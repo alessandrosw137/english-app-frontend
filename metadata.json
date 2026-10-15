@@ -1,0 +1,6 @@
+{
+  "name": "Phrasal Verbs TOEFL",
+  "description": "Desarrollado por: Wilberth Alessandro Molina Cutz",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

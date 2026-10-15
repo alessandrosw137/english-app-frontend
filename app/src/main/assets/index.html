@@ -1,0 +1,3295 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>English Mastery & TOEFL Campaign Platform</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      overflow-x: hidden;
+    }
+    input, select, textarea {
+      user-select: auto;
+    }
+    .safe-bottom {
+      padding-bottom: max(4.5rem, env(safe-area-inset-bottom, 32px));
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(99, 102, 241, 0.5);
+      border-radius: 9999px;
+    }
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 15px rgba(99, 102, 241, 0.4), 0 0 30px rgba(99, 102, 241, 0.2); }
+      50% { box-shadow: 0 0 25px rgba(99, 102, 241, 0.8), 0 0 50px rgba(129, 140, 248, 0.4); }
+    }
+    .animate-pulse-glow {
+      animation: pulse-glow 2s infinite ease-in-out;
+    }
+    @keyframes float-gentle {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-4px); }
+    }
+    .animate-float {
+      animation: float-gentle 3s ease-in-out infinite;
+    }
+
+    /* Subtle slide-in transitions for main child sections */
+    @keyframes slideIn {
+      0% {
+        opacity: 0;
+        transform: translate3d(20px, 0, 0);
+      }
+      100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+      }
+    }
+    @keyframes slideInRight {
+      0% {
+        opacity: 0;
+        transform: translate3d(24px, 0, 0);
+      }
+      100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+      }
+    }
+    @keyframes slideInLeft {
+      0% {
+        opacity: 0;
+        transform: translate3d(-24px, 0, 0);
+      }
+      100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+      }
+    }
+    .slide-in,
+    main > section.slide-in {
+      animation: slideIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+      will-change: transform, opacity;
+    }
+    .slide-in-right,
+    main > section.slide-in-right {
+      animation: slideInRight 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+      will-change: transform, opacity;
+    }
+    .slide-in-left,
+    main > section.slide-in-left {
+      animation: slideInLeft 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+      will-change: transform, opacity;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .slide-in, .slide-in-right, .slide-in-left,
+      main > section.slide-in, main > section.slide-in-right, main > section.slide-in-left {
+        animation: none !important;
+        transform: none !important;
+      }
+    }
+
+    /* Visual Pagination Indicator (Dots) at bottom of main > section */
+    .section-pagination-container {
+      transition: opacity 0.25s ease-in-out;
+    }
+    .pagination-dot {
+      display: inline-block;
+      transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .pagination-dot.active {
+      width: 1.75rem; /* 28px */
+      height: 0.625rem; /* 10px */
+      background: linear-gradient(90deg, #6366f1 0%, #06b6d4 100%);
+      border-radius: 9999px;
+      box-shadow: 0 0 12px rgba(99, 102, 241, 0.6);
+      transform: scale(1.05);
+    }
+    .pagination-dot.inactive {
+      width: 0.625rem; /* 10px */
+      height: 0.625rem; /* 10px */
+      background-color: #334155;
+      border-radius: 9999px;
+      opacity: 0.65;
+    }
+    .pagination-dot.inactive:hover {
+      background-color: #64748b;
+      opacity: 1;
+      transform: scale(1.2);
+    }
+
+    /* Print & PDF Export Styling */
+    #printableGlossaryContainer {
+      display: none;
+    }
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 12mm 14mm 15mm 14mm;
+      }
+      body {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+        font-size: 11pt !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        user-select: auto !important;
+      }
+      /* Hide all standard screen UI elements during printing */
+      header,
+      nav,
+      #bottomNavBar,
+      #view-hub,
+      #view-campaign,
+      #view-library,
+      #view-toefl,
+      #levelSessionModal,
+      #ttsSpeedControlContainer,
+      .section-pagination-container,
+      button,
+      input,
+      select {
+        display: none !important;
+      }
+      /* Reveal and format print container */
+      #printableGlossaryContainer {
+        display: block !important;
+        width: 100% !important;
+        background: #ffffff !important;
+        color: #0f172a !important;
+      }
+      .pdf-doc-header {
+        border-bottom: 2.5pt solid #4f46e5;
+        padding-bottom: 12px;
+        margin-bottom: 16px;
+      }
+      .pdf-brand-title {
+        font-size: 19pt;
+        font-weight: 800;
+        color: #1e1b4b;
+        letter-spacing: -0.5px;
+        margin: 0;
+        line-height: 1.2;
+      }
+      .pdf-module-badge {
+        display: inline-block;
+        background-color: #e0e7ff;
+        color: #3730a3;
+        font-size: 9.5pt;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 4px;
+        margin-top: 4px;
+        margin-bottom: 6px;
+      }
+      .pdf-author-credit {
+        font-size: 9pt;
+        color: #475569;
+        margin-top: 4px;
+        margin-bottom: 0;
+      }
+      .pdf-author-name {
+        color: #1e293b;
+        font-weight: 700;
+      }
+      .pdf-table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        margin-top: 8px !important;
+        font-size: 9pt !important;
+        line-height: 1.35 !important;
+      }
+      .pdf-table th {
+        background-color: #f1f5f9 !important;
+        color: #1e293b !important;
+        font-weight: 700 !important;
+        text-align: left !important;
+        padding: 8px 10px !important;
+        border-top: 1pt solid #cbd5e1 !important;
+        border-bottom: 2pt solid #64748b !important;
+        font-size: 8.5pt !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+      }
+      .pdf-table td {
+        padding: 8px 10px !important;
+        border-bottom: 1pt solid #e2e8f0 !important;
+        vertical-align: top !important;
+        word-break: break-word !important;
+      }
+      .pdf-table tr {
+        page-break-inside: avoid !important;
+      }
+      .pdf-table tr:nth-child(even) td {
+        background-color: #f8fafc !important;
+      }
+      .pdf-term-en {
+        font-weight: 700;
+        color: #1e1b4b;
+        font-size: 10pt;
+      }
+      .pdf-term-pron {
+        font-size: 8pt;
+        color: #64748b;
+        font-style: italic;
+        margin-top: 1px;
+      }
+      .pdf-term-es {
+        font-weight: 600;
+        color: #0f172a;
+      }
+      .pdf-term-def {
+        font-size: 8pt;
+        color: #475569;
+        margin-top: 3px;
+        line-height: 1.3;
+      }
+      .pdf-term-ex {
+        color: #334155;
+        font-style: italic;
+        background: #f1f5f9;
+        padding: 4px 6px;
+        border-left: 2.5pt solid #6366f1;
+        border-radius: 3px;
+        font-size: 8pt;
+        margin-top: 2px;
+      }
+      .pdf-term-tip {
+        font-size: 7.5pt;
+        color: #b45309;
+        background: #fef3c7;
+        padding: 2px 5px;
+        border-radius: 3px;
+        display: inline-block;
+        margin-top: 3px;
+        font-weight: 600;
+      }
+      /* Compact Format Print Styles */
+      .pdf-table-compact {
+        font-size: 8.5pt !important;
+      }
+      .pdf-table-compact th {
+        padding: 6px 8px !important;
+        font-size: 8pt !important;
+      }
+      .pdf-table-compact td {
+        padding: 5px 8px !important;
+        line-height: 1.25 !important;
+      }
+
+      /* Flashcards Print Grid (Cut & Fold Ready) */
+      .pdf-flashcard-grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px !important;
+        width: 100% !important;
+        margin-top: 10px !important;
+      }
+      .pdf-flashcard-card {
+        border: 1.5pt dashed #94a3b8 !important;
+        border-radius: 6px !important;
+        padding: 12px 14px !important;
+        background: #ffffff !important;
+        page-break-inside: avoid !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: space-between !important;
+        min-height: 135px !important;
+        box-sizing: border-box !important;
+        position: relative !important;
+      }
+      .pdf-flashcard-header {
+        border-bottom: 1pt solid #e2e8f0 !important;
+        padding-bottom: 6px !important;
+        margin-bottom: 6px !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: baseline !important;
+      }
+      .pdf-flashcard-number {
+        font-size: 7.5pt !important;
+        color: #64748b !important;
+        font-weight: 700 !important;
+      }
+      .pdf-flashcard-term {
+        font-size: 11pt !important;
+        font-weight: 800 !important;
+        color: #1e1b4b !important;
+      }
+      .pdf-flashcard-pron {
+        font-size: 8pt !important;
+        color: #475569 !important;
+        font-style: italic !important;
+      }
+      .pdf-flashcard-meaning {
+        font-size: 9pt !important;
+        font-weight: 700 !important;
+        color: #047857 !important;
+        margin-top: 3px !important;
+      }
+      .pdf-flashcard-def {
+        font-size: 8pt !important;
+        color: #334155 !important;
+        margin-top: 2px !important;
+        line-height: 1.25 !important;
+      }
+      .pdf-flashcard-example {
+        font-size: 7.5pt !important;
+        color: #334155 !important;
+        font-style: italic !important;
+        background: #f8fafc !important;
+        border-left: 2pt solid #6366f1 !important;
+        padding: 3px 6px !important;
+        border-radius: 2px !important;
+        margin-top: 5px !important;
+      }
+      .pdf-flashcard-cutline {
+        position: absolute !important;
+        bottom: 2px !important;
+        right: 6px !important;
+        font-size: 6.5pt !important;
+        color: #94a3b8 !important;
+        letter-spacing: 0.5px !important;
+      }
+
+      .pdf-footer {
+        margin-top: 16px;
+        padding-top: 8px;
+        border-top: 1pt solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 8pt;
+        color: #64748b;
+        page-break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white safe-bottom">
+
+  <!-- TOP GAMIFICATION STATUS BAR -->
+  <header class="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800/90 shadow-md">
+    <div class="max-w-5xl mx-auto px-4 py-2.5 flex items-center justify-between gap-3">
+      <!-- App Brand & Back to Hub Button -->
+      <div class="flex items-center gap-2.5">
+        <button id="navBackBtn" onclick="handleNavigationBack()" class="hidden p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition">
+          <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <div class="flex items-center gap-2 cursor-pointer" onclick="navigateTo('hub')">
+          <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 flex items-center justify-center font-extrabold text-sm text-white shadow-md shadow-indigo-600/30">
+            EM
+          </div>
+          <div>
+            <h1 class="text-xs sm:text-sm font-extrabold tracking-tight bg-gradient-to-r from-white via-indigo-100 to-cyan-300 bg-clip-text text-transparent">
+              English Master
+            </h1>
+            <p id="userRankBadge" class="text-[10px] font-semibold text-indigo-400 leading-none">Novato C1</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gamification Counters: Streak, Stars, XP -->
+      <div class="flex items-center gap-2 sm:gap-3 text-xs">
+        <!-- Streak -->
+        <div class="flex items-center gap-1 bg-amber-950/40 border border-amber-500/30 px-2.5 py-1 rounded-xl" title="Días en racha consecutiva">
+          <span class="text-sm">🔥</span>
+          <span id="headerStreakCount" class="font-bold text-amber-400 font-mono">1</span>
+        </div>
+
+        <!-- Stars -->
+        <div class="flex items-center gap-1 bg-amber-950/40 border border-amber-500/30 px-2.5 py-1 rounded-xl" title="Estrellas acumuladas en la campaña">
+          <span class="text-sm">⭐</span>
+          <span id="headerStarsCount" class="font-bold text-amber-300 font-mono">0</span>
+        </div>
+
+        <!-- XP Level Progress -->
+        <div class="hidden sm:flex items-center gap-2 bg-slate-800/90 border border-slate-700/80 px-3 py-1 rounded-xl">
+          <span class="text-indigo-400 font-bold text-[11px]">XP</span>
+          <span id="headerXpCount" class="font-mono text-white text-[11px] font-bold">0</span>
+          <div class="w-16 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+            <div id="headerXpBar" class="h-full bg-cyan-400 transition-all duration-300" style="width: 10%"></div>
+          </div>
+        </div>
+
+        <!-- Daily 9:00 PM Reminder Bell -->
+        <button onclick="toggleOrTestReminder()" id="reminderBellBtn" class="p-1.5 rounded-lg bg-slate-800 text-amber-300 hover:text-white transition" title="Recordatorio diario activo (9:00 PM) - Toca para probar">
+          🔔
+        </button>
+
+        <!-- Sound Audio FX Toggle -->
+        <button onclick="toggleSoundFx()" id="soundFxBtn" class="p-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white transition" title="Activar/Silenciar efectos">
+          🔊
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN DYNAMIC CONTENT CONTAINER -->
+  <main id="mainContainer" class="max-w-5xl mx-auto px-4 py-5 flex-1 w-full relative touch-pan-y select-none sm:select-auto">
+
+    <!-- Section Navigation Tab Bar (Hub, Campaña, Biblioteca, TOEFL) -->
+    <nav id="sectionNavTabs" class="flex items-center justify-between bg-slate-900/95 backdrop-blur border border-slate-800 rounded-2xl p-1 mb-5 text-xs font-bold shadow-lg sticky top-16 z-30" aria-label="Secciones">
+      <button id="tab-hub" onclick="navigateTo('hub')" class="flex-1 py-2 px-1 sm:px-2 rounded-xl text-center transition flex items-center justify-center gap-1 sm:gap-1.5 text-white bg-indigo-600 shadow-md">
+        <span>🏠</span> <span>Hub</span>
+      </button>
+      <button id="tab-campaign" onclick="navigateTo('campaign')" class="flex-1 py-2 px-1 sm:px-2 rounded-xl text-center transition flex items-center justify-center gap-1 sm:gap-1.5 text-slate-400 hover:text-slate-200">
+        <span>🗺️</span> <span>Campaña</span>
+      </button>
+      <button id="tab-library" onclick="navigateTo('library')" class="flex-1 py-2 px-1 sm:px-2 rounded-xl text-center transition flex items-center justify-center gap-1 sm:gap-1.5 text-slate-400 hover:text-slate-200">
+        <span>📖</span> <span>Biblioteca</span>
+      </button>
+      <button id="tab-toefl" onclick="navigateTo('toefl')" class="flex-1 py-2 px-1 sm:px-2 rounded-xl text-center transition flex items-center justify-center gap-1 sm:gap-1.5 text-slate-400 hover:text-slate-200">
+        <span>🎓</span> <span>TOEFL</span>
+      </button>
+    </nav>
+
+    <!-- Swipe Gesture Toast Notification -->
+    <div id="swipeGestureToast" class="fixed bottom-6 left-1/2 -translate-x-1/2 pointer-events-none transition-all duration-300 opacity-0 transform translate-y-3 z-50 flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900/95 border border-indigo-500/50 text-white text-xs font-bold shadow-2xl backdrop-blur">
+      <span id="swipeToastIcon">👉</span>
+      <span id="swipeToastText">Campaña</span>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- VIEW 1: MAIN HUB SCREEN (SELECT MODALITY)  -->
+    <!-- ========================================== -->
+    <section id="view-hub" class="space-y-6 slide-in">
+      <!-- Daily Motivation Card -->
+      <div class="relative overflow-hidden bg-gradient-to-r from-indigo-900/60 via-slate-900 to-cyan-950/40 border border-indigo-500/30 rounded-3xl p-5 sm:p-6 shadow-xl">
+        <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="space-y-1">
+            <div class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[11px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+              <span>🎯</span> PLAN DE MAESTRÍA INTEGRAL
+            </div>
+            <h2 class="text-xl sm:text-2xl font-black text-white">
+              ¿Qué dominaremos hoy, Alessandro?
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-xl">
+              Elige una modalidad para avanzar en su <strong>Ruta de Niveles con Jefes</strong> o explora su biblioteca completa para consultas rápidas.
+            </p>
+          </div>
+          <button onclick="openDailyQuickChallenge()" class="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-extrabold px-4 py-2.5 rounded-2xl text-xs sm:text-sm shadow-lg shadow-amber-500/30 transition flex items-center justify-center gap-2 shrink-0">
+            <span>⚡</span> Reto Rápido del Día (+50 XP)
+          </button>
+        </div>
+      </div>
+
+      <!-- Daily 9:00 PM Study Reminder & Streak Shield Card -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-xl shrink-0">
+            ⏰
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="text-sm font-bold text-white">Recordatorio Diario de Estudio</h3>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold">9:00 PM ACTIVO</span>
+            </div>
+            <p class="text-xs text-slate-400">Protege tu racha de <span id="hubStreakDisplay" class="text-amber-300 font-bold">3 días</span>. Alarma automática para tu sesión nocturna de 5 minutos.</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 self-end sm:self-auto shrink-0">
+          <button onclick="toggleOrTestReminder()" class="px-3.5 py-1.5 rounded-xl bg-slate-950 border border-slate-700 hover:border-amber-500 text-xs text-slate-300 hover:text-white font-semibold transition flex items-center gap-1.5 shadow-sm">
+            <span>🔔</span> Probar Alarma
+          </button>
+        </div>
+      </div>
+
+      <!-- Grid of 6 Modality Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        <!-- MODALITY 1: Phrasal Verbs Master -->
+        <div class="bg-slate-900 border border-slate-800 hover:border-indigo-500/50 rounded-2xl p-5 flex flex-col justify-between gap-4 transition shadow-md group">
+          <div class="space-y-2.5">
+            <div class="flex items-start justify-between">
+              <div class="w-12 h-12 rounded-2xl bg-indigo-600/20 border border-indigo-500/40 flex items-center justify-center text-2xl group-hover:scale-105 transition">
+                📚
+              </div>
+              <span id="badge-progress-pv" class="text-xs font-mono font-bold px-2.5 py-1 rounded-xl bg-slate-950 border border-slate-800 text-emerald-400">
+                0 / 22 Niveles
+              </span>
+            </div>
+            <div>
+              <h3 class="text-lg font-bold text-white group-hover:text-indigo-300 transition">
+                1. Phrasal Verbs Master
+              </h3>
+              <p class="text-xs text-slate-400 leading-relaxed mt-1">
+                110 verbos con matices (<em>Run into</em> vs <em>Bump into</em>, <em>Pop up</em> vs <em>Crop up</em>). Ruta estructurada de 22 niveles con exámenes de jefe.
+              </p>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800/80">
+            <button onclick="openCampaign('pv')" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 transition shadow-sm">
+              <span>🗺️</span> Ruta de Niveles
+            </button>
+            <button onclick="openLibrary('pv')" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 transition">
+              <span>📖</span> Diccionario A-Z
+            </button>
+          </div>
+        </div>
+
+        <!-- MODALITY 2: Grammar by Levels (B1 to C2) -->
+        <div class="bg-slate-900 border border-slate-800 hover:border-cyan-500/50 rounded-2xl p-5 flex flex-col justify-between gap-4 transition shadow-md group">
+          <div class="space-y-2.5">
+            <div class="flex items-start justify-between">
+              <div class="w-12 h-12 rounded-2xl bg-cyan-600/20 border border-cyan-500/40 flex items-center justify-center text-2xl group-hover:scale-105 transition">
+                🏛️
+              </div>
+              <span id="badge-progress-grammar" class="text-xs font-mono font-bold px-2.5 py-1 rounded-xl bg-slate-950 border border-slate-800 text-cyan-400">
+                0 / 16 Niveles
+              </span>
+            </div>
+            <div>
+              <h3 class="text-lg font-bold text-white group-hover:text-cyan-300 transition">
+                2. Gramática Pro: B1 ➔ C2
+              </h3>
+              <p class="text-xs text-slate-400 leading-relaxed mt-1">
+                Estructuras clave para TOEFL/IELTS: Inversiones negativas, Subjuntivo académico, Cleft sentences, Causativos y Marcadores de discurso formal.
+              </p>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800/80">
+            <button onclick="openCampaign('grammar')" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 transition shadow-sm">
+              <span>🗺️</span> Ruta B1-C2
+            </button>
+            <button onclick="openLibrary('grammar')" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 transition">
+              <span>📑</span> Guía de Reglas
+            </button>
+          </div>
+        </div>
+
+        <!-- MODALITY 3: Daily Life, Chores & Emergencies -->
+        <div class="bg-slate-900 border border-slate-800 hover:border-emerald-500/50 rounded-2xl p-5 flex flex-col justify-between gap-4 transition shadow-md group">
+          <div class="space-y-2.5">
+            <div class="flex items-start justify-between">
+              <div class="w-12 h-12 rounded-2xl bg-emerald-600/20 border border-emerald-500/40 flex items-center justify-center text-2xl group-hover:scale-105 transition">
+                🏠
+              </div>
+              <span id="badge-progress-daily" class="text-xs font-mono font-bold px-2.5 py-1 rounded-xl bg-slate-950 border border-slate-800 text-emerald-400">
+                0 / 10 Niveles
+              </span>
+            </div>
+            <div>
+              <h3 class="text-lg font-bold text-white group-hover:text-emerald-300 transition">
+                3. Daily Life, Habits & Quehaceres
+              </h3>
+              <p class="text-xs text-slate-400 leading-relaxed mt-1">
+                Inglés del mundo real: quehaceres del hogar, supermercado, banco, citas médicas de emergencia, cómo dar indicaciones en la calle y reparar cosas.
+              </p>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800/80">
+            <button onclick="openCampaign('daily')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 transition shadow-sm">
+              <span>🗺️</span> Ruta de Vida Diaria
+            </button>
+            <button onclick="openLibrary('daily')" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 transition">
+              <span>🛒</span> Glosario Cotidiano
+            </button>
+          </div>
+        </div>
+
+        <!-- MODALITY 4: Work, Tech & Interviews -->
+        <div class="bg-slate-900 border border-slate-800 hover:border-purple-500/50 rounded-2xl p-5 flex flex-col justify-between gap-4 transition shadow-md group">
+          <div class="space-y-2.5">
+            <div class="flex items-start justify-between">
+              <div class="w-12 h-12 rounded-2xl bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-2xl group-hover:scale-105 transition">
+                💼
+              </div>
+              <span id="badge-progress-work" class="text-xs font-mono font-bold px-2.5 py-1 rounded-xl bg-slate-950 border border-slate-800 text-purple-400">
+                0 / 12 Niveles
+              </span>
+            </div>
+            <div>
+              <h3 class="text-lg font-bold text-white group-hover:text-purple-300 transition">
+                4. English for Work & Tech
+              </h3>
+              <p class="text-xs text-slate-400 leading-relaxed mt-1">
+                Entrevistas método STAR, negociación de sueldos, jerga de software (<em>standup, rollout, tech debt</em>), reuniones ejecutivas y correos formales.
+              </p>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800/80">
+            <button onclick="openCampaign('work')" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 transition shadow-sm">
+              <span>🗺️</span> Ruta Profesional
+            </button>
+            <button onclick="openLibrary('work')" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 transition">
+              <span>📊</span> Manual Laboral
+            </button>
+          </div>
+        </div>
+
+        <!-- MODALITY 5: Advanced Slang & Idioms -->
+        <div class="bg-slate-900 border border-slate-800 hover:border-pink-500/50 rounded-2xl p-5 flex flex-col justify-between gap-4 transition shadow-md group">
+          <div class="space-y-2.5">
+            <div class="flex items-start justify-between">
+              <div class="w-12 h-12 rounded-2xl bg-pink-600/20 border border-pink-500/40 flex items-center justify-center text-2xl group-hover:scale-105 transition">
+                🔥
+              </div>
+              <span id="badge-progress-slang" class="text-xs font-mono font-bold px-2.5 py-1 rounded-xl bg-slate-950 border border-slate-800 text-pink-400">
+                0 / 10 Niveles
+              </span>
+            </div>
+            <div>
+              <h3 class="text-lg font-bold text-white group-hover:text-pink-300 transition">
+                5. Slang, Idioms & Social Life
+              </h3>
+              <p class="text-xs text-slate-400 leading-relaxed mt-1">
+                Jerga moderna de EE. UU. (<em>no cap, lowkey, touch grass</em>), modismos de animales, citas/dating (<em>red flags, ghosting</em>) y plática de amigos.
+              </p>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800/80">
+            <button onclick="openCampaign('slang')" class="w-full bg-pink-600 hover:bg-pink-500 text-white font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 transition shadow-sm">
+              <span>🗺️</span> Ruta Social
+            </button>
+            <button onclick="openLibrary('slang')" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 transition">
+              <span>🕶️</span> Glosario Urbano
+            </button>
+          </div>
+        </div>
+
+        <!-- MODALITY 6: Everyday Blindspots (Acciones Cotidianas que Nadie Sabe Decir) -->
+        <div class="bg-slate-900 border border-slate-800 hover:border-amber-500/50 rounded-2xl p-5 flex flex-col justify-between gap-4 transition shadow-md group">
+          <div class="space-y-2.5">
+            <div class="flex items-start justify-between">
+              <div class="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-2xl group-hover:scale-105 transition">
+                🫀
+              </div>
+              <span id="badge-progress-blindspots" class="text-xs font-mono font-bold px-2.5 py-1 rounded-xl bg-slate-950 border border-slate-800 text-amber-400">
+                0 / 5 Niveles
+              </span>
+            </div>
+            <div>
+              <h3 class="text-lg font-bold text-white group-hover:text-amber-300 transition">
+                6. Everyday Blindspots
+              </h3>
+              <p class="text-xs text-slate-400 leading-relaxed mt-1">
+                Acciones instintivas y corporales que nadie sabe decir: <em>bark, purr, whistle, yawn, hiccup, burp, sneeze, snore, grind teeth, shrug, blink, wink, squint, trip, stumble, gargle, rinse</em>.
+              </p>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800/80">
+            <button onclick="openCampaign('blindspots')" class="w-full bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 transition shadow-sm">
+              <span>🗺️</span> Ruta Corporal
+            </button>
+            <button onclick="openLibrary('blindspots')" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 transition">
+              <span>📖</span> Glosario
+            </button>
+          </div>
+        </div>
+
+        <!-- MODALITY 7: Compound & Hyphenated Words -->
+        <div class="bg-slate-900 border border-slate-800 hover:border-teal-500/50 rounded-2xl p-5 flex flex-col justify-between gap-4 transition shadow-md group">
+          <div class="space-y-2.5">
+            <div class="flex items-start justify-between">
+              <div class="w-12 h-12 rounded-2xl bg-teal-500/20 border border-teal-500/40 flex items-center justify-center text-2xl group-hover:scale-105 transition">
+                🔗
+              </div>
+              <span id="badge-progress-compound" class="text-xs font-mono font-bold px-2.5 py-1 rounded-xl bg-slate-950 border border-slate-800 text-teal-400">
+                0 / 4 Niveles
+              </span>
+            </div>
+            <div>
+              <h3 class="text-lg font-bold text-white group-hover:text-teal-300 transition">
+                7. Compound & Hyphenated Words
+              </h3>
+              <p class="text-xs text-slate-400 leading-relaxed mt-1">
+                Reglas del guion ('-') antes de sustantivos: <em>big-boned, stuck-up, open-minded, short-tempered, self-taught, cold-hearted, up-to-date, two-hour meeting, 10-dollar bill</em>.
+              </p>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800/80">
+            <button onclick="openCampaign('compound')" class="w-full bg-teal-600 hover:bg-teal-500 text-white font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 transition shadow-sm">
+              <span>🗺️</span> Ruta Guiones
+            </button>
+            <button onclick="openLibrary('compound')" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 transition">
+              <span>📖</span> Reglas y Banco
+            </button>
+          </div>
+        </div>
+
+        <!-- MODALITY 8: Phrasal Adjectives & Participles -->
+        <div class="bg-slate-900 border border-slate-800 hover:border-violet-500/50 rounded-2xl p-5 flex flex-col justify-between gap-4 transition shadow-md group">
+          <div class="space-y-2.5">
+            <div class="flex items-start justify-between">
+              <div class="w-12 h-12 rounded-2xl bg-violet-500/20 border border-violet-500/40 flex items-center justify-center text-2xl group-hover:scale-105 transition">
+                🔄
+              </div>
+              <span id="badge-progress-phrasal_adj" class="text-xs font-mono font-bold px-2.5 py-1 rounded-xl bg-slate-950 border border-slate-800 text-violet-400">
+                0 / 3 Niveles
+              </span>
+            </div>
+            <div>
+              <h3 class="text-lg font-bold text-white group-hover:text-violet-300 transition">
+                8. Phrasal Adjectives & Participles
+              </h3>
+              <p class="text-xs text-slate-400 leading-relaxed mt-1">
+                Adjetivos nacidos de phrasal verbs: <em>worn-out, burned-out, broken-down, wound-up, laid-back, spaced-out, built-in, hands-on</em>. Distingue acción vs estado.
+              </p>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800/80">
+            <button onclick="openCampaign('phrasal_adj')" class="w-full bg-violet-600 hover:bg-violet-500 text-white font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 transition shadow-sm">
+              <span>🗺️</span> Ruta Adjetivos
+            </button>
+            <button onclick="openLibrary('phrasal_adj')" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 transition">
+              <span>📖</span> Guía de Uso
+            </button>
+          </div>
+        </div>
+
+        <!-- MODALITY 9: Root Multipliers: Suffixes & Prefixes -->
+        <div class="bg-slate-900 border border-slate-800 hover:border-rose-500/50 rounded-2xl p-5 flex flex-col justify-between gap-4 transition shadow-md group">
+          <div class="space-y-2.5">
+            <div class="flex items-start justify-between">
+              <div class="w-12 h-12 rounded-2xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-2xl group-hover:scale-105 transition">
+                🧬
+              </div>
+              <span id="badge-progress-roots" class="text-xs font-mono font-bold px-2.5 py-1 rounded-xl bg-slate-950 border border-slate-800 text-rose-400">
+                0 / 5 Niveles
+              </span>
+            </div>
+            <div>
+              <h3 class="text-lg font-bold text-white group-hover:text-rose-300 transition">
+                9. Root Multipliers: Prefijos & Sufijos
+              </h3>
+              <p class="text-xs text-slate-400 leading-relaxed mt-1">
+                Terminaciones repetidas que multiplican tu vocabulario: <em>-ish</em> (aproximación), <em>-proof</em> (inmune), <em>over- vs under-</em>, <em>-worthy</em> y el prefijo <em>mis-</em>.
+              </p>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800/80">
+            <button onclick="openCampaign('roots')" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 transition shadow-sm">
+              <span>🗺️</span> Ruta Raíces
+            </button>
+            <button onclick="openLibrary('roots')" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 transition">
+              <span>📖</span> Diccionario
+            </button>
+          </div>
+        </div>
+
+        <!-- MODALITY 10: TOEFL Exam Simulator -->
+        <div class="col-span-1 md:col-span-2 bg-gradient-to-br from-indigo-950/80 to-slate-900 border border-indigo-500/40 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 transition shadow-md group">
+          <div class="flex items-center gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-indigo-500/30 border border-indigo-400/50 flex items-center justify-center text-3xl shrink-0">
+              🎓
+            </div>
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <h3 class="text-lg font-bold text-white">
+                  10. Simulador Examen TOEFL
+                </h3>
+                <span id="hubToeflBestScore" class="text-xs font-mono font-extrabold px-2.5 py-0.5 rounded-xl bg-slate-950 border border-amber-500/40 text-amber-300">
+                  0 / 30 pts
+                </span>
+              </div>
+              <p class="text-xs text-slate-300 leading-relaxed max-w-xl">
+                Simulador cronometrado oficial (0-30 puntos) que sintetiza Phrasal Verbs, Gramática Avanzada B1-C2, modismos y palabras compuestas con explicaciones y análisis de trampas.
+              </p>
+            </div>
+          </div>
+          <button onclick="navigateTo('toefl')" class="w-full sm:w-auto shrink-0 bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white font-bold px-6 py-3 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 transition shadow-lg shadow-indigo-600/30">
+            <span>🚀</span> Iniciar Simulador TOEFL
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Visual Pagination Indicator (Dots) at bottom of section -->
+      <div class="section-pagination-container pt-8 pb-4 flex flex-col items-center justify-center space-y-2 border-t border-slate-800/80 mt-8 select-none" data-section-owner="hub" aria-label="Paginación de secciones">
+        <div class="flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-slate-800/90 backdrop-blur shadow-md">
+          <button type="button" onclick="navigateTo('hub')" class="section-dot-btn p-1.5 focus:outline-none group" data-target="hub" title="Hub (1 de 4)" aria-label="Ir a sección Hub" aria-current="page">
+            <span class="pagination-dot active"></span>
+          </button>
+          <button type="button" onclick="navigateTo('campaign')" class="section-dot-btn p-1.5 focus:outline-none group" data-target="campaign" title="Campaña (2 de 4)" aria-label="Ir a sección Campaña">
+            <span class="pagination-dot inactive"></span>
+          </button>
+          <button type="button" onclick="navigateTo('library')" class="section-dot-btn p-1.5 focus:outline-none group" data-target="library" title="Biblioteca (3 de 4)" aria-label="Ir a sección Biblioteca">
+            <span class="pagination-dot inactive"></span>
+          </button>
+          <button type="button" onclick="navigateTo('toefl')" class="section-dot-btn p-1.5 focus:outline-none group" data-target="toefl" title="TOEFL (4 de 4)" aria-label="Ir a sección TOEFL">
+            <span class="pagination-dot inactive"></span>
+          </button>
+        </div>
+        <div class="flex items-center gap-2 text-[11px] text-slate-400 font-medium">
+          <span class="section-pagination-label font-bold text-indigo-300">🏠 Sección 1 de 4: <span class="text-white">Hub</span></span>
+          <span class="text-slate-600">•</span>
+          <span class="text-slate-500 flex items-center gap-1">
+            <span>👈</span> Desliza <span>👉</span>
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- VIEW 2: CAMPAIGN ROADMAP (MAPA DE RUTA)   -->
+    <!-- ========================================== -->
+    <section id="view-campaign" class="hidden space-y-5 slide-in">
+      <!-- Campaign Header Bar -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
+        <div>
+          <span id="campaignCategoryTag" class="text-[11px] font-bold text-indigo-400 uppercase tracking-wider">Campaña de Aprendizaje</span>
+          <h2 id="campaignTitle" class="text-lg sm:text-xl font-extrabold text-white mt-0.5">Ruta de Niveles</h2>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="campaignLibraryBtn" onclick="openCurrentLibrary()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition">
+            <span>📖</span> Ver Biblioteca
+          </button>
+          <button onclick="navigateTo('hub')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1 transition">
+            <span>🏠</span> Menú Hub
+          </button>
+        </div>
+      </div>
+
+      <!-- Winding Path Game Map Container -->
+      <div class="relative bg-slate-900/60 border border-slate-800/80 rounded-3xl p-6 sm:p-10 overflow-hidden flex flex-col items-center">
+        <!-- Trail Guide Line (SVG connecting nodes) -->
+        <svg id="trailSvg" class="absolute inset-0 w-full h-full pointer-events-none z-0 stroke-indigo-500/20 stroke-[4] stroke-dasharray-[6,6]"></svg>
+
+        <!-- Dynamic Level Nodes Path -->
+        <div id="trailNodesContainer" class="relative z-10 w-full max-w-md flex flex-col items-center space-y-10 sm:space-y-12"></div>
+      </div>
+
+      <!-- Visual Pagination Indicator (Dots) at bottom of section -->
+      <div class="section-pagination-container pt-8 pb-4 flex flex-col items-center justify-center space-y-2 border-t border-slate-800/80 mt-8 select-none" data-section-owner="campaign" aria-label="Paginación de secciones">
+        <div class="flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-slate-800/90 backdrop-blur shadow-md">
+          <button type="button" onclick="navigateTo('hub')" class="section-dot-btn p-1.5 focus:outline-none group" data-target="hub" title="Hub (1 de 4)" aria-label="Ir a sección Hub">
+            <span class="pagination-dot inactive"></span>
+          </button>
+          <button type="button" onclick="navigateTo('campaign')" class="section-dot-btn p-1.5 focus:outline-none group" data-target="campaign" title="Campaña (2 de 4)" aria-label="Ir a sección Campaña" aria-current="page">
+            <span class="pagination-dot active"></span>
+          </button>
+          <button type="button" onclick="navigateTo('library')" class="section-dot-btn p-1.5 focus:outline-none group" data-target="library" title="Biblioteca (3 de 4)" aria-label="Ir a sección Biblioteca">
+            <span class="pagination-dot inactive"></span>
+          </button>
+          <button type="button" onclick="navigateTo('toefl')" class="section-dot-btn p-1.5 focus:outline-none group" data-target="toefl" title="TOEFL (4 de 4)" aria-label="Ir a sección TOEFL">
+            <span class="pagination-dot inactive"></span>
+          </button>
+        </div>
+        <div class="flex items-center gap-2 text-[11px] text-slate-400 font-medium">
+          <span class="section-pagination-label font-bold text-indigo-300">🗺️ Sección 2 de 4: <span class="text-white">Campaña</span></span>
+          <span class="text-slate-600">•</span>
+          <span class="text-slate-500 flex items-center gap-1">
+            <span>👈</span> Desliza <span>👉</span>
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- VIEW 3: REFERENCE LIBRARY & DICTIONARY    -->
+    <!-- ========================================== -->
+    <section id="view-library" class="hidden space-y-5 slide-in">
+      <!-- Library Header Bar -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-3.5 shadow-md">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+          <div>
+            <h2 id="libraryTitle" class="text-lg sm:text-xl font-extrabold text-white">Biblioteca de Consulta</h2>
+            <p id="librarySubtitle" class="text-xs text-slate-400">Explora sin restricciones todos los términos con audio nativo</p>
+          </div>
+          <div class="flex items-center flex-wrap gap-2">
+            <!-- PDF Format Selector & Download Button -->
+            <div class="flex items-center bg-slate-950/90 border border-amber-500/40 rounded-xl p-1 shadow-sm gap-1">
+              <select
+                id="libraryPdfFormatSelect"
+                class="bg-slate-900 hover:bg-slate-800 text-amber-300 font-bold text-xs px-2.5 py-1.5 rounded-lg border border-amber-500/30 outline-none cursor-pointer transition focus:border-amber-400"
+                title="Elegir diseño y formato del documento PDF"
+              >
+                <option value="FULL_TABLE" selected>📄 Tabla Completa (Estándar)</option>
+                <option value="COMPACT">📑 Solo términos y definiciones (Compacto)</option>
+                <option value="FLASHCARDS">🗂️ Flashcards para imprimir (Tarjetas)</option>
+              </select>
+              <button
+                onclick="downloadGlossaryPDF()"
+                id="downloadPdfBtn"
+                class="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-md shadow-amber-500/20 active:scale-95 transition"
+                title="Generar y descargar PDF en el formato seleccionado con créditos de autoría"
+              >
+                <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Descargar PDF</span>
+              </button>
+            </div>
+            <button onclick="openCurrentCampaign()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition">
+              <span>🗺️</span> Ir al Mapa de Ruta
+            </button>
+            <button onclick="navigateTo('hub')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-xl transition">
+              🏠 Hub
+            </button>
+          </div>
+        </div>
+
+        <!-- Search Bar & Filters -->
+        <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+          <div class="sm:col-span-8 relative">
+            <input
+              type="text"
+              id="librarySearchInput"
+              oninput="renderLibraryItems()"
+              placeholder="Buscar en inglés, español o contexto..."
+              class="w-full bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded-xl pl-10 pr-4 py-2 text-xs sm:text-sm text-white placeholder-slate-500 outline-none transition"
+            >
+            <svg class="w-4 h-4 text-slate-500 absolute left-3.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </div>
+          <div class="sm:col-span-4">
+            <select id="libraryFilterSelect" onchange="renderLibraryItems()" class="w-full bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded-xl px-3 py-2 text-xs text-slate-200 outline-none">
+              <option value="ALL">Mostrar Todos (Orden Inteligente)</option>
+              <option value="SRS_QUEUE">🧠 Solo Cola SRS (Difíciles + Fallados)</option>
+              <option value="HARD_ONLY">⚠️ Solo Marcados como Difícil</option>
+              <option value="MISSED_ONLY">❌ Solo Fallados en Quizzes</option>
+              <option value="MASTERED">Solo Dominados ✅</option>
+              <option value="PENDING">Solo Pendientes</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Spaced Repetition (SRS) Engine Controls -->
+        <div class="bg-gradient-to-r from-purple-950/40 via-slate-950 to-indigo-950/40 border border-purple-500/30 rounded-xl p-3 sm:p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-inner">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-lg shrink-0">
+              🧠
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs sm:text-sm font-bold text-white">Algoritmo Spaced Repetition (SRS)</span>
+                <span id="srsActiveStatusBadge" class="text-[10px] px-2 py-0.5 rounded-full font-bold border transition">INACTIVO</span>
+              </div>
+              <p id="srsQueueStatsText" class="text-[11px] text-slate-400 mt-0.5 leading-tight">
+                Prioriza automáticamente palabras marcadas como 'Difícil' y los reactivos fallados en quizzes.
+              </p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 self-end sm:self-auto shrink-0">
+            <button
+              id="srsToggleSwitchBtn"
+              onclick="toggleSRSMode()"
+              class="px-3.5 py-1.5 rounded-xl text-xs font-bold border transition flex items-center gap-1.5 shadow-sm"
+            >
+              <span id="srsToggleIcon">⚡</span>
+              <span id="srsToggleLabel">Activar SRS</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Alphabet Pills (Available for Phrasal Verbs) -->
+        <div id="libraryAlphabetBar" class="flex flex-wrap gap-1 pt-1"></div>
+      </div>
+
+      <!-- Item Cards Container -->
+      <div id="libraryCardsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-3.5"></div>
+
+      <!-- Visual Pagination Indicator (Dots) at bottom of section -->
+      <div class="section-pagination-container pt-8 pb-4 flex flex-col items-center justify-center space-y-2 border-t border-slate-800/80 mt-8 select-none" data-section-owner="library" aria-label="Paginación de secciones">
+        <div class="flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-slate-800/90 backdrop-blur shadow-md">
+          <button type="button" onclick="navigateTo('hub')" class="section-dot-btn p-1.5 focus:outline-none group" data-target="hub" title="Hub (1 de 4)" aria-label="Ir a sección Hub">
+            <span class="pagination-dot inactive"></span>
+          </button>
+          <button type="button" onclick="navigateTo('campaign')" class="section-dot-btn p-1.5 focus:outline-none group" data-target="campaign" title="Campaña (2 de 4)" aria-label="Ir a sección Campaña">
+            <span class="pagination-dot inactive"></span>
+          </button>
+          <button type="button" onclick="navigateTo('library')" class="section-dot-btn p-1.5 focus:outline-none group" data-target="library" title="Biblioteca (3 de 4)" aria-label="Ir a sección Biblioteca" aria-current="page">
+            <span class="pagination-dot active"></span>
+          </button>
+          <button type="button" onclick="navigateTo('toefl')" class="section-dot-btn p-1.5 focus:outline-none group" data-target="toefl" title="TOEFL (4 de 4)" aria-label="Ir a sección TOEFL">
+            <span class="pagination-dot inactive"></span>
+          </button>
+        </div>
+        <div class="flex items-center gap-2 text-[11px] text-slate-400 font-medium">
+          <span class="section-pagination-label font-bold text-indigo-300">📖 Sección 3 de 4: <span class="text-white">Biblioteca</span></span>
+          <span class="text-slate-600">•</span>
+          <span class="text-slate-500 flex items-center gap-1">
+            <span>👈</span> Desliza <span>👉</span>
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- VIEW 4: TOEFL EXAM SIMULATOR ENGINE       -->
+    <!-- ========================================== -->
+    <section id="view-toefl" class="hidden space-y-5 slide-in">
+      <!-- Setup Panel -->
+      <div id="toeflSetupPanel" class="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 space-y-5 shadow-md">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+          <div>
+            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+              SIMULADOR CRONOMETRADO OFICIAL
+            </span>
+            <h2 class="text-xl sm:text-2xl font-black text-white mt-1.5">
+              TOEFL Mastery Test (Escala 0–30)
+            </h2>
+            <p class="text-xs text-slate-400 mt-0.5">
+              Reactivos auténticos de contexto, sinónimos TOEFL Reading y trampas de matiz.
+            </p>
+          </div>
+          <div class="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-right self-start sm:self-auto">
+            <span class="text-[11px] text-slate-400 block">Récord Histórico</span>
+            <span id="bestToeflScore" class="text-base font-extrabold text-amber-400">Sin intentos</span>
+          </div>
+        </div>
+
+        <!-- Mode Selectors -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">Enfoque del Examen</label>
+            <select id="toeflFocusMode" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white outline-none focus:border-indigo-500">
+              <option value="CONFUSING_TRAPS" selected>🔥 Trampas Clásicas (Verbos Parecidos)</option>
+              <option value="GRAMMAR_C1">🏛️ Gramática Avanzada (C1-C2)</option>
+              <option value="COMPOUND_ROOTS">🔗 Compuestos, Guiones & Raíces</option>
+              <option value="BLINDSPOTS">🫀 Everyday Blindspots (Cuerpo/Instintos)</option>
+              <option value="WORK_TECH">💼 Negocios & Entrevistas Laborales</option>
+              <option value="ALL">📚 Todo el Vocabulario (A-Z Completo)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">Cantidad de Preguntas</label>
+            <select id="toeflQuestionCount" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white outline-none focus:border-indigo-500">
+              <option value="10" selected>10 Preguntas (Rápido - 5 min)</option>
+              <option value="20">20 Preguntas (Estándar TOEFL - 10 min)</option>
+              <option value="30">30 Preguntas (Simulacro Completo - 15 min)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">Tipo de Pregunta</label>
+            <select id="toeflQuestionType" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white outline-none focus:border-indigo-500">
+              <option value="MIXED" selected>Mixto (Contexto + Matiz + Sinónimos)</option>
+              <option value="CONTEXT">Completar Oración (Fill-in-the-blank)</option>
+              <option value="MEANING">Closest in Meaning (Sinónimos)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="pt-2 flex flex-wrap items-center justify-between gap-3">
+          <div class="text-[11px] text-slate-400">
+            🎯 Cada sesión baraja reactivos y calcula tu puntaje extrapolado a los 30 puntos oficiales del TOEFL.
+          </div>
+          <button onclick="startToeflExam()" class="w-full sm:w-auto bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white font-bold px-6 py-2.5 rounded-xl shadow-lg shadow-indigo-600/30 transition flex items-center justify-center gap-2">
+            <span>🚀</span> Iniciar Examen Ahora
+          </button>
+        </div>
+
+        <!-- History of Attempts -->
+        <div id="toeflHistoryContainer" class="pt-4 border-t border-slate-800 hidden">
+          <h4 class="text-xs font-bold text-slate-400 uppercase mb-2">Historial Reciente de Exámenes:</h4>
+          <div id="toeflHistoryList" class="space-y-1.5 text-xs"></div>
+        </div>
+      </div>
+
+      <!-- Active Quiz Interface -->
+      <div id="toeflActivePanel" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 space-y-4 shadow-md">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div class="flex items-center gap-2">
+            <span id="quizQuestionCounter" class="px-2.5 py-1 rounded-lg bg-indigo-500/20 text-indigo-300 font-bold text-xs">Pregunta 1 / 10</span>
+            <span id="quizTypeBadge" class="text-[11px] text-slate-400"></span>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="text-xs font-mono bg-slate-950 border border-slate-800 px-2.5 py-1 rounded-lg text-slate-300">
+              ⏱️ <span id="quizTimerDisplay" class="font-bold text-white">00:00</span>
+            </div>
+            <button onclick="cancelToeflExam()" class="text-xs text-slate-400 hover:text-rose-400">Salir ✕</button>
+          </div>
+        </div>
+
+        <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+          <div id="quizProgressBar" class="h-full bg-cyan-400 transition-all duration-300" style="width: 10%"></div>
+        </div>
+
+        <div class="space-y-1 py-1">
+          <p id="quizInstructionText" class="text-[11px] font-bold text-indigo-400 uppercase tracking-wider"></p>
+          <h3 id="quizPromptText" class="text-base sm:text-lg font-bold text-white leading-relaxed"></h3>
+        </div>
+
+        <div id="quizOptionsContainer" class="grid grid-cols-1 gap-2.5"></div>
+
+        <div id="quizFeedbackBox" class="hidden rounded-xl p-3.5 border space-y-2 text-xs"></div>
+
+        <div class="flex justify-end pt-1">
+          <button id="quizNextBtn" onclick="nextToeflQuestion()" class="hidden bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-5 py-2.5 rounded-xl text-xs sm:text-sm transition">
+            Siguiente Pregunta →
+          </button>
+        </div>
+      </div>
+
+      <!-- Results Interface -->
+      <div id="toeflResultsPanel" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 space-y-5 text-center shadow-md">
+        <span class="px-3 py-0.5 rounded-full text-xs font-bold bg-indigo-500/20 text-indigo-300">RESULTADO TOEFL</span>
+        <h3 id="resultsScoreHeadline" class="text-2xl sm:text-3xl font-black text-white"></h3>
+        <p id="resultsScaleText" class="text-xs sm:text-sm text-slate-300 max-w-md mx-auto"></p>
+        <div class="flex justify-center gap-2.5 pt-2">
+          <button onclick="startToeflExam()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-2 rounded-xl text-xs sm:text-sm transition">
+            🔄 Repetir Examen
+          </button>
+          <button onclick="resetToeflView()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold px-4 py-2 rounded-xl text-xs sm:text-sm transition">
+            ⚙️ Cambiar Ajustes
+          </button>
+        </div>
+        <div class="text-left pt-4 border-t border-slate-800">
+          <h4 class="text-xs font-bold text-white uppercase mb-2">Revisión de Respuestas y Matices:</h4>
+          <div id="resultsReviewList" class="space-y-2"></div>
+        </div>
+      </div>
+
+      <!-- Visual Pagination Indicator (Dots) at bottom of section -->
+      <div class="section-pagination-container pt-8 pb-4 flex flex-col items-center justify-center space-y-2 border-t border-slate-800/80 mt-8 select-none" data-section-owner="toefl" aria-label="Paginación de secciones">
+        <div class="flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-slate-800/90 backdrop-blur shadow-md">
+          <button type="button" onclick="navigateTo('hub')" class="section-dot-btn p-1.5 focus:outline-none group" data-target="hub" title="Hub (1 de 4)" aria-label="Ir a sección Hub">
+            <span class="pagination-dot inactive"></span>
+          </button>
+          <button type="button" onclick="navigateTo('campaign')" class="section-dot-btn p-1.5 focus:outline-none group" data-target="campaign" title="Campaña (2 de 4)" aria-label="Ir a sección Campaña">
+            <span class="pagination-dot inactive"></span>
+          </button>
+          <button type="button" onclick="navigateTo('library')" class="section-dot-btn p-1.5 focus:outline-none group" data-target="library" title="Biblioteca (3 de 4)" aria-label="Ir a sección Biblioteca">
+            <span class="pagination-dot inactive"></span>
+          </button>
+          <button type="button" onclick="navigateTo('toefl')" class="section-dot-btn p-1.5 focus:outline-none group" data-target="toefl" title="TOEFL (4 de 4)" aria-label="Ir a sección TOEFL" aria-current="page">
+            <span class="pagination-dot active"></span>
+          </button>
+        </div>
+        <div class="flex items-center gap-2 text-[11px] text-slate-400 font-medium">
+          <span class="section-pagination-label font-bold text-indigo-300">🎓 Sección 4 de 4: <span class="text-white">TOEFL</span></span>
+          <span class="text-slate-600">•</span>
+          <span class="text-slate-500 flex items-center gap-1">
+            <span>👈</span> Desliza <span>👉</span>
+          </span>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========================================== -->
+  <!-- MODAL: INTERACTIVE LEVEL SESSION (FLASHCARDS + 5-Q QUIZ) -->
+  <!-- ========================================== -->
+  <div id="levelSessionModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-xl max-h-[92vh] flex flex-col justify-between p-5 sm:p-6 shadow-2xl relative overflow-hidden">
+      <!-- Session Top Bar -->
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
+        <div class="flex items-center gap-2">
+          <span id="sessionLevelBadge" class="px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-mono font-bold text-xs">Nivel 1</span>
+          <h3 id="sessionLevelTitle" class="text-sm font-bold text-white truncate max-w-[200px] sm:max-w-xs">Lección de Maestría</h3>
+        </div>
+        <button onclick="closeLevelSession()" class="text-slate-400 hover:text-white p-1 rounded-lg">✕</button>
+      </div>
+
+      <!-- PHASE 1: STUDY FLASHCARDS -->
+      <div id="sessionStudyPhase" class="space-y-4 py-1 overflow-y-auto custom-scrollbar flex-1">
+        <div class="text-center space-y-1">
+          <span class="text-xs text-indigo-400 font-bold uppercase tracking-wider">Paso 1: Estudia los Conceptos Clave</span>
+          <p class="text-[11px] text-slate-400">Escucha la pronunciación nativa y lee el contexto antes de la prueba.</p>
+        </div>
+        <div id="sessionFlashcardsContainer" class="space-y-3"></div>
+      </div>
+
+      <!-- PHASE 2: INTERACTIVE 5-QUESTION QUIZ -->
+      <div id="sessionQuizPhase" class="hidden space-y-3.5 py-1 flex-1">
+        <div class="flex items-center justify-between">
+          <span id="sessionQuizCounter" class="text-xs font-bold text-indigo-400">Reactivo 1 / 5</span>
+          <span id="sessionQuizScoreLive" class="text-xs font-mono text-emerald-400">Aciertos: 0</span>
+        </div>
+        <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+          <div id="sessionQuizProgressBar" class="h-full bg-indigo-500 transition-all duration-300" style="width: 20%"></div>
+        </div>
+
+        <div class="space-y-1">
+          <p id="sessionQuizInstruction" class="text-[11px] text-slate-400 uppercase font-semibold"></p>
+          <h4 id="sessionQuizPrompt" class="text-sm sm:text-base font-bold text-white leading-relaxed"></h4>
+        </div>
+
+        <div id="sessionQuizOptions" class="grid grid-cols-1 gap-2"></div>
+        <div id="sessionQuizFeedback" class="hidden rounded-xl p-3 border text-xs"></div>
+      </div>
+
+      <!-- PHASE 3: LEVEL SUCCESS / RESULTS -->
+      <div id="sessionSuccessPhase" class="hidden space-y-4 py-4 text-center">
+        <div id="sessionStarsCelebration" class="text-4xl animate-bounce">⭐⭐⭐</div>
+        <h3 id="sessionSuccessTitle" class="text-2xl font-black text-white">¡Nivel Completado!</h3>
+        <p id="sessionSuccessSub" class="text-xs text-slate-300 max-w-sm mx-auto leading-relaxed"></p>
+        <div class="flex justify-center items-center gap-4 py-2 font-mono text-sm">
+          <span class="text-emerald-400 font-bold" id="sessionEarnedXp">+50 XP</span>
+          <span class="text-amber-300 font-bold" id="sessionEarnedStars">+3 Estrellas</span>
+        </div>
+        <div class="pt-2">
+          <button onclick="finishSessionAndUnlockNext()" class="w-full bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-extrabold py-3 rounded-2xl text-sm shadow-lg shadow-emerald-600/30 transition">
+            Continuar en el Sendero →
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal Bottom Actions for Phases 1 & 2 -->
+      <div id="sessionModalFooter" class="pt-3 border-t border-slate-800 mt-2 flex justify-between items-center">
+        <button id="sessionPhaseActionBtn" onclick="startLevelQuizPhase()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold py-2.5 rounded-xl text-xs sm:text-sm transition flex items-center justify-center gap-1.5 shadow-md">
+          <span>🎮</span> Iniciar Prueba del Nivel (5 Reactivos)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRINTABLE GLOSSARY TEMPLATE FOR PDF EXPORT & PRINTING API -->
+  <div id="printableGlossaryContainer" aria-hidden="true"></div>
+
+  <!-- JAVASCRIPT LOGIC & DATABASE ENGINE -->
+  <script>
+    // ==========================================
+    // 1. SOUND EFFECTS SYNTHESIZER (WEB AUDIO API)
+    // ==========================================
+    let audioCtx = null;
+    let isSoundMuted = false;
+
+    function initAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function playSound(type) {
+      if (isSoundMuted) return;
+      try {
+        initAudioContext();
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        const now = audioCtx.currentTime;
+
+        if (type === 'correct') {
+          // Ascending sweet major chord
+          const freqs = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+          freqs.forEach((f, i) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(f, now + i * 0.08);
+            gain.gain.setValueAtTime(0.12, now + i * 0.08);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.3);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now + i * 0.08);
+            osc.stop(now + i * 0.08 + 0.35);
+          });
+        } else if (type === 'wrong') {
+          // Soft lower buzz
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(220, now);
+          osc.frequency.exponentialRampToValueAtTime(140, now + 0.25);
+          gain.gain.setValueAtTime(0.1, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + 0.3);
+        } else if (type === 'fanfare') {
+          // Victory celebration melody
+          const melody = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+          melody.forEach((f, i) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(f, now + i * 0.1);
+            gain.gain.setValueAtTime(0.15, now + i * 0.1);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.4);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now + i * 0.1);
+            osc.stop(now + i * 0.1 + 0.45);
+          });
+        }
+      } catch (e) {
+        console.warn("Audio synthesizer error:", e);
+      }
+    }
+
+    function toggleSoundFx() {
+      isSoundMuted = !isSoundMuted;
+      document.getElementById("soundFxBtn").textContent = isSoundMuted ? "🔇" : "🔊";
+    }
+
+    // ==========================================
+    // 2. UNIVERSAL STORAGE (LOCALSTORAGE + ANDROID PREFS)
+    // ==========================================
+    function getStoredData(key, fallbackVal) {
+      try {
+        if (window.AndroidBridge && typeof window.AndroidBridge.getData === 'function') {
+          const nativeVal = window.AndroidBridge.getData(key, "");
+          if (nativeVal && nativeVal !== "") {
+            return JSON.parse(nativeVal);
+          }
+        }
+      } catch (e) {
+        console.warn("Native bridge read error:", e);
+      }
+      try {
+        const localVal = localStorage.getItem(key);
+        if (localVal !== null) {
+          return JSON.parse(localVal);
+        }
+      } catch (e) {
+        console.warn("localStorage read error:", e);
+      }
+      return fallbackVal;
+    }
+
+    function saveStoredData(key, value) {
+      const jsonStr = JSON.stringify(value);
+      try {
+        localStorage.setItem(key, jsonStr);
+      } catch (e) {
+        console.warn("localStorage write error:", e);
+      }
+      try {
+        if (window.AndroidBridge && typeof window.AndroidBridge.saveData === 'function') {
+          window.AndroidBridge.saveData(key, jsonStr);
+        }
+      } catch (e) {
+        console.warn("Native bridge write error:", e);
+      }
+    }
+
+    // Platform State with Spaced Repetition (SRS)
+    const defaultState = {
+      xp: 120,
+      stars: 6,
+      streak: 3,
+      lastDate: new Date().toDateString(),
+      masteredIds: [],
+      hardIds: [],            // Words marked as hard by user
+      missedStats: {},        // Map of itemId -> count of quiz misses
+      recentMissedIds: [],    // Recent missed IDs in chronological order
+      srsEnabled: false,      // Spaced Repetition toggle state
+      campaignProgress: {
+        pv: 1,          // Unlocked level in Phrasal Verbs (1 to 22)
+        grammar: 1,     // Unlocked level in Grammar (1 to 8)
+        daily: 1,       // Unlocked level in Daily Life (1 to 5)
+        work: 1,        // Unlocked level in Work & Tech (1 to 4)
+        slang: 1,       // Unlocked level in Slang (1 to 4)
+        blindspots: 1,  // Unlocked level in Everyday Blindspots (1 to 5)
+        compound: 1,    // Unlocked level in Compound Words (1 to 4)
+        phrasal_adj: 1, // Unlocked level in Phrasal Adjectives (1 to 3)
+        roots: 1        // Unlocked level in Root Multipliers (1 to 5)
+      },
+      levelStars: {}, // e.g. "pv_1": 3
+      toeflHistory: []
+    };
+
+    let userState = getStoredData("alessandro_platform_state_v3", defaultState);
+    if (!userState.hardIds) userState.hardIds = [];
+    if (!userState.missedStats) userState.missedStats = {};
+    if (!userState.recentMissedIds) userState.recentMissedIds = [];
+    if (typeof userState.srsEnabled === 'undefined') userState.srsEnabled = false;
+    if (!userState.campaignProgress) userState.campaignProgress = {};
+    ['pv', 'grammar', 'daily', 'work', 'slang', 'blindspots', 'compound', 'phrasal_adj', 'roots'].forEach(m => {
+      if (!userState.campaignProgress[m]) userState.campaignProgress[m] = 1;
+    });
+
+    // Ensure streak consistency
+    (function checkDailyStreak() {
+      const today = new Date().toDateString();
+      if (userState.lastDate !== today) {
+        // user came on a new day
+        userState.streak = (userState.streak || 1) + 1;
+        userState.lastDate = today;
+        saveStoredData("alessandro_platform_state_v3", userState);
+      }
+    })();
+
+    // ==========================================
+    // 3. ZERO-LATENCY NATIVE TTS AUDIO PLAYER
+    // ==========================================
+    function speakText(text) {
+      if (!text) return;
+      const clean = text.replace(/\(.*?\)/g, '').split('/')[0].trim();
+      let handled = false;
+      if (window.AndroidBridge && typeof window.AndroidBridge.speak === 'function') {
+        try {
+          handled = window.AndroidBridge.speak(clean);
+        } catch (e) {}
+      }
+      if (!handled && 'speechSynthesis' in window) {
+        try {
+          window.speechSynthesis.cancel();
+          const u = new SpeechSynthesisUtterance(clean);
+          u.lang = 'en-US';
+          u.rate = 0.95;
+          window.speechSynthesis.speak(u);
+        } catch (e) {}
+      }
+    }
+
+    // ==========================================
+    // 4. RICH CONTENT DATABASES FOR ALL 6 MODULES
+    // ==========================================
+
+    // Modality 1: 110 Phrasal Verbs Database (Sample excerpted + cluster mapped)
+    const PHRASAL_VERBS_LIST = [
+      { id: "pv_1", verb: "Run into", pron: "/ran ín-tu/", es: "Toparse con alguien por casualidad", enDef: "To meet someone unexpectedly by chance.", example: "I ran into my former professor at the airport.", cluster: "MEET_FIND", tip: "Exclusivo para personas en la calle o tropezar con problemas." },
+      { id: "pv_2", verb: "Bump into", pron: "/bamp ín-tu/", es: "Encontrarse de frente con alguien", enDef: "To meet someone unexpectedly, often bumping physically.", example: "You won't believe who I bumped into at Starbucks!", cluster: "MEET_FIND", tip: "Coloquial; da sensación de casi chocar de hombros." },
+      { id: "pv_3", verb: "Come across", pron: "/kam a-krós/", es: "Hallar un objeto o dato por azar", enDef: "To find something unexpectedly while looking for something else.", example: "I came across my high school diary while tidying up.", cluster: "MEET_FIND", tip: "Para objetos, cartas o libros; no personas en la calle." },
+      { id: "pv_4", verb: "Pop up", pron: "/pop ap/", es: "Aparecer de golpe (pantalla o anuncios)", enDef: "To appear suddenly, like an on-screen notification.", example: "An error dialog popped up right as I hit submit.", cluster: "APPEAR_SHOW", tip: "Cosas visuales o notificaciones rápidas." },
+      { id: "pv_5", verb: "Crop up", pron: "/krop ap/", es: "Brotar problemas de la nada", enDef: "To appear unexpectedly, especially problems or obstacles.", example: "Several urgent bugs cropped up during testing.", cluster: "APPEAR_SHOW", tip: "Exclusivo para dificultades, fallos o líos." },
+      { id: "pv_6", verb: "Show up", pron: "/shóu ap/", es: "Llegar o presentarse a una cita", enDef: "To arrive at a place where people are waiting for you.", example: "He showed up 20 minutes late for the final interview.", cluster: "APPEAR_SHOW", tip: "Para personas que llegan o asisten a un evento." },
+      { id: "pv_7", verb: "Turn up", pron: "/tern ap/", es: "Aparecer un objeto perdido", enDef: "To be found after being lost; or arrive unexpectedly.", example: "My car keys will turn up in the coat pocket.", cluster: "APPEAR_SHOW", tip: "Objetos que se creían perdidos y reaparecen." },
+      { id: "pv_8", verb: "Figure out", pron: "/fí-guiur áut/", es: "Descifrar / Entender pensando", enDef: "To understand or solve a problem by mental reasoning.", example: "I need to figure out why this algorithm runs so slowly.", cluster: "SOLVE_GROUP", tip: "Proceso mental de resolver un acertijo." },
+      { id: "pv_9", verb: "Sort out", pron: "/sort áut/", es: "Poner en orden / Desenredar líos", enDef: "To organize messy things or resolve a misunderstanding.", example: "I have to sort out my tuition paperwork before Friday.", cluster: "SOLVE_GROUP", tip: "Poner orden físico o administrativo." },
+      { id: "pv_10", verb: "Deal with", pron: "/díil uíd/", es: "Lidiar con / Manejar una crisis", enDef: "To take action to handle a difficult situation or person.", example: "Managers must deal with stressful client requests daily.", cluster: "SOLVE_GROUP", tip: "Hacerse cargo y aguantar la situación." },
+      { id: "pv_11", verb: "Call off", pron: "/kol of/", es: "Cancelar para siempre", enDef: "To cancel an event or plan completely.", example: "They called off the soccer match due to heavy snow.", cluster: "CANCEL_IGNORE", tip: "Ya NO se realizará definitivamente." },
+      { id: "pv_12", verb: "Put off", pron: "/put of/", es: "Posponer para después", enDef: "To postpone an action to a later date.", example: "Never put off studying your TOEFL vocabulary.", cluster: "CANCEL_IGNORE", tip: "Sí se realizará, pero en una fecha posterior." },
+      { id: "pv_13", verb: "End up", pron: "/end ap/", es: "Terminar en una situación no planeada", enDef: "To finally be in a particular state without planning it.", example: "We took the wrong turn and ended up in another town.", cluster: "END_WIND_WRAP", tip: "Neutral; siempre va seguido de verbo en -ING." },
+      { id: "pv_14", verb: "Wind up", pron: "/uáind ap/", es: "Terminar mal por malas decisiones", enDef: "To end up in an unpleasant situation as a consequence.", example: "If you neglect sleep, you'll wind up burnt out.", cluster: "END_WIND_WRAP", tip: "Pronunciado /uáind/; suele ser consecuencia negativa." },
+      { id: "pv_15", verb: "Wrap up", pron: "/rap ap/", es: "Concluir exitosamente", enDef: "To bring a meeting, project, or class to a conclusion.", example: "Let's wrap up today's meeting with a quick summary.", cluster: "END_WIND_WRAP", tip: "Cerrar algo deliberadamente y a propósito." },
+      { id: "pv_16", verb: "Cut down on", pron: "/kat dáun on/", es: "Reducir el consumo de algo", enDef: "To consume less of something like caffeine or sugar.", example: "I'm trying to cut down on energy drinks.", cluster: null, tip: "Reducir paulatinamente, no de golpe." },
+      { id: "pv_17", verb: "Get rid of", pron: "/guet rid of/", es: "Deshacerse de / Tirar a la basura", enDef: "To eliminate or throw away something unwanted.", example: "We need to get rid of these obsolete textbooks.", cluster: null, tip: "Eliminar definitivamente." },
+      { id: "pv_18", verb: "Look into", pron: "/luk ín-tu/", es: "Investigar a fondo un problema", enDef: "To examine the facts about a complaint or mystery.", example: "The dean promised to look into the grading discrepancy.", cluster: null, tip: "Equivalente académico formal a 'investigate'." },
+      { id: "pv_19", verb: "Stand out", pron: "/stand áut/", es: "Sobresalir / Destacar", enDef: "To be noticeably better or unique among a group.", example: "Her TOEFL speaking score will make her resume stand out.", cluster: null, tip: "Ser claramente superior o distintivo." },
+      { id: "pv_20", verb: "Put up with", pron: "/put ap uíd/", es: "Tolerar / Soportar algo molesto", enDef: "To tolerate or endure an unpleasant situation.", example: "I cannot put up with this loud construction noise.", cluster: null, tip: "Sinónimo directo de 'tolerate'." }
+    ];
+
+    // Modality 2: Grammar by Levels (B1 to C2)
+    const GRAMMAR_LEVELS_LIST = [
+      { id: "gr_1", level: "B1", topic: "Causative Verbs (Have / Get something done)", rule: "Sujeto + HAVE/GET + Objeto + Participio Pasado", example: "I had my laptop repaired yesterday.", context: "Se usa cuando tú no hiciste la acción con tus manos, sino que pagaste a un profesional para que la hiciera." },
+      { id: "gr_2", level: "B1", topic: "Used to vs. Be used to vs. Get used to", rule: "'Used to' (hábito pasado), 'Be used to' (acostumbrado a), 'Get used to' (acostumbrándose a)", example: "I am used to waking up at 6 AM; it feels effortless now.", context: "Con 'Be used to' y 'Get used to', el verbo siguiente SIEMPRE termina en -ING." },
+      { id: "gr_3", level: "B2", topic: "Negative Inversion for Emphasis", rule: "Adverbio negativo (Seldom, Rarely, Never, Not only) + Auxiliar + Sujeto + Verbo", example: "Seldom have I witnessed such dedication in an exam.", context: "Trampa favorita del TOEFL Structure para sonar altamente formal y académico." },
+      { id: "gr_4", level: "B2", topic: "Third & Mixed Conditionals", rule: "If + Had + Participio, Sujeto + Would have + Participio (o Would + Base para presente)", example: "If I had practiced daily, I would have scored 30 on the TOEFL.", context: "Hipótesis del pasado con resultados en el pasado o presente." },
+      { id: "gr_5", level: "C1", topic: "The Subjunctive Mood in Academic English", rule: "Verbo de demanda (Insist, Demand, Recommend) + That + Sujeto + Verbo en forma BASE", example: "The professor insisted that every student be on time.", context: "Siempre usa la forma base 'be', 'study', 'submit', sin importar si el sujeto es he/she/it." },
+      { id: "gr_6", level: "C1", topic: "Cleft Sentences for Focus", rule: "It is/was [elemento enfocado] that/who... o What I really need is...", example: "What surprised the committee was his articulate reasoning.", context: "Usado en ensayos de C1 para focalizar la atención en el factor clave." },
+      { id: "gr_7", level: "C2", topic: "Inversion in Conditional Clauses without 'If'", rule: "Had I known / Were he to arrive / Should you require assistance", example: "Had the researchers known the outcome, they would have halted the trial.", context: "El pináculo del registro académico TOEFL y C2: omite 'If' invirtiendo el auxiliar." },
+      { id: "gr_8", level: "C2", topic: "Formal Discourse Markers & Hedging", rule: "Notwithstanding, Insofar as, Albeit, Hitherto", example: "The results were promising, albeit somewhat preliminary.", context: "Demuestra sutileza y cautela intelectual en el habla y escritura nativa." }
+    ];
+
+    // Modality 3: Daily Life, Habits & Quehaceres
+    const DAILY_LIFE_LIST = [
+      { id: "dl_1", topic: "Hogar & Quehaceres", phrase: "Do the laundry / Fold the laundry", es: "Lavar la ropa / Doblar la ropa", example: "I need to do the laundry before the week starts." },
+      { id: "dl_2", topic: "Hogar & Cocina", phrase: "Wipe down the counter", es: "Limpiar o pasar el trapo a la barra", example: "Always wipe down the counters after cooking." },
+      { id: "dl_3", topic: "Supermercado & Mandados", phrase: "Run errands", es: "Hacer mandados / Vueltas del día", example: "I'll be out all afternoon running a few errands." },
+      { id: "dl_4", topic: "Emergencias Médicas", phrase: "I'm having a severe flare-up", es: "Tengo un ataque/brote fuerte de dolor", example: "Call an ambulance, my asthma is flaring up." },
+      { id: "dl_5", topic: "Direcciones en la Calle", phrase: "Take the second exit off the roundabout", es: "Toma la segunda salida de la glorieta", example: "Go straight and take the second exit off the roundabout." }
+    ];
+
+    // Modality 4: Work, Tech & Interviews
+    const WORK_TECH_LIST = [
+      { id: "wk_1", topic: "Entrevistas STAR", phrase: "The key takeaway from that challenge was...", es: "La principal lección aprendida de ese reto fue...", example: "The key takeaway was streamlining cross-functional communication." },
+      { id: "wk_2", topic: "Negociación Salarial", phrase: "Based on my contributions and market data, I'm targeting...", es: "Con base en mis aportes y el mercado, aspiro a...", example: "Based on market benchmarks, I am targeting a base of $95k." },
+      { id: "wk_3", topic: "Software & Tech", phrase: "We need to tackle this tech debt before rollout", es: "Debemos resolver esta deuda técnica antes del despliegue", example: "Refactoring now prevents severe tech debt later." },
+      { id: "wk_4", topic: "Reuniones & Presentaciones", phrase: "Let's touch base on this offline", es: "Hablemos de esto en privado después de la junta", example: "Great point, let's touch base on this offline after the standup." }
+    ];
+
+    // Modality 5: Slang, Idioms & Social Life
+    const SLANG_LIST = [
+      { id: "sl_1", topic: "Jerga Moderna", phrase: "No cap", es: "Sin mentir / De verdad / 100% real", example: "That lecture was the most insightful one yet, no cap." },
+      { id: "sl_2", topic: "Jerga Moderna", phrase: "Touch grass", es: "Desconéctate / Sal a la vida real", example: "You've been studying for 12 hours straight, go touch grass!" },
+      { id: "sl_3", topic: "Modismos Animales", phrase: "The elephant in the room", es: "El problema evidente que nadie se atreve a nombrar", example: "Let's address the elephant in the room: our budget deficit." },
+      { id: "sl_4", topic: "Dating & Amistades", phrase: "Hit it off", es: "Hacer química de inmediato al conocerse", example: "They met at the conference and immediately hit it off." }
+    ];
+
+    // Modality 6: Everyday Blindspots (Acciones corporales e instintivas que nadie sabe decir)
+    const EVERYDAY_BLINDSPOTS_LIST = [
+      { id: "bs_1", verb: "Bark", pron: "/bɑːrk/", es: "Ladrar (perros o gritar órdenes ásperas)", enDef: "The explosive sound of a dog, or speaking fiercely.", example: "The watchdog began to bark as someone approached the gate.", tip: "Figurado: 'He barked orders at his staff'." },
+      { id: "bs_2", verb: "Purr", pron: "/pɜːr/", es: "Ronronear (gatos o motores suaves)", enDef: "A low continuous vibrating sound of a contented cat or smooth engine.", example: "The kitten curled on my chest and started to purr.", tip: "Figurado: 'The luxury sports car's engine purred smoothly'." },
+      { id: "bs_3", verb: "Whistle", pron: "/ˈwɪs.əl/", es: "Silbar", enDef: "To emit a clear high-pitched sound through puckered lips.", example: "He whistled a cheerful tune while walking down the avenue.", tip: "La 't' es muda: se pronuncia /wí-sel/." },
+      { id: "bs_4", verb: "Whisper", pron: "/ˈwɪs.pɚ/", es: "Susurrar / Hablar en voz baja", enDef: "To speak very softly without activating vocal cord vibrations.", example: "She leaned in to whisper the confidential password.", tip: "Contraste con 'shout' (gritar) y 'mumble' (farfullar)." },
+      { id: "bs_5", verb: "Tie your shoelaces", pron: "/taɪ jɔːr ˈʃuː.leɪ.sɪz/", es: "Amarrarse o atarse las agujetas", enDef: "To fasten shoes by knotting the laces together.", example: "Always tie your shoelaces tightly before going on a run.", tip: "El opuesto directo es 'untie your shoelaces'." },
+      { id: "bs_6", verb: "Untie", pron: "/ʌnˈtaɪ/", es: "Desamarrar / Desatar", enDef: "To loosen or undo a knot or cord.", example: "Can you help me untie this stubborn shoe knot?", tip: "Prefijo inversor 'un-'." },
+      { id: "bs_7", verb: "Yawn", pron: "/jɑːn/", es: "Bostezar", enDef: "Involuntarily open mouth wide and inhale deeply from fatigue.", example: "I couldn't help but yawn during the marathon morning meeting.", tip: "Bostezar es contagioso: 'Yawning is contagious'." },
+      { id: "bs_8", verb: "Hiccup", pron: "/ˈhɪk.ʌp/", es: "Tener hipo", enDef: "Involuntary spasm of the diaphragm causing sudden closure of glottis.", example: "Drinking a glass of cold water helped him stop hiccuping.", tip: "También escrito 'hiccough', pero 'hiccup' es la norma estándar." },
+      { id: "bs_9", verb: "Burp", pron: "/bɜːrp/", es: "Eructar", enDef: "To noisily release gas from the stomach through mouth.", example: "Excuse me! It's polite to cover your mouth when you burp.", tip: "Término médico/formal: 'belch'." },
+      { id: "bs_10", verb: "Sneeze", pron: "/sniːz/", es: "Estornudar", enDef: "To expel air suddenly and violently through nose and mouth.", example: "Spring pollen makes me sneeze several times in a row.", tip: "La respuesta de cortesía común es 'Bless you!'." },
+      { id: "bs_11", verb: "Snore", pron: "/snɔːr/", es: "Roncar", enDef: "To breathe noisily while asleep due to palate vibrations.", example: "He snores so loudly that he wakes up his roommate.", tip: "Diferente de 'snort' (resoplar despierto con desdén)." },
+      { id: "bs_12", verb: "Grind teeth", pron: "/ɡraɪnd tiːθ/", es: "Rechinar los dientes (Bruxismo)", enDef: "To rub teeth together forcefully, often during sleep or stress.", example: "Stress frequently causes students to grind their teeth at night.", tip: "Término médico: 'bruxism'." },
+      { id: "bs_13", verb: "Shrug", pron: "/ʃrʌɡ/", es: "Encogerse de hombros", enDef: "To raise shoulders briefly to indicate you don't know or care.", example: "When asked for the meeting room number, he simply shrugged.", tip: "Frase idiomática: 'Shrug it off' (restarle importancia)." },
+      { id: "bs_14", verb: "Blink", pron: "/blɪŋk/", es: "Parpadear (ambos ojos)", enDef: "To shut and open both eyes rapidly.", example: "Remember to blink frequently when staring at code for hours.", tip: "Blink = ambos ojos; Wink = un solo ojo." },
+      { id: "bs_15", verb: "Wink", pron: "/wɪŋk/", es: "Guiñar un ojo (complicidad o broma)", enDef: "To close and open one eye quickly as a signal or friendly hint.", example: "She winked at me across the room to show she was joking.", tip: "Gesto deliberado de complicidad." },
+      { id: "bs_16", verb: "Squint", pron: "/skwɪnt/", es: "Entrecerrar los ojos (por sol o enfocar)", enDef: "To look with eyes partly closed, as in intense glare or fine print.", example: "He had to squint in the bright sun to decipher the street sign.", tip: "Muy común al mirar luces intensas o sin anteojos." },
+      { id: "bs_17", verb: "Scratch", pron: "/skrætʃ/", es: "Rascar / Rascarse", enDef: "To rub your skin with fingernails to relieve itching.", example: "Try not to scratch that bug bite, as it can cause infection.", tip: "'Itch' es la sensación; 'scratch' es la acción de las uñas." },
+      { id: "bs_18", verb: "Trip", pron: "/trɪp/", es: "Tropezar con un obstáculo", enDef: "To catch your foot on an object and momentarily lose balance.", example: "Be cautious so you don't trip over the microphone cord.", tip: "Se suele usar como 'trip over [algo]'." },
+      { id: "bs_19", verb: "Stumble", pron: "/ˈstʌm.bəl/", es: "Tambalearse / Dar traspiés", enDef: "To lose footing and almost fall while walking or running.", example: "He stumbled in the dim hallway but caught the handrail.", tip: "Figurado: 'stumble through a speech' (titubear al hablar)." },
+      { id: "bs_20", verb: "Slip", pron: "/slɪp/", es: "Resbalar (en piso húmedo o hielo)", enDef: "To slide inadvertently on a smooth, slick, or icy surface.", example: "The floor was wet from mopping, causing several guests to slip.", tip: "Peligro señalizado: 'Caution: Slippery when wet'." },
+      { id: "bs_21", verb: "Gargle", pron: "/ˈɡɑːr.ɡəl/", es: "Hacer gárgaras", enDef: "To wash the throat with liquid held in back of mouth while breathing out.", example: "Gargle with warm salt water twice daily to soothe a sore throat.", tip: "Sonido gutural terapéutico." },
+      { id: "bs_22", verb: "Rinse", pron: "/rɪns/", es: "Enjuagar", enDef: "To clean with clean water without soap to remove particles.", example: "Always rinse your mouth with water after brushing your teeth.", tip: "Enjuagar platos, cabello o la boca." },
+      { id: "bs_23", verb: "Spit", pron: "/spɪt/", es: "Escupir", enDef: "To forcefully expel saliva or liquid from mouth.", example: "After rinsing with mouthwash, spit it out completely.", tip: "Frase típica médica: 'Rinse and spit'." }
+    ];
+
+    // Modality 7: Compound & Hyphenated Words (Palabras con Guion '-')
+    const COMPOUND_WORDS_LIST = [
+      { id: "cp_1", verb: "Big-boned", pron: "/ˌbɪɡˈboʊnd/", es: "De huesos anchos / Complexión grande", rule: "Adjetivo compuesto con guion antes de sustantivo", example: "He is naturally big-boned rather than overweight.", tip: "Eufemismo cortés en inglés para complexión robusta." },
+      { id: "cp_2", verb: "Stuck-up", pron: "/ˌstʌkˈʌp/", es: "Engreído / Presumido / Arrogante", rule: "Adjetivo compuesto con guion derivado de stick up", example: "People thought she was stuck-up, but she was merely shy.", tip: "Coloquial para alguien presumido que mira por encima del hombro." },
+      { id: "cp_3", verb: "Open-minded", pron: "/ˌoʊ.pənˈmaɪn.dɪd/", es: "De mente abierta / Receptivo", rule: "Adjetivo compuesto modificador", example: "An open-minded researcher welcomes alternative hypotheses.", tip: "Antónimo directo: 'Narrow-minded'." },
+      { id: "cp_4", verb: "Short-tempered", pron: "/ˌʃɔːrtˈtem.pɚd/", es: "De mecha corta / Irritable", rule: "Adjetivo compuesto con participio", example: "He gets short-tempered whenever he skips breakfast.", tip: "Sinónimo: 'Quick-tempered'." },
+      { id: "cp_5", verb: "Self-taught", pron: "/ˌselfˈtɔːt/", es: "Autodidacta", rule: "Palabras con 'self-' casi siempre llevan guion", example: "She is a self-taught programmer who mastered AI on her own.", tip: "Regla fija: self-esteem, self-taught, self-aware llevan guion." },
+      { id: "cp_6", verb: "Cold-hearted", pron: "/ˌkoʊldˈhɑːr.t̬ɪd/", es: "Despiadado / Frío de corazón", rule: "Adjetivo compuesto con guion", example: "Only a cold-hearted person would dismiss suffering so callously.", tip: "Antónimo: 'Warm-hearted'." },
+      { id: "cp_7", verb: "Up-to-date", pron: "/ˌʌp.təˈdeɪt/", es: "Actualizado / Al día", rule: "Guion ANTES del sustantivo ('an up-to-date report'); SIN guion DESPUÉS del verbo ('keep it up to date')", example: "Please submit an up-to-date curriculum vitae.", tip: "¡Regla clave!: Antes del sustantivo lleva guion; tras el verbo, no." },
+      { id: "cp_8", verb: "Out-of-date", pron: "/ˌaʊt.əvˈdeɪt/", es: "Desactualizado / Caducado / Vencido", rule: "Guion antes de sustantivo: 'out-of-date software'", example: "This medical certification is out-of-date and must be renewed.", tip: "Sinónimo de obsolete o expired." },
+      { id: "cp_9", verb: "Part-time / Full-time", pron: "/ˌpɑːrtˈtaɪm/ /ˌfʊlˈtaɪm/", es: "A tiempo parcial / A tiempo completo", rule: "Con guion como adjetivo ('a full-time position'); sin guion como adverbio ('she works full time')", example: "She accepted a full-time job after interning part-time.", tip: "Crucial en entrevistas de trabajo y contratos." },
+      { id: "cp_10", verb: "First-rate", pron: "/ˌfɜːrstˈreɪt/", es: "De primera calidad / Excelente", rule: "Compuesto adjetival de rango con guion", example: "The university provides first-rate laboratory facilities.", tip: "Sinónimo de world-class o top-tier." },
+      { id: "cp_11", verb: "Run-down", pron: "/ˌrʌnˈdaʊn/", es: "Deteriorado / Desgastado / Viejo", rule: "Adjetivo compuesto con guion", example: "They bought a run-down mansion and renovated it entirely.", tip: "Aplica tanto a edificios decrépitos como a personas agotadas." },
+      { id: "cp_12", verb: "A two-hour meeting", pron: "/ə ˈtuː.aʊ.ɚ ˈmiː.tɪŋ/", es: "Una reunión de dos horas (¡Sin -s en 'hour'!)", rule: "Numeral + sustantivo singular con guion antes de sustantivo", example: "We scheduled a two-hour meeting to resolve the dispute.", tip: "¡Trampa mortal del TOEFL!: NUNCA 'two-hours meeting'. El modificador siempre va en singular." },
+      { id: "cp_13", verb: "A 10-dollar bill", pron: "/ə ˈten ˈdɑː.lɚ bɪl/", es: "Un billete de diez dólares", rule: "Número + unidad singular con guion antes del sustantivo", example: "He handed the barista a crisp 10-dollar bill.", tip: "Incorrecto: 'a 10-dollars bill'. Correcto: 'a 10-dollar bill'." },
+      { id: "cp_14", verb: "A 20-year-old guy", pron: "/ə ˈtwen.t̬i jɪr oʊld ɡaɪ/", es: "Un chico de 20 años", rule: "Todo enlazado con guiones y en singular antes del sustantivo", example: "A 20-year-old prodigy won the grandmaster tournament.", tip: "Si va después del verbo: 'He is 20 years old' (con 's' y sin guiones)." },
+      { id: "cp_15", verb: "A five-star hotel", pron: "/ə ˈfaɪv.stɑːr hoʊˈtel/", es: "Un hotel de cinco estrellas", rule: "Numeral + sustantivo en singular con guion", example: "Keynote speakers were accommodated in a five-star hotel.", tip: "Nunca 'five-stars hotel'. Siempre en singular." },
+      { id: "cp_16", verb: "A three-bedroom house", pron: "/ə θriː ˈbed.ruːm haʊs/", es: "Una casa de tres recámaras", rule: "Compuesto numérico singular", example: "They recently closed on a beautiful three-bedroom house.", tip: "Siempre 'three-bedroom', jamás 'three-bedrooms'." },
+      { id: "cp_17", verb: "State-of-the-art", pron: "/ˌsteɪt.əv.ðiːˈɑːrt/", es: "De vanguardia / Lo último en tecnología", rule: "Frase compuesta modificadora con guiones múltiples", example: "The hospital opened a state-of-the-art surgical pavilion.", tip: "Frecuente en lecturas científicas del TOEFL." }
+    ];
+
+    // Modality 8: Phrasal Adjectives & Participles (Adjetivos nacidos de phrasal verbs)
+    const PHRASAL_ADJECTIVES_LIST = [
+      { id: "pa_1", verb: "Worn-out", pron: "/ˌwɔːrnˈaʊt/", es: "Agotado / Desgastado", rule: "Adjetivo con guion vs Verbo: 'wear out' (desgastarse)", example: "His worn-out sneakers offered no support during the race.", tip: "Verbo: 'Running on gravel will wear out the rubber fast'." },
+      { id: "pa_2", verb: "Burned-out", pron: "/ˌbɜːrndˈaʊt/", es: "Quemado por estrés crónico", rule: "Adjetivo con guion vs Sustantivo: 'burnout' vs Verbo: 'burn out'", example: "The overworked resident doctor felt utterly burned-out.", tip: "Sustantivo junto: 'burnout'; Verbo separado: 'burn out'." },
+      { id: "pa_3", verb: "Broken-down", pron: "/ˌbroʊ.kənˈdaʊn/", es: "Descompuesto / Averiado", rule: "Adjetivo modificador con guion vs Verbo: 'break down'", example: "A broken-down truck obstructed both northbound lanes.", tip: "Verbo: 'My car broke down in the middle of nowhere'." },
+      { id: "pa_4", verb: "Wound-up", pron: "/ˌwaʊndˈʌp/", es: "Tenso / Estresado / Hiperactivo", rule: "Participio adjetival de 'wind up' (/waʊnd/)", example: "He was too wound-up after the pitch to sleep peacefully.", tip: "Pronunciación con /aʊ/ como en 'sound'." },
+      { id: "pa_5", verb: "Laid-back", pron: "/ˌleɪdˈbæk/", es: "Relajado / Despreocupado / Tranquilo", rule: "Adjetivo compuesto de 'lay back'", example: "His laid-back management style empowers the engineering team.", tip: "Sinónimo coloquial de 'chill' o 'easygoing'." },
+      { id: "pa_6", verb: "Spaced-out", pron: "/ˌspeɪstˈaʊt/", es: "Ido / En las nubes / Despistado", rule: "Adjetivo compuesto de 'space out'", example: "She looked completely spaced-out during the morning briefing.", tip: "Verbo: 'I spaced out for a second and lost track of the topic'." },
+      { id: "pa_7", verb: "Built-in", pron: "/ˌbɪltˈɪn/", es: "Integrado / Incorporado de fábrica", rule: "Adjetivo con guion vs Verbo: 'build in'", example: "The monitor has high-fidelity built-in speakers.", tip: "Verbo: 'We need to build in some margin for error'." },
+      { id: "pa_8", verb: "Hands-on", pron: "/ˌhændzˈɑːn/", es: "Práctico / Con las manos en la masa", rule: "Adjetivo de experiencia aplicada directa", example: "She gained hands-on experience by coding production systems.", tip: "Antónimo de puramente teórico o pasivo." },
+      { id: "pa_9", verb: "Tidied-up / Cluttered", pron: "/ˈtaɪ.diːd ʌp/ /ˈklʌt.ɚd/", es: "Ordenado / Abarrotado de desorden", rule: "Participios adjetivales de espacio", example: "The office was spotless and nicely tidied-up for investors.", tip: "Cluttered = repleto de objetos desorganizados." },
+      { id: "pa_10", verb: "Backup (Adj/Sust) vs Back up (Verbo)", pron: "/ˈbæk.ʌp/", es: "De respaldo vs Dar marcha atrás / Respaldar", rule: "Sustantivo/Adjetivo: UNIDO ('a backup plan'); Verbo: SEPARADO ('back up your database')", example: "Make sure you back up your project and verify the backup file.", tip: "¡Regla crucial en TOEFL Writing!: Si es acción, dos palabras ('back up')." },
+      { id: "pa_11", verb: "Runaway", pron: "/ˈrʌn.ə.weɪ/", es: "Desbocado / Fuera de control", rule: "Adjetivo unido vs Verbo: 'run away'", example: "Runaway inflation eroded the purchasing power of families.", tip: "Adjetivo: 'runaway train'; Verbo: 'the puppy ran away'." },
+      { id: "pa_12", verb: "Washed-up", pron: "/ˌwɑːʃtˈʌp/", es: "Acabado / Pasado de moda (carrera)", rule: "Adjetivo de quien perdió su auge o talento", example: "The media labeled the boxer washed-up, but he reclaimed the belt.", tip: "Aplica a artistas o atletas cuya época de oro terminó." }
+    ];
+
+    // Modality 9: Root Multipliers: Suffixes & Prefixes (Multiplicadores de Léxico)
+    const ROOT_MULTIPLIERS_LIST = [
+      { id: "rm_1", verb: "Childish", pron: "/ˈtʃaɪl.dɪʃ/", es: "Infantil / Inmaduro", affixType: "Sufijo -ish (Cualidad peyorativa)", example: "Throwing a tantrum over constructive feedback is childish.", tip: "-ish en sustantivos da matiz negativo (childish = inmaduro; childlike = tierno)." },
+      { id: "rm_2", verb: "Bluish", pron: "/ˈbluː.ɪʃ/", es: "Azulado / Con tono azul", affixType: "Sufijo -ish (Aproximación de color)", example: "The twilight sky turned a mysterious bluish gray.", tip: "Añadir -ish a cualquier color significa 'un tono aproximado de'." },
+      { id: "rm_3", verb: "7-ish", pron: "/ˈsev.ən.ɪʃ/", es: "Alrededor de las 7 (Aproximación temporal)", affixType: "Sufijo -ish (Hora aproximada)", example: "Let's meet at the coffee shop around 7-ish.", tip: "Supernativo y ubicuo en inglés conversacional: 'noon-ish', '30-ish'." },
+      { id: "rm_4", verb: "Coldish", pron: "/ˈkoʊl.dɪʃ/", es: "Algo frío / Fresco", affixType: "Sufijo -ish (Grado moderado)", example: "The weather was coldish, so remember to bring a jacket.", tip: "Equivale exactamente a 'somewhat cold'." },
+      { id: "rm_5", verb: "Bookish", pron: "/ˈbʊk.ɪʃ/", es: "Erudito / Muy aficionado a leer libros", affixType: "Sufijo -ish (Inclinación de personalidad)", example: "She was a quiet, bookish student who lived in the library.", tip: "Persona que prefiere los libros a las actividades sociales." },
+      { id: "rm_6", verb: "Waterproof", pron: "/ˈwɑː.t̬ɚ.pruːf/", es: "A prueba de agua / Impermeable", affixType: "Sufijo -proof (Inmune / Resistente)", example: "This dive watch is waterproof down to 200 meters.", tip: "-proof convierte la raíz en resistente o invulnerable a ese elemento." },
+      { id: "rm_7", verb: "Bulletproof", pron: "/ˈbʊl.ɪt.pruːf/", es: "A prueba de balas / Blindado", affixType: "Sufijo -proof (Resistente)", example: "The head of state traveled in a reinforced bulletproof car.", tip: "Uso figurado: 'A bulletproof reasoning' (argumento sin fisuras)." },
+      { id: "rm_8", verb: "Foolproof", pron: "/ˈfuːl.pruːf/", es: "A prueba de tontos / Infalible", affixType: "Sufijo -proof (Imposible de fallar)", example: "We designed a foolproof deployment checklist to prevent downtime.", tip: "Tan bien concebido y simple que nadie puede equivocarse." },
+      { id: "rm_9", verb: "Childproof", pron: "/ˈtʃaɪld.pruːf/", es: "Con seguro para niños / A prueba de niños", affixType: "Sufijo -proof (Seguridad)", example: "Remember to childproof medication bottles and cabinet locks.", tip: "También actúa como verbo: 'to childproof an apartment'." },
+      { id: "rm_10", verb: "Soundproof", pron: "/ˈsaʊnd.pruːf/", es: "Insonorizado / Aislado de ruidos", affixType: "Sufijo -proof (Aislamiento acústico)", example: "The podcast studio is entirely soundproof.", tip: "Impide el paso de ondas sonoras." },
+      { id: "rm_11", verb: "Overestimate vs Underestimate", pron: "/ˌoʊ.vɚˈes.tə.meɪt/ /ˌʌn.dɚˈes.tə.meɪt/", es: "Sobrestimar vs Subestimar", affixType: "Prefijo Over- vs Under-", example: "Never underestimate your rivals, nor overestimate your preparedness.", tip: "Over- = en exceso; Under- = por debajo de lo requerido." },
+      { id: "rm_12", verb: "Overwhelmed vs Underwhelmed", pron: "/ˌoʊ.vɚˈwelmd/ /ˌʌn.dɚˈwelmd/", es: "Abrumado vs Poco impresionado / Decepcionado", affixType: "Prefijo Over- vs Under-", example: "I was overwhelmed by the workload, but underwhelmed by the pay.", tip: "Underwhelmed es un juego de palabras hoy formalmente aceptado." },
+      { id: "rm_13", verb: "Overcooked vs Undercooked", pron: "/ˌoʊ.vɚˈkʊkt/ /ˌʌn.dɚˈkʊkt/", es: "Recocido vs Crudo / Poco cocido", affixType: "Prefijo Over- vs Under-", example: "The vegetables were overcooked, while the steak was undercooked.", tip: "Válido con infinidad de verbos culinarios." },
+      { id: "rm_14", verb: "Overrated vs Underrated", pron: "/ˌoʊ.vɚˈreɪ.t̬ɪd/ /ˌʌn.dɚˈreɪ.t̬ɪd/", es: "Sobrevalorado vs Infravalorado", affixType: "Prefijo Over- vs Under-", example: "That famous film is overrated, while this indie drama is underrated.", tip: "Tema clásico para ensayos de opinión TOEFL." },
+      { id: "rm_15", verb: "Overpriced", pron: "/ˌoʊ.vɚˈpraɪst/", es: "Demasiado caro / Con sobreprecio", affixType: "Prefijo Over-", example: "Theme park concessions sell notoriously overpriced water bottles.", tip: "Opuesto de buen valor por dinero." },
+      { id: "rm_16", verb: "Trustworthy", pron: "/ˈtrʌstˌwɜːr.ði/", es: "Digno de confianza / Fiable", affixType: "Sufijo -worthy (Digno de / Que merece)", example: "He proved to be a trustworthy partner in every business deal.", tip: "-worthy indica merecedor de la acción base." },
+      { id: "rm_17", verb: "Noteworthy", pron: "/ˈnoʊtˌwɜːr.ði/", es: "Destacable / Digno de mención", affixType: "Sufijo -worthy", example: "Her score increase in the reading section was particularly noteworthy.", tip: "Muy frecuente en papers académicos y conferencias." },
+      { id: "rm_18", verb: "Praiseworthy", pron: "/ˈpreɪzˌwɜːr.ði/", es: "Digno de elogio / Loable", affixType: "Sufijo -worthy", example: "Their philanthropic efforts during the crisis were truly praiseworthy.", tip: "Registro formal TOEFL." },
+      { id: "rm_19", verb: "Creditworthy", pron: "/ˈkred.ɪtˌwɜːr.ði/", es: "Solvente / Digno de crédito", affixType: "Sufijo -worthy (Financiero)", example: "The startup must maintain clean records to be deemed creditworthy.", tip: "Término del sector bancario y corporativo." },
+      { id: "rm_20", verb: "Misunderstand", pron: "/ˌmɪs.ʌn.dɚˈstænd/", es: "Malentender / Comprender erróneamente", affixType: "Prefijo Mis- (Mal / Equivocadamente)", example: "It is easy to misunderstand cultural cues in cross-border emails.", tip: "Prefijo 'mis-' indica que la acción fue errada." },
+      { id: "rm_21", verb: "Misplace", pron: "/ˌmɪsˈpleɪs/", es: "Extraviar / Dejar en el lugar equivocado", affixType: "Prefijo Mis-", example: "I always misplace my eyeglasses right before leaving the house.", tip: "Diferente de 'lose' (perder definitivamente)." },
+      { id: "rm_22", verb: "Misjudge", pron: "/ˌmɪsˈdʒʌdʒ/", es: "Juzgar mal / Evaluar erróneamente", affixType: "Prefijo Mis-", example: "The driver misjudged the braking distance on wet asphalt.", tip: "Evaluar equivocadamente intenciones, tiempos o distancias." },
+      { id: "rm_23", verb: "Mislead", pron: "/ˌmɪsˈliːd/", es: "Engañar / Inducir a error", affixType: "Prefijo Mis-", example: "The promotional campaign was criticized for attempting to mislead buyers.", tip: "Participio: 'misled'; adjetivo: 'misleading'." },
+      { id: "rm_24", verb: "Misinterpret", pron: "/ˌmɪs.ɪnˈtɜː.prət/", es: "Malinterpretar / Dar lectura equivocada", affixType: "Prefijo Mis-", example: "Scientists urged the press not to misinterpret the preliminary findings.", tip: "Clave en TOEFL Reading para opciones tramposas." }
+    ];
+
+    // Current navigation state
+    let activeModalityKey = 'pv'; // 'pv', 'grammar', 'daily', 'work', 'slang', 'blindspots', 'compound', 'phrasal_adj', 'roots'
+    let currentSessionData = null;
+    let currentQuizIndex = 0;
+    let currentSessionScore = 0;
+
+    // Navigation sections definition
+    const SECTIONS = ['hub', 'campaign', 'library', 'toefl'];
+    let currentActiveView = 'hub';
+
+    // ==========================================
+    // 5. NAVIGATION CONTROLLER & SWIPE GESTURES
+    // ==========================================
+    function navigateTo(viewId, swipeDirection = 0) {
+      if (!SECTIONS.includes(viewId)) return;
+      const prevIndex = SECTIONS.indexOf(currentActiveView);
+      const nextIndex = SECTIONS.indexOf(viewId);
+      currentActiveView = viewId;
+
+      const views = ['view-hub', 'view-campaign', 'view-library', 'view-toefl'];
+      views.forEach(v => {
+        const el = document.getElementById(v);
+        if (el) {
+          el.classList.add('hidden');
+          el.classList.remove('slide-in', 'slide-in-right', 'slide-in-left');
+        }
+      });
+
+      const target = document.getElementById(`view-${viewId}`);
+      if (target) {
+        target.classList.remove('hidden');
+
+        // Dynamic subtle slide-in animation class based on swipe or navigation direction
+        let animClass = 'slide-in';
+        if (swipeDirection > 0 || (swipeDirection === 0 && nextIndex > prevIndex && prevIndex !== -1)) {
+          animClass = 'slide-in-right';
+        } else if (swipeDirection < 0 || (swipeDirection === 0 && nextIndex < prevIndex && prevIndex !== -1)) {
+          animClass = 'slide-in-left';
+        }
+
+        // Force browser reflow to reliably trigger the CSS keyframe animation
+        void target.offsetWidth;
+        target.classList.add(animClass, 'slide-in');
+      }
+
+      const backBtn = document.getElementById("navBackBtn");
+      if (viewId === 'hub') {
+        backBtn.classList.add('hidden');
+      } else {
+        backBtn.classList.remove('hidden');
+      }
+
+      if (viewId === 'campaign') {
+        refreshCampaignView();
+      } else if (viewId === 'library') {
+        refreshLibraryView();
+      } else if (viewId === 'hub') {
+        updateGamificationHeader();
+      }
+
+      updateNavTabs(viewId);
+      updatePaginationDots(viewId);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function updateNavTabs(viewId) {
+      SECTIONS.forEach(s => {
+        const tab = document.getElementById(`tab-${s}`);
+        if (!tab) return;
+        if (s === viewId) {
+          tab.className = "flex-1 py-2 px-1 sm:px-2 rounded-xl text-center transition flex items-center justify-center gap-1 sm:gap-1.5 text-white bg-indigo-600 shadow-md font-bold";
+        } else {
+          tab.className = "flex-1 py-2 px-1 sm:px-2 rounded-xl text-center transition flex items-center justify-center gap-1 sm:gap-1.5 text-slate-400 hover:text-slate-200 font-medium";
+        }
+      });
+    }
+
+    function updatePaginationDots(viewId) {
+      const sectionMeta = {
+        hub: { index: 1, name: "Hub", icon: "🏠" },
+        campaign: { index: 2, name: "Campaña", icon: "🗺️" },
+        library: { index: 3, name: "Biblioteca", icon: "📖" },
+        toefl: { index: 4, name: "TOEFL", icon: "🎓" }
+      };
+      const currentMeta = sectionMeta[viewId] || { index: 1, name: viewId, icon: "📍" };
+
+      const containers = document.querySelectorAll(".section-pagination-container");
+      containers.forEach(container => {
+        const labelEl = container.querySelector(".section-pagination-label");
+        if (labelEl) {
+          labelEl.innerHTML = `${currentMeta.icon} Sección ${currentMeta.index} de 4: <span class="text-white">${currentMeta.name}</span>`;
+        }
+
+        const buttons = container.querySelectorAll(".section-dot-btn");
+        buttons.forEach(btn => {
+          const target = btn.getAttribute("data-target");
+          const dot = btn.querySelector(".pagination-dot");
+          if (!dot) return;
+          if (target === viewId) {
+            dot.classList.add("active");
+            dot.classList.remove("inactive");
+            btn.setAttribute("aria-current", "page");
+          } else {
+            dot.classList.remove("active");
+            dot.classList.add("inactive");
+            btn.removeAttribute("aria-current");
+          }
+        });
+      });
+    }
+
+    // Touch gesture navigation (touchstart / touchend on <main>)
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchStartTime = 0;
+
+    function initSwipeGestures() {
+      const mainEl = document.getElementById('mainContainer') || document.querySelector('main');
+      if (!mainEl) return;
+
+      mainEl.addEventListener('touchstart', (e) => {
+        if (e.touches.length > 1) return;
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        touchStartTime = Date.now();
+      }, { passive: true });
+
+      mainEl.addEventListener('touchend', (e) => {
+        if (!e.changedTouches || e.changedTouches.length === 0) return;
+
+        // Prevent swipe while modal is open (active lesson/quiz)
+        const modal = document.getElementById("levelSessionModal");
+        if (modal && !modal.classList.contains("hidden")) return;
+
+        // Prevent swipe during active timed TOEFL exam
+        const toeflActive = document.getElementById("toeflActivePanel");
+        if (toeflActive && !toeflActive.classList.contains("hidden")) return;
+
+        // Skip if user was interacting with form controls
+        const target = e.target;
+        if (target && target.closest('input, textarea, select')) return;
+
+        const touchEndX = e.changedTouches[0].clientX;
+        const touchEndY = e.changedTouches[0].clientY;
+        const diffX = touchEndX - touchStartX;
+        const diffY = touchEndY - touchStartY;
+        const elapsed = Date.now() - touchStartTime;
+
+        // Require gesture under 750ms and horizontal distance >= 45px with horizontal dominance
+        if (elapsed > 750) return;
+        const minSwipeDistance = 45;
+        if (Math.abs(diffX) >= minSwipeDistance && Math.abs(diffX) > Math.abs(diffY) * 1.25) {
+          if (diffX < 0) {
+            // Swiped left (finger right to left) -> Go forward (Hub -> Campaña -> Biblioteca -> TOEFL)
+            navigateSwipe(1);
+          } else {
+            // Swiped right (finger left to right) -> Go backward (TOEFL -> Biblioteca -> Campaña -> Hub)
+            navigateSwipe(-1);
+          }
+        }
+      }, { passive: true });
+    }
+
+    function navigateSwipe(direction) {
+      const currentIndex = SECTIONS.indexOf(currentActiveView);
+      if (currentIndex === -1) return;
+      const targetIndex = currentIndex + direction;
+
+      if (targetIndex >= 0 && targetIndex < SECTIONS.length) {
+        const nextSection = SECTIONS[targetIndex];
+        navigateTo(nextSection, direction);
+        showSwipeIndicator(direction, nextSection);
+        playSound('correct');
+      }
+    }
+
+    function showSwipeIndicator(direction, section) {
+      const toast = document.getElementById("swipeGestureToast");
+      const icon = document.getElementById("swipeToastIcon");
+      const text = document.getElementById("swipeToastText");
+      if (!toast || !icon || !text) return;
+
+      const labels = {
+        hub: { icon: "🏠", label: "Menú Hub" },
+        campaign: { icon: "🗺️", label: "Ruta de Campaña" },
+        library: { icon: "📖", label: "Biblioteca & Glosario" },
+        toefl: { icon: "🎓", label: "Simulador TOEFL" }
+      };
+
+      const meta = labels[section] || { icon: "✨", label: section };
+      icon.textContent = direction > 0 ? `${meta.icon} →` : `← ${meta.icon}`;
+      text.textContent = meta.label;
+
+      toast.classList.remove("opacity-0", "translate-y-3");
+      toast.classList.add("opacity-100", "translate-y-0");
+
+      if (window.swipeToastTimeout) clearTimeout(window.swipeToastTimeout);
+      window.swipeToastTimeout = setTimeout(() => {
+        toast.classList.remove("opacity-100", "translate-y-0");
+        toast.classList.add("opacity-0", "translate-y-3");
+      }, 1000);
+    }
+
+    // Android back button bridge listener
+    window.handleAndroidBack = function() {
+      // If modal is open, close modal
+      const modal = document.getElementById("levelSessionModal");
+      if (!modal.classList.contains("hidden")) {
+        closeLevelSession();
+        return "true";
+      }
+      // If in campaign or library or toefl, return to hub
+      const hub = document.getElementById("view-hub");
+      if (hub.classList.contains("hidden")) {
+        navigateTo("hub");
+        return "true";
+      }
+      return "false"; // Let Android handle default back (minimize/exit)
+    };
+
+    function handleNavigationBack() {
+      navigateTo('hub');
+    }
+
+    // ==========================================
+    // 6. CAMPAIGN ROUTE GENERATOR (PVZ2 / DUOLINGO STYLE)
+    // ==========================================
+    function openCampaign(modalityKey) {
+      if (modalityKey) activeModalityKey = modalityKey;
+      navigateTo('campaign');
+    }
+
+    function refreshCampaignView() {
+      const titles = {
+        pv: "Ruta Phrasal Verbs (22 Niveles + Jefes)",
+        grammar: "Ruta de Gramática B1 ➔ C2",
+        daily: "Ruta de Vida Cotidiana & Emergencias",
+        work: "Ruta de Inglés Laboral & Tech",
+        slang: "Ruta de Jerga & Expresiones Nativas",
+        blindspots: "Ruta Everyday Blindspots (Acciones del Cuerpo)",
+        compound: "Ruta Compound Words (Reglas de Guion '-')",
+        phrasal_adj: "Ruta Phrasal Adjectives & Participles",
+        roots: "Ruta Root Multipliers (Prefijos & Sufijos)"
+      };
+
+      const key = activeModalityKey || 'pv';
+      const titleEl = document.getElementById("campaignTitle");
+      if (titleEl) titleEl.textContent = titles[key] || "Ruta de Niveles";
+      const catEl = document.getElementById("campaignCategoryTag");
+      if (catEl) catEl.textContent = `MODALIDAD: ${key.toUpperCase()}`;
+
+      renderTrailNodes();
+    }
+
+    function renderTrailNodes() {
+      const container = document.getElementById("trailNodesContainer");
+      const currentLevel = userState.campaignProgress[activeModalityKey] || 1;
+
+      // Determine total levels for active modality
+      let totalLevels = 22;
+      let getLevelTitle = (lvl) => `Nivel ${lvl}`;
+
+      if (activeModalityKey === 'grammar') {
+        totalLevels = 8;
+        getLevelTitle = (lvl) => GRAMMAR_LEVELS_LIST[lvl - 1]?.topic || `Nivel ${lvl}`;
+      } else if (activeModalityKey === 'daily') {
+        totalLevels = 5;
+        getLevelTitle = (lvl) => DAILY_LIFE_LIST[lvl - 1]?.phrase || `Nivel ${lvl}`;
+      } else if (activeModalityKey === 'work') {
+        totalLevels = 4;
+        getLevelTitle = (lvl) => WORK_TECH_LIST[lvl - 1]?.topic || `Nivel ${lvl}`;
+      } else if (activeModalityKey === 'slang') {
+        totalLevels = 4;
+        getLevelTitle = (lvl) => SLANG_LIST[lvl - 1]?.phrase || `Nivel ${lvl}`;
+      } else if (activeModalityKey === 'blindspots') {
+        totalLevels = 5;
+        getLevelTitle = (lvl) => `Bloque ${lvl}: Acciones ${lvl * 5 - 4}-${Math.min(lvl * 5, EVERYDAY_BLINDSPOTS_LIST.length)}`;
+      } else if (activeModalityKey === 'compound') {
+        totalLevels = 4;
+        getLevelTitle = (lvl) => `Bloque ${lvl}: Compuestos & Guion`;
+      } else if (activeModalityKey === 'phrasal_adj') {
+        totalLevels = 3;
+        getLevelTitle = (lvl) => `Bloque ${lvl}: Adjetivos vs Verbos`;
+      } else if (activeModalityKey === 'roots') {
+        totalLevels = 5;
+        getLevelTitle = (lvl) => `Bloque ${lvl}: Prefijos & Sufijos`;
+      }
+
+      let nodesHTML = "";
+      // Winding path alignments (center, right, center, left)
+      const offsets = ["self-center", "self-end sm:translate-x-8", "self-center", "self-start sm:-translate-x-8"];
+
+      for (let i = 1; i <= totalLevels; i++) {
+        const isCompleted = i < currentLevel;
+        const isCurrent = i === currentLevel;
+        const isLocked = i > currentLevel;
+        const isBoss = (i % 4 === 0) || (i === totalLevels);
+
+        const alignClass = offsets[(i - 1) % offsets.length];
+        const starsKey = `${activeModalityKey}_${i}`;
+        const earnedStars = userState.levelStars[starsKey] || (isCompleted ? 3 : 0);
+
+        let nodeColor = "bg-slate-800 text-slate-500 border-slate-700 opacity-60";
+        let iconContent = isLocked ? "🔒" : `${i}`;
+        let statusGlow = "";
+
+        if (isCompleted) {
+          nodeColor = isBoss
+            ? "bg-gradient-to-tr from-amber-600 to-yellow-400 text-slate-950 border-amber-300 shadow-lg shadow-amber-500/30"
+            : "bg-gradient-to-tr from-emerald-600 to-teal-400 text-white border-emerald-300 shadow-md";
+          iconContent = isBoss ? "👑" : "⭐";
+        } else if (isCurrent) {
+          nodeColor = isBoss
+            ? "bg-gradient-to-tr from-amber-500 to-orange-500 text-slate-950 border-white shadow-xl animate-pulse-glow"
+            : "bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 text-white border-white shadow-xl animate-pulse-glow";
+          iconContent = isBoss ? "🏆" : "⚡";
+        }
+
+        nodesHTML += `
+          <div class="flex flex-col items-center ${alignClass} group relative">
+            <!-- Pulsing active label -->
+            ${isCurrent ? `
+              <div class="absolute -top-7 px-2.5 py-0.5 rounded-full bg-cyan-400 text-slate-950 font-black text-[10px] uppercase tracking-wider animate-bounce shadow-md">
+                ¡Aquí!
+              </div>
+            ` : ''}
+
+            <!-- Node Button -->
+            <button
+              onclick="handleNodeClick(${i}, ${isLocked})"
+              ${isLocked ? 'disabled' : ''}
+              class="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 flex items-center justify-center text-xl sm:text-2xl font-black transition transform active:scale-95 ${nodeColor}"
+            >
+              ${iconContent}
+            </button>
+
+            <!-- Node Label & Stars -->
+            <div class="text-center mt-2 space-y-0.5">
+              <span class="text-xs font-bold text-white block truncate max-w-[140px]">
+                ${isBoss ? '👑 EXAMEN JEFE' : `Nivel ${i}`}
+              </span>
+              <div class="flex justify-center text-[11px] text-amber-400">
+                ${isCompleted ? '⭐'.repeat(earnedStars) : `<span class="text-slate-500 text-[10px]">${isLocked ? 'Bloqueado' : 'Disponible'}</span>`}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      container.innerHTML = nodesHTML;
+    }
+
+    function handleNodeClick(levelNumber, isLocked) {
+      if (isLocked) {
+        playSound('wrong');
+        return;
+      }
+      openLevelSession(levelNumber);
+    }
+
+    // ==========================================
+    // 7. LEVEL SESSION (FLASHCARDS + 5-Q QUIZ)
+    // ==========================================
+    function openLevelSession(levelNumber) {
+      currentSessionData = prepareLevelData(activeModalityKey, levelNumber);
+      currentQuizIndex = 0;
+      currentSessionScore = 0;
+
+      document.getElementById("sessionLevelBadge").textContent = `Nivel ${levelNumber}`;
+      document.getElementById("sessionLevelTitle").textContent = currentSessionData.title;
+
+      // Show Phase 1: Flashcards
+      document.getElementById("sessionStudyPhase").classList.remove("hidden");
+      document.getElementById("sessionQuizPhase").classList.add("hidden");
+      document.getElementById("sessionSuccessPhase").classList.add("hidden");
+      document.getElementById("sessionModalFooter").classList.remove("hidden");
+
+      renderSessionFlashcards(currentSessionData.flashcards);
+
+      document.getElementById("levelSessionModal").classList.remove("hidden");
+      playSound('correct');
+    }
+
+    function prepareLevelData(modalityKey, levelNumber) {
+      if (modalityKey === 'pv') {
+        // Group of 5 Phrasal Verbs
+        const start = ((levelNumber - 1) * 5) % PHRASAL_VERBS_LIST.length;
+        const slice = PHRASAL_VERBS_LIST.slice(start, start + 5);
+        return {
+          levelNumber,
+          title: `Phrasal Verbs: Bloque ${levelNumber}`,
+          flashcards: slice.map(item => ({
+            title: item.verb,
+            pron: item.pron,
+            meaning: item.es,
+            def: item.enDef,
+            example: item.example,
+            tip: item.tip
+          })),
+          quiz: slice.map(item => ({
+            itemId: item.id,
+            targetWord: item.verb,
+            prompt: `"${item.example.replace(new RegExp('\\b' + item.verb.split(' ')[0], 'i'), '________')}"`,
+            instruction: "Selecciona el phrasal verb que encaja con precisión nativa:",
+            correct: item.verb,
+            options: [item.verb, "Get over", "Break down", "Turn out"].sort(() => Math.random() - 0.5),
+            explanation: `${item.verb}: ${item.es} — ${item.tip || ''}`
+          }))
+        };
+      } else if (modalityKey === 'grammar') {
+        const item = GRAMMAR_LEVELS_LIST[(levelNumber - 1) % GRAMMAR_LEVELS_LIST.length];
+        return {
+          levelNumber,
+          title: `${item.level}: ${item.topic}`,
+          flashcards: [{
+            title: item.topic,
+            pron: item.level,
+            meaning: item.rule,
+            def: item.context,
+            example: item.example,
+            tip: "Estructura vital evaluada en la sección TOEFL Structure & Written Expression."
+          }],
+          quiz: [
+            {
+              itemId: item.id,
+              targetWord: item.topic,
+              prompt: `"${item.example.split(' ')[0]} ________ ${item.example.split(' ').slice(2).join(' ')}"`,
+              instruction: "Completa la estructura gramatical formal correcta:",
+              correct: item.example.split(' ')[1] || item.topic.split(' ')[0],
+              options: [item.example.split(' ')[1] || "had", "would have", "is being", "having been"].sort(() => Math.random() - 0.5),
+              explanation: item.rule
+            },
+            {
+              itemId: item.id,
+              targetWord: item.topic,
+              prompt: `¿Cuál oración ejemplifica correctamente la regla de ${item.topic}?`,
+              instruction: "Identifica la opción gramaticalmente precisa:",
+              correct: item.example,
+              options: [item.example, "I had went to the party yesterday.", "She don't used to work.", "Not only he failed the test."].sort(() => Math.random() - 0.5),
+              explanation: item.context
+            }
+          ]
+        };
+      } else if (modalityKey === 'blindspots') {
+        const start = ((levelNumber - 1) * 5) % EVERYDAY_BLINDSPOTS_LIST.length;
+        let slice = EVERYDAY_BLINDSPOTS_LIST.slice(start, start + 5);
+        if (slice.length < 5) {
+          slice = [...slice, ...EVERYDAY_BLINDSPOTS_LIST.slice(0, 5 - slice.length)];
+        }
+        return {
+          levelNumber,
+          title: `Blindspots: Bloque ${levelNumber}`,
+          flashcards: slice.map(item => ({
+            title: item.verb,
+            pron: item.pron,
+            meaning: item.es,
+            def: item.enDef,
+            example: item.example,
+            tip: item.tip
+          })),
+          quiz: slice.map(item => {
+            const distractors = EVERYDAY_BLINDSPOTS_LIST
+              .filter(x => x.verb !== item.verb)
+              .sort(() => Math.random() - 0.5)
+              .slice(0, 3)
+              .map(x => x.verb);
+            const options = [item.verb, ...distractors].sort(() => Math.random() - 0.5);
+            return {
+              itemId: item.id,
+              targetWord: item.verb,
+              prompt: `"${item.example.replace(new RegExp('\\b' + item.verb.split(' ')[0], 'i'), '________')}"`,
+              instruction: "Selecciona la acción corporal o instintiva precisa:",
+              correct: item.verb,
+              options: options,
+              explanation: `${item.verb}: ${item.es}. (${item.tip || item.enDef})`
+            };
+          })
+        };
+      } else if (modalityKey === 'compound') {
+        const start = ((levelNumber - 1) * 4) % COMPOUND_WORDS_LIST.length;
+        let slice = COMPOUND_WORDS_LIST.slice(start, start + 4);
+        if (slice.length < 4) {
+          slice = [...slice, ...COMPOUND_WORDS_LIST.slice(0, 4 - slice.length)];
+        }
+        const customCompoundQuizzes = [
+          {
+            itemId: "cp_quiz_1",
+            targetWord: "two-hour",
+            prompt: "We just wrapped up an intensive ________ with senior leadership.",
+            instruction: "Regla del guion antes de sustantivo con número (¡unidad siempre en singular!):",
+            correct: "two-hour meeting",
+            options: ["two-hour meeting", "two-hours meeting", "two hours meeting", "two-hours-meeting"].sort(() => Math.random() - 0.5),
+            explanation: "Regla de oro: Antes de un sustantivo actúa como adjetivo compuesto y la unidad va en SINGULAR con guion: 'two-hour meeting' (NUNCA two-hours)."
+          },
+          {
+            itemId: "cp_quiz_2",
+            targetWord: "up to date",
+            prompt: "The IT security team made sure all database patches were kept ________ .",
+            instruction: "¿Lleva guion cuando va DESPUÉS del verbo y no antes de un sustantivo?",
+            correct: "up to date",
+            options: ["up to date", "up-to-date", "up-to date", "uptodate"].sort(() => Math.random() - 0.5),
+            explanation: "¡Regla clave!: Lleva guion ANTES de un sustantivo ('an up-to-date file'), pero va SIN guion cuando va después del verbo ('kept up to date')."
+          },
+          {
+            itemId: "cp_quiz_3",
+            targetWord: "10-dollar",
+            prompt: "Could you please break this ________ bill into two five-dollar bills?",
+            instruction: "Completa la denominación monetaria en función de adjetivo compuesto:",
+            correct: "10-dollar",
+            options: ["10-dollar", "10-dollars", "10 dollars", "10th-dollar"].sort(() => Math.random() - 0.5),
+            explanation: "Antes del sustantivo 'bill', la cifra y la moneda forman un adjetivo compuesto en singular con guion: 'a 10-dollar bill'."
+          },
+          {
+            itemId: "cp_quiz_4",
+            targetWord: "open-minded",
+            prompt: "A successful researcher must remain ________ to opposing viewpoints and unexpected data.",
+            instruction: "Selecciona el rasgo de personalidad compuesto correctamente escrito:",
+            correct: "open-minded",
+            options: ["open-minded", "open mindedness", "open-mind", "openly-minded"].sort(() => Math.random() - 0.5),
+            explanation: "Open-minded es el adjetivo compuesto correcto con guion para calificar la actitud receptiva."
+          },
+          {
+            itemId: "cp_quiz_5",
+            targetWord: "20-year-old",
+            prompt: "A brilliant ________ university student authored the winning research paper.",
+            instruction: "Elige la forma correcta de edad como modificador antes de sustantivo:",
+            correct: "20-year-old",
+            options: ["20-year-old", "20-years-old", "20 years old", "20-year-olds"].sort(() => Math.random() - 0.5),
+            explanation: "Cuando califica al sustantivo ('student'), se unen todos los elementos con guiones y 'year' va en singular: '20-year-old student'."
+          }
+        ];
+
+        return {
+          levelNumber,
+          title: `Compound Words: Bloque ${levelNumber}`,
+          flashcards: slice.map(item => ({
+            title: item.verb,
+            pron: item.pron,
+            meaning: item.es,
+            def: item.rule,
+            example: item.example,
+            tip: item.tip
+          })),
+          quiz: customCompoundQuizzes
+        };
+      } else if (modalityKey === 'phrasal_adj') {
+        const start = ((levelNumber - 1) * 4) % PHRASAL_ADJECTIVES_LIST.length;
+        let slice = PHRASAL_ADJECTIVES_LIST.slice(start, start + 4);
+        if (slice.length < 4) {
+          slice = [...slice, ...PHRASAL_ADJECTIVES_LIST.slice(0, 4 - slice.length)];
+        }
+        const customPhrasalAdjQuizzes = [
+          {
+            itemId: "pa_quiz_1",
+            targetWord: "back up vs backup",
+            prompt: "Always make sure to ________ your source code to the cloud before leaving work.",
+            instruction: "¿Verbo de acción de dos palabras o sustantivo/adjetivo unido?",
+            correct: "back up",
+            options: ["back up", "backup", "back-up", "backed-up"].sort(() => Math.random() - 0.5),
+            explanation: "Si es la ACCIÓN (verbo), se escribe separado en dos palabras: 'to back up'. Solo se escribe junto ('backup') si es sustantivo o adjetivo ('a backup copy')."
+          },
+          {
+            itemId: "pa_quiz_2",
+            targetWord: "backup file",
+            prompt: "The system administrator restored the entire database using the latest ________ file.",
+            instruction: "Selecciona la forma adjetival modificadora antes de 'file':",
+            correct: "backup",
+            options: ["backup", "back up", "backing up", "backed up"].sort(() => Math.random() - 0.5),
+            explanation: "Como adjetivo que califica a 'file', va unido: 'backup file'."
+          },
+          {
+            itemId: "pa_quiz_3",
+            targetWord: "worn-out",
+            prompt: "His running shoes were completely ________ after training for the marathon.",
+            instruction: "Selecciona el adjetivo compuesto de estado derivado del phrasal verb 'wear out':",
+            correct: "worn-out",
+            options: ["worn-out", "wear out", "wore out", "wearing out"].sort(() => Math.random() - 0.5),
+            explanation: "Worn-out es el participio adjetival con guion que describe el estado desgastado."
+          },
+          {
+            itemId: "pa_quiz_4",
+            targetWord: "burned-out",
+            prompt: "Working 80-hour shifts without time off left the junior engineer feeling completely ________ .",
+            instruction: "Selecciona el adjetivo que denota agotamiento crónico por estrés:",
+            correct: "burned-out",
+            options: ["burned-out", "burn out", "burnout", "burnt-off"].sort(() => Math.random() - 0.5),
+            explanation: "Burned-out es el adjetivo de estado. 'Burn out' es el verbo de acción y 'burnout' es el sustantivo."
+          },
+          {
+            itemId: "pa_quiz_5",
+            targetWord: "laid-back",
+            prompt: "Unlike his stressed manager, Alex has an exceptionally ________ and tranquil attitude.",
+            instruction: "Selecciona el adjetivo compuesto que significa relajado / despreocupado:",
+            correct: "laid-back",
+            options: ["laid-back", "lay back", "laying-back", "laid down"].sort(() => Math.random() - 0.5),
+            explanation: "Laid-back es el adjetivo compuesto derivado de 'lay back', denotando una actitud calmada y serena."
+          }
+        ];
+
+        return {
+          levelNumber,
+          title: `Phrasal Adjectives: Bloque ${levelNumber}`,
+          flashcards: slice.map(item => ({
+            title: item.verb,
+            pron: item.pron,
+            meaning: item.es,
+            def: item.rule,
+            example: item.example,
+            tip: item.tip
+          })),
+          quiz: customPhrasalAdjQuizzes
+        };
+      } else if (modalityKey === 'roots') {
+        const start = ((levelNumber - 1) * 5) % ROOT_MULTIPLIERS_LIST.length;
+        let slice = ROOT_MULTIPLIERS_LIST.slice(start, start + 5);
+        if (slice.length < 5) {
+          slice = [...slice, ...ROOT_MULTIPLIERS_LIST.slice(0, 5 - slice.length)];
+        }
+        const customRootQuizzes = [
+          {
+            itemId: "rm_quiz_1",
+            targetWord: "7-ish",
+            prompt: "I have a late meeting, but I can join everyone for dinner around ________ .",
+            instruction: "Usa el sufijo nativo de aproximación de tiempo:",
+            correct: "7-ish",
+            options: ["7-ish", "7-proof", "7-worthy", "mis-7"].sort(() => Math.random() - 0.5),
+            explanation: "El sufijo '-ish' denota aproximación ('around 7 o'clock'). Es ubicuo en habla nativa."
+          },
+          {
+            itemId: "rm_quiz_2",
+            targetWord: "foolproof",
+            prompt: "The engineering team created a ________ verification protocol so that human error is impossible.",
+            instruction: "Selecciona la palabra con sufijo que significa infalible / a prueba de errores:",
+            correct: "foolproof",
+            options: ["foolproof", "foolish", "foolworthy", "misfool"].sort(() => Math.random() - 0.5),
+            explanation: "Foolproof significa literalmente 'a prueba de tontos': un sistema tan blindado que no puede fallar."
+          },
+          {
+            itemId: "rm_quiz_3",
+            targetWord: "underestimate",
+            prompt: "No candidate should ever ________ the preparation required for the TOEFL Speaking section.",
+            instruction: "Selecciona el prefijo que indica tasar o valorar por debajo de la realidad:",
+            correct: "underestimate",
+            options: ["underestimate", "overestimate", "misestimate", "proofestimate"].sort(() => Math.random() - 0.5),
+            explanation: "Underestimate = Subestimar (calcular por debajo de la dificultad real)."
+          },
+          {
+            itemId: "rm_quiz_4",
+            targetWord: "trustworthy",
+            prompt: "In academic collaboration, it is vital to have a ________ partner who honors deadlines.",
+            instruction: "Selecciona la palabra con sufijo '-worthy' que significa digno de confianza:",
+            correct: "trustworthy",
+            options: ["trustworthy", "trustproof", "trustish", "mistrustful"].sort(() => Math.random() - 0.5),
+            explanation: "Trustworthy: Digno de confianza. El sufijo '-worthy' añade el valor de merecimiento."
+          },
+          {
+            itemId: "rm_quiz_5",
+            targetWord: "misunderstand",
+            prompt: "Without clear context, it is extraordinarily easy to ________ a colleague's tone in chat.",
+            instruction: "Selecciona el prefijo 'mis-' que indica entender erróneamente:",
+            correct: "misunderstand",
+            options: ["misunderstand", "underunderstand", "overunderstand", "ununderstand"].sort(() => Math.random() - 0.5),
+            explanation: "Misunderstand: Malentender. El prefijo 'mis-' indica que la acción se ejecutó mal o erróneamente."
+          }
+        ];
+
+        return {
+          levelNumber,
+          title: `Root Multipliers: Bloque ${levelNumber}`,
+          flashcards: slice.map(item => ({
+            title: item.verb,
+            pron: item.pron,
+            meaning: item.es,
+            def: item.affixType,
+            example: item.example,
+            tip: item.tip
+          })),
+          quiz: customRootQuizzes
+        };
+      } else {
+        // Daily Life / Work / Slang
+        const source = modalityKey === 'daily' ? DAILY_LIFE_LIST : modalityKey === 'work' ? WORK_TECH_LIST : SLANG_LIST;
+        const item = source[(levelNumber - 1) % source.length];
+        return {
+          levelNumber,
+          title: item.topic,
+          flashcards: [{
+            title: item.phrase,
+            pron: item.topic,
+            meaning: item.es,
+            def: item.example,
+            example: item.example,
+            tip: "Uso diario y modismos de alta frecuencia."
+          }],
+          quiz: [
+            {
+              itemId: item.id,
+              targetWord: item.phrase,
+              prompt: `"${item.example.replace(item.phrase.split(' ')[0], '________')}"`,
+              instruction: "Completa la expresión nativa con la frase precisa:",
+              correct: item.phrase,
+              options: [item.phrase, "Cut corners", "Hit the road", "Bite the bullet"].sort(() => Math.random() - 0.5),
+              explanation: `${item.phrase} significa '${item.es}'`
+            }
+          ]
+        };
+      }
+    }
+
+    function renderSessionFlashcards(cards) {
+      const container = document.getElementById("sessionFlashcardsContainer");
+      container.innerHTML = cards.map(c => `
+        <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="font-extrabold text-white text-base">${c.title}</span>
+              <span class="text-xs text-indigo-400 font-mono ml-2">${c.pron || ''}</span>
+            </div>
+            <button onclick="speakText('${c.title.replace(/'/g, "\\'")}')" class="p-1.5 rounded-xl bg-slate-800 hover:bg-indigo-600 text-slate-200 transition">
+              🔊
+            </button>
+          </div>
+          <p class="text-xs font-semibold text-amber-300">🇪🇸 ${c.meaning}</p>
+          <div class="p-2.5 rounded-xl bg-indigo-950/20 border border-indigo-500/20 flex items-center justify-between gap-2">
+            <p class="text-xs text-indigo-100 font-mono italic">"${c.example}"</p>
+            <button onclick="speakText('${c.example.replace(/'/g, "\\'")}')" class="text-[10px] px-2 py-1 rounded bg-indigo-500/20 text-indigo-300 shrink-0">Audio</button>
+          </div>
+          ${c.tip ? `<p class="text-[11px] text-slate-400">💡 <strong>Matiz:</strong> ${c.tip}</p>` : ''}
+        </div>
+      `).join("");
+    }
+
+    function startLevelQuizPhase() {
+      document.getElementById("sessionStudyPhase").classList.add("hidden");
+      document.getElementById("sessionQuizPhase").classList.remove("hidden");
+      document.getElementById("sessionModalFooter").classList.add("hidden");
+
+      currentQuizIndex = 0;
+      currentSessionScore = 0;
+      renderCurrentSessionQuestion();
+    }
+
+    function renderCurrentSessionQuestion() {
+      const q = currentSessionData.quiz[currentQuizIndex];
+      const total = currentSessionData.quiz.length;
+
+      document.getElementById("sessionQuizCounter").textContent = `Reactivo ${currentQuizIndex + 1} / ${total}`;
+      document.getElementById("sessionQuizScoreLive").textContent = `Aciertos: ${currentSessionScore}`;
+      document.getElementById("sessionQuizProgressBar").style.width = `${Math.round(((currentQuizIndex + 1) / total) * 100)}%`;
+
+      document.getElementById("sessionQuizInstruction").textContent = q.instruction;
+      document.getElementById("sessionQuizPrompt").textContent = q.prompt;
+
+      const optsContainer = document.getElementById("sessionQuizOptions");
+      optsContainer.innerHTML = q.options.map((opt, idx) => `
+        <button
+          onclick="selectSessionOption('${opt.replace(/'/g, "\\'")}', this)"
+          class="w-full text-left p-3 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs sm:text-sm font-semibold text-white transition flex items-center gap-2.5"
+        >
+          <span class="w-6 h-6 rounded-md bg-slate-900 border border-slate-700 flex items-center justify-center text-xs font-bold text-indigo-400">
+            ${['A', 'B', 'C', 'D'][idx]}
+          </span>
+          <span>${opt}</span>
+        </button>
+      `).join("");
+
+      document.getElementById("sessionQuizFeedback").classList.add("hidden");
+    }
+
+    function selectSessionOption(chosen, btn) {
+      const q = currentSessionData.quiz[currentQuizIndex];
+      const isRight = chosen === q.correct;
+
+      if (isRight) {
+        currentSessionScore++;
+        playSound('correct');
+        btn.className = "w-full text-left p-3 rounded-xl bg-emerald-950/60 border-2 border-emerald-500 text-white font-bold transition flex items-center gap-2.5";
+      } else {
+        playSound('wrong');
+        btn.className = "w-full text-left p-3 rounded-xl bg-rose-950/60 border-2 border-rose-500 text-white font-bold transition flex items-center gap-2.5";
+        if (q.itemId) {
+          recordMissedItem(q.itemId);
+        }
+      }
+
+      // Show feedback
+      const fb = document.getElementById("sessionQuizFeedback");
+      fb.classList.remove("hidden");
+      fb.className = `rounded-xl p-3 border text-xs leading-relaxed ${isRight ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-200' : 'bg-rose-950/30 border-rose-500/40 text-rose-200'}`;
+      fb.innerHTML = `
+        <div class="flex items-center justify-between font-bold">
+          <span>${isRight ? '✅ ¡Correcto!' : `❌ Respuesta correcta: ${q.correct}`}</span>
+          <button onclick="speakText('${q.correct.replace(/'/g, "\\'")}')" class="text-[10px] px-2 py-0.5 rounded bg-slate-900 text-white">🔊 Audio</button>
+        </div>
+        <p class="mt-1">${q.explanation}</p>
+      `;
+
+      setTimeout(() => {
+        if (currentQuizIndex + 1 < currentSessionData.quiz.length) {
+          currentQuizIndex++;
+          renderCurrentSessionQuestion();
+        } else {
+          showSessionSuccess();
+        }
+      }, 1400);
+    }
+
+    function showSessionSuccess() {
+      document.getElementById("sessionQuizPhase").classList.add("hidden");
+      document.getElementById("sessionSuccessPhase").classList.remove("hidden");
+
+      const total = currentSessionData.quiz.length;
+      const passed = currentSessionScore >= Math.ceil(total * 0.7);
+
+      if (passed) {
+        playSound('fanfare');
+        const starsEarned = currentSessionScore === total ? 3 : 2;
+
+        userState.xp = (userState.xp || 0) + 50;
+        userState.stars = (userState.stars || 0) + starsEarned;
+
+        const starsKey = `${activeModalityKey}_${currentSessionData.levelNumber}`;
+        userState.levelStars[starsKey] = starsEarned;
+
+        // Unlock next level if this was the highest reached
+        if (currentSessionData.levelNumber === userState.campaignProgress[activeModalityKey]) {
+          userState.campaignProgress[activeModalityKey]++;
+        }
+
+        saveStoredData("alessandro_platform_state_v3", userState);
+        updateGamificationHeader();
+
+        document.getElementById("sessionStarsCelebration").textContent = '⭐'.repeat(starsEarned);
+        document.getElementById("sessionSuccessTitle").textContent = "¡Nivel Conquistado!";
+        document.getElementById("sessionSuccessSub").textContent = `Obtuviste ${currentSessionScore} de ${total} aciertos. El siguiente nodo ha sido desbloqueado.`;
+        document.getElementById("sessionEarnedXp").textContent = "+50 XP";
+        document.getElementById("sessionEarnedStars").textContent = `+${starsEarned} Estrellas`;
+      } else {
+        playSound('wrong');
+        document.getElementById("sessionStarsCelebration").textContent = "💪";
+        document.getElementById("sessionSuccessTitle").textContent = "¡Casi lo logras!";
+        document.getElementById("sessionSuccessSub").textContent = `Obtuviste ${currentSessionScore} de ${total}. Repasa las tarjetas e inténtalo de nuevo para desbloquear el siguiente nivel.`;
+        document.getElementById("sessionEarnedXp").textContent = "+10 XP de esfuerzo";
+        document.getElementById("sessionEarnedStars").textContent = "0 Estrellas";
+      }
+    }
+
+    function finishSessionAndUnlockNext() {
+      closeLevelSession();
+      renderTrailNodes();
+    }
+
+    function closeLevelSession() {
+      document.getElementById("levelSessionModal").classList.add("hidden");
+    }
+
+    // ==========================================
+    // 8. REFERENCE LIBRARY & DICTIONARY ENGINE
+    // ==========================================
+    function openLibrary(modalityKey) {
+      if (modalityKey) activeModalityKey = modalityKey;
+      navigateTo('library');
+    }
+
+    function refreshLibraryView() {
+      const titles = {
+        pv: "Diccionario Completo A-Z de Phrasal Verbs",
+        grammar: "Compendio de Reglas Gramaticales B1 a C2",
+        daily: "Glosario de Vida Diaria & Quehaceres",
+        work: "Manual de Términos Laborales, Tech & Negocios",
+        slang: "Diccionario de Slang & Expresiones Nativas",
+        blindspots: "Glosario de Acciones Corporales & Instintivas",
+        compound: "Banco de Palabras con Guion & Reglas Gramaticales",
+        phrasal_adj: "Guía de Adjetivos Derivados de Phrasal Verbs",
+        roots: "Multiplicadores de Léxico: Prefijos & Sufijos Clave"
+      };
+
+      const key = activeModalityKey || 'pv';
+      const titleEl = document.getElementById("libraryTitle");
+      if (titleEl) titleEl.textContent = titles[key] || "Biblioteca de Consulta";
+      renderLibraryAlphabetBar();
+      renderLibraryItems();
+    }
+
+    // ==========================================
+    // PDF GENERATION & BROWSER PRINTING API
+    // ==========================================
+    function escapeHtml(text) {
+      if (!text) return "";
+      return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function downloadGlossaryPDF() {
+      const moduleNames = {
+        pv: "Phrasal Verbs TOEFL (B2 - C2)",
+        grammar: "Compendio de Reglas Gramaticales (B1 - C2)",
+        daily: "Vida Diaria & Quehaceres del Hogar",
+        work: "Términos Laborales, Tech & Entrevistas STAR",
+        slang: "Slang Moderno & Expresiones Idiomáticas Nativas",
+        blindspots: "Acciones Corporales & Instintivas",
+        compound: "Palabras con Guion & Reglas Gramaticales",
+        phrasal_adj: "Adjetivos Derivados de Phrasal Verbs",
+        roots: "Multiplicadores de Léxico: Prefijos & Sufijos Clave"
+      };
+
+      const key = activeModalityKey || 'pv';
+      const moduleTitle = moduleNames[key] || "Glosario de Términos";
+      const items = getCurrentModalityItems();
+      const container = document.getElementById("printableGlossaryContainer");
+      if (!container) return;
+
+      const formatSelect = document.getElementById("libraryPdfFormatSelect");
+      const selectedFormat = formatSelect ? formatSelect.value : "FULL_TABLE";
+
+      const formatNames = {
+        FULL_TABLE: "Tabla Completa (Estándar con Ejemplos & Tips)",
+        COMPACT: "Solo Términos y Definiciones (Formato Compacto)",
+        FLASHCARDS: "Flashcards para Imprimir (Tarjetas de Corte y Estudio)"
+      };
+      const activeFormatLabel = formatNames[selectedFormat] || "Tabla Completa";
+
+      const dateStr = new Date().toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+
+      let contentHtml = "";
+
+      if (selectedFormat === 'COMPACT') {
+        // Formato 2: Solo términos y definiciones (compacto, alta densidad)
+        let rows = "";
+        items.forEach((item, index) => {
+          const enTerm = escapeHtml(item.verb || item.phrase || item.topic || `Término #${index + 1}`);
+          const pronOrLevel = escapeHtml(item.pron || item.level || (item.affixType ? item.affixType : ""));
+          const esMeaning = escapeHtml(item.es || item.rule || "");
+          const enDef = escapeHtml(item.enDef || item.context || "");
+
+          rows += `
+            <tr>
+              <td style="width: 7%; text-align: center; color: #64748b; font-weight: 700;">${index + 1}</td>
+              <td style="width: 38%;">
+                <span class="pdf-term-en">${enTerm}</span>
+                ${pronOrLevel ? `<span class="pdf-term-pron" style="margin-left: 6px;">(${pronOrLevel})</span>` : ''}
+              </td>
+              <td style="width: 55%;">
+                <span class="pdf-term-es">${esMeaning}</span>
+                ${enDef ? `<div class="pdf-term-def" style="margin-top: 1px;">${enDef}</div>` : ''}
+              </td>
+            </tr>
+          `;
+        });
+
+        contentHtml = `
+          <table class="pdf-table pdf-table-compact">
+            <thead>
+              <tr>
+                <th style="width: 7%; text-align: center;">#</th>
+                <th style="width: 38%;">Término en Inglés / Fonética</th>
+                <th style="width: 55%;">Traducción al Español &amp; Definición</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows}
+            </tbody>
+          </table>
+        `;
+      } else if (selectedFormat === 'FLASHCARDS') {
+        // Formato 3: Flashcards individuales listas para imprimir y recortar
+        let cards = "";
+        items.forEach((item, index) => {
+          const enTerm = escapeHtml(item.verb || item.phrase || item.topic || `Término #${index + 1}`);
+          const pronOrLevel = escapeHtml(item.pron || item.level || (item.affixType ? item.affixType : ""));
+          const esMeaning = escapeHtml(item.es || item.rule || "");
+          const enDef = escapeHtml(item.enDef || item.context || "");
+          const example = escapeHtml(item.example || "");
+          const tip = escapeHtml(item.tip || "");
+
+          cards += `
+            <div class="pdf-flashcard-card">
+              <div>
+                <div class="pdf-flashcard-header">
+                  <span class="pdf-flashcard-number">TARJETA #${index + 1}</span>
+                  <span style="font-size: 7pt; color: #4338ca; font-weight: 700;">English Master</span>
+                </div>
+                <div class="pdf-flashcard-term">${enTerm}</div>
+                ${pronOrLevel ? `<div class="pdf-flashcard-pron">${pronOrLevel}</div>` : ''}
+                <div class="pdf-flashcard-meaning">${esMeaning}</div>
+                ${enDef ? `<div class="pdf-flashcard-def">${enDef}</div>` : ''}
+                ${example ? `<div class="pdf-flashcard-example"><strong>Ej:</strong> "${example}"</div>` : ''}
+                ${tip ? `<div class="pdf-term-tip" style="margin-top: 4px;">💡 ${tip}</div>` : ''}
+              </div>
+              <div class="pdf-flashcard-cutline">✂ línea de recorte</div>
+            </div>
+          `;
+        });
+
+        contentHtml = `
+          <div style="font-size: 8pt; color: #64748b; margin-top: 4px; margin-bottom: 8px;">
+            ✂ <em>Instrucciones: Recorta cada tarjeta por la línea punteada para armar tu mazo físico de estudio.</em>
+          </div>
+          <div class="pdf-flashcard-grid">
+            ${cards}
+          </div>
+        `;
+      } else {
+        // Formato 1: Tabla Completa estándar (con fonética, ejemplos y tips de examen)
+        let tableRows = "";
+        items.forEach((item, index) => {
+          const enTerm = escapeHtml(item.verb || item.phrase || item.topic || `Término #${index + 1}`);
+          const pronOrLevel = escapeHtml(item.pron || item.level || (item.affixType ? item.affixType : ""));
+          const esMeaning = escapeHtml(item.es || item.rule || "");
+          const enDef = escapeHtml(item.enDef || item.context || "");
+          const example = escapeHtml(item.example || "");
+          const tip = escapeHtml(item.tip || "");
+
+          tableRows += `
+            <tr>
+              <td style="width: 6%; text-align: center; color: #64748b; font-weight: 700; font-size: 8pt;">
+                ${index + 1}
+              </td>
+              <td style="width: 28%;">
+                <div class="pdf-term-en">${enTerm}</div>
+                ${pronOrLevel ? `<div class="pdf-term-pron">${pronOrLevel}</div>` : ''}
+                ${tip ? `<div class="pdf-term-tip">💡 ${tip}</div>` : ''}
+              </td>
+              <td style="width: 32%;">
+                <div class="pdf-term-es">${esMeaning}</div>
+                ${enDef ? `<div class="pdf-term-def">${enDef}</div>` : ''}
+              </td>
+              <td style="width: 34%;">
+                ${example ? `<div class="pdf-term-ex">"${example}"</div>` : '<span style="color:#94a3b8; font-style:italic;">—</span>'}
+              </td>
+            </tr>
+          `;
+        });
+
+        contentHtml = `
+          <table class="pdf-table">
+            <thead>
+              <tr>
+                <th style="width: 6%; text-align: center;">#</th>
+                <th style="width: 28%;">Término en Inglés</th>
+                <th style="width: 32%;">Traducción &amp; Definición</th>
+                <th style="width: 34%;">Ejemplo Práctico en Contexto</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tableRows}
+            </tbody>
+          </table>
+        `;
+      }
+
+      container.innerHTML = `
+        <div class="pdf-doc-header">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
+            <div>
+              <h1 class="pdf-brand-title">English Master • TOEFL Study Guide</h1>
+              <div class="pdf-module-badge">${escapeHtml(moduleTitle)}</div>
+              <div style="font-size: 8.5pt; color: #4338ca; font-weight: 700; margin-top: 2px;">
+                Diseño: ${escapeHtml(activeFormatLabel)}
+              </div>
+              <p class="pdf-author-credit">
+                Compilado y estructurado por el autor: <span class="pdf-author-name">Wilberth Alessandro Molina Cutz</span>
+              </p>
+            </div>
+            <div style="text-align: right; font-size: 8pt; color: #64748b; shrink-0;">
+              <div><strong>Fecha de emisión:</strong> ${dateStr}</div>
+              <div><strong>Total de registros:</strong> ${items.length} entradas</div>
+              <div style="margin-top: 4px; color: #4338ca; font-weight: 700;">Formato Oficial para Impresión y PDF</div>
+            </div>
+          </div>
+        </div>
+
+        ${contentHtml}
+
+        <div class="pdf-footer">
+          <div>
+            Guía de Estudio TOEFL • <strong>English Master App</strong> • Formato: <strong>${escapeHtml(activeFormatLabel)}</strong> • Autor: <strong>Wilberth Alessandro Molina Cutz</strong>
+          </div>
+          <div>
+            Documento generado para impresión y guardado como PDF en dispositivo
+          </div>
+        </div>
+      `;
+
+      playSound('tap');
+
+      // Filename reflecting chosen design format & author
+      const formatCode = selectedFormat.toLowerCase();
+      const cleanFileName = `Glosario_${key}_${formatCode}_Wilberth_Alessandro_Molina_Cutz.pdf`;
+      const originalTitle = document.title;
+      document.title = `Glosario_${key}_${formatCode}_Wilberth_Alessandro_Molina_Cutz`;
+
+      // Allow DOM to settle before invoking printing API
+      setTimeout(() => {
+        if (window.AndroidBridge && typeof window.AndroidBridge.printDocument === 'function') {
+          window.AndroidBridge.printDocument(cleanFileName);
+        } else if (typeof window.print === 'function') {
+          window.print();
+        } else {
+          alert("Glosario preparado para imprimir. Usa el menú Compartir o Imprimir del navegador.");
+        }
+        document.title = originalTitle;
+      }, 150);
+    }
+
+    function openCurrentLibrary() {
+      openLibrary(activeModalityKey);
+    }
+
+    function openCurrentCampaign() {
+      openCampaign(activeModalityKey);
+    }
+
+    let librarySelectedLetter = "ALL";
+
+    function renderLibraryAlphabetBar() {
+      const bar = document.getElementById("libraryAlphabetBar");
+      if (['grammar', 'daily', 'work', 'slang'].includes(activeModalityKey)) {
+        bar.innerHTML = "";
+        return;
+      }
+      const letters = ["ALL", ..."ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("")];
+      bar.innerHTML = letters.map(l => `
+        <button
+          onclick="setLibraryLetter('${l}')"
+          class="px-2 py-0.5 rounded-lg text-[10px] font-bold ${librarySelectedLetter === l ? 'bg-indigo-600 text-white' : 'bg-slate-950 text-slate-400 border border-slate-800'}"
+        >
+          ${l}
+        </button>
+      `).join("");
+    }
+
+    function setLibraryLetter(l) {
+      librarySelectedLetter = l;
+      renderLibraryAlphabetBar();
+      renderLibraryItems();
+    }
+
+    function getCurrentModalityItems() {
+      if (activeModalityKey === 'pv') return PHRASAL_VERBS_LIST;
+      if (activeModalityKey === 'grammar') return GRAMMAR_LEVELS_LIST;
+      if (activeModalityKey === 'daily') return DAILY_LIFE_LIST;
+      if (activeModalityKey === 'work') return WORK_TECH_LIST;
+      if (activeModalityKey === 'slang') return SLANG_LIST;
+      if (activeModalityKey === 'blindspots') return EVERYDAY_BLINDSPOTS_LIST;
+      if (activeModalityKey === 'compound') return COMPOUND_WORDS_LIST;
+      if (activeModalityKey === 'phrasal_adj') return PHRASAL_ADJECTIVES_LIST;
+      if (activeModalityKey === 'roots') return ROOT_MULTIPLIERS_LIST;
+      return PHRASAL_VERBS_LIST;
+    }
+
+    // Spaced Repetition Priority Formula
+    function calculateSRSScore(item) {
+      const isHard = (userState.hardIds || []).includes(item.id);
+      const missedCount = (userState.missedStats && userState.missedStats[item.id]) || 0;
+      const isRecentMiss = (userState.recentMissedIds || []).includes(item.id);
+      const isMastered = (userState.masteredIds || []).includes(item.id);
+
+      let score = 0;
+      if (isHard) score += 600;
+      if (isRecentMiss) score += 400;
+      score += missedCount * 200;
+      if (isMastered) score -= 500; // Demote already mastered
+      return score;
+    }
+
+    function updateSRSControls() {
+      const isEnabled = !!userState.srsEnabled;
+      const toggleBtn = document.getElementById("srsToggleSwitchBtn");
+      const statusBadge = document.getElementById("srsActiveStatusBadge");
+      const icon = document.getElementById("srsToggleIcon");
+      const label = document.getElementById("srsToggleLabel");
+      const stats = document.getElementById("srsQueueStatsText");
+
+      if (!toggleBtn || !statusBadge) return;
+
+      const items = getCurrentModalityItems();
+      const hardCount = items.filter(x => (userState.hardIds || []).includes(x.id)).length;
+      const missedCount = items.filter(x => (userState.missedStats && userState.missedStats[x.id] > 0)).length;
+      const totalInQueue = items.filter(x => (userState.hardIds || []).includes(x.id) || (userState.missedStats && userState.missedStats[x.id] > 0)).length;
+
+      if (isEnabled) {
+        statusBadge.textContent = "ACTIVO 🧠";
+        statusBadge.className = "text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm animate-pulse";
+        toggleBtn.className = "px-3.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white border border-indigo-400/50 shadow-md transition flex items-center gap-1.5";
+        icon.textContent = "✨";
+        label.textContent = "SRS Activado";
+        stats.innerHTML = `<span class="text-indigo-300 font-bold">Cola de Repaso Activa:</span> <strong>${hardCount}</strong> marcadas como difíciles y <strong>${missedCount}</strong> falladas en quizzes recientes. Priorizadas al inicio.`;
+      } else {
+        statusBadge.textContent = "INACTIVO";
+        statusBadge.className = "text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-800 text-slate-400 border border-slate-700";
+        toggleBtn.className = "px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-700 transition flex items-center gap-1.5";
+        icon.textContent = "⚡";
+        label.textContent = "Activar SRS";
+        stats.innerHTML = `Prioriza automáticamente al inicio las palabras difíciles y falladas en quizzes (${totalInQueue} en cola en este módulo).`;
+      }
+    }
+
+    function toggleSRSMode() {
+      userState.srsEnabled = !userState.srsEnabled;
+      saveStoredData("alessandro_platform_state_v3", userState);
+      playSound('tap');
+      renderLibraryItems();
+    }
+
+    function recordMissedItem(id) {
+      if (!id) return;
+      if (!userState.missedStats) userState.missedStats = {};
+      userState.missedStats[id] = (userState.missedStats[id] || 0) + 1;
+
+      if (!userState.recentMissedIds) userState.recentMissedIds = [];
+      if (!userState.recentMissedIds.includes(id)) {
+        userState.recentMissedIds.unshift(id);
+      } else {
+        userState.recentMissedIds = [id, ...userState.recentMissedIds.filter(x => x !== id)];
+      }
+      if (userState.recentMissedIds.length > 50) userState.recentMissedIds.pop();
+      saveStoredData("alessandro_platform_state_v3", userState);
+    }
+
+    function toggleHard(id) {
+      if (!userState.hardIds) userState.hardIds = [];
+      if (userState.hardIds.includes(id)) {
+        userState.hardIds = userState.hardIds.filter(x => x !== id);
+      } else {
+        userState.hardIds.push(id);
+        playSound('tap');
+      }
+      saveStoredData("alessandro_platform_state_v3", userState);
+      renderLibraryItems();
+    }
+
+    function clearMissedItem(id) {
+      if (userState.missedStats && userState.missedStats[id]) {
+        delete userState.missedStats[id];
+      }
+      if (userState.recentMissedIds) {
+        userState.recentMissedIds = userState.recentMissedIds.filter(x => x !== id);
+      }
+      saveStoredData("alessandro_platform_state_v3", userState);
+      playSound('correct');
+      renderLibraryItems();
+    }
+
+    function renderLibraryItems() {
+      updateSRSControls();
+
+      const query = (document.getElementById("librarySearchInput")?.value || "").toLowerCase().trim();
+      const filter = document.getElementById("libraryFilterSelect")?.value || "ALL";
+      const grid = document.getElementById("libraryCardsGrid");
+
+      let items = getCurrentModalityItems();
+
+      const filtered = items.filter(item => {
+        const textKey = (item.verb || item.topic || item.phrase || "").toLowerCase();
+        const esKey = (item.es || item.rule || item.context || "").toLowerCase();
+        const exKey = (item.example || "").toLowerCase();
+
+        const matchesQuery = !query || textKey.includes(query) || esKey.includes(query) || exKey.includes(query);
+        const matchesLetter = librarySelectedLetter === "ALL" || (item.verb && item.verb.toUpperCase().startsWith(librarySelectedLetter));
+
+        const isMastered = (userState.masteredIds || []).includes(item.id);
+        const isHard = (userState.hardIds || []).includes(item.id);
+        const missedCount = (userState.missedStats && userState.missedStats[item.id]) || 0;
+
+        let matchesFilter = true;
+        if (filter === "MASTERED") matchesFilter = isMastered;
+        else if (filter === "PENDING") matchesFilter = !isMastered;
+        else if (filter === "SRS_QUEUE") matchesFilter = (isHard || missedCount > 0);
+        else if (filter === "HARD_ONLY") matchesFilter = isHard;
+        else if (filter === "MISSED_ONLY") matchesFilter = (missedCount > 0);
+
+        return matchesQuery && matchesLetter && matchesFilter;
+      });
+
+      // Spaced Repetition (SRS) prioritization
+      if (userState.srsEnabled) {
+        filtered.sort((a, b) => {
+          const scoreA = calculateSRSScore(a);
+          const scoreB = calculateSRSScore(b);
+          if (scoreB !== scoreA) {
+            return scoreB - scoreA;
+          }
+          const nameA = a.verb || a.topic || a.phrase || "";
+          const nameB = b.verb || b.topic || b.phrase || "";
+          return nameA.localeCompare(nameB);
+        });
+      }
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center space-y-1">
+            <p class="text-sm font-bold text-white">No se encontraron términos con esos filtros.</p>
+            <p class="text-xs text-slate-400">Intenta cambiar la búsqueda o el filtro seleccionado.</p>
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = filtered.map((item, idx) => {
+        const title = item.verb || item.phrase || item.topic;
+        const sub = item.pron || item.level || "";
+        const meaning = item.es || item.rule || "";
+        const example = item.example || item.context || "";
+        const isMastered = (userState.masteredIds || []).includes(item.id);
+        const isHard = (userState.hardIds || []).includes(item.id);
+        const missedCount = (userState.missedStats && userState.missedStats[item.id]) || 0;
+        const srsScore = calculateSRSScore(item);
+
+        return `
+          <div class="bg-slate-900 border ${isHard ? 'border-amber-500/50 bg-amber-950/10' : missedCount > 0 ? 'border-rose-500/40 bg-rose-950/10' : isMastered ? 'border-emerald-500/40 bg-emerald-950/10' : 'border-slate-800'} rounded-2xl p-4 flex flex-col justify-between gap-3 transition">
+            <div class="space-y-2">
+              <div class="flex items-start justify-between gap-2">
+                <div>
+                  <div class="flex items-center flex-wrap gap-1.5">
+                    <span class="font-extrabold text-white text-base">${title}</span>
+                    ${sub ? `<span class="text-xs text-indigo-400 font-mono">${sub}</span>` : ''}
+                  </div>
+                  <!-- Status & SRS Badges -->
+                  <div class="flex items-center flex-wrap gap-1.5 mt-1">
+                    ${isHard ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1"><span>⚠️</span> Difícil</span>` : ''}
+                    ${missedCount > 0 ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 flex items-center gap-1"><span>❌</span> Fallado ${missedCount}x</span>` : ''}
+                    ${isMastered ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1"><span>✅</span> Dominado</span>` : ''}
+                    ${userState.srsEnabled && srsScore > 0 ? `<span class="px-1.5 py-0.5 rounded-md text-[9px] font-extrabold bg-purple-500/20 text-purple-300 border border-purple-500/40 font-mono">PRIORIDAD SRS #${idx + 1}</span>` : ''}
+                  </div>
+                </div>
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <button onclick="speakText('${title.replace(/'/g, "\\'")}')" class="p-1.5 rounded-xl bg-slate-800 hover:bg-indigo-600 text-slate-200 transition" title="Pronunciación">🔊</button>
+                </div>
+              </div>
+              <p class="text-xs font-semibold text-amber-300">🇪🇸 ${meaning}</p>
+              <p class="text-xs text-indigo-100 font-mono bg-indigo-950/20 border border-indigo-500/20 p-2 rounded-xl">"${example}"</p>
+            </div>
+            
+            <!-- Card Footer & Action Buttons -->
+            <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between gap-2 flex-wrap">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <!-- Hard Button -->
+                <button
+                  onclick="toggleHard('${item.id}')"
+                  class="px-2.5 py-1 rounded-xl text-[10px] font-bold border transition flex items-center gap-1 ${isHard ? 'bg-amber-500/20 border-amber-500 text-amber-300' : 'bg-slate-950 border-slate-700 text-slate-400 hover:text-amber-300'}"
+                  title="Marcar o desmarcar como difícil para priorizar en el algoritmo SRS"
+                >
+                  <span>${isHard ? '⚠️ Difícil' : '⚡ Marcar Difícil'}</span>
+                </button>
+
+                <!-- Mastered Button -->
+                <button
+                  onclick="toggleMastered('${item.id}')"
+                  class="px-2.5 py-1 rounded-xl text-[10px] font-bold border transition flex items-center gap-1 ${isMastered ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300' : 'bg-slate-950 border-slate-700 text-slate-400 hover:text-emerald-300'}"
+                >
+                  <span>${isMastered ? '✅ Dominado' : 'Dominar'}</span>
+                </button>
+
+                <!-- Clear Missed Button if missed in quizzes -->
+                ${missedCount > 0 ? `
+                  <button
+                    onclick="clearMissedItem('${item.id}')"
+                    class="px-2 py-1 rounded-xl text-[10px] font-semibold bg-rose-950/40 border border-rose-500/30 text-rose-300 hover:bg-rose-900/60 transition flex items-center gap-1"
+                    title="Limpiar fallos registrados en quizzes"
+                  >
+                    <span>🧹 Limpiar fallo</span>
+                  </button>
+                ` : ''}
+              </div>
+              ${item.tip ? `<p class="text-[10px] text-slate-400 italic">💡 ${item.tip}</p>` : ''}
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function toggleMastered(id) {
+      if (!userState.masteredIds) userState.masteredIds = [];
+      if (userState.masteredIds.includes(id)) {
+        userState.masteredIds = userState.masteredIds.filter(x => x !== id);
+      } else {
+        userState.masteredIds.push(id);
+        // Clearing recent misses when mastered
+        if (userState.missedStats && userState.missedStats[id]) {
+          delete userState.missedStats[id];
+        }
+        if (userState.recentMissedIds) {
+          userState.recentMissedIds = userState.recentMissedIds.filter(x => x !== id);
+        }
+        playSound('correct');
+      }
+      saveStoredData("alessandro_platform_state_v3", userState);
+      renderLibraryItems();
+      updateGamificationHeader();
+    }
+
+    // ==========================================
+    // 9. TOEFL SIMULATOR ENGINE (0-30 SCALED)
+    // ==========================================
+    let toeflQuizState = {
+      questions: [],
+      currentIndex: 0,
+      score: 0,
+      timerSec: 0,
+      timerInt: null,
+      answers: []
+    };
+
+    function startToeflExam() {
+      const focus = document.getElementById("toeflFocusMode").value;
+      const count = parseInt(document.getElementById("toeflQuestionCount").value, 10);
+      const qType = document.getElementById("toeflQuestionType").value;
+
+      // Build questions pool
+      let pool = PHRASAL_VERBS_LIST;
+      if (focus === 'GRAMMAR_C1') {
+        pool = GRAMMAR_LEVELS_LIST.map(g => ({
+          id: g.id,
+          verb: g.topic,
+          example: g.example,
+          es: g.rule,
+          enDef: g.context
+        }));
+      } else if (focus === 'WORK_TECH') {
+        pool = WORK_TECH_LIST.map(w => ({
+          id: w.id,
+          verb: w.phrase,
+          example: w.example,
+          es: w.es,
+          enDef: w.topic
+        }));
+      } else if (focus === 'COMPOUND_ROOTS') {
+        pool = [...COMPOUND_WORDS_LIST, ...ROOT_MULTIPLIERS_LIST, ...PHRASAL_ADJECTIVES_LIST];
+      } else if (focus === 'BLINDSPOTS') {
+        pool = EVERYDAY_BLINDSPOTS_LIST;
+      } else if (focus === 'ALL') {
+        pool = [...PHRASAL_VERBS_LIST, ...EVERYDAY_BLINDSPOTS_LIST, ...COMPOUND_WORDS_LIST, ...PHRASAL_ADJECTIVES_LIST, ...ROOT_MULTIPLIERS_LIST];
+      }
+
+      toeflQuizState.questions = [];
+      const shuffled = [...pool].sort(() => Math.random() - 0.5);
+
+      for (let i = 0; i < count; i++) {
+        const target = shuffled[i % shuffled.length];
+        const dist = shuffled.filter(x => x.verb !== target.verb).slice(0, 3);
+        const options = [target.verb, ...dist.map(d => d.verb)].sort(() => Math.random() - 0.5);
+
+        toeflQuizState.questions.push({
+          itemId: target.id,
+          target,
+          prompt: `"${target.example.replace(new RegExp('\\b' + target.verb.split(' ')[0], 'i'), '________')}"`,
+          instruction: "Elige la opción que completa la oración con el registro TOEFL adecuado:",
+          correct: target.verb,
+          options,
+          explanation: `${target.verb}: ${target.es} — ${target.enDef || ''}`
+        });
+      }
+
+      toeflQuizState.currentIndex = 0;
+      toeflQuizState.score = 0;
+      toeflQuizState.answers = [];
+      toeflQuizState.timerSec = 0;
+
+      document.getElementById("toeflSetupPanel").classList.add("hidden");
+      document.getElementById("toeflResultsPanel").classList.add("hidden");
+      document.getElementById("toeflActivePanel").classList.remove("hidden");
+
+      if (toeflQuizState.timerInt) clearInterval(toeflQuizState.timerInt);
+      toeflQuizState.timerInt = setInterval(() => {
+        toeflQuizState.timerSec++;
+        const m = String(Math.floor(toeflQuizState.timerSec / 60)).padStart(2, "0");
+        const s = String(toeflQuizState.timerSec % 60).padStart(2, "0");
+        document.getElementById("quizTimerDisplay").textContent = `${m}:${s}`;
+      }, 1000);
+
+      renderCurrentToeflQuestion();
+    }
+
+    function renderCurrentToeflQuestion() {
+      const q = toeflQuizState.questions[toeflQuizState.currentIndex];
+      const total = toeflQuizState.questions.length;
+
+      document.getElementById("quizQuestionCounter").textContent = `Pregunta ${toeflQuizState.currentIndex + 1} / ${total}`;
+      document.getElementById("quizProgressBar").style.width = `${Math.round(((toeflQuizState.currentIndex + 1) / total) * 100)}%`;
+      document.getElementById("quizInstructionText").textContent = q.instruction;
+      document.getElementById("quizPromptText").textContent = q.prompt;
+
+      const letters = ["A", "B", "C", "D"];
+      const container = document.getElementById("quizOptionsContainer");
+      container.innerHTML = q.options.map((opt, idx) => `
+        <button
+          onclick="selectToeflOption('${opt.replace(/'/g, "\\'")}', this)"
+          class="w-full text-left p-3.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs sm:text-sm font-semibold text-white transition flex items-center gap-3"
+        >
+          <span class="w-7 h-7 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center font-bold text-xs text-indigo-400">
+            ${letters[idx]}
+          </span>
+          <span>${opt}</span>
+        </button>
+      `).join("");
+
+      document.getElementById("quizFeedbackBox").classList.add("hidden");
+      document.getElementById("quizNextBtn").classList.add("hidden");
+    }
+
+    function selectToeflOption(chosen, btn) {
+      const q = toeflQuizState.questions[toeflQuizState.currentIndex];
+      const isRight = chosen === q.correct;
+
+      if (isRight) {
+        toeflQuizState.score++;
+        playSound('correct');
+        btn.className = "w-full text-left p-3.5 rounded-xl bg-emerald-950/60 border-2 border-emerald-500 text-white font-bold transition flex items-center gap-3";
+      } else {
+        playSound('wrong');
+        btn.className = "w-full text-left p-3.5 rounded-xl bg-rose-950/60 border-2 border-rose-500 text-white font-bold transition flex items-center gap-3";
+        if (q.itemId) {
+          recordMissedItem(q.itemId);
+        } else if (q.target && q.target.id) {
+          recordMissedItem(q.target.id);
+        }
+      }
+
+      toeflQuizState.answers.push({ q, chosen, isRight });
+
+      const fb = document.getElementById("quizFeedbackBox");
+      fb.classList.remove("hidden");
+      fb.className = `rounded-xl p-3.5 border text-xs leading-relaxed ${isRight ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-200' : 'bg-rose-950/30 border-rose-500/40 text-rose-200'}`;
+      fb.innerHTML = `
+        <div class="flex items-center justify-between font-bold">
+          <span>${isRight ? '✅ ¡Spot on!' : `❌ Opción correcta: ${q.correct}`}</span>
+          <button onclick="speakText('${q.correct.replace(/'/g, "\\'")}')" class="text-[10px] px-2 py-0.5 rounded bg-slate-900 text-white">🔊 Audio</button>
+        </div>
+        <p class="mt-1">${q.explanation}</p>
+      `;
+
+      const nextBtn = document.getElementById("quizNextBtn");
+      nextBtn.classList.remove("hidden");
+      nextBtn.textContent = toeflQuizState.currentIndex + 1 === toeflQuizState.questions.length ? "Ver Calificación Final →" : "Siguiente Pregunta →";
+    }
+
+    function nextToeflQuestion() {
+      if (toeflQuizState.currentIndex + 1 < toeflQuizState.questions.length) {
+        toeflQuizState.currentIndex++;
+        renderCurrentToeflQuestion();
+      } else {
+        finishToeflExam();
+      }
+    }
+
+    function finishToeflExam() {
+      if (toeflQuizState.timerInt) clearInterval(toeflQuizState.timerInt);
+      document.getElementById("toeflActivePanel").classList.add("hidden");
+      document.getElementById("toeflResultsPanel").classList.remove("hidden");
+
+      const total = toeflQuizState.questions.length;
+      const pct = Math.round((toeflQuizState.score / total) * 100);
+      const scaled = Math.round((toeflQuizState.score / total) * 30);
+
+      playSound(scaled >= 25 ? 'fanfare' : 'correct');
+
+      document.getElementById("resultsScoreHeadline").textContent =
+        `${toeflQuizState.score} / ${total} Aciertos (${pct}%) — Escala TOEFL: ${scaled} / 30 pts`;
+
+      let feedback = "";
+      if (scaled >= 26) feedback = "🏆 Nivel C1-C2 Avanzado: Dominio excepcional de la estructura y matices nativos.";
+      else if (scaled >= 20) feedback = "🔥 Nivel B2 Sólido: Comprensión muy buena, ideal para alcanzar corte de universidad.";
+      else feedback = "💪 Nivel B1: Continúa entrenando en la ruta de niveles para pulir los distractores.";
+
+      document.getElementById("resultsScaleText").textContent = feedback;
+
+      // Save Best & History
+      const scoreStr = `${scaled} / 30 pts (${pct}%)`;
+      saveStoredData("alessandro_best_toefl", scoreStr);
+
+      const newEntry = {
+        date: new Date().toLocaleDateString("es-ES", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }),
+        score: toeflQuizState.score,
+        total,
+        scaled
+      };
+      if (!userState.toeflHistory) userState.toeflHistory = [];
+      userState.toeflHistory.unshift(newEntry);
+      if (userState.toeflHistory.length > 5) userState.toeflHistory.pop();
+      saveStoredData("alessandro_platform_state_v3", userState);
+
+      updateGamificationHeader();
+
+      // Render Review
+      const review = document.getElementById("resultsReviewList");
+      review.innerHTML = toeflQuizState.answers.map((a, idx) => `
+        <div class="p-3 rounded-xl bg-slate-950 border ${a.isRight ? 'border-emerald-500/30' : 'border-rose-500/30'} space-y-1 text-xs">
+          <div class="flex items-center justify-between">
+            <span class="font-bold ${a.isRight ? 'text-emerald-400' : 'text-rose-400'}">#${idx + 1} ${a.isRight ? '✅ Correcta' : '❌ Incorrecta'} — ${a.q.correct}</span>
+            <button onclick="speakText('${a.q.correct.replace(/'/g, "\\'")}')" class="text-[10px] text-indigo-400">🔊 Audio</button>
+          </div>
+          <p class="text-slate-300">${a.q.explanation}</p>
+        </div>
+      `).join("");
+    }
+
+    function cancelToeflExam() {
+      if (toeflQuizState.timerInt) clearInterval(toeflQuizState.timerInt);
+      resetToeflView();
+    }
+
+    function resetToeflView() {
+      document.getElementById("toeflActivePanel").classList.add("hidden");
+      document.getElementById("toeflResultsPanel").classList.add("hidden");
+      document.getElementById("toeflSetupPanel").classList.remove("hidden");
+    }
+
+    function openDailyQuickChallenge() {
+      openLevelSession(userState.campaignProgress.pv || 1);
+    }
+
+    // ==========================================
+    // 10. GAMIFICATION & STATUS BAR UPDATER
+    // ==========================================
+    function updateGamificationHeader() {
+      document.getElementById("headerStreakCount").textContent = userState.streak || 1;
+      document.getElementById("headerStarsCount").textContent = userState.stars || 0;
+      document.getElementById("headerXpCount").textContent = userState.xp || 0;
+
+      if (document.getElementById("hubStreakDisplay")) {
+        document.getElementById("hubStreakDisplay").textContent = `${userState.streak || 1} días`;
+      }
+
+      const xpPct = Math.min(100, Math.round(((userState.xp || 0) % 500) / 5));
+      document.getElementById("headerXpBar").style.width = `${Math.max(10, xpPct)}%`;
+
+      // Update Hub Progress Badges
+      const p = userState.campaignProgress || {};
+      document.getElementById("badge-progress-pv").textContent = `${p.pv || 1} / 22 Niveles`;
+      document.getElementById("badge-progress-grammar").textContent = `${p.grammar || 1} / 8 Niveles`;
+      document.getElementById("badge-progress-daily").textContent = `${p.daily || 1} / 5 Niveles`;
+      document.getElementById("badge-progress-work").textContent = `${p.work || 1} / 4 Niveles`;
+      document.getElementById("badge-progress-slang").textContent = `${p.slang || 1} / 4 Niveles`;
+      if (document.getElementById("badge-progress-blindspots")) {
+        document.getElementById("badge-progress-blindspots").textContent = `${p.blindspots || 1} / 5 Niveles`;
+      }
+      if (document.getElementById("badge-progress-compound")) {
+        document.getElementById("badge-progress-compound").textContent = `${p.compound || 1} / 4 Niveles`;
+      }
+      if (document.getElementById("badge-progress-phrasal_adj")) {
+        document.getElementById("badge-progress-phrasal_adj").textContent = `${p.phrasal_adj || 1} / 3 Niveles`;
+      }
+      if (document.getElementById("badge-progress-roots")) {
+        document.getElementById("badge-progress-roots").textContent = `${p.roots || 1} / 5 Niveles`;
+      }
+
+      const best = getStoredData("alessandro_best_toefl", "0 / 30 pts");
+      document.getElementById("hubToeflBestScore").textContent = best;
+      document.getElementById("bestToeflScore").textContent = best;
+
+      // Update Rank Title
+      const xp = userState.xp || 0;
+      let rank = "Novato C1";
+      if (xp > 1200) rank = "Maestro TOEFL";
+      else if (xp > 600) rank = "Fluido Avanzado";
+      else if (xp > 300) rank = "Erudito B2";
+      document.getElementById("userRankBadge").textContent = rank;
+    }
+
+    function toggleOrTestReminder() {
+      if (window.AndroidBridge && typeof window.AndroidBridge.testNotification === 'function') {
+        window.AndroidBridge.testNotification();
+        playSound('correct');
+      } else {
+        alert("🔔 Recordatorio diario activo: Tu alarma de estudio está programada a las 9:00 PM para proteger tu racha.");
+      }
+    }
+
+    // Init on load
+    window.addEventListener("DOMContentLoaded", () => {
+      updateGamificationHeader();
+      initSwipeGestures();
+      navigateTo('hub');
+    });
+  </script>
+</body>
+</html>
