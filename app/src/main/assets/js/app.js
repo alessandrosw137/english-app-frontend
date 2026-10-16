@@ -2005,6 +2005,51 @@
     // ========================================================
     // SISTEMA UNIVERSAL DE APERTURA DE MODALES
     // ========================================================
+    
+    // ========================================================
+    // FUNCIONES UNIVERSALES E INFALIBLES DE CIERRE DE MODALES
+    // ========================================================
+    window.closeAllModals = function() {
+      document.querySelectorAll('.modal, .modal-overlay, .modal-backdrop, .drawer, [id$="-modal"]').forEach(el => {
+        el.style.display = 'none';
+        el.classList.remove('active', 'show', 'open');
+        el.classList.add('hidden');
+      });
+      document.querySelectorAll('#profileModal, #settingsModal, #rouletteModal, #glossaryModal, #learningMissionModal, #musicWordModal, #chatbotWindow, #adminDashboardModal, #adminConfirmDeleteModal, #adminViewProgressModal').forEach(el => {
+        el.style.display = 'none';
+        el.classList.remove('active', 'show', 'open');
+        el.classList.add('hidden');
+      });
+      if (typeof rouletteTimerInterval !== 'undefined' && rouletteTimerInterval) {
+        clearInterval(rouletteTimerInterval);
+      }
+    };
+
+    window.closeModal = function(modalId) {
+      const modal = typeof modalId === 'string' ? document.getElementById(modalId) : modalId?.closest('.modal, [id$="-modal"]');
+      if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('active', 'show', 'open');
+        modal.classList.add('hidden');
+      } else {
+        window.closeAllModals();
+      }
+    };
+
+    // Cierre por Clic en Fondo (Backdrop)
+    document.addEventListener('click', function(e) {
+      if (e.target && e.target.classList && (e.target.classList.contains('modal') || e.target.classList.contains('modal-overlay') || e.target.classList.contains('modal-backdrop'))) {
+        window.closeAllModals();
+      }
+    });
+
+    // Cierre con Tecla Escape
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        window.closeAllModals();
+      }
+    });
+
     function toggleModal(modalId) {
       let modal = document.getElementById(modalId);
       if (!modal) {
@@ -2042,6 +2087,8 @@
       }
     }
     window.toggleModal = toggleModal;
+  window.closeAllModals = window.closeAllModals;
+  window.closeModal = window.closeModal;
 
     function openProfileModal() {
       const user = getStoredUser() || { username: 'Invitado', role: 'guest', exp: 0 };
@@ -2097,8 +2144,7 @@
     }
 
     function closeProfileModal() {
-      const modal = document.getElementById('profileModal');
-      if (modal) modal.classList.add('hidden');
+      window.closeAllModals();
     }
 
     function updateFloatingWidgetsVisibility() {
@@ -2148,11 +2194,8 @@
     }
 
     function closeSettingsModal() {
-      const modal = document.getElementById('settingsModal');
-      if (modal) {
-        modal.style.display = 'none';
-        modal.classList.add('hidden');
-      }
+      window.closeAllModals();
+    }
     }
 
     function handleMasterVolumeChange(val) {
@@ -2524,8 +2567,7 @@
     }
 
     function closeGlossaryModal() {
-      const modal = document.getElementById('glossaryModal');
-      if (modal) modal.classList.add('hidden');
+      window.closeAllModals();
     }
 
     function openModuleMission(modKey) {
@@ -2659,8 +2701,7 @@
     }
 
     function closeMissionModal() {
-      const modal = document.getElementById('learningMissionModal');
-      if (modal) modal.classList.add('hidden');
+      window.closeAllModals();
     }
 
     // ========================================================

@@ -637,3 +637,25 @@ header, .top-bar, .navbar {
 button, [role="button"], .cursor-pointer {
   touch-action: manipulation;
 }
+
+
+/* ========================================================
+   ESTILOS DE CIERRE INFALIBLE DE MODALES Y BOTONES X
+   ======================================================== */
+.close-btn,
+button.close-btn,
+button[onclick*="closeAllModals"],
+button[onclick*="closeModal"] {
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  position: relative !important;
+  z-index: 100001 !important;
+}
+
+.modal.hidden,
+.drawer.hidden,
+.modal-overlay.hidden,
+.modal-backdrop.hidden,
+[style*="display: none"] {
+  display: none !important;
+}
