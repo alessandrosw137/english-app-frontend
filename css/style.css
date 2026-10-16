@@ -97,7 +97,8 @@
     #adminViewProgressModal.hidden,
     #headerAdminBtn.hidden,
     #rouletteModal.hidden,
-    #musicWordModal.hidden {
+    #musicWordModal.hidden,
+    #settingsModal.hidden {
       display: none !important;
     }
 
@@ -435,4 +436,104 @@
   color: rgba(56, 189, 248, 0.85);
   margin-top: 0.35rem;
   transition: opacity 0.3s ease;
+}
+
+
+/* ========================================================
+   MODAL DE AJUSTES Y CONFIGURACIÓN (ENGRANE ⚙️)
+   ======================================================== */
+#settingsModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background-color: rgba(2, 6, 23, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+#settingsModal.hidden {
+  display: none !important;
+}
+
+/* Tipografías configurables */
+body.font-sans-modern {
+  font-family: "Plus Jakarta Sans", Inter, system-ui, -apple-system, sans-serif !important;
+}
+body.font-dyslexic {
+  font-family: "OpenDyslexic", "Comic Sans MS", "Comic Sans", cursive, sans-serif !important;
+  letter-spacing: 0.04em !important;
+  word-spacing: 0.08em !important;
+}
+body.font-classic {
+  font-family: Georgia, "Times New Roman", Cambria, serif !important;
+  letter-spacing: 0.01em !important;
+}
+
+/* Modo Neón / Claro */
+body.theme-neon-light {
+  background-color: #0b1329 !important;
+  color: #f8fafc !important;
+  background-image: radial-gradient(circle at top right, rgba(56, 189, 248, 0.12), transparent 40%),
+                    radial-gradient(circle at bottom left, rgba(99, 102, 241, 0.12), transparent 40%) !important;
+}
+body.theme-neon-light header {
+  background-color: rgba(15, 23, 42, 0.95) !important;
+  border-color: rgba(56, 189, 248, 0.4) !important;
+  box-shadow: 0 4px 20px rgba(56, 189, 248, 0.15) !important;
+}
+
+
+/* ========================================================
+   MODAL DE AJUSTES Y CONFIGURACIÓN (ENGRANE ⚙️)
+   ======================================================== */
+#settingsModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background-color: rgba(2, 6, 23, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+#settingsModal.hidden {
+  display: none !important;
+}
+
+/* Tipografías configurables */
+body.font-sans-modern {
+  font-family: "Plus Jakarta Sans", Inter, system-ui, -apple-system, sans-serif !important;
+}
+body.font-dyslexic {
+  font-family: "OpenDyslexic", "Comic Sans MS", "Comic Sans", cursive, sans-serif !important;
+  letter-spacing: 0.04em !important;
+  word-spacing: 0.08em !important;
+}
+body.font-classic {
+  font-family: Georgia, "Times New Roman", Cambria, serif !important;
+  letter-spacing: 0.01em !important;
+}
+
+/* Modo Neón / Claro */
+body.theme-neon-light {
+  background-color: #0b1329 !important;
+  color: #f8fafc !important;
+  background-image: radial-gradient(circle at top right, rgba(56, 189, 248, 0.12), transparent 40%),
+                    radial-gradient(circle at bottom left, rgba(99, 102, 241, 0.12), transparent 40%) !important;
+}
+body.theme-neon-light header {
+  background-color: rgba(15, 23, 42, 0.95) !important;
+  border-color: rgba(56, 189, 248, 0.4) !important;
+  box-shadow: 0 4px 20px rgba(56, 189, 248, 0.15) !important;
 }

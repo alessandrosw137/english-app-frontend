@@ -668,7 +668,8 @@
       // Control condicional del botón "⚙️ Panel Admin"
       const adminBtn = document.getElementById('headerAdminBtn');
       if (adminBtn) {
-        if (user && user.role === 'admin') {
+        const storedRole = (typeof localStorage !== 'undefined') ? localStorage.getItem('user_role') : null;
+        if ((user && user.role === 'admin') || storedRole === 'admin') {
           adminBtn.style.display = 'inline-flex';
           adminBtn.classList.remove('hidden');
         } else {
@@ -737,7 +738,8 @@
 
     function openAdminDashboardModal() {
       const user = getStoredUser();
-      if (!user || user.role !== 'admin') {
+      const storedRole = (typeof localStorage !== 'undefined') ? localStorage.getItem('user_role') : null;
+      if ((!user || user.role !== 'admin') && storedRole !== 'admin') {
         showFloatingToast('Acceso restringido: requiere permisos de Administrador', '🔒');
         return;
       }
@@ -1144,8 +1146,10 @@
       }
     }
 
-    function speakText(text, rate = 0.95, onEnd = null) {
+    function speakText(text, rate = null, onEnd = null) {
       if (!text) return;
+      const effectiveRate = (rate !== null) ? rate : (window.ttsPlaybackSpeed || 1.0);
+      const effectiveVolume = (window.masterAppVolume !== undefined) ? window.masterAppVolume : 1.0;
       try {
         if (window.AndroidBridge && typeof window.AndroidBridge.speak === 'function') {
           const ok = window.AndroidBridge.speak(text);
@@ -1158,7 +1162,8 @@
           window.speechSynthesis.cancel();
           const utterance = new SpeechSynthesisUtterance(text);
           utterance.lang = 'en-US';
-          utterance.rate = rate;
+          utterance.rate = effectiveRate;
+          utterance.volume = effectiveVolume;
           if (onEnd) utterance.onend = onEnd;
           window.speechSynthesis.speak(utterance);
         }
@@ -1239,23 +1244,7 @@
         universalBtn.classList.add('hidden');
       }
 
-      const robot = document.getElementById('draggableRobotWidget');
-      if (robot) {
-        if (viewId === 'view-auth' || viewId === 'view-home') {
-          robot.classList.add('hidden');
-        } else {
-          robot.classList.remove('hidden');
-        }
-      }
-
-      const roulette = document.getElementById('draggableRouletteWidget');
-      if (roulette) {
-        if (viewId === 'view-home') {
-          roulette.classList.remove('hidden');
-        } else {
-          roulette.classList.add('hidden');
-        }
-      }
+      updateFloatingWidgetsVisibility();
 
       if (viewId === 'view-home') {
         startPortalStars();
@@ -1268,10 +1257,27 @@
       }
     }
 
+    function handleLogoClick() {
+      const user = getStoredUser();
+      if (user && user.username) {
+        goToHomePortals();
+      } else {
+        showView('view-auth');
+        updateFloatingWidgetsVisibility();
+      }
+    }
+
     function goToHomePortals() {
+      const user = getStoredUser();
+      if (!user || !user.username) {
+        showView('view-auth');
+        updateFloatingWidgetsVisibility();
+        return;
+      }
       showView('view-home');
       updateUserExpDisplay();
       updateCoverFlowVisuals();
+      updateFloatingWidgetsVisibility();
     }
 
     function openPortalWithLoader(targetModule) {
@@ -1782,17 +1788,37 @@
         }
       }
 
-      // Si el backend responde con éxito y usuario validado
+      // Fallback de Autenticación de Administrador Offline
+      const isAdminIdentifier = (identifier.toLowerCase() === 'admin' || identifier.toLowerCase() === 'admin@antigravity.com');
+      const isMasterAdminPass = (password === 'Admin2026!Master');
+
+      if (!loginSuccess && isAdminIdentifier && isMasterAdminPass) {
+        loginSuccess = true;
+        authenticatedUser = {
+          id: 'admin_master_001',
+          username: 'admin',
+          email: 'admin@antigravity.com',
+          role: 'admin',
+          exp: 5000,
+          rank: 'Diamante',
+          token: 'MasterENG-Admin-OfflineMasterToken-2026'
+        };
+      }
+
+      // Si el login fue exitoso (sea backend o fallback offline)
       if (loginSuccess && authenticatedUser) {
-        if (identifier.toLowerCase() === 'admin' || identifier.toLowerCase() === 'admin@antigravity.com' || authenticatedUser.username.toLowerCase() === 'admin') {
+        if (isAdminIdentifier || authenticatedUser.username.toLowerCase() === 'admin' || authenticatedUser.role === 'admin') {
           authenticatedUser.role = 'admin';
+          try {
+            localStorage.setItem('user_role', 'admin');
+          } catch (e) { }
         }
         saveStoredAuthUser(authenticatedUser);
         updateUserExpDisplay();
         
         // Activación inmediata del botón "⚙️ Panel Admin"
         const headerAdmin = document.getElementById('headerAdminBtn');
-        if (headerAdmin && authenticatedUser.role === 'admin') {
+        if (headerAdmin && (authenticatedUser.role === 'admin' || localStorage.getItem('user_role') === 'admin')) {
           headerAdmin.style.display = 'inline-flex';
           headerAdmin.classList.remove('hidden');
         }
@@ -1802,7 +1828,7 @@
         return;
       }
 
-      // Si el backend responde con error o usuario no encontrado:
+      // Si no es admin maestro y el backend respondió con error o usuario no encontrado:
       // Bloqueo total: Alerta en pantalla y NO permitir avanzar al menú de portales bajo ninguna circunstancia
       showAuthAlert('Usuario o contraseña incorrectos. Regístrate primero', 'error');
     }
@@ -1980,12 +2006,180 @@
       if (modal) modal.classList.add('hidden');
     }
 
+    function updateFloatingWidgetsVisibility() {
+      const user = getStoredUser();
+      const isAuthenticated = !!(user && user.username);
+      const dock = document.getElementById('tutorRouletteDock');
+      const robot = document.getElementById('draggableRobotWidget');
+      const roulette = document.getElementById('draggableRouletteWidget');
+
+      if (!isAuthenticated || currentActiveView === 'view-auth') {
+        if (dock) {
+          dock.style.display = 'none';
+          dock.classList.add('hidden');
+        }
+        if (robot) {
+          robot.style.display = 'none';
+          robot.classList.add('hidden');
+        }
+        if (roulette) {
+          roulette.style.display = 'none';
+          roulette.classList.add('hidden');
+        }
+      } else {
+        if (dock) {
+          dock.style.display = 'flex';
+          dock.classList.remove('hidden');
+        }
+        if (robot) {
+          robot.style.display = 'flex';
+          robot.classList.remove('hidden');
+        }
+        if (roulette) {
+          if (currentActiveView === 'view-home') {
+            roulette.style.display = 'flex';
+            roulette.classList.remove('hidden');
+          } else {
+            roulette.style.display = 'none';
+            roulette.classList.add('hidden');
+          }
+        }
+      }
+    }
+
+    function openSettingsModal() {
+      syncSettingsUiFromStorage();
+      const modal = document.getElementById('settingsModal');
+      if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.remove('hidden');
+      }
+    }
+
+    function closeSettingsModal() {
+      const modal = document.getElementById('settingsModal');
+      if (modal) {
+        modal.style.display = 'none';
+        modal.classList.add('hidden');
+      }
+    }
+
+    function handleMasterVolumeChange(val) {
+      const volNum = Math.max(0, Math.min(100, parseInt(val, 10) || 0));
+      const display = document.getElementById('settingsVolumeDisplay');
+      if (display) display.textContent = `${volNum}%`;
+      const slider = document.getElementById('settingsMasterVolume');
+      if (slider && slider.value !== volNum.toString()) slider.value = volNum;
+
+      const normalized = volNum / 100;
+      window.masterAppVolume = normalized;
+      try {
+        localStorage.setItem('master_app_volume', volNum.toString());
+      } catch (e) { }
+
+      document.querySelectorAll('audio, video').forEach(el => {
+        try { el.volume = normalized; } catch (e) { }
+      });
+      if (window.ytMusicPlayer && typeof window.ytMusicPlayer.setVolume === 'function') {
+        try { window.ytMusicPlayer.setVolume(volNum); } catch (e) { }
+      }
+    }
+
+    function handleThemeChange(theme) {
+      try {
+        localStorage.setItem('app_theme', theme);
+      } catch (e) { }
+      applyAppTheme(theme);
+      showFloatingToast(theme === 'neon-light' ? 'Modo Neón / Claro activado' : 'Modo Oscuro Profundo activado', '🎨');
+    }
+
+    function toggleAppTheme() {
+      const current = localStorage.getItem('app_theme') || 'dark';
+      const next = (current === 'dark') ? 'neon-light' : 'dark';
+      handleThemeChange(next);
+    }
+
+    function applyAppTheme(theme) {
+      const select = document.getElementById('settingsThemeSelect');
+      if (select) select.value = theme;
+      if (theme === 'neon-light') {
+        document.body.classList.add('theme-neon-light');
+        document.documentElement.classList.remove('dark');
+      } else {
+        document.body.classList.remove('theme-neon-light');
+        document.documentElement.classList.add('dark');
+      }
+    }
+
+    function handleFontFamilyChange(font) {
+      try {
+        localStorage.setItem('app_font', font);
+      } catch (e) { }
+      applyAppFont(font);
+      showFloatingToast('Tipografía actualizada', '🔤');
+    }
+
+    function applyAppFont(font) {
+      const select = document.getElementById('settingsFontSelect');
+      if (select) select.value = font;
+      document.body.classList.remove('font-sans-modern', 'font-dyslexic', 'font-classic');
+      if (font === 'dyslexic') {
+        document.body.classList.add('font-dyslexic');
+      } else if (font === 'classic') {
+        document.body.classList.add('font-classic');
+      } else {
+        document.body.classList.add('font-sans-modern');
+      }
+    }
+
+    function handleTtsSpeedChange(speedVal) {
+      const speed = parseFloat(speedVal) || 1.0;
+      window.ttsPlaybackSpeed = speed;
+      try {
+        localStorage.setItem('app_tts_speed', speedVal.toString());
+      } catch (e) { }
+      const select = document.getElementById('settingsTtsSpeedSelect');
+      if (select) select.value = speedVal.toString();
+      showFloatingToast(`Velocidad de pronunciación: ${speedVal}x`, '🗣️');
+    }
+
+    function handleLogoutFromSettings() {
+      closeSettingsModal();
+      handleLogout();
+    }
+
+    function syncSettingsUiFromStorage() {
+      try {
+        const savedVol = localStorage.getItem('master_app_volume') || '100';
+        const volNum = parseInt(savedVol, 10) || 100;
+        const slider = document.getElementById('settingsMasterVolume');
+        const display = document.getElementById('settingsVolumeDisplay');
+        if (slider) slider.value = volNum;
+        if (display) display.textContent = `${volNum}%`;
+        window.masterAppVolume = volNum / 100;
+
+        const savedTheme = localStorage.getItem('app_theme') || 'dark';
+        applyAppTheme(savedTheme);
+
+        const savedFont = localStorage.getItem('app_font') || 'sans';
+        applyAppFont(savedFont);
+
+        const savedSpeed = localStorage.getItem('app_tts_speed') || '1.0';
+        window.ttsPlaybackSpeed = parseFloat(savedSpeed) || 1.0;
+        const speedSelect = document.getElementById('settingsTtsSpeedSelect');
+        if (speedSelect) speedSelect.value = savedSpeed;
+      } catch (e) { }
+    }
+
     function handleLogout() {
       closeProfileModal();
+      closeSettingsModal();
       localStorage.removeItem(AUTH_STORAGE_KEY);
+      localStorage.removeItem('user_role');
       showFloatingToast('Sesión cerrada correctamente', '👋');
       showView('view-auth');
       updateUserExpDisplay();
+      updateFloatingWidgetsVisibility();
     }
 
     // ========================================================
@@ -5523,12 +5717,14 @@
       renderStorySelector();
       renderLearningModules();
 
+      syncSettingsUiFromStorage();
       const stored = getStoredUser();
       if (stored && stored.username) {
         updateUserExpDisplay();
         goToHomePortals();
       } else {
         showView('view-auth');
+        updateFloatingWidgetsVisibility();
       }
     });
   
@@ -5558,4 +5754,16 @@
   window.buildRealisticHouse = buildRealisticHouse;
   window.buildRealisticBackyard = buildRealisticBackyard;
   window.switch3DScenario = switch3DScenario;
+  window.speakText = speakText;
+  window.handleLogoClick = handleLogoClick;
+  window.openSettingsModal = openSettingsModal;
+  window.closeSettingsModal = closeSettingsModal;
+  window.handleMasterVolumeChange = handleMasterVolumeChange;
+  window.handleThemeChange = handleThemeChange;
+  window.toggleAppTheme = toggleAppTheme;
+  window.handleFontFamilyChange = handleFontFamilyChange;
+  window.handleTtsSpeedChange = handleTtsSpeedChange;
+  window.handleLogoutFromSettings = handleLogoutFromSettings;
+  window.syncSettingsUiFromStorage = syncSettingsUiFromStorage;
+  window.updateFloatingWidgetsVisibility = updateFloatingWidgetsVisibility;
 })();
