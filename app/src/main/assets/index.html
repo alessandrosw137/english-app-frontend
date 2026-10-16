@@ -249,6 +249,27 @@ button[onclick*="closeModal"] {
   display: none !important;
 }
 
+  
+/* ========================================================
+   ESTILOS DEL MODAL DE PERFIL DE USUARIO
+   ======================================================== */
+.profile-body {
+  padding: 1rem 0;
+  color: #f1f5f9;
+}
+
+.profile-body h4 {
+  color: #ffffff;
+}
+
+.profile-body p {
+  color: #94a3b8;
+}
+
+.profile-body button {
+  margin-top: 0.25rem;
+}
+
   </style>
   <!-- jsPDF para generación y descarga directa de PDF en cliente -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -294,7 +315,7 @@ button[onclick*="closeModal"] {
         <span>⚙️ Panel Admin</span>
       </button>
 
-      <button id="headerProfileBtn" onclick="toggleModal('profile-modal'); openProfileModal();" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-semibold text-xs transition shadow-md shadow-sky-600/30 cursor-pointer active:scale-95">
+      <button id="headerProfileBtn" onclick="window.renderUserProfile(); toggleModal('profile-modal');" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-semibold text-xs transition shadow-md shadow-sky-600/30 cursor-pointer active:scale-95" data-action="openProfileModal"><!-- openProfileModal --><!-- openProfileModal -->
         <span id="headerAvatarText"
           class="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px]">👤</span>
         <span class="hidden sm:inline">Perfil</span>
@@ -1145,7 +1166,7 @@ button[onclick*="closeModal"] {
         </h3>
         <button type="button" onclick="window.closeAllModals()" class="close-btn w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer text-base" style="cursor: pointer !important; pointer-events: auto !important; position: relative; z-index: 100001 !important;">&times;</button>
       </div>
-      <div id="profileModalBody" class="py-4 space-y-4"></div>
+      <div class="profile-body py-4 space-y-4 text-slate-100" id="profile-content"></div>
     </div>
   </div>
 
@@ -1685,117 +1706,8 @@ button[onclick*="closeModal"] {
        FUNCIONES GLOBALES DE ACCESO DIRECTO EN WINDOW
        ======================================================== -->
   <script>
-    
-    // Sistema Universal de Apertura de Modales
-    
-    // Función Universal e Infalible de Cierre de Modales
-    window.closeAllModals = function() {
-      document.querySelectorAll('.modal, .modal-overlay, .modal-backdrop, .drawer, [id$="-modal"]').forEach(el => {
-        el.style.display = 'none';
-        el.classList.remove('active', 'show', 'open');
-        el.classList.add('hidden');
-      });
-      document.querySelectorAll('#profileModal, #settingsModal, #rouletteModal, #glossaryModal, #learningMissionModal, #musicWordModal, #chatbotWindow, #adminDashboardModal, #adminConfirmDeleteModal, #adminViewProgressModal').forEach(el => {
-        el.style.display = 'none';
-        el.classList.remove('active', 'show', 'open');
-        el.classList.add('hidden');
-      });
-      if (typeof rouletteTimerInterval !== 'undefined' && rouletteTimerInterval) {
-        clearInterval(rouletteTimerInterval);
-      }
-    };
-
-    window.closeModal = function(modalId) {
-      const modal = typeof modalId === 'string' ? document.getElementById(modalId) : modalId?.closest('.modal, [id$="-modal"]');
-      if (modal) {
-        modal.style.display = 'none';
-        modal.classList.remove('active', 'show', 'open');
-        modal.classList.add('hidden');
-      } else {
-        window.closeAllModals();
-      }
-    };
-
-    // Cierre por Clic en Fondo (Backdrop)
-    document.addEventListener('click', function(e) {
-      if (e.target && e.target.classList && (e.target.classList.contains('modal') || e.target.classList.contains('modal-overlay') || e.target.classList.contains('modal-backdrop'))) {
-        window.closeAllModals();
-      }
-    });
-
-    // Cierre por Tecla Escape
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') {
-        window.closeAllModals();
-      }
-    });
-
-    window.toggleModal = function(modalId) {
-      let modal = document.getElementById(modalId);
-      if (!modal) {
-        if (modalId === 'profile-modal') modal = document.getElementById('profileModal');
-        else if (modalId === 'settings-modal') modal = document.getElementById('settingsModal');
-        else if (modalId === 'ai-tutor-modal') modal = document.getElementById('chatbotWindow');
-        else if (modalId === 'roulette-modal') modal = document.getElementById('rouletteModal');
-      }
-      if (!modal) return;
-      const isVisible = modal.style.display === 'flex' || modal.classList.contains('active');
-      document.querySelectorAll('.modal, .drawer').forEach(m => {
-        m.style.display = 'none';
-        m.classList.remove('active');
-        m.classList.add('hidden');
-      });
-      if (!isVisible) {
-        modal.style.display = 'flex';
-        modal.classList.add('active');
-        modal.classList.remove('hidden');
-        modal.style.zIndex = '100000';
-
-        if (modal.id === 'profileModal' || modalId === 'profile-modal') {
-          if (typeof renderProfileModalContent === 'function') renderProfileModalContent();
-        } else if (modal.id === 'settingsModal' || modalId === 'settings-modal') {
-          if (typeof syncSettingsUiFromStorage === 'function') syncSettingsUiFromStorage();
-        } else if (modal.id === 'rouletteModal' || modalId === 'roulette-modal') {
-          const qCard = document.getElementById('rouletteQuestionCard');
-          const spinBtn = document.getElementById('spinRouletteBtn');
-          if (qCard) qCard.classList.add('hidden');
-          if (spinBtn) spinBtn.disabled = false;
-        } else if (modal.id === 'chatbotWindow' || modalId === 'ai-tutor-modal') {
-          const input = document.getElementById('chatbotInput');
-          if (input) setTimeout(() => input.focus(), 60);
-        }
-      }
-    };
-
-    // Alias transparentes para getElementById
-    (function() {
-      const origGetElemById = document.getElementById.bind(document);
-      document.getElementById = function(id) {
-        let el = origGetElemById(id);
-        if (!el) {
-          if (id === 'profile-modal') el = origGetElemById('profileModal');
-          else if (id === 'settings-modal') el = origGetElemById('settingsModal');
-          else if (id === 'ai-tutor-modal') el = origGetElemById('chatbotWindow');
-          else if (id === 'roulette-modal') el = origGetElemById('rouletteModal');
-          else if (id === 'ai-tutor-btn') el = origGetElemById('draggableRobotWidget') || document.querySelector('#ai-tutor-btn');
-          else if (id === 'roulette-btn') el = origGetElemById('draggableRouletteWidget') || document.querySelector('#roulette-btn');
-        }
-        return el;
-      };
-    })();
-
-    // Cierre inmediato en backdrop click
-    window.addEventListener('click', function(e) {
-      if (e.target && (e.target.classList.contains('modal') || ['profileModal', 'profile-modal', 'settingsModal', 'settings-modal', 'rouletteModal', 'roulette-modal', 'glossaryModal', 'learningMissionModal', 'musicWordModal', 'adminDashboardModal', 'adminConfirmDeleteModal', 'adminViewProgressModal'].includes(e.target.id))) {
-        e.target.style.display = 'none';
-        e.target.classList.add('hidden');
-        e.target.classList.remove('active');
-      }
-    }, true);
-
     window.continueAsGuest = function(e) {
       if (e && typeof e.preventDefault === 'function') e.preventDefault();
-      console.log("Accediendo como Invitado...");
       try {
         localStorage.setItem('mastereng_user', JSON.stringify({ username: 'Invitado', role: 'guest' }));
         localStorage.setItem('user_role', 'guest');
@@ -1803,7 +1715,7 @@ button[onclick*="closeModal"] {
         localStorage.setItem('english_app_user_session', JSON.stringify({ username: 'Invitado', role: 'guest', exp: 0, rank: 'Bronce' }));
       } catch (err) { }
 
-      const loginModal = document.getElementById('login-modal') || document.querySelector('.login-container') || document.querySelector('[class*="login"]') || document.getElementById('view-auth');
+      const loginModal = document.getElementById('login-modal') || document.querySelector('.login-container') || document.getElementById('view-auth');
       if (loginModal) {
         loginModal.style.display = 'none';
         loginModal.classList.add('hidden');
@@ -1815,7 +1727,6 @@ button[onclick*="closeModal"] {
         mainApp.classList.remove('hidden');
       }
 
-      // Mostrar ruleta y robot al entrar
       const floatingWidgets = document.querySelectorAll('.floating-widget, .robot-mascot, .roulette-btn, #ai-tutor, #roulette-container, #tutorRouletteDock, #draggableRobotWidget, #draggableRouletteWidget');
       floatingWidgets.forEach(el => {
         el.style.display = 'flex';
@@ -1865,14 +1776,12 @@ button[onclick*="closeModal"] {
           mainApp.classList.remove('hidden');
         }
 
-        // Mostrar botón del panel admin
         const adminBtn = document.getElementById('admin-panel-btn') || document.getElementById('headerAdminBtn');
         if (adminBtn) {
           adminBtn.style.display = 'inline-flex';
           adminBtn.classList.remove('hidden');
         }
 
-        // Mostrar ruleta y robot al entrar
         const floatingWidgets = document.querySelectorAll('.floating-widget, .robot-mascot, .roulette-btn, #ai-tutor, #roulette-container, #tutorRouletteDock, #draggableRobotWidget, #draggableRouletteWidget');
         floatingWidgets.forEach(el => {
           el.style.display = 'flex';

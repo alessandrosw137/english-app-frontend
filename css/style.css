@@ -659,3 +659,24 @@ button[onclick*="closeModal"] {
 [style*="display: none"] {
   display: none !important;
 }
+
+
+/* ========================================================
+   ESTILOS DEL MODAL DE PERFIL DE USUARIO
+   ======================================================== */
+.profile-body {
+  padding: 1rem 0;
+  color: #f1f5f9;
+}
+
+.profile-body h4 {
+  color: #ffffff;
+}
+
+.profile-body p {
+  color: #94a3b8;
+}
+
+.profile-body button {
+  margin-top: 0.25rem;
+}

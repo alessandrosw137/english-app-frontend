@@ -2072,7 +2072,7 @@
         modal.style.zIndex = '100000';
 
         if (modal.id === 'profileModal' || modalId === 'profile-modal') {
-          if (typeof renderProfileModalContent === 'function') renderProfileModalContent();
+          renderUserProfile();
         } else if (modal.id === 'settingsModal' || modalId === 'settings-modal') {
           if (typeof syncSettingsUiFromStorage === 'function') syncSettingsUiFromStorage();
         } else if (modal.id === 'rouletteModal' || modalId === 'roulette-modal') {
@@ -2090,7 +2090,152 @@
   window.closeAllModals = window.closeAllModals;
   window.closeModal = window.closeModal;
 
+    
+    // ========================================================
+    // RENDERIZADO DINÁMICO DEL PERFIL DE USUARIO
+    // ========================================================
+    function renderUserProfile() {
+      const user = JSON.parse(localStorage.getItem('mastereng_user') || '{"role":"guest","username":"Invitado"}');
+      const container = document.getElementById('profile-content') || document.getElementById('profileModalBody');
+      if (!container) return;
+
+      const isGuest = user.role === 'guest' || user.username === 'Invitado';
+
+      if (isGuest) {
+        container.innerHTML = `
+          <div class="flex items-center gap-4 p-4 rounded-2xl bg-slate-800/80 border border-slate-700/60 shadow-lg">
+            <div class="relative w-14 h-14 rounded-2xl bg-gradient-to-tr from-slate-700 to-slate-800 flex items-center justify-center text-2xl font-black text-white shadow-md border border-slate-600 shrink-0">
+              <span>👤</span>
+              <span class="absolute -bottom-1 -right-1 px-1.5 py-0.2 rounded-full bg-amber-500 text-slate-950 text-[9px] font-black shadow">⚡</span>
+            </div>
+            <div class="space-y-1">
+              <div class="flex items-center gap-2 flex-wrap">
+                <h4 class="text-base font-extrabold text-white">Invitado</h4>
+                <span class="px-2 py-0.5 rounded-full bg-slate-700/80 text-amber-300 font-bold text-[10px] border border-amber-500/30">Modo Invitado</span>
+              </div>
+              <p class="text-xs text-slate-400">Sesión Temporal de Prueba</p>
+            </div>
+          </div>
+
+          <div class="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs flex items-start gap-2.5">
+            <span class="text-base shrink-0">⚠️</span>
+            <p class="leading-relaxed">Estás explorando en modo de prueba. Tu progreso no se guardará de forma permanente.</p>
+          </div>
+
+          <div class="pt-2 space-y-2.5">
+            <button type="button" onclick="window.openLoginFromProfile('login')"
+              class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-bold text-xs transition shadow-lg shadow-sky-500/30 flex items-center justify-center gap-2 cursor-pointer active:scale-95">
+              <span>🔑</span>
+              <span>Iniciar Sesión</span>
+            </button>
+            <button type="button" onclick="window.openLoginFromProfile('register')"
+              class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold text-xs transition shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-2 cursor-pointer active:scale-95">
+              <span>✨</span>
+              <span>Crear Cuenta / Registrarse</span>
+            </button>
+          </div>
+        `;
+      } else {
+        const exp = parseInt(user.exp, 10) || 0;
+        const rankInfo = typeof calculateRankInfo === 'function' ? calculateRankInfo(exp) : { rank: 'Bronce', medal: '🥉', title: 'Novato', progressPercent: 0 };
+        const level = Math.floor(exp / 100) + 1;
+        const isAdmin = user.role === 'admin';
+
+        container.innerHTML = `
+          <div class="flex items-center gap-4 p-4 rounded-2xl bg-slate-800/80 border border-slate-700/60 shadow-lg">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-sky-500 via-indigo-600 to-purple-600 flex items-center justify-center text-xl font-black text-white shadow-md shrink-0">
+              ${user.username ? user.username.charAt(0).toUpperCase() : '👤'}
+            </div>
+            <div class="space-y-1 min-w-0 flex-1">
+              <div class="flex items-center gap-2 flex-wrap">
+                <h4 class="text-base font-extrabold text-white truncate">${user.username}</h4>
+                ${isAdmin ? `
+                  <span class="px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500/20 to-purple-500/20 text-amber-300 font-bold border border-amber-400/40 text-[10px] inline-flex items-center gap-1 shadow">
+                    <span>🛡️</span>
+                    <span>Administrador</span>
+                  </span>
+                ` : ''}
+              </div>
+              <p class="text-xs text-slate-400 truncate">${user.email || (user.username + '@mastereng.com')}</p>
+            </div>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-slate-800/60 border border-slate-700/50 space-y-2.5">
+            <div class="flex justify-between items-center text-xs">
+              <span class="font-bold text-amber-300 flex items-center gap-1.5">
+                <span>${rankInfo.medal}</span>
+                <span>${rankInfo.rank} • Nivel ${level}</span>
+              </span>
+              <span class="font-extrabold text-amber-400 px-2 py-0.5 rounded-md bg-slate-900 border border-amber-500/30">${exp} EXP</span>
+            </div>
+            <div class="w-full bg-slate-900 h-2.5 rounded-full overflow-hidden border border-slate-700">
+              <div class="h-full rounded-full bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 transition-all duration-500" style="width: ${rankInfo.progressPercent}%;"></div>
+            </div>
+            <p class="text-[10px] text-slate-400 text-right">
+              ${rankInfo.nextTier ? 'Faltan ' + rankInfo.neededForNext + ' EXP para ' + rankInfo.nextTier.name : '¡Has alcanzado el rango máximo!'}
+            </p>
+          </div>
+
+          <div class="pt-2 space-y-2.5">
+            ${isAdmin ? `
+              <button type="button" onclick="window.closeAllModals(); openAdminDashboardModal();"
+                class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 via-purple-600 to-indigo-600 hover:from-amber-400 hover:via-purple-500 hover:to-indigo-500 text-white font-bold text-xs transition shadow-lg shadow-purple-600/30 flex items-center justify-center gap-2 cursor-pointer active:scale-95 border border-amber-300/40">
+                <span>⚙️</span>
+                <span>Panel Admin</span>
+              </button>
+            ` : ''}
+
+            <button type="button" onclick="window.handleProfileLogout()"
+              class="w-full py-2.5 px-4 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/40 font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer active:scale-95">
+              <span>🚪</span>
+              <span>Cerrar Sesión</span>
+            </button>
+          </div>
+        `;
+      }
+    }
+    window.renderUserProfile = renderUserProfile;
+    window.renderProfileModalContent = renderUserProfile;
+
+    function openLoginFromProfile(tab) {
+      window.closeAllModals();
+      if (typeof showView === 'function') {
+        showView('view-auth');
+      }
+      if (typeof switchAuthTab === 'function') {
+        switchAuthTab(tab || 'login');
+      }
+    }
+    window.openLoginFromProfile = openLoginFromProfile;
+
+    function handleProfileLogout() {
+      try {
+        localStorage.removeItem('mastereng_user');
+        localStorage.removeItem('english_app_user_session');
+        localStorage.removeItem('user_role');
+        localStorage.setItem('mastereng_user', JSON.stringify({ role: 'guest', username: 'Invitado' }));
+      } catch (e) {}
+      window.closeAllModals();
+      if (typeof showView === 'function') {
+        showView('view-auth');
+      }
+      if (typeof switchAuthTab === 'function') {
+        switchAuthTab('login');
+      }
+      if (typeof updateUserExpDisplay === 'function') {
+        updateUserExpDisplay();
+      }
+      if (typeof updateFloatingWidgetsVisibility === 'function') {
+        updateFloatingWidgetsVisibility();
+      }
+      if (typeof showFloatingToast === 'function') {
+        showFloatingToast('Sesión cerrada correctamente', '👋');
+      }
+    }
+    window.handleProfileLogout = handleProfileLogout;
+
     function openProfileModal() {
+      renderUserProfile();
       const user = getStoredUser() || { username: 'Invitado', role: 'guest', exp: 0 };
       const rankInfo = calculateRankInfo(user.exp);
       const isGuest = user.role === 'guest' || user.username === 'Invitado';
