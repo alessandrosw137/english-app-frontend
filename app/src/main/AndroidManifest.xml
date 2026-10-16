@@ -13,6 +13,9 @@
     <!-- Permissions for local daily reminder notification system -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Storage permission for Android 9 (Pie) and below when downloading files -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
+
     <!-- Hardware feature declarations for WebGL & Microphone -->
     <uses-feature android:name="android.hardware.microphone" android:required="false" />
     <uses-feature android:glEsVersion="0x00020000" android:required="false" />

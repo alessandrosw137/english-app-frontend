@@ -66,6 +66,21 @@ async function runTests() {
     }
     console.log('✅ /api/health OK');
 
+    // 1b. App Version check
+    console.log('\n--- 1b. Probando GET /api/app/version ---');
+    const versionRes = await request('GET', '/api/app/version');
+    console.log('Status:', versionRes.status, '- Version Data:', versionRes.data);
+    if (
+      versionRes.status !== 200 ||
+      versionRes.data.minVersion !== 1 ||
+      versionRes.data.latestVersion !== 2 ||
+      versionRes.data.forceUpdate !== false ||
+      versionRes.data.updateUrl !== 'https://english-app-frontend-3j9w.onrender.com'
+    ) {
+      throw new Error('Falló el endpoint /api/app/version o no coincide el payload exacto esperado');
+    }
+    console.log('✅ /api/app/version OK');
+
     // 2. Register con correo inválido (debe rechazar con 400)
     console.log('\n--- 2. Probando /api/auth/register con formatos de email inválidos ---');
     const invalidEmails = ['correo-invalido', 'usuario@', '@dominio.com', 'usuario@dominio', ''];
@@ -260,8 +275,8 @@ async function runTests() {
     }
     console.log('✅ GET /api/progress autenticado OK');
 
-    // 11. Búsqueda real en YouTube / YouTube Music (/api/music/search)
-    console.log('\n--- 11. Probando GET /api/music/search ---');
+    // 11. Búsqueda pública en iTunes Search API (/api/music/search)
+    console.log('\n--- 11. Probando GET /api/music/search con iTunes Search API ---');
     const searchRes = await request('GET', '/api/music/search?q=' + encodeURIComponent('Coldplay Yellow'));
     console.log('Status:', searchRes.status);
     console.log('Total resultados encontrados:', Array.isArray(searchRes.data) ? searchRes.data.length : 0);
@@ -269,17 +284,23 @@ async function runTests() {
       throw new Error('Falló el endpoint /api/music/search');
     }
     const firstTrack = searchRes.data[0];
-    console.log('Primer resultado:', {
+    console.log('Primer resultado normalizado:', {
       id: firstTrack.id,
-      title: firstTrack.title,
-      artist: firstTrack.artist,
-      thumbnail: firstTrack.thumbnail,
-      duration: firstTrack.duration
+      trackName: firstTrack.trackName,
+      artistName: firstTrack.artistName,
+      previewUrl: firstTrack.previewUrl,
+      artworkUrl100: firstTrack.artworkUrl100
     });
-    if (!firstTrack.id || !firstTrack.title || !firstTrack.artist || !firstTrack.thumbnail || !firstTrack.duration) {
-      throw new Error('El resultado de /api/music/search no contiene todos los campos requeridos (id, title, artist, thumbnail, duration)');
+    if (!firstTrack.id || !firstTrack.trackName || !firstTrack.artistName || !firstTrack.previewUrl || !firstTrack.artworkUrl100) {
+      throw new Error('El resultado de /api/music/search no contiene los campos requeridos (id, trackName, artistName, previewUrl, artworkUrl100)');
     }
-    console.log('✅ /api/music/search con catálogo real de YouTube OK');
+
+    // Probar búsqueda vacía
+    const emptySearchRes = await request('GET', '/api/music/search?q=');
+    if (emptySearchRes.status !== 200 || !Array.isArray(emptySearchRes.data) || emptySearchRes.data.length !== 0) {
+      throw new Error('La búsqueda vacía en /api/music/search debe responder 200 con un arreglo vacío');
+    }
+    console.log('✅ /api/music/search con API pública de iTunes (normalización y previewUrl) OK');
 
     // 12. Letras sincronizadas con marcas de tiempo (Timestamps) y traducción al español
     console.log('\n--- 12. Probando GET /api/music/lyrics con canción conocida ---');

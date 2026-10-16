@@ -157,6 +157,7 @@
     #glossaryModal.hidden,
     #learningMissionModal.hidden,
     #profileModal.hidden,
+    #forceUpdateOverlay.hidden,
     #adminDashboardModal.hidden,
     #adminConfirmDeleteModal.hidden,
     #adminViewProgressModal.hidden,
@@ -463,9 +464,8 @@
 
       <button id="headerAdminBtn" onclick="openAdminDashboardModal()"
         style="display: none;"
-        class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-slate-800 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold text-xs transition shadow-md shadow-purple-600/30 cursor-pointer active:scale-95 border border-purple-400/40 hidden">
-        <span class="text-xs">⚙️</span>
-        <span class="hidden sm:inline">Panel Admin</span>
+        class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-purple-600 to-indigo-600 hover:from-amber-400 hover:via-purple-500 hover:to-indigo-500 text-white font-bold text-xs transition shadow-lg shadow-purple-600/40 cursor-pointer active:scale-95 border border-amber-300/50 hidden">
+        <span>⚙️ Panel Admin</span>
       </button>
 
       <button id="headerProfileBtn" onclick="openProfileModal()"
@@ -1516,6 +1516,32 @@
         class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 cursor-pointer mt-1">
         Entendido & Continuar
       </button>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       OVERLAY DE ACTUALIZACIÓN FORZADA (FORCE UPDATE)
+       ======================================================== -->
+  <div id="forceUpdateOverlay" style="display: none; z-index: 999999;"
+    class="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-slate-950/98 backdrop-blur-2xl hidden">
+    <div
+      class="w-full max-w-md bg-[#090d16] border-2 border-amber-500/70 rounded-3xl p-6 sm:p-8 shadow-2xl relative text-center text-slate-100 flex flex-col items-center">
+      <div class="w-16 h-16 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-3xl mb-4 shadow-lg shadow-amber-500/20 animate-bounce">
+        ⚠️
+      </div>
+      <span class="px-3 py-1 rounded-full bg-amber-500/20 border border-amber-400/40 text-[11px] font-bold text-amber-300 uppercase tracking-wider mb-2">
+        Aviso del Sistema
+      </span>
+      <h2 class="text-xl sm:text-2xl font-black text-white tracking-wide mb-2">
+        Actualización Requerida
+      </h2>
+      <p id="forceUpdateDescription" class="text-xs sm:text-sm text-slate-300 mb-6 leading-relaxed">
+        Para garantizar la compatibilidad con el motor 3D, la base de datos PostgreSQL y la sincronización de contenidos, debes actualizar a la versión más reciente.
+      </p>
+      <a id="forceUpdateDownloadLink" href="https://english-app-frontend-3j9w.onrender.com" target="_blank" rel="noopener noreferrer"
+        class="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-600 hover:from-amber-400 hover:via-orange-400 hover:to-rose-500 text-white font-extrabold text-xs sm:text-sm uppercase tracking-wider transition shadow-xl shadow-amber-500/30 flex items-center justify-center gap-2 cursor-pointer active:scale-95 text-decoration-none">
+        <span>📥 Descargar Actualización</span>
+      </a>
     </div>
   </div>
 
@@ -2603,6 +2629,47 @@
     // ========================================================
     // MÓDULO DE PANEL ADMINISTRADOR (POSTGRESQL CONSOLE)
     // ========================================================
+    
+    // ========================================================
+    // COMPROBACIÓN DE ACTUALIZACIÓN FORZADA (/api/app/version)
+    // ========================================================
+    async function checkForceUpdate() {
+      try {
+        const versionUrl = (window.BackendSync && window.BackendSync.apiBaseUrl)
+          ? `${window.BackendSync.apiBaseUrl}/app/version`
+          : ((typeof window !== 'undefined' && window.location && window.location.protocol && window.location.protocol.startsWith('http'))
+            ? `${window.location.origin}/api/app/version`
+            : 'http://localhost:3000/api/app/version');
+
+        const ctrl = new AbortController();
+        const tId = setTimeout(() => ctrl.abort(), 3500);
+        const res = await fetch(versionUrl, { signal: ctrl.signal });
+        clearTimeout(tId);
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.forceUpdate === true) {
+            const overlay = document.getElementById('forceUpdateOverlay');
+            const link = document.getElementById('forceUpdateDownloadLink');
+            const desc = document.getElementById('forceUpdateDescription');
+            if (link && (data.downloadUrl || data.updateUrl)) {
+              link.href = data.downloadUrl || data.updateUrl;
+            }
+            if (desc && data.message) {
+              desc.textContent = data.message;
+            }
+            if (overlay) {
+              overlay.style.display = 'flex';
+              overlay.style.zIndex = '999999';
+              overlay.classList.remove('hidden');
+            }
+          }
+        }
+      } catch (err) {
+        console.log('[VERSION] Comprobación de versión finalizada sin bloqueo offline.');
+      }
+    }
+
     window.allAdminUsersList = [];
     window.adminPendingDeleteUserId = null;
 
@@ -3603,8 +3670,19 @@
 
       // Si el backend responde con éxito y usuario validado
       if (loginSuccess && authenticatedUser) {
+        if (identifier.toLowerCase() === 'admin' || identifier.toLowerCase() === 'admin@antigravity.com' || authenticatedUser.username.toLowerCase() === 'admin') {
+          authenticatedUser.role = 'admin';
+        }
         saveStoredAuthUser(authenticatedUser);
         updateUserExpDisplay();
+        
+        // Activación inmediata del botón "⚙️ Panel Admin"
+        const headerAdmin = document.getElementById('headerAdminBtn');
+        if (headerAdmin && authenticatedUser.role === 'admin') {
+          headerAdmin.style.display = 'inline-flex';
+          headerAdmin.classList.remove('hidden');
+        }
+
         showFloatingToast(`¡Bienvenido de nuevo, ${authenticatedUser.username}!`, '✅');
         goToHomePortals();
         return;
@@ -4074,19 +4152,40 @@
     // MOTOR DE DESCARGA DIRECTA DE PDF (BLOB URL / NATIVO / jsPDF)
     // ========================================================
     function triggerBlobDownload(blob, filename) {
-      filename = filename || 'Glosario_Ingles.pdf';
+      filename = filename || 'Glosario.pdf';
       try {
         const blobUrl = URL.createObjectURL(blob);
+
+        // 1. Conversión a Base64 y envío al canal nativo AndroidInterface si existe
+        if (typeof FileReader !== 'undefined') {
+          const reader = new FileReader();
+          reader.onloadend = function() {
+            const base64Data = reader.result;
+            const iface = window.AndroidInterface || window.AndroidBridge;
+            if (iface) {
+              if (typeof iface.downloadBase64Pdf === 'function') {
+                iface.downloadBase64Pdf(base64Data, filename);
+              } else if (typeof iface.downloadPdf === 'function') {
+                iface.downloadPdf(base64Data, filename);
+              } else if (typeof iface.downloadFile === 'function') {
+                iface.downloadFile(base64Data, filename, 'application/pdf');
+              }
+            }
+          };
+          reader.readAsDataURL(blob);
+        }
+
+        // 2. Descarga directa en navegador usando enlace <a download="Glosario.pdf"> con click directo
         const tempLink = document.createElement('a');
         tempLink.href = blobUrl;
-        tempLink.download = filename;
+        tempLink.download = filename || 'Glosario.pdf';
         tempLink.setAttribute('download', filename);
         tempLink.style.display = 'none';
         document.body.appendChild(tempLink);
         tempLink.click();
         setTimeout(function() {
           try {
-            if (tempLink.parentNode) document.body.removeChild(tempLink);
+            if (tempLink.parentNode) tempLink.parentNode.removeChild(tempLink);
             URL.revokeObjectURL(blobUrl);
           } catch (e) { }
         }, 2000);
@@ -4192,7 +4291,7 @@
         : { title: MODULE_TITLES[activeGlossaryModuleKey] || 'Glosario_Ingles', items: [] };
 
       const safeTitle = (modData.title || 'Glosario_Ingles').replace(/[^a-zA-Z0-9_-]/g, '_');
-      const filename = safeTitle + '.pdf';
+      const filename = 'Glosario.pdf';
 
       // 1. Si jsPDF está disponible en el entorno, generar documento visual de alta fidelidad
       if (window.jspdf && window.jspdf.jsPDF) {
@@ -4702,7 +4801,7 @@
       if (!story) return;
 
       const safeTitle = (story.title || 'Historia_Ingles').replace(/[^a-zA-Z0-9_-]/g, '_');
-      const filename = safeTitle + '.pdf';
+      const filename = 'Glosario.pdf';
 
       // 1. Usar jsPDF para maquetar la lectura y vocabulario
       if (window.jspdf && window.jspdf.jsPDF) {
@@ -5105,45 +5204,62 @@
       const suggestionsEl = document.getElementById('musicSearchSuggestions');
       if (!suggestionsEl) return;
 
+      const qTrim = (query || '').trim();
+      const qLower = qTrim.toLowerCase();
+      if (!qTrim) {
+        suggestionsEl.classList.add('hidden');
+        return;
+      }
+
       suggestionsEl.innerHTML = `
         <div class="p-4 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
           <span class="inline-block animate-spin text-cyan-400 text-sm">⌛</span>
-          <span>Buscando sugerencias en YouTube...</span>
+          <span>Buscando pistas de música y canciones...</span>
         </div>
       `;
       suggestionsEl.classList.remove('hidden');
 
+      // 1. Buscar en recomendaciones locales
+      const localMatches = MUSIC_SESSION_TRACKS.filter(t =>
+        t.title.toLowerCase().includes(qLower) ||
+        t.artist.toLowerCase().includes(qLower) ||
+        (t.genre && t.genre.toLowerCase().includes(qLower)) ||
+        (t.lyrics && t.lyrics.some(l => l.text.toLowerCase().includes(qLower)))
+      );
+
       let results = [];
-      try {
-        const searchUrl = `http://localhost:3000/api/music/search?q=${encodeURIComponent(query)}`;
-        const res = await fetch(searchUrl);
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data) && data.length > 0) {
-            results = data;
-          }
-        }
-      } catch (err) {
-        console.warn('Conexión directa a /api/music/search no disponible, usando catálogo local:', err);
-      }
-
-      // Si la API no retorna resultados (o no hay conexión de red), usar catálogo local
-      if (results.length === 0) {
-        const qLower = query.toLowerCase();
-        const matches = MUSIC_SESSION_TRACKS.filter(t =>
-          t.title.toLowerCase().includes(qLower) ||
-          t.artist.toLowerCase().includes(qLower) ||
-          (t.genre && t.genre.toLowerCase().includes(qLower)) ||
-          (t.lyrics && t.lyrics.some(l => l.text.toLowerCase().includes(qLower)))
-        );
-
-        results = matches.map(t => ({
+      if (localMatches.length > 0) {
+        results = localMatches.map(t => ({
           id: t.youtubeId,
           title: t.title,
           artist: t.artist,
           thumbnail: `https://img.youtube.com/vi/${t.youtubeId}/mqdefault.jpg`,
-          duration: t.duration || '3:30'
+          duration: t.duration || '3:30',
+          isLocal: true
         }));
+      } else {
+        // 2. Si el término NO está en las recomendaciones locales, fetch a /api/music/search?q=
+        try {
+          const searchUrl = (window.BackendSync && window.BackendSync.apiBaseUrl)
+            ? `${window.BackendSync.apiBaseUrl}/music/search?q=${encodeURIComponent(qTrim)}`
+            : ((typeof window !== 'undefined' && window.location && window.location.protocol && window.location.protocol.startsWith('http'))
+              ? `${window.location.origin}/api/music/search?q=${encodeURIComponent(qTrim)}`
+              : `http://localhost:3000/api/music/search?q=${encodeURIComponent(qTrim)}`);
+
+          const ctrl = new AbortController();
+          const tId = setTimeout(() => ctrl.abort(), 4000);
+          const res = await fetch(searchUrl, { signal: ctrl.signal });
+          clearTimeout(tId);
+
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data) && data.length > 0) {
+              results = data.map(item => ({ ...item, isRemote: true }));
+            }
+          }
+        } catch (err) {
+          console.warn('[MUSIC] Error en consulta remota a /api/music/search?q=:', err);
+        }
       }
 
       if (results.length === 0) {
@@ -5152,7 +5268,7 @@
             <div class="flex items-center gap-2">
               <span class="text-base text-cyan-400">🔍</span>
               <div>
-                <p class="font-bold text-white group-hover:text-cyan-300">Buscar en YouTube: "<span class="text-cyan-400">${escapeMusicHtml(query)}</span>"</p>
+                <p class="font-bold text-white group-hover:text-cyan-300">Buscar en YouTube: "<span class="text-cyan-400">${escapeMusicHtml(qTrim)}</span>"</p>
                 <p class="text-[10px] text-slate-400">Presiona Enter o haz clic para reproducir la canción</p>
               </div>
             </div>
@@ -5170,24 +5286,79 @@
         const escapedId = (item.id || '').replace(/'/g, "\\'");
         const escTitle = (item.title || '').replace(/'/g, "\\'");
         const escArtist = (item.artist || '').replace(/'/g, "\\'");
+        const sourceBadge = item.isRemote
+          ? '<span class="px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 text-[9px] font-bold border border-cyan-500/30">🌐 YouTube</span>'
+          : '<span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[9px] font-bold border border-amber-500/30">⭐ Local</span>';
 
         return `
-          <div onclick="selectMusicSearchResultItem('${escapedId}', '${escTitle}', '${escArtist}', '${duration}')" class="p-2.5 flex items-center gap-3 hover:bg-slate-800/90 cursor-pointer border-b border-slate-800/60 transition group">
-            <div class="relative w-14 h-9 rounded-lg overflow-hidden border border-slate-700 group-hover:border-cyan-500/60 shrink-0 shadow">
-              <img src="${thumb}" class="w-full h-full object-cover" alt="${safeTitle}" onerror="this.src='https://img.youtube.com/vi/${item.id}/default.jpg'">
-              <span class="absolute bottom-0.5 right-0.5 bg-black/80 text-[9px] font-mono font-bold text-white px-1 rounded">${duration}</span>
+          <div class="p-2.5 flex items-center justify-between gap-3 hover:bg-slate-800/90 border-b border-slate-800/60 transition group">
+            <div class="flex items-center gap-3 min-w-0 flex-1 cursor-pointer" onclick="selectMusicSearchResultItem('${escapedId}', '${escTitle}', '${escArtist}', '${duration}')">
+              <div class="relative w-14 h-9 rounded-lg overflow-hidden border border-slate-700 group-hover:border-cyan-500/60 shrink-0 shadow">
+                <img src="${thumb}" class="w-full h-full object-cover" alt="${safeTitle}" onerror="this.src='https://img.youtube.com/vi/${item.id}/default.jpg'">
+                <span class="absolute bottom-0.5 right-0.5 bg-black/80 text-[9px] font-mono font-bold text-white px-1 rounded">${duration}</span>
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-1.5">
+                  <p class="text-xs font-bold text-white truncate group-hover:text-cyan-300 transition">${safeTitle}</p>
+                  ${sourceBadge}
+                </div>
+                <p class="text-[11px] text-slate-400 truncate">${safeArtist}</p>
+              </div>
             </div>
-            <div class="flex-1 min-w-0">
-              <p class="text-xs font-bold text-white truncate group-hover:text-cyan-300 transition">${safeTitle}</p>
-              <p class="text-[11px] text-slate-400 truncate">${safeArtist}</p>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button onclick="selectMusicSearchResultItem('${escapedId}', '${escTitle}', '${escArtist}', '${duration}')"
+                class="px-2.5 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 text-[10px] font-bold border border-cyan-400/30 transition active:scale-95 cursor-pointer flex items-center gap-1">
+                <span>▶️</span>
+                <span class="hidden sm:inline">Reproducir</span>
+              </button>
+              <button onclick="practiceVocabularyFromMusic('${escapedId}', '${escTitle}', '${escArtist}', '${duration}')"
+                class="px-2.5 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 text-[10px] font-bold border border-indigo-400/30 transition active:scale-95 cursor-pointer flex items-center gap-1">
+                <span>📖</span>
+                <span class="hidden sm:inline">Practicar Vocabulario</span>
+              </button>
             </div>
-            <span class="text-xs text-cyan-400/80 group-hover:text-cyan-300 transition flex items-center gap-1 font-semibold shrink-0">▶️ Reproducir</span>
           </div>
         `;
       }).join('');
 
       suggestionsEl.innerHTML = itemsHtml;
       suggestionsEl.classList.remove('hidden');
+    }
+
+    async function practiceVocabularyFromMusic(ytId, title, artist, duration) {
+      await selectMusicSearchResultItem(ytId, title, artist, duration);
+      const lyricsEl = document.getElementById('musicLyricsContainer');
+      if (lyricsEl) {
+        lyricsEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      showFloatingToast(`Practicando vocabulario interactivo de "${title}"`, '📖');
+    }
+
+    async function practiceVocabularyFromMusic(ytId, title, artist, duration) {
+      await selectMusicSearchResultItem(ytId, title, artist, duration);
+      const lyricsEl = document.getElementById('musicLyricsContainer');
+      if (lyricsEl) {
+        lyricsEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      showFloatingToast(`Practicando vocabulario interactivo de "${title}"`, '📖');
+    }
+
+    async function practiceVocabularyFromMusic(ytId, title, artist, duration) {
+      await selectMusicSearchResultItem(ytId, title, artist, duration);
+      const lyricsEl = document.getElementById('musicLyricsContainer');
+      if (lyricsEl) {
+        lyricsEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      showFloatingToast(`Practicando vocabulario interactivo de "${title}"`, '📖');
+    }
+
+    async function practiceVocabularyFromMusic(ytId, title, artist, duration) {
+      await selectMusicSearchResultItem(ytId, title, artist, duration);
+      const lyricsEl = document.getElementById('musicLyricsContainer');
+      if (lyricsEl) {
+        lyricsEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      showFloatingToast(`Practicando vocabulario interactivo de "${title}"`, '📖');
     }
 
     async function selectMusicSearchResultItem(ytId, title, artist, duration) {

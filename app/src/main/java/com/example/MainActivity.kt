@@ -3,12 +3,18 @@ package com.example
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.AlarmManager
+import android.app.AlertDialog
 import android.app.DownloadManager
 import android.app.PendingIntent
+import android.content.BroadcastReceiver
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.content.res.Configuration
+import android.graphics.Color
+import android.graphics.Typeface
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.Uri
@@ -18,9 +24,12 @@ import android.os.Environment
 import android.print.PrintAttributes
 import android.print.PrintDocumentAdapter
 import android.print.PrintManager
+import android.provider.MediaStore
 import android.speech.tts.TextToSpeech
+import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
+import android.webkit.CookieManager
 import android.webkit.JavascriptInterface
 import android.webkit.PermissionRequest
 import android.webkit.URLUtil
@@ -30,6 +39,10 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.Button
+import android.widget.FrameLayout
+import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
@@ -37,7 +50,14 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
 import java.io.File
+import java.net.HttpURLConnection
+import java.net.URL
 import java.util.Calendar
 import java.util.Locale
 
@@ -56,10 +76,25 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
     // Track offline fallback state to avoid infinite reload loops
     private var isOfflineFallbackLoaded: Boolean = false
 
+    // State flag for mandatory in-app force update
+    private var isForceUpdateActive: Boolean = false
+
+    // Broadcast receiver to notify user when background DownloadManager finishes downloading
+    private val downloadCompleteReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == DownloadManager.ACTION_DOWNLOAD_COMPLETE) {
+                runOnUiThread {
+                    Toast.makeText(this@MainActivity, "Descarga completada en la carpeta Descargas", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
     companion object {
         private const val PREFS_NAME = "phrasal_verbs_offline_prefs"
         const val PRODUCTION_URL = "https://english-app-frontend-3j9w.onrender.com"
         const val LOCAL_ASSET_URL = "file:///android_asset/index.html"
+        const val CURRENT_APP_VERSION = 1
     }
 
     // Permission launcher for Android 13+ (POST_NOTIFICATIONS)
@@ -135,13 +170,13 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
             insets
         }
 
-        // Configure WebView settings for full WebGL support, inline audio/video, and resilience
+        // Configure WebView settings with strict NO_CACHE to ensure always querying live Render app
         @Suppress("DEPRECATION")
         webView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
             databaseEnabled = true
-            cacheMode = WebSettings.LOAD_DEFAULT
+            cacheMode = WebSettings.LOAD_NO_CACHE
             mediaPlaybackRequiresUserGesture = false
 
             // WebGL & Rendering configurations
@@ -160,26 +195,31 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
             mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
         }
 
+        // Strictly clear cache to guarantee loading latest deployed changes
+        webView.clearCache(true)
+
         android.webkit.WebView.setWebContentsDebuggingEnabled(true)
 
-        // Native Android DownloadManager listener for PDF files and offline assets
+        // Native Android Download listener for Blobs, Base64 data URIs, and HTTP/HTTPS PDFs
         webView.setDownloadListener { url, userAgent, contentDisposition, mimetype, _ ->
             try {
-                val fileName = URLUtil.guessFileName(url, contentDisposition, mimetype)
-                val request = DownloadManager.Request(Uri.parse(url))
-                request.setMimeType(mimetype)
-                request.addRequestHeader("User-Agent", userAgent)
-                request.setDescription("Descargando archivo...")
-                request.setTitle(fileName)
-                request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
-                val dm = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-                dm.enqueue(request)
-                Toast.makeText(applicationContext, "Descargando PDF...", Toast.LENGTH_SHORT).show()
+                if (url.startsWith("blob:") || url.startsWith("data:")) {
+                    handleBlobOrDataDownload(url, mimetype, contentDisposition)
+                } else if (url.startsWith("http://") || url.startsWith("https://")) {
+                    handleHttpDownload(url, userAgent, contentDisposition, mimetype)
+                }
             } catch (e: Throwable) {
-                android.util.Log.e("DownloadListener", "Error initiating download: ${e.message}")
+                android.util.Log.e("DownloadListener", "Error in download listener: ${e.message}", e)
                 Toast.makeText(applicationContext, "Error al iniciar descarga", Toast.LENGTH_SHORT).show()
             }
+        }
+
+        // Register download complete broadcast receiver
+        val filter = IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(downloadCompleteReceiver, filter, Context.RECEIVER_EXPORTED)
+        } else {
+            registerReceiver(downloadCompleteReceiver, filter)
         }
 
         // WebChromeClient with automatic microphone permissions for Cuentos Speaking Coach
@@ -291,12 +331,17 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
             }
         }
 
-        // Expose native TextToSpeech, SharedPreferences, and Notification bridge to JavaScript
+        // Expose native TextToSpeech, SharedPreferences, File Downloads, and Notification bridge to JavaScript
         webView.addJavascriptInterface(AndroidNativeBridge(), "AndroidBridge")
+        webView.addJavascriptInterface(AndroidNativeBridge(), "AndroidInterface")
 
         // Intercept Android Back Button so user can navigate back in WebView history if canGoBack() is true
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
+                if (isForceUpdateActive) {
+                    // Prevent leaving the force update screen
+                    return
+                }
                 if (webView.canGoBack()) {
                     webView.goBack()
                 } else {
@@ -309,6 +354,9 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         // Request runtime permissions and schedule daily study reminder
         checkAndRequestAppPermissions()
 
+        // Asynchronous check for mandatory in-app force update
+        checkForAppUpdate()
+
         // Resilient loading: if savedInstanceState is present, restore WebView state without reloading; otherwise load URL
         if (savedInstanceState != null) {
             webView.restoreState(savedInstanceState)
@@ -320,6 +368,263 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                 webView.loadUrl(LOCAL_ASSET_URL)
             }
         }
+    }
+
+    private fun handleBlobOrDataDownload(url: String, mimetype: String, contentDisposition: String) {
+        val cleanFileName = if (contentDisposition.isNotBlank()) {
+            URLUtil.guessFileName(url, contentDisposition, mimetype)
+        } else {
+            "Document_${System.currentTimeMillis()}.${if (mimetype.contains("pdf", ignoreCase = true)) "pdf" else "bin"}"
+        }
+
+        if (url.startsWith("data:")) {
+            saveBase64ToDownloads(url, mimetype, cleanFileName)
+        } else {
+            // Blob URL: fetch blob content via JavaScript and stream to AndroidBridge
+            val safeMime = if (mimetype.isBlank()) "application/pdf" else mimetype
+            val js = """
+                (function() {
+                    try {
+                        var xhr = new XMLHttpRequest();
+                        xhr.open('GET', '$url', true);
+                        xhr.responseType = 'blob';
+                        xhr.onload = function() {
+                            if (this.status === 200 || this.status === 0) {
+                                var reader = new FileReader();
+                                reader.onloadend = function() {
+                                    if (window.AndroidBridge && window.AndroidBridge.saveBlob) {
+                                        window.AndroidBridge.saveBlob(reader.result, '$safeMime', '$cleanFileName');
+                                    }
+                                };
+                                reader.readAsDataURL(this.response);
+                            }
+                        };
+                        xhr.onerror = function() {
+                            fetch('$url')
+                                .then(function(res) { return res.blob(); })
+                                .then(function(blob) {
+                                    var reader = new FileReader();
+                                    reader.onloadend = function() {
+                                        if (window.AndroidBridge && window.AndroidBridge.saveBlob) {
+                                            window.AndroidBridge.saveBlob(reader.result, '$safeMime', '$cleanFileName');
+                                        }
+                                    };
+                                    reader.readAsDataURL(blob);
+                                })
+                                .catch(function(err) {
+                                    console.error('Blob download error:', err);
+                                });
+                        };
+                        xhr.send();
+                    } catch (e) {
+                        console.error('Blob fetch exception:', e);
+                    }
+                })();
+            """.trimIndent()
+            webView.evaluateJavascript(js, null)
+        }
+    }
+
+    private fun handleHttpDownload(url: String, userAgent: String, contentDisposition: String, mimetype: String) {
+        val fileName = URLUtil.guessFileName(url, contentDisposition, mimetype).ifBlank {
+            "Document_${System.currentTimeMillis()}.${if (mimetype.contains("pdf", ignoreCase = true)) "pdf" else "bin"}"
+        }
+        val request = DownloadManager.Request(Uri.parse(url)).apply {
+            setMimeType(mimetype)
+            addRequestHeader("User-Agent", userAgent)
+            val cookie = CookieManager.getInstance().getCookie(url)
+            if (!cookie.isNullOrBlank()) {
+                addRequestHeader("Cookie", cookie)
+            }
+            setDescription("Descargando archivo...")
+            setTitle(fileName)
+            setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+            setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
+        }
+        val dm = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+        dm.enqueue(request)
+        Toast.makeText(this@MainActivity, "Descarga completada en la carpeta Descargas", Toast.LENGTH_LONG).show()
+    }
+
+    fun saveBase64ToDownloads(base64Data: String, mimeType: String?, fileName: String?) {
+        try {
+            val pureBase64 = if (base64Data.contains(",")) {
+                base64Data.substringAfter(",")
+            } else {
+                base64Data
+            }
+            val bytes = android.util.Base64.decode(pureBase64, android.util.Base64.DEFAULT)
+            val resolvedMime = if (mimeType.isNullOrBlank()) "application/pdf" else mimeType
+            val resolvedName = if (!fileName.isNullOrBlank()) {
+                fileName
+            } else {
+                val ext = if (resolvedMime.contains("pdf", ignoreCase = true)) "pdf" else "bin"
+                "Document_${System.currentTimeMillis()}.$ext"
+            }
+            saveBytesToDownloads(bytes, resolvedName, resolvedMime)
+        } catch (e: Throwable) {
+            android.util.Log.e("DownloadListener", "Error decoding base64 blob: ${e.message}", e)
+            runOnUiThread {
+                Toast.makeText(this@MainActivity, "Error al procesar archivo", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    fun saveBytesToDownloads(bytes: ByteArray, fileName: String, mimeType: String) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val contentValues = ContentValues().apply {
+                    put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+                    put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+                }
+                val resolver = applicationContext.contentResolver
+                val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
+                if (uri != null) {
+                    resolver.openOutputStream(uri)?.use { os ->
+                        os.write(bytes)
+                        os.flush()
+                    }
+                } else {
+                    throw Exception("MediaStore insert returned null URI")
+                }
+            } else {
+                val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                if (!dir.exists()) dir.mkdirs()
+                val file = File(dir, fileName)
+                file.outputStream().use { os ->
+                    os.write(bytes)
+                    os.flush()
+                }
+            }
+            runOnUiThread {
+                Toast.makeText(this@MainActivity, "Descarga completada en la carpeta Descargas", Toast.LENGTH_LONG).show()
+            }
+        } catch (e: Throwable) {
+            android.util.Log.e("DownloadListener", "Error writing to downloads: ${e.message}", e)
+            runOnUiThread {
+                Toast.makeText(this@MainActivity, "Error al guardar descarga", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun checkForAppUpdate() {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val url = URL("$PRODUCTION_URL/api/app/version")
+                val connection = (url.openConnection() as HttpURLConnection).apply {
+                    requestMethod = "GET"
+                    connectTimeout = 5000
+                    readTimeout = 5000
+                    setRequestProperty("Accept", "application/json")
+                }
+                val responseCode = connection.responseCode
+                if (responseCode == HttpURLConnection.HTTP_OK) {
+                    val responseBody = connection.inputStream.bufferedReader().use { it.readText() }
+                    val json = JSONObject(responseBody)
+                    val remoteVersion = when {
+                        json.has("remoteVersion") -> json.getInt("remoteVersion")
+                        json.has("version") -> json.getInt("version")
+                        json.has("versionCode") -> json.getInt("versionCode")
+                        else -> CURRENT_APP_VERSION
+                    }
+                    val updateUrl = when {
+                        json.has("download_url") -> json.getString("download_url")
+                        json.has("update_url") -> json.getString("update_url")
+                        json.has("apk_url") -> json.getString("apk_url")
+                        json.has("url") -> json.getString("url")
+                        else -> PRODUCTION_URL
+                    }
+                    if (remoteVersion > CURRENT_APP_VERSION) {
+                        withContext(Dispatchers.Main) {
+                            showForceUpdateModal(updateUrl)
+                        }
+                    }
+                }
+            } catch (e: Throwable) {
+                android.util.Log.d("AppVersionCheck", "Version check skipped or offline: ${e.message}")
+            }
+        }
+    }
+
+    private fun showForceUpdateModal(updateUrl: String) {
+        isForceUpdateActive = true
+
+        // 1. Add full-screen native overlay view to completely block interaction with WebView underneath
+        val rootLayout = findViewById<FrameLayout>(R.id.rootLayout)
+        val overlayView = LinearLayout(this).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setBackgroundColor(Color.parseColor("#0F172A"))
+            setPadding(64, 64, 64, 64)
+            isClickable = true
+            isFocusable = true
+
+            val titleView = TextView(this@MainActivity).apply {
+                text = "Actualización obligatoria"
+                setTextColor(Color.WHITE)
+                textSize = 22f
+                typeface = Typeface.DEFAULT_BOLD
+                gravity = Gravity.CENTER
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    bottomMargin = 24
+                }
+            }
+            addView(titleView)
+
+            val msgView = TextView(this@MainActivity).apply {
+                text = "¡Nueva actualización disponible! Es necesario actualizar para continuar."
+                setTextColor(Color.parseColor("#E2E8F0"))
+                textSize = 16f
+                gravity = Gravity.CENTER
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    bottomMargin = 48
+                }
+            }
+            addView(msgView)
+
+            val btnUpdate = Button(this@MainActivity).apply {
+                text = "Descargar actualización"
+                setBackgroundColor(Color.parseColor("#3B82F6"))
+                setTextColor(Color.WHITE)
+                textSize = 16f
+                typeface = Typeface.DEFAULT_BOLD
+                setPadding(48, 24, 48, 24)
+                setOnClickListener {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(updateUrl)).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    }
+                    startActivity(intent)
+                }
+            }
+            addView(btnUpdate)
+        }
+        rootLayout.addView(overlayView)
+
+        // 2. Also present a non-dismissible modal Dialog
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("Actualización obligatoria")
+            .setMessage("¡Nueva actualización disponible! Es necesario actualizar para continuar.")
+            .setCancelable(false)
+            .setPositiveButton("Actualizar") { _, _ ->
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(updateUrl)).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                startActivity(intent)
+            }
+            .create()
+        dialog.setCanceledOnTouchOutside(false)
+        dialog.show()
     }
 
     private fun isNetworkAvailable(): Boolean {
@@ -427,6 +732,13 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         }
 
         @JavascriptInterface
+        fun downloadBase64Pdf(base64Data: String, filename: String) {
+            runOnUiThread {
+                Toast.makeText(applicationContext, "Descargando PDF: " + filename, Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        @JavascriptInterface
         fun requestAudioPermission() {
             runOnUiThread {
                 if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
@@ -463,6 +775,17 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
             runOnUiThread {
                 triggerTestNotification()
             }
+        }
+
+        // Direct Blob and Base64 download handler for PDF files and exported study guides
+        @JavascriptInterface
+        fun saveBlob(base64Data: String, mimeType: String?, fileName: String?) {
+            saveBase64ToDownloads(base64Data, mimeType, fileName)
+        }
+
+        @JavascriptInterface
+        fun getBase64FromBlobData(base64Data: String, mimeType: String?, fileName: String?) {
+            saveBase64ToDownloads(base64Data, mimeType, fileName)
         }
 
         // Native Android Print Framework bridge for PDF generation & saving
@@ -514,6 +837,9 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
     }
 
     override fun onDestroy() {
+        try {
+            unregisterReceiver(downloadCompleteReceiver)
+        } catch (_: Throwable) {}
         webView.destroy()
         tts?.stop()
         tts?.shutdown()

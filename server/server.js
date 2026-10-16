@@ -334,6 +334,19 @@ app.get('/api/health', async (req, res) => {
   });
 });
 
+// 1.1. Control de Versiones de la Aplicación (/api/app/version)
+app.get('/api/app/version', (req, res) => {
+  const force = req.query.force === 'true';
+  return res.status(200).json({
+    minVersion: 1,
+    latestVersion: 2,
+    forceUpdate: force,
+    downloadUrl: 'https://english-app-frontend-3j9w.onrender.com',
+    updateUrl: 'https://english-app-frontend-3j9w.onrender.com',
+    message: 'Se requiere actualizar la aplicación para continuar sincronizando con PostgreSQL y Three.js.'
+  });
+});
+
 // 2. POST /api/auth/register
 app.post('/api/auth/register', async (req, res) => {
   let client = null;
@@ -1306,7 +1319,8 @@ function parseLrcLyrics(lrcText) {
   return parsed;
 }
 
-// 6. GET /api/music/search?q=
+// 6. GET /api/music/search?q=termino
+// Consulta la API pública abierta de iTunes Search (https://itunes.apple.com/search?term=...&entity=song&limit=15)
 app.get('/api/music/search', async (req, res) => {
   try {
     const query = String(req.query.q || '').trim();
@@ -1314,43 +1328,53 @@ app.get('/api/music/search', async (req, res) => {
       return res.status(200).json([]);
     }
 
-    if (!ytSearch) {
-      return res.status(503).json({
+    const itunesUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=15`;
+    const response = await fetch(itunesUrl, {
+      signal: AbortSignal.timeout(6000),
+      headers: {
+        Accept: 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      return res.status(response.status).json({
         success: false,
-        error: 'El servicio de búsqueda de música no está disponible actualmente.',
+        error: `Error al consultar la API pública de iTunes Search (HTTP ${response.status}).`,
         results: []
       });
     }
 
-    const searchResults = await ytSearch(query);
-    const videos = Array.isArray(searchResults.videos) ? searchResults.videos : [];
+    const data = await response.json();
+    const items = Array.isArray(data.results) ? data.results : [];
 
-    const formattedList = videos.slice(0, 25).map((v) => {
-      const durationStr =
-        v.timestamp ||
-        (v.seconds
-          ? `${Math.floor(v.seconds / 60)}:${String(v.seconds % 60).padStart(2, '0')}`
-          : '3:30');
+    // Normalizar la respuesta para devolver: id, trackName, artistName, previewUrl, artworkUrl100
+    const formattedList = items.map((item) => {
+      const durationSec = Math.round((item.trackTimeMillis || 30000) / 1000);
+      const durationStr = `${Math.floor(durationSec / 60)}:${String(durationSec % 60).padStart(2, '0')}`;
 
       return {
-        id: v.videoId || v.id,
-        title: v.title || 'Untitled Track',
-        artist: (v.author && v.author.name) || 'Unknown Artist',
-        thumbnail:
-          v.thumbnail ||
-          v.image ||
-          `https://i.ytimg.com/vi/${v.videoId || v.id}/hqdefault.jpg`,
-        duration: durationStr,
-        seconds: v.seconds || 0
+        id: item.trackId ? String(item.trackId) : '',
+        trackName: item.trackName || 'Untitled Track',
+        artistName: item.artistName || 'Unknown Artist',
+        previewUrl: item.previewUrl || '',
+        artworkUrl100: item.artworkUrl100 || item.artworkUrl60 || '',
+        // Campos de compatibilidad para clientes existentes
+        title: item.trackName || 'Untitled Track',
+        artist: item.artistName || 'Unknown Artist',
+        thumbnail: item.artworkUrl100 || item.artworkUrl60 || '',
+        duration: durationStr
       };
     });
 
     return res.status(200).json(formattedList);
   } catch (err) {
-    console.error('❌ [MUSIC-SEARCH] Error buscando en YouTube:', err.message);
-    return res.status(500).json({
+    console.error('❌ [MUSIC-SEARCH] Error consultando iTunes Search API:', err.message);
+    const isTimeout = err.name === 'TimeoutError' || err.name === 'AbortError' || (err.message && err.message.toLowerCase().includes('timeout'));
+    return res.status(502).json({
       success: false,
-      error: 'Error al realizar la búsqueda en YouTube.',
+      error: isTimeout
+        ? 'Tiempo de espera agotado al conectar con el servicio de música externa (iTunes Search API).'
+        : 'Error de red al consultar el servicio de música externa (iTunes Search API).',
       details: err.message,
       results: []
     });
