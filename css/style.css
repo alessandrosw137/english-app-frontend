@@ -537,3 +537,58 @@ body.theme-neon-light header {
   border-color: rgba(56, 189, 248, 0.4) !important;
   box-shadow: 0 4px 20px rgba(56, 189, 248, 0.15) !important;
 }
+
+
+    /* ========================================================
+       DESBLOQUEO TOTAL DE INTERACCIÓN: LOGIN, INPUTS Y Z-INDEX
+       ======================================================== */
+    #view-auth,
+    .login-container,
+    .login-card,
+    #authLoginForm,
+    #authRegisterForm {
+      position: relative !important;
+      z-index: 10000 !important;
+      pointer-events: auto !important;
+    }
+
+    #view-auth input,
+    .login-card input,
+    #authLoginIdentifier,
+    #authLoginPassword,
+    #authRegUsername,
+    #authRegEmail,
+    #authRegPassword,
+    input[type="text"],
+    input[type="password"],
+    input[type="email"] {
+      position: relative !important;
+      z-index: 10001 !important;
+      pointer-events: auto !important;
+      user-select: text !important;
+      -webkit-user-select: text !important;
+    }
+
+    #view-auth button,
+    .login-card button,
+    #authLoginSubmitBtn,
+    #authTabBtnLogin,
+    #authTabBtnRegister {
+      position: relative !important;
+      z-index: 10001 !important;
+      pointer-events: auto !important;
+      cursor: pointer !important;
+    }
+
+    /* Fondos animados, partículas y canvas detrás sin interceptar clics */
+    #portalStarsCanvas,
+    .star-bg,
+    .particle-overlay,
+    .canvas-background {
+      pointer-events: none !important;
+      z-index: 1 !important;
+    }
+
+    #view-worldtour canvas {
+      pointer-events: auto !important;
+    }
