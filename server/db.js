@@ -18,11 +18,22 @@ function getDatabaseUrl() {
   if (process.env.DATABASE_URL) {
     return process.env.DATABASE_URL;
   }
-  const isRender = Boolean(process.env.RENDER);
-  return isRender ? RENDER_INTERNAL_URL : RENDER_EXTERNAL_URL;
+  const isProduction = Boolean(
+    process.env.RENDER ||
+    process.env.NODE_ENV === 'production' ||
+    process.env.IS_PRODUCTION
+  );
+  if (isProduction && process.env.INTERNAL_DATABASE_URL) {
+    return process.env.INTERNAL_DATABASE_URL;
+  }
+  return isProduction ? RENDER_INTERNAL_URL : RENDER_EXTERNAL_URL;
 }
 
-const isRenderEnvironment = Boolean(process.env.RENDER);
+const isRenderEnvironment = Boolean(
+  process.env.RENDER ||
+  process.env.NODE_ENV === 'production' ||
+  process.env.IS_PRODUCTION
+);
 const connectionString = getDatabaseUrl();
 
 console.log(`🔌 [PostgreSQL Render] Modo detectado: ${isRenderEnvironment ? 'Producción (Render Internal)' : 'Desarrollo Local (Render External)'}`);

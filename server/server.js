@@ -23,9 +23,9 @@ try {
   ytSearch = null;
 }
 
-const { pool, initializeDatabase, getDatabaseUrl } = require('./db');
+const { pool, initializeDatabase, getDatabaseUrl, RENDER_INTERNAL_URL, RENDER_EXTERNAL_URL } = require('./db');
 
-const PORT = parseInt(process.env.PORT || '3000', 10);
+const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'english_app_jwt_secret_key_2026';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
@@ -44,8 +44,27 @@ process.on('uncaughtException', (err) => {
 
 const app = express();
 
-// Middleware
-app.use(cors({ origin: '*' }));
+// Middleware y configuración de CORS permitiendo origen de producción en Render
+const ALLOWED_PRODUCTION_ORIGIN = 'https://english-app-frontend-3j9w.onrender.com';
+const allowedOrigins = [
+  ALLOWED_PRODUCTION_ORIGIN,
+  'http://localhost:3000',
+  'http://127.0.0.1:3000'
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Permitir solicitudes sin origin (como apps móviles nativas WebView, Postman o curl)
+    if (!origin) return callback(null, true);
+    if (origin === ALLOWED_PRODUCTION_ORIGIN || allowedOrigins.includes(origin) || origin.endsWith('.onrender.com') || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      return callback(null, true);
+    }
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
+}));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -709,9 +728,9 @@ app.post('/api/auth/google', async (req, res) => {
   }
 });
 
-// 4. POST /api/progress/sync
+// 4. POST /api/progress & POST /api/progress/sync
 // Actualización periódica de puntos de EXP, nivel y rachas sin bloqueos de concurrencia.
-app.post('/api/progress/sync', async (req, res) => {
+const handleProgressSync = async (req, res) => {
   const body = req.body || {};
   const tokenPayload = verifyToken(extractTokenFromHeader(req));
 
@@ -958,6 +977,88 @@ app.post('/api/progress/sync', async (req, res) => {
     } finally {
       if (client) client.release();
     }
+  }
+};
+
+app.post('/api/progress', handleProgressSync);
+app.post('/api/progress/sync', handleProgressSync);
+
+// GET /api/progress
+// Consulta del progreso del usuario autenticado o especificado por query
+app.get('/api/progress', async (req, res) => {
+  try {
+    const tokenPayload = verifyToken(extractTokenFromHeader(req));
+    const rawUsername = req.query.username || (tokenPayload && tokenPayload.username) || '';
+    const cleanUser = String(rawUsername).trim();
+    const explicitUserId = parseInt(req.query.user_id || (tokenPayload && tokenPayload.id), 10);
+
+    if (!cleanUser && isNaN(explicitUserId)) {
+      return res.status(401).json({
+        success: false,
+        error: 'Token de autorización o nombre de usuario requerido para consultar el progreso.'
+      });
+    }
+
+    let userRes;
+    if (cleanUser) {
+      userRes = await pool.query(
+        `SELECT id, username, email, role, avatar_url, created_at
+         FROM users
+         WHERE username = $1`,
+        [cleanUser]
+      );
+    } else {
+      userRes = await pool.query(
+        `SELECT id, username, email, role, avatar_url, created_at
+         FROM users
+         WHERE id = $1`,
+        [explicitUserId]
+      );
+    }
+
+    if (userRes.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Usuario no encontrado en la base de datos.'
+      });
+    }
+
+    const user = userRes.rows[0];
+
+    const statsRes = await pool.query(
+      `SELECT exp, level, rank, streak_days, last_login
+       FROM user_stats
+       WHERE user_id = $1`,
+      [user.id]
+    );
+
+    const modulesRes = await pool.query(
+      `SELECT module_id, current_level, completed_nodes, updated_at
+       FROM module_progress
+       WHERE user_id = $1
+       ORDER BY module_id ASC`,
+      [user.id]
+    );
+
+    const toeflRes = await pool.query(
+      `SELECT id, score, total_questions, exam_type, completed_at
+       FROM toefl_history
+       WHERE user_id = $1
+       ORDER BY completed_at DESC
+       LIMIT 10`,
+      [user.id]
+    );
+
+    return res.status(200).json({
+      success: true,
+      user,
+      stats: statsRes.rows[0] || { exp: 0, level: 1, rank: 'Bronce', streak_days: 1 },
+      modules: modulesRes.rows,
+      toefl: toeflRes.rows
+    });
+  } catch (err) {
+    console.error('❌ [PROGRESS-GET] Error consultando progreso:', err.message);
+    return handleDatabaseError(res, err, 'Error al consultar el progreso del usuario.');
   }
 });
 

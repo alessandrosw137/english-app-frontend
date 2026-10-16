@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 160" width="100%" height="100%">
+    <defs>
+      <linearGradient id="bg_toefl_simulator" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#0f172a"/>
+        <stop offset="55%" stop-color="#1e293b"/>
+        <stop offset="100%" stop-color="#b45309"/>
+      </linearGradient>
+      <radialGradient id="glow_toefl_simulator" cx="50%" cy="55%" r="55%">
+        <stop offset="0%" stop-color="#eab308" stop-opacity="0.45"/>
+        <stop offset="100%" stop-color="#0f172a" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <rect width="400" height="160" fill="url(#bg_toefl_simulator)"/>
+    <rect width="400" height="160" fill="url(#glow_toefl_simulator)"/>
+    <circle cx="350" cy="25" r="70" fill="#eab308" opacity="0.12"/>
+    <circle cx="45" cy="135" r="55" fill="#fef08a" opacity="0.1"/>
+    <g transform="translate(200, 90)">
+      <polygon points="0,-38 55,-16 0,6 -55,-16" fill="#fbbf24" stroke="#fef08a" stroke-width="2"/>
+      <rect x="-32" y="2" width="64" height="22" rx="6" fill="#78350f" stroke="#fbbf24" stroke-width="2"/>
+      <text x="0" y="17" fill="#fef08a" font-family="sans-serif" font-weight="900" font-size="12" text-anchor="middle">SCORE 677</text>
+    </g>
+    <rect x="14" y="12" width="110" height="20" rx="10" fill="#0f172a" opacity="0.75" stroke="#fef08a" stroke-width="1"/>
+    <text x="69" y="25" fill="#fef08a" font-family="sans-serif" font-weight="800" font-size="9" text-anchor="middle" letter-spacing="1">TOEFL ITP & iBT</text>
+  </svg>

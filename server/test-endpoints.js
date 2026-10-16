@@ -198,8 +198,8 @@ async function runTests() {
     }
     console.log('✅ Login con email OK');
 
-    // 10. Sincronización de progreso con token JWT autenticado
-    console.log('\n--- 10. Probando /api/progress/sync autenticado ---');
+    // 10. Sincronización de progreso con token JWT autenticado (vía /api/progress/sync y /api/progress)
+    console.log('\n--- 10a. Probando POST /api/progress/sync autenticado ---');
     const syncRes = await request(
       'POST',
       '/api/progress/sync',
@@ -213,9 +213,52 @@ async function runTests() {
     );
     console.log('Status sync:', syncRes.status, '- Stats:', syncRes.data.stats);
     if (syncRes.status !== 200 || syncRes.data.stats.exp !== 750) {
-      throw new Error('Falló la sincronización de progreso');
+      throw new Error('Falló la sincronización de progreso en /api/progress/sync');
     }
-    console.log('✅ Sincronización de progreso OK');
+    console.log('✅ Sincronización en /api/progress/sync OK');
+
+    console.log('\n--- 10b. Probando POST /api/progress autenticado con CORS ---');
+    const progressPostRes = await request(
+      'POST',
+      '/api/progress',
+      {
+        username: testUser,
+        exp_gained: 50,
+        reason: 'speaking_coach'
+      },
+      {
+        Authorization: `Bearer ${jwtToken}`,
+        Origin: 'https://english-app-frontend-3j9w.onrender.com'
+      }
+    );
+    console.log('Status POST /api/progress:', progressPostRes.status, '- EXP:', progressPostRes.data.stats?.exp);
+    console.log('CORS Allow-Origin:', progressPostRes.headers['access-control-allow-origin']);
+    if (progressPostRes.status !== 200 || progressPostRes.data.stats?.exp !== 800) {
+      throw new Error('Falló la actualización en POST /api/progress');
+    }
+    if (progressPostRes.headers['access-control-allow-origin'] !== 'https://english-app-frontend-3j9w.onrender.com') {
+      throw new Error('Falló la cabecera CORS para https://english-app-frontend-3j9w.onrender.com');
+    }
+    console.log('✅ POST /api/progress con cabeceras CORS de producción OK');
+
+    console.log('\n--- 10c. Probando GET /api/progress no autenticado (401 esperado) ---');
+    const unauthProgressRes = await request('GET', '/api/progress');
+    console.log('Status GET /api/progress sin auth:', unauthProgressRes.status);
+    if (unauthProgressRes.status !== 401) {
+      throw new Error(`Esperado 401 para GET /api/progress sin credenciales, obtenido ${unauthProgressRes.status}`);
+    }
+    console.log('✅ GET /api/progress sin auth rechaza con 401 OK');
+
+    console.log('\n--- 10d. Probando GET /api/progress autenticado (200 esperado) ---');
+    const getProgressRes = await request('GET', '/api/progress', null, {
+      Authorization: `Bearer ${jwtToken}`,
+      Origin: 'https://english-app-frontend-3j9w.onrender.com'
+    });
+    console.log('Status GET /api/progress con auth:', getProgressRes.status, '- Stats:', getProgressRes.data.stats);
+    if (getProgressRes.status !== 200 || !getProgressRes.data.stats || getProgressRes.data.stats.exp !== 800) {
+      throw new Error('Falló la consulta en GET /api/progress autenticado');
+    }
+    console.log('✅ GET /api/progress autenticado OK');
 
     // 11. Búsqueda real en YouTube / YouTube Music (/api/music/search)
     console.log('\n--- 11. Probando GET /api/music/search ---');

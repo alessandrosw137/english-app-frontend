@@ -7,6 +7,8 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.os.Build
 import android.os.Bundle
 import android.print.PrintAttributes
@@ -18,6 +20,7 @@ import android.view.WindowManager
 import android.webkit.JavascriptInterface
 import android.webkit.PermissionRequest
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
@@ -44,8 +47,13 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
     // Pending permission request for WebChromeClient (Speaking Coach / Microphone capture)
     private var pendingPermissionRequest: PermissionRequest? = null
 
+    // Track offline fallback state to avoid infinite reload loops
+    private var isOfflineFallbackLoaded: Boolean = false
+
     companion object {
         private const val PREFS_NAME = "phrasal_verbs_offline_prefs"
+        const val PRODUCTION_URL = "https://english-app-frontend-3j9w.onrender.com"
+        const val LOCAL_ASSET_URL = "file:///android_asset/index.html"
     }
 
     // Permission launcher for Android 13+ (POST_NOTIFICATIONS)
@@ -65,7 +73,11 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
             if (isGranted) {
                 req.grant(req.resources)
             } else {
-                req.deny()
+                if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                    req.grant(req.resources)
+                } else {
+                    req.deny()
+                }
             }
             pendingPermissionRequest = null
         }
@@ -117,28 +129,26 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
             insets
         }
 
-        // Configure WebView settings for full WebGL support, inline audio/video, and offline persistence
+        // Configure WebView settings for full WebGL support, inline audio/video, and resilience
         @Suppress("DEPRECATION")
         webView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
             databaseEnabled = true
-            allowFileAccess = true
-            allowContentAccess = true
-
-            // Inline audio and video playback without blocking on user gesture
+            cacheMode = WebSettings.LOAD_DEFAULT
             mediaPlaybackRequiresUserGesture = false
+
+            // WebGL & Rendering configurations
             loadsImagesAutomatically = true
             javaScriptCanOpenWindowsAutomatically = true
-
-            // Viewport & rendering configuration
             loadWithOverviewMode = true
             useWideViewPort = true
-            cacheMode = WebSettings.LOAD_NO_CACHE
             displayZoomControls = false
             builtInZoomControls = false
             setSupportZoom(false)
 
+            allowFileAccess = true
+            allowContentAccess = true
             allowFileAccessFromFileURLs = true
             allowUniversalAccessFromFileURLs = true
             mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
@@ -146,7 +156,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
 
         android.webkit.WebView.setWebContentsDebuggingEnabled(true)
 
-        // WebChromeClient with microphone permissions for Cuentos Speaking Coach
+        // WebChromeClient with automatic microphone permissions for Cuentos Speaking Coach
         webView.webChromeClient = object : WebChromeClient() {
             override fun onPermissionRequest(request: PermissionRequest?) {
                 if (request == null) return
@@ -180,7 +190,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
             }
         }
 
-        // WebViewClient to keep all navigation inside local WebView and inject environment config
+        // WebViewClient to keep all navigation inside WebView, inject environment config, and fallback to local assets on error
         webView.webViewClient = object : WebViewClient() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
@@ -190,29 +200,60 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
 
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                 val url = request?.url?.toString() ?: ""
-                if (url.startsWith("file:///android_asset/") || url.startsWith("data:")) {
+                if (url.startsWith("https://english-app-frontend-3j9w.onrender.com") ||
+                    url.startsWith("file:///android_asset/") ||
+                    url.startsWith("data:")
+                ) {
                     return false
                 }
                 return false
+            }
+
+            override fun onReceivedError(
+                view: WebView?,
+                request: WebResourceRequest?,
+                error: WebResourceError?
+            ) {
+                super.onReceivedError(view, request, error)
+                if (request?.isForMainFrame == true) {
+                    val failingUrl = request.url?.toString() ?: ""
+                    if (!failingUrl.startsWith("file:///android_asset/") && !isOfflineFallbackLoaded) {
+                        isOfflineFallbackLoaded = true
+                        view?.post {
+                            view.loadUrl(LOCAL_ASSET_URL)
+                        }
+                    }
+                }
+            }
+
+            @Suppress("DEPRECATION")
+            override fun onReceivedError(
+                view: WebView?,
+                errorCode: Int,
+                description: String?,
+                failingUrl: String?
+            ) {
+                super.onReceivedError(view, errorCode, description, failingUrl)
+                if (failingUrl != null && !failingUrl.startsWith("file:///android_asset/") && !isOfflineFallbackLoaded) {
+                    isOfflineFallbackLoaded = true
+                    view?.post {
+                        view.loadUrl(LOCAL_ASSET_URL)
+                    }
+                }
             }
         }
 
         // Expose native TextToSpeech, SharedPreferences, and Notification bridge to JavaScript
         webView.addJavascriptInterface(AndroidNativeBridge(), "AndroidBridge")
 
-        // Intercept Android Back Button so user can navigate back in web views/campaigns or history
+        // Intercept Android Back Button so user can navigate back in WebView history if canGoBack() is true
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                webView.evaluateJavascript("if (typeof window.handleAndroidBack === 'function') { window.handleAndroidBack(); } else { 'false'; }") { handled ->
-                    val isHandled = handled == "true" || handled == "\"true\""
-                    if (!isHandled) {
-                        if (webView.canGoBack()) {
-                            webView.goBack()
-                        } else {
-                            isEnabled = false
-                            onBackPressedDispatcher.onBackPressed()
-                        }
-                    }
+                if (webView.canGoBack()) {
+                    webView.goBack()
+                } else {
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
                 }
             }
         })
@@ -220,8 +261,24 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         // Request runtime permissions and schedule daily study reminder
         checkAndRequestAppPermissions()
 
-        // Load the local offline HTML application from assets
-        webView.loadUrl("file:///android_asset/index.html")
+        // Resilient loading: if internet is available, load Render production URL; otherwise fallback to local assets
+        if (isNetworkAvailable()) {
+            webView.loadUrl(PRODUCTION_URL)
+        } else {
+            isOfflineFallbackLoaded = true
+            webView.loadUrl(LOCAL_ASSET_URL)
+        }
+    }
+
+    private fun isNetworkAvailable(): Boolean {
+        return try {
+            val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+            val network = connectivityManager?.activeNetwork ?: return false
+            val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+            capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        } catch (_: Throwable) {
+            false
+        }
     }
 
     private fun checkAndRequestAppPermissions() {
