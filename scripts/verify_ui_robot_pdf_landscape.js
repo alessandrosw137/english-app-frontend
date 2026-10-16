@@ -2,7 +2,12 @@ const fs = require('fs');
 const path = require('path');
 
 const indexPath = path.resolve(__dirname, '../app/src/main/assets/index.html');
-const content = fs.readFileSync(indexPath, 'utf8');
+let content = fs.readFileSync(indexPath, 'utf8');
+const baseDir = path.dirname(indexPath);
+['js/app.js', 'js/karaoke.js', 'css/style.css'].forEach(f => {
+  const fp = path.join(baseDir, f);
+  if (fs.existsSync(fp)) content += '\n' + fs.readFileSync(fp, 'utf8');
+});
 
 console.log('=== VERIFICANDO REQUISITOS DE UI: ROBOT, RULETA, PDF Y MODO HORIZONTAL ===\n');
 

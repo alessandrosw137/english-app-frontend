@@ -3,8 +3,14 @@ const path = require('path');
 
 console.log('=== VERIFICANDO REQUISITOS V6: BUSCADOR MÚSICA, FORCE UPDATE Y DESCARGA PDF ===\n');
 
-const htmlRoot = fs.readFileSync('index.html', 'utf8');
-const htmlAssets = fs.readFileSync(path.join('app', 'src', 'main', 'assets', 'index.html'), 'utf8');
+const rawRoot = fs.readFileSync('index.html', 'utf8');
+const rawAssets = fs.readFileSync(path.join('app', 'src', 'main', 'assets', 'index.html'), 'utf8');
+const htmlRoot = rawRoot +
+  (fs.existsSync('js/app.js') ? fs.readFileSync('js/app.js', 'utf8') : '') +
+  (fs.existsSync('js/karaoke.js') ? fs.readFileSync('js/karaoke.js', 'utf8') : '');
+const htmlAssets = rawAssets +
+  (fs.existsSync(path.join('app', 'src', 'main', 'assets', 'js', 'app.js')) ? fs.readFileSync(path.join('app', 'src', 'main', 'assets', 'js', 'app.js'), 'utf8') : '') +
+  (fs.existsSync(path.join('app', 'src', 'main', 'assets', 'js', 'karaoke.js')) ? fs.readFileSync(path.join('app', 'src', 'main', 'assets', 'js', 'karaoke.js'), 'utf8') : '');
 
 let pass = true;
 
@@ -83,7 +89,7 @@ assert(
 
 // 5. REQUISITO 5: SINCRONIZACIÓN EXACTA
 assert(
-  htmlRoot === htmlAssets,
+  rawRoot === rawAssets,
   'index.html de la raíz y app/src/main/assets/index.html están 100% sincronizados'
 );
 

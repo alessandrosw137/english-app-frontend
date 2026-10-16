@@ -1,0 +1,438 @@
+/* ========================================================
+       ESTILOS CRÍTICOS AUTOSUFICIENTES (RESILIENTES PARA RENDER)
+       ======================================================== */
+    .hidden {
+      display: none !important;
+    }
+
+    [style*="display: none"] {
+      display: none !important;
+    }
+
+    /* Vistas principales */
+    #view-auth.hidden,
+    #view-home.hidden,
+    #view-path.hidden,
+    #view-stories.hidden,
+    #view-music.hidden,
+    #view-worldtour.hidden {
+      display: none !important;
+    }
+
+    #view-auth:not(.hidden) {
+      display: flex !important;
+    }
+    #view-home:not(.hidden) {
+      display: flex !important;
+    }
+    #view-path:not(.hidden) {
+      display: block !important;
+    }
+    #view-stories:not(.hidden) {
+      display: block !important;
+    }
+    #view-music:not(.hidden) {
+      display: block !important;
+    }
+    #view-worldtour:not(.hidden) {
+      display: block !important;
+    }
+
+    /* Pestañas de Autenticación (Login vs Registro) */
+    #authLoginForm.hidden,
+    #authRegisterForm.hidden {
+      display: none !important;
+    }
+    #authLoginForm:not(.hidden),
+    #authRegisterForm:not(.hidden) {
+      display: block !important;
+    }
+
+    /* Alerta de autenticación y widgets flotantes */
+    #authAlertBanner.hidden,
+    #draggableRobotWidget.hidden,
+    #draggableRouletteWidget.hidden,
+    #threeObjectInspectCard.hidden,
+    #floatingToast.hidden {
+      display: none !important;
+    }
+
+    #authAlertBanner:not(.hidden) {
+      display: flex !important;
+    }
+    #draggableRobotWidget:not(.hidden),
+    #draggableRouletteWidget:not(.hidden) {
+      display: flex !important;
+    }
+    #threeObjectInspectCard:not(.hidden) {
+      display: block !important;
+    }
+
+    /* Contenedores Modales Flotantes con Backdrop (Centrados y Aislados del flujo) */
+    #glossaryModal,
+    #learningMissionModal,
+    #profileModal,
+    #rouletteModal,
+    #musicWordModal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 50;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      background-color: rgba(2, 6, 23, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    #glossaryModal.hidden,
+    #learningMissionModal.hidden,
+    #profileModal.hidden,
+    #forceUpdateOverlay.hidden,
+    #adminDashboardModal.hidden,
+    #adminConfirmDeleteModal.hidden,
+    #adminViewProgressModal.hidden,
+    #headerAdminBtn.hidden,
+    #rouletteModal.hidden,
+    #musicWordModal.hidden {
+      display: none !important;
+    }
+
+    #glossaryModal:not(.hidden),
+    #learningMissionModal:not(.hidden),
+    #profileModal:not(.hidden),
+    #rouletteModal:not(.hidden),
+    #musicWordModal:not(.hidden) {
+      display: flex !important;
+    }
+
+    /* Utilidades mínimas de interfaz dark slate */
+    .bg-slate-900 { background-color: #0f172a; }
+    .bg-slate-800 { background-color: #1e293b; }
+    .text-slate-100 { color: #f1f5f9; }
+    .text-slate-300 { color: #cbd5e1; }
+    .text-slate-400 { color: #94a3b8; }
+    .border-slate-800 { border-color: #1e293b; }
+    .border-slate-700 { border-color: #334155; }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html,
+    body {
+      background-color: #0f172a;
+      color: #f8fafc;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+      min-height: 100vh;
+      user-select: none;
+    }
+
+    input,
+    textarea,
+    select {
+      user-select: text;
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 99px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+
+    /* ========================================================
+       COVER FLOW HORIZONTAL MODERNO DE PORTALES (PROFUNDIDAD)
+       ======================================================== */
+    .coverflow-viewport {
+      perspective: 1200px;
+      perspective-origin: center center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .coverflow-track {
+      position: relative;
+      width: 100%;
+      height: 400px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform-style: preserve-3d;
+    }
+
+    .coverflow-portal-card {
+      position: absolute;
+      width: 320px;
+      max-width: 85vw;
+      height: 380px;
+      transform-origin: center center;
+      transition: transform 0.45s cubic-bezier(0.2, 0.85, 0.25, 1),
+        opacity 0.45s ease,
+        filter 0.45s ease,
+        box-shadow 0.45s ease;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .coverflow-portal-card.active-center {
+      transform: translateX(0px) scale(1) translateZ(0);
+      opacity: 1;
+      filter: none;
+      z-index: 30;
+      pointer-events: auto;
+    }
+
+    .coverflow-portal-card.side-left {
+      transform: translateX(-240px) scale(0.82) translateZ(-50px);
+      opacity: 0.45;
+      filter: blur(5px);
+      z-index: 15;
+      pointer-events: auto;
+    }
+
+    .coverflow-portal-card.side-right {
+      transform: translateX(240px) scale(0.82) translateZ(-50px);
+      opacity: 0.45;
+      filter: blur(5px);
+      z-index: 15;
+      pointer-events: auto;
+    }
+
+    .coverflow-portal-card.hidden-back {
+      transform: translateX(0px) scale(0.65) translateZ(-150px);
+      opacity: 0;
+      filter: blur(10px);
+      z-index: 5;
+      pointer-events: none;
+    }
+
+    @media (max-width: 640px) {
+      .coverflow-portal-card.side-left {
+        transform: translateX(-160px) scale(0.82) translateZ(-50px);
+      }
+
+      .coverflow-portal-card.side-right {
+        transform: translateX(160px) scale(0.82) translateZ(-50px);
+      }
+    }
+
+    @keyframes portalSpinSlow {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes portalSpinReverse {
+      0% {
+        transform: rotate(360deg);
+      }
+
+      100% {
+        transform: rotate(0deg);
+      }
+    }
+
+    .animate-spin-slow {
+      animation: portalSpinSlow 24s linear infinite;
+    }
+
+    .animate-spin-reverse-slow {
+      animation: portalSpinReverse 32s linear infinite;
+    }
+
+    .draggable-widget {
+      cursor: grab;
+      touch-action: none;
+      user-select: none;
+    }
+
+    .draggable-widget:active {
+      cursor: grabbing;
+    }
+
+    /* ========================================================
+       ADAPTABILIDAD A PANTALLA COMPLETA Y MODO HORIZONTAL (LANDSCAPE)
+       ======================================================== */
+    @media (orientation: landscape) {
+      body.view-worldtour-active header {
+        display: none !important;
+      }
+      body.view-worldtour-active .h-14 {
+        display: none !important;
+      }
+      #view-worldtour {
+        position: fixed !important;
+        inset: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        max-width: 100vw !important;
+        max-height: 100vh !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        z-index: 45 !important;
+        background: #020617 !important;
+        display: flex !important;
+        flex-direction: column !important;
+      }
+      #view-worldtour > div.relative {
+        border-radius: 0 !important;
+        border: none !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        flex: 1 !important;
+      }
+      #threeCanvasContainer {
+        width: 100vw !important;
+        height: 100vh !important;
+        position: fixed !important;
+        inset: 0 !important;
+        border-radius: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      #threeWebGLMount {
+        width: 100% !important;
+        height: 100% !important;
+      }
+      #worldTourTopBar {
+        position: fixed !important;
+        top: 12px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        z-index: 55 !important;
+        background: rgba(15, 23, 42, 0.82) !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+        border: 1px solid rgba(148, 163, 184, 0.28) !important;
+        border-radius: 9999px !important;
+        padding: 6px 16px !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 10px !important;
+        box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.6) !important;
+        max-width: 92vw !important;
+      }
+      #worldTourControlsHint {
+        display: none !important;
+      }
+      #virtualJoystickContainer {
+        bottom: 16px !important;
+        left: 20px !important;
+        transform: scale(0.9) !important;
+        transform-origin: bottom left !important;
+      }
+      #threeObjectInspectCard {
+        bottom: 16px !important;
+        right: 20px !important;
+        max-width: 320px !important;
+        max-height: 80vh !important;
+        overflow-y: auto !important;
+      }
+    }
+
+/* ========================================================
+   REPRODUCTOR CON LETRAS ILUMINADAS (EFECTO SPOTIFY / APPLE MUSIC)
+   ======================================================== */
+.lyric-line {
+  position: relative;
+  display: block;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.6;
+  padding: 0.65rem 0.95rem;
+  margin-bottom: 0.75rem;
+  border-radius: 0.85rem;
+  transform: scale(1);
+  transform-origin: left center;
+  transition: transform 0.35s cubic-bezier(0.2, 0, 0, 1),
+              color 0.35s ease,
+              text-shadow 0.35s ease,
+              background-color 0.35s ease,
+              border-color 0.35s ease,
+              box-shadow 0.35s ease;
+  cursor: pointer;
+  user-select: none;
+  border: 1px solid transparent;
+  background: rgba(30, 41, 59, 0.25);
+}
+
+.lyric-line:hover {
+  color: rgba(255, 255, 255, 0.75);
+  background: rgba(30, 41, 59, 0.5);
+}
+
+.lyric-line.lyric-active {
+  transform: scale(1.05) !important;
+  color: #ffffff !important;
+  text-shadow: 0 0 14px rgba(56, 189, 248, 0.95),
+               0 0 28px rgba(99, 102, 241, 0.65),
+               0 0 42px rgba(6, 182, 212, 0.5) !important;
+  background: rgba(15, 23, 42, 0.85) !important;
+  border-color: rgba(56, 189, 248, 0.5) !important;
+  box-shadow: 0 0 25px rgba(6, 182, 212, 0.35), inset 0 0 15px rgba(56, 189, 248, 0.15) !important;
+  z-index: 10;
+}
+
+.lyric-word {
+  display: inline-block;
+  position: relative;
+  background-image: linear-gradient(90deg, #ffffff 0%, #38bdf8 100%);
+  background-size: 0% 100%;
+  background-repeat: no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.4);
+  transition: background-size 0.18s linear,
+              -webkit-text-fill-color 0.2s ease,
+              color 0.2s ease;
+  padding: 0 1.5px;
+}
+
+.lyric-active .lyric-word.word-sung {
+  background-size: 100% 100%;
+  -webkit-text-fill-color: #ffffff !important;
+  color: #ffffff !important;
+  text-shadow: 0 0 12px rgba(56, 189, 248, 0.95);
+}
+
+.lyric-active .lyric-word.word-active {
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent !important;
+  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.85));
+}
+
+.music-stanza-translation {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 500;
+  font-style: italic;
+  color: rgba(56, 189, 248, 0.85);
+  margin-top: 0.35rem;
+  transition: opacity 0.3s ease;
+}

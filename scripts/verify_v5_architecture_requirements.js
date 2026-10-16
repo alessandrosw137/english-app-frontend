@@ -2,7 +2,10 @@ const fs = require('fs');
 
 console.log('=== VERIFICANDO REQUISITOS DE ARQUITECTURA Y MODELADO 3D V5 ===\n');
 
-const html = fs.readFileSync('app/src/main/assets/index.html', 'utf8');
+let html = fs.readFileSync('app/src/main/assets/index.html', 'utf8');
+if (fs.existsSync('app/src/main/assets/js/app.js')) {
+  html += '\n' + fs.readFileSync('app/src/main/assets/js/app.js', 'utf8');
+}
 
 let errors = [];
 let passes = [];
