@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="100%" height="100%">
+  <defs>
+    <radialGradient id="bgGlow" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#083344"/>
+      <stop offset="55%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </radialGradient>
+    <radialGradient id="portalCore" cx="50%" cy="50%" r="45%">
+      <stop offset="0%" stop-color="#a5f3fc" stop-opacity="0.95"/>
+      <stop offset="30%" stop-color="#06b6d4" stop-opacity="0.65"/>
+      <stop offset="65%" stop-color="#3b82f6" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="cyanNeon" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#67e8f9"/>
+      <stop offset="50%" stop-color="#06b6d4"/>
+      <stop offset="100%" stop-color="#2563eb"/>
+    </linearGradient>
+    <linearGradient id="magentaNeon" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f43f5e"/>
+      <stop offset="50%" stop-color="#d946ef"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+    <linearGradient id="chromeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#94a3b8"/>
+      <stop offset="35%" stop-color="#f8fafc"/>
+      <stop offset="65%" stop-color="#cbd5e1"/>
+      <stop offset="100%" stop-color="#475569"/>
+    </linearGradient>
+    <linearGradient id="darkMetal" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#334155"/>
+      <stop offset="50%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <filter id="neonBloom" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="blur1"/>
+      <feGaussianBlur stdDeviation="18" result="blur2"/>
+      <feMerge>
+        <feMergeNode in="blur2"/>
+        <feMergeNode in="blur1"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <pattern id="micMesh" width="8" height="8" patternUnits="userSpaceOnUse">
+      <path d="M 0 4 L 8 4 M 4 0 L 4 8" stroke="#1e293b" stroke-width="1.2"/>
+    </pattern>
+  </defs>
+
+  <!-- Deep Cyberpunk Studio Background -->
+  <rect width="800" height="500" fill="url(#bgGlow)"/>
+
+  <!-- Perspective Cyber Grid Floor -->
+  <g opacity="0.32" stroke="#06b6d4" stroke-width="1">
+    <line x1="0" y1="390" x2="800" y2="390"/>
+    <line x1="0" y1="415" x2="800" y2="415"/>
+    <line x1="0" y1="445" x2="800" y2="445"/>
+    <line x1="0" y1="480" x2="800" y2="480"/>
+    <line x1="400" y1="360" x2="50" y2="500"/>
+    <line x1="400" y1="360" x2="180" y2="500"/>
+    <line x1="400" y1="360" x2="300" y2="500"/>
+    <line x1="400" y1="360" x2="400" y2="500"/>
+    <line x1="400" y1="360" x2="500" y2="500"/>
+    <line x1="400" y1="360" x2="620" y2="500"/>
+    <line x1="400" y1="360" x2="750" y2="500"/>
+  </g>
+
+  <!-- Glowing Portal Energy Core -->
+  <circle cx="400" cy="235" r="195" fill="url(#portalCore)"/>
+  <circle cx="400" cy="235" r="175" fill="none" stroke="url(#cyanNeon)" stroke-width="5" filter="url(#neonBloom)"/>
+  <circle cx="400" cy="235" r="158" fill="none" stroke="#67e8f9" stroke-width="2" stroke-dasharray="18 10 6 10" opacity="0.85"/>
+  <circle cx="400" cy="235" r="138" fill="none" stroke="url(#magentaNeon)" stroke-width="3.5" filter="url(#neonBloom)" opacity="0.85"/>
+
+  <!-- 3D Equalizer Soundwave Bars Left & Right -->
+  <g filter="url(#neonBloom)" opacity="0.9">
+    <rect x="110" y="215" width="12" height="50" rx="6" fill="url(#cyanNeon)"/>
+    <rect x="132" y="185" width="12" height="110" rx="6" fill="url(#cyanNeon)"/>
+    <rect x="154" y="155" width="12" height="170" rx="6" fill="url(#magentaNeon)"/>
+    <rect x="176" y="195" width="12" height="90" rx="6" fill="url(#cyanNeon)"/>
+    <rect x="198" y="170" width="12" height="140" rx="6" fill="url(#cyanNeon)"/>
+    <rect x="220" y="210" width="12" height="60" rx="6" fill="url(#magentaNeon)"/>
+
+    <rect x="568" y="210" width="12" height="60" rx="6" fill="url(#magentaNeon)"/>
+    <rect x="590" y="170" width="12" height="140" rx="6" fill="url(#cyanNeon)"/>
+    <rect x="612" y="195" width="12" height="90" rx="6" fill="url(#cyanNeon)"/>
+    <rect x="634" y="155" width="12" height="170" rx="6" fill="url(#magentaNeon)"/>
+    <rect x="656" y="185" width="12" height="110" rx="6" fill="url(#cyanNeon)"/>
+    <rect x="678" y="215" width="12" height="50" rx="6" fill="url(#cyanNeon)"/>
+  </g>
+
+  <!-- Studio Headphones Arc & Earcups -->
+  <path d="M 275 245 A 125 125 0 0 1 525 245" fill="none" stroke="url(#darkMetal)" stroke-width="22" stroke-linecap="round"/>
+  <path d="M 283 240 A 117 117 0 0 1 517 240" fill="none" stroke="url(#cyanNeon)" stroke-width="4" stroke-linecap="round" filter="url(#neonBloom)"/>
+
+  <!-- Left Earcup -->
+  <g transform="translate(268, 255) rotate(-8)">
+    <rect x="-26" y="-48" width="44" height="96" rx="22" fill="url(#darkMetal)" stroke="#38bdf8" stroke-width="2.5"/>
+    <rect x="-14" y="-36" width="22" height="72" rx="11" fill="none" stroke="#67e8f9" stroke-width="3" filter="url(#neonBloom)"/>
+    <rect x="12" y="-42" width="16" height="84" rx="8" fill="#0f172a"/>
+  </g>
+
+  <!-- Right Earcup -->
+  <g transform="translate(532, 255) rotate(8)">
+    <rect x="-18" y="-48" width="44" height="96" rx="22" fill="url(#darkMetal)" stroke="#38bdf8" stroke-width="2.5"/>
+    <rect x="-8" y="-36" width="22" height="72" rx="11" fill="none" stroke="#67e8f9" stroke-width="3" filter="url(#neonBloom)"/>
+    <rect x="-28" y="-42" width="16" height="84" rx="8" fill="#0f172a"/>
+  </g>
+
+  <!-- Center Studio Condenser Microphone -->
+  <g transform="translate(400, 235)">
+    <!-- Outer U-Mount -->
+    <path d="M -52 10 L -52 55 A 52 52 0 0 0 52 55 L 52 10" fill="none" stroke="url(#chromeGrad)" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="-52" cy="10" r="7" fill="#38bdf8"/>
+    <circle cx="52" cy="10" r="7" fill="#38bdf8"/>
+    <!-- Stand Stem & Base -->
+    <rect x="-8" y="106" width="16" height="58" fill="url(#chromeGrad)"/>
+    <ellipse cx="0" cy="168" rx="68" ry="14" fill="url(#darkMetal)" stroke="#38bdf8" stroke-width="2"/>
+    <ellipse cx="0" cy="165" rx="48" ry="8" fill="none" stroke="#67e8f9" stroke-width="2" filter="url(#neonBloom)"/>
+
+    <!-- Microphone Capsule -->
+    <rect x="-38" y="-85" width="76" height="145" rx="38" fill="url(#chromeGrad)" stroke="#e2e8f0" stroke-width="2"/>
+    <rect x="-38" y="-85" width="76" height="82" rx="38" fill="url(#micMesh)" opacity="0.65"/>
+    <!-- Neon Ring Band on Mic -->
+    <rect x="-40" y="-8" width="80" height="12" rx="4" fill="url(#cyanNeon)" filter="url(#neonBloom)"/>
+    <!-- Power LED -->
+    <circle cx="0" cy="28" r="5" fill="#22d3ee" filter="url(#neonBloom)"/>
+  </g>
+
+  <!-- Floating Glowing Musical Particles -->
+  <g fill="#67e8f9" filter="url(#neonBloom)">
+    <circle cx="215" cy="105" r="4"/>
+    <circle cx="595" cy="95" r="5"/>
+    <circle cx="310" cy="70" r="3"/>
+    <circle cx="495" cy="75" r="3.5"/>
+    <circle cx="160" cy="330" r="4"/>
+    <circle cx="640" cy="335" r="4.5"/>
+  </g>
+</svg>

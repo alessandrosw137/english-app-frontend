@@ -1,0 +1,10 @@
+const fs = require('fs');
+const html = fs.readFileSync('app/src/main/assets/index.html', 'utf8');
+console.log('HTML size:', html.length, 'lines:', html.split('\n').length);
+console.log('Has view-auth:', html.includes('id="view-auth"'));
+console.log('Has profileModal:', html.includes('id="profileModal"'));
+console.log('Has threeCanvasContainer:', html.includes('id="threeCanvasContainer"'));
+console.log('Has view-medialab:', html.includes('id="view-medialab"'));
+console.log('Has view-stories:', html.includes('id="view-stories"'));
+console.log('Has STORIES_DATA:', html.includes('STORIES_DATA'));
+console.log('Has MUSIC_SESSION_TRACKS:', html.includes('MUSIC_SESSION_TRACKS'));

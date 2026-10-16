@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 160" width="100%" height="100%">
+    <defs>
+      <linearGradient id="bg_compound_words" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#0f172a"/>
+        <stop offset="55%" stop-color="#1e293b"/>
+        <stop offset="100%" stop-color="#6d28d9"/>
+      </linearGradient>
+      <radialGradient id="glow_compound_words" cx="50%" cy="55%" r="55%">
+        <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.45"/>
+        <stop offset="100%" stop-color="#0f172a" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <rect width="400" height="160" fill="url(#bg_compound_words)"/>
+    <rect width="400" height="160" fill="url(#glow_compound_words)"/>
+    <circle cx="350" cy="25" r="70" fill="#8b5cf6" opacity="0.12"/>
+    <circle cx="45" cy="135" r="55" fill="#c4b5fd" opacity="0.1"/>
+    <g transform="translate(200, 90)">
+      <path d="M -95 -28 H -15 V -10 A 12 12 0 0 1 9 -10 V -28 H 95 V 28 H -95 Z" fill="#2e1065" stroke="#c4b5fd" stroke-width="2.5"/>
+      <text x="-48" y="8" fill="#fbbf24" font-family="sans-serif" font-weight="900" font-size="16" text-anchor="middle">SUN ☀️</text>
+      <text x="48" y="8" fill="#c4b5fd" font-family="sans-serif" font-weight="900" font-size="16" text-anchor="middle">FLOWER</text>
+    </g>
+    <rect x="14" y="12" width="110" height="20" rx="10" fill="#0f172a" opacity="0.75" stroke="#c4b5fd" stroke-width="1"/>
+    <text x="69" y="25" fill="#c4b5fd" font-family="sans-serif" font-weight="800" font-size="9" text-anchor="middle" letter-spacing="1">WORD FUSION</text>
+  </svg>

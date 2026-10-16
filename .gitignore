@@ -1,18 +1,27 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build and Gradle
+build/
+**/build/
+app/build/
+.gradle/
+.kotlin/
 *.iml
-.gradle
-.kotlin
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
-local.properties
+.cxx/
+.externalNativeBuild/
+captures/
+
+# Environment and sensitive files
 .env
+.env.*
+!.env.example
+local.properties
 debug.keystore
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

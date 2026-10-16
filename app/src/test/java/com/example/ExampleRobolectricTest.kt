@@ -48,4 +48,18 @@ class ExampleRobolectricTest {
       assertTrue(true)
     }
   }
+
+  @Test
+  fun `main activity configures webview with webgl and inline media playback settings`() {
+    Robolectric.buildActivity(MainActivity::class.java).use { controller ->
+      val activity = controller.create().get()
+      val webView = activity.findViewById<android.webkit.WebView>(R.id.webView)
+      assertNotNull(webView)
+      assertTrue(webView.settings.javaScriptEnabled)
+      assertTrue(webView.settings.domStorageEnabled)
+      org.junit.Assert.assertFalse(webView.settings.mediaPlaybackRequiresUserGesture)
+      assertNotNull(webView.webChromeClient)
+    }
+  }
 }
+

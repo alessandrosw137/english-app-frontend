@@ -9,9 +9,14 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.print.PrintAttributes
+import android.print.PrintDocumentAdapter
+import android.print.PrintManager
 import android.speech.tts.TextToSpeech
 import android.view.View
+import android.view.WindowManager
 import android.webkit.JavascriptInterface
+import android.webkit.PermissionRequest
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
@@ -23,9 +28,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import android.print.PrintAttributes
-import android.print.PrintDocumentAdapter
-import android.print.PrintManager
 import java.io.File
 import java.util.Calendar
 import java.util.Locale
@@ -36,20 +38,14 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
     private var tts: TextToSpeech? = null
     private var ttsReady = false
 
+    // Hardware acceleration explicitly enabled for WebGL and smooth rendering
+    private val hardwareAccelerated: Boolean = true
+
+    // Pending permission request for WebChromeClient (Speaking Coach / Microphone capture)
+    private var pendingPermissionRequest: PermissionRequest? = null
+
     companion object {
         private const val PREFS_NAME = "phrasal_verbs_offline_prefs"
-
-        init {
-            try {
-                android.system.Os.setenv("MESA_DEBUG", "silent", true)
-                android.system.Os.setenv("MESA_LOG_FILE", "/dev/null", true)
-                android.system.Os.setenv("MESA_SILENT", "1", true)
-                android.system.Os.setenv("LIBGL_ALWAYS_SOFTWARE", "1", true)
-                android.system.Os.setenv("GALLIUM_DRIVER", "llvmpipe", true)
-                android.system.Os.setenv("EGL_LOG_LEVEL", "fatal", true)
-                android.system.Os.setenv("DRM_SHIM_DEBUG", "0", true)
-            } catch (_: Throwable) {}
-        }
     }
 
     // Permission launcher for Android 13+ (POST_NOTIFICATIONS)
@@ -61,9 +57,31 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         }
     }
 
+    // Permission launcher for Microphone (RECORD_AUDIO for Speaking Coach in Cuentos)
+    private val audioPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        pendingPermissionRequest?.let { req ->
+            if (isGranted) {
+                req.grant(req.resources)
+            } else {
+                req.deny()
+            }
+            pendingPermissionRequest = null
+        }
+    }
+
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Enable hardware acceleration at Window level for high-performance WebGL and 3D Canvas
+        if (hardwareAccelerated) {
+            window.setFlags(
+                WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
+                WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED
+            )
+        }
 
         // Clean up any corrupt or misconfigured WebView cache directories and ensure structure exists
         try {
@@ -86,9 +104,11 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         tts = TextToSpeech(applicationContext, this)
 
         webView = findViewById(R.id.webView)
-        try {
-            webView.setLayerType(View.LAYER_TYPE_SOFTWARE, null)
-        } catch (_: Throwable) {}
+
+        // Enable hardware layer on WebView for accelerated WebGL 3D rendering
+        if (hardwareAccelerated) {
+            webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+        }
 
         // Handle window insets gracefully for system status bar & navigation bar
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.rootLayout)) { view, insets ->
@@ -97,26 +117,77 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
             insets
         }
 
-        // Configure WebView settings for maximum offline performance & persistence
+        // Configure WebView settings for full WebGL support, inline audio/video, and offline persistence
+        @Suppress("DEPRECATION")
         webView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
             databaseEnabled = true
             allowFileAccess = true
             allowContentAccess = true
+
+            // Inline audio and video playback without blocking on user gesture
             mediaPlaybackRequiresUserGesture = false
+            loadsImagesAutomatically = true
+            javaScriptCanOpenWindowsAutomatically = true
+
+            // Viewport & rendering configuration
             loadWithOverviewMode = true
             useWideViewPort = true
             cacheMode = WebSettings.LOAD_NO_CACHE
             displayZoomControls = false
             builtInZoomControls = false
+            setSupportZoom(false)
+
+            allowFileAccessFromFileURLs = true
+            allowUniversalAccessFromFileURLs = true
+            mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
         }
 
-        // WebChromeClient for alert, prompt and console compatibility
-        webView.webChromeClient = WebChromeClient()
+        android.webkit.WebView.setWebContentsDebuggingEnabled(true)
 
-        // WebViewClient to keep all navigation inside local WebView
+        // WebChromeClient with microphone permissions for Cuentos Speaking Coach
+        webView.webChromeClient = object : WebChromeClient() {
+            override fun onPermissionRequest(request: PermissionRequest?) {
+                if (request == null) return
+                runOnUiThread {
+                    val resources = request.resources
+                    val needsAudio = resources.contains(PermissionRequest.RESOURCE_AUDIO_CAPTURE)
+                    if (needsAudio) {
+                        if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                            request.grant(resources)
+                        } else {
+                            pendingPermissionRequest = request
+                            audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                        }
+                    } else {
+                        // Grant any other requested web resource (e.g. protected media, video capture)
+                        request.grant(resources)
+                    }
+                }
+            }
+
+            override fun onPermissionRequestCanceled(request: PermissionRequest?) {
+                super.onPermissionRequestCanceled(request)
+                if (pendingPermissionRequest == request) {
+                    pendingPermissionRequest = null
+                }
+            }
+
+            override fun onConsoleMessage(consoleMessage: android.webkit.ConsoleMessage?): Boolean {
+                android.util.Log.e("WebConsole", "${consoleMessage?.message()} [line ${consoleMessage?.lineNumber()} of ${consoleMessage?.sourceId()}]")
+                return true
+            }
+        }
+
+        // WebViewClient to keep all navigation inside local WebView and inject environment config
         webView.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView?, url: String?) {
+                super.onPageFinished(view, url)
+                val apiKey = BuildConfig.GEMINI_API_KEY
+                view?.evaluateJavascript("window.GEMINI_API_KEY = '$apiKey';", null)
+            }
+
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                 val url = request?.url?.toString() ?: ""
                 if (url.startsWith("file:///android_asset/") || url.startsWith("data:")) {
@@ -146,14 +217,15 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
             }
         })
 
-        // Schedule daily study reminder at 9:00 PM (21:00) to protect user's streak
-        checkAndScheduleDailyReminder()
+        // Request runtime permissions and schedule daily study reminder
+        checkAndRequestAppPermissions()
 
         // Load the local offline HTML application from assets
         webView.loadUrl("file:///android_asset/index.html")
     }
 
-    private fun checkAndScheduleDailyReminder() {
+    private fun checkAndRequestAppPermissions() {
+        // Notification permission for Android 13+ (TIRAMISU)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -162,6 +234,11 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
             }
         } else {
             scheduleDailyStudyReminder(21, 0)
+        }
+
+        // Microphone permission for Speaking Coach
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
         }
     }
 
@@ -213,6 +290,9 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
 
     inner class AndroidNativeBridge {
         @JavascriptInterface
+        fun getApiKey(): String = BuildConfig.GEMINI_API_KEY
+
+        @JavascriptInterface
         fun isTTSReady(): Boolean = ttsReady
 
         @JavascriptInterface
@@ -228,6 +308,21 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         fun stop() {
             if (ttsReady) {
                 tts?.stop()
+            }
+        }
+
+        // Microphone status and request helpers for Speaking Coach
+        @JavascriptInterface
+        fun hasAudioPermission(): Boolean {
+            return ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+        }
+
+        @JavascriptInterface
+        fun requestAudioPermission() {
+            runOnUiThread {
+                if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                    audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                }
             }
         }
 

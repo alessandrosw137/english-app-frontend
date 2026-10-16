@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 160" width="100%" height="100%">
+    <defs>
+      <linearGradient id="bg_phrasal_verbs" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#0f172a"/>
+        <stop offset="55%" stop-color="#1e293b"/>
+        <stop offset="100%" stop-color="#ea580c"/>
+      </linearGradient>
+      <radialGradient id="glow_phrasal_verbs" cx="50%" cy="55%" r="55%">
+        <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.45"/>
+        <stop offset="100%" stop-color="#0f172a" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <rect width="400" height="160" fill="url(#bg_phrasal_verbs)"/>
+    <rect width="400" height="160" fill="url(#glow_phrasal_verbs)"/>
+    <circle cx="350" cy="25" r="70" fill="#f59e0b" opacity="0.12"/>
+    <circle cx="45" cy="135" r="55" fill="#fde047" opacity="0.1"/>
+    <g transform="translate(200, 90)">
+      <rect x="-110" y="-28" width="90" height="56" rx="14" fill="#1e293b" stroke="#fbbf24" stroke-width="2.5"/>
+      <text x="-65" y="6" fill="#ffffff" font-family="sans-serif" font-weight="900" font-size="18" text-anchor="middle">TAKE</text>
+      <circle cx="0" cy="0" r="16" fill="#f59e0b"/>
+      <text x="0" y="6" fill="#0f172a" font-family="sans-serif" font-weight="900" font-size="20" text-anchor="middle">+</text>
+      <rect x="20" y="-28" width="90" height="56" rx="14" fill="#fbbf24" stroke="#fef08a" stroke-width="2.5"/>
+      <text x="65" y="6" fill="#0f172a" font-family="sans-serif" font-weight="900" font-size="18" text-anchor="middle">OFF 🚀</text>
+    </g>
+    <rect x="14" y="12" width="110" height="20" rx="10" fill="#0f172a" opacity="0.75" stroke="#fde047" stroke-width="1"/>
+    <text x="69" y="25" fill="#fde047" font-family="sans-serif" font-weight="800" font-size="9" text-anchor="middle" letter-spacing="1">VERB + PARTICLE</text>
+  </svg>
