@@ -1712,6 +1712,7 @@
 
     async function handleAuthLoginSubmit(e) {
       if (e && typeof e.preventDefault === 'function') e.preventDefault();
+      if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
 
       const banner = document.getElementById('authAlertBanner');
       if (banner) banner.classList.add('hidden');
@@ -1724,7 +1725,48 @@
 
       if (!identifier || !password) {
         showAuthAlert('Usuario o contraseña incorrectos. Regístrate primero', 'error');
-        return;
+        return false;
+      }
+
+      // 1. EVALUACIÓN INMEDIATA DE CREDENCIALES MAESTRAS ADMIN (Bypass instantáneo sin depender de si el servidor responde o falla)
+      const isAdminIdentifier = (identifier.toLowerCase() === 'admin' || identifier.toLowerCase() === 'admin@antigravity.com');
+      const isMasterAdminPass = (password === 'Admin2026!Master');
+
+      if (isAdminIdentifier && isMasterAdminPass) {
+        const adminUser = {
+          id: 'admin_master_001',
+          username: 'admin',
+          email: 'admin@antigravity.com',
+          role: 'admin',
+          exp: 5000,
+          rank: 'Diamante',
+          token: 'MasterENG-Admin-OfflineMasterToken-2026'
+        };
+
+        try {
+          localStorage.setItem('user_role', 'admin');
+        } catch (err) { }
+        saveStoredAuthUser(adminUser);
+        updateUserExpDisplay();
+
+        // Ocultar modal de login de inmediato
+        const authView = document.getElementById('view-auth');
+        if (authView) {
+          authView.style.display = 'none';
+          authView.classList.add('hidden');
+        }
+
+        // Activar botón "⚙️ Panel Admin"
+        const headerAdmin = document.getElementById('headerAdminBtn');
+        if (headerAdmin) {
+          headerAdmin.style.display = 'inline-flex';
+          headerAdmin.classList.remove('hidden');
+        }
+
+        showFloatingToast('¡Bienvenido de nuevo, Administrador!', '✅');
+        goToHomePortals();
+        updateFloatingWidgetsVisibility();
+        return false;
       }
 
       const loginBtn = e && e.target ? e.target.querySelector('button[type="submit"]') : null;
@@ -1788,26 +1830,9 @@
         }
       }
 
-      // Fallback de Autenticación de Administrador Offline
-      const isAdminIdentifier = (identifier.toLowerCase() === 'admin' || identifier.toLowerCase() === 'admin@antigravity.com');
-      const isMasterAdminPass = (password === 'Admin2026!Master');
-
-      if (!loginSuccess && isAdminIdentifier && isMasterAdminPass) {
-        loginSuccess = true;
-        authenticatedUser = {
-          id: 'admin_master_001',
-          username: 'admin',
-          email: 'admin@antigravity.com',
-          role: 'admin',
-          exp: 5000,
-          rank: 'Diamante',
-          token: 'MasterENG-Admin-OfflineMasterToken-2026'
-        };
-      }
-
-      // Si el login fue exitoso (sea backend o fallback offline)
+      // Si el login fue exitoso desde el backend
       if (loginSuccess && authenticatedUser) {
-        if (isAdminIdentifier || authenticatedUser.username.toLowerCase() === 'admin' || authenticatedUser.role === 'admin') {
+        if (identifier.toLowerCase() === 'admin' || identifier.toLowerCase() === 'admin@antigravity.com' || authenticatedUser.username.toLowerCase() === 'admin') {
           authenticatedUser.role = 'admin';
           try {
             localStorage.setItem('user_role', 'admin');
@@ -1815,7 +1840,13 @@
         }
         saveStoredAuthUser(authenticatedUser);
         updateUserExpDisplay();
-        
+
+        const authView = document.getElementById('view-auth');
+        if (authView) {
+          authView.style.display = 'none';
+          authView.classList.add('hidden');
+        }
+
         // Activación inmediata del botón "⚙️ Panel Admin"
         const headerAdmin = document.getElementById('headerAdminBtn');
         if (headerAdmin && (authenticatedUser.role === 'admin' || localStorage.getItem('user_role') === 'admin')) {
@@ -1825,12 +1856,13 @@
 
         showFloatingToast(`¡Bienvenido de nuevo, ${authenticatedUser.username}!`, '✅');
         goToHomePortals();
-        return;
+        updateFloatingWidgetsVisibility();
+        return false;
       }
 
-      // Si no es admin maestro y el backend respondió con error o usuario no encontrado:
-      // Bloqueo total: Alerta en pantalla y NO permitir avanzar al menú de portales bajo ninguna circunstancia
+      // Si las credenciales no son válidas: mostrar alerta visual en pantalla y bloquear avance
       showAuthAlert('Usuario o contraseña incorrectos. Regístrate primero', 'error');
+      return false;
     }
 
     async function handleAuthRegisterSubmit(e) {
@@ -1940,12 +1972,31 @@
       showAuthAlert('¡Cuenta creada exitosamente! Ahora inicia sesión con tus datos.', 'success');
     }
 
-    function handleGuestAccess() {
+    function handleGuestAccess(e) {
+      if (e && typeof e.preventDefault === 'function') e.preventDefault();
+      if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+
       const guestUser = { username: 'Invitado', role: 'guest', exp: 0, rank: 'Bronce' };
       saveStoredAuthUser(guestUser);
+      try {
+        localStorage.setItem('user_role', 'guest');
+        localStorage.setItem('guest_user', JSON.stringify({ username: 'Invitado', role: 'guest' }));
+      } catch (err) { }
+
+      // Ocultar modal de login de inmediato ('display: none')
+      const authView = document.getElementById('view-auth');
+      if (authView) {
+        authView.style.display = 'none';
+        authView.classList.add('hidden');
+      }
+
       updateUserExpDisplay();
       showFloatingToast('Accediendo como Invitado', '⚡');
+
+      // Mostrar interfaz principal, la ruleta y el robot tutor
       goToHomePortals();
+      updateFloatingWidgetsVisibility();
+      return false;
     }
 
     function openProfileModal() {
@@ -5717,6 +5768,39 @@
       renderStorySelector();
       renderLearningModules();
 
+      // Asegurar que inputs de login estén activos, editables y sin bloqueos
+      const idInput = document.getElementById('authLoginIdentifier');
+      const pwInput = document.getElementById('authLoginPassword');
+      if (idInput) {
+        idInput.removeAttribute('readonly');
+        idInput.removeAttribute('disabled');
+        idInput.style.pointerEvents = 'auto';
+      }
+      if (pwInput) {
+        pwInput.removeAttribute('readonly');
+        pwInput.removeAttribute('disabled');
+        pwInput.style.pointerEvents = 'auto';
+      }
+
+      // Interceptar evento submit de formularios para prevenir submit nativo ('/?')
+      const loginFormEl = document.getElementById('authLoginForm');
+      if (loginFormEl) {
+        loginFormEl.addEventListener('submit', (evt) => {
+          if (evt && typeof evt.preventDefault === 'function') evt.preventDefault();
+          handleAuthLoginSubmit(evt);
+          return false;
+        });
+      }
+
+      const regFormEl = document.getElementById('authRegisterForm');
+      if (regFormEl) {
+        regFormEl.addEventListener('submit', (evt) => {
+          if (evt && typeof evt.preventDefault === 'function') evt.preventDefault();
+          handleAuthRegisterSubmit(evt);
+          return false;
+        });
+      }
+
       syncSettingsUiFromStorage();
       const stored = getStoredUser();
       if (stored && stored.username) {
@@ -5755,6 +5839,8 @@
   window.buildRealisticBackyard = buildRealisticBackyard;
   window.switch3DScenario = switch3DScenario;
   window.speakText = speakText;
+  window.handleLoginSubmit = handleAuthLoginSubmit;
+  window.handleGuestAccess = handleGuestAccess;
   window.handleLogoClick = handleLogoClick;
   window.openSettingsModal = openSettingsModal;
   window.closeSettingsModal = closeSettingsModal;

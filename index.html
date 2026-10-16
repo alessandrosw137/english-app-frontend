@@ -275,12 +275,6 @@
     </div>
 
   </div>
-      <span
-        class="absolute -top-2 -right-2 px-1.5 py-0.5 rounded-full bg-amber-500 text-slate-950 font-black text-[9px] shadow animate-bounce">
-        +15
-      </span>
-    </div>
-  </div>
 
   <!-- ========================================================
        PANTALLA DE CARGA Y ANTI-LAG (LOADING SCREEN)
@@ -334,7 +328,7 @@
   <!-- ========================================================
        VISTA 1: AUTENTICACIÓN (LOGIN, REGISTRO & GOOGLE GIS)
        ======================================================== -->
-  <div id="view-auth" class="flex-1 flex items-center justify-center p-4">
+  <div id="view-auth" class="flex-1 flex items-center justify-center p-4 relative z-10" style="pointer-events: auto;">
     <div
       class="w-full max-w-md bg-slate-900/90 backdrop-blur-xl border border-slate-800/80 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-sky-950/40 relative overflow-hidden">
       <div class="absolute -top-24 -right-24 w-48 h-48 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -356,7 +350,7 @@
       </div>
 
       <div class="mb-5">
-        <button onclick="handleGoogleSignInClick()"
+        <button type="button" onclick="handleGoogleSignInClick(event)" style="pointer-events: auto;"
           class="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-2xl bg-white hover:bg-slate-100 text-slate-800 font-bold text-sm transition shadow-lg shadow-white/10 active:scale-98 cursor-pointer">
           <svg class="w-5 h-5" viewBox="0 0 24 24">
             <path fill="#4285F4"
@@ -380,11 +374,11 @@
       </div>
 
       <div class="flex rounded-2xl bg-slate-800/80 p-1 mb-5 border border-slate-700/60">
-        <button id="authTabBtnLogin" onclick="switchAuthTab('login')"
+        <button type="button" id="authTabBtnLogin" onclick="switchAuthTab('login')" style="pointer-events: auto;"
           class="flex-1 py-2 text-xs font-bold rounded-xl transition bg-sky-600 text-white shadow">
           Iniciar Sesión
         </button>
-        <button id="authTabBtnRegister" onclick="switchAuthTab('register')"
+        <button type="button" id="authTabBtnRegister" onclick="switchAuthTab('register')" style="pointer-events: auto;"
           class="flex-1 py-2 text-xs font-bold rounded-xl transition text-slate-400 hover:text-slate-200">
           Registrarse
         </button>
@@ -396,19 +390,19 @@
         <span id="authAlertText"></span>
       </div>
 
-      <form id="authLoginForm" onsubmit="handleAuthLoginSubmit(event)" class="space-y-4">
+      <form id="authLoginForm" onsubmit="event.preventDefault(); handleAuthLoginSubmit(event); return false;" action="javascript:void(0);" method="dialog" class="space-y-4" style="pointer-events: auto;">
         <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1">Usuario o Correo Electrónico</label>
-          <input type="text" id="authLoginIdentifier" required placeholder="ej. usuario o correo@gmail.com"
-            class="w-full px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 transition">
+          <label for="authLoginIdentifier" class="block text-xs font-semibold text-slate-300 mb-1">Usuario o Correo Electrónico</label>
+          <input type="text" id="authLoginIdentifier" name="authLoginIdentifier" autocomplete="username" required placeholder="ej. usuario o correo@gmail.com"
+            class="w-full px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 transition relative z-20 cursor-text" style="pointer-events: auto;">
         </div>
         <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1">Contraseña</label>
-          <input type="password" id="authLoginPassword" required placeholder="••••••••"
-            class="w-full px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 transition">
+          <label for="authLoginPassword" class="block text-xs font-semibold text-slate-300 mb-1">Contraseña</label>
+          <input type="password" id="authLoginPassword" name="authLoginPassword" autocomplete="current-password" required placeholder="••••••••"
+            class="w-full px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 transition relative z-20 cursor-text" style="pointer-events: auto;">
         </div>
-        <button type="submit"
-          class="w-full py-3 rounded-2xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-bold text-sm transition shadow-lg shadow-sky-600/30 cursor-pointer active:scale-98">
+        <button type="submit" id="authLoginSubmitBtn" onclick="if (event) event.preventDefault(); handleAuthLoginSubmit(event); return false;"
+          class="w-full py-3 rounded-2xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-bold text-sm transition shadow-lg shadow-sky-600/30 cursor-pointer active:scale-98" style="pointer-events: auto;">
           Entrar a mi Cuenta
         </button>
       </form>
@@ -436,7 +430,7 @@
       </form>
 
       <div class="mt-5 pt-4 border-t border-slate-800 text-center">
-        <button onclick="handleGuestAccess()"
+        <button type="button" onclick="handleGuestAccess(event)" style="pointer-events: auto;"
           class="text-xs font-bold text-slate-400 hover:text-sky-300 transition cursor-pointer py-1.5 px-3 rounded-lg hover:bg-slate-800/50">
           ⚡ Continuar como Invitado (Acceso Rápido)
         </button>
