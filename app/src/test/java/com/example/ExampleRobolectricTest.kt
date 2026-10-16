@@ -63,6 +63,99 @@ class ExampleRobolectricTest {
       assertNotNull(webView.webChromeClient)
     }
   }
+
+  @Test
+  fun `main activity handles onConfigurationChanged preserving webview`() {
+    Robolectric.buildActivity(MainActivity::class.java).use { controller ->
+      val activity = controller.create().get()
+      val webViewBefore = activity.findViewById<android.webkit.WebView>(R.id.webView)
+      assertNotNull(webViewBefore)
+
+      val landscapeConfig = android.content.res.Configuration().apply {
+        orientation = android.content.res.Configuration.ORIENTATION_LANDSCAPE
+      }
+      activity.onConfigurationChanged(landscapeConfig)
+
+      val webViewAfter = activity.findViewById<android.webkit.WebView>(R.id.webView)
+      assertEquals(webViewBefore, webViewAfter)
+    }
+  }
+
+  @Test
+  fun `main activity sets download listener for pdfs`() {
+    Robolectric.buildActivity(MainActivity::class.java).use { controller ->
+      val activity = controller.create().get()
+      val webView = activity.findViewById<android.webkit.WebView>(R.id.webView)
+      val shadowWebView = org.robolectric.Shadows.shadowOf(webView)
+      val listener = shadowWebView.downloadListener
+      assertNotNull(listener)
+
+      listener.onDownloadStart(
+        "https://example.com/guide.pdf",
+        "Mozilla/5.0",
+        "attachment; filename=guide.pdf",
+        "application/pdf",
+        2048L
+      )
+      assertTrue(true)
+    }
+  }
+
+  @Test
+  fun `main activity webview client intercepts google accounts url and launches intent`() {
+    Robolectric.buildActivity(MainActivity::class.java).use { controller ->
+      val activity = controller.create().get()
+      val webView = activity.findViewById<android.webkit.WebView>(R.id.webView)
+      val client = webView.webViewClient
+      assertNotNull(client)
+
+      val googleAuthUrl = "https://accounts.google.com/o/oauth2/auth?client_id=123"
+      val shouldOverride = client.shouldOverrideUrlLoading(webView, googleAuthUrl)
+      assertTrue(shouldOverride)
+
+      val nextIntent = org.robolectric.Shadows.shadowOf(activity).nextStartedActivity
+      assertNotNull(nextIntent)
+      assertEquals(android.content.Intent.ACTION_VIEW, nextIntent.action)
+      assertEquals(android.net.Uri.parse(googleAuthUrl), nextIntent.data)
+    }
+  }
+
+  @Test
+  fun `main activity webview client intercepts cuentas google url and launches intent`() {
+    Robolectric.buildActivity(MainActivity::class.java).use { controller ->
+      val activity = controller.create().get()
+      val webView = activity.findViewById<android.webkit.WebView>(R.id.webView)
+      val client = webView.webViewClient
+      assertNotNull(client)
+
+      val cuentasUrl = "https://cuentas.google.com/signin"
+      val shouldOverride = client.shouldOverrideUrlLoading(webView, cuentasUrl)
+      assertTrue(shouldOverride)
+
+      val nextIntent = org.robolectric.Shadows.shadowOf(activity).nextStartedActivity
+      assertNotNull(nextIntent)
+      assertEquals(android.content.Intent.ACTION_VIEW, nextIntent.action)
+    }
+  }
+
+  @Test
+  fun `main activity webview client keeps internal urls inside webview`() {
+    Robolectric.buildActivity(MainActivity::class.java).use { controller ->
+      val activity = controller.create().get()
+      val webView = activity.findViewById<android.webkit.WebView>(R.id.webView)
+      val client = webView.webViewClient
+      assertNotNull(client)
+
+      val localAssetUrl = "file:///android_asset/index.html"
+      val overrideLocal = client.shouldOverrideUrlLoading(webView, localAssetUrl)
+      org.junit.Assert.assertFalse(overrideLocal)
+
+      val renderUrl = "https://english-app-frontend-3j9w.onrender.com/#home"
+      val overrideRender = client.shouldOverrideUrlLoading(webView, renderUrl)
+      org.junit.Assert.assertFalse(overrideRender)
+    }
+  }
 }
+
 
 

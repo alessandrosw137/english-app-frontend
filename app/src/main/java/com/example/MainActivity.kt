@@ -3,14 +3,18 @@ package com.example
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.AlarmManager
+import android.app.DownloadManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.print.PrintAttributes
 import android.print.PrintDocumentAdapter
 import android.print.PrintManager
@@ -19,12 +23,14 @@ import android.view.View
 import android.view.WindowManager
 import android.webkit.JavascriptInterface
 import android.webkit.PermissionRequest
+import android.webkit.URLUtil
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
@@ -156,6 +162,26 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
 
         android.webkit.WebView.setWebContentsDebuggingEnabled(true)
 
+        // Native Android DownloadManager listener for PDF files and offline assets
+        webView.setDownloadListener { url, userAgent, contentDisposition, mimetype, _ ->
+            try {
+                val fileName = URLUtil.guessFileName(url, contentDisposition, mimetype)
+                val request = DownloadManager.Request(Uri.parse(url))
+                request.setMimeType(mimetype)
+                request.addRequestHeader("User-Agent", userAgent)
+                request.setDescription("Descargando archivo...")
+                request.setTitle(fileName)
+                request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
+                val dm = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+                dm.enqueue(request)
+                Toast.makeText(applicationContext, "Descargando PDF...", Toast.LENGTH_SHORT).show()
+            } catch (e: Throwable) {
+                android.util.Log.e("DownloadListener", "Error initiating download: ${e.message}")
+                Toast.makeText(applicationContext, "Error al iniciar descarga", Toast.LENGTH_SHORT).show()
+            }
+        }
+
         // WebChromeClient with automatic microphone permissions for Cuentos Speaking Coach
         webView.webChromeClient = object : WebChromeClient() {
             override fun onPermissionRequest(request: PermissionRequest?) {
@@ -198,15 +224,37 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                 view?.evaluateJavascript("window.GEMINI_API_KEY = '$apiKey';", null)
             }
 
-            override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
-                val url = request?.url?.toString() ?: ""
-                if (url.startsWith("https://english-app-frontend-3j9w.onrender.com") ||
-                    url.startsWith("file:///android_asset/") ||
-                    url.startsWith("data:")
+            private fun handleShouldOverrideUrl(url: String): Boolean {
+                if (url.isBlank()) return false
+
+                // Recursos internos que permanecen dentro del WebView
+                if (url.startsWith("file:///android_asset/") ||
+                    url.startsWith("data:") ||
+                    url.startsWith("blob:")
                 ) {
                     return false
                 }
+
+                // Interceptar URLs de autenticación de Google (OAuth) o enlaces externos
+                val isGoogleAuth = url.contains("accounts.google.com") || url.contains("cuentas.google.com")
+                val isAppHost = url.startsWith("https://english-app-frontend-3j9w.onrender.com")
+
+                if (isGoogleAuth || !isAppHost) {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                    startActivity(intent)
+                    return true
+                }
                 return false
+            }
+
+            override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                val url = request?.url?.toString() ?: ""
+                return handleShouldOverrideUrl(url)
+            }
+
+            @Suppress("DEPRECATION")
+            override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
+                return handleShouldOverrideUrl(url ?: "")
             }
 
             override fun onReceivedError(
@@ -261,12 +309,16 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         // Request runtime permissions and schedule daily study reminder
         checkAndRequestAppPermissions()
 
-        // Resilient loading: if internet is available, load Render production URL; otherwise fallback to local assets
-        if (isNetworkAvailable()) {
-            webView.loadUrl(PRODUCTION_URL)
+        // Resilient loading: if savedInstanceState is present, restore WebView state without reloading; otherwise load URL
+        if (savedInstanceState != null) {
+            webView.restoreState(savedInstanceState)
         } else {
-            isOfflineFallbackLoaded = true
-            webView.loadUrl(LOCAL_ASSET_URL)
+            if (isNetworkAvailable()) {
+                webView.loadUrl(PRODUCTION_URL)
+            } else {
+                isOfflineFallbackLoaded = true
+                webView.loadUrl(LOCAL_ASSET_URL)
+            }
         }
     }
 
@@ -432,6 +484,22 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                 }
             }
         }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // La actividad no se destruye ni reinicia ante cambios de orientación (Portrait / Landscape).
+        // Se preserva la instancia activa del WebView sin recargas ni pérdida de contexto WebGL o sesiones.
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        webView.saveState(outState)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        webView.restoreState(savedInstanceState)
     }
 
     override fun onResume() {

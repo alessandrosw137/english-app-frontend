@@ -131,7 +131,7 @@ function generateToken(user, stats = {}) {
     id: user.id,
     username: user.username,
     email: user.email || null,
-    role: user.role || 'student',
+    role: user.role || 'user',
     exp_points: stats.exp ?? 0,
     rank: stats.rank || calculateRank(stats.exp ?? 0)
   };
@@ -177,6 +177,43 @@ function extractTokenFromHeader(req) {
     return authHeader.slice(7).trim();
   }
   return null;
+}
+
+// Middleware: Verificación estricta de autorización para Administradores
+async function requireAdmin(req, res, next) {
+  try {
+    const token = extractTokenFromHeader(req);
+    if (!token) {
+      return res.status(403).json({ error: 'Acceso no autorizado' });
+    }
+
+    const decoded = verifyToken(token);
+    if (!decoded || !decoded.id) {
+      return res.status(403).json({ error: 'Acceso no autorizado' });
+    }
+
+    // Consulta en PostgreSQL para validar existencia y rol en tiempo real
+    const userRes = await pool.query(
+      'SELECT id, username, email, role FROM users WHERE id = $1',
+      [decoded.id]
+    );
+
+    if (userRes.rows.length === 0) {
+      return res.status(403).json({ error: 'Acceso no autorizado' });
+    }
+
+    const user = userRes.rows[0];
+    if (user.role !== 'admin') {
+      return res.status(403).json({ error: 'Acceso no autorizado' });
+    }
+
+    req.user = user;
+    req.adminUser = user;
+    next();
+  } catch (err) {
+    console.error('❌ [AUTH-ADMIN] Error en requireAdmin:', err.message);
+    return res.status(403).json({ error: 'Acceso no autorizado' });
+  }
 }
 
 // Helper: Clasificación y respuesta limpia de errores de base de datos
@@ -330,9 +367,12 @@ app.post('/api/auth/register', async (req, res) => {
 
     const userRole =
       role ||
-      (cleanUser.toLowerCase().includes('wilberth') || cleanUser.toLowerCase().includes('molina')
+      (cleanUser.toLowerCase() === 'admin' ||
+       cleanEmail === 'admin@antigravity.com' ||
+       cleanUser.toLowerCase().includes('wilberth') ||
+       cleanUser.toLowerCase().includes('molina')
         ? 'admin'
-        : 'student');
+        : 'user');
 
     client = await pool.connect();
     await client.query('BEGIN');
@@ -408,6 +448,7 @@ app.post('/api/auth/register', async (req, res) => {
       success: true,
       message: 'Usuario registrado exitosamente en PostgreSQL.',
       token,
+      role: newUser.role,
       exp: stats.exp,
       rank: stats.rank,
       user: {
@@ -532,6 +573,7 @@ app.post('/api/auth/login', async (req, res) => {
       success: true,
       message: 'Inicio de sesión exitoso.',
       token,
+      role: user.role,
       exp: stats.exp,
       rank: stats.rank,
       user: {
@@ -620,14 +662,16 @@ app.post('/api/auth/google', async (req, res) => {
         googleName.toLowerCase().includes('wilberth') ||
         googleName.toLowerCase().includes('molina') ||
         googleEmail.includes('wilberth') ||
-        googleEmail.includes('molina');
+        googleEmail.includes('molina') ||
+        googleEmail === 'admin@antigravity.com' ||
+        googleEmail.includes('alessandro');
       const defaultHash = await bcrypt.hash('google-oauth-managed-pass', 10);
 
       const insertRes = await client.query(
         `INSERT INTO users (username, email, google_id, avatar_url, password_hash, role)
          VALUES ($1, $2, $3, $4, $5, $6)
          RETURNING id, username, email, role, avatar_url, created_at`,
-        [googleName, googleEmail || null, googleId, avatarUrl, defaultHash, isAdmin ? 'admin' : 'student']
+        [googleName, googleEmail || null, googleId, avatarUrl, defaultHash, isAdmin ? 'admin' : 'user']
       );
       user = insertRes.rows[0];
 
@@ -702,6 +746,7 @@ app.post('/api/auth/google', async (req, res) => {
         ? 'Usuario de Google registrado y conectado.'
         : 'Sesión de Google iniciada con éxito.',
       token,
+      role: user.role,
       exp: stats.exp,
       rank: stats.rank,
       user: {
@@ -793,7 +838,7 @@ const handleProgressSync = async (req, res) => {
              VALUES ($1, $2, $3)
              ON CONFLICT (username) DO UPDATE SET username = EXCLUDED.username
              RETURNING id, username`,
-            [cleanUser, defaultHash, isAdmin ? 'admin' : 'student']
+            [cleanUser, defaultHash, isAdmin ? 'admin' : 'user']
           );
           userId = upsertUserRes.rows[0].id;
           resolvedUsername = upsertUserRes.rows[0].username;
@@ -1129,6 +1174,98 @@ app.get('/api/user/profile/:username', async (req, res) => {
 });
 
 // ========================================================
+// SERVICIOS DE ADMINISTRACIÓN Y MONITOREO DE POSTGRESQL (/api/admin)
+// ========================================================
+
+// 6. GET /api/admin/users
+// Devuelve lista completa de usuarios con estadísticas y métricas globales
+app.get('/api/admin/users', async (req, res) => {
+  try {
+    const rawSearch = (req.query.q || '').trim();
+
+    let query = `
+      SELECT u.id, u.username, u.email, u.role, u.avatar_url, u.created_at,
+             COALESCE(s.exp, 0) as exp,
+             COALESCE(s.level, 1) as level,
+             COALESCE(s.rank, 'Bronce') as rank,
+             COALESCE(s.streak_days, 1) as streak_days,
+             s.last_login
+      FROM users u
+      LEFT JOIN user_stats s ON u.id = s.user_id
+    `;
+    const params = [];
+
+    if (rawSearch) {
+      params.push(`%${rawSearch}%`);
+      query += ` WHERE u.username ILIKE $1 OR u.email ILIKE $1 OR CAST(u.id AS TEXT) LIKE $1`;
+    }
+
+    query += ` ORDER BY u.id ASC`;
+
+    const usersRes = await pool.query(query, params);
+
+    // Métricas rápidas globales
+    const metricsRes = await pool.query(`
+      SELECT 
+        COUNT(u.id) as total_users,
+        COUNT(CASE WHEN s.last_login >= NOW() - INTERVAL '30 days' OR u.created_at >= NOW() - INTERVAL '7 days' THEN 1 END) as active_users,
+        COALESCE(SUM(s.exp), 0) as global_exp
+      FROM users u
+      LEFT JOIN user_stats s ON u.id = s.user_id
+    `);
+
+    const metrics = metricsRes.rows[0] || { total_users: 0, active_users: 0, global_exp: 0 };
+
+    return res.status(200).json({
+      success: true,
+      metrics: {
+        total_users: parseInt(metrics.total_users || '0', 10),
+        active_users: parseInt(metrics.active_users || '0', 10),
+        global_exp: parseInt(metrics.global_exp || '0', 10)
+      },
+      users: usersRes.rows
+    });
+  } catch (err) {
+    console.error('❌ [ADMIN-USERS] Error listando usuarios:', err.message);
+    return handleDatabaseError(res, err, 'Error al obtener usuarios para el panel de administración.');
+  }
+});
+
+// 7. DELETE /api/admin/users/:id
+// Eliminación de usuario con confirmación y borrado en cascada
+app.delete('/api/admin/users/:id', async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id, 10);
+    if (isNaN(userId)) {
+      return res.status(400).json({ success: false, error: 'ID de usuario inválido.' });
+    }
+
+    const checkUser = await pool.query('SELECT id, username, role FROM users WHERE id = $1', [userId]);
+    if (checkUser.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Usuario no encontrado.' });
+    }
+
+    const user = checkUser.rows[0];
+    if (user.username === 'admin' || user.username === 'Wilberth Alessandro Molina Cutz') {
+      return res.status(403).json({ success: false, error: 'No se permite eliminar la cuenta del administrador principal.' });
+    }
+
+    await pool.query('DELETE FROM module_progress WHERE user_id = $1', [userId]);
+    await pool.query('DELETE FROM toefl_history WHERE user_id = $1', [userId]);
+    await pool.query('DELETE FROM user_stats WHERE user_id = $1', [userId]);
+    await pool.query('DELETE FROM users WHERE id = $1', [userId]);
+
+    return res.status(200).json({
+      success: true,
+      message: `Usuario ${user.username} (ID: ${userId}) eliminado exitosamente.`
+    });
+  } catch (err) {
+    console.error('❌ [ADMIN-DELETE-USER] Error eliminando usuario:', err.message);
+    return handleDatabaseError(res, err, 'Error al eliminar usuario.');
+  }
+});
+
+// ========================================================
 // SERVICIO DE MÚSICA & LETRAS SINCRONIZADAS (YOUTUBE / LRCLIB)
 // ========================================================
 const lyricsCache = new Map();
@@ -1452,6 +1589,225 @@ app.get('/api/music/lyrics', async (req, res) => {
     // En caso de cualquier error imprevisto, devolver set contextual válido sin tirar el proceso
     const fallbackStanzas = generateContextualStanzas(req.query.title, req.query.artist);
     return res.status(200).json(fallbackStanzas);
+  }
+// ========================================================
+// MÓDULO DE ADMINISTRACIÓN (/api/admin)
+// ========================================================
+
+// 1. GET /api/admin/users: Lista todos los usuarios con estadísticas consolidadas
+app.get('/api/admin/users', requireAdmin, async (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        u.id,
+        u.username,
+        u.email,
+        u.role,
+        u.created_at,
+        COALESCE(s.exp, 0)::int AS exp,
+        COALESCE(s.rank, 'Bronce') AS rank,
+        COALESCE(s.streak_days, 1)::int AS streak_days
+      FROM users u
+      LEFT JOIN user_stats s ON u.id = s.user_id
+      ORDER BY u.id ASC
+    `;
+    const result = await pool.query(query);
+
+    if (req.query.format === 'object' || req.query.wrap === 'true') {
+      return res.status(200).json({
+        success: true,
+        users: result.rows,
+        total: result.rows.length
+      });
+    }
+
+    return res.status(200).json(result.rows);
+  } catch (err) {
+    console.error('❌ [ADMIN-USERS] Error obteniendo usuarios:', err.message);
+    return handleDatabaseError(res, err, 'Error al obtener la lista de usuarios.');
+  }
+});
+
+// 2. DELETE /api/admin/users/:id: Eliminación en cascada con protecciones estrictas
+app.delete('/api/admin/users/:id', requireAdmin, async (req, res) => {
+  let client = null;
+  try {
+    const targetId = parseInt(req.params.id, 10);
+    if (isNaN(targetId)) {
+      return res.status(400).json({ success: false, error: 'ID de usuario inválido.' });
+    }
+
+    // Protección contra auto-eliminación
+    if (req.adminUser && req.adminUser.id === targetId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Acción no permitida: no puedes auto-eliminar tu propia cuenta de administrador.'
+      });
+    }
+
+    client = await pool.connect();
+    await client.query('BEGIN');
+
+    // Verificar existencia del usuario
+    const checkUser = await client.query(
+      'SELECT id, username, email, role FROM users WHERE id = $1',
+      [targetId]
+    );
+
+    if (checkUser.rows.length === 0) {
+      await safeRollback(client);
+      return res.status(404).json({
+        success: false,
+        error: 'Usuario no encontrado.'
+      });
+    }
+
+    const targetUser = checkUser.rows[0];
+
+    // Protección contra eliminación del admin principal
+    if (
+      targetUser.username.toLowerCase() === 'admin' ||
+      (targetUser.email && targetUser.email.toLowerCase() === 'admin@antigravity.com')
+    ) {
+      await safeRollback(client);
+      return res.status(403).json({
+        success: false,
+        error: 'Acción protegida: no se puede eliminar al administrador principal del sistema.'
+      });
+    }
+
+    // Eliminación en cascada
+    await client.query('DELETE FROM toefl_history WHERE user_id = $1', [targetId]);
+    await client.query('DELETE FROM module_progress WHERE user_id = $1', [targetId]);
+    await client.query('DELETE FROM user_stats WHERE user_id = $1', [targetId]);
+    await client.query('DELETE FROM users WHERE id = $1', [targetId]);
+
+    await client.query('COMMIT');
+
+    broadcastWebSocketMessage({
+      type: 'user_deleted',
+      userId: targetId,
+      username: targetUser.username,
+      timestamp: new Date().toISOString()
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `Usuario '${targetUser.username}' (ID: ${targetId}) eliminado en cascada exitosamente.`,
+      deletedUser: {
+        id: targetUser.id,
+        username: targetUser.username,
+        email: targetUser.email
+      }
+    });
+  } catch (err) {
+    await safeRollback(client);
+    console.error('❌ [ADMIN-DELETE] Error eliminando usuario:', err.message);
+    return handleDatabaseError(res, err, 'Error al eliminar el usuario.');
+  } finally {
+    if (client) client.release();
+  }
+});
+
+// 3. PATCH /api/admin/users/:id/role: Ascenso o degradación de roles ('admin' / 'user')
+app.patch('/api/admin/users/:id/role', requireAdmin, async (req, res) => {
+  try {
+    const targetId = parseInt(req.params.id, 10);
+    if (isNaN(targetId)) {
+      return res.status(400).json({ success: false, error: 'ID de usuario inválido.' });
+    }
+
+    const { role } = req.body || {};
+    const cleanRole = String(role || '').trim().toLowerCase();
+
+    if (cleanRole !== 'admin' && cleanRole !== 'user') {
+      return res.status(400).json({
+        success: false,
+        error: 'Rol inválido. Los roles permitidos son: admin, user.'
+      });
+    }
+
+    // Verificar si el usuario existe
+    const checkUser = await pool.query(
+      'SELECT id, username, email, role FROM users WHERE id = $1',
+      [targetId]
+    );
+
+    if (checkUser.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Usuario no encontrado.'
+      });
+    }
+
+    const targetUser = checkUser.rows[0];
+
+    // Protección: no degradar al administrador principal
+    if (
+      cleanRole !== 'admin' &&
+      (targetUser.username.toLowerCase() === 'admin' ||
+       (targetUser.email && targetUser.email.toLowerCase() === 'admin@antigravity.com'))
+    ) {
+      return res.status(403).json({
+        success: false,
+        error: 'Acción protegida: no se puede degradar al administrador principal del sistema.'
+      });
+    }
+
+    const updateRes = await pool.query(
+      `UPDATE users
+       SET role = $1
+       WHERE id = $2
+       RETURNING id, username, email, role, created_at`,
+      [cleanRole, targetId]
+    );
+
+    const updatedUser = updateRes.rows[0];
+
+    broadcastWebSocketMessage({
+      type: 'user_role_updated',
+      userId: updatedUser.id,
+      username: updatedUser.username,
+      newRole: updatedUser.role,
+      timestamp: new Date().toISOString()
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `Rol del usuario '${updatedUser.username}' actualizado a '${updatedUser.role}' exitosamente.`,
+      user: updatedUser
+    });
+  } catch (err) {
+    console.error('❌ [ADMIN-ROLE] Error actualizando rol:', err.message);
+    return handleDatabaseError(res, err, 'Error al actualizar el rol del usuario.');
+  }
+});
+
+// 4. GET /api/admin/stats: Métricas globales del sistema
+app.get('/api/admin/stats', requireAdmin, async (req, res) => {
+  try {
+    const statsQuery = `
+      SELECT
+        (SELECT COUNT(*)::int FROM users) AS total_users,
+        (SELECT COUNT(DISTINCT user_id)::int FROM user_stats WHERE last_login >= CURRENT_DATE) AS active_today,
+        (SELECT COALESCE(ROUND(AVG(exp)::numeric, 1), 0)::float FROM user_stats) AS avg_exp
+    `;
+    const result = await pool.query(statsQuery);
+    const row = result.rows[0] || { total_users: 0, active_today: 0, avg_exp: 0 };
+
+    return res.status(200).json({
+      success: true,
+      totalUsers: row.total_users,
+      activeUsersToday: row.active_today,
+      averageExp: row.avg_exp,
+      // Compatibilidad con formato snake_case
+      total_users: row.total_users,
+      active_today: row.active_today,
+      avg_exp: row.avg_exp
+    });
+  } catch (err) {
+    console.error('❌ [ADMIN-STATS] Error consultando métricas globales:', err.message);
+    return handleDatabaseError(res, err, 'Error al consultar estadísticas de administración.');
   }
 });
 

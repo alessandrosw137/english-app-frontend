@@ -77,7 +77,8 @@ async function initializeDatabase() {
           created_at TIMESTAMP DEFAULT NOW()
       );
 
-      ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'student';
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(20) DEFAULT 'user';
+      ALTER TABLE users ALTER COLUMN role SET DEFAULT 'user';
       ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id VARCHAR(255);
       ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
 
@@ -173,23 +174,60 @@ async function initializeDatabase() {
 
     await client.query(ddl);
 
-    // 3. Crear usuario administrador inicial si no existe
-    const adminUser = 'Wilberth Alessandro Molina Cutz';
-    const checkAdmin = await client.query('SELECT id FROM users WHERE username = $1', [adminUser]);
-    if (checkAdmin.rows.length === 0) {
-      const bcrypt = require('bcryptjs');
-      const hash = await bcrypt.hash('master-admin-2026', 10);
-      const adminEmail = 'wilberth.admin@englishapp.com';
-      const insertUserRes = await client.query(
-        'INSERT INTO users (username, email, password_hash, role) VALUES ($1, $2, $3, $4) RETURNING id',
-        [adminUser, adminEmail, hash, 'admin']
+    const bcrypt = require('bcryptjs');
+
+    // 3. Crear o verificar usuario administrador principal ('admin' / 'admin@antigravity.com' / 'Admin2026!Master')
+    const checkMainAdmin = await client.query(
+      'SELECT id, role, password_hash FROM users WHERE username = $1 OR email = $2',
+      ['admin', 'admin@antigravity.com']
+    );
+
+    if (checkMainAdmin.rows.length === 0) {
+      const mainHash = await bcrypt.hash('Admin2026!Master', 10);
+      const insertAdminRes = await client.query(
+        `INSERT INTO users (username, email, password_hash, role)
+         VALUES ($1, $2, $3, $4)
+         RETURNING id`,
+        ['admin', 'admin@antigravity.com', mainHash, 'admin']
       );
-      const adminId = insertUserRes.rows[0].id;
+      const adminId = insertAdminRes.rows[0].id;
       await client.query(
-        "INSERT INTO user_stats (user_id, exp, level, rank, streak_days, last_login) VALUES ($1, 500, 2, 'Plata', 7, NOW()) ON CONFLICT (user_id) DO NOTHING",
+        `INSERT INTO user_stats (user_id, exp, level, rank, streak_days, last_login)
+         VALUES ($1, 1000, 5, 'Platino', 10, NOW())
+         ON CONFLICT (user_id) DO UPDATE SET exp = GREATEST(user_stats.exp, 1000), rank = 'Platino'`,
         [adminId]
       );
-      console.log(`👑 [PostgreSQL Render] Usuario administrador inicial creado: "${adminUser}".`);
+      console.log('👑 [PostgreSQL Render] Usuario administrador principal creado: "admin" (admin@antigravity.com).');
+    } else {
+      const existingAdmin = checkMainAdmin.rows[0];
+      const matchPass = await bcrypt.compare('Admin2026!Master', existingAdmin.password_hash || '');
+      if (existingAdmin.role !== 'admin' || !matchPass) {
+        const newHash = await bcrypt.hash('Admin2026!Master', 10);
+        await client.query(
+          "UPDATE users SET role = 'admin', password_hash = $1 WHERE id = $2",
+          [newHash, existingAdmin.id]
+        );
+      }
+    }
+
+    // 3.1 Crear o verificar usuario administrador desarrollador
+    const devUser = 'Wilberth Alessandro Molina Cutz';
+    const checkDev = await client.query('SELECT id, role FROM users WHERE username = $1', [devUser]);
+    if (checkDev.rows.length === 0) {
+      const hash = await bcrypt.hash('master-admin-2026', 10);
+      const devEmail = 'wilberth.admin@englishapp.com';
+      const insertDevRes = await client.query(
+        'INSERT INTO users (username, email, password_hash, role) VALUES ($1, $2, $3, $4) RETURNING id',
+        [devUser, devEmail, hash, 'admin']
+      );
+      const devId = insertDevRes.rows[0].id;
+      await client.query(
+        "INSERT INTO user_stats (user_id, exp, level, rank, streak_days, last_login) VALUES ($1, 500, 2, 'Plata', 7, NOW()) ON CONFLICT (user_id) DO NOTHING",
+        [devId]
+      );
+      console.log(`👑 [PostgreSQL Render] Usuario desarrollador creado: "${devUser}".`);
+    } else if (checkDev.rows[0].role !== 'admin') {
+      await client.query("UPDATE users SET role = 'admin' WHERE id = $1", [checkDev.rows[0].id]);
     }
 
     console.log('✅ [PostgreSQL Render] Tablas e índices inicializados correctamente.');
