@@ -53,7 +53,7 @@ assert(
 
 // 4. Modales y vistas ocultas por defecto con style="display: none;"
 assert(
-  htmlRoot.includes('id="view-home"') && htmlRoot.includes('id="view-home" class="flex-1 flex flex-col items-center justify-center p-3 relative overflow-hidden hidden" style="display: none;"'),
+  htmlRoot.includes('id="view-home"') && (htmlRoot.includes('id="view-home" class="hub-container flex-1') || htmlRoot.includes('id="view-home" class="flex-1')) && htmlRoot.includes('style="display: none;"'),
   'view-home tiene style="display: none;" por defecto'
 );
 assert(

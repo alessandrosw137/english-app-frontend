@@ -582,7 +582,7 @@ button[onclick*="closeModal"] {
   <!-- ========================================================
        VISTA 2: MENÚ DE PORTALES (COVER FLOW HORIZONTAL MODERNO)
        ======================================================== -->
-  <div id="view-home" class="flex-1 flex flex-col items-center justify-center p-3 relative overflow-hidden hidden" style="display: none;">
+  <div id="view-home" class="hub-container flex-1 flex flex-col items-center justify-center p-3 relative overflow-hidden hidden" style="display: none;">
     <canvas id="portalStarsCanvas" class="absolute inset-0 pointer-events-none w-full h-full z-0 opacity-60"></canvas>
 
     <div class="relative z-10 w-full max-w-xl text-center mb-2">
@@ -598,8 +598,8 @@ button[onclick*="closeModal"] {
     <div id="coverFlowViewport"
       class="coverflow-viewport w-full max-w-4xl h-[440px] flex items-center justify-center my-2 z-10">
       <button onclick="navigateCoverFlow(-1)"
-        class="absolute left-2 sm:left-4 z-40 w-11 h-11 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-white flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition cursor-pointer"
-        title="Portal Anterior">
+        class="carousel-btn carousel-prev nav-arrow absolute left-2 sm:left-4 z-40 w-11 h-11 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-white flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition cursor-pointer"
+        data-action="prev" title="Portal Anterior">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
           <path d="M15 19l-7-7 7-7" />
         </svg>
@@ -607,7 +607,7 @@ button[onclick*="closeModal"] {
 
       <div id="coverFlowTrack" class="coverflow-track">
         <!-- PORTAL 0: LEARNING PATH -->
-        <div id="coverCard-0" onclick="handleCoverCardClick(0)" class="coverflow-portal-card active-center"
+        <div id="coverCard-0" onclick="handleCoverCardClick(0)" class="coverflow-portal-card portal-card active-center"
           style="--portal-glow: rgba(245, 158, 11, 0.45);">
           <div
             class="w-full h-full rounded-3xl bg-slate-900/95 border-2 border-amber-500/70 p-4 flex flex-col justify-between shadow-2xl relative overflow-hidden group">
@@ -632,15 +632,12 @@ button[onclick*="closeModal"] {
               <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent"></div>
               <span class="absolute bottom-2 right-2.5 text-xs font-black text-amber-300 bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-amber-400/40">🌌 10 Módulos</span>
             </div>
-            <button onclick="event.stopPropagation(); openPortalWithLoader('path')"
-              class="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-amber-500/30 cursor-pointer">
-              Entrar al Portal
-            </button>
+            <button onclick="event.stopPropagation(); openPortalWithLoader('path')" class="portal-btn w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-amber-500/30 cursor-pointer" data-action="enter-portal" data-portal="path">ENTRAR AL PORTAL</button>
           </div>
         </div>
 
         <!-- PORTAL 1: CUENTOS CLÁSICOS -->
-        <div id="coverCard-1" onclick="handleCoverCardClick(1)" class="coverflow-portal-card side-right"
+        <div id="coverCard-1" onclick="handleCoverCardClick(1)" class="coverflow-portal-card portal-card side-right"
           style="--portal-glow: rgba(16, 185, 129, 0.45);">
           <div
             class="w-full h-full rounded-3xl bg-slate-900/95 border-2 border-emerald-500/70 p-4 flex flex-col justify-between shadow-2xl relative overflow-hidden group">
@@ -665,15 +662,12 @@ button[onclick*="closeModal"] {
               <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent"></div>
               <span class="absolute bottom-2 right-2.5 text-xs font-black text-emerald-300 bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-emerald-400/40">🌲 6 Obras</span>
             </div>
-            <button onclick="event.stopPropagation(); openPortalWithLoader('stories')"
-              class="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-500/30 cursor-pointer">
-              Entrar al Portal
-            </button>
+            <button onclick="event.stopPropagation(); openPortalWithLoader('stories')" class="portal-btn w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-500/30 cursor-pointer" data-action="enter-portal" data-portal="stories">ENTRAR AL PORTAL</button>
           </div>
         </div>
 
         <!-- PORTAL 2: MUSIC SESSION -->
-        <div id="coverCard-2" onclick="handleCoverCardClick(2)" class="coverflow-portal-card hidden-back"
+        <div id="coverCard-2" onclick="handleCoverCardClick(2)" class="coverflow-portal-card portal-card hidden-back"
           style="--portal-glow: rgba(6, 182, 212, 0.45);">
           <div
             class="w-full h-full rounded-3xl bg-slate-900/95 border-2 border-cyan-500/70 p-4 flex flex-col justify-between shadow-2xl relative overflow-hidden group">
@@ -698,15 +692,12 @@ button[onclick*="closeModal"] {
               <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent"></div>
               <span class="absolute bottom-2 right-2.5 text-xs font-black text-cyan-300 bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-cyan-400/40">⚡ Karaoke Live</span>
             </div>
-            <button onclick="event.stopPropagation(); openPortalWithLoader('music')"
-              class="w-full py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-cyan-500/30 cursor-pointer">
-              Entrar al Portal
-            </button>
+            <button onclick="event.stopPropagation(); openPortalWithLoader('music')" class="portal-btn w-full py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-cyan-500/30 cursor-pointer" data-action="enter-portal" data-portal="music">ENTRAR AL PORTAL</button>
           </div>
         </div>
 
         <!-- PORTAL 3: WORLD TOUR 3D -->
-        <div id="coverCard-3" onclick="handleCoverCardClick(3)" class="coverflow-portal-card side-left"
+        <div id="coverCard-3" onclick="handleCoverCardClick(3)" class="coverflow-portal-card portal-card side-left"
           style="--portal-glow: rgba(168, 85, 247, 0.45);">
           <div
             class="w-full h-full rounded-3xl bg-slate-900/95 border-2 border-purple-500/70 p-4 flex flex-col justify-between shadow-2xl relative overflow-hidden group">
@@ -731,17 +722,14 @@ button[onclick*="closeModal"] {
               <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent"></div>
               <span class="absolute bottom-2 right-2.5 text-xs font-black text-purple-300 bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-purple-400/40">🪐 Casa & Jardín 3D</span>
             </div>
-            <button onclick="event.stopPropagation(); openPortalWithLoader('worldtour')"
-              class="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-fuchsia-500 hover:from-purple-400 hover:to-fuchsia-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-purple-500/30 cursor-pointer">
-              Entrar al Portal
-            </button>
+            <button onclick="event.stopPropagation(); openPortalWithLoader('worldtour')" class="portal-btn w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-fuchsia-500 hover:from-purple-400 hover:to-fuchsia-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-purple-500/30 cursor-pointer" data-action="enter-portal" data-portal="worldtour">ENTRAR AL PORTAL</button>
           </div>
         </div>
       </div>
 
       <button onclick="navigateCoverFlow(1)"
-        class="absolute right-2 sm:right-4 z-40 w-11 h-11 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-white flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition cursor-pointer"
-        title="Portal Siguiente">
+        class="carousel-btn carousel-next nav-arrow absolute right-2 sm:right-4 z-40 w-11 h-11 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-white flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition cursor-pointer"
+        data-action="next" title="Portal Siguiente">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
           <path d="M9 5l7 7-7 7" />
         </svg>

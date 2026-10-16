@@ -1220,12 +1220,35 @@
           if (v === viewId) {
             el.classList.remove('hidden');
             el.style.display = '';
+            el.style.pointerEvents = 'auto';
+            el.style.visibility = 'visible';
           } else {
             el.classList.add('hidden');
             el.style.display = 'none';
+            el.style.pointerEvents = 'none';
+            el.style.visibility = 'hidden';
+            if (v === 'view-auth') {
+              el.style.zIndex = '-1';
+            }
           }
         }
       });
+
+      if (viewId !== 'view-auth') {
+        const loginModal = document.getElementById('login-modal') || document.querySelector('.login-container');
+        if (loginModal) {
+          loginModal.style.display = 'none';
+          loginModal.style.pointerEvents = 'none';
+          loginModal.style.visibility = 'hidden';
+        }
+        document.querySelectorAll('.modal-backdrop, .modal-overlay').forEach(el => {
+          if (el.id === 'authModalBackdrop' || el.classList.contains('auth-backdrop')) {
+            el.style.display = 'none';
+            el.style.pointerEvents = 'none';
+            el.style.visibility = 'hidden';
+          }
+        });
+      }
       currentActiveView = viewId;
 
       // Pausar video de YouTube si se abandona Music Session
@@ -1419,6 +1442,70 @@
         updateCoverFlowVisuals();
       }
     }
+
+    
+    /* ========================================================
+       NAVEGACIÓN DEL CARRUSEL Y BOTÓN DE PORTALES
+       ======================================================== */
+    window.prevSlide = function() {
+      if (typeof navigateCoverFlow === 'function') {
+        navigateCoverFlow(-1);
+      }
+    };
+
+    window.nextSlide = function() {
+      if (typeof navigateCoverFlow === 'function') {
+        navigateCoverFlow(1);
+      }
+    };
+
+    window.openPortalModules = function(targetPortal) {
+      const portalModules = ['path', 'stories', 'music', 'worldtour'];
+      const portal = targetPortal || portalModules[currentCoverFlowIndex] || 'path';
+      console.log('Ingresando al portal de módulos:', portal);
+      if (typeof openPortalWithLoader === 'function') {
+        openPortalWithLoader(portal);
+      } else if (typeof showView === 'function') {
+        showView('view-' + portal);
+      } else {
+        alert('Abriendo Módulos de Aprendizaje...');
+      }
+    };
+
+    /* ========================================================
+       DELEGACIÓN DE EVENTOS GLOBAL (INMUNE A RE-RENDERIZADOS)
+       ======================================================== */
+    document.addEventListener('click', function(e) {
+      // Botón Entrar al Portal
+      const portalBtn = e.target.closest('.portal-btn, [data-action="enter-portal"], button');
+      if (portalBtn && (
+        portalBtn.innerText.includes('ENTRAR AL PORTAL') ||
+        (portalBtn.dataset && portalBtn.dataset.action === 'enter-portal') ||
+        (portalBtn.innerText && portalBtn.innerText.toUpperCase().includes('ENTRAR AL PORTAL'))
+      )) {
+        e.preventDefault();
+        console.log('Ingresando al portal de módulos...');
+        const portalTarget = portalBtn.dataset.portal || portalBtn.getAttribute('data-portal');
+        if (typeof window.openPortalModules === 'function') {
+          window.openPortalModules(portalTarget);
+        } else {
+          alert('Abriendo Módulos de Aprendizaje...');
+        }
+        return;
+      }
+
+      // Flechas de navegación del carrusel
+      const prevBtn = e.target.closest('.carousel-prev, [data-action="prev"]');
+      const nextBtn = e.target.closest('.carousel-next, [data-action="next"]');
+      if (prevBtn) {
+        if (typeof window.prevSlide === 'function') window.prevSlide();
+        return;
+      }
+      if (nextBtn) {
+        if (typeof window.nextSlide === 'function') window.nextSlide();
+        return;
+      }
+    });
 
     function setupCoverFlowGestures() {
       const viewport = document.getElementById('coverFlowViewport');
@@ -2340,7 +2427,6 @@
 
     function closeSettingsModal() {
       window.closeAllModals();
-    }
     }
 
     function handleMasterVolumeChange(val) {
@@ -5833,11 +5919,25 @@
         localStorage.setItem('english_app_user_session', JSON.stringify({ username: 'Invitado', role: 'guest', exp: 0, rank: 'Bronce' }));
       } catch (err) { }
 
-      const loginModal = document.getElementById('login-modal') || document.querySelector('.login-container') || document.querySelector('[class*="login"]') || document.getElementById('view-auth');
+      const loginModal = document.getElementById('login-modal') || document.querySelector('.login-container');
       if (loginModal) {
         loginModal.style.display = 'none';
-        loginModal.classList.add('hidden');
+        loginModal.style.pointerEvents = 'none';
+        loginModal.style.visibility = 'hidden';
       }
+      const viewAuthEl = document.getElementById('view-auth');
+      if (viewAuthEl) {
+        viewAuthEl.style.display = 'none';
+        viewAuthEl.style.pointerEvents = 'none';
+        viewAuthEl.style.visibility = 'hidden';
+        viewAuthEl.style.zIndex = '-1';
+        viewAuthEl.classList.add('hidden');
+      }
+      document.querySelectorAll('.modal-backdrop, .modal-overlay').forEach(el => {
+        el.style.display = 'none';
+        el.style.pointerEvents = 'none';
+        el.style.visibility = 'hidden';
+      });
 
       const mainApp = document.getElementById('app-main') || document.getElementById('main-content') || document.getElementById('view-home');
       if (mainApp) {
@@ -5882,11 +5982,25 @@
 
         alert("¡Acceso concedido como Administrador!");
 
-        const loginModal = document.getElementById('login-modal') || document.querySelector('.login-container') || document.getElementById('view-auth');
+        const loginModal = document.getElementById('login-modal') || document.querySelector('.login-container');
         if (loginModal) {
           loginModal.style.display = 'none';
-          loginModal.classList.add('hidden');
+          loginModal.style.pointerEvents = 'none';
+          loginModal.style.visibility = 'hidden';
         }
+        const viewAuthEl = document.getElementById('view-auth');
+        if (viewAuthEl) {
+          viewAuthEl.style.display = 'none';
+          viewAuthEl.style.pointerEvents = 'none';
+          viewAuthEl.style.visibility = 'hidden';
+          viewAuthEl.style.zIndex = '-1';
+          viewAuthEl.classList.add('hidden');
+        }
+        document.querySelectorAll('.modal-backdrop, .modal-overlay').forEach(el => {
+          el.style.display = 'none';
+          el.style.pointerEvents = 'none';
+          el.style.visibility = 'hidden';
+        });
 
         const mainApp = document.getElementById('app-main') || document.getElementById('main-content') || document.getElementById('view-home');
         if (mainApp) {

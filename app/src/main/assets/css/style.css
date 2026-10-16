@@ -5,6 +5,36 @@
       display: none !important;
     }
 
+/* ========================================================
+   DESTRUCCIÓN REAL DE OVERLAYS TRANSPARENTES
+   ======================================================== */
+#view-auth.hidden,
+#view-auth[style*="display: none"],
+.login-container.hidden,
+.login-container[style*="display: none"],
+.login-card.hidden,
+.login-card[style*="display: none"],
+#login-modal.hidden,
+#login-modal[style*="display: none"] {
+  display: none !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+  z-index: -1 !important;
+}
+
+.modal-backdrop.hidden,
+.modal-backdrop[style*="display: none"],
+.modal-overlay.hidden,
+.modal-overlay[style*="display: none"],
+#authModalBackdrop.hidden,
+#authModalBackdrop[style*="display: none"] {
+  display: none !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+  z-index: -1 !important;
+}
+
+
     [style*="display: none"] {
       display: none !important;
     }
@@ -594,8 +624,9 @@ body.theme-neon-light header {
     }
 
 
+
 /* ========================================================
-   JERARQUÍA DE CAPAS (Z-INDEX Y POINTER-EVENTS)
+   JERARQUÍA ESTRICTA DE CAPAS Y PUNTERO (Z-INDEX Y POINTER-EVENTS)
    ======================================================== */
 header, .top-bar, .navbar {
   position: fixed;
@@ -606,16 +637,23 @@ header, .top-bar, .navbar {
   pointer-events: auto !important;
 }
 
+.top-bar, header, .floating-widget, .bottom-widgets, #roulette-btn, #ai-tutor-btn {
+  position: fixed !important;
+  z-index: 9999 !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
 .floating-widget, #ai-tutor-btn, #roulette-btn, .bottom-widgets {
   z-index: 9999 !important;
   pointer-events: auto !important;
 }
 
 #canvas-container, canvas {
-  position: fixed;
-  inset: 0;
+  position: fixed !important;
+  inset: 0 !important;
   z-index: 0 !important;
-  pointer-events: auto; /* Permite rotar el 3D solo donde no haya interfaz */
+  pointer-events: auto;
 }
 
 #portalStarsCanvas, .star-bg, .particle-overlay, .canvas-background {
@@ -623,7 +661,25 @@ header, .top-bar, .navbar {
   z-index: 0 !important;
 }
 
-/* Modales y Cajones de Diálogo (Máxima prioridad de capa) */
+.hub-container, .portal-card, .portal-btn, .carousel-btn, .nav-arrow {
+  position: relative !important;
+  z-index: 100 !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+.hub-container, .portal-card, .portal-btn, .carousel-btn, .nav-arrow, button {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+
+/* Anclaje y máxima prioridad de clic para flechas en el coverflow */
+.coverflow-viewport .carousel-btn,
+.coverflow-viewport .nav-arrow {
+  position: absolute !important;
+  z-index: 110 !important;
+}
+
 .modal, .drawer {
   z-index: 100000 !important;
 }
@@ -633,11 +689,9 @@ header, .top-bar, .navbar {
   z-index: 100000 !important;
 }
 
-/* Eliminación de retardo táctil en controles interactivos */
 button, [role="button"], .cursor-pointer {
   touch-action: manipulation;
 }
-
 
 /* ========================================================
    ESTILOS DE CIERRE INFALIBLE DE MODALES Y BOTONES X

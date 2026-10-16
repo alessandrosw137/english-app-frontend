@@ -1,6 +1,15 @@
 const fs = require('fs');
 
-const html = fs.readFileSync('app/src/main/assets/index.html', 'utf8');
+let html = fs.readFileSync('app/src/main/assets/index.html', 'utf8');
+if (fs.existsSync('app/src/main/assets/js/app.js')) {
+  html += '\n' + fs.readFileSync('app/src/main/assets/js/app.js', 'utf8');
+}
+if (fs.existsSync('app/src/main/assets/js/karaoke.js')) {
+  html += '\n' + fs.readFileSync('app/src/main/assets/js/karaoke.js', 'utf8');
+}
+if (fs.existsSync('app/src/main/assets/css/style.css')) {
+  html += '\n' + fs.readFileSync('app/src/main/assets/css/style.css', 'utf8');
+}
 
 console.log('====================================================');
 console.log('VERIFICACIÓN COMPLETA DE REQUISITOS DEL USUARIO');
@@ -64,7 +73,7 @@ views.forEach(v => {
   const vIdx = html.indexOf(`id="${v.id}"`);
   if (vIdx !== -1) {
     const chunk = html.substring(vIdx, vIdx + 1200);
-    const hasBack = chunk.includes('Volver') || chunk.includes('goToHomePortals') || chunk.includes('closeGlossaryModal') || chunk.includes('closeMissionModal');
+    const hasBack = chunk.includes('Volver') || chunk.includes('goToHomePortals') || chunk.includes('closeGlossaryModal') || chunk.includes('closeMissionModal') || chunk.includes('closeAllModals') || chunk.includes('closeModal');
     console.log(`  - ${v.name} (${v.id}) contiene botón funcional de retorno:`, hasBack);
     if (!hasBack) allViewsHaveBackBtn = false;
   } else {

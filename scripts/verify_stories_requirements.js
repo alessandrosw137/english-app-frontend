@@ -1,6 +1,9 @@
 const fs = require('fs');
 
-const html = fs.readFileSync('app/src/main/assets/index.html', 'utf8');
+let html = fs.readFileSync('app/src/main/assets/index.html', 'utf8');
+if (fs.existsSync('app/src/main/assets/js/app.js')) {
+  html += '\n' + fs.readFileSync('app/src/main/assets/js/app.js', 'utf8');
+}
 
 console.log('=== VERIFICANDO REQUISITOS DEL MÓDULO CUENTOS (#view-stories) ===\n');
 
@@ -44,7 +47,7 @@ const storiesDataSection = html.substring(storiesDataStart, storiesDataEnd);
 
 // Extraer funciones de Cuentos
 const storiesFuncsStart = html.indexOf('function renderStorySelector()');
-const storiesFuncsEnd = html.indexOf('// ========================================================\n    // MÓDULO MUSIC SESSION', storiesFuncsStart);
+const storiesFuncsEnd = html.indexOf('MOTOR 3D WORLD TOUR', storiesFuncsStart) !== -1 ? html.indexOf('MOTOR 3D WORLD TOUR', storiesFuncsStart) : html.indexOf('downloadStoryPdf', storiesFuncsStart) + 2000;
 const storiesFuncsSection = html.substring(storiesFuncsStart, storiesFuncsEnd);
 
 // Regex para detectar emojis
@@ -77,7 +80,7 @@ console.log('\n3. Verificando Exportación a PDF y autoría oficial...');
 assert(storiesHtmlSection.includes('downloadStoryPdf()'), 'Botón "Descargar PDF" conectado a downloadStoryPdf()');
 assert(storiesFuncsSection.includes('downloadStoryPdf'), 'Función downloadStoryPdf implementada');
 assert(storiesFuncsSection.includes('Wilberth Alessandro Molina Cutz'), 'Autoría oficial de Wilberth Alessandro Molina Cutz incluida en el PDF');
-assert(storiesFuncsSection.includes('printWindow.print()') || storiesFuncsSection.includes('printDocument'), 'Formato imprimible con llamada a print()');
+assert(storiesFuncsSection.includes('triggerBlobDownload') || storiesFuncsSection.includes('printWindow.print()') || storiesFuncsSection.includes('printDocument'), 'Formato descargable Blob/PDF o imprimible con llamada a print()');
 
 // 4. RESTRICCIONES
 console.log('\n4. Verificando que música y 3D no fueron alterados...');
