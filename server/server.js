@@ -1173,97 +1173,7 @@ app.get('/api/user/profile/:username', async (req, res) => {
   }
 });
 
-// ========================================================
-// SERVICIOS DE ADMINISTRACIÓN Y MONITOREO DE POSTGRESQL (/api/admin)
-// ========================================================
 
-// 6. GET /api/admin/users
-// Devuelve lista completa de usuarios con estadísticas y métricas globales
-app.get('/api/admin/users', async (req, res) => {
-  try {
-    const rawSearch = (req.query.q || '').trim();
-
-    let query = `
-      SELECT u.id, u.username, u.email, u.role, u.avatar_url, u.created_at,
-             COALESCE(s.exp, 0) as exp,
-             COALESCE(s.level, 1) as level,
-             COALESCE(s.rank, 'Bronce') as rank,
-             COALESCE(s.streak_days, 1) as streak_days,
-             s.last_login
-      FROM users u
-      LEFT JOIN user_stats s ON u.id = s.user_id
-    `;
-    const params = [];
-
-    if (rawSearch) {
-      params.push(`%${rawSearch}%`);
-      query += ` WHERE u.username ILIKE $1 OR u.email ILIKE $1 OR CAST(u.id AS TEXT) LIKE $1`;
-    }
-
-    query += ` ORDER BY u.id ASC`;
-
-    const usersRes = await pool.query(query, params);
-
-    // Métricas rápidas globales
-    const metricsRes = await pool.query(`
-      SELECT 
-        COUNT(u.id) as total_users,
-        COUNT(CASE WHEN s.last_login >= NOW() - INTERVAL '30 days' OR u.created_at >= NOW() - INTERVAL '7 days' THEN 1 END) as active_users,
-        COALESCE(SUM(s.exp), 0) as global_exp
-      FROM users u
-      LEFT JOIN user_stats s ON u.id = s.user_id
-    `);
-
-    const metrics = metricsRes.rows[0] || { total_users: 0, active_users: 0, global_exp: 0 };
-
-    return res.status(200).json({
-      success: true,
-      metrics: {
-        total_users: parseInt(metrics.total_users || '0', 10),
-        active_users: parseInt(metrics.active_users || '0', 10),
-        global_exp: parseInt(metrics.global_exp || '0', 10)
-      },
-      users: usersRes.rows
-    });
-  } catch (err) {
-    console.error('❌ [ADMIN-USERS] Error listando usuarios:', err.message);
-    return handleDatabaseError(res, err, 'Error al obtener usuarios para el panel de administración.');
-  }
-});
-
-// 7. DELETE /api/admin/users/:id
-// Eliminación de usuario con confirmación y borrado en cascada
-app.delete('/api/admin/users/:id', async (req, res) => {
-  try {
-    const userId = parseInt(req.params.id, 10);
-    if (isNaN(userId)) {
-      return res.status(400).json({ success: false, error: 'ID de usuario inválido.' });
-    }
-
-    const checkUser = await pool.query('SELECT id, username, role FROM users WHERE id = $1', [userId]);
-    if (checkUser.rows.length === 0) {
-      return res.status(404).json({ success: false, error: 'Usuario no encontrado.' });
-    }
-
-    const user = checkUser.rows[0];
-    if (user.username === 'admin' || user.username === 'Wilberth Alessandro Molina Cutz') {
-      return res.status(403).json({ success: false, error: 'No se permite eliminar la cuenta del administrador principal.' });
-    }
-
-    await pool.query('DELETE FROM module_progress WHERE user_id = $1', [userId]);
-    await pool.query('DELETE FROM toefl_history WHERE user_id = $1', [userId]);
-    await pool.query('DELETE FROM user_stats WHERE user_id = $1', [userId]);
-    await pool.query('DELETE FROM users WHERE id = $1', [userId]);
-
-    return res.status(200).json({
-      success: true,
-      message: `Usuario ${user.username} (ID: ${userId}) eliminado exitosamente.`
-    });
-  } catch (err) {
-    console.error('❌ [ADMIN-DELETE-USER] Error eliminando usuario:', err.message);
-    return handleDatabaseError(res, err, 'Error al eliminar usuario.');
-  }
-});
 
 // ========================================================
 // SERVICIO DE MÚSICA & LETRAS SINCRONIZADAS (YOUTUBE / LRCLIB)
@@ -1590,6 +1500,7 @@ app.get('/api/music/lyrics', async (req, res) => {
     const fallbackStanzas = generateContextualStanzas(req.query.title, req.query.artist);
     return res.status(200).json(fallbackStanzas);
   }
+});
 // ========================================================
 // MÓDULO DE ADMINISTRACIÓN (/api/admin)
 // ========================================================

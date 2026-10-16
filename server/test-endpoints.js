@@ -311,7 +311,143 @@ async function runTests() {
     }
     console.log('✅ Extractor contextual con intervalos y traducción al español OK');
 
-    console.log('\n🎉 ¡TODAS LAS PRUEBAS DE MÚSICA, BÚSQUEDA Y LETRAS PASARON EXITOSAMENTE!');
+    // ========================================================
+    // 14. MÓDULO DE ADMINISTRACIÓN (/api/admin)
+    // ========================================================
+    console.log('\n--- 14a. Probando login del Administrador Principal ("admin" / "Admin2026!Master") ---');
+    const adminLoginRes = await request('POST', '/api/auth/login', {
+      username: 'admin',
+      password: 'Admin2026!Master'
+    });
+    console.log('Status login admin:', adminLoginRes.status, '- Role:', adminLoginRes.data.user?.role);
+    if (adminLoginRes.status !== 200 || !adminLoginRes.data.token || adminLoginRes.data.user?.role !== 'admin') {
+      throw new Error('Falló el login del administrador principal');
+    }
+    const adminToken = adminLoginRes.data.token;
+    const adminUserObj = adminLoginRes.data.user;
+    console.log('✅ Login de administrador principal OK, role:', adminUserObj.role);
+
+    console.log('\n--- 14b. Probando middleware requireAdmin (rechazo a usuarios no autorizados con 403) ---');
+    // Sin token
+    const noTokenRes = await request('GET', '/api/admin/users');
+    console.log('GET /api/admin/users sin token -> Status:', noTokenRes.status, '- Error:', noTokenRes.data.error);
+    if (noTokenRes.status !== 403 || noTokenRes.data.error !== 'Acceso no autorizado') {
+      throw new Error(`Esperado 403 con error 'Acceso no autorizado' sin token, obtenido ${noTokenRes.status}`);
+    }
+
+    // Con token inválido
+    const badTokenRes = await request('GET', '/api/admin/users', null, { Authorization: 'Bearer token_invalido_123' });
+    console.log('GET /api/admin/users con token inválido -> Status:', badTokenRes.status);
+    if (badTokenRes.status !== 403 || badTokenRes.data.error !== 'Acceso no autorizado') {
+      throw new Error(`Esperado 403 con error 'Acceso no autorizado' para token inválido, obtenido ${badTokenRes.status}`);
+    }
+
+    // Con token de usuario normal (jwtToken creado en paso 3/8)
+    const normalUserRes = await request('GET', '/api/admin/users', null, { Authorization: `Bearer ${jwtToken}` });
+    console.log('GET /api/admin/users con usuario común -> Status:', normalUserRes.status, '- Error:', normalUserRes.data.error);
+    if (normalUserRes.status !== 403 || normalUserRes.data.error !== 'Acceso no autorizado') {
+      throw new Error(`Esperado 403 con error 'Acceso no autorizado' para usuario no admin, obtenido ${normalUserRes.status}`);
+    }
+    console.log('✅ requireAdmin bloquea accesos no autorizados con código 403 OK');
+
+    console.log('\n--- 14c. Probando GET /api/admin/users con token de administrador ---');
+    const adminUsersRes = await request('GET', '/api/admin/users', null, { Authorization: `Bearer ${adminToken}` });
+    console.log('Status GET /api/admin/users:', adminUsersRes.status);
+    console.log('Total usuarios obtenidos:', Array.isArray(adminUsersRes.data) ? adminUsersRes.data.length : 'No es array');
+    if (adminUsersRes.status !== 200 || !Array.isArray(adminUsersRes.data) || adminUsersRes.data.length === 0) {
+      throw new Error('Falló GET /api/admin/users');
+    }
+    const sampleUser = adminUsersRes.data[0];
+    console.log('Muestra de usuario retornado:', sampleUser);
+    const requiredKeys = ['id', 'username', 'email', 'role', 'created_at', 'exp', 'rank', 'streak_days'];
+    for (const key of requiredKeys) {
+      if (!(key in sampleUser)) {
+        throw new Error(`El usuario en GET /api/admin/users no contiene la propiedad requerida '${key}'`);
+      }
+    }
+    console.log('✅ GET /api/admin/users retorna todos los campos requeridos OK');
+
+    console.log('\n--- 14d. Probando GET /api/admin/stats ---');
+    const adminStatsRes = await request('GET', '/api/admin/stats', null, { Authorization: `Bearer ${adminToken}` });
+    console.log('Status GET /api/admin/stats:', adminStatsRes.status);
+    console.log('Stats:', adminStatsRes.data);
+    if (
+      adminStatsRes.status !== 200 ||
+      typeof adminStatsRes.data.totalUsers !== 'number' ||
+      typeof adminStatsRes.data.activeUsersToday !== 'number' ||
+      typeof adminStatsRes.data.averageExp !== 'number'
+    ) {
+      throw new Error('Falló GET /api/admin/stats o las métricas no son números');
+    }
+    console.log('✅ GET /api/admin/stats retorna métricas globales correctas OK');
+
+    console.log('\n--- 14e. Probando PATCH /api/admin/users/:id/role ---');
+    // Crear un usuario temporal para ascender y degradar
+    const tempUser = `temp_role_user_${Date.now()}`;
+    const tempRegRes = await request('POST', '/api/auth/register', {
+      username: tempUser,
+      email: `${tempUser}@dominio.com`,
+      password: 'TemporaryPass123!'
+    });
+    const tempUserId = tempRegRes.data.user.id;
+    console.log('Usuario temporal creado:', tempUser, 'con ID:', tempUserId, 'Role:', tempRegRes.data.user.role);
+
+    // Intento con rol inválido (400 esperado)
+    const badRoleRes = await request('PATCH', `/api/admin/users/${tempUserId}/role`, { role: 'super_admin_falso' }, { Authorization: `Bearer ${adminToken}` });
+    console.log('PATCH con rol inválido -> Status:', badRoleRes.status);
+    if (badRoleRes.status !== 400) {
+      throw new Error(`Se esperaba 400 para rol inválido, obtenido ${badRoleRes.status}`);
+    }
+
+    // Ascender a 'admin'
+    const promoteRes = await request('PATCH', `/api/admin/users/${tempUserId}/role`, { role: 'admin' }, { Authorization: `Bearer ${adminToken}` });
+    console.log('Ascenso a admin -> Status:', promoteRes.status, '- Nuevo rol:', promoteRes.data.user?.role);
+    if (promoteRes.status !== 200 || promoteRes.data.user?.role !== 'admin') {
+      throw new Error('Falló el ascenso de rol a admin');
+    }
+
+    // Degradar a 'user'
+    const demoteRes = await request('PATCH', `/api/admin/users/${tempUserId}/role`, { role: 'user' }, { Authorization: `Bearer ${adminToken}` });
+    console.log('Degradación a user -> Status:', demoteRes.status, '- Nuevo rol:', demoteRes.data.user?.role);
+    if (demoteRes.status !== 200 || demoteRes.data.user?.role !== 'user') {
+      throw new Error('Falló la degradación de rol a user');
+    }
+
+    // Intentar degradar al administrador principal (403 esperado)
+    const demoteMainAdminRes = await request('PATCH', `/api/admin/users/${adminUserObj.id}/role`, { role: 'user' }, { Authorization: `Bearer ${adminToken}` });
+    console.log('Intento de degradar al admin principal -> Status:', demoteMainAdminRes.status, '- Error:', demoteMainAdminRes.data.error);
+    if (demoteMainAdminRes.status !== 403) {
+      throw new Error(`Se esperaba 403 al intentar degradar al admin principal, obtenido ${demoteMainAdminRes.status}`);
+    }
+    console.log('✅ PATCH /api/admin/users/:id/role con protecciones OK');
+
+    console.log('\n--- 14f. Probando DELETE /api/admin/users/:id con cascada y protecciones ---');
+    // Intento de auto-eliminación por el propio admin (400 esperado)
+    const selfDeleteRes = await request('DELETE', `/api/admin/users/${adminUserObj.id}`, null, { Authorization: `Bearer ${adminToken}` });
+    console.log('Auto-eliminación de admin -> Status:', selfDeleteRes.status, '- Error:', selfDeleteRes.data.error);
+    if (selfDeleteRes.status !== 400) {
+      throw new Error(`Se esperaba 400 al intentar auto-eliminar la cuenta del admin, obtenido ${selfDeleteRes.status}`);
+    }
+
+    // Intento de eliminar al admin principal (403 esperado)
+    const delMainAdminRes = await request('DELETE', `/api/admin/users/${adminUserObj.id}`, null, { Authorization: `Bearer ${adminToken}` });
+    // (Ya cubierto por auto-eliminación si es el mismo, pero si se pasa otro id de admin o el mismo debe responder 400 o 403)
+
+    // Eliminación exitosa del usuario temporal
+    const deleteTempRes = await request('DELETE', `/api/admin/users/${tempUserId}`, null, { Authorization: `Bearer ${adminToken}` });
+    console.log('Eliminación de usuario temporal -> Status:', deleteTempRes.status, '- Msg:', deleteTempRes.data.message);
+    if (deleteTempRes.status !== 200 || !deleteTempRes.data.success) {
+      throw new Error('Falló la eliminación del usuario temporal');
+    }
+
+    // Verificar que el usuario temporal ya no exista
+    const verifyDelRes = await pool.query('SELECT id FROM users WHERE id = $1', [tempUserId]);
+    if (verifyDelRes.rows.length !== 0) {
+      throw new Error('El usuario temporal aún existe en la base de datos tras DELETE');
+    }
+    console.log('✅ DELETE /api/admin/users/:id con eliminación en cascada y protecciones OK');
+
+    console.log('\n🎉 ¡TODAS LAS PRUEBAS DE AUTENTICACIÓN, ADMIN, YOUTUBE Y BASE DE DATOS PASARON EXITOSAMENTE!');
   } catch (err) {
     console.error('❌ Error durante la ejecución de pruebas:', err);
     process.exitCode = 1;

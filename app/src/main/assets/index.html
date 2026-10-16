@@ -2231,7 +2231,12 @@
 
           // 4. BATHROOM (Cuarto de Baño)
           { id: "bathroom_sink", en: "Bathroom Sink & Mirror", ipa: "/ˈbæθ.ruːm sɪŋk/", es: "Lavamanos cerámico y espejo con luz", category: "Baño", pos: { x: 3.2, y: 0, z: 3.0 }, example: "A pristine ceramic sink basin beneath a backlit framed vanity mirror." },
-          { id: "shower", en: "Glass Shower", ipa: "/ˈʃaʊ.ɚ/", es: "Regadera con cancel de cristal templado", category: "Baño", pos: { x: 6.8, y: 0, z: 6.8 }, example: "A modern walk-in shower with transparent glass doors and rainfall showerhead." }
+          { id: "shower", en: "Glass Shower", ipa: "/ˈʃaʊ.ɚ/", es: "Regadera con cancel de cristal templado", category: "Baño", pos: { x: 6.8, y: 0, z: 6.8 }, example: "A modern walk-in shower with transparent glass doors and rainfall showerhead." },
+          // 5. STUDY & CLASSROOM (Aula de Estudio)
+          { id: "desk", en: "Study Desk", ipa: "/ˈstʌd.i desk/", es: "Escritorio con laptop estilizada", category: "Aula de Estudio", pos: { x: 5.5, y: 0, z: -7.0 }, example: "A solid wood study desk equipped with a sleek laptop computer." },
+          { id: "chair", en: "Ergonomic Chair", ipa: "/ˌɝː.ɡəˈnɑː.mɪk tʃer/", es: "Silla ergonómica con respaldo curvo", category: "Aula de Estudio", pos: { x: 5.5, y: 0, z: -6.2 }, example: "The swivel chair features a curved lumbar support and cushioned seat." },
+          { id: "blackboard", en: "Chalkboard", ipa: "/ˈtʃɑːk.bɔːrd/", es: "Pizarra con apuntes legibles", category: "Aula de Estudio", pos: { x: 5.5, y: 1.8, z: -8.35 }, example: "The teacher wrote today's English pronunciation lesson on the chalkboard." },
+          { id: "lamp", en: "Desk Lamp", ipa: "/desk læmp/", es: "Lámpara con punto de luz tenue", category: "Iluminación", pos: { x: 6.2, y: 0.74, z: -7.0 }, example: "A warm articulated desk lamp provides soft focused lighting for study." }
         ]
       },
       garden: {
@@ -2252,6 +2257,7 @@
           { id: "sprinkler", en: "Lawn Sprinkler", ipa: "/ˈlɑːn ˌsprɪŋ.klɚ/", es: "Aspersor de riego rotatorio", category: "Irrigación", pos: { x: -1.5, y: 0, z: 1.5 }, example: "The rotating lawn sprinkler shoots cool water droplets over the emerald lawn." },
           { id: "wooden_fence", en: "Wooden Fence", ipa: "/ˈwʊd.ən fens/", es: "Cerca perimetral de estacas", category: "Límites & Seguridad", pos: { x: 0, y: 0, z: -11.5 }, example: "The white wooden picket fence encloses the peaceful backyard." },
           { id: "garden_bench", en: "Garden Bench", ipa: "/ˈɡɑːr.dən bentʃ/", es: "Banco de jardín con listones de madera", category: "Asientos", pos: { x: -5.5, y: 0, z: -7.5 }, example: "Take a seat on the comfortable wooden bench to admire the flowers." },
+          { id: "lamp_post", en: "Street Lamp Post", ipa: "/læmp poʊst/", es: "Poste de luz victoriano con farol", category: "Iluminación Exterior", pos: { x: -0.8, y: 0, z: 2.5 }, example: "A classic cast-iron lamp post casts a warm welcoming glow across the garden pathway." },,
           { id: "garden_hose", en: "Garden Hose", ipa: "/ˈɡɑːr.dən hoʊz/", es: "Manguera de jardín enrollada", category: "Riego", pos: { x: -7.5, y: 0, z: -1.0 }, example: "He coiled the green garden hose neatly after watering the vegetable patch." },
           { id: "shovel", en: "Garden Shovel", ipa: "/ˈʃʌv.əl/", es: "Pala de jardinería", category: "Herramientas Manuales", pos: { x: 6.8, y: 0, z: 2.2 }, example: "The steel garden shovel stood upright in the soft garden bed." },
           { id: "sun", en: "Sun & Sunlight", ipa: "/sʌn/", es: "Sol diurno y luz natural", category: "Naturaleza & Clima", pos: { x: 8.0, y: 12.0, z: -18.0 }, example: "Warm golden sunlight illuminates the entire garden on a clear summer day." }
@@ -5126,7 +5132,25 @@
       // 6. Construir Escenario Inicial (House)
       buildCurrentScenario();
 
-      // 7. Resize Observer
+      // 7. Resize Observer & Screen Orientation Responsive Listener (Landscape / Portrait)
+      const camera = threeCamera;
+      const renderer = threeRenderer;
+      window.addEventListener("resize", () => {
+        if (camera && renderer) {
+          camera.aspect = window.innerWidth / window.innerHeight;
+          camera.updateProjectionMatrix();
+          renderer.setSize(window.innerWidth, window.innerHeight);
+          if (container && container.clientWidth > 0 && container.clientHeight > 0) {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+          }
+          if (threeScene) {
+            renderer.render(threeScene, camera);
+          }
+        }
+      });
+
       if (window.ResizeObserver) {
         threeResizeObserver = new ResizeObserver((entries) => {
           for (let entry of entries) {
@@ -5144,8 +5168,9 @@
 
       // 8. Bucle de Animación a 60 FPS con delta time
       let lastTime = performance.now();
+      let threeAnimFrameId = null;
       function animate3D(now) {
-        requestAnimationFrame(animate3D);
+        threeAnimFrameId = requestAnimationFrame(animate3D);
         const delta = Math.min((now - lastTime) / 1000, 0.1);
         lastTime = now;
 
@@ -5164,7 +5189,23 @@
           threeRenderer.render(threeScene, threeCamera);
         }
       }
-      requestAnimationFrame(animate3D);
+      threeAnimFrameId = requestAnimationFrame(animate3D);
+
+      // Pausa automática del bucle de renderizado en segundo plano para ahorrar batería y recursos
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          if (threeAnimFrameId) {
+            cancelAnimationFrame(threeAnimFrameId);
+            threeAnimFrameId = null;
+          }
+        } else {
+          if (!threeAnimFrameId && isThreeInitialized && currentActiveView === 'view-worldtour') {
+            lastTime = performance.now();
+            threeAnimFrameId = requestAnimationFrame(animate3D);
+          }
+        }
+      });
+
       isThreeInitialized = true;
     }
 
@@ -5271,6 +5312,142 @@
       return texture;
     }
 
+    // Pizarra escolar con textura procedural de apuntes legibles
+    let cachedBlackboardTexture = null;
+    function createBlackboardTexture() {
+      if (cachedBlackboardTexture) return cachedBlackboardTexture;
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+
+      // Fondo verde pizarra clásico con sutil polvo de tiza
+      ctx.fillStyle = '#143827';
+      ctx.fillRect(0, 0, 512, 256);
+
+      // Marco interior sutil
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+      ctx.lineWidth = 4;
+      ctx.strokeRect(12, 12, 488, 232);
+
+      // Texto de clase legible en tiza
+      ctx.font = 'bold 24px sans-serif';
+      ctx.fillStyle = '#fef08a';
+      ctx.fillText("TODAY'S ENGLISH LESSON", 32, 54);
+
+      ctx.font = '19px sans-serif';
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillText("1. Classroom & Study Vocabulary", 32, 98);
+      ctx.fillText("2. Desk, Chair, Lamp & Books", 32, 136);
+      ctx.fillText("3. Speaking Practice (+50 EXP)", 32, 174);
+
+      ctx.font = 'italic 16px sans-serif';
+      ctx.fillStyle = '#6ee7b7';
+      ctx.fillText("★ Fluency Goal: 100% Pronunciation Accuracy", 32, 218);
+
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.wrapS = THREE.ClampToEdgeWrapping;
+      tex.wrapT = THREE.ClampToEdgeWrapping;
+      cachedBlackboardTexture = tex;
+      return tex;
+    }
+
+    // Pantalla de laptop estilizada con editor de código IDE
+    let cachedLaptopScreenTexture = null;
+    function createLaptopScreenTexture() {
+      if (cachedLaptopScreenTexture) return cachedLaptopScreenTexture;
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 160;
+      const ctx = canvas.getContext('2d');
+
+      // Interfaz de editor de código estilizado (IDE)
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(0, 0, 256, 160);
+
+      // Barra superior con pestañas
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(0, 0, 256, 22);
+
+      // Botones ventana (rojo, amarillo, verde)
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath(); ctx.arc(10, 11, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#eab308';
+      ctx.beginPath(); ctx.arc(22, 11, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#22c55e';
+      ctx.beginPath(); ctx.arc(34, 11, 4, 0, Math.PI * 2); ctx.fill();
+
+      // Pestaña activa
+      ctx.fillStyle = '#334155';
+      ctx.fillRect(48, 4, 80, 18);
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '10px monospace';
+      ctx.fillText('EnglishApp.js', 54, 16);
+
+      // Líneas de código coloreadas (syntax highlighting)
+      const codeLines = [
+        { color: '#818cf8', text: 'import { speak } from "coach";' },
+        { color: '#38bdf8', text: 'const user = new Student();' },
+        { color: '#34d399', text: 'function practiceVocabulary() {' },
+        { color: '#fcd34d', text: '  user.gainExp(50);' },
+        { color: '#f472b6', text: '  user.pronounce("fluent");' },
+        { color: '#34d399', text: '}' }
+      ];
+
+      codeLines.forEach((line, idx) => {
+        const y = 42 + idx * 18;
+        ctx.fillStyle = '#475569';
+        ctx.font = '9px monospace';
+        ctx.fillText(String(idx + 1), 10, y);
+
+        ctx.fillStyle = line.color;
+        ctx.font = 'bold 9px monospace';
+        ctx.fillText(line.text, 26, y);
+      });
+
+      // Barra inferior de estado
+      ctx.fillStyle = '#0284c7';
+      ctx.fillRect(0, 146, 256, 14);
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = '8px sans-serif';
+      ctx.fillText('⚡ Ready • UTF-8 • JavaScript • 60 FPS', 10, 156);
+
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.wrapS = THREE.ClampToEdgeWrapping;
+      tex.wrapT = THREE.ClampToEdgeWrapping;
+      cachedLaptopScreenTexture = tex;
+      return tex;
+    }
+
+    // Funciones de liberación segura de recursos GPU para prevenir memory leaks
+    function disposeThreeMaterial(mat) {
+      if (!mat) return;
+      if (mat.map && mat.map !== cachedBlackboardTexture && mat.map !== cachedLaptopScreenTexture) {
+        try { mat.map.dispose(); } catch (e) {}
+      }
+      try { mat.dispose(); } catch (e) {}
+    }
+
+    function disposeThreeNode(node) {
+      if (!node) return;
+      if (node.children) {
+        while (node.children.length > 0) {
+          disposeThreeNode(node.children[0]);
+          node.remove(node.children[0]);
+        }
+      }
+      if (node.geometry) {
+        try { node.geometry.dispose(); } catch (e) {}
+      }
+      if (node.material) {
+        if (Array.isArray(node.material)) {
+          node.material.forEach(m => disposeThreeMaterial(m));
+        } else {
+          disposeThreeMaterial(node.material);
+        }
+      }
+    }
+
     // ========================================================
     // GESTIÓN Y CONSTRUCCIÓN DE ESCENARIOS (HOUSE & GARDEN)
     // ========================================================
@@ -5303,6 +5480,7 @@
       // Limpiar objetos y luces previas
       while (threeScene.children.length > 0) {
         const obj = threeScene.children[0];
+        disposeThreeNode(obj);
         threeScene.remove(obj);
       }
 
@@ -6215,9 +6393,242 @@
           rainHead.position.set(0.68, 2.10, 0);
           group.add(showerColumn, rainHead);
 
+        } else if (obj.id === 'desk') {
+          // Escritorio con cubierta de madera satinada, cajonera y laptop estilizada
+          const deskWood = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.45, metalness: 0.12 });
+          const legMetal = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.35, metalness: 0.85 });
+          const brassMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.25, metalness: 0.85 });
+
+          // Cubierta principal de madera maciza biselada
+          const desktop = new THREE.Mesh(new THREE.BoxGeometry(1.40, 0.05, 0.70), deskWood);
+          desktop.position.set(0, 0.745, 0);
+          desktop.castShadow = true;
+          desktop.receiveShadow = true;
+          group.add(desktop);
+
+          // 4 patas cónicas metálicas con casquillos de latón en la base (y = 0)
+          [[-0.62, -0.28], [0.62, -0.28], [-0.62, 0.28], [0.62, 0.28]].forEach(([lx, lz]) => {
+            const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.016, 0.72, 12), legMetal);
+            leg.position.set(lx, 0.36, lz);
+            leg.castShadow = true;
+            const ferrule = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.06, 12), brassMat);
+            ferrule.position.set(lx, 0.03, lz);
+            group.add(leg, ferrule);
+          });
+
+          // Mueble lateral cajonero bajo la cubierta
+          const drawerCab = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.44, 0.58), deskWood);
+          drawerCab.position.set(0.42, 0.48, 0);
+          drawerCab.castShadow = true;
+          group.add(drawerCab);
+
+          // Tiradores de cajón en aluminio pulido
+          [-0.10, 0.10].forEach(dy => {
+            const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.14, 8), brassMat);
+            handle.rotation.z = Math.PI / 2;
+            handle.position.set(0.42, 0.48 + dy, 0.30);
+            group.add(handle);
+          });
+
+          // Tapete / protector de escritorio en cuero oscuro
+          const deskPad = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.006, 0.44), new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.68 }));
+          deskPad.position.set(-0.12, 0.773, 0);
+          group.add(deskPad);
+
+          // Laptop estilizada con pantalla emitida
+          const laptopGroup = new THREE.Group();
+          const laptopChassis = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.014, 0.24), legMetal);
+          laptopChassis.position.y = 0.007;
+          laptopChassis.castShadow = true;
+
+          // Teclado estilizado oscuro
+          const keyboard = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.004, 0.12), new THREE.MeshStandardMaterial({ color: 0x090d16, roughness: 0.7 }));
+          keyboard.position.set(0, 0.015, -0.02);
+
+          // Trackpad
+          const trackpad = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.002, 0.07), new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.3, metalness: 0.7 }));
+          trackpad.position.set(0, 0.015, 0.07);
+
+          // Tapa / Pantalla abierta a 105 grados
+          const laptopLid = new THREE.Group();
+          laptopLid.position.set(0, 0.014, -0.12);
+
+          const lidBody = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.24, 0.010), legMetal);
+          lidBody.position.set(0, 0.12, 0);
+          lidBody.castShadow = true;
+
+          const screenTex = createLaptopScreenTexture();
+          const screenMat = new THREE.MeshStandardMaterial({
+            map: screenTex,
+            roughness: 0.25,
+            metalness: 0.15,
+            emissive: 0xffffff,
+            emissiveMap: screenTex,
+            emissiveIntensity: 0.75
+          });
+          const screenMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.33, 0.21), screenMat);
+          screenMesh.position.set(0, 0.12, 0.006);
+
+          laptopLid.add(lidBody, screenMesh);
+          laptopLid.rotation.x = -Math.PI * 0.15;
+
+          laptopGroup.add(laptopChassis, keyboard, trackpad, laptopLid);
+          laptopGroup.position.set(-0.12, 0.776, 0);
+          group.add(laptopGroup);
+
+        } else if (obj.id === 'chair') {
+          // Silla de oficina ergonómica con respaldo curvo, asiento acolchado y base estrella de ruedas
+          const fabricMat = new THREE.MeshStandardMaterial({ color: 0x1e3a8a, roughness: 0.55, metalness: 0.15 });
+          const chromeChairMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.92, roughness: 0.18 });
+          const darkFrameMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.65, metalness: 0.2 });
+
+          // Asiento acolchado biselado
+          const seat = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.08, 0.46), fabricMat);
+          seat.position.set(0, 0.46, 0);
+          seat.castShadow = true;
+          group.add(seat);
+
+          // Respaldo curvo ergonómico (cilindro hueco con arco suave)
+          const backGeo = new THREE.CylinderGeometry(0.26, 0.26, 0.44, 18, 1, true, -Math.PI * 0.35, Math.PI * 0.7);
+          const backMesh = new THREE.Mesh(backGeo, new THREE.MeshStandardMaterial({ color: 0x1e3a8a, roughness: 0.55, metalness: 0.15, side: THREE.DoubleSide }));
+          backMesh.position.set(0, 0.72, -0.05);
+          backMesh.castShadow = true;
+          group.add(backMesh);
+
+          // Soporte estructural del respaldo
+          const spine = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.38, 0.04), darkFrameMat);
+          spine.position.set(0, 0.65, -0.22);
+          group.add(spine);
+
+          // Reposabrazos curvados a ambos lados
+          [-0.26, 0.26].forEach(ax => {
+            const armPost = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.20), darkFrameMat);
+            armPost.position.set(ax, 0.55, 0);
+            const armRest = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.025, 0.24), darkFrameMat);
+            armRest.position.set(ax, 0.65, 0);
+            group.add(armPost, armRest);
+          });
+
+          // Columna neumática central
+          const column = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.24, 12), chromeChairMat);
+          column.position.set(0, 0.26, 0);
+          column.castShadow = true;
+          group.add(column);
+
+          // Base estrella de 5 radios con ruedas a ras de suelo (y = 0)
+          for (let i = 0; i < 5; i++) {
+            const angle = (i * Math.PI * 2) / 5;
+            const arm = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.025, 0.035), chromeChairMat);
+            arm.position.set(Math.cos(angle) * 0.12, 0.07, Math.sin(angle) * 0.12);
+            arm.rotation.y = -angle;
+            arm.castShadow = true;
+
+            // Rueda giratoria
+            const wheel = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), darkFrameMat);
+            wheel.position.set(Math.cos(angle) * 0.24, 0.035, Math.sin(angle) * 0.24);
+            wheel.castShadow = true;
+            group.add(arm, wheel);
+          }
+
+        } else if (obj.id === 'blackboard') {
+          // Pizarra escolar con textura procedural de apuntes legibles, marco de madera y bandeja para tizas
+          const boardFrameMat = new THREE.MeshStandardMaterial({ color: 0x5c2b09, roughness: 0.48, metalness: 0.1 });
+          const boardTex = createBlackboardTexture();
+          const slateMat = new THREE.MeshStandardMaterial({
+            map: boardTex,
+            roughness: 0.65,
+            metalness: 0.05
+          });
+
+          // Marco biselado exterior
+          const frame = new THREE.Mesh(new THREE.BoxGeometry(2.44, 1.44, 0.06), boardFrameMat);
+          frame.castShadow = true;
+
+          // Superficie frontal de la pizarra con apuntes legibles
+          const slate = new THREE.Mesh(new THREE.PlaneGeometry(2.32, 1.32), slateMat);
+          slate.position.set(0, 0, 0.032);
+
+          // Bandeja inferior porta-tizas y borrador
+          const chalkTray = new THREE.Mesh(new THREE.BoxGeometry(2.36, 0.03, 0.12), boardFrameMat);
+          chalkTray.position.set(0, -0.72, 0.06);
+          chalkTray.castShadow = true;
+
+          // Borrador de madera y fieltro
+          const eraserMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.8 });
+          const eraser = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.035, 0.06), eraserMat);
+          eraser.position.set(-0.35, -0.69, 0.06);
+
+          // Tizas de colores individuales en la bandeja
+          const chalkColors = [0xfef08a, 0xffffff, 0x38bdf8];
+          chalkColors.forEach((color, idx) => {
+            const chalk = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.07, 8), new THREE.MeshStandardMaterial({ color, roughness: 0.9 }));
+            chalk.rotation.z = Math.PI / 2;
+            chalk.position.set(0.15 + idx * 0.10, -0.70, 0.06);
+            group.add(chalk);
+          });
+
+          group.add(frame, slate, chalkTray, eraser);
+
+        } else if (obj.id === 'lamp') {
+          // Lámpara de escritorio articulada de latón con foco cálido y punto de luz tenue
+          const brassLampMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.35, metalness: 0.82 });
+          const darkLampMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.45, metalness: 0.85 });
+
+          // Base circular biselada con peso
+          const lampBase = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 0.024, 24), brassLampMat);
+          lampBase.position.y = 0.012;
+          lampBase.castShadow = true;
+          group.add(lampBase);
+
+          // Brazo articulado inferior
+          const armLower = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.34, 12), brassLampMat);
+          armLower.position.set(0.04, 0.16, 0);
+          armLower.rotation.z = -0.35;
+          armLower.castShadow = true;
+
+          // Codo articulado central
+          const elbow = new THREE.Mesh(new THREE.SphereGeometry(0.020, 12, 12), darkLampMat);
+          elbow.position.set(0.10, 0.30, 0);
+
+          // Brazo articulado superior
+          const armUpper = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.28, 12), brassLampMat);
+          armUpper.position.set(0.02, 0.42, 0);
+          armUpper.rotation.z = 0.45;
+          armUpper.castShadow = true;
+
+          // Campana cónica difusora
+          const shade = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.14, 18, 1, true), brassLampMat);
+          shade.position.set(-0.08, 0.48, 0);
+          shade.rotation.z = -Math.PI * 0.40;
+          shade.castShadow = true;
+
+          // Bombilla emisiva
+          const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.035, 12, 12), new THREE.MeshStandardMaterial({
+            color: 0xffedd5,
+            emissive: 0xfef08a,
+            emissiveIntensity: 1.4
+          }));
+          bulb.position.set(-0.08, 0.46, 0);
+
+          // Punto de luz tenue cálida en el escritorio
+          const deskPointLight = new THREE.PointLight(0xfef08a, 1.25, 4.8);
+          deskPointLight.position.set(-0.08, 0.45, 0);
+          deskPointLight.castShadow = true;
+          deskPointLight.shadow.bias = -0.001;
+
+          group.add(armLower, elbow, armUpper, shade, bulb, deskPointLight);
+
         } else {
-          const box = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), new THREE.MeshStandardMaterial({ color: 0xa855f7 }));
-          group.add(box);
+          // Objeto decorativo de alta fidelidad: pedestal biselado y jarrón de cerámica esmaltada
+          const pedMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.5, metalness: 0.2 });
+          const vaseMat = new THREE.MeshStandardMaterial({ color: 0x7c3aed, roughness: 0.18, metalness: 0.1 });
+          const ped = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, 0.65, 16), pedMat);
+          ped.position.y = 0.325;
+          ped.castShadow = true;
+          const vase = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.08, 0.42, 16), vaseMat);
+          vase.position.y = 0.86;
+          vase.castShadow = true;
+          group.add(ped, vase);
         }
       } else {
         // SCENARIO: BACKYARD & GARDEN
@@ -6524,9 +6935,76 @@
         } else if (obj.id === 'sun') {
           const sunSphere = new THREE.Mesh(new THREE.SphereGeometry(1.6, 16, 16), new THREE.MeshBasicMaterial({ color: 0xfef08a }));
           group.add(sunSphere);
+        } else if (obj.id === 'lamp_post') {
+          // Poste de luz exterior victoriano de hierro fundido con farol hexagonal y luz cálida
+          const ironPostMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.45, metalness: 0.85 });
+          const brassTrimMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.35, metalness: 0.8 });
+
+          // Base octagonal con molduras biseladas a ras de suelo (y = 0)
+          const plinth = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.36, 0.38, 8), ironPostMat);
+          plinth.position.y = 0.19;
+          plinth.castShadow = true;
+
+          // Columna cilíndrica estriada
+          const column = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.12, 2.7, 12), ironPostMat);
+          column.position.y = 1.65;
+          column.castShadow = true;
+
+          // Anillos decorativos de latón en la columna
+          const ring1 = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.022, 8, 16), brassTrimMat);
+          ring1.position.y = 0.42;
+          ring1.rotation.x = Math.PI / 2;
+          const ring2 = new THREE.Mesh(new THREE.TorusGeometry(0.09, 0.018, 8, 16), brassTrimMat);
+          ring2.position.y = 2.85;
+          ring2.rotation.x = Math.PI / 2;
+
+          // Ménsula / soporte del farol
+          const bracket = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.12, 0.18), ironPostMat);
+          bracket.position.y = 3.02;
+
+          // Farol victoriano de 6 caras
+          const lanternCap = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.22, 6), ironPostMat);
+          lanternCap.position.y = 3.45;
+          lanternCap.castShadow = true;
+
+          const glassCage = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.14, 0.34, 6, 1, true), new THREE.MeshStandardMaterial({
+            color: 0xfffbeb,
+            roughness: 0.12,
+            metalness: 0.1,
+            transparent: true,
+            opacity: 0.65
+          }));
+          glassCage.position.y = 3.20;
+
+          // Filamento incandescente brillante
+          const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.05, 12, 12), new THREE.MeshStandardMaterial({
+            color: 0xffedd5,
+            emissive: 0xfef08a,
+            emissiveIntensity: 2.2
+          }));
+          bulb.position.y = 3.20;
+
+          // Luz puntual suave exterior
+          const streetLight = new THREE.PointLight(0xffedd5, 1.8, 11.5);
+          streetLight.position.y = 3.20;
+          streetLight.castShadow = true;
+          streetLight.shadow.bias = -0.001;
+
+          group.add(plinth, column, ring1, ring2, bracket, lanternCap, glassCage, bulb, streetLight);
+
         } else {
-          const box = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), new THREE.MeshStandardMaterial({ color: 0x10b981 }));
-          group.add(box);
+          // Escultura ornamental de piedra: pedestal torneado y cuenco fuente de baño de aves (birdbath)
+          const stoneMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.65, metalness: 0.1 });
+          const waterMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.1, metalness: 0.3, transparent: true, opacity: 0.8 });
+          const column = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.22, 0.72, 16), stoneMat);
+          column.position.y = 0.36;
+          column.castShadow = true;
+          const basin = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.18, 0.16, 20), stoneMat);
+          basin.position.y = 0.78;
+          basin.castShadow = true;
+          const water = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.02, 20), waterMat);
+          water.position.y = 0.84;
+          group.add(column, basin, water);
         }
       }
 
