@@ -43,6 +43,7 @@ process.on('uncaughtException', (err) => {
 });
 
 const app = express();
+app.set('trust proxy', true);
 
 // Middleware y configuración de CORS permitiendo origen de producción en Render
 const ALLOWED_PRODUCTION_ORIGIN = 'https://english-app-frontend-3j9w.onrender.com';
@@ -179,9 +180,91 @@ function extractTokenFromHeader(req) {
   return null;
 }
 
+// ========================================================
+// SEGURIDAD DE ADMINISTRACIÓN: CONTROL DE IP Y DISPOSITIVO MAESTRO
+// ========================================================
+const ADMIN_DENIED_ERROR = { error: 'Acceso denegado: Dispositivo o red no autorizada para administración' };
+const ADMIN_DEVICE_KEY = process.env.ADMIN_DEVICE_KEY || 'MasterENG-Admin-Secure-2026-DeviceKey';
+
+const ALLOWED_ADMIN_IPS = new Set([
+  '::1',
+  '127.0.0.1',
+  '::ffff:127.0.0.1',
+  '192.168.1.76',
+  '::ffff:192.168.1.76',
+  'localhost'
+]);
+
+const ALLOWED_IPV6_PREFIX = '2806:10be:7:2d74:';
+
+function getClientIp(req) {
+  const forwarded = req.headers && req.headers['x-forwarded-for'];
+  if (forwarded && typeof forwarded === 'string') {
+    const first = forwarded.split(',')[0].trim();
+    if (first) return first;
+  }
+  return (req.socket && req.socket.remoteAddress) || req.ip || '';
+}
+
+function isAllowedAdminIp(rawIp) {
+  if (!rawIp) return false;
+  let ip = String(rawIp).trim().toLowerCase();
+
+  // Eliminar prefijo IPv4 mapeado en IPv6 si existe
+  if (ip.startsWith('::ffff:')) {
+    const unmapped = ip.slice(7);
+    if (ALLOWED_ADMIN_IPS.has(unmapped)) return true;
+  }
+
+  // 1. Coincidencia exacta con lista blanca local / desarrollo
+  if (ALLOWED_ADMIN_IPS.has(ip)) return true;
+
+  // 2. Prefijo IPv6 del módem del desarrollador (2806:10be:7:2d74::/64)
+  if (
+    ip.startsWith(ALLOWED_IPV6_PREFIX.toLowerCase()) ||
+    ip.startsWith('2806:10be:7:2d74::') ||
+    ip.startsWith('2806:10be:0007:2d74:')
+  ) {
+    return true;
+  }
+
+  // 3. Variable de entorno opcional de respaldo en Render (ADMIN_ALLOWED_IP)
+  const envAllowedIp = process.env.ADMIN_ALLOWED_IP;
+  if (envAllowedIp) {
+    const envList = envAllowedIp.split(',').map((item) => item.trim().toLowerCase());
+    if (envList.includes(ip) || envList.includes(rawIp.trim().toLowerCase())) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function isValidAdminDevice(req) {
+  const deviceKey = req.headers && req.headers['x-admin-device-key'];
+  if (!deviceKey || typeof deviceKey !== 'string') return false;
+  return deviceKey.trim() === ADMIN_DEVICE_KEY;
+}
+
+// Middleware: Lista blanca de IPs y validación de Dispositivo Maestro para Admin
+function adminIpWhitelist(req, res, next) {
+  const clientIp = getClientIp(req);
+  if (!isAllowedAdminIp(clientIp) || !isValidAdminDevice(req)) {
+    console.warn(`🛡️ [ADMIN-SECURITY] Acceso bloqueado a ruta de administración desde IP: ${clientIp}, deviceKey: ${req.headers && req.headers['x-admin-device-key'] ? 'inválido' : 'ausente'}`);
+    return res.status(403).json(ADMIN_DENIED_ERROR);
+  }
+  next();
+}
+
 // Middleware: Verificación estricta de autorización para Administradores
 async function requireAdmin(req, res, next) {
   try {
+    const clientIp = getClientIp(req);
+    if (!isAllowedAdminIp(clientIp) || !isValidAdminDevice(req)) {
+      console.warn(`🛡️ [ADMIN-SECURITY] requireAdmin bloqueó acceso desde IP: ${clientIp}`);
+      return res.status(403).json(ADMIN_DENIED_ERROR);
+    }
+
     const token = extractTokenFromHeader(req);
     if (!token) {
       return res.status(403).json({ error: 'Acceso no autorizado' });
@@ -526,6 +609,15 @@ app.post('/api/auth/login', async (req, res) => {
 
     const user = userRes.rows[0];
 
+    // Seguridad Estricta para Administrador: Validación de IP Whitelist y Dispositivo Maestro
+    if (user.role === 'admin') {
+      const clientIp = getClientIp(req);
+      if (!isAllowedAdminIp(clientIp) || !isValidAdminDevice(req)) {
+        console.warn(`🛡️ [ADMIN-SECURITY] Intento de login de administrador bloqueado desde IP: ${clientIp}, deviceKey: ${req.headers && req.headers['x-admin-device-key'] ? 'inválido' : 'ausente'}`);
+        return res.status(403).json(ADMIN_DENIED_ERROR);
+      }
+    }
+
     if (!user.password_hash) {
       return res.status(401).json({
         success: false,
@@ -721,6 +813,16 @@ app.post('/api/auth/google', async (req, res) => {
          ON CONFLICT (user_id) DO UPDATE SET last_login = NOW()`,
         [user.id]
       );
+    }
+
+    // Seguridad Estricta para Administrador en Google Auth
+    if (user.role === 'admin') {
+      const clientIp = getClientIp(req);
+      if (!isAllowedAdminIp(clientIp) || !isValidAdminDevice(req)) {
+        await safeRollback(client);
+        console.warn(`🛡️ [ADMIN-SECURITY] Google login de administrador bloqueado desde IP: ${clientIp}`);
+        return res.status(403).json(ADMIN_DENIED_ERROR);
+      }
     }
 
     await client.query('COMMIT');
@@ -1528,6 +1630,7 @@ app.get('/api/music/lyrics', async (req, res) => {
 // ========================================================
 // MÓDULO DE ADMINISTRACIÓN (/api/admin)
 // ========================================================
+app.use('/api/admin', adminIpWhitelist);
 
 // 1. GET /api/admin/users: Lista todos los usuarios con estadísticas consolidadas
 app.get('/api/admin/users', requireAdmin, async (req, res) => {

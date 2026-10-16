@@ -26,6 +26,7 @@
     }
   </script>
   <script src="master_data.js"></script>
+  <script src="js/world3d.js"></script>
 
   <!-- Fallback SVGs de alta resolución en memoria para garantizar cero imágenes rotas -->
   <script>
@@ -2498,7 +2499,9 @@
           { id: "desk", en: "Study Desk", ipa: "/ˈstʌd.i desk/", es: "Escritorio con laptop estilizada", category: "Aula de Estudio", pos: { x: 5.5, y: 0, z: -7.0 }, example: "A solid wood study desk equipped with a sleek laptop computer." },
           { id: "chair", en: "Ergonomic Chair", ipa: "/ˌɝː.ɡəˈnɑː.mɪk tʃer/", es: "Silla ergonómica con respaldo curvo", category: "Aula de Estudio", pos: { x: 5.5, y: 0, z: -6.2 }, example: "The swivel chair features a curved lumbar support and cushioned seat." },
           { id: "blackboard", en: "Chalkboard", ipa: "/ˈtʃɑːk.bɔːrd/", es: "Pizarra con apuntes legibles", category: "Aula de Estudio", pos: { x: 5.5, y: 1.8, z: -8.35 }, example: "The teacher wrote today's English pronunciation lesson on the chalkboard." },
-          { id: "lamp", en: "Desk Lamp", ipa: "/desk læmp/", es: "Lámpara con punto de luz tenue", category: "Iluminación", pos: { x: 6.2, y: 0.74, z: -7.0 }, example: "A warm articulated desk lamp provides soft focused lighting for study." }
+          { id: "lamp", en: "Desk Lamp", ipa: "/desk læmp/", es: "Lámpara con punto de luz tenue", category: "Iluminación", pos: { x: 6.2, y: 0.74, z: -7.0 }, example: "A warm articulated desk lamp provides soft focused lighting for study." },
+          { id: "wall_painting", en: "Wall Painting", ipa: "/wɔːl ˈpeɪn.tɪŋ/", es: "Cuadro enmarcado de arte abstracto", category: "Decoración", pos: { x: -3.6, y: 2.2, z: -8.3 }, example: "A fine framed art canvas hangs gracefully on the living room wall." },
+          { id: "wall_clock", en: "Wall Clock", ipa: "/wɔːl klɑːk/", es: "Reloj de pared analógico con manecillas", category: "Decoración", pos: { x: 0, y: 2.4, z: -8.3 }, example: "The wooden wall clock ticks steadily to keep track of study time." }
         ]
       },
       garden: {
@@ -2519,10 +2522,13 @@
           { id: "sprinkler", en: "Lawn Sprinkler", ipa: "/ˈlɑːn ˌsprɪŋ.klɚ/", es: "Aspersor de riego rotatorio", category: "Irrigación", pos: { x: -1.5, y: 0, z: 1.5 }, example: "The rotating lawn sprinkler shoots cool water droplets over the emerald lawn." },
           { id: "wooden_fence", en: "Wooden Fence", ipa: "/ˈwʊd.ən fens/", es: "Cerca perimetral de estacas", category: "Límites & Seguridad", pos: { x: 0, y: 0, z: -11.5 }, example: "The white wooden picket fence encloses the peaceful backyard." },
           { id: "garden_bench", en: "Garden Bench", ipa: "/ˈɡɑːr.dən bentʃ/", es: "Banco de jardín con listones de madera", category: "Asientos", pos: { x: -5.5, y: 0, z: -7.5 }, example: "Take a seat on the comfortable wooden bench to admire the flowers." },
-          { id: "lamp_post", en: "Street Lamp Post", ipa: "/læmp poʊst/", es: "Poste de luz victoriano con farol", category: "Iluminación Exterior", pos: { x: -0.8, y: 0, z: 2.5 }, example: "A classic cast-iron lamp post casts a warm welcoming glow across the garden pathway." },,
+          { id: "lamp_post", en: "Street Lamp Post", ipa: "/læmp poʊst/", es: "Poste de luz victoriano con farol", category: "Iluminación Exterior", pos: { x: -0.8, y: 0, z: 2.5 }, example: "A classic cast-iron lamp post casts a warm welcoming glow across the garden pathway." },
           { id: "garden_hose", en: "Garden Hose", ipa: "/ˈɡɑːr.dən hoʊz/", es: "Manguera de jardín enrollada", category: "Riego", pos: { x: -7.5, y: 0, z: -1.0 }, example: "He coiled the green garden hose neatly after watering the vegetable patch." },
           { id: "shovel", en: "Garden Shovel", ipa: "/ˈʃʌv.əl/", es: "Pala de jardinería", category: "Herramientas Manuales", pos: { x: 6.8, y: 0, z: 2.2 }, example: "The steel garden shovel stood upright in the soft garden bed." },
-          { id: "sun", en: "Sun & Sunlight", ipa: "/sʌn/", es: "Sol diurno y luz natural", category: "Naturaleza & Clima", pos: { x: 8.0, y: 12.0, z: -18.0 }, example: "Warm golden sunlight illuminates the entire garden on a clear summer day." }
+          { id: "sun", en: "Sun & Sunlight", ipa: "/sʌn/", es: "Sol diurno y luz natural", category: "Naturaleza & Clima", pos: { x: 8.0, y: 12.0, z: -18.0 }, example: "Warm golden sunlight illuminates the entire garden on a clear summer day." },
+          { id: "flower_bush", en: "Flower Bush", ipa: "/ˈflaʊ.ɚ bʊʃ/", es: "Arbusto floral con flores de colores vivos", category: "Naturaleza", pos: { x: -4.5, y: 0, z: -4.8 }, example: "A vibrant flowering shrub blooming with colorful petals." },
+          { id: "stone_path", en: "Stone Pathway", ipa: "/stoʊn ˈpæθ.weɪ/", es: "Camino de baldosas de piedra desiguales", category: "Arquitectura Exterior", pos: { x: 0.0, y: 0, z: 1.5 }, example: "An irregular stone paver path winds gracefully through the garden lawn." },
+          { id: "grass_patch", en: "Grass Patch", ipa: "/ɡræs pætʃ/", es: "Parche de césped tridimensional", category: "Naturaleza", pos: { x: 2.5, y: 0, z: 4.0 }, example: "Dense tufts of green grass blades grow along the garden edge." }
         ]
       }
     };
@@ -6234,10 +6240,75 @@
       return tex;
     }
 
+    // Textura procedural para cuadros decorativos
+    let cachedPaintingTexture = null;
+    function createPaintingTexture() {
+      if (cachedPaintingTexture) return cachedPaintingTexture;
+      const canvas = document.createElement('canvas');
+      canvas.width = 256; canvas.height = 160;
+      const ctx = canvas.getContext('2d');
+      const grad = ctx.createLinearGradient(0, 0, 0, 160);
+      grad.addColorStop(0, '#38bdf8'); grad.addColorStop(0.55, '#fde047');
+      grad.addColorStop(0.7, '#fb923c'); grad.addColorStop(1, '#1e3a8a');
+      ctx.fillStyle = grad; ctx.fillRect(0, 0, 256, 160);
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath(); ctx.moveTo(0, 160); ctx.lineTo(40, 105); ctx.lineTo(95, 125); ctx.lineTo(160, 85); ctx.lineTo(215, 115); ctx.lineTo(256, 95); ctx.lineTo(256, 160); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = 'rgba(254, 240, 138, 0.85)';
+      ctx.beginPath(); ctx.arc(160, 75, 16, 0, Math.PI * 2); ctx.fill();
+      const tex = new THREE.CanvasTexture(canvas);
+      cachedPaintingTexture = tex;
+      return tex;
+    }
+
+    // Textura procedural para reloj analógico
+    let cachedClockTexture = null;
+    function createClockFaceTexture() {
+      if (cachedClockTexture) return cachedClockTexture;
+      const canvas = document.createElement('canvas');
+      canvas.width = 256; canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.arc(128, 128, 120, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 6; ctx.stroke();
+      for (let i = 0; i < 12; i++) {
+        const angle = (i * Math.PI) / 6;
+        const x1 = 128 + Math.sin(angle) * 96; const y1 = 128 - Math.cos(angle) * 96;
+        const x2 = 128 + Math.sin(angle) * 110; const y2 = 128 - Math.cos(angle) * 110;
+        ctx.lineWidth = i % 3 === 0 ? 5 : 2;
+        ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+      }
+      ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 6;
+      ctx.beginPath(); ctx.moveTo(128, 128); ctx.lineTo(82, 82); ctx.stroke();
+      ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(128, 128); ctx.lineTo(174, 82); ctx.stroke();
+      ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(128, 128); ctx.lineTo(128, 48); ctx.stroke();
+      ctx.fillStyle = '#d97706'; ctx.beginPath(); ctx.arc(128, 128, 6, 0, Math.PI * 2); ctx.fill();
+      const tex = new THREE.CanvasTexture(canvas);
+      cachedClockTexture = tex;
+      return tex;
+    }
+
+    // Textura procedural para alfombra
+    let cachedRugTexture = null;
+    function createRugTexture() {
+      if (cachedRugTexture) return cachedRugTexture;
+      const canvas = document.createElement('canvas');
+      canvas.width = 256; canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#0f766e'; ctx.fillRect(0, 0, 256, 256);
+      ctx.strokeStyle = '#2dd4bf'; ctx.lineWidth = 6; ctx.strokeRect(12, 12, 232, 232);
+      ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 3; ctx.strokeRect(24, 24, 208, 208);
+      ctx.fillStyle = '#134e4a';
+      ctx.beginPath(); ctx.moveTo(128, 40); ctx.lineTo(216, 128); ctx.lineTo(128, 216); ctx.lineTo(40, 128); ctx.closePath(); ctx.fill();
+      const tex = new THREE.CanvasTexture(canvas);
+      cachedRugTexture = tex;
+      return tex;
+    }
+
     // Funciones de liberación segura de recursos GPU para prevenir memory leaks
     function disposeThreeMaterial(mat) {
       if (!mat) return;
-      if (mat.map && mat.map !== cachedBlackboardTexture && mat.map !== cachedLaptopScreenTexture) {
+      if (mat.map && mat.map !== cachedBlackboardTexture && mat.map !== cachedLaptopScreenTexture && mat.map !== cachedPaintingTexture && mat.map !== cachedClockTexture && mat.map !== cachedRugTexture) {
         try { mat.map.dispose(); } catch (e) {}
       }
       try { mat.dispose(); } catch (e) {}
@@ -6797,6 +6868,16 @@
           const handle = new THREE.Mesh(new THREE.TorusGeometry(0.042, 0.012, 8, 16), ceramicMat);
           handle.position.set(0.085, 0.08, 0);
           handle.rotation.y = Math.PI / 2;
+
+          // Vapor humeante estilizado (steam)
+          const steamMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.9, transparent: true, opacity: 0.35 });
+          [0.06, 0.12, 0.18].forEach((sy, idx) => {
+            const steam = new THREE.Mesh(new THREE.TorusGeometry(0.022 + idx * 0.008, 0.006, 6, 12, Math.PI * 1.2), steamMat);
+            steam.rotation.x = Math.PI / 2 + (idx % 2 === 0 ? 0.35 : -0.35);
+            steam.position.set((idx % 2 === 0 ? 0.01 : -0.01), 0.14 + sy, 0);
+            group.add(steam);
+          });
+
           group.add(plate, cup, handle);
 
         } else if (obj.id === 'ceiling_fan') {
@@ -7291,6 +7372,17 @@
           laptopGroup.position.set(-0.12, 0.776, 0);
           group.add(laptopGroup);
 
+          // Monitor estilizado sobre soporte delgado con luz emisiva suave
+          const monitorBase = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.01, 16), legMetal);
+          monitorBase.position.set(0.35, 0.775, -0.16);
+          const monitorStand = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.26, 12), new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.95, roughness: 0.15 }));
+          monitorStand.position.set(0.35, 0.90, -0.16);
+          const monitorFrame = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.35, 0.018), legMetal);
+          monitorFrame.position.set(0.35, 1.05, -0.15);
+          const monitorDisplay = new THREE.Mesh(new THREE.PlaneGeometry(0.53, 0.32), screenMat);
+          monitorDisplay.position.set(0.35, 1.05, -0.14);
+          group.add(monitorBase, monitorStand, monitorFrame, monitorDisplay);
+
         } else if (obj.id === 'chair') {
           // Silla de oficina ergonómica con respaldo curvo, asiento acolchado y base estrella de ruedas
           const fabricMat = new THREE.MeshStandardMaterial({ color: 0x1e3a8a, roughness: 0.55, metalness: 0.15 });
@@ -7432,6 +7524,34 @@
           deskPointLight.shadow.bias = -0.001;
 
           group.add(armLower, elbow, armUpper, shade, bulb, deskPointLight);
+
+        } else if (obj.id === 'wall_painting') {
+          // Cuadro decorativo enmarcado con arte abstracto
+          const pFrameMat = new THREE.MeshStandardMaterial({ color: 0x3b1d0e, roughness: 0.45, metalness: 0.1 });
+          const pFrame = new THREE.Mesh(new THREE.BoxGeometry(1.28, 0.88, 0.04), pFrameMat);
+          pFrame.castShadow = true;
+          const pCanvasTex = createPaintingTexture();
+          const pCanvasMat = new THREE.MeshStandardMaterial({
+            map: pCanvasTex,
+            roughness: 0.4
+          });
+          const pCanvas = new THREE.Mesh(new THREE.PlaneGeometry(1.18, 0.78), pCanvasMat);
+          pCanvas.position.set(0, 0, 0.022);
+          group.add(pFrame, pCanvas);
+
+        } else if (obj.id === 'wall_clock') {
+          // Reloj de pared circular con manecillas
+          const clockBodyMat = new THREE.MeshStandardMaterial({ color: 0x3b1d0e, roughness: 0.45, metalness: 0.1 });
+          const clockBody = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.04, 24), clockBodyMat);
+          clockBody.rotation.x = Math.PI / 2;
+          const clockTex = createClockFaceTexture();
+          const clockFaceMat = new THREE.MeshStandardMaterial({
+            map: clockTex,
+            roughness: 0.2
+          });
+          const clockFace = new THREE.Mesh(new THREE.CircleGeometry(0.24, 24), clockFaceMat);
+          clockFace.position.set(0, 0, 0.022);
+          group.add(clockBody, clockFace);
 
         } else {
           // Objeto decorativo de alta fidelidad: pedestal biselado y jarrón de cerámica esmaltada
@@ -7805,7 +7925,63 @@
           streetLight.castShadow = true;
           streetLight.shadow.bias = -0.001;
 
-          group.add(plinth, column, ring1, ring2, bracket, lanternCap, glassCage, bulb, streetLight);
+          // Haz de luz puntual (SpotLight) focalizado hacia el suelo y el camino
+          const spotLight = new THREE.SpotLight(0xffedd5, 2.8, 12.0, Math.PI / 3.5, 0.5, 1.2);
+          spotLight.position.set(0, 3.20, 0);
+          spotLight.target.position.set(0, 0, 0);
+          spotLight.castShadow = true;
+
+          group.add(plinth, column, ring1, ring2, bracket, lanternCap, glassCage, bulb, streetLight, spotLight, spotLight.target);
+
+        } else if (obj.id === 'flower_bush') {
+          // Arbusto floral con flores de colores vivos
+          const bushMat = new THREE.MeshStandardMaterial({ color: 0x166534, roughness: 0.8 });
+          const bush = new THREE.Mesh(new THREE.DodecahedronGeometry(0.72), bushMat);
+          bush.position.y = 0.55;
+          bush.scale.set(1.2, 0.85, 1.1);
+          bush.castShadow = true;
+          group.add(bush);
+
+          const flowerMats = [
+            new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.45 }),
+            new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.45 }),
+            new THREE.MeshStandardMaterial({ color: 0xec4899, roughness: 0.45 }),
+            new THREE.MeshStandardMaterial({ color: 0xa855f7, roughness: 0.45 })
+          ];
+          for (let f = 0; f < 18; f++) {
+            const fMat = flowerMats[f % flowerMats.length];
+            const blossom = new THREE.Mesh(new THREE.SphereGeometry(0.045, 6, 6), fMat);
+            const theta = (f * 1.35) % (Math.PI * 2);
+            const phi = 0.2 + (f * 0.15) % (Math.PI * 0.4);
+            blossom.position.set(
+              Math.sin(phi) * Math.cos(theta) * 0.74,
+              0.55 + Math.cos(phi) * 0.45,
+              Math.sin(phi) * Math.sin(theta) * 0.74
+            );
+            group.add(blossom);
+          }
+
+        } else if (obj.id === 'grass_patch') {
+          // Parches de pasto procedural tridimensional
+          const bladeMat = new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.75 });
+          for (let g = 0; g < 14; g++) {
+            const blade = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.28, 4), bladeMat);
+            blade.position.set(((g % 5) - 2) * 0.12, 0.14, (Math.floor(g / 5) - 1) * 0.15);
+            blade.rotation.x = ((g % 3) - 1) * 0.15;
+            blade.rotation.z = ((g % 4) - 1.5) * 0.12;
+            group.add(blade);
+          }
+
+        } else if (obj.id === 'stone_path') {
+          // Camino de baldosas de piedra desiguales
+          const paverMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.75, metalness: 0.05 });
+          [[-0.4, 0], [0.3, 0.6], [-0.2, 1.3], [0.4, 2.0], [0.0, 2.7]].forEach(([px, pz], idx) => {
+            const paver = new THREE.Mesh(new THREE.CylinderGeometry(0.28 + (idx % 2) * 0.06, 0.32, 0.04, 7), paverMat);
+            paver.position.set(px, 0.02, pz);
+            paver.rotation.y = idx * 0.8;
+            paver.receiveShadow = true;
+            group.add(paver);
+          });
 
         } else {
           // Escultura ornamental de piedra: pedestal torneado y cuenco fuente de baño de aves (birdbath)

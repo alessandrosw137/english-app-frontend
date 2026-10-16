@@ -333,46 +333,124 @@ async function runTests() {
     console.log('✅ Extractor contextual con intervalos y traducción al español OK');
 
     // ========================================================
-    // 14. MÓDULO DE ADMINISTRACIÓN (/api/admin)
+    // 14. MÓDULO DE ADMINISTRACIÓN (/api/admin) & SEGURIDAD ESTRICTA (IP / DISPOSITIVO)
     // ========================================================
-    console.log('\n--- 14a. Probando login del Administrador Principal ("admin" / "Admin2026!Master") ---');
-    const adminLoginRes = await request('POST', '/api/auth/login', {
+    const ADMIN_DEVICE_KEY = process.env.ADMIN_DEVICE_KEY || 'MasterENG-Admin-Secure-2026-DeviceKey';
+    const ADMIN_DEVICE_HEADER = { 'x-admin-device-key': ADMIN_DEVICE_KEY };
+    const ADMIN_DENIED_MSG = 'Acceso denegado: Dispositivo o red no autorizada para administración';
+
+    console.log('\n--- 14a. Probando Seguridad Estricta en Login de Administrador (Bloqueo por IP y Dispositivo) ---');
+
+    // 14a.1: Intento de login admin sin encabezado x-admin-device-key (403 esperado)
+    const adminNoDeviceRes = await request('POST', '/api/auth/login', {
       username: 'admin',
       password: 'Admin2026!Master'
     });
-    console.log('Status login admin:', adminLoginRes.status, '- Role:', adminLoginRes.data.user?.role);
+    console.log('Login admin sin device key -> Status:', adminNoDeviceRes.status, '- Error:', adminNoDeviceRes.data.error);
+    if (adminNoDeviceRes.status !== 403 || adminNoDeviceRes.data.error !== ADMIN_DENIED_MSG) {
+      throw new Error(`Se esperaba 403 con mensaje de dispositivo denegado, obtenido: ${adminNoDeviceRes.status} ${JSON.stringify(adminNoDeviceRes.data)}`);
+    }
+
+    // 14a.2: Intento de login admin con encabezado x-admin-device-key erróneo (403 esperado)
+    const adminBadDeviceRes = await request('POST', '/api/auth/login', {
+      username: 'admin',
+      password: 'Admin2026!Master'
+    }, { 'x-admin-device-key': 'Clave-Incorrecta-Fake' });
+    console.log('Login admin con device key errónea -> Status:', adminBadDeviceRes.status, '- Error:', adminBadDeviceRes.data.error);
+    if (adminBadDeviceRes.status !== 403 || adminBadDeviceRes.data.error !== ADMIN_DENIED_MSG) {
+      throw new Error(`Se esperaba 403 para clave de dispositivo inválida, obtenido: ${adminBadDeviceRes.status}`);
+    }
+
+    // 14a.3: Intento de login admin desde IP no autorizada (simulada vía x-forwarded-for externa) (403 esperado)
+    const adminBadIpRes = await request('POST', '/api/auth/login', {
+      username: 'admin',
+      password: 'Admin2026!Master'
+    }, {
+      ...ADMIN_DEVICE_HEADER,
+      'x-forwarded-for': '203.0.113.195'
+    });
+    console.log('Login admin desde IP externa no autorizada -> Status:', adminBadIpRes.status, '- Error:', adminBadIpRes.data.error);
+    if (adminBadIpRes.status !== 403 || adminBadIpRes.data.error !== ADMIN_DENIED_MSG) {
+      throw new Error(`Se esperaba 403 para IP externa no autorizada, obtenido: ${adminBadIpRes.status}`);
+    }
+
+    // 14a.4: Login admin exitoso simulando IPv6 autorizada del módem (2806:10be:7:2d74::/64) y device key válida
+    const adminIpv6Res = await request('POST', '/api/auth/login', {
+      username: 'admin',
+      password: 'Admin2026!Master'
+    }, {
+      ...ADMIN_DEVICE_HEADER,
+      'x-forwarded-for': '2806:10be:7:2d74:a1b2:c3d4:e5f6:7890'
+    });
+    console.log('Login admin desde IPv6 autorizada del módem -> Status:', adminIpv6Res.status, '- Role:', adminIpv6Res.data.user?.role);
+    if (adminIpv6Res.status !== 200 || !adminIpv6Res.data.token || adminIpv6Res.data.user?.role !== 'admin') {
+      throw new Error('Falló el login de administrador desde el prefijo IPv6 autorizado');
+    }
+
+    // 14a.5: Login admin exitoso desde IP local (127.0.0.1) con device key válida
+    const adminLoginRes = await request('POST', '/api/auth/login', {
+      username: 'admin',
+      password: 'Admin2026!Master'
+    }, ADMIN_DEVICE_HEADER);
+    console.log('Login admin local con device key -> Status:', adminLoginRes.status, '- Role:', adminLoginRes.data.user?.role);
     if (adminLoginRes.status !== 200 || !adminLoginRes.data.token || adminLoginRes.data.user?.role !== 'admin') {
-      throw new Error('Falló el login del administrador principal');
+      throw new Error('Falló el login del administrador principal localmente');
     }
     const adminToken = adminLoginRes.data.token;
     const adminUserObj = adminLoginRes.data.user;
-    console.log('✅ Login de administrador principal OK, role:', adminUserObj.role);
+    console.log('✅ Seguridad estricta en login de administrador (IP Whitelist + Dispositivo Maestro) OK, role:', adminUserObj.role);
 
-    console.log('\n--- 14b. Probando middleware requireAdmin (rechazo a usuarios no autorizados con 403) ---');
-    // Sin token
-    const noTokenRes = await request('GET', '/api/admin/users');
+    console.log('\n--- 14b. Probando middleware adminIpWhitelist y requireAdmin en /api/admin/* ---');
+    // 14b.1: Acceso a /api/admin/users sin device key -> bloqueado por adminIpWhitelist con 403 y ADMIN_DENIED_MSG
+    const noDeviceAdminRes = await request('GET', '/api/admin/users');
+    console.log('GET /api/admin/users sin device key -> Status:', noDeviceAdminRes.status, '- Error:', noDeviceAdminRes.data.error);
+    if (noDeviceAdminRes.status !== 403 || noDeviceAdminRes.data.error !== ADMIN_DENIED_MSG) {
+      throw new Error(`Se esperaba 403 con ADMIN_DENIED_MSG sin device key, obtenido ${noDeviceAdminRes.status}`);
+    }
+
+    // 14b.2: Acceso a /api/admin/users desde IP no autorizada aunque tenga device key -> bloqueado con 403
+    const badIpAdminRes = await request('GET', '/api/admin/users', null, {
+      ...ADMIN_DEVICE_HEADER,
+      'x-forwarded-for': '198.51.100.25'
+    });
+    console.log('GET /api/admin/users desde IP no autorizada -> Status:', badIpAdminRes.status, '- Error:', badIpAdminRes.data.error);
+    if (badIpAdminRes.status !== 403 || badIpAdminRes.data.error !== ADMIN_DENIED_MSG) {
+      throw new Error(`Se esperaba 403 con ADMIN_DENIED_MSG para IP no autorizada, obtenido ${badIpAdminRes.status}`);
+    }
+
+    // 14b.3: Con device key válida e IP válida, pero sin token -> requireAdmin responde 403 "Acceso no autorizado"
+    const noTokenRes = await request('GET', '/api/admin/users', null, ADMIN_DEVICE_HEADER);
     console.log('GET /api/admin/users sin token -> Status:', noTokenRes.status, '- Error:', noTokenRes.data.error);
     if (noTokenRes.status !== 403 || noTokenRes.data.error !== 'Acceso no autorizado') {
       throw new Error(`Esperado 403 con error 'Acceso no autorizado' sin token, obtenido ${noTokenRes.status}`);
     }
 
-    // Con token inválido
-    const badTokenRes = await request('GET', '/api/admin/users', null, { Authorization: 'Bearer token_invalido_123' });
+    // 14b.4: Con device key válida e IP válida, pero con token inválido -> requireAdmin responde 403 "Acceso no autorizado"
+    const badTokenRes = await request('GET', '/api/admin/users', null, {
+      ...ADMIN_DEVICE_HEADER,
+      Authorization: 'Bearer token_invalido_123'
+    });
     console.log('GET /api/admin/users con token inválido -> Status:', badTokenRes.status);
     if (badTokenRes.status !== 403 || badTokenRes.data.error !== 'Acceso no autorizado') {
       throw new Error(`Esperado 403 con error 'Acceso no autorizado' para token inválido, obtenido ${badTokenRes.status}`);
     }
 
-    // Con token de usuario normal (jwtToken creado en paso 3/8)
-    const normalUserRes = await request('GET', '/api/admin/users', null, { Authorization: `Bearer ${jwtToken}` });
+    // 14b.5: Con token de usuario normal (jwtToken creado en paso 3/8) -> requireAdmin responde 403 "Acceso no autorizado"
+    const normalUserRes = await request('GET', '/api/admin/users', null, {
+      ...ADMIN_DEVICE_HEADER,
+      Authorization: `Bearer ${jwtToken}`
+    });
     console.log('GET /api/admin/users con usuario común -> Status:', normalUserRes.status, '- Error:', normalUserRes.data.error);
     if (normalUserRes.status !== 403 || normalUserRes.data.error !== 'Acceso no autorizado') {
       throw new Error(`Esperado 403 con error 'Acceso no autorizado' para usuario no admin, obtenido ${normalUserRes.status}`);
     }
-    console.log('✅ requireAdmin bloquea accesos no autorizados con código 403 OK');
+    console.log('✅ adminIpWhitelist y requireAdmin bloquean accesos no autorizados con código 403 OK');
 
-    console.log('\n--- 14c. Probando GET /api/admin/users con token de administrador ---');
-    const adminUsersRes = await request('GET', '/api/admin/users', null, { Authorization: `Bearer ${adminToken}` });
+    console.log('\n--- 14c. Probando GET /api/admin/users con token de administrador y dispositivo autorizado ---');
+    const adminUsersRes = await request('GET', '/api/admin/users', null, {
+      ...ADMIN_DEVICE_HEADER,
+      Authorization: `Bearer ${adminToken}`
+    });
     console.log('Status GET /api/admin/users:', adminUsersRes.status);
     console.log('Total usuarios obtenidos:', Array.isArray(adminUsersRes.data) ? adminUsersRes.data.length : 'No es array');
     if (adminUsersRes.status !== 200 || !Array.isArray(adminUsersRes.data) || adminUsersRes.data.length === 0) {
@@ -389,7 +467,10 @@ async function runTests() {
     console.log('✅ GET /api/admin/users retorna todos los campos requeridos OK');
 
     console.log('\n--- 14d. Probando GET /api/admin/stats ---');
-    const adminStatsRes = await request('GET', '/api/admin/stats', null, { Authorization: `Bearer ${adminToken}` });
+    const adminStatsRes = await request('GET', '/api/admin/stats', null, {
+      ...ADMIN_DEVICE_HEADER,
+      Authorization: `Bearer ${adminToken}`
+    });
     console.log('Status GET /api/admin/stats:', adminStatsRes.status);
     console.log('Stats:', adminStatsRes.data);
     if (
@@ -414,28 +495,40 @@ async function runTests() {
     console.log('Usuario temporal creado:', tempUser, 'con ID:', tempUserId, 'Role:', tempRegRes.data.user.role);
 
     // Intento con rol inválido (400 esperado)
-    const badRoleRes = await request('PATCH', `/api/admin/users/${tempUserId}/role`, { role: 'super_admin_falso' }, { Authorization: `Bearer ${adminToken}` });
+    const badRoleRes = await request('PATCH', `/api/admin/users/${tempUserId}/role`, { role: 'super_admin_falso' }, {
+      ...ADMIN_DEVICE_HEADER,
+      Authorization: `Bearer ${adminToken}`
+    });
     console.log('PATCH con rol inválido -> Status:', badRoleRes.status);
     if (badRoleRes.status !== 400) {
       throw new Error(`Se esperaba 400 para rol inválido, obtenido ${badRoleRes.status}`);
     }
 
     // Ascender a 'admin'
-    const promoteRes = await request('PATCH', `/api/admin/users/${tempUserId}/role`, { role: 'admin' }, { Authorization: `Bearer ${adminToken}` });
+    const promoteRes = await request('PATCH', `/api/admin/users/${tempUserId}/role`, { role: 'admin' }, {
+      ...ADMIN_DEVICE_HEADER,
+      Authorization: `Bearer ${adminToken}`
+    });
     console.log('Ascenso a admin -> Status:', promoteRes.status, '- Nuevo rol:', promoteRes.data.user?.role);
     if (promoteRes.status !== 200 || promoteRes.data.user?.role !== 'admin') {
       throw new Error('Falló el ascenso de rol a admin');
     }
 
     // Degradar a 'user'
-    const demoteRes = await request('PATCH', `/api/admin/users/${tempUserId}/role`, { role: 'user' }, { Authorization: `Bearer ${adminToken}` });
+    const demoteRes = await request('PATCH', `/api/admin/users/${tempUserId}/role`, { role: 'user' }, {
+      ...ADMIN_DEVICE_HEADER,
+      Authorization: `Bearer ${adminToken}`
+    });
     console.log('Degradación a user -> Status:', demoteRes.status, '- Nuevo rol:', demoteRes.data.user?.role);
     if (demoteRes.status !== 200 || demoteRes.data.user?.role !== 'user') {
       throw new Error('Falló la degradación de rol a user');
     }
 
     // Intentar degradar al administrador principal (403 esperado)
-    const demoteMainAdminRes = await request('PATCH', `/api/admin/users/${adminUserObj.id}/role`, { role: 'user' }, { Authorization: `Bearer ${adminToken}` });
+    const demoteMainAdminRes = await request('PATCH', `/api/admin/users/${adminUserObj.id}/role`, { role: 'user' }, {
+      ...ADMIN_DEVICE_HEADER,
+      Authorization: `Bearer ${adminToken}`
+    });
     console.log('Intento de degradar al admin principal -> Status:', demoteMainAdminRes.status, '- Error:', demoteMainAdminRes.data.error);
     if (demoteMainAdminRes.status !== 403) {
       throw new Error(`Se esperaba 403 al intentar degradar al admin principal, obtenido ${demoteMainAdminRes.status}`);
@@ -444,18 +537,27 @@ async function runTests() {
 
     console.log('\n--- 14f. Probando DELETE /api/admin/users/:id con cascada y protecciones ---');
     // Intento de auto-eliminación por el propio admin (400 esperado)
-    const selfDeleteRes = await request('DELETE', `/api/admin/users/${adminUserObj.id}`, null, { Authorization: `Bearer ${adminToken}` });
+    const selfDeleteRes = await request('DELETE', `/api/admin/users/${adminUserObj.id}`, null, {
+      ...ADMIN_DEVICE_HEADER,
+      Authorization: `Bearer ${adminToken}`
+    });
     console.log('Auto-eliminación de admin -> Status:', selfDeleteRes.status, '- Error:', selfDeleteRes.data.error);
     if (selfDeleteRes.status !== 400) {
       throw new Error(`Se esperaba 400 al intentar auto-eliminar la cuenta del admin, obtenido ${selfDeleteRes.status}`);
     }
 
     // Intento de eliminar al admin principal (403 esperado)
-    const delMainAdminRes = await request('DELETE', `/api/admin/users/${adminUserObj.id}`, null, { Authorization: `Bearer ${adminToken}` });
+    const delMainAdminRes = await request('DELETE', `/api/admin/users/${adminUserObj.id}`, null, {
+      ...ADMIN_DEVICE_HEADER,
+      Authorization: `Bearer ${adminToken}`
+    });
     // (Ya cubierto por auto-eliminación si es el mismo, pero si se pasa otro id de admin o el mismo debe responder 400 o 403)
 
     // Eliminación exitosa del usuario temporal
-    const deleteTempRes = await request('DELETE', `/api/admin/users/${tempUserId}`, null, { Authorization: `Bearer ${adminToken}` });
+    const deleteTempRes = await request('DELETE', `/api/admin/users/${tempUserId}`, null, {
+      ...ADMIN_DEVICE_HEADER,
+      Authorization: `Bearer ${adminToken}`
+    });
     console.log('Eliminación de usuario temporal -> Status:', deleteTempRes.status, '- Msg:', deleteTempRes.data.message);
     if (deleteTempRes.status !== 200 || !deleteTempRes.data.success) {
       throw new Error('Falló la eliminación del usuario temporal');

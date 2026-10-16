@@ -20,7 +20,7 @@ class ExampleRobolectricTest {
   fun `read string from context`() {
     val context = ApplicationProvider.getApplicationContext<Context>()
     val appName = context.getString(R.string.app_name)
-    assertEquals("Phrasal Verbs TOEFL", appName)
+    assertEquals("MasterENG", appName)
   }
 
   @Test
@@ -58,7 +58,7 @@ class ExampleRobolectricTest {
       assertTrue(webView.settings.javaScriptEnabled)
       assertTrue(webView.settings.domStorageEnabled)
       org.junit.Assert.assertFalse(webView.settings.mediaPlaybackRequiresUserGesture)
-      assertEquals(android.webkit.WebSettings.LOAD_DEFAULT, webView.settings.cacheMode)
+      assertEquals(android.webkit.WebSettings.LOAD_NO_CACHE, webView.settings.cacheMode)
       assertEquals("https://english-app-frontend-3j9w.onrender.com", MainActivity.PRODUCTION_URL)
       assertNotNull(webView.webChromeClient)
     }
