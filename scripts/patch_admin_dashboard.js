@@ -281,24 +281,9 @@ if (html.includes(toastTarget) && !html.includes('id="adminDashboardModal"')) {
 }
 
 // 5. Actualizar updateUserExpDisplay() para alternar condicionalmente #headerAdminBtn
-const userExpTarget = `function updateUserExpDisplay() {
-      const user = getStoredUser() || { username: 'Invitado', role: 'guest', exp: 0 };
-      const rankInfo = calculateRankInfo(user.exp);
-
-      const rankEl = document.getElementById('headerUserRank');
-      const expEl = document.getElementById('headerUserExp');
-      const medalEl = document.getElementById('userRankMedal');
-      const avatarText = document.getElementById('headerAvatarText');
-
-      if (rankEl) rankEl.textContent = rankInfo.rank;
-      if (expEl) expEl.textContent = \`\${rankInfo.exp} EXP\`;
-      if (medalEl) medalEl.textContent = rankInfo.medal;
-      if (avatarText) {
-        avatarText.textContent = user.username ? user.username.charAt(0).toUpperCase() : '👤';
-      }
-    }`;
-
-const userExpReplacement = `function updateUserExpDisplay() {
+const regexUserExp = /function\s+updateUserExpDisplay\s*\(\)\s*\{[\s\S]*?avatarText\.textContent[\s\S]*?\}\s*\}\s*\}?/;
+if (regexUserExp.test(html)) {
+  html = html.replace(regexUserExp, `function updateUserExpDisplay() {
       const user = getStoredUser() || { username: 'Invitado', role: 'guest', exp: 0 };
       const rankInfo = calculateRankInfo(user.exp);
 
@@ -325,10 +310,7 @@ const userExpReplacement = `function updateUserExpDisplay() {
           adminBtn.classList.add('hidden');
         }
       }
-    }`;
-
-if (html.includes(userExpTarget)) {
-  html = html.replace(userExpTarget, userExpReplacement);
+    }`);
   console.log('✅ updateUserExpDisplay() actualizado con lógica condicional para el botón de admin.');
 }
 

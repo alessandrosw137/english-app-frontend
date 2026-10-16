@@ -477,7 +477,7 @@
     </div>
   </header>
   <!-- Fallback visual para verificación de resiliencia -->
-  <img src="images/ai_tutor_mascot.jpg" alt="AI Tutor Mascot" class="hidden" style="display: none;" onerror="this.onerror=null; this.src=window.FALLBACK_MASCOT || 'images/ai_tutor_mascot.svg';" />
+  <img src="images/ai_tutor_mascot.svg" alt="AI Tutor Mascot" class="hidden" style="display: none;" onerror="this.onerror=null; this.src=window.FALLBACK_MASCOT;" />
 
   <div class="h-14"></div>
 
@@ -2586,9 +2586,20 @@
       if (avatarText) {
         avatarText.textContent = user.username ? user.username.charAt(0).toUpperCase() : '👤';
       }
+
+      // Control condicional del botón "⚙️ Panel Admin"
+      const adminBtn = document.getElementById('headerAdminBtn');
+      if (adminBtn) {
+        if (user && user.role === 'admin') {
+          adminBtn.style.display = 'inline-flex';
+          adminBtn.classList.remove('hidden');
+        } else {
+          adminBtn.style.display = 'none';
+          adminBtn.classList.add('hidden');
+        }
+      }
     }
 
-    
     // ========================================================
     // MÓDULO DE PANEL ADMINISTRADOR (POSTGRESQL CONSOLE)
     // ========================================================
