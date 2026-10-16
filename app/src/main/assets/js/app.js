@@ -1528,16 +1528,18 @@
       widget.addEventListener('touchend', onPointerUp, { passive: true });
     }
 
-    function handleRobotWidgetClick() {
+    function handleRobotWidgetClick(e) {
+      if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
       const widget = document.getElementById('draggableRobotWidget');
       if (widget && widget.getAttribute('data-dragged') === 'true') return;
-      toggleChatbotWindow();
+      toggleModal('ai-tutor-modal');
     }
 
-    function handleRouletteWidgetClick() {
+    function handleRouletteWidgetClick(e) {
+      if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
       const widget = document.getElementById('draggableRouletteWidget');
       if (widget && widget.getAttribute('data-dragged') === 'true') return;
-      openRouletteModal();
+      toggleModal('roulette-modal');
     }
 
     // ========================================================
@@ -1999,6 +2001,48 @@
       return false;
     }
 
+    
+    // ========================================================
+    // SISTEMA UNIVERSAL DE APERTURA DE MODALES
+    // ========================================================
+    function toggleModal(modalId) {
+      let modal = document.getElementById(modalId);
+      if (!modal) {
+        if (modalId === 'profile-modal') modal = document.getElementById('profileModal');
+        else if (modalId === 'settings-modal') modal = document.getElementById('settingsModal');
+        else if (modalId === 'ai-tutor-modal') modal = document.getElementById('chatbotWindow');
+        else if (modalId === 'roulette-modal') modal = document.getElementById('rouletteModal');
+      }
+      if (!modal) return;
+      const isVisible = modal.style.display === 'flex' || modal.classList.contains('active');
+      document.querySelectorAll('.modal, .drawer').forEach(m => {
+        m.style.display = 'none';
+        m.classList.remove('active');
+        m.classList.add('hidden');
+      });
+      if (!isVisible) {
+        modal.style.display = 'flex';
+        modal.classList.add('active');
+        modal.classList.remove('hidden');
+        modal.style.zIndex = '100000';
+
+        if (modal.id === 'profileModal' || modalId === 'profile-modal') {
+          if (typeof renderProfileModalContent === 'function') renderProfileModalContent();
+        } else if (modal.id === 'settingsModal' || modalId === 'settings-modal') {
+          if (typeof syncSettingsUiFromStorage === 'function') syncSettingsUiFromStorage();
+        } else if (modal.id === 'rouletteModal' || modalId === 'roulette-modal') {
+          const qCard = document.getElementById('rouletteQuestionCard');
+          const spinBtn = document.getElementById('spinRouletteBtn');
+          if (qCard) qCard.classList.add('hidden');
+          if (spinBtn) spinBtn.disabled = false;
+        } else if (modal.id === 'chatbotWindow' || modalId === 'ai-tutor-modal') {
+          const input = document.getElementById('chatbotInput');
+          if (input) setTimeout(() => input.focus(), 60);
+        }
+      }
+    }
+    window.toggleModal = toggleModal;
+
     function openProfileModal() {
       const user = getStoredUser() || { username: 'Invitado', role: 'guest', exp: 0 };
       const rankInfo = calculateRankInfo(user.exp);
@@ -2100,11 +2144,7 @@
 
     function openSettingsModal() {
       syncSettingsUiFromStorage();
-      const modal = document.getElementById('settingsModal');
-      if (modal) {
-        modal.style.display = 'flex';
-        modal.classList.remove('hidden');
-      }
+      toggleModal('settings-modal');
     }
 
     function closeSettingsModal() {
@@ -2247,226 +2287,7 @@
     let rouletteTimerInterval = null;
 
     function openRouletteModal() {
-      const modal = document.getElementById('rouletteModal');
-      const qCard = document.getElementById('rouletteQuestionCard');
-      const spinBtn = document.getElementById('spinRouletteBtn');
-      if (qCard) qCard.classList.add('hidden');
-      if (spinBtn) spinBtn.disabled = false;
-      if (modal) modal.classList.remove('hidden');
-    }
-
-    function closeRouletteModal() {
-      const modal = document.getElementById('rouletteModal');
-      if (modal) modal.classList.add('hidden');
-      if (rouletteTimerInterval) clearInterval(rouletteTimerInterval);
-    }
-
-    function spinRouletteWheel() {
-      const tutorSpeech = document.getElementById('rouletteTutorSpeech');
-      if (tutorSpeech) tutorSpeech.textContent = "¡Mucha suerte! Girando la ruleta para tu nuevo desafío...";
-      const disk = document.getElementById('rouletteWheelDisk');
-      const spinBtn = document.getElementById('spinRouletteBtn');
-      const qCard = document.getElementById('rouletteQuestionCard');
-
-      if (spinBtn) spinBtn.disabled = true;
-      if (qCard) qCard.classList.add('hidden');
-
-      const extraSpins = 5 + Math.floor(Math.random() * 5);
-      const randomDeg = Math.floor(Math.random() * 360);
-      rouletteSpinAngle += (extraSpins * 360) + randomDeg;
-
-      if (disk) disk.style.transform = `rotate(${rouletteSpinAngle}deg)`;
-      showFloatingToast('Girando ruleta...', '🎯');
-      setTimeout(() => presentRouletteQuestion(), 4000);
-    }
-
-    function presentRouletteQuestion() {
-      const qCard = document.getElementById('rouletteQuestionCard');
-      const catBadge = document.getElementById('rouletteCategoryBadge');
-      const qText = document.getElementById('rouletteQuestionText');
-      const optsContainer = document.getElementById('rouletteOptionsContainer');
-      const timerEl = document.getElementById('rouletteTimer');
-
-      const randQ = ROULETTE_QUESTIONS[Math.floor(Math.random() * ROULETTE_QUESTIONS.length)];
-
-      if (catBadge) catBadge.textContent = randQ.category;
-      if (qText) qText.textContent = randQ.q;
-      if (optsContainer) {
-        optsContainer.innerHTML = randQ.options.map((opt, idx) => `
-          <button onclick="handleRouletteAnswer(${idx}, ${randQ.correct})" class="w-full text-left px-3.5 py-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-700 border border-slate-700/80 text-xs font-semibold text-slate-200 transition cursor-pointer">
-            ${String.fromCharCode(65 + idx)}) ${opt}
-          </button>
-        `).join('');
-      }
-
-      if (qCard) qCard.classList.remove('hidden');
-
-      let seconds = 30;
-      if (timerEl) timerEl.textContent = `⏱️ ${seconds}s`;
-      if (rouletteTimerInterval) clearInterval(rouletteTimerInterval);
-
-      rouletteTimerInterval = setInterval(() => {
-        seconds--;
-        if (timerEl) timerEl.textContent = `⏱️ ${seconds}s`;
-        if (seconds <= 0) {
-          clearInterval(rouletteTimerInterval);
-          showFloatingToast('¡Tiempo agotado!', '⏱️');
-          closeRouletteModal();
-        }
-      }, 1000);
-    }
-
-    function handleRouletteAnswer(selectedIdx, correctIdx) {
-      if (rouletteTimerInterval) clearInterval(rouletteTimerInterval);
-      if (selectedIdx === correctIdx) {
-        addExp(15, 'Respuesta correcta en la Ruleta');
-      } else {
-        showFloatingToast('Respuesta incorrecta. ¡Sigue intentando!', '❌');
-      const tutorSpeech = document.getElementById('rouletteTutorSpeech');
-      if (tutorSpeech) tutorSpeech.textContent = "¡Casi! No te desanimes, cada intento refuerza tu memoria.";
-      }
-      setTimeout(() => closeRouletteModal(), 1000);
-    }
-
-    // ========================================================
-    // CHATBOT DE DUDAS
-    // ========================================================
-    function toggleChatbotWindow() {
-      const win = document.getElementById('chatbotWindow');
-      if (win) win.classList.toggle('hidden');
-    }
-
-    function askChatbotQuestion(query) {
-      const input = document.getElementById('chatbotInput');
-      if (input) input.value = query;
-      sendChatbotMessage();
-    }
-
-    function sendChatbotMessage() {
-      const input = document.getElementById('chatbotInput');
-      const container = document.getElementById('chatbotMessagesContainer');
-      if (!input || !container) return;
-
-      const userText = input.value.trim();
-      if (!userText) return;
-
-      const userDiv = document.createElement('div');
-      userDiv.className = 'bg-sky-600/90 text-white p-2.5 rounded-2xl rounded-tr-none ml-auto max-w-[85%] font-medium';
-      userDiv.textContent = userText;
-      container.appendChild(userDiv);
-      input.value = '';
-      container.scrollTop = container.scrollHeight;
-
-      setTimeout(() => {
-        let answer = "Para dominar esa expresión, úsala en oraciones cortas todos los días.";
-        const lower = userText.toLowerCase();
-
-        if (lower.includes('make') || lower.includes('do')) {
-          answer = "'Do' se usa para actividades y tareas (do homework). 'Make' se usa para construir o producir algo (make coffee, make a plan).";
-        } else if (lower.includes('phrasal')) {
-          answer = "Top 5 Phrasal Verbs: 1) Give up (Rendirse), 2) Look for (Buscar), 3) Carry on (Continuar), 4) Find out (Descubrir), 5) Turn down (Rechazar).";
-        } else if (lower.includes('toefl')) {
-          answer = "En el TOEFL, identifica primero el sujeto y verbo principal antes de elegir la opción y presta atención a conectores como 'however' y 'despite'.";
-        } else if (lower.includes('exp')) {
-          answer = "Ganas +20 EXP en Misiones, +50 EXP hablando en Cuentos, +30 EXP en Music Session y +15 EXP en la Ruleta.";
-        }
-
-        const aiDiv = document.createElement('div');
-        aiDiv.className = 'bg-slate-800 p-2.5 rounded-2xl rounded-tl-none border border-slate-700 text-slate-200 max-w-[90%]';
-        aiDiv.textContent = answer;
-        container.appendChild(aiDiv);
-        container.scrollTop = container.scrollHeight;
-      }, 300);
-    }
-
-    // ========================================================
-    // MÓDULO LEARNING PATH: GLOSARIOS Y MISIONES
-    // ========================================================
-    let activeGlossaryModuleKey = 'phrasal_verbs';
-    let currentMissionModuleKey = 'phrasal_verbs';
-    let currentMissionQuestionIndex = 0;
-    let currentMissionScore = 0;
-    let currentMissionQuestions = [];
-
-    const MODULE_TITLES = {
-      phrasal_verbs: 'Phrasal Verbs Esenciales',
-      connectors: 'Conectores Lógicos y Discurso',
-      everyday_actions: 'Acciones Cotidianas',
-      compound_words: 'Palabras Compuestas',
-      affixes_morphology: 'Prefijos, Sufijos y Morfología',
-      grammar_path: 'Estructuras Gramaticales Avanzadas',
-      professional_english: 'Inglés Profesional y Laboral',
-      social_dating: 'Inglés Social e Interpersonal',
-      internet_slang: 'Internet Slang y Tendencias',
-      toefl_simulator: 'Simulador TOEFL ITP & iBT'
-    };
-
-    function isModuleLevelCompleted(modKey, level = 1) {
-      try {
-        const completed = JSON.parse(localStorage.getItem('user_completed_modules') || '{}');
-        return Boolean(completed[`${modKey}_lvl${level}`]);
-      } catch (e) {
-        return false;
-      }
-    }
-
-    function markModuleLevelCompleted(modKey, level = 1) {
-      try {
-        const completed = JSON.parse(localStorage.getItem('user_completed_modules') || '{}');
-        completed[`${modKey}_lvl${level}`] = true;
-        localStorage.setItem('user_completed_modules', JSON.stringify(completed));
-      } catch (e) { }
-    }
-
-    function renderLearningModules() {
-      const container = document.getElementById('learningModulesContainer');
-      if (!container) return;
-
-      container.innerHTML = DEFAULT_MODULE_KEYS.map((key, idx) => {
-        const isDone = isModuleLevelCompleted(key, 1);
-        return `
-          <div class="p-5 rounded-3xl bg-slate-900/95 border border-slate-800 hover:border-amber-500/50 transition flex flex-col justify-between shadow-xl">
-            <div>
-              <div class="flex items-center justify-between mb-2">
-                <span class="text-[10px] font-bold text-amber-400 bg-amber-500/20 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                  Módulo ${idx + 1}
-                </span>
-                <span class="text-xs font-semibold ${isDone ? 'text-emerald-400' : 'text-slate-400'}">
-                  ${isDone ? '✅ Completado' : 'Nivel 1 disponible'}
-                </span>
-              </div>
-              <h4 class="text-base font-extrabold text-white">${MODULE_TITLES[key] || key}</h4>
-              <p class="text-xs text-slate-400 mt-1">Explora los términos nativos con fonética o supera el desafío interactivo.</p>
-            </div>
-            <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center gap-2">
-              <button onclick="openModuleGlossary('${key}')" class="flex-1 py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700/80 text-xs font-bold text-slate-200 transition cursor-pointer flex items-center justify-center gap-1.5">
-                <span>📖 Glosario</span>
-              </button>
-              <button onclick="openModuleMission('${key}')" class="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-xs transition shadow-md shadow-amber-500/20 cursor-pointer flex items-center justify-center gap-1.5">
-                <span>🚀 Iniciar Misiones</span>
-              </button>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    function openModuleGlossary(modKey) {
-      activeGlossaryModuleKey = modKey;
-      const modData = (window.MASTER_MODULES_DATA && window.MASTER_MODULES_DATA[modKey]) ? window.MASTER_MODULES_DATA[modKey] : { title: MODULE_TITLES[modKey], items: [] };
-
-      const titleEl = document.getElementById('glossaryModalTitle');
-      const subtitleEl = document.getElementById('glossaryModalSubtitle');
-      const searchInput = document.getElementById('glossarySearchInput');
-
-      if (titleEl) titleEl.textContent = `Glosario: ${modData.title || MODULE_TITLES[modKey]}`;
-      if (subtitleEl) subtitleEl.textContent = `${modData.items ? modData.items.length : 0} términos con fonética y contexto`;
-      if (searchInput) searchInput.value = '';
-
-      renderGlossaryItems(modData.items || []);
-
-      const modal = document.getElementById('glossaryModal');
-      if (modal) modal.classList.remove('hidden');
+      toggleModal('roulette-modal');
     }
 
     function renderGlossaryItems(items) {

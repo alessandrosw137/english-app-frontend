@@ -592,3 +592,48 @@ body.theme-neon-light header {
     #view-worldtour canvas {
       pointer-events: auto !important;
     }
+
+
+/* ========================================================
+   JERARQUÍA DE CAPAS (Z-INDEX Y POINTER-EVENTS)
+   ======================================================== */
+header, .top-bar, .navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 9999 !important;
+  pointer-events: auto !important;
+}
+
+.floating-widget, #ai-tutor-btn, #roulette-btn, .bottom-widgets {
+  z-index: 9999 !important;
+  pointer-events: auto !important;
+}
+
+#canvas-container, canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0 !important;
+  pointer-events: auto; /* Permite rotar el 3D solo donde no haya interfaz */
+}
+
+#portalStarsCanvas, .star-bg, .particle-overlay, .canvas-background {
+  pointer-events: none !important;
+  z-index: 0 !important;
+}
+
+/* Modales y Cajones de Diálogo (Máxima prioridad de capa) */
+.modal, .drawer {
+  z-index: 100000 !important;
+}
+
+.modal.active, .drawer.active {
+  display: flex !important;
+  z-index: 100000 !important;
+}
+
+/* Eliminación de retardo táctil en controles interactivos */
+button, [role="button"], .cursor-pointer {
+  touch-action: manipulation;
+}
