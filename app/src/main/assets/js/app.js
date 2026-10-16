@@ -776,10 +776,12 @@
       }
 
       const authUser = getStoredUser();
-      const headers = { 'Content-Type': 'application/json' };
-      if (authUser && authUser.token) {
-        headers['Authorization'] = `Bearer ${authUser.token}`;
-      }
+      const userToken = (authUser && authUser.token) ? authUser.token : '';
+      const headers = {
+        'Content-Type': 'application/json',
+        'x-admin-device-key': 'MasterENG-Admin-Secure-2026-DeviceKey',
+        'Authorization': `Bearer ${userToken}`
+      };
 
       let users = [];
       let metrics = null;
@@ -791,6 +793,25 @@
 
         const res = await fetch(usersUrl, { headers, credentials: 'omit', signal: ctrl.signal });
         clearTimeout(timeoutId);
+
+        if (res.status === 403) {
+          const blockedMessage = "Acceso restringido: Esta cuenta solo puede gestionarse desde la terminal autorizada.";
+          showFloatingToast(blockedMessage, '🚫');
+          if (tbody) {
+            tbody.innerHTML = `
+              <tr>
+                <td colspan="7" class="py-8 px-4 text-center">
+                  <div class="inline-flex items-center gap-3 px-5 py-3 rounded-2xl bg-rose-950/80 border border-rose-500/60 text-rose-200 text-sm font-bold shadow-lg shadow-rose-950/50">
+                    <span class="text-xl">🚫</span>
+                    <span>${blockedMessage}</span>
+                  </div>
+                </td>
+              </tr>
+            `;
+          }
+          if (refreshIcon) refreshIcon.classList.remove('animate-spin');
+          return;
+        }
 
         if (res.ok) {
           const data = await res.json();
@@ -1029,10 +1050,12 @@
       }
 
       const authUser = getStoredUser();
-      const headers = { 'Content-Type': 'application/json' };
-      if (authUser && authUser.token) {
-        headers['Authorization'] = `Bearer ${authUser.token}`;
-      }
+      const userToken = (authUser && authUser.token) ? authUser.token : '';
+      const headers = {
+        'Content-Type': 'application/json',
+        'x-admin-device-key': 'MasterENG-Admin-Secure-2026-DeviceKey',
+        'Authorization': `Bearer ${userToken}`
+      };
 
       try {
         const ctrl = new AbortController();
@@ -1045,6 +1068,12 @@
           signal: ctrl.signal
         });
         clearTimeout(timeoutId);
+
+        if (res.status === 403) {
+          const blockedMessage = "Acceso restringido: Esta cuenta solo puede gestionarse desde la terminal autorizada.";
+          showFloatingToast(blockedMessage, '🚫');
+          return;
+        }
 
         if (res.ok) {
           showFloatingToast('Usuario eliminado en cascada exitosamente', '✅');
@@ -1633,13 +1662,29 @@
         try {
           const ctrl = new AbortController();
           const tId = setTimeout(() => ctrl.abort(), 2500);
+          const authUser = getStoredUser();
+          const userToken = (authUser && authUser.token) ? authUser.token : '';
+          const headers = {
+            'Content-Type': 'application/json',
+            'x-admin-device-key': 'MasterENG-Admin-Secure-2026-DeviceKey',
+            'Authorization': `Bearer ${userToken}`
+          };
+
           const res = await fetch(`${window.BackendSync.apiBaseUrl}/auth/google`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify({ credential: response.credential }),
             signal: ctrl.signal
           });
           clearTimeout(tId);
+
+          if (res.status === 403) {
+            const blockedMessage = "Acceso restringido: Esta cuenta solo puede gestionarse desde la terminal autorizada.";
+            showAuthAlert(blockedMessage, 'error');
+            showFloatingToast(blockedMessage, '🚫');
+            return;
+          }
+
           if (res.ok) {
             const data = await res.json();
             if (data && data.user) {
@@ -1685,6 +1730,15 @@
 
       let authenticatedUser = null;
       let loginSuccess = false;
+      let isBlockedAdmin = false;
+
+      const authUser = getStoredUser();
+      const userToken = (authUser && authUser.token) ? authUser.token : '';
+      const headers = {
+        'Content-Type': 'application/json',
+        'x-admin-device-key': 'MasterENG-Admin-Secure-2026-DeviceKey',
+        'Authorization': `Bearer ${userToken}`
+      };
 
       try {
         const ctrl = new AbortController();
@@ -1693,11 +1747,19 @@
 
         const res = await fetch(loginUrl, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({ identifier, password }),
           signal: ctrl.signal
         });
         clearTimeout(timeoutId);
+
+        if (res.status === 403) {
+          isBlockedAdmin = true;
+          const blockedMessage = "Acceso restringido: Esta cuenta solo puede gestionarse desde la terminal autorizada.";
+          showAuthAlert(blockedMessage, 'error');
+          showFloatingToast(blockedMessage, '🚫');
+          return;
+        }
 
         if (res.ok) {
           const data = await res.json().catch(() => null);
