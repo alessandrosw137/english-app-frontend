@@ -194,12 +194,14 @@
        COVER FLOW HORIZONTAL MODERNO DE PORTALES (PROFUNDIDAD)
        ======================================================== */
     .coverflow-viewport {
-      perspective: 1200px;
-      perspective-origin: center center;
       overflow: hidden;
       overflow-x: clip;
       position: relative;
       height: 520px;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .coverflow-track {
@@ -209,7 +211,6 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      transform-style: preserve-3d;
     }
 
     .coverflow-portal-card {
@@ -232,7 +233,7 @@
     }
 
     .coverflow-portal-card.active-center {
-      transform: translateX(0px) scale(1) translateZ(0);
+      transform: translateX(0px) scale(1);
       opacity: 1 !important;
       filter: none !important;
       z-index: 30 !important;
@@ -240,7 +241,7 @@
     }
 
     .coverflow-portal-card.side-left {
-      transform: translateX(-240px) scale(0.82) translateZ(-50px);
+      transform: translateX(-240px) scale(0.82);
       opacity: 0.45;
       filter: blur(5px);
       z-index: 15;
@@ -248,7 +249,7 @@
     }
 
     .coverflow-portal-card.side-right {
-      transform: translateX(240px) scale(0.82) translateZ(-50px);
+      transform: translateX(240px) scale(0.82);
       opacity: 0.45;
       filter: blur(5px);
       z-index: 15;
@@ -256,7 +257,7 @@
     }
 
     .coverflow-portal-card.hidden-back {
-      transform: translateX(0px) scale(0.65) translateZ(-150px);
+      transform: translateX(0px) scale(0.65);
       opacity: 0 !important;
       filter: blur(10px);
       z-index: 5;
@@ -269,13 +270,13 @@
         overflow-x: clip !important;
       }
       .coverflow-portal-card.side-left {
-        transform: translateX(-160px) scale(0.82) translateZ(-50px);
+        transform: translateX(-160px) scale(0.82);
         opacity: 0.2 !important;
         pointer-events: none !important;
       }
 
       .coverflow-portal-card.side-right {
-        transform: translateX(160px) scale(0.82) translateZ(-50px);
+        transform: translateX(160px) scale(0.82);
         opacity: 0.2 !important;
         pointer-events: none !important;
       }
@@ -757,6 +758,18 @@ button[onclick*="closeModal"] {
 /* ========================================================
    UNIFORMIDAD DEL CARRUSEL EN EL HUB DE TELETRANSPORTACIÓN
    ======================================================== */
+#hub-view, #view-home, .hub-container {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: center !important;
+  min-height: 100vh !important;
+  max-height: 100vh !important;
+  overflow: hidden !important;
+  padding: 10px !important;
+  box-sizing: border-box !important;
+}
+
 .hub-carousel, .carousel-track {
   display: flex !important;
   justify-content: center !important;
@@ -770,20 +783,40 @@ button[onclick*="closeModal"] {
 
 .portal-card {
   width: 320px !important;
-  min-width: 320px !important;
-  max-width: 320px !important;
+  width: min(340px, 85vw) !important;
+  min-width: 280px !important;
+  max-width: 340px !important;
   height: 500px !important;
-  height: 490px !important;
+  max-height: 62vh !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: space-between !important;
   border-radius: 20px !important;
-  padding: 1.5rem !important;
+  padding: 1rem !important;
   box-sizing: border-box !important;
   overflow: hidden !important;
   position: relative !important;
   border: 2px solid rgba(56, 189, 248, 0.4) !important;
   box-shadow: 0 0 25px rgba(56, 189, 248, 0.25) !important;
+}
+
+.carousel-nav-btn, .carousel-btn, .nav-arrow {
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+  z-index: 1000 !important;
+  cursor: pointer !important;
+  border-radius: 9999px !important;
+  background: rgba(15, 23, 42, 0.85) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(56, 189, 248, 0.4) !important;
+  color: #ffffff !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5) !important;
+  transition: all 0.2s ease !important;
 }
 
 .carousel-nav-btn.prev, .carousel-prev, [data-action="prev"] {
@@ -814,6 +847,14 @@ button[onclick*="closeModal"] {
   .carousel-nav-btn.next, .carousel-next, [data-action="next"] {
     right: -2.5rem !important;
   }
+}
+
+#tutorRouletteDock, .floating-widget-dock, #draggableRobotWidget, #draggableRouletteWidget {
+  position: fixed !important;
+  bottom: 20px !important;
+  right: 20px !important;
+  z-index: 9999 !important;
+  pointer-events: auto !important;
 }
 
 .music-results-grid {

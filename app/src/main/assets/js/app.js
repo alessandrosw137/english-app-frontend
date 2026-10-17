@@ -1333,7 +1333,9 @@
       }
 
       if (targetId === 'view-path') {
-        if (typeof window.renderOfficialLearningModules === 'function') {
+        if (typeof window.renderLearningPathModules === 'function') {
+          window.renderLearningPathModules();
+        } else if (typeof window.renderOfficialLearningModules === 'function') {
           window.renderOfficialLearningModules();
         }
       }
@@ -1359,15 +1361,21 @@
     function goToHomePortals() {
       const user = getStoredUser();
       if (!user || !user.username) {
-        showView('view-auth');
+        if (typeof window.navigateToView === 'function') window.navigateToView('login-view');
+        else showView('view-auth');
         updateFloatingWidgetsVisibility();
         return;
       }
-      showView('view-home');
+      if (typeof window.navigateToView === 'function') {
+        window.navigateToView('hub-view');
+      } else {
+        showView('view-home');
+      }
       updateUserExpDisplay();
       updateCoverFlowVisuals();
       updateFloatingWidgetsVisibility();
     }
+    window.goToHomePortals = goToHomePortals;
 
     function openPortalWithLoader(targetModule) {
       window.isTransitioningView = true;
@@ -1486,22 +1494,34 @@
 
         if (diff === 0) {
           card.classList.add('active-center');
+          card.style.display = 'flex';
+          card.style.opacity = '1';
+          card.style.filter = 'none';
+          card.style.transform = 'none';
           card.style.boxShadow = '0 0 45px var(--portal-glow, rgba(56, 189, 248, 0.45))';
           card.style.zIndex = '30';
           card.style.pointerEvents = 'auto';
           if (dot) dot.className = 'w-3 h-3 rounded-full bg-amber-400 transition-all duration-300 shadow cursor-pointer';
         } else if (diff === -1) {
           card.classList.add('side-left');
+          card.style.display = 'none';
+          card.style.opacity = '0';
           card.style.boxShadow = 'none';
           card.style.zIndex = '15';
+          card.style.pointerEvents = 'none';
           if (dot) dot.className = 'w-2 h-2 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer';
         } else if (diff === 1) {
           card.classList.add('side-right');
+          card.style.display = 'none';
+          card.style.opacity = '0';
           card.style.boxShadow = 'none';
           card.style.zIndex = '15';
+          card.style.pointerEvents = 'none';
           if (dot) dot.className = 'w-2 h-2 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer';
         } else {
           card.classList.add('hidden-back');
+          card.style.display = 'none';
+          card.style.opacity = '0';
           card.style.boxShadow = 'none';
           card.style.zIndex = '5';
           card.style.pointerEvents = 'none';
@@ -1654,29 +1674,48 @@
     });
 
     function setupCoverFlowGestures() {
-      const viewport = document.getElementById('coverFlowViewport');
+      const viewport = document.getElementById('coverFlowViewport') || document.querySelector('.coverflow-viewport') || document.querySelector('.hub-carousel');
       if (!viewport) return;
 
       let touchStartX = 0;
+      let touchStartY = 0;
       viewport.addEventListener('touchstart', (e) => {
-        if (e.touches.length > 0) touchStartX = e.touches[0].clientX;
+        if (e.touches.length > 0) {
+          touchStartX = e.touches[0].clientX;
+          touchStartY = e.touches[0].clientY;
+        }
       }, { passive: true });
 
       viewport.addEventListener('touchend', (e) => {
         if (e.changedTouches.length > 0) {
           const deltaX = touchStartX - e.changedTouches[0].clientX;
-          if (deltaX > 40) navigateCoverFlow(1);
-          else if (deltaX < -40) navigateCoverFlow(-1);
+          const deltaY = touchStartY - e.changedTouches[0].clientY;
+          if (Math.abs(deltaX) >= 50 && Math.abs(deltaX) > Math.abs(deltaY)) {
+            if (deltaX > 0) {
+              if (typeof window.nextPortal === 'function') window.nextPortal();
+              else navigateCoverFlow(1);
+            } else {
+              if (typeof window.prevPortal === 'function') window.prevPortal();
+              else navigateCoverFlow(-1);
+            }
+          }
         }
       }, { passive: true });
 
       window.addEventListener('keydown', (e) => {
         if (currentActiveView === 'view-home') {
-          if (e.key === 'ArrowLeft') navigateCoverFlow(-1);
-          if (e.key === 'ArrowRight') navigateCoverFlow(1);
+          if (e.key === 'ArrowLeft') {
+            if (typeof window.prevPortal === 'function') window.prevPortal();
+            else navigateCoverFlow(-1);
+          }
+          if (e.key === 'ArrowRight') {
+            if (typeof window.nextPortal === 'function') window.nextPortal();
+            else navigateCoverFlow(1);
+          }
         }
       });
     }
+    window.setupCoverFlowGestures = setupCoverFlowGestures;
 
     // ========================================================
     // WIDGETS FLOTANTES ARRASTRABLES
@@ -6360,16 +6399,16 @@
        RENDERIZADO DINÁMICO DE LOS 10 MÓDULOS DE LEARNING PATH
        ======================================================== */
     window.OFFICIAL_LEARNING_MODULES = [
-      { id: 1, title: "Foundations & Daily Routine", level: "A1", exp: 20, words: 45, key: "everyday_actions" },
-      { id: 2, title: "Travel, Airport & Navigation", level: "A1-A2", exp: 20, words: 50, key: "connectors" },
-      { id: 3, title: "Food, Dining & Culinary Arts", level: "A2", exp: 20, words: 40, key: "phrasal_verbs" },
-      { id: 4, title: "Workplace & Professional Tech", level: "B1", exp: 25, words: 60, key: "professional_english" },
-      { id: 5, title: "Socializing & Idiomatic Slang", level: "B1", exp: 25, words: 55, key: "social_dating" },
-      { id: 6, title: "Debate, Opinions & Current Events", level: "B2", exp: 30, words: 65, key: "grammar_path" },
-      { id: 7, title: "Science, Nature & Environment", level: "B2", exp: 30, words: 50, key: "compound_words" },
-      { id: 8, title: "Literature, Storytelling & Cinema", level: "C1", exp: 35, words: 70, key: "affixes_morphology" },
-      { id: 9, title: "Academic Research & TOEFL Prep", level: "C1", exp: 40, words: 85, key: "toefl_simulator" },
-      { id: 10, title: "Master Fluency & Accent Reduction", level: "C2", exp: 50, words: 100, key: "internet_slang" }
+      { id: 1, title: "Foundations & Daily Routine", level: "A1", exp: 20, words: 45, key: "everyday_actions", progress: 65 },
+      { id: 2, title: "Professional & Business English", level: "B2", exp: 25, words: 60, key: "professional_english", progress: 40 },
+      { id: 3, title: "Conversational Fluency & Small Talk", level: "B1", exp: 20, words: 40, key: "social_dating", progress: 25 },
+      { id: 4, title: "Advanced Grammar & Structure", level: "C1", exp: 30, words: 65, key: "grammar_path", progress: 10 },
+      { id: 5, title: "Academic English & TOEFL/IELTS Prep", level: "C1-C2", exp: 40, words: 85, key: "toefl_simulator", progress: 0 },
+      { id: 6, title: "Travel & Cultural Immersion", level: "A2-B1", exp: 20, words: 50, key: "connectors", progress: 0 },
+      { id: 7, title: "Tech, AI & Digital Economy", level: "B2-C1", exp: 30, words: 50, key: "compound_words", progress: 0 },
+      { id: 8, title: "Pronunciation, Idioms & Slang", level: "B2", exp: 25, words: 55, key: "phrasal_verbs", progress: 0 },
+      { id: 9, title: "Storytelling & Public Speaking", level: "C1", exp: 35, words: 70, key: "affixes_morphology", progress: 0 },
+      { id: 10, title: "Native-like Fluency & Accent Reduction", altTitle: "Master Fluency & Accent Reduction", level: "C2", exp: 50, words: 100, key: "internet_slang", progress: 0 }
     ];
 
     window.openLearningPath = function() {
@@ -6379,7 +6418,11 @@
       } else if (typeof showView === 'function') {
         showView('view-path');
       }
-      window.renderOfficialLearningModules();
+      if (typeof window.renderLearningPathModules === 'function') {
+        window.renderLearningPathModules();
+      } else if (typeof window.renderOfficialLearningModules === 'function') {
+        window.renderOfficialLearningModules();
+      }
     };
 
     window.openLearningMissionModal = function(modId) {
@@ -6406,7 +6449,7 @@
     };
 
     window.renderOfficialLearningModules = function() {
-      const container = document.querySelector('.modules-grid') || document.getElementById('learningModulesContainer');
+      const container = document.querySelector('.modules-grid') || document.getElementById('learningModulesContainer') || document.getElementById('modules-container');
       if (!container) return;
 
       container.innerHTML = window.OFFICIAL_LEARNING_MODULES.map(mod => {
@@ -6414,20 +6457,32 @@
           ? window.MASTER_MODULES_DATA[mod.key] 
           : { items: [] };
         const sampleItems = (modData.items || []).slice(0, 3);
+        const progressPercent = typeof mod.progress === 'number' ? mod.progress : 0;
 
         return `
         <div class="module-card p-5 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-amber-500/50 shadow-xl flex flex-col justify-between transition hover:-translate-y-1 group">
           <div>
             <div class="flex items-center justify-between mb-2">
               <span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold text-[10px] border border-amber-500/30">
-                Módulo ${mod.id} &bull; ${mod.level}
+                Módulo ${mod.id} &bull; Nivel ${mod.level}
               </span>
               <span class="text-xs font-bold text-amber-400">+${mod.exp} EXP</span>
             </div>
             <h3 class="text-base font-extrabold text-white mb-1 group-hover:text-amber-200 transition">
               ${mod.id}. ${mod.title}
             </h3>
-            <p class="text-xs text-slate-400 mb-3">${mod.words} palabras clave y ejercicios interactivos</p>
+            <p class="text-xs text-slate-400 mb-2">${mod.words} palabras clave y ejercicios interactivos</p>
+
+            <!-- Barra de Progreso -->
+            <div class="mb-3">
+              <div class="flex items-center justify-between text-[10px] font-semibold text-slate-400 mb-1">
+                <span>Progreso</span>
+                <span class="text-amber-400 font-bold">${progressPercent}%</span>
+              </div>
+              <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                <div class="bg-gradient-to-r from-amber-500 to-yellow-400 h-1.5 rounded-full transition-all duration-500" style="width: ${progressPercent}%;"></div>
+              </div>
+            </div>
 
             <div class="mb-3 p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 text-xs">
               <div class="flex items-center justify-between mb-1.5">
@@ -6445,14 +6500,14 @@
             </div>
           </div>
           <div class="flex items-center gap-2 pt-2 border-t border-slate-800">
-            <button type="button" onclick="downloadActiveGlossaryPdf(${mod.id})"
+            <button type="button" onclick="openModuleGlossary(${mod.id}); downloadActiveGlossaryPdf(${mod.id});"
               class="flex-1 py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer">
-              <span>📥</span>
-              <span>Descargar Glosario PDF</span>
+              <span>📖</span>
+              <span>Glosario Oficial (PDF)</span>
             </button>
             <button type="button" onclick="openLearningMissionModal(${mod.id})"
               class="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 text-slate-950 text-xs font-extrabold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-amber-500/20">
-              <span>🚀</span>
+              <span>🎯</span>
               <span>Iniciar Misión</span>
             </button>
           </div>
@@ -6460,6 +6515,7 @@
       `;
       }).join('');
     };
+    window.renderLearningPathModules = window.renderOfficialLearningModules;
 
     window.returnToHub = function() {
       goToHomePortals();
