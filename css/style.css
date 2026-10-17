@@ -755,6 +755,7 @@ button[onclick*="closeModal"] {
   min-width: 320px !important;
   max-width: 320px !important;
   height: 500px !important;
+  height: 490px !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: space-between !important;
@@ -763,23 +764,47 @@ button[onclick*="closeModal"] {
   box-sizing: border-box !important;
   overflow: hidden !important;
   position: relative !important;
+  border: 2px solid rgba(56, 189, 248, 0.4) !important;
+  box-shadow: 0 0 25px rgba(56, 189, 248, 0.25) !important;
 }
 
-.carousel-nav-btn.prev, .carousel-prev {
+.carousel-nav-btn.prev, .carousel-prev, [data-action="prev"] {
   position: absolute !important;
-  left: 1rem !important;
+  left: 0.5rem !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
   z-index: 1000 !important;
   cursor: pointer !important;
 }
 
-.carousel-nav-btn.next, .carousel-next {
+@media (min-width: 768px) {
+  .carousel-nav-btn.prev, .carousel-prev, [data-action="prev"] {
+    left: -2.5rem !important;
+  }
+}
+
+.carousel-nav-btn.next, .carousel-next, [data-action="next"] {
   position: absolute !important;
-  right: 1rem !important;
+  right: 0.5rem !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
   z-index: 1000 !important;
   cursor: pointer !important;
+}
+
+@media (min-width: 768px) {
+  .carousel-nav-btn.next, .carousel-next, [data-action="next"] {
+    right: -2.5rem !important;
+  }
 }
 
 .music-results-grid {
   display: grid !important;
   gap: 1rem !important;
+}
+
+.modules-grid, #learningModulesContainer {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+  gap: 1.25rem !important;
 }

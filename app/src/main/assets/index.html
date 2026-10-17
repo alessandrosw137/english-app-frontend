@@ -646,7 +646,7 @@ button[onclick*="closeModal"] {
               <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent"></div>
               <span class="absolute bottom-2 right-2.5 text-xs font-black text-amber-300 bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-amber-400/40">🌌 10 Módulos</span>
             </div>
-            <button onclick="event.stopPropagation(); window.openLearningPath()" class="portal-btn w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-amber-500/30 cursor-pointer" data-action="enter-portal" data-portal="path">ENTRAR AL PORTAL</button>
+            <button onclick="event.stopPropagation(); window.navigateToView('learning-path-view'); window.openLearningPath();" class="portal-btn w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-amber-500/30 cursor-pointer" data-action="enter-portal" data-portal="path">ENTRAR AL PORTAL</button>
           </div>
         </div>
 
@@ -676,7 +676,7 @@ button[onclick*="closeModal"] {
               <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent"></div>
               <span class="absolute bottom-2 right-2.5 text-xs font-black text-emerald-300 bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-emerald-400/40">🌲 6 Obras</span>
             </div>
-            <button onclick="event.stopPropagation(); openPortalWithLoader('stories')" class="portal-btn w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-500/30 cursor-pointer" data-action="enter-portal" data-portal="stories">ENTRAR AL PORTAL</button>
+            <button onclick="event.stopPropagation(); window.navigateToView('view-stories'); openPortalWithLoader('stories');" class="portal-btn w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-500/30 cursor-pointer" data-action="enter-portal" data-portal="stories">ENTRAR AL PORTAL</button>
           </div>
         </div>
 
@@ -706,7 +706,7 @@ button[onclick*="closeModal"] {
               <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent"></div>
               <span class="absolute bottom-2 right-2.5 text-xs font-black text-cyan-300 bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-cyan-400/40">⚡ Karaoke Live</span>
             </div>
-            <button onclick="event.stopPropagation(); openPortalWithLoader('music')" class="portal-btn w-full py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-cyan-500/30 cursor-pointer" data-action="enter-portal" data-portal="music">ENTRAR AL PORTAL</button>
+            <button onclick="event.stopPropagation(); window.navigateToView('music-view'); openPortalWithLoader('music');" class="portal-btn w-full py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-cyan-500/30 cursor-pointer" data-action="enter-portal" data-portal="music">ENTRAR AL PORTAL</button>
           </div>
         </div>
 
@@ -736,7 +736,7 @@ button[onclick*="closeModal"] {
               <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent"></div>
               <span class="absolute bottom-2 right-2.5 text-xs font-black text-purple-300 bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-purple-400/40">🪐 Casa & Jardín 3D</span>
             </div>
-            <button onclick="event.stopPropagation(); openPortalWithLoader('worldtour')" class="portal-btn w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-fuchsia-500 hover:from-purple-400 hover:to-fuchsia-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-purple-500/30 cursor-pointer" data-action="enter-portal" data-portal="worldtour">ENTRAR AL PORTAL</button>
+            <button onclick="event.stopPropagation(); window.navigateToView('world3d-view'); openPortalWithLoader('worldtour');" class="portal-btn w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-fuchsia-500 hover:from-purple-400 hover:to-fuchsia-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-purple-500/30 cursor-pointer" data-action="enter-portal" data-portal="worldtour">ENTRAR AL PORTAL</button>
           </div>
         </div>
       </div>
@@ -1015,7 +1015,7 @@ button[onclick*="closeModal"] {
   <!-- ========================================================
        VISTA 6: WORLD TOUR 3D (CON CONTROLES Y OBJETOS INTERACTIVOS)
        ======================================================== -->
-  <div id="view-worldtour" class="flex-1 p-3 max-w-6xl mx-auto w-full hidden" style="display: none;">
+  <div id="view-worldtour" class="flex-1 p-3 max-w-5xl mx-auto w-full hidden" style="display: none;">
     <div id="worldTourTopBar" class="hidden items-center justify-between mb-2">
       <button onclick="goToHomePortals()"
         class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 transition cursor-pointer">
@@ -1836,8 +1836,15 @@ button[onclick*="closeModal"] {
         if (formReg) { formReg.style.display = 'block'; formReg.classList.remove('hidden'); }
       }
     };
+    window.navigateToView = window.navigateToView || function(v) {
+      if (typeof showView === 'function') return showView(v);
+    };
     window.openLearningPath = function() {
-      if (typeof showView === 'function') showView('view-path');
+      if (typeof window.navigateToView === 'function') {
+        window.navigateToView('learning-path-view');
+      } else if (typeof showView === 'function') {
+        showView('view-path');
+      }
       if (typeof window.renderOfficialLearningModules === 'function') window.renderOfficialLearningModules();
     };
     window.nextPortal = function() { if (typeof navigateCoverFlow === 'function') navigateCoverFlow(1); };

@@ -1212,14 +1212,56 @@
       showFloatingToast('Regresaste al Menú Principal', '🏠');
     }
 
-    function showView(viewId) {
+    window.navigateToView = function(viewId) {
+      const viewMap = {
+        'login-view': 'view-auth',
+        'view-auth': 'view-auth',
+        'hub-view': 'view-home',
+        'view-home': 'view-home',
+        'learning-path-view': 'view-path',
+        'view-path': 'view-path',
+        'world3d-view': 'view-worldtour',
+        'view-worldtour': 'view-worldtour',
+        'music-view': 'view-music',
+        'view-music': 'view-music',
+        'stories-view': 'view-stories',
+        'view-stories': 'view-stories',
+        'admin-view': 'adminDashboardModal'
+      };
+
+      const targetId = viewMap[viewId] || viewId;
+
+      if (targetId === 'adminDashboardModal' || viewId === 'admin-view') {
+        if (typeof openAdminDashboardModal === 'function') {
+          openAdminDashboardModal();
+        } else {
+          const m = document.getElementById('adminDashboardModal');
+          if (m) {
+            m.style.display = 'flex';
+            m.classList.remove('hidden');
+          }
+        }
+        return;
+      }
+
+      let user = null;
+      try {
+        user = JSON.parse(localStorage.getItem('english_app_user_session') || localStorage.getItem('mastereng_user') || 'null');
+      } catch (e) {}
+      const isAuthenticated = !!(user && (user.username || user.role));
+
+      if (!isAuthenticated && targetId !== 'view-auth') {
+        window.navigateToView('login-view');
+        return;
+      }
+
       const views = ['view-auth', 'view-home', 'view-path', 'view-stories', 'view-music', 'view-worldtour'];
       views.forEach(v => {
         const el = document.getElementById(v);
         if (el) {
-          if (v === viewId) {
+          if (v === targetId) {
             el.classList.remove('hidden');
-            el.style.display = '';
+            el.style.display = (v === 'view-home' || v === 'view-auth') ? 'block' : 'flex';
             el.style.pointerEvents = 'auto';
             el.style.visibility = 'visible';
           } else {
@@ -1234,12 +1276,13 @@
         }
       });
 
-      if (viewId !== 'view-auth') {
+      if (targetId !== 'view-auth') {
         const loginModal = document.getElementById('login-modal') || document.querySelector('.login-container');
         if (loginModal) {
           loginModal.style.display = 'none';
           loginModal.style.pointerEvents = 'none';
           loginModal.style.visibility = 'hidden';
+          loginModal.style.zIndex = '-1';
         }
         document.querySelectorAll('.modal-backdrop, .modal-overlay').forEach(el => {
           if (el.id === 'authModalBackdrop' || el.classList.contains('auth-backdrop')) {
@@ -1249,15 +1292,17 @@
           }
         });
       }
-      currentActiveView = viewId;
+      currentActiveView = targetId;
 
       // Pausar video de YouTube si se abandona Music Session
-      if (viewId !== 'view-music') {
+      if (targetId !== 'view-music') {
         pauseYouTubePlayer();
         if (typeof stopMusicKaraokeSync === 'function') stopMusicKaraokeSync();
         if (typeof closeMusicWordModal === 'function') closeMusicWordModal();
         const suggEl = document.getElementById('musicSearchSuggestions');
         if (suggEl) suggEl.classList.add('hidden');
+        const audioTrack = document.getElementById('karaokeAudioTracker') || document.getElementById('musicAudioPlayer');
+        if (audioTrack && typeof audioTrack.pause === 'function') audioTrack.pause();
       }
 
       // El botón superior universal se oculta por completo al mostrar cualquier vista
@@ -1269,13 +1314,15 @@
 
       updateFloatingWidgetsVisibility();
 
-      if (viewId === 'view-home') {
+      if (targetId === 'view-home') {
         startPortalStars();
+        updateCoverFlowVisuals();
+        updateUserExpDisplay();
       } else {
         stopPortalStars();
       }
 
-      if (viewId === 'view-worldtour') {
+      if (targetId === 'view-worldtour') {
         if (typeof window.initOrResumeWorld3D === 'function') {
           window.initOrResumeWorld3D();
         } else {
@@ -1284,6 +1331,19 @@
       } else if (typeof window.pauseWorld3D === 'function') {
         window.pauseWorld3D();
       }
+
+      if (targetId === 'view-path') {
+        if (typeof window.renderOfficialLearningModules === 'function') {
+          window.renderOfficialLearningModules();
+        }
+      }
+    };
+
+    function showView(viewId) {
+      if (viewId !== 'view-music') {
+        pauseYouTubePlayer();
+      }
+      return window.navigateToView(viewId);
     }
 
     function handleLogoClick() {
@@ -2786,6 +2846,13 @@
     }
 
     function downloadActiveGlossaryPdf() {
+      const modId = arguments[0];
+      if (modId) {
+        const mod = (window.OFFICIAL_LEARNING_MODULES || []).find(m => m.id === modId);
+        if (mod && mod.key) {
+          activeGlossaryModuleKey = mod.key;
+        }
+      }
       const modData = (window.MASTER_MODULES_DATA && window.MASTER_MODULES_DATA[activeGlossaryModuleKey]) 
         ? window.MASTER_MODULES_DATA[activeGlossaryModuleKey] 
         : { title: MODULE_TITLES[activeGlossaryModuleKey] || 'Glosario_Ingles', items: [] };
@@ -6219,37 +6286,62 @@
        RENDERIZADO DINÁMICO DE LOS 10 MÓDULOS DE LEARNING PATH
        ======================================================== */
     window.OFFICIAL_LEARNING_MODULES = [
-      { id: 1, title: "Foundations & Daily Routine", level: "A1", exp: 20, words: 45 },
-      { id: 2, title: "Travel, Airport & Navigation", level: "A1-A2", exp: 20, words: 50 },
-      { id: 3, title: "Food, Dining & Culinary Arts", level: "A2", exp: 20, words: 40 },
-      { id: 4, title: "Workplace & Professional Tech", level: "B1", exp: 25, words: 60 },
-      { id: 5, title: "Socializing & Idiomatic Slang", level: "B1", exp: 25, words: 55 },
-      { id: 6, title: "Debate, Opinions & Current Events", level: "B2", exp: 30, words: 65 },
-      { id: 7, title: "Science, Nature & Environment", level: "B2", exp: 30, words: 50 },
-      { id: 8, title: "Literature, Storytelling & Cinema", level: "C1", exp: 35, words: 70 },
-      { id: 9, title: "Academic Research & TOEFL Prep", level: "C1", exp: 40, words: 85 },
-      { id: 10, title: "Master Fluency & Accent Reduction", level: "C2", exp: 50, words: 100 }
+      { id: 1, title: "Foundations & Daily Routine", level: "A1", exp: 20, words: 45, key: "everyday_actions" },
+      { id: 2, title: "Travel, Airport & Navigation", level: "A1-A2", exp: 20, words: 50, key: "connectors" },
+      { id: 3, title: "Food, Dining & Culinary Arts", level: "A2", exp: 20, words: 40, key: "phrasal_verbs" },
+      { id: 4, title: "Workplace & Professional Tech", level: "B1", exp: 25, words: 60, key: "professional_english" },
+      { id: 5, title: "Socializing & Idiomatic Slang", level: "B1", exp: 25, words: 55, key: "social_dating" },
+      { id: 6, title: "Debate, Opinions & Current Events", level: "B2", exp: 30, words: 65, key: "grammar_path" },
+      { id: 7, title: "Science, Nature & Environment", level: "B2", exp: 30, words: 50, key: "compound_words" },
+      { id: 8, title: "Literature, Storytelling & Cinema", level: "C1", exp: 35, words: 70, key: "affixes_morphology" },
+      { id: 9, title: "Academic Research & TOEFL Prep", level: "C1", exp: 40, words: 85, key: "toefl_simulator" },
+      { id: 10, title: "Master Fluency & Accent Reduction", level: "C2", exp: 50, words: 100, key: "internet_slang" }
     ];
 
     window.openLearningPath = function() {
       console.log('Abriendo Learning Path y renderizando 10 módulos...');
-      if (typeof showView === 'function') {
+      if (typeof window.navigateToView === 'function') {
+        window.navigateToView('learning-path-view');
+      } else if (typeof showView === 'function') {
         showView('view-path');
-      } else {
-        const vHome = document.getElementById('view-home');
-        if (vHome) { vHome.style.display = 'none'; vHome.classList.add('hidden'); }
-        const vPath = document.getElementById('view-path') || document.getElementById('learning-path-view');
-        if (vPath) { vPath.style.display = 'block'; vPath.classList.remove('hidden'); }
       }
-
       window.renderOfficialLearningModules();
+    };
+
+    window.openLearningMissionModal = function(modId) {
+      const mod = (window.OFFICIAL_LEARNING_MODULES || []).find(m => m.id === modId);
+      const key = mod ? mod.key : 'phrasal_verbs';
+      if (typeof openModuleMission === 'function') {
+        openModuleMission(key);
+      }
+    };
+
+    window.openModuleGlossary = function(modId) {
+      const mod = (window.OFFICIAL_LEARNING_MODULES || []).find(m => m.id === modId);
+      const key = mod ? mod.key : 'phrasal_verbs';
+      activeGlossaryModuleKey = key;
+      if (typeof openGlossaryModal === 'function') {
+        openGlossaryModal(key);
+      } else {
+        const modal = document.getElementById('glossaryModal');
+        if (modal) {
+          modal.style.display = 'flex';
+          modal.classList.remove('hidden');
+        }
+      }
     };
 
     window.renderOfficialLearningModules = function() {
       const container = document.querySelector('.modules-grid') || document.getElementById('learningModulesContainer');
       if (!container) return;
 
-      container.innerHTML = window.OFFICIAL_LEARNING_MODULES.map(mod => `
+      container.innerHTML = window.OFFICIAL_LEARNING_MODULES.map(mod => {
+        const modData = (window.MASTER_MODULES_DATA && window.MASTER_MODULES_DATA[mod.key]) 
+          ? window.MASTER_MODULES_DATA[mod.key] 
+          : { items: [] };
+        const sampleItems = (modData.items || []).slice(0, 3);
+
+        return `
         <div class="module-card p-5 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-amber-500/50 shadow-xl flex flex-col justify-between transition hover:-translate-y-1 group">
           <div>
             <div class="flex items-center justify-between mb-2">
@@ -6261,12 +6353,27 @@
             <h3 class="text-base font-extrabold text-white mb-1 group-hover:text-amber-200 transition">
               ${mod.id}. ${mod.title}
             </h3>
-            <p class="text-xs text-slate-400 mb-4">${mod.words} palabras clave y ejercicios interactivos</p>
+            <p class="text-xs text-slate-400 mb-3">${mod.words} palabras clave y ejercicios interactivos</p>
+
+            <div class="mb-3 p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 text-xs">
+              <div class="flex items-center justify-between mb-1.5">
+                <span class="font-bold text-slate-300 text-[11px] uppercase tracking-wider">Vocabulario Clave</span>
+                <button type="button" onclick="window.openModuleGlossary(${mod.id})" class="text-[10px] font-bold text-amber-400 hover:underline cursor-pointer">Ver todos ↗</button>
+              </div>
+              <div class="space-y-1">
+                ${sampleItems.map(item => `
+                  <div class="flex items-center justify-between py-0.5 border-b border-slate-900 last:border-none">
+                    <span class="text-slate-200 font-medium truncate">${item.term || ''} <span class="text-[10px] text-amber-400/80 font-mono">${item.pron || ''}</span></span>
+                    <button type="button" onclick="speakText('${(item.term || '').replace(/'/g, "\\'")}')" class="text-amber-400 hover:text-amber-300 text-xs px-1 cursor-pointer" title="Pronunciar">🔊</button>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
           </div>
           <div class="flex items-center gap-2 pt-2 border-t border-slate-800">
             <button type="button" onclick="downloadActiveGlossaryPdf(${mod.id})"
               class="flex-1 py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer">
-              <span>📄</span>
+              <span>📥</span>
               <span>Descargar Glosario PDF</span>
             </button>
             <button type="button" onclick="openLearningMissionModal(${mod.id})"
@@ -6276,7 +6383,8 @@
             </button>
           </div>
         </div>
-      `).join('');
+      `;
+      }).join('');
     };
 
     window.returnToHub = function() {
@@ -6393,6 +6501,48 @@
           </p>
         `).join('');
       }
+
+      // Integración con reproductor de audio nativo y sincronización timeupdate
+      let audioTracker = document.getElementById('karaokeAudioTracker');
+      if (!audioTracker) {
+        audioTracker = document.createElement('audio');
+        audioTracker.id = 'karaokeAudioTracker';
+        audioTracker.className = 'w-full mt-3 rounded-xl';
+        audioTracker.controls = true;
+        const playerCard = document.getElementById('musicPlayerCard') || document.querySelector('#view-music .grid > div') || document.body;
+        playerCard.appendChild(audioTracker);
+      }
+
+      if (previewUrl) {
+        audioTracker.src = previewUrl;
+        audioTracker.style.display = 'block';
+        try {
+          audioTracker.play().catch(e => console.log('Autoplay deferred:', e));
+        } catch (e) {}
+      }
+
+      audioTracker.ontimeupdate = function() {
+        const currentTime = audioTracker.currentTime;
+        let matchedIdx = 0;
+        for (let i = 0; i < dynamicLyrics.length; i++) {
+          if (currentTime >= dynamicLyrics[i].time) {
+            matchedIdx = i;
+          } else {
+            break;
+          }
+        }
+        const lines = lyricsContainer ? lyricsContainer.querySelectorAll('.lyric-line') : [];
+        lines.forEach((lineEl, idx) => {
+          if (idx === matchedIdx) {
+            if (!lineEl.classList.contains('lyric-active')) {
+              lineEl.classList.add('lyric-active', 'scale-[1.02]', 'border-cyan-400', 'bg-cyan-950/80', 'text-white');
+              lineEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          } else {
+            lineEl.classList.remove('lyric-active', 'scale-[1.02]', 'border-cyan-400', 'bg-cyan-950/80', 'text-white');
+          }
+        });
+      };
 
       showFloatingToast(`Pista "${trackName}" lista para cantar`, '🎤');
 
