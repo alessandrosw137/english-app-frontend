@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 const scripts = [
+  'verify_core_fixes_requirements.js',
   'verify_hub_interaction_requirements.js',
   'verify_user_profile_requirements.js',
   'verify_modal_close_requirements.js',
@@ -21,7 +22,8 @@ const scripts = [
   'verify_render_resilience.js',
   'verify_stories_requirements.js',
   'verify_music_requirements.js',
-  'verify_ui_robot_pdf_landscape.js'
+  'verify_ui_robot_pdf_landscape.js',
+  'verify_world3d_engine.js'
 ];
 
 let allPassed = true;
@@ -46,7 +48,7 @@ scripts.forEach(script => {
 });
 
 if (allPassed) {
-  console.log('\n🏆 ALL TEST SUITES PASSED FLAWLESSLY!');
+  console.log('\n🏆 ALL 21 TEST SUITES PASSED FLAWLESSLY!');
 } else {
   console.error('\n❌ SOME TEST SUITES FAILED!');
   process.exit(1);
