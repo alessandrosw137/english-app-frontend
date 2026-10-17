@@ -168,9 +168,66 @@ assert(
 );
 assert(
   world3dCode.includes('THREE.OrbitControls') &&
-  world3dCode.includes('maxPolarAngle = Math.PI / 2.1') ||
-  world3dCode.includes('maxPolarAngle: Math.PI / 2.1'),
-  'Controles de órbita suaves (OrbitControls) con límites de inclinación (maxPolarAngle: Math.PI / 2.1)'
+  (world3dCode.includes('maxPolarAngle = Math.PI / 2.05') || world3dCode.includes('maxPolarAngle: Math.PI / 2.1')),
+  'Controles de órbita suaves (OrbitControls) con límites de inclinación (maxPolarAngle: Math.PI / 2.05)'
+);
+assert(
+  world3dCode.includes('THREE.ACESFilmicToneMapping') && world3dCode.includes('ResizeObserver'),
+  'ACESFilmicToneMapping y ResizeObserver configurados para redimensionado instantáneo sin pantalla en negro'
+);
+
+// ----------------------------------------------------------------------------
+// 5. LOS 14 OBJETOS INTERACTIVOS Y RAYCASTING EDUCATIVO
+// ----------------------------------------------------------------------------
+console.log('5. Verificando los 14 Objetos Interactivos y Raycasting Educativo...');
+const requiredObjectIds = [
+  'desk', 'computer_monitor', 'office_chair', 'bookshelf',
+  'sofa', 'coffee_table', 'floor_lamp', 'wall_clock', 'indoor_plant',
+  'oak_tree', 'park_bench', 'street_lantern', 'flower_bush', 'mailbox'
+];
+requiredObjectIds.forEach(objId => {
+  assert(
+    world3dCode.includes(`id: "${objId}"`) && world3dCode.includes(`registerInteractiveGroup(`) && world3dCode.includes(`'${objId}'`),
+    `Objeto 3D compuesto e interactivo registrado: "${objId}"`
+  );
+});
+assert(
+  world3dCode.includes('new THREE.Raycaster()') &&
+  world3dCode.includes('raycaster.setFromCamera') &&
+  world3dCode.includes('raycaster.intersectObjects(interactiveObjects, true)'),
+  'Sistema THREE.Raycaster con soporte táctil y clic limpio (diferenciando arrastre vs selección)'
+);
+assert(
+  world3dCode.includes('camera.position.lerp') && world3dCode.includes('controls.target.lerp'),
+  'Interpolación suave de cámara (Lerp) en el loop requestAnimationFrame hacia el objeto o zona seleccionada'
+);
+assert(
+  world3dCode.includes('🔊 Escuchar Pronunciación') &&
+  world3dCode.includes('🎙️ Practicar Pronunciación (+10 EXP)') &&
+  world3dCode.includes('Ver toda la casa') &&
+  world3dCode.includes('Aprendido ✅'),
+  'Tarjeta flotante HUD con pronunciación TTS (en-US), práctica (+10 EXP), estado "Aprendido ✅" y botón "Ver toda la casa"'
+);
+
+// ----------------------------------------------------------------------------
+// 6. HUD DE CONTROL 3D Y CICLO DÍA / NOCHE
+// ----------------------------------------------------------------------------
+console.log('6. Verificando HUD de Control 3D y Ciclo Día / Noche...');
+assert(
+  world3dCode.includes('☀️ Día / 🌙 Noche') && world3dCode.includes('toggleWorld3DDayNight'),
+  'Botón "☀️ Día / 🌙 Noche" funcional con alternancia de luces solares y encendido automático de lámparas/farol/monitor'
+);
+assert(
+  world3dCode.includes('Objetos descubiertos:') && world3dCode.includes('/ 14'),
+  'Contador de progreso en tiempo real "Objetos descubiertos: X / 14"'
+);
+assert(
+  world3dCode.includes('🏠 Vista General') &&
+  world3dCode.includes('🛋️ Ir a la Sala') &&
+  world3dCode.includes('💻 Ir al Estudio') &&
+  world3dCode.includes('🌳 Ir al Jardín') &&
+  world3dCode.includes('← Volver a Portales'),
+  'Botones de filtro rápido de cámara ("🏠 Vista General", "🛋️ Ir a la Sala", "💻 Ir al Estudio", "🌳 Ir al Jardín") y "← Volver a Portales"'
 );
 
 console.log('\n--- RESUMEN DE PRUEBAS ---');

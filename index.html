@@ -207,6 +207,16 @@ header, .top-bar, .navbar {
   pointer-events: auto; /* Permite rotar el 3D solo donde no haya interfaz */
 }
 
+#threeWebGLMount canvas, #threeCanvasContainer canvas, #world3d-container canvas, #world3d-canvas {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  z-index: 5 !important;
+  display: block !important;
+  pointer-events: auto !important;
+}
+
 #portalStarsCanvas, .star-bg, .particle-overlay, .canvas-background {
   pointer-events: none !important;
   z-index: 0 !important;
@@ -1005,8 +1015,8 @@ button[onclick*="closeModal"] {
   <!-- ========================================================
        VISTA 6: WORLD TOUR 3D (CON CONTROLES Y OBJETOS INTERACTIVOS)
        ======================================================== -->
-  <div id="view-worldtour" class="flex-1 p-3 max-w-5xl mx-auto w-full hidden" style="display: none;">
-    <div id="worldTourTopBar" class="flex items-center justify-between mb-3">
+  <div id="view-worldtour" class="flex-1 p-3 max-w-6xl mx-auto w-full hidden" style="display: none;">
+    <div id="worldTourTopBar" class="hidden items-center justify-between mb-2">
       <button onclick="goToHomePortals()"
         class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 transition cursor-pointer">
         <span>← Volver a Portales</span>
@@ -1023,45 +1033,44 @@ button[onclick*="closeModal"] {
       </div>
     </div>
 
-    <div class="relative w-full rounded-3xl overflow-hidden border border-slate-800 shadow-2xl bg-[#1e293b]">
+    <div id="world3d-container" class="relative w-full rounded-3xl overflow-hidden border border-slate-800 shadow-2xl bg-[#0a0e17]">
       <div id="threeCanvasContainer" class="w-full relative select-none"
-        style="height: 520px; background-color: #0f172a;">
+        style="height: 580px; min-height: 520px; background-color: #0a0e17;">
         <!-- Contenedor dedicado exclusivamente al Canvas de Three.js para NO borrar la UI superpuesta -->
-        <div id="threeWebGLMount" class="canvas-container canvas-container canvas-container absolute inset-0 w-full h-full z-10"></div>
+        <div id="threeWebGLMount" class="canvas-container absolute inset-0 w-full h-full z-10"></div>
 
-        <!-- Indicador de controles -->
+        <!-- Indicador de controles inferior -->
         <div
-          class="absolute top-3 left-3 z-20 bg-slate-900/85 backdrop-blur-md px-3.5 py-2 rounded-xl border border-slate-700/80 text-[11px] text-slate-300 font-medium shadow-lg flex items-center gap-2 pointer-events-none">
+          class="absolute bottom-3 left-3 z-20 bg-slate-900/85 backdrop-blur-md px-3.5 py-2 rounded-xl border border-slate-700/80 text-[11px] text-slate-300 font-medium shadow-lg flex items-center gap-2 pointer-events-none">
           <span class="text-purple-400 font-bold">🎮</span>
-          <span>Mover: WASD / Flechas / Joystick | Cámara 360°: Arrastrar ratón | Clic en muebles: Ver
-            Vocabulario</span>
+          <span>Orbitar: Arrastrar | Zoom: Rueda / Pellizcar | Clic en cualquiera de los 14 objetos: Vocabulario 3D (+10 EXP)</span>
         </div>
 
-        <!-- Joystick Virtual Táctil (Visible en móvil y PC para moverse cómodamente) -->
+        <!-- Joystick Virtual Táctil (Compatibilidad) -->
         <div id="virtualJoystickContainer"
-          class="absolute bottom-5 left-5 z-30 w-28 h-28 rounded-full bg-slate-900/75 border-2 border-purple-500/50 backdrop-blur-md flex items-center justify-center touch-none select-none shadow-2xl cursor-pointer">
+          class="hidden absolute bottom-5 left-5 z-30 w-28 h-28 rounded-full bg-slate-900/75 border-2 border-purple-500/50 backdrop-blur-md items-center justify-center touch-none select-none shadow-2xl cursor-pointer">
           <div id="virtualJoystickKnob"
             class="w-12 h-12 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-500 border-2 border-white/60 shadow-lg pointer-events-none transition-transform duration-75">
           </div>
         </div>
 
-        <!-- Tarjeta de Inspección de Objeto 3D -->
+        <!-- Tarjeta de Inspección de Objeto 3D (Sincronizada con HUD) -->
         <div id="threeObjectInspectCard"
-          class="absolute bottom-4 left-36 right-4 sm:left-auto sm:right-4 sm:w-80 z-30 bg-slate-900/95 backdrop-blur-md border border-purple-500/50 rounded-2xl p-4 shadow-2xl hidden transition-all duration-300">
+          class="hidden">
           <div class="flex items-center justify-between mb-2">
             <span id="threeObjCategory"
               class="text-[10px] font-bold uppercase tracking-wider text-purple-400 bg-purple-500/20 px-2 py-0.5 rounded-full">Hogar</span>
             <button type="button" onclick="close3DInspectCard(); window.closeAllModals();" class="close-btn text-slate-400 hover:text-white text-sm cursor-pointer p-1" style="cursor: pointer !important; pointer-events: auto !important; position: relative; z-index: 100001 !important;">&times;</button>
           </div>
           <div class="flex items-center justify-between">
-            <h4 id="threeObjEnName" class="text-lg font-black text-white">Hammock</h4>
+            <h4 id="threeObjEnName" class="text-lg font-black text-white">Sofa / Couch</h4>
             <button onclick="speakCurrent3DObj()"
               class="p-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white transition cursor-pointer">🔊</button>
           </div>
-          <p id="threeObjIpa" class="text-xs text-purple-300 font-mono">/ˈhæm.ək/</p>
-          <p id="threeObjEsName" class="text-xs text-slate-300 font-semibold mt-1">Hamaca tradicional tejida</p>
+          <p id="threeObjIpa" class="text-xs text-purple-300 font-mono">/ˈsoʊ.fə/</p>
+          <p id="threeObjEsName" class="text-xs text-slate-300 font-semibold mt-1">Sofá / Sillón</p>
           <div class="mt-2.5 p-2 rounded-xl bg-slate-800/80 border border-slate-700/60 text-xs text-slate-300 italic">
-            "<span id="threeObjExample">I relax in the hammock on warm afternoons.</span>"
+            "<span id="threeObjExample">I relax on the sofa after studying English.</span>"
           </div>
         </div>
       </div>

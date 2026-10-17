@@ -1276,7 +1276,13 @@
       }
 
       if (viewId === 'view-worldtour') {
-        initThreeWorldTour();
+        if (typeof window.initOrResumeWorld3D === 'function') {
+          window.initOrResumeWorld3D();
+        } else {
+          initThreeWorldTour();
+        }
+      } else if (typeof window.pauseWorld3D === 'function') {
+        window.pauseWorld3D();
       }
     }
 
@@ -3396,6 +3402,9 @@
     };
 
     function initThreeWorldTour() {
+      if (typeof window.initOrResumeWorld3D === 'function') {
+        return window.initOrResumeWorld3D();
+      }
       const container = document.getElementById('threeCanvasContainer');
       const mount = document.getElementById('threeWebGLMount');
       if (!container || !mount) return;
@@ -3835,6 +3844,9 @@
     // ========================================================
 
     function switch3DScenario(scenarioKey) {
+      if (window.World3D && typeof window.World3D.switch3DScenario === 'function') {
+        return window.World3D.switch3DScenario(scenarioKey);
+      }
       if (!WORLD_TOUR_SCENARIOS[scenarioKey]) return;
       currentScenarioKey = scenarioKey;
 
