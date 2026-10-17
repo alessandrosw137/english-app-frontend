@@ -194,95 +194,70 @@
        COVER FLOW HORIZONTAL MODERNO DE PORTALES (PROFUNDIDAD)
        ======================================================== */
     .coverflow-viewport {
-      overflow: hidden;
-      overflow-x: clip;
+      overflow: visible;
       position: relative;
-      height: 520px;
       width: 100%;
+      max-width: 560px;
+      min-height: 430px;
+      height: auto;
+      margin: 0 auto;
+      padding: 0 56px;
       display: flex;
       align-items: center;
       justify-content: center;
+      box-sizing: border-box;
     }
 
     .coverflow-track {
       position: relative;
       width: 100%;
-      height: 500px;
+      height: auto;
       display: flex;
       align-items: center;
       justify-content: center;
     }
 
     .coverflow-portal-card {
-      position: absolute;
+      position: relative;
       width: 320px;
-      max-width: 85vw;
-      height: 500px;
-      height: 490px;
-      top: 50%;
-      left: 50%;
-      margin-left: -160px;
-      margin-top: -245px;
-      transform-origin: center center;
-      transition: transform 0.45s cubic-bezier(0.2, 0.85, 0.25, 1),
-        opacity 0.45s ease,
-        filter 0.45s ease,
-        box-shadow 0.45s ease;
+      width: min(350px, 88vw);
+      height: auto;
+      min-height: 410px;
+      max-height: min(540px, 72vh);
+      top: auto;
+      left: auto;
+      right: auto;
+      bottom: auto;
+      margin: 0 auto;
+      transform: none;
+      transition: opacity 0.3s ease, box-shadow 0.3s ease;
       cursor: pointer;
       user-select: none;
+      box-sizing: border-box;
     }
 
     .coverflow-portal-card.active-center {
-      transform: translateX(0px) scale(1);
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: space-between !important;
+      position: relative !important;
+      top: auto !important;
+      left: auto !important;
+      margin: 0 auto !important;
+      transform: none !important;
       opacity: 1 !important;
       filter: none !important;
       z-index: 30 !important;
       pointer-events: auto !important;
     }
 
-    .coverflow-portal-card.side-left {
-      transform: translateX(-240px) scale(0.82);
-      opacity: 0.45;
-      filter: blur(5px);
-      z-index: 15;
-      pointer-events: auto;
-    }
-
-    .coverflow-portal-card.side-right {
-      transform: translateX(240px) scale(0.82);
-      opacity: 0.45;
-      filter: blur(5px);
-      z-index: 15;
-      pointer-events: auto;
-    }
-
-    .coverflow-portal-card.hidden-back {
-      transform: translateX(0px) scale(0.65);
+    .coverflow-portal-card.side-left,
+    .coverflow-portal-card.side-right,
+    .coverflow-portal-card.hidden-back,
+    .coverflow-portal-card:not(.active-center) {
+      display: none !important;
       opacity: 0 !important;
-      filter: blur(10px);
-      z-index: 5;
       pointer-events: none !important;
-    }
-
-    @media (max-width: 640px) {
-      .coverflow-viewport {
-        overflow: hidden !important;
-        overflow-x: clip !important;
-      }
-      .coverflow-portal-card.side-left {
-        transform: translateX(-160px) scale(0.82);
-        opacity: 0.2 !important;
-        pointer-events: none !important;
-      }
-
-      .coverflow-portal-card.side-right {
-        transform: translateX(160px) scale(0.82);
-        opacity: 0.2 !important;
-        pointer-events: none !important;
-      }
-      .coverflow-portal-card.hidden-back {
-        display: none !important;
-      }
     }
 
     @keyframes portalSpinSlow {
@@ -764,9 +739,9 @@ button[onclick*="closeModal"] {
   justify-content: center !important;
   align-items: center !important;
   min-height: 100vh !important;
-  max-height: 100vh !important;
+  width: 100% !important;
   overflow: hidden !important;
-  padding: 10px !important;
+  padding: 72px 16px 24px 16px !important;
   box-sizing: border-box !important;
 }
 
@@ -776,83 +751,108 @@ button[onclick*="closeModal"] {
   align-items: center !important;
   gap: 2rem !important;
   width: 100% !important;
-  max-width: 1200px !important;
+  max-width: 560px !important;
   margin: 0 auto !important;
   position: relative !important;
+  overflow: visible !important;
+}
+
+#coverFlowViewport.hub-carousel {
+  padding: 0 56px !important;
+  height: auto !important;
+  min-height: 430px !important;
 }
 
 .portal-card {
   width: 320px !important;
-  width: min(340px, 85vw) !important;
+  width: min(350px, 88vw) !important;
   min-width: 280px !important;
-  max-width: 340px !important;
+  max-width: 350px !important;
   height: 500px !important;
-  max-height: 62vh !important;
+  height: auto !important;
+  min-height: 410px !important;
+  max-height: min(540px, 72vh) !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  margin: 0 auto !important;
+  transform: none !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: space-between !important;
-  border-radius: 20px !important;
-  padding: 1rem !important;
+  border-radius: 24px !important;
+  padding: 1.5rem !important;
+  background: rgba(13, 20, 36, 0.9) !important;
+  border: 2px solid rgba(245, 166, 35, 0.4) !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6) !important;
   box-sizing: border-box !important;
   overflow: hidden !important;
   position: relative !important;
-  border: 2px solid rgba(56, 189, 248, 0.4) !important;
-  box-shadow: 0 0 25px rgba(56, 189, 248, 0.25) !important;
+}
+
+.portal-card:not(.active-center) {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 .carousel-nav-btn, .carousel-btn, .nav-arrow {
-  width: 44px !important;
-  height: 44px !important;
-  min-width: 44px !important;
-  min-height: 44px !important;
+  width: 48px !important;
+  height: 48px !important;
+  min-width: 48px !important;
+  min-height: 48px !important;
   z-index: 1000 !important;
   cursor: pointer !important;
   border-radius: 9999px !important;
-  background: rgba(15, 23, 42, 0.85) !important;
+  background: rgba(15, 23, 42, 0.92) !important;
   backdrop-filter: blur(8px) !important;
-  border: 1px solid rgba(56, 189, 248, 0.4) !important;
+  border: 1.5px solid rgba(56, 189, 248, 0.5) !important;
   color: #ffffff !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6) !important;
   transition: all 0.2s ease !important;
+}
+
+.carousel-nav-btn:hover, .carousel-btn:hover, .nav-arrow:hover {
+  background: rgba(30, 41, 59, 0.98) !important;
+  border-color: rgba(245, 166, 35, 0.8) !important;
 }
 
 .carousel-nav-btn.prev, .carousel-prev, [data-action="prev"] {
   position: absolute !important;
-  left: 0.5rem !important;
+  left: 0px !important;
   top: 50% !important;
   transform: translateY(-50%) !important;
   z-index: 1000 !important;
   cursor: pointer !important;
-}
-
-@media (min-width: 768px) {
-  .carousel-nav-btn.prev, .carousel-prev, [data-action="prev"] {
-    left: -2.5rem !important;
-  }
 }
 
 .carousel-nav-btn.next, .carousel-next, [data-action="next"] {
   position: absolute !important;
-  right: 0.5rem !important;
+  right: 0px !important;
   top: 50% !important;
   transform: translateY(-50%) !important;
   z-index: 1000 !important;
   cursor: pointer !important;
 }
 
-@media (min-width: 768px) {
-  .carousel-nav-btn.next, .carousel-next, [data-action="next"] {
-    right: -2.5rem !important;
-  }
-}
-
-#tutorRouletteDock, .floating-widget-dock, #draggableRobotWidget, #draggableRouletteWidget {
+#tutorRouletteDock, .floating-widget-dock {
   position: fixed !important;
   bottom: 20px !important;
   right: 20px !important;
+  z-index: 9999 !important;
+  pointer-events: auto !important;
+}
+
+#draggableRobotWidget, #draggableRouletteWidget {
+  position: relative !important;
+  bottom: auto !important;
+  right: auto !important;
+  left: auto !important;
+  top: auto !important;
   z-index: 9999 !important;
   pointer-events: auto !important;
 }
@@ -867,3 +867,4 @@ button[onclick*="closeModal"] {
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
   gap: 1.25rem !important;
 }
+

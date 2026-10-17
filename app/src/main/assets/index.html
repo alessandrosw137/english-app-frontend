@@ -163,6 +163,17 @@
       pointer-events: auto !important;
     }
 
+    .coverflow-portal-card, .portal-card {
+      position: relative !important;
+      top: auto !important;
+      left: auto !important;
+      margin: 0 auto !important;
+      transform: none !important;
+    }
+    .coverflow-portal-card:not(.active-center) {
+      display: none !important;
+    }
+
     /* Adaptabilidad a pantalla completa y landscape */
     @media (orientation: landscape) {
       body.view-worldtour-active header {
@@ -600,7 +611,7 @@ button[onclick*="closeModal"] {
   <div id="view-home" class="hub-container flex-1 flex flex-col items-center justify-center p-3 relative overflow-hidden hidden" style="display: none;">
     <canvas id="portalStarsCanvas" class="absolute inset-0 pointer-events-none w-full h-full z-0 opacity-60"></canvas>
 
-    <div class="relative z-10 w-full max-w-xl text-center mb-2">
+    <div class="relative z-10 w-full max-w-xl text-center mb-3">
       <h2
         class="text-xl sm:text-2xl font-black bg-gradient-to-r from-amber-300 via-sky-300 to-purple-400 bg-clip-text text-transparent">
         Hub de Teletransportación
@@ -611,9 +622,9 @@ button[onclick*="closeModal"] {
     </div>
 
     <div id="coverFlowViewport"
-      class="coverflow-viewport hub-carousel w-full max-w-4xl h-[520px] flex items-center justify-center my-2 z-10">
+      class="coverflow-viewport hub-carousel w-full max-w-xl flex items-center justify-center my-1 z-10">
       <button type="button" onclick="window.prevPortal()"
-        class="carousel-nav-btn prev carousel-btn carousel-prev nav-arrow absolute left-2 sm:left-4 z-40 w-11 h-11 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-white flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition cursor-pointer" data-action="prev" title="Portal Anterior">
+        class="carousel-nav-btn prev carousel-btn carousel-prev nav-arrow absolute left-0 z-40 w-12 h-12 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-white flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition cursor-pointer" data-action="prev" title="Portal Anterior">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
           <path d="M15 19l-7-7 7-7" />
         </svg>
@@ -623,13 +634,11 @@ button[onclick*="closeModal"] {
         <!-- PORTAL 0: LEARNING PATH -->
         <div id="coverCard-0" onclick="handleCoverCardClick(0)" class="coverflow-portal-card portal-card active-center"
           style="--portal-glow: rgba(245, 158, 11, 0.45);">
-          <div
-            class="w-full h-full rounded-3xl bg-slate-900/95 border-2 border-amber-500/70 p-4 flex flex-col justify-between shadow-2xl relative overflow-hidden group">
+          <div class="w-full h-full flex flex-col justify-between relative overflow-hidden group">
             <div class="absolute -top-12 -right-12 w-36 h-36 bg-amber-500/20 rounded-full blur-2xl pointer-events-none"></div>
             <div>
               <div class="flex items-center justify-between mb-1.5">
-                <span
-                  class="px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-[10px] font-bold text-amber-300 uppercase tracking-widest">
+                <span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-[10px] font-bold text-amber-300 uppercase tracking-widest">
                   PORTAL 01 &bull; CÓSMICO
                 </span>
                 <span class="text-xs font-bold text-amber-400">+20 EXP / nivel</span>
@@ -637,123 +646,117 @@ button[onclick*="closeModal"] {
               <h3 class="text-lg font-black text-amber-300 group-hover:text-amber-200 transition">
                 Learning Path
               </h3>
-              <p class="text-[11px] text-slate-300 mt-0.5 leading-snug h-[34px] overflow-hidden">
-                Academia con 10 módulos, glosarios con descarga PDF y misiones interactivas.
+              <p class="text-[11px] text-slate-300 mt-1 leading-snug">
+                Academia con 10 módulos TOEFL, glosarios con descarga PDF y misiones interactivas.
               </p>
             </div>
-            <div class="my-1.5 relative w-full h-28 sm:h-36 max-h-[140px] rounded-2xl overflow-hidden border border-amber-500/50 shadow-lg shadow-amber-950/60">
+            <div class="my-3 relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden border border-amber-500/50 shadow-lg shadow-amber-950/60 shrink-0">
               <img src="images/portal_learning_path.jpg" alt="Portal Learning Path" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onerror="this.onerror=null; this.src=window.FALLBACK_PORTAL_LEARNING || 'images/portal_learning_path.svg';">
               <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none"></div>
               <span class="absolute bottom-2 right-2.5 text-xs font-black text-amber-300 bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-amber-400/40">🌌 10 Módulos</span>
             </div>
-            <button type="button" onclick="event.stopPropagation(); window.openPortalModules('path'); window.openLearningPath();" class="portal-btn w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-amber-500/30 cursor-pointer" data-action="enter-portal" data-portal="path">ENTRAR AL PORTAL</button>
+            <button type="button" onclick="event.stopPropagation(); window.openPortalModules('path'); window.openLearningPath();" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-amber-500/30 cursor-pointer" data-action="enter-portal" data-portal="path">ENTRAR AL PORTAL</button>
           </div>
         </div>
 
-        <!-- PORTAL 1: CUENTOS CLÁSICOS -->
+        <!-- PORTAL 1: WORLD TOUR 3D -->
         <div id="coverCard-1" onclick="handleCoverCardClick(1)" class="coverflow-portal-card portal-card side-right"
-          style="--portal-glow: rgba(16, 185, 129, 0.45);">
-          <div
-            class="w-full h-full rounded-3xl bg-slate-900/95 border-2 border-emerald-500/70 p-4 flex flex-col justify-between shadow-2xl relative overflow-hidden group">
-            <div class="absolute -top-12 -right-12 w-36 h-36 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none"></div>
-            <div>
-              <div class="flex items-center justify-between mb-1.5">
-                <span
-                  class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-[10px] font-bold text-emerald-300 uppercase tracking-widest">
-                  PORTAL 02 &bull; ESMERALDA
-                </span>
-                <span class="text-xs font-bold text-emerald-400">+50 EXP / voz</span>
-              </div>
-              <h3 class="text-lg font-black text-emerald-300 group-hover:text-emerald-200 transition">
-                Cuentos
-              </h3>
-              <p class="text-[11px] text-slate-300 mt-0.5 leading-snug h-[34px] overflow-hidden">
-                Biblioteca ilustrada con 6 obras clásicas, narrador nativo, práctica por micrófono y PDF.
-              </p>
-            </div>
-            <div class="my-1.5 relative w-full h-28 sm:h-36 max-h-[140px] rounded-2xl overflow-hidden border border-emerald-500/50 shadow-lg shadow-emerald-950/60">
-              <img src="images/portal_stories.jpg" alt="Portal Cuentos" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onerror="this.onerror=null; this.src=window.FALLBACK_PORTAL_STORIES || 'images/portal_stories.svg';">
-              <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none"></div>
-              <span class="absolute bottom-2 right-2.5 text-xs font-black text-emerald-300 bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-emerald-400/40">🌲 6 Obras</span>
-            </div>
-            <button type="button" onclick="event.stopPropagation(); window.openPortalModules('stories');" class="portal-btn w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-500/30 cursor-pointer" data-action="enter-portal" data-portal="stories">ENTRAR AL PORTAL</button>
-          </div>
-        </div>
-
-        <!-- PORTAL 2: MUSIC SESSION -->
-        <div id="coverCard-2" onclick="handleCoverCardClick(2)" class="coverflow-portal-card portal-card hidden-back"
-          style="--portal-glow: rgba(6, 182, 212, 0.45);">
-          <div
-            class="w-full h-full rounded-3xl bg-slate-900/95 border-2 border-cyan-500/70 p-4 flex flex-col justify-between shadow-2xl relative overflow-hidden group">
-            <div class="absolute -top-12 -right-12 w-36 h-36 bg-cyan-500/20 rounded-full blur-2xl pointer-events-none"></div>
-            <div>
-              <div class="flex items-center justify-between mb-1.5">
-                <span
-                  class="px-2.5 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-500/40 text-[10px] font-bold text-cyan-300 uppercase tracking-widest">
-                  PORTAL 03 &bull; CYBERPUNK
-                </span>
-                <span class="text-xs font-bold text-cyan-400">+30 EXP / reto</span>
-              </div>
-              <h3 class="text-lg font-black text-cyan-300 group-hover:text-cyan-200 transition">
-                Music Session
-              </h3>
-              <p class="text-[11px] text-slate-300 mt-0.5 leading-snug h-[34px] overflow-hidden">
-                Buscador predictivo estilo YouTube con sugerencias en vivo, karaoke y diccionario.
-              </p>
-            </div>
-            <div class="my-1.5 relative w-full h-28 sm:h-36 max-h-[140px] rounded-2xl overflow-hidden border border-cyan-500/50 shadow-lg shadow-cyan-950/60 bg-slate-950">
-              <img src="images/portal_music.svg" alt="Portal Music Session" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onerror="this.onerror=null; this.src=window.FALLBACK_PORTAL_MUSIC || 'images/portal_music.svg';">
-              <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none"></div>
-              <span class="absolute bottom-2 right-2.5 text-xs font-black text-cyan-300 bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-cyan-400/40">⚡ Karaoke Live</span>
-            </div>
-            <button type="button" onclick="event.stopPropagation(); window.openPortalModules('music');" class="portal-btn w-full py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-cyan-500/30 cursor-pointer" data-action="enter-portal" data-portal="music">ENTRAR AL PORTAL</button>
-          </div>
-        </div>
-
-        <!-- PORTAL 3: WORLD TOUR 3D -->
-        <div id="coverCard-3" onclick="handleCoverCardClick(3)" class="coverflow-portal-card portal-card side-left"
           style="--portal-glow: rgba(168, 85, 247, 0.45);">
-          <div
-            class="w-full h-full rounded-3xl bg-slate-900/95 border-2 border-purple-500/70 p-4 flex flex-col justify-between shadow-2xl relative overflow-hidden group">
+          <div class="w-full h-full flex flex-col justify-between relative overflow-hidden group">
             <div class="absolute -top-12 -right-12 w-36 h-36 bg-purple-500/20 rounded-full blur-2xl pointer-events-none"></div>
             <div>
               <div class="flex items-center justify-between mb-1.5">
-                <span
-                  class="px-2.5 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/40 text-[10px] font-bold text-purple-300 uppercase tracking-widest">
-                  PORTAL 04 &bull; INMERSIVO 3D
+                <span class="px-2.5 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/40 text-[10px] font-bold text-purple-300 uppercase tracking-widest">
+                  PORTAL 02 &bull; INMERSIVO 3D
                 </span>
                 <span class="text-xs font-bold text-purple-400">15 Objetos Interactivos</span>
               </div>
               <h3 class="text-lg font-black text-purple-300 group-hover:text-purple-200 transition">
                 World Tour 3D
               </h3>
-              <p class="text-[11px] text-slate-300 mt-0.5 leading-snug h-[34px] overflow-hidden">
+              <p class="text-[11px] text-slate-300 mt-1 leading-snug">
                 Escenario House & Rooms y Backyard en Three.js con iluminación PBR y pronunciación.
               </p>
             </div>
-            <div class="my-1.5 relative w-full h-28 sm:h-36 max-h-[140px] rounded-2xl overflow-hidden border border-purple-500/50 shadow-lg shadow-purple-950/60">
+            <div class="my-3 relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden border border-purple-500/50 shadow-lg shadow-purple-950/60 shrink-0">
               <img src="images/portal_worldtour.jpg" alt="Portal World Tour 3D" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onerror="this.onerror=null; this.src=window.FALLBACK_PORTAL_WORLDTOUR || 'images/portal_worldtour.svg';">
               <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none"></div>
               <span class="absolute bottom-2 right-2.5 text-xs font-black text-purple-300 bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-purple-400/40">🪐 Casa & Jardín 3D</span>
             </div>
-            <button type="button" onclick="event.stopPropagation(); window.openPortalModules('worldtour'); openPortalWithLoader('worldtour'); if (typeof window.initOrResumeWorld3D === 'function') window.initOrResumeWorld3D();" class="portal-btn w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-fuchsia-500 hover:from-purple-400 hover:to-fuchsia-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-purple-500/30 cursor-pointer" data-action="enter-portal" data-portal="worldtour">ENTRAR AL PORTAL</button>
+            <button type="button" onclick="event.stopPropagation(); window.openPortalModules('worldtour'); openPortalWithLoader('worldtour'); if (typeof window.initOrResumeWorld3D === 'function') window.initOrResumeWorld3D();" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-purple-500 to-fuchsia-500 hover:from-purple-400 hover:to-fuchsia-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-purple-500/30 cursor-pointer" data-action="enter-portal" data-portal="worldtour">ENTRAR AL PORTAL</button>
+          </div>
+        </div>
+
+        <!-- PORTAL 2: MUSIC JAM -->
+        <div id="coverCard-2" onclick="handleCoverCardClick(2)" class="coverflow-portal-card portal-card hidden-back"
+          style="--portal-glow: rgba(6, 182, 212, 0.45);">
+          <div class="w-full h-full flex flex-col justify-between relative overflow-hidden group">
+            <div class="absolute -top-12 -right-12 w-36 h-36 bg-cyan-500/20 rounded-full blur-2xl pointer-events-none"></div>
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <span class="px-2.5 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-500/40 text-[10px] font-bold text-cyan-300 uppercase tracking-widest">
+                  PORTAL 03 &bull; CYBERPUNK
+                </span>
+                <span class="text-xs font-bold text-cyan-400">+30 EXP / reto</span>
+              </div>
+              <h3 class="text-lg font-black text-cyan-300 group-hover:text-cyan-200 transition">
+                Music Jam
+              </h3>
+              <p class="text-[11px] text-slate-300 mt-1 leading-snug">
+                Buscador en vivo conectado a iTunes API con karaoke interactivo y diccionario.
+              </p>
+            </div>
+            <div class="my-3 relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden border border-cyan-500/50 shadow-lg shadow-cyan-950/60 bg-slate-950 shrink-0">
+              <img src="images/portal_music.svg" alt="Portal Music Session" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onerror="this.onerror=null; this.src=window.FALLBACK_PORTAL_MUSIC || 'images/portal_music.svg';">
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none"></div>
+              <span class="absolute bottom-2 right-2.5 text-xs font-black text-cyan-300 bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-cyan-400/40">⚡ Karaoke Live</span>
+            </div>
+            <button type="button" onclick="event.stopPropagation(); window.openPortalModules('music');" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-cyan-500/30 cursor-pointer" data-action="enter-portal" data-portal="music">ENTRAR AL PORTAL</button>
+          </div>
+        </div>
+
+        <!-- PORTAL 3: CUENTOS CLÁSICOS -->
+        <div id="coverCard-3" onclick="handleCoverCardClick(3)" class="coverflow-portal-card portal-card side-left"
+          style="--portal-glow: rgba(16, 185, 129, 0.45);">
+          <div class="w-full h-full flex flex-col justify-between relative overflow-hidden group">
+            <div class="absolute -top-12 -right-12 w-36 h-36 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none"></div>
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-[10px] font-bold text-emerald-300 uppercase tracking-widest">
+                  PORTAL 04 &bull; ESMERALDA
+                </span>
+                <span class="text-xs font-bold text-emerald-400">+50 EXP / voz</span>
+              </div>
+              <h3 class="text-lg font-black text-emerald-300 group-hover:text-emerald-200 transition">
+                Cuentos Clásicos
+              </h3>
+              <p class="text-[11px] text-slate-300 mt-1 leading-snug">
+                Biblioteca ilustrada con 6 obras clásicas, narrador nativo, práctica por micrófono y PDF.
+              </p>
+            </div>
+            <div class="my-3 relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden border border-emerald-500/50 shadow-lg shadow-emerald-950/60 shrink-0">
+              <img src="images/portal_stories.jpg" alt="Portal Cuentos" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onerror="this.onerror=null; this.src=window.FALLBACK_PORTAL_STORIES || 'images/portal_stories.svg';">
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none"></div>
+              <span class="absolute bottom-2 right-2.5 text-xs font-black text-emerald-300 bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-emerald-400/40">🌲 6 Obras</span>
+            </div>
+            <button type="button" onclick="event.stopPropagation(); window.openPortalModules('stories');" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-500/30 cursor-pointer" data-action="enter-portal" data-portal="stories">ENTRAR AL PORTAL</button>
           </div>
         </div>
       </div>
 
       <button type="button" onclick="window.nextPortal()"
-        class="carousel-nav-btn next carousel-btn carousel-next nav-arrow absolute right-2 sm:right-4 z-40 w-11 h-11 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-white flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition cursor-pointer" data-action="next" title="Portal Siguiente">
+        class="carousel-nav-btn next carousel-btn carousel-next nav-arrow absolute right-0 z-40 w-12 h-12 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-white flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition cursor-pointer" data-action="next" title="Portal Siguiente">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
           <path d="M9 5l7 7-7 7" />
         </svg>
       </button>
     </div>
 
-    <div class="flex items-center gap-2 mt-2 z-10">
+    <div class="flex items-center gap-2.5 mt-3 z-10">
       <span id="coverDot-0" onclick="handleCoverCardClick(0)" class="w-3 h-3 rounded-full bg-amber-400 transition-all duration-300 shadow cursor-pointer"></span>
-      <span id="coverDot-1" onclick="handleCoverCardClick(1)" class="w-2 h-2 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer"></span>
-      <span id="coverDot-2" onclick="handleCoverCardClick(2)" class="w-2 h-2 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer"></span>
-      <span id="coverDot-3" onclick="handleCoverCardClick(3)" class="w-2 h-2 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer"></span>
+      <span id="coverDot-1" onclick="handleCoverCardClick(1)" class="w-2.5 h-2.5 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer"></span>
+      <span id="coverDot-2" onclick="handleCoverCardClick(2)" class="w-2.5 h-2.5 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer"></span>
+      <span id="coverDot-3" onclick="handleCoverCardClick(3)" class="w-2.5 h-2.5 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer"></span>
     </div>
   </div>
 

@@ -1214,24 +1214,31 @@
 
     window.navigateToView = function(viewId) {
       const viewMap = {
+        'login': 'view-auth',
         'login-view': 'view-auth',
         'view-auth': 'view-auth',
+        'hub': 'view-home',
         'hub-view': 'view-home',
         'view-home': 'view-home',
+        'learning-path': 'view-path',
         'learning-path-view': 'view-path',
         'view-path': 'view-path',
+        'world3d': 'view-worldtour',
         'world3d-view': 'view-worldtour',
         'view-worldtour': 'view-worldtour',
+        'music': 'view-music',
         'music-view': 'view-music',
         'view-music': 'view-music',
+        'stories': 'view-stories',
         'stories-view': 'view-stories',
         'view-stories': 'view-stories',
+        'admin': 'adminDashboardModal',
         'admin-view': 'adminDashboardModal'
       };
 
       const targetId = viewMap[viewId] || viewId;
 
-      if (targetId === 'adminDashboardModal' || viewId === 'admin-view') {
+      if (targetId === 'adminDashboardModal' || viewId === 'admin-view' || viewId === 'admin') {
         if (typeof openAdminDashboardModal === 'function') {
           openAdminDashboardModal();
         } else {
@@ -1261,7 +1268,7 @@
         if (el) {
           if (v === targetId) {
             el.classList.remove('hidden');
-            el.style.display = (v === 'view-home' || v === 'view-auth') ? 'block' : 'flex';
+            el.style.display = 'flex';
             el.style.pointerEvents = 'auto';
             el.style.visibility = 'visible';
           } else {
@@ -1340,6 +1347,7 @@
         }
       }
     };
+    window.navigateTo = window.navigateToView;
 
     function showView(viewId) {
       if (viewId !== 'view-music') {
@@ -1468,7 +1476,7 @@
     }
 
     // ========================================================
-    // HUB DE PORTALES: COVER FLOW HORIZONTAL FLUIDO
+    // HUB DE PORTALES: CARRUSEL SIMÉTRICO BASADO EN ÍNDICE ACTIVO
     // ========================================================
     window.currentPortalIndex = 0;
     let currentCoverFlowIndex = 0;
@@ -1495,6 +1503,12 @@
         if (diff === 0) {
           card.classList.add('active-center');
           card.style.display = 'flex';
+          card.style.position = 'relative';
+          card.style.top = 'auto';
+          card.style.left = 'auto';
+          card.style.right = 'auto';
+          card.style.bottom = 'auto';
+          card.style.margin = '0 auto';
           card.style.opacity = '1';
           card.style.filter = 'none';
           card.style.transform = 'none';
@@ -1502,34 +1516,27 @@
           card.style.zIndex = '30';
           card.style.pointerEvents = 'auto';
           if (dot) dot.className = 'w-3 h-3 rounded-full bg-amber-400 transition-all duration-300 shadow cursor-pointer';
-        } else if (diff === -1) {
-          card.classList.add('side-left');
-          card.style.display = 'none';
-          card.style.opacity = '0';
-          card.style.boxShadow = 'none';
-          card.style.zIndex = '15';
-          card.style.pointerEvents = 'none';
-          if (dot) dot.className = 'w-2 h-2 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer';
-        } else if (diff === 1) {
-          card.classList.add('side-right');
-          card.style.display = 'none';
-          card.style.opacity = '0';
-          card.style.boxShadow = 'none';
-          card.style.zIndex = '15';
-          card.style.pointerEvents = 'none';
-          if (dot) dot.className = 'w-2 h-2 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer';
         } else {
-          card.classList.add('hidden-back');
+          if (diff === -1) card.classList.add('side-left');
+          else if (diff === 1) card.classList.add('side-right');
+          else card.classList.add('hidden-back');
           card.style.display = 'none';
           card.style.opacity = '0';
           card.style.boxShadow = 'none';
           card.style.zIndex = '5';
           card.style.pointerEvents = 'none';
-          if (dot) dot.className = 'w-2 h-2 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer';
+          if (dot) dot.className = 'w-2.5 h-2.5 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer';
         }
       }
     }
     window.updateCoverFlowVisuals = updateCoverFlowVisuals;
+
+    window.goToPortal = function(index) {
+      const next = ((index % TOTAL_COVER_PORTALS) + TOTAL_COVER_PORTALS) % TOTAL_COVER_PORTALS;
+      window.currentPortalIndex = next;
+      currentCoverFlowIndex = next;
+      updateCoverFlowVisuals();
+    };
 
     function navigateCoverFlow(direction) {
       if (isCoverFlowAnimating) return;
@@ -1539,19 +1546,17 @@
       window.currentPortalIndex = next;
       currentCoverFlowIndex = next;
       updateCoverFlowVisuals();
-      setTimeout(() => { isCoverFlowAnimating = false; }, 300);
+      setTimeout(() => { isCoverFlowAnimating = false; }, 220);
     }
 
     function handleCoverCardClick(index) {
       if (index === window.currentPortalIndex) {
-        const modules = ['path', 'stories', 'music', 'worldtour'];
+        const modules = ['path', 'worldtour', 'music', 'stories'];
         if (typeof window.openPortalModules === 'function') {
           window.openPortalModules(modules[index]);
         }
       } else {
-        window.currentPortalIndex = index;
-        currentCoverFlowIndex = index;
-        updateCoverFlowVisuals();
+        window.goToPortal(index);
       }
     }
     window.handleCoverCardClick = handleCoverCardClick;
@@ -1576,7 +1581,7 @@
     };
 
     window.openPortalModules = function(targetPortal) {
-      const portalModules = ['path', 'stories', 'music', 'worldtour'];
+      const portalModules = ['path', 'worldtour', 'music', 'stories'];
       const activeIdx = (typeof window.currentPortalIndex === 'number') 
         ? ((window.currentPortalIndex % TOTAL_COVER_PORTALS + TOTAL_COVER_PORTALS) % TOTAL_COVER_PORTALS) 
         : currentCoverFlowIndex;
@@ -1718,7 +1723,7 @@
     window.setupCoverFlowGestures = setupCoverFlowGestures;
 
     // ========================================================
-    // WIDGETS FLOTANTES ARRASTRABLES
+    // WIDGETS FLOTANTES ARRASTRABLES (ANCLADOS EN ESQUINA INFERIOR DERECHA)
     // ========================================================
     function setupDraggableWidget(widgetId, storageKey) {
       const widget = document.getElementById(widgetId);
@@ -1729,15 +1734,12 @@
       let initialLeft = 0, initialTop = 0;
       let hasMovedSignificantly = false;
 
-      try {
-        const saved = JSON.parse(localStorage.getItem(storageKey));
-        if (saved && typeof saved.left === 'number' && typeof saved.top === 'number') {
-          widget.style.left = `${saved.left}px`;
-          widget.style.top = `${saved.top}px`;
-          widget.style.bottom = 'auto';
-          widget.style.right = 'auto';
-        }
-      } catch (e) { }
+      // Mantener siempre anclados en el dock inferior derecho al iniciar
+      widget.style.left = '';
+      widget.style.top = '';
+      widget.style.bottom = '';
+      widget.style.right = '';
+      try { localStorage.removeItem(storageKey); } catch (e) {}
 
       function onPointerDown(clientX, clientY) {
         isDragging = true;
@@ -3023,6 +3025,23 @@
       triggerBlobDownload(binaryBlob, filename);
     }
 
+    function openGlossaryModal(modKey) {
+      if (modKey) activeGlossaryModuleKey = modKey;
+      const modData = (window.MASTER_MODULES_DATA && window.MASTER_MODULES_DATA[activeGlossaryModuleKey])
+        ? window.MASTER_MODULES_DATA[activeGlossaryModuleKey]
+        : { title: (typeof MODULE_TITLES !== 'undefined' && MODULE_TITLES[activeGlossaryModuleKey]) || 'Glosario Oficial', items: [] };
+      const titleEl = document.getElementById('glossaryModalTitle');
+      if (titleEl) titleEl.textContent = modData.title || 'Glosario Oficial';
+      const searchInput = document.getElementById('glossarySearchInput');
+      if (searchInput) searchInput.value = '';
+      renderGlossaryItems(modData.items || []);
+      const modal = document.getElementById('glossaryModal');
+      if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.remove('hidden');
+      }
+    }
+
     function closeGlossaryModal() {
       window.closeAllModals();
     }
@@ -3055,7 +3074,7 @@
       });
 
       const titleEl = document.getElementById('missionModalTitle');
-      if (titleEl) titleEl.textContent = MODULE_TITLES[modKey] || modKey;
+      if (titleEl) titleEl.textContent = (typeof MODULE_TITLES !== 'undefined' && MODULE_TITLES[modKey]) || modKey;
 
       const quizBody = document.getElementById('missionQuizBody');
       const resultBody = document.getElementById('missionResultBody');
@@ -3065,7 +3084,10 @@
       loadMissionQuestion();
 
       const modal = document.getElementById('learningMissionModal');
-      if (modal) modal.classList.remove('hidden');
+      if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.remove('hidden');
+      }
     }
 
     function loadMissionQuestion() {
@@ -6173,7 +6195,7 @@
 
       const mainApp = document.getElementById('app-main') || document.getElementById('main-content') || document.getElementById('view-home');
       if (mainApp) {
-        mainApp.style.display = 'block';
+        mainApp.style.display = 'flex';
         mainApp.classList.remove('hidden');
       }
 
@@ -6241,7 +6263,7 @@
 
         const mainApp = document.getElementById('app-main') || document.getElementById('main-content') || document.getElementById('view-home');
         if (mainApp) {
-          mainApp.style.display = 'block';
+          mainApp.style.display = 'flex';
           mainApp.classList.remove('hidden');
         }
 
@@ -6403,12 +6425,12 @@
       { id: 2, title: "Professional & Business English", level: "B2", exp: 25, words: 60, key: "professional_english", progress: 40 },
       { id: 3, title: "Conversational Fluency & Small Talk", level: "B1", exp: 20, words: 40, key: "social_dating", progress: 25 },
       { id: 4, title: "Advanced Grammar & Structure", level: "C1", exp: 30, words: 65, key: "grammar_path", progress: 10 },
-      { id: 5, title: "Academic English & TOEFL/IELTS Prep", level: "C1-C2", exp: 40, words: 85, key: "toefl_simulator", progress: 0 },
+      { id: 5, title: "Academic Reading & Listening (TOEFL)", altTitle: "Academic English & TOEFL/IELTS Prep", level: "C1-C2", exp: 40, words: 85, key: "toefl_simulator", progress: 0 },
       { id: 6, title: "Travel & Cultural Immersion", level: "A2-B1", exp: 20, words: 50, key: "connectors", progress: 0 },
       { id: 7, title: "Tech, AI & Digital Economy", level: "B2-C1", exp: 30, words: 50, key: "compound_words", progress: 0 },
       { id: 8, title: "Pronunciation, Idioms & Slang", level: "B2", exp: 25, words: 55, key: "phrasal_verbs", progress: 0 },
       { id: 9, title: "Storytelling & Public Speaking", level: "C1", exp: 35, words: 70, key: "affixes_morphology", progress: 0 },
-      { id: 10, title: "Native-like Fluency & Accent Reduction", altTitle: "Master Fluency & Accent Reduction", level: "C2", exp: 50, words: 100, key: "internet_slang", progress: 0 }
+      { id: 10, title: "Master Fluency & Accent Reduction", altTitle: "Native-like Fluency & Accent Reduction", level: "C2", exp: 50, words: 100, key: "internet_slang", progress: 0 }
     ];
 
     window.openLearningPath = function() {
