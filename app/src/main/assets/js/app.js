@@ -1212,7 +1212,21 @@
       showFloatingToast('Regresaste al Menú Principal', '🏠');
     }
 
-    window.navigateToView = function(viewId) {
+    window.navigateTo = function(viewId) {
+      const views = ['login-view', 'hub-view', 'learning-path-view', 'world3d-view', 'music-view', 'admin-view'];
+      views.forEach(v => {
+        const el = document.getElementById(v);
+        if (el) {
+          el.style.display = (v === viewId || v === viewId + '-view') ? 'flex' : 'none';
+        }
+      });
+      // Ocultar widgets en login y mostrarlos adentro
+      const widgets = document.querySelectorAll('.floating-widget, #roulette-btn, #ai-tutor-btn');
+      widgets.forEach(w => {
+        w.style.display = (viewId.includes('login')) ? 'none' : 'flex';
+      });
+
+      // Mapeo transparente para las vistas maestras existentes
       const viewMap = {
         'login': 'view-auth',
         'login-view': 'view-auth',
@@ -1235,7 +1249,6 @@
         'admin': 'adminDashboardModal',
         'admin-view': 'adminDashboardModal'
       };
-
       const targetId = viewMap[viewId] || viewId;
 
       if (targetId === 'adminDashboardModal' || viewId === 'admin-view' || viewId === 'admin') {
@@ -1251,19 +1264,7 @@
         return;
       }
 
-      let user = null;
-      try {
-        user = JSON.parse(localStorage.getItem('english_app_user_session') || localStorage.getItem('mastereng_user') || 'null');
-      } catch (e) {}
-      const isAuthenticated = !!(user && (user.username || user.role));
-
-      if (!isAuthenticated && targetId !== 'view-auth') {
-        window.navigateToView('login-view');
-        return;
-      }
-
-      const views = ['view-auth', 'view-home', 'view-path', 'view-stories', 'view-music', 'view-worldtour'];
-      views.forEach(v => {
+      ['view-auth', 'view-home', 'view-path', 'view-stories', 'view-music', 'view-worldtour'].forEach(v => {
         const el = document.getElementById(v);
         if (el) {
           if (v === targetId) {
@@ -1289,67 +1290,47 @@
           loginModal.style.display = 'none';
           loginModal.style.pointerEvents = 'none';
           loginModal.style.visibility = 'hidden';
-          loginModal.style.zIndex = '-1';
+          loginModal.classList.add('hidden');
         }
-        document.querySelectorAll('.modal-backdrop, .modal-overlay').forEach(el => {
-          if (el.id === 'authModalBackdrop' || el.classList.contains('auth-backdrop')) {
-            el.style.display = 'none';
-            el.style.pointerEvents = 'none';
-            el.style.visibility = 'hidden';
-          }
-        });
-      }
-      currentActiveView = targetId;
-
-      // Pausar video de YouTube si se abandona Music Session
-      if (targetId !== 'view-music') {
-        pauseYouTubePlayer();
-        if (typeof stopMusicKaraokeSync === 'function') stopMusicKaraokeSync();
-        if (typeof closeMusicWordModal === 'function') closeMusicWordModal();
-        const suggEl = document.getElementById('musicSearchSuggestions');
-        if (suggEl) suggEl.classList.add('hidden');
-        const audioTrack = document.getElementById('karaokeAudioTracker') || document.getElementById('musicAudioPlayer');
-        if (audioTrack && typeof audioTrack.pause === 'function') audioTrack.pause();
-      }
-
-      // El botón superior universal se oculta por completo al mostrar cualquier vista
-      const universalBtn = document.getElementById('universalExitBtn');
-      if (universalBtn) {
-        universalBtn.style.display = 'none';
-        universalBtn.classList.add('hidden');
-      }
-
-      updateFloatingWidgetsVisibility();
-
-      if (targetId === 'view-home') {
-        startPortalStars();
-        updateCoverFlowVisuals();
-        updateUserExpDisplay();
-      } else {
-        stopPortalStars();
-      }
-
-      if (targetId === 'view-worldtour') {
-        if (typeof window.initOrResumeWorld3D === 'function') {
-          window.initOrResumeWorld3D();
-        } else {
-          initThreeWorldTour();
+        const mainApp = document.getElementById('app-main') || document.getElementById('main-content') || document.getElementById('view-home');
+        if (mainApp) {
+          mainApp.style.pointerEvents = 'auto';
+          mainApp.style.display = 'block';
         }
-      } else if (typeof window.pauseWorld3D === 'function') {
-        window.pauseWorld3D();
+        document.body.style.overflow = 'auto';
       }
 
+      if (targetId === 'view-home' || viewId === 'hub' || viewId === 'hub-view') {
+        if (typeof window.showPortal === 'function') {
+          window.showPortal(window.currentPortal || 0);
+        }
+      }
       if (targetId === 'view-path') {
-        if (typeof window.renderLearningPathModules === 'function') {
-          window.renderLearningPathModules();
-        } else if (typeof window.renderOfficialLearningModules === 'function') {
+        if (typeof window.renderOfficialLearningModules === 'function') {
           window.renderOfficialLearningModules();
         }
       }
+      if (targetId !== 'view-music' && typeof pauseYouTubePlayer === 'function') {
+        pauseYouTubePlayer();
+      }
     };
-    window.navigateTo = window.navigateToView;
+    window.navigateToView = window.navigateTo;
+window.logout = function() {
+      console.log("Cerrando sesión...");
+      try {
+        localStorage.removeItem('mastereng_user');
+        localStorage.removeItem('user_role');
+        localStorage.removeItem('english_app_user_session');
+        localStorage.removeItem('guest_user');
+      } catch (e) {}
+      window.closeAllModals();
+      window.navigateTo('login');
+    };
+    window.handleLogoutFromSettings = window.logout;
 
     function showView(viewId) {
+      const universalBtn = document.getElementById('universalExitBtn');
+      if (universalBtn) universalBtn.style.display = 'none';
       if (viewId !== 'view-music') {
         pauseYouTubePlayer();
       }
@@ -1551,23 +1532,44 @@
     }
     window.updateCoverFlowVisuals = window.updatePortalDisplay;
 
+    window.currentPortal = 0;
+    window.showPortal = function(index) {
+      const cards = document.querySelectorAll('.portal-card');
+      const dots = document.querySelectorAll('.carousel-dot');
+      if (!cards.length) return;
+      window.currentPortal = (index + cards.length) % cards.length;
+      cards.forEach((c, idx) => {
+        c.style.display = (idx === window.currentPortal) ? 'flex' : 'none';
+        c.classList.toggle('active', idx === window.currentPortal);
+        if (idx === window.currentPortal) {
+          c.style.opacity = '1';
+          c.style.pointerEvents = 'auto';
+        } else {
+          c.style.pointerEvents = 'none';
+        }
+      });
+      dots.forEach((d, idx) => {
+        d.classList.toggle('active', idx === window.currentPortal);
+      });
+      window.currentPortalIndex = window.currentPortal;
+    };
     window.nextPortal = function() {
-      window.currentPortal = ((window.currentPortal || 0) + 1) % 3;
-      window.currentPortalIndex = window.currentPortal;
-      window.updatePortalDisplay();
+      window.showPortal(window.currentPortal + 1);
+      if (typeof navigateCoverFlow === 'function') {
+        try { navigateCoverFlow(1); } catch (e) {}
+      }
     };
-
     window.prevPortal = function() {
-      window.currentPortal = ((window.currentPortal || 0) - 1 + 3) % 3;
-      window.currentPortalIndex = window.currentPortal;
-      window.updatePortalDisplay();
+      window.showPortal(window.currentPortal - 1);
+      if (typeof navigateCoverFlow === 'function') {
+        try { navigateCoverFlow(-1); } catch (e) {}
+      }
     };
-
-    window.goToPortal = function(index) {
-      window.currentPortal = ((index % 3) + 3) % 3;
-      window.currentPortalIndex = window.currentPortal;
-      window.updatePortalDisplay();
+    window.updatePortalDisplay = function() {
+      window.showPortal(window.currentPortal || 0);
     };
+    window.updateCoverFlowVisuals = window.updatePortalDisplay;
+    window.goToPortal = function(idx) { window.showPortal(idx); };
 
     function navigateCoverFlow(direction) {
       if (direction > 0) {
@@ -2338,6 +2340,10 @@
     // FUNCIONES UNIVERSALES E INFALIBLES DE CIERRE DE MODALES
     // ========================================================
     window.closeAllModals = function() {
+      document.querySelectorAll('.modal, .modal-backdrop, [id$="-modal"], .drawer').forEach(el => {
+        el.style.display = 'none';
+        el.classList.remove('active', 'open');
+      });
       document.querySelectorAll('.modal, .modal-overlay, .modal-backdrop, .drawer, [id$="-modal"]').forEach(el => {
         el.style.display = 'none';
         el.classList.remove('active', 'show', 'open');
@@ -6740,14 +6746,22 @@
       }
     });
 
-    // Inicialización inmediata de portales y módulos de academia
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', function() {
-        if (typeof window.updatePortalDisplay === 'function') window.updatePortalDisplay();
+    // Inicialización inmediata de portales y módulos de academia con blindaje try/catch
+    try {
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+          try {
+            if (typeof window.showPortal === 'function') window.showPortal(0);
+            if (typeof window.renderOfficialLearningModules === 'function') window.renderOfficialLearningModules();
+          } catch (initErr) {
+            console.error('Error en inicialización DOMContentLoaded:', initErr);
+          }
+        });
+      } else {
+        if (typeof window.showPortal === 'function') window.showPortal(0);
         if (typeof window.renderOfficialLearningModules === 'function') window.renderOfficialLearningModules();
-      });
-    } else {
-      if (typeof window.updatePortalDisplay === 'function') window.updatePortalDisplay();
-      if (typeof window.renderOfficialLearningModules === 'function') window.renderOfficialLearningModules();
+      }
+    } catch (e) {
+      console.error('Error al inicializar la aplicación:', e);
     }
-
+  })();
