@@ -1462,83 +1462,150 @@
     // ========================================================
     // HUB DE PORTALES: COVER FLOW HORIZONTAL FLUIDO
     // ========================================================
+    window.currentPortalIndex = 0;
     let currentCoverFlowIndex = 0;
     const TOTAL_COVER_PORTALS = 4;
     let isCoverFlowAnimating = false;
 
     function updateCoverFlowVisuals() {
+      const activeIdx = (typeof window.currentPortalIndex === 'number') 
+        ? ((window.currentPortalIndex % TOTAL_COVER_PORTALS + TOTAL_COVER_PORTALS) % TOTAL_COVER_PORTALS) 
+        : currentCoverFlowIndex;
+      window.currentPortalIndex = activeIdx;
+      currentCoverFlowIndex = activeIdx;
+
       for (let i = 0; i < TOTAL_COVER_PORTALS; i++) {
         const card = document.getElementById(`coverCard-${i}`);
         const dot = document.getElementById(`coverDot-${i}`);
         if (!card) continue;
 
-        let diff = (i - currentCoverFlowIndex + TOTAL_COVER_PORTALS) % TOTAL_COVER_PORTALS;
+        let diff = (i - activeIdx + TOTAL_COVER_PORTALS) % TOTAL_COVER_PORTALS;
         if (diff === 3) diff = -1;
 
         card.classList.remove('active-center', 'side-left', 'side-right', 'hidden-back');
 
         if (diff === 0) {
           card.classList.add('active-center');
-          card.style.boxShadow = '0 0 45px var(--portal-glow)';
-          if (dot) dot.className = 'w-3 h-3 rounded-full bg-amber-400 transition-all duration-300 shadow';
+          card.style.boxShadow = '0 0 45px var(--portal-glow, rgba(56, 189, 248, 0.45))';
+          card.style.zIndex = '30';
+          card.style.pointerEvents = 'auto';
+          if (dot) dot.className = 'w-3 h-3 rounded-full bg-amber-400 transition-all duration-300 shadow cursor-pointer';
         } else if (diff === -1) {
           card.classList.add('side-left');
           card.style.boxShadow = 'none';
-          if (dot) dot.className = 'w-2 h-2 rounded-full bg-slate-600 transition-all duration-300';
+          card.style.zIndex = '15';
+          if (dot) dot.className = 'w-2 h-2 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer';
         } else if (diff === 1) {
           card.classList.add('side-right');
           card.style.boxShadow = 'none';
-          if (dot) dot.className = 'w-2 h-2 rounded-full bg-slate-600 transition-all duration-300';
+          card.style.zIndex = '15';
+          if (dot) dot.className = 'w-2 h-2 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer';
         } else {
           card.classList.add('hidden-back');
           card.style.boxShadow = 'none';
-          if (dot) dot.className = 'w-2 h-2 rounded-full bg-slate-600 transition-all duration-300';
+          card.style.zIndex = '5';
+          card.style.pointerEvents = 'none';
+          if (dot) dot.className = 'w-2 h-2 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer';
         }
       }
     }
+    window.updateCoverFlowVisuals = updateCoverFlowVisuals;
 
     function navigateCoverFlow(direction) {
       if (isCoverFlowAnimating) return;
       isCoverFlowAnimating = true;
-      currentCoverFlowIndex = (currentCoverFlowIndex + direction + TOTAL_COVER_PORTALS) % TOTAL_COVER_PORTALS;
+      const current = typeof window.currentPortalIndex === 'number' ? window.currentPortalIndex : currentCoverFlowIndex;
+      const next = (current + direction + TOTAL_COVER_PORTALS) % TOTAL_COVER_PORTALS;
+      window.currentPortalIndex = next;
+      currentCoverFlowIndex = next;
       updateCoverFlowVisuals();
-      setTimeout(() => { isCoverFlowAnimating = false; }, 350);
+      setTimeout(() => { isCoverFlowAnimating = false; }, 300);
     }
 
     function handleCoverCardClick(index) {
-      if (index === currentCoverFlowIndex) {
+      if (index === window.currentPortalIndex) {
         const modules = ['path', 'stories', 'music', 'worldtour'];
-        openPortalWithLoader(modules[index]);
+        if (typeof window.openPortalModules === 'function') {
+          window.openPortalModules(modules[index]);
+        }
       } else {
+        window.currentPortalIndex = index;
         currentCoverFlowIndex = index;
         updateCoverFlowVisuals();
       }
     }
+    window.handleCoverCardClick = handleCoverCardClick;
 
-    
     /* ========================================================
        NAVEGACIÓN DEL CARRUSEL Y BOTÓN DE PORTALES
        ======================================================== */
+    window.nextPortal = function() {
+      navigateCoverFlow(1);
+    };
+
+    window.prevPortal = function() {
+      navigateCoverFlow(-1);
+    };
+
     window.prevSlide = function() {
-      if (typeof navigateCoverFlow === 'function') {
-        navigateCoverFlow(-1);
-      }
+      window.prevPortal();
     };
 
     window.nextSlide = function() {
-      if (typeof navigateCoverFlow === 'function') {
-        navigateCoverFlow(1);
-      }
+      window.nextPortal();
     };
 
     window.openPortalModules = function(targetPortal) {
       const portalModules = ['path', 'stories', 'music', 'worldtour'];
-      const portal = targetPortal || portalModules[currentCoverFlowIndex] || 'path';
+      const activeIdx = (typeof window.currentPortalIndex === 'number') 
+        ? ((window.currentPortalIndex % TOTAL_COVER_PORTALS + TOTAL_COVER_PORTALS) % TOTAL_COVER_PORTALS) 
+        : currentCoverFlowIndex;
+      const portal = targetPortal || portalModules[activeIdx] || 'path';
       console.log('Ingresando al portal de módulos:', portal);
-      if (typeof openPortalWithLoader === 'function') {
+
+      if (portal === 'path') {
+        if (typeof window.navigateToView === 'function') {
+          window.navigateToView('learning-path-view');
+        } else if (typeof showView === 'function') {
+          showView('view-path');
+        }
+        if (typeof window.openLearningPath === 'function') {
+          window.openLearningPath();
+        }
+        if (typeof window.renderOfficialLearningModules === 'function') {
+          window.renderOfficialLearningModules();
+        }
+      } else if (portal === 'worldtour') {
+        if (typeof window.navigateToView === 'function') {
+          window.navigateToView('world3d-view');
+        } else if (typeof showView === 'function') {
+          showView('view-worldtour');
+        }
+        if (typeof window.initOrResumeWorld3D === 'function') {
+          window.initOrResumeWorld3D();
+        } else if (typeof initThreeWorldTour === 'function') {
+          initThreeWorldTour();
+        }
+      } else if (portal === 'music') {
+        if (typeof window.navigateToView === 'function') {
+          window.navigateToView('music-view');
+        } else if (typeof showView === 'function') {
+          showView('view-music');
+        }
+        if (typeof renderMusicTracksList === 'function') {
+          renderMusicTracksList();
+        }
+      } else if (portal === 'stories') {
+        if (typeof window.navigateToView === 'function') {
+          window.navigateToView('view-stories');
+        } else if (typeof showView === 'function') {
+          showView('view-stories');
+        }
+        if (typeof renderStorySelector === 'function') {
+          renderStorySelector();
+        }
+      } else if (typeof openPortalWithLoader === 'function') {
         openPortalWithLoader(portal);
-      } else if (typeof showView === 'function') {
-        showView('view-' + portal);
       } else {
         alert('Abriendo Módulos de Aprendizaje...');
       }
@@ -1549,13 +1616,14 @@
        ======================================================== */
     document.addEventListener('click', function(e) {
       // Botón Entrar al Portal
-      const portalBtn = e.target.closest('.portal-btn, [data-action="enter-portal"], button');
+      const portalBtn = e.target.closest('.portal-btn, [data-action="enter-portal"]');
       if (portalBtn && (
         portalBtn.innerText.includes('ENTRAR AL PORTAL') ||
         (portalBtn.dataset && portalBtn.dataset.action === 'enter-portal') ||
         (portalBtn.innerText && portalBtn.innerText.toUpperCase().includes('ENTRAR AL PORTAL'))
       )) {
         e.preventDefault();
+        e.stopPropagation();
         console.log('Ingresando al portal de módulos...');
         const portalTarget = portalBtn.dataset.portal || portalBtn.getAttribute('data-portal');
         if (typeof window.openPortalModules === 'function') {
@@ -1570,11 +1638,17 @@
       const prevBtn = e.target.closest('.carousel-prev, [data-action="prev"]');
       const nextBtn = e.target.closest('.carousel-next, [data-action="next"]');
       if (prevBtn) {
-        if (typeof window.prevSlide === 'function') window.prevSlide();
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof window.prevPortal === 'function') window.prevPortal();
+        else if (typeof window.prevSlide === 'function') window.prevSlide();
         return;
       }
       if (nextBtn) {
-        if (typeof window.nextSlide === 'function') window.nextSlide();
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof window.nextPortal === 'function') window.nextPortal();
+        else if (typeof window.nextSlide === 'function') window.nextSlide();
         return;
       }
     });

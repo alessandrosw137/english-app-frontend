@@ -197,13 +197,15 @@
       perspective: 1200px;
       perspective-origin: center center;
       overflow: hidden;
+      overflow-x: clip;
       position: relative;
+      height: 520px;
     }
 
     .coverflow-track {
       position: relative;
       width: 100%;
-      height: 400px;
+      height: 500px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -214,7 +216,12 @@
       position: absolute;
       width: 320px;
       max-width: 85vw;
-      height: 380px;
+      height: 500px;
+      height: 490px;
+      top: 50%;
+      left: 50%;
+      margin-left: -160px;
+      margin-top: -245px;
       transform-origin: center center;
       transition: transform 0.45s cubic-bezier(0.2, 0.85, 0.25, 1),
         opacity 0.45s ease,
@@ -226,10 +233,10 @@
 
     .coverflow-portal-card.active-center {
       transform: translateX(0px) scale(1) translateZ(0);
-      opacity: 1;
-      filter: none;
-      z-index: 30;
-      pointer-events: auto;
+      opacity: 1 !important;
+      filter: none !important;
+      z-index: 30 !important;
+      pointer-events: auto !important;
     }
 
     .coverflow-portal-card.side-left {
@@ -250,19 +257,30 @@
 
     .coverflow-portal-card.hidden-back {
       transform: translateX(0px) scale(0.65) translateZ(-150px);
-      opacity: 0;
+      opacity: 0 !important;
       filter: blur(10px);
       z-index: 5;
-      pointer-events: none;
+      pointer-events: none !important;
     }
 
     @media (max-width: 640px) {
+      .coverflow-viewport {
+        overflow: hidden !important;
+        overflow-x: clip !important;
+      }
       .coverflow-portal-card.side-left {
         transform: translateX(-160px) scale(0.82) translateZ(-50px);
+        opacity: 0.2 !important;
+        pointer-events: none !important;
       }
 
       .coverflow-portal-card.side-right {
         transform: translateX(160px) scale(0.82) translateZ(-50px);
+        opacity: 0.2 !important;
+        pointer-events: none !important;
+      }
+      .coverflow-portal-card.hidden-back {
+        display: none !important;
       }
     }
 
