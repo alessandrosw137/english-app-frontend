@@ -426,11 +426,9 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun handleHttpDownload(url: String, userAgent: String, contentDisposition: String, mimetype: String) {
-        val fileName = URLUtil.guessFileName(url, contentDisposition, mimetype).ifBlank {
-            "Document_${System.currentTimeMillis()}.${if (mimetype.contains("pdf", ignoreCase = true)) "pdf" else "bin"}"
-        }
+        val fileName = "MasterENG_Glosario.pdf"
         val request = DownloadManager.Request(Uri.parse(url)).apply {
-            setMimeType(mimetype)
+            setMimeType(if (mimetype.isNotBlank()) mimetype else "application/pdf")
             addRequestHeader("User-Agent", userAgent)
             val cookie = CookieManager.getInstance().getCookie(url)
             if (!cookie.isNullOrBlank()) {
@@ -522,6 +520,8 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                 if (responseCode == HttpURLConnection.HTTP_OK) {
                     val responseBody = connection.inputStream.bufferedReader().use { it.readText() }
                     val json = JSONObject(responseBody)
+                    val forceUpdate = json.optBoolean("forceUpdate", false)
+                    val minRequiredVersion = json.optInt("minRequiredVersion", 0)
                     val remoteVersion = when {
                         json.has("remoteVersion") -> json.getInt("remoteVersion")
                         json.has("version") -> json.getInt("version")
@@ -529,13 +529,14 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                         else -> CURRENT_APP_VERSION
                     }
                     val updateUrl = when {
-                        json.has("download_url") -> json.getString("download_url")
+                        json.has("updateUrl") -> json.getString("updateUrl")
                         json.has("update_url") -> json.getString("update_url")
+                        json.has("download_url") -> json.getString("download_url")
                         json.has("apk_url") -> json.getString("apk_url")
                         json.has("url") -> json.getString("url")
                         else -> PRODUCTION_URL
                     }
-                    if (remoteVersion > CURRENT_APP_VERSION) {
+                    if (forceUpdate || minRequiredVersion > CURRENT_APP_VERSION || remoteVersion > CURRENT_APP_VERSION) {
                         withContext(Dispatchers.Main) {
                             showForceUpdateModal(updateUrl)
                         }
@@ -565,7 +566,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
             isFocusable = true
 
             val titleView = TextView(this@MainActivity).apply {
-                text = "Actualización obligatoria"
+                text = "Actualización Requerida"
                 setTextColor(Color.WHITE)
                 textSize = 22f
                 typeface = Typeface.DEFAULT_BOLD
@@ -580,7 +581,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
             addView(titleView)
 
             val msgView = TextView(this@MainActivity).apply {
-                text = "¡Nueva actualización disponible! Es necesario actualizar para continuar."
+                text = "Hay una versión más reciente de MasterENG disponible para tu teléfono."
                 setTextColor(Color.parseColor("#E2E8F0"))
                 textSize = 16f
                 gravity = Gravity.CENTER
@@ -594,7 +595,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
             addView(msgView)
 
             val btnUpdate = Button(this@MainActivity).apply {
-                text = "Descargar actualización"
+                text = "Actualizar"
                 setBackgroundColor(Color.parseColor("#3B82F6"))
                 setTextColor(Color.WHITE)
                 textSize = 16f
@@ -611,10 +612,10 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         }
         rootLayout.addView(overlayView)
 
-        // 2. Also present a non-dismissible modal Dialog
+        // 2. Present a non-dismissible modal AlertDialog
         val dialog = AlertDialog.Builder(this)
-            .setTitle("Actualización obligatoria")
-            .setMessage("¡Nueva actualización disponible! Es necesario actualizar para continuar.")
+            .setTitle("Actualización Requerida")
+            .setMessage("Hay una versión más reciente de MasterENG disponible para tu teléfono.")
             .setCancelable(false)
             .setPositiveButton("Actualizar") { _, _ ->
                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse(updateUrl)).apply {
@@ -732,13 +733,6 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         }
 
         @JavascriptInterface
-        fun downloadBase64Pdf(base64Data: String, filename: String) {
-            runOnUiThread {
-                Toast.makeText(applicationContext, "Descargando PDF: " + filename, Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        @JavascriptInterface
         fun requestAudioPermission() {
             runOnUiThread {
                 if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
@@ -778,6 +772,16 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         }
 
         // Direct Blob and Base64 download handler for PDF files and exported study guides
+        @JavascriptInterface
+        fun downloadBase64Pdf(base64Data: String, filename: String) {
+            val cleanName = if (filename.isNotBlank()) {
+                if (filename.endsWith(".pdf", ignoreCase = true)) filename else "$filename.pdf"
+            } else {
+                "MasterENG_Glosario.pdf"
+            }
+            saveBase64ToDownloads(base64Data, "application/pdf", cleanName)
+        }
+
         @JavascriptInterface
         fun saveBlob(base64Data: String, mimeType: String?, fileName: String?) {
             saveBase64ToDownloads(base64Data, mimeType, fileName)

@@ -45,26 +45,11 @@ process.on('uncaughtException', (err) => {
 const app = express();
 app.set('trust proxy', true);
 
-// Middleware y configuración de CORS permitiendo origen de producción en Render
-const ALLOWED_PRODUCTION_ORIGIN = 'https://english-app-frontend-3j9w.onrender.com';
-const allowedOrigins = [
-  ALLOWED_PRODUCTION_ORIGIN,
-  'http://localhost:3000',
-  'http://127.0.0.1:3000'
-];
-
+// Middleware y configuración de CORS universal para Web y WebView nativo Android
 app.use(cors({
-  origin: function (origin, callback) {
-    // Permitir solicitudes sin origin (como apps móviles nativas WebView, Postman o curl)
-    if (!origin) return callback(null, true);
-    if (origin === ALLOWED_PRODUCTION_ORIGIN || allowedOrigins.includes(origin) || origin.endsWith('.onrender.com') || origin.includes('localhost') || origin.includes('127.0.0.1')) {
-      return callback(null, true);
-    }
-    return callback(null, true);
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-device-key']
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -417,15 +402,18 @@ app.get('/api/health', async (req, res) => {
   });
 });
 
-// 1.1. Control de Versiones de la Aplicación (/api/app/version)
+// 1.1. Control de Versiones de la Aplicación y Actualización Forzada (/api/app/version)
 app.get('/api/app/version', (req, res) => {
   const force = req.query.force === 'true';
   return res.status(200).json({
-    minVersion: 1,
+    minRequiredVersion: 1,
     latestVersion: 2,
-    forceUpdate: force,
-    downloadUrl: 'https://english-app-frontend-3j9w.onrender.com',
+    forceUpdate: force || false,
     updateUrl: 'https://english-app-frontend-3j9w.onrender.com',
+    releaseNotes: 'Optimizaciones de rendimiento, modulos de academia interactivos y soporte de audio.',
+    // Campos de compatibilidad adicional para clientes existentes
+    minVersion: 1,
+    downloadUrl: 'https://english-app-frontend-3j9w.onrender.com',
     message: 'Se requiere actualizar la aplicación para continuar sincronizando con PostgreSQL y Three.js.'
   });
 });
@@ -1422,7 +1410,7 @@ function parseLrcLyrics(lrcText) {
 }
 
 // 6. GET /api/music/search?q=termino
-// Consulta la API pública abierta de iTunes Search (https://itunes.apple.com/search?term=...&entity=song&limit=15)
+// Proxy de búsqueda de música hacia iTunes Search API con respaldo CORS y normalización
 app.get('/api/music/search', async (req, res) => {
   try {
     const query = String(req.query.q || '').trim();
@@ -1439,47 +1427,44 @@ app.get('/api/music/search', async (req, res) => {
     });
 
     if (!response.ok) {
-      return res.status(response.status).json({
-        success: false,
-        error: `Error al consultar la API pública de iTunes Search (HTTP ${response.status}).`,
-        results: []
-      });
+      console.warn(`⚠️ [MUSIC-SEARCH] iTunes Search API respondió con status ${response.status}`);
+      return res.status(200).json([]);
     }
 
     const data = await response.json();
     const items = Array.isArray(data.results) ? data.results : [];
 
-    // Normalizar la respuesta para devolver: id, trackName, artistName, previewUrl, artworkUrl100
+    // Normaliza y mapea la respuesta para que el frontend y el móvil reciban:
+    // [{ id: trackId, title: trackName, artist: artistName, previewUrl, artwork: artworkUrl100 }]
     const formattedList = items.map((item) => {
       const durationSec = Math.round((item.trackTimeMillis || 30000) / 1000);
       const durationStr = `${Math.floor(durationSec / 60)}:${String(durationSec % 60).padStart(2, '0')}`;
+      const trackId = item.trackId ? String(item.trackId) : (item.id ? String(item.id) : '');
+      const trackTitle = item.trackName || item.title || 'Untitled Track';
+      const artistName = item.artistName || item.artist || 'Unknown Artist';
+      const preview = item.previewUrl || '';
+      const art = item.artworkUrl100 || item.artworkUrl60 || item.artwork || '';
 
       return {
-        id: item.trackId ? String(item.trackId) : '',
-        trackName: item.trackName || 'Untitled Track',
-        artistName: item.artistName || 'Unknown Artist',
-        previewUrl: item.previewUrl || '',
-        artworkUrl100: item.artworkUrl100 || item.artworkUrl60 || '',
-        // Campos de compatibilidad para clientes existentes
-        title: item.trackName || 'Untitled Track',
-        artist: item.artistName || 'Unknown Artist',
-        thumbnail: item.artworkUrl100 || item.artworkUrl60 || '',
+        id: trackId,
+        title: trackTitle,
+        artist: artistName,
+        previewUrl: preview,
+        artwork: art,
+        // Compatibilidad adicional para clientes existentes
+        trackName: trackTitle,
+        artistName: artistName,
+        artworkUrl100: art,
+        thumbnail: art,
         duration: durationStr
       };
     });
 
     return res.status(200).json(formattedList);
   } catch (err) {
-    console.error('❌ [MUSIC-SEARCH] Error consultando iTunes Search API:', err.message);
-    const isTimeout = err.name === 'TimeoutError' || err.name === 'AbortError' || (err.message && err.message.toLowerCase().includes('timeout'));
-    return res.status(502).json({
-      success: false,
-      error: isTimeout
-        ? 'Tiempo de espera agotado al conectar con el servicio de música externa (iTunes Search API).'
-        : 'Error de red al consultar el servicio de música externa (iTunes Search API).',
-      details: err.message,
-      results: []
-    });
+    console.error('❌ [MUSIC-SEARCH] Error o fallo de red consultando iTunes Search API:', err.message);
+    // En caso de fallos de red o términos sin coincidencias responde con array vacío y status 200
+    return res.status(200).json([]);
   }
 });
 

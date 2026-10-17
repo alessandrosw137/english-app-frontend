@@ -72,10 +72,11 @@ async function runTests() {
     console.log('Status:', versionRes.status, '- Version Data:', versionRes.data);
     if (
       versionRes.status !== 200 ||
-      versionRes.data.minVersion !== 1 ||
+      versionRes.data.minRequiredVersion !== 1 ||
       versionRes.data.latestVersion !== 2 ||
       versionRes.data.forceUpdate !== false ||
-      versionRes.data.updateUrl !== 'https://english-app-frontend-3j9w.onrender.com'
+      versionRes.data.updateUrl !== 'https://english-app-frontend-3j9w.onrender.com' ||
+      !versionRes.data.releaseNotes
     ) {
       throw new Error('Falló el endpoint /api/app/version o no coincide el payload exacto esperado');
     }
@@ -251,10 +252,11 @@ async function runTests() {
     if (progressPostRes.status !== 200 || progressPostRes.data.stats?.exp !== 800) {
       throw new Error('Falló la actualización en POST /api/progress');
     }
-    if (progressPostRes.headers['access-control-allow-origin'] !== 'https://english-app-frontend-3j9w.onrender.com') {
-      throw new Error('Falló la cabecera CORS para https://english-app-frontend-3j9w.onrender.com');
+    const allowOrigin = progressPostRes.headers['access-control-allow-origin'];
+    if (allowOrigin !== '*' && allowOrigin !== 'https://english-app-frontend-3j9w.onrender.com') {
+      throw new Error(`Falló la cabecera CORS esperada (* o https://english-app-frontend-3j9w.onrender.com), obtenido: ${allowOrigin}`);
     }
-    console.log('✅ POST /api/progress con cabeceras CORS de producción OK');
+    console.log('✅ POST /api/progress con cabeceras CORS universal OK');
 
     console.log('\n--- 10c. Probando GET /api/progress no autenticado (401 esperado) ---');
     const unauthProgressRes = await request('GET', '/api/progress');
@@ -286,16 +288,16 @@ async function runTests() {
     const firstTrack = searchRes.data[0];
     console.log('Primer resultado normalizado:', {
       id: firstTrack.id,
-      trackName: firstTrack.trackName,
-      artistName: firstTrack.artistName,
+      title: firstTrack.title,
+      artist: firstTrack.artist,
       previewUrl: firstTrack.previewUrl,
-      artworkUrl100: firstTrack.artworkUrl100
+      artwork: firstTrack.artwork
     });
-    if (!firstTrack.id || !firstTrack.trackName || !firstTrack.artistName || !firstTrack.previewUrl || !firstTrack.artworkUrl100) {
-      throw new Error('El resultado de /api/music/search no contiene los campos requeridos (id, trackName, artistName, previewUrl, artworkUrl100)');
+    if (!firstTrack.id || !firstTrack.title || !firstTrack.artist || !firstTrack.previewUrl || !firstTrack.artwork) {
+      throw new Error('El resultado de /api/music/search no contiene los campos requeridos (id, title, artist, previewUrl, artwork)');
     }
 
-    // Probar búsqueda vacía
+    // Probar búsqueda vacía (debe responder 200 con un arreglo vacío)
     const emptySearchRes = await request('GET', '/api/music/search?q=');
     if (emptySearchRes.status !== 200 || !Array.isArray(emptySearchRes.data) || emptySearchRes.data.length !== 0) {
       throw new Error('La búsqueda vacía en /api/music/search debe responder 200 con un arreglo vacío');
