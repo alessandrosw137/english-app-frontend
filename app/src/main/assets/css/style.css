@@ -791,10 +791,17 @@ button[onclick*="closeModal"] {
   position: relative !important;
 }
 
-.portal-card:not(.active-center) {
+.portal-card:not(.active):not(.active-center) {
   display: none !important;
   opacity: 0 !important;
   pointer-events: none !important;
+}
+
+.portal-card.active,
+.portal-card.active-center {
+  display: flex !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
 }
 
 .carousel-nav-btn, .carousel-btn, .nav-arrow {
@@ -804,6 +811,7 @@ button[onclick*="closeModal"] {
   min-height: 48px !important;
   z-index: 1000 !important;
   cursor: pointer !important;
+  pointer-events: auto !important;
   border-radius: 9999px !important;
   background: rgba(15, 23, 42, 0.92) !important;
   backdrop-filter: blur(8px) !important;
@@ -828,6 +836,7 @@ button[onclick*="closeModal"] {
   transform: translateY(-50%) !important;
   z-index: 1000 !important;
   cursor: pointer !important;
+  pointer-events: auto !important;
 }
 
 .carousel-nav-btn.next, .carousel-next, [data-action="next"] {
@@ -837,6 +846,7 @@ button[onclick*="closeModal"] {
   transform: translateY(-50%) !important;
   z-index: 1000 !important;
   cursor: pointer !important;
+  pointer-events: auto !important;
 }
 
 #tutorRouletteDock, .floating-widget-dock {
@@ -862,9 +872,13 @@ button[onclick*="closeModal"] {
   gap: 1rem !important;
 }
 
-.modules-grid, #learningModulesContainer {
+.modules-grid, #learningModulesContainer, #learning-modules-grid {
   display: grid !important;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
-  gap: 1.25rem !important;
+  gap: 1.5rem !important;
+  padding: 2rem 1rem !important;
+  max-width: 1200px !important;
+  margin: 0 auto !important;
 }
+
 

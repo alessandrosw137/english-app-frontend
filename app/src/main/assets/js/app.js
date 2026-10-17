@@ -1478,15 +1478,19 @@
     // ========================================================
     // HUB DE PORTALES: CARRUSEL SIMÉTRICO BASADO EN ÍNDICE ACTIVO
     // ========================================================
+    // HUB DE PORTALES: ROTACIÓN DE 3 PORTALES PRINCIPALES (< y >)
+    // ========================================================
+    window.currentPortal = 0;
     window.currentPortalIndex = 0;
     let currentCoverFlowIndex = 0;
     const TOTAL_COVER_PORTALS = 4;
     let isCoverFlowAnimating = false;
 
-    function updateCoverFlowVisuals() {
-      const activeIdx = (typeof window.currentPortalIndex === 'number') 
-        ? ((window.currentPortalIndex % TOTAL_COVER_PORTALS + TOTAL_COVER_PORTALS) % TOTAL_COVER_PORTALS) 
-        : currentCoverFlowIndex;
+    window.updatePortalDisplay = function() {
+      const activeIdx = typeof window.currentPortal === 'number'
+        ? ((window.currentPortal % 3 + 3) % 3)
+        : 0;
+      window.currentPortal = activeIdx;
       window.currentPortalIndex = activeIdx;
       currentCoverFlowIndex = activeIdx;
 
@@ -1495,13 +1499,22 @@
         const dot = document.getElementById(`coverDot-${i}`);
         if (!card) continue;
 
-        let diff = (i - activeIdx + TOTAL_COVER_PORTALS) % TOTAL_COVER_PORTALS;
-        if (diff === 3) diff = -1;
+        if (i === 3) {
+          card.classList.remove('active', 'active-center');
+          card.classList.add('hidden');
+          card.style.display = 'none';
+          card.style.opacity = '0';
+          card.style.pointerEvents = 'none';
+          if (dot) {
+            dot.classList.remove('active');
+            dot.style.display = 'none';
+          }
+          continue;
+        }
 
-        card.classList.remove('active-center', 'side-left', 'side-right', 'hidden-back');
-
-        if (diff === 0) {
-          card.classList.add('active-center');
+        if (i === activeIdx) {
+          card.classList.add('active', 'active-center');
+          card.classList.remove('side-left', 'side-right', 'hidden-back', 'hidden');
           card.style.display = 'flex';
           card.style.position = 'relative';
           card.style.top = 'auto';
@@ -1515,42 +1528,68 @@
           card.style.boxShadow = '0 0 45px var(--portal-glow, rgba(56, 189, 248, 0.45))';
           card.style.zIndex = '30';
           card.style.pointerEvents = 'auto';
-          if (dot) dot.className = 'w-3 h-3 rounded-full bg-amber-400 transition-all duration-300 shadow cursor-pointer';
+          if (dot) {
+            dot.classList.add('active');
+            dot.className = 'carousel-dot active w-3 h-3 rounded-full bg-amber-400 transition-all duration-300 shadow cursor-pointer';
+          }
         } else {
-          if (diff === -1) card.classList.add('side-left');
-          else if (diff === 1) card.classList.add('side-right');
-          else card.classList.add('hidden-back');
+          card.classList.remove('active', 'active-center');
           card.style.display = 'none';
           card.style.opacity = '0';
           card.style.boxShadow = 'none';
           card.style.zIndex = '5';
           card.style.pointerEvents = 'none';
-          if (dot) dot.className = 'w-2.5 h-2.5 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer';
+          if (dot) {
+            dot.classList.remove('active');
+            dot.className = 'carousel-dot w-2.5 h-2.5 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer';
+          }
         }
       }
+    };
+    function updateCoverFlowVisuals() {
+      window.updatePortalDisplay();
     }
-    window.updateCoverFlowVisuals = updateCoverFlowVisuals;
+    window.updateCoverFlowVisuals = window.updatePortalDisplay;
+
+    window.nextPortal = function() {
+      window.currentPortal = ((window.currentPortal || 0) + 1) % 3;
+      window.currentPortalIndex = window.currentPortal;
+      window.updatePortalDisplay();
+    };
+
+    window.prevPortal = function() {
+      window.currentPortal = ((window.currentPortal || 0) - 1 + 3) % 3;
+      window.currentPortalIndex = window.currentPortal;
+      window.updatePortalDisplay();
+    };
 
     window.goToPortal = function(index) {
-      const next = ((index % TOTAL_COVER_PORTALS) + TOTAL_COVER_PORTALS) % TOTAL_COVER_PORTALS;
-      window.currentPortalIndex = next;
-      currentCoverFlowIndex = next;
-      updateCoverFlowVisuals();
+      window.currentPortal = ((index % 3) + 3) % 3;
+      window.currentPortalIndex = window.currentPortal;
+      window.updatePortalDisplay();
     };
 
     function navigateCoverFlow(direction) {
-      if (isCoverFlowAnimating) return;
-      isCoverFlowAnimating = true;
-      const current = typeof window.currentPortalIndex === 'number' ? window.currentPortalIndex : currentCoverFlowIndex;
-      const next = (current + direction + TOTAL_COVER_PORTALS) % TOTAL_COVER_PORTALS;
-      window.currentPortalIndex = next;
-      currentCoverFlowIndex = next;
-      updateCoverFlowVisuals();
-      setTimeout(() => { isCoverFlowAnimating = false; }, 220);
+      if (direction > 0) {
+        window.nextPortal();
+      } else {
+        window.prevPortal();
+      }
     }
+    window.navigateCoverFlow = navigateCoverFlow;
+
+    window.prevSlide = function() {
+      window.prevPortal();
+      navigateCoverFlow(-1);
+    };
+
+    window.nextSlide = function() {
+      window.nextPortal();
+      navigateCoverFlow(1);
+    };
 
     function handleCoverCardClick(index) {
-      if (index === window.currentPortalIndex) {
+      if (index === window.currentPortal) {
         const modules = ['path', 'worldtour', 'music', 'stories'];
         if (typeof window.openPortalModules === 'function') {
           window.openPortalModules(modules[index]);
@@ -1561,34 +1600,15 @@
     }
     window.handleCoverCardClick = handleCoverCardClick;
 
-    /* ========================================================
-       NAVEGACIÓN DEL CARRUSEL Y BOTÓN DE PORTALES
-       ======================================================== */
-    window.nextPortal = function() {
-      navigateCoverFlow(1);
-    };
-
-    window.prevPortal = function() {
-      navigateCoverFlow(-1);
-    };
-
-    window.prevSlide = function() {
-      window.prevPortal();
-    };
-
-    window.nextSlide = function() {
-      window.nextPortal();
-    };
-
     window.openPortalModules = function(targetPortal) {
       const portalModules = ['path', 'worldtour', 'music', 'stories'];
-      const activeIdx = (typeof window.currentPortalIndex === 'number') 
-        ? ((window.currentPortalIndex % TOTAL_COVER_PORTALS + TOTAL_COVER_PORTALS) % TOTAL_COVER_PORTALS) 
-        : currentCoverFlowIndex;
+      const activeIdx = (typeof window.currentPortal === 'number') 
+        ? ((window.currentPortal % 3 + 3) % 3) 
+        : 0;
       const portal = targetPortal || portalModules[activeIdx] || 'path';
-      console.log('Ingresando al portal de módulos:', portal);
+      console.log('Ingresando al portal de módulos:', portal, 'Índice activo:', activeIdx);
 
-      if (portal === 'path') {
+      if (portal === 'path' || activeIdx === 0) {
         if (typeof window.navigateToView === 'function') {
           window.navigateToView('learning-path-view');
         } else if (typeof showView === 'function') {
@@ -1600,7 +1620,7 @@
         if (typeof window.renderOfficialLearningModules === 'function') {
           window.renderOfficialLearningModules();
         }
-      } else if (portal === 'worldtour') {
+      } else if (portal === 'worldtour' || activeIdx === 1) {
         if (typeof window.navigateToView === 'function') {
           window.navigateToView('world3d-view');
         } else if (typeof showView === 'function') {
@@ -1611,7 +1631,7 @@
         } else if (typeof initThreeWorldTour === 'function') {
           initThreeWorldTour();
         }
-      } else if (portal === 'music') {
+      } else if (portal === 'music' || activeIdx === 2) {
         if (typeof window.navigateToView === 'function') {
           window.navigateToView('music-view');
         } else if (typeof showView === 'function') {
@@ -6401,36 +6421,19 @@
 
 
     /* ========================================================
-       NAVEGACIÓN DE PORTALES (NEXT / PREV PORTAL)
-       ======================================================== */
-    window.nextPortal = function() {
-      if (typeof navigateCoverFlow === 'function') {
-        navigateCoverFlow(1);
-      }
-    };
-    window.prevPortal = function() {
-      if (typeof navigateCoverFlow === 'function') {
-        navigateCoverFlow(-1);
-      }
-    };
-    window.nextSlide = window.nextPortal;
-    window.prevSlide = window.prevPortal;
-
-
-    /* ========================================================
        RENDERIZADO DINÁMICO DE LOS 10 MÓDULOS DE LEARNING PATH
        ======================================================== */
     window.OFFICIAL_LEARNING_MODULES = [
       { id: 1, title: "Foundations & Daily Routine", level: "A1", exp: 20, words: 45, key: "everyday_actions", progress: 65 },
-      { id: 2, title: "Professional & Business English", level: "B2", exp: 25, words: 60, key: "professional_english", progress: 40 },
-      { id: 3, title: "Conversational Fluency & Small Talk", level: "B1", exp: 20, words: 40, key: "social_dating", progress: 25 },
-      { id: 4, title: "Advanced Grammar & Structure", level: "C1", exp: 30, words: 65, key: "grammar_path", progress: 10 },
-      { id: 5, title: "Academic Reading & Listening (TOEFL)", altTitle: "Academic English & TOEFL/IELTS Prep", level: "C1-C2", exp: 40, words: 85, key: "toefl_simulator", progress: 0 },
-      { id: 6, title: "Travel & Cultural Immersion", level: "A2-B1", exp: 20, words: 50, key: "connectors", progress: 0 },
-      { id: 7, title: "Tech, AI & Digital Economy", level: "B2-C1", exp: 30, words: 50, key: "compound_words", progress: 0 },
-      { id: 8, title: "Pronunciation, Idioms & Slang", level: "B2", exp: 25, words: 55, key: "phrasal_verbs", progress: 0 },
-      { id: 9, title: "Storytelling & Public Speaking", level: "C1", exp: 35, words: 70, key: "affixes_morphology", progress: 0 },
-      { id: 10, title: "Master Fluency & Accent Reduction", altTitle: "Native-like Fluency & Accent Reduction", level: "C2", exp: 50, words: 100, key: "internet_slang", progress: 0 }
+      { id: 2, title: "Travel, Airport & Directions", level: "A1-A2", exp: 20, words: 50, key: "connectors", progress: 40 },
+      { id: 3, title: "Food, Dining & Social Life", level: "A2", exp: 20, words: 40, key: "social_dating", progress: 25 },
+      { id: 4, title: "Workplace & Professional Tech", level: "B1", exp: 25, words: 60, key: "professional_english", progress: 10 },
+      { id: 5, title: "Socializing & Idiomatic Slang", level: "B1", exp: 25, words: 55, key: "phrasal_verbs", progress: 0 },
+      { id: 6, title: "Debate, Opinions & Current Events", level: "B2", exp: 30, words: 50, key: "compound_words", progress: 0 },
+      { id: 7, title: "Science, Nature & Environment", level: "B2", exp: 30, words: 50, key: "affixes_morphology", progress: 0 },
+      { id: 8, title: "Literature, Storytelling & Cinema", level: "C1", exp: 35, words: 70, key: "grammar_path", progress: 0 },
+      { id: 9, title: "Academic Research & TOEFL Prep", level: "C1", exp: 40, words: 85, key: "toefl_simulator", progress: 0 },
+      { id: 10, title: "Fluency & Accent Reduction", altTitle: "Master Fluency & Accent Reduction", level: "C2", exp: 50, words: 100, key: "internet_slang", progress: 0 }
     ];
 
     window.openLearningPath = function() {
@@ -6440,10 +6443,10 @@
       } else if (typeof showView === 'function') {
         showView('view-path');
       }
-      if (typeof window.renderLearningPathModules === 'function') {
-        window.renderLearningPathModules();
-      } else if (typeof window.renderOfficialLearningModules === 'function') {
+      if (typeof window.renderOfficialLearningModules === 'function') {
         window.renderOfficialLearningModules();
+      } else if (typeof window.renderLearningPathModules === 'function') {
+        window.renderLearningPathModules();
       }
     };
 
@@ -6454,11 +6457,11 @@
         openModuleMission(key);
       }
     };
+    function openLearningMissionModal(modId) { return window.openLearningMissionModal(modId); }
 
     window.openModuleGlossary = function(modId) {
       const mod = (window.OFFICIAL_LEARNING_MODULES || []).find(m => m.id === modId);
       const key = mod ? mod.key : 'phrasal_verbs';
-      activeGlossaryModuleKey = key;
       if (typeof openGlossaryModal === 'function') {
         openGlossaryModal(key);
       } else {
@@ -6469,12 +6472,16 @@
         }
       }
     };
+    function openModuleGlossary(modId) { return window.openModuleGlossary(modId); }
 
     window.renderOfficialLearningModules = function() {
-      const container = document.querySelector('.modules-grid') || document.getElementById('learningModulesContainer') || document.getElementById('modules-container');
-      if (!container) return;
+      const g1 = document.getElementById('learning-modules-grid');
+      const g2 = document.getElementById('learningModulesContainer');
+      const g3 = document.querySelector('.modules-grid');
+      const targets = [g1, g2, g3].filter(Boolean);
+      if (!targets.length) return;
 
-      container.innerHTML = window.OFFICIAL_LEARNING_MODULES.map(mod => {
+      const htmlContent = window.OFFICIAL_LEARNING_MODULES.map(mod => {
         const modData = (window.MASTER_MODULES_DATA && window.MASTER_MODULES_DATA[mod.key]) 
           ? window.MASTER_MODULES_DATA[mod.key] 
           : { items: [] };
@@ -6522,12 +6529,12 @@
             </div>
           </div>
           <div class="flex items-center gap-2 pt-2 border-t border-slate-800">
-            <button type="button" onclick="openModuleGlossary(${mod.id}); downloadActiveGlossaryPdf(${mod.id});"
+            <button type="button" onclick="window.openModuleGlossary(${mod.id}); if(typeof window.downloadActiveGlossaryPdf === 'function') window.downloadActiveGlossaryPdf(${mod.id});"
               class="flex-1 py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer">
               <span>📖</span>
-              <span>Glosario Oficial (PDF)</span>
+              <span>Glosario Oficial</span>
             </button>
-            <button type="button" onclick="openLearningMissionModal(${mod.id})"
+            <button type="button" onclick="window.openLearningMissionModal(${mod.id})"
               class="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 text-slate-950 text-xs font-extrabold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-amber-500/20">
               <span>🎯</span>
               <span>Iniciar Misión</span>
@@ -6536,6 +6543,10 @@
         </div>
       `;
       }).join('');
+
+      targets.forEach(t => {
+        t.innerHTML = htmlContent;
+      });
     };
     window.renderLearningPathModules = window.renderOfficialLearningModules;
 
@@ -6728,3 +6739,15 @@
         }
       }
     });
+
+    // Inicialización inmediata de portales y módulos de academia
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function() {
+        if (typeof window.updatePortalDisplay === 'function') window.updatePortalDisplay();
+        if (typeof window.renderOfficialLearningModules === 'function') window.renderOfficialLearningModules();
+      });
+    } else {
+      if (typeof window.updatePortalDisplay === 'function') window.updatePortalDisplay();
+      if (typeof window.renderOfficialLearningModules === 'function') window.renderOfficialLearningModules();
+    }
+

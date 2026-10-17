@@ -622,9 +622,11 @@ button[onclick*="closeModal"] {
     </div>
 
     <div id="coverFlowViewport"
-      class="coverflow-viewport hub-carousel w-full max-w-xl flex items-center justify-center my-1 z-10">
+      class="coverflow-viewport hub-carousel carousel-viewport w-full max-w-xl flex items-center justify-center my-1 z-10">
       <button type="button" onclick="window.prevPortal()"
-        class="carousel-nav-btn prev carousel-btn carousel-prev nav-arrow absolute left-0 z-40 w-12 h-12 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-white flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition cursor-pointer" data-action="prev" title="Portal Anterior">
+        class="carousel-nav-btn prev carousel-btn carousel-prev nav-arrow absolute left-0 z-40 w-12 h-12 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-white flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition cursor-pointer"
+        style="cursor: pointer !important; pointer-events: auto !important; z-index: 1000 !important;"
+        data-action="prev" title="Portal Anterior">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
           <path d="M15 19l-7-7 7-7" />
         </svg>
@@ -745,7 +747,9 @@ button[onclick*="closeModal"] {
       </div>
 
       <button type="button" onclick="window.nextPortal()"
-        class="carousel-nav-btn next carousel-btn carousel-next nav-arrow absolute right-0 z-40 w-12 h-12 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-white flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition cursor-pointer" data-action="next" title="Portal Siguiente">
+        class="carousel-nav-btn next carousel-btn carousel-next nav-arrow absolute right-0 z-40 w-12 h-12 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-white flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition cursor-pointer"
+        style="cursor: pointer !important; pointer-events: auto !important; z-index: 1000 !important;"
+        data-action="next" title="Portal Siguiente">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
           <path d="M9 5l7 7-7 7" />
         </svg>
@@ -753,10 +757,10 @@ button[onclick*="closeModal"] {
     </div>
 
     <div class="flex items-center gap-2.5 mt-3 z-10">
-      <span id="coverDot-0" onclick="handleCoverCardClick(0)" class="w-3 h-3 rounded-full bg-amber-400 transition-all duration-300 shadow cursor-pointer"></span>
-      <span id="coverDot-1" onclick="handleCoverCardClick(1)" class="w-2.5 h-2.5 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer"></span>
-      <span id="coverDot-2" onclick="handleCoverCardClick(2)" class="w-2.5 h-2.5 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer"></span>
-      <span id="coverDot-3" onclick="handleCoverCardClick(3)" class="w-2.5 h-2.5 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer"></span>
+      <span id="coverDot-0" onclick="window.goToPortal(0)" class="carousel-dot active w-3 h-3 rounded-full bg-amber-400 transition-all duration-300 shadow cursor-pointer"></span>
+      <span id="coverDot-1" onclick="window.goToPortal(1)" class="carousel-dot w-2.5 h-2.5 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer"></span>
+      <span id="coverDot-2" onclick="window.goToPortal(2)" class="carousel-dot w-2.5 h-2.5 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer"></span>
+      <span id="coverDot-3" onclick="window.goToPortal(3)" class="carousel-dot w-2.5 h-2.5 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer hidden" style="display: none !important;"></span>
     </div>
   </div>
 
@@ -824,7 +828,8 @@ button[onclick*="closeModal"] {
       </div>
     </div>
 
-    <div id="learningModulesContainer" class="modules-grid grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+    <div id="learning-modules-grid" class="modules-grid"></div>
+    <div id="learningModulesContainer" class="modules-grid hidden" style="display: none;"></div>
     </div>
   </div>
 
