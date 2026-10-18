@@ -1389,6 +1389,18 @@
       }
       if (targetId === 'view-music') {
         if (typeof renderMusicTracksList === 'function') renderMusicTracksList();
+        if (typeof window.clearMusicSearchInput === 'function') window.clearMusicSearchInput();
+        if (typeof window.renderTrendingTracksCarousel === 'function') window.renderTrendingTracksCarousel();
+        const searchSub = document.getElementById('music-search-subview');
+        const playerSub = document.getElementById('music-player-subview');
+        if (searchSub) {
+          searchSub.style.display = 'block';
+          searchSub.classList.remove('hidden');
+        }
+        if (playerSub) {
+          playerSub.style.display = 'none';
+          playerSub.classList.add('hidden');
+        }
       }
       if (targetId === 'view-stories') {
         if (typeof renderStorySelector === 'function') renderStorySelector();
@@ -1747,6 +1759,12 @@ window.logout = function() {
         }
         if (typeof renderMusicTracksList === 'function') {
           renderMusicTracksList();
+        }
+        if (typeof window.clearMusicSearchInput === 'function') {
+          window.clearMusicSearchInput();
+        }
+        if (typeof window.renderTrendingTracksCarousel === 'function') {
+          window.renderTrendingTracksCarousel();
         }
       } else if (portal === 'stories') {
         if (typeof window.navigateToView === 'function') {
@@ -7937,14 +7955,319 @@ window.logout = function() {
     /* ========================================================
        BÚSQUEDA GLOBAL DE MÚSICA CONECTADA A LA WEB (ITUNES API)
        ======================================================== */
+
+    /* ========================================================
+       CARRUSEL DE CANCIONES SUGERIDAS (TRENDING LEARNING TRACKS)
+       ======================================================== */
+    window.TRENDING_LEARNING_TRACKS = [
+      {
+        title: "Losing My Religion",
+        artist: "R.E.M.",
+        level: "Intermedio",
+        levelBadgeClass: "bg-amber-500/20 text-amber-300 border-amber-500/40",
+        artwork: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/bf/20/0f/bf200fa8-c516-7359-5a50-ad3173d1ee05/00602557551068.rgb.jpg/600x600bb.jpg",
+        previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/Music115/v4/bf/20/0f/bf200fa8-c516-7359-5a50-ad3173d1ee05/mzaf_1003460627582236896.plus.aac.p.m4a",
+        duration: 268,
+        pedagogy: "Aprende modismos sureños ('in the corner') y condicionales poéticos."
+      },
+      {
+        title: "Viva La Vida",
+        artist: "Coldplay",
+        level: "Intermedio",
+        levelBadgeClass: "bg-amber-500/20 text-amber-300 border-amber-500/40",
+        artwork: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/4e/c9/2b/4ec92bd7-7eb1-5ef2-2f3b-60b6fa48f3b2/00094639537951.rgb.jpg/600x600bb.jpg",
+        previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/Music115/v4/4e/c9/2b/4ec92bd7-7eb1-5ef2-2f3b-60b6fa48f3b2/mzaf_8435860368307521743.plus.aac.p.m4a",
+        duration: 242,
+        pedagogy: "Domina verbos en pasado ('I used to rule the world') y metáforas históricas."
+      },
+      {
+        title: "Rolling in the Deep",
+        artist: "Adele",
+        level: "Avanzado",
+        levelBadgeClass: "bg-purple-500/20 text-purple-300 border-purple-500/40",
+        artwork: "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/35/06/f0/3506f0e9-ff65-bfbf-f4f5-51341a0e5b72/886445598687.jpg/600x600bb.jpg",
+        previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/Music125/v4/35/06/f0/3506f0e9-ff65-bfbf-f4f5-51341a0e5b72/mzaf_10488689129532822941.plus.aac.p.m4a",
+        duration: 228,
+        pedagogy: "Excelente para enlaces consonánticos y modismos rítmicos ('could have had it all')."
+      },
+      {
+        title: "Don't Stop Me Now",
+        artist: "Queen",
+        level: "Intermedio",
+        levelBadgeClass: "bg-amber-500/20 text-amber-300 border-amber-500/40",
+        artwork: "https://is1-ssl.mzstatic.com/image/thumb/Music128/v4/05/cf/54/05cf54eb-72cf-6192-3eb6-3840e60805ea/00602527718385.rgb.jpg/600x600bb.jpg",
+        previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/Music128/v4/05/cf/54/05cf54eb-72cf-6192-3eb6-3840e60805ea/mzaf_15082181790409890691.plus.aac.p.m4a",
+        duration: 210,
+        pedagogy: "Velocidad vocal, energía y vocabulario dinámico de acción ('having a good time')."
+      },
+      {
+        title: "Believer",
+        artist: "Imagine Dragons",
+        level: "Intermedio",
+        levelBadgeClass: "bg-amber-500/20 text-amber-300 border-amber-500/40",
+        artwork: "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/33/c9/b0/33c9b0e1-7ca2-632b-aa45-9ec49b1ff337/17UMGIM08253.rgb.jpg/600x600bb.jpg",
+        previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/Music125/v4/33/c9/b0/33c9b0e1-7ca2-632b-aa45-9ec49b1ff337/mzaf_6388480376229987625.plus.aac.p.m4a",
+        duration: 204,
+        pedagogy: "Narrativa en primera persona, superación y vocabulario de resiliencia."
+      },
+      {
+        title: "Count on Me",
+        artist: "Bruno Mars",
+        level: "Fácil",
+        levelBadgeClass: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40",
+        artwork: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/b8/b5/02/b8b5020d-b4b6-455b-4c5c-74ecbb7cf02a/075679958938.jpg/600x600bb.jpg",
+        previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/Music115/v4/b8/b5/02/b8b5020d-b4b6-455b-4c5c-74ecbb7cf02a/mzaf_3992014167909381652.plus.aac.p.m4a",
+        duration: 197,
+        pedagogy: "Frases condicionales directas ('If you ever find yourself...') y números básicos."
+      },
+      {
+        title: "Yellow",
+        artist: "Coldplay",
+        level: "Fácil",
+        levelBadgeClass: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40",
+        artwork: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/91/96/e8/9196e83d-3b1d-8526-7243-ea7cb81e2850/00724388915456.rgb.jpg/600x600bb.jpg",
+        previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/Music115/v4/91/96/e8/9196e83d-3b1d-8526-7243-ea7cb81e2850/mzaf_10526715694269123898.plus.aac.p.m4a",
+        duration: 269,
+        pedagogy: "Adjetivos descriptivos, colores y entonación limpia a tempo moderado."
+      },
+      {
+        title: "Stay With Me",
+        artist: "Sam Smith",
+        level: "Fácil",
+        levelBadgeClass: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40",
+        artwork: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/ce/20/fa/ce20fa1d-40bc-caad-16ec-9d9fc3756209/14UMGIM10243.rgb.jpg/600x600bb.jpg",
+        previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/Music115/v4/ce/20/fa/ce20fa1d-40bc-caad-16ec-9d9fc3756209/mzaf_1648057997973719001.plus.aac.p.m4a",
+        duration: 172,
+        pedagogy: "Oraciones cortas, verbos modales y articulación vocal sumamente clara."
+      },
+      {
+        title: "Creep",
+        artist: "Radiohead",
+        level: "Intermedio",
+        levelBadgeClass: "bg-amber-500/20 text-amber-300 border-amber-500/40",
+        artwork: "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/10/7c/d2/107cd2fc-1ca2-14eb-373a-f116a80479f6/634904078121.png/600x600bb.jpg",
+        previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/Music116/v4/10/7c/d2/107cd2fc-1ca2-14eb-373a-f116a80479f6/mzaf_15038933256038312017.plus.aac.p.m4a",
+        duration: 238,
+        pedagogy: "Adjetivos de personalidad, contrastes verbales y pronunciación expresiva."
+      },
+      {
+        title: "Someone Like You",
+        artist: "Adele",
+        level: "Intermedio",
+        levelBadgeClass: "bg-amber-500/20 text-amber-300 border-amber-500/40",
+        artwork: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/b9/62/1d/b9621d9f-dc53-933e-e098-b8bc4594fe01/886443317761.jpg/600x600bb.jpg",
+        previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/Music115/v4/b9/62/1d/b9621d9f-dc53-933e-e098-b8bc4594fe01/mzaf_1241151659929283734.plus.aac.p.m4a",
+        duration: 285,
+        pedagogy: "Narrativa en pasado, recuerdos y expresiones de despedida cotidiana."
+      }
+    ];
+
+    window.slideTrendingCarousel = function(dir) {
+      const container = document.getElementById('trendingCarouselScroll');
+      if (container) {
+        const scrollAmount = 300 * dir;
+        if (typeof container.scrollBy === 'function') {
+          container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        } else {
+          container.scrollLeft = (container.scrollLeft || 0) + scrollAmount;
+        }
+      }
+    };
+
+    window.renderTrendingTracksCarousel = function() {
+      const target = document.getElementById('musicTrendingSection');
+      if (!target) return;
+
+      const tracks = window.TRENDING_LEARNING_TRACKS || [];
+      const cardsHtml = tracks.map((t, idx) => {
+        const durLabel = Math.floor(t.duration / 60) + ':' + String(Math.floor(t.duration % 60)).padStart(2, '0');
+        const safeTitle = t.title.replace(/'/g, "\\'");
+        const safeArtist = t.artist.replace(/'/g, "\\'");
+
+        return `
+          <div class="trending-track-card w-64 sm:w-72 shrink-0 snap-start bg-slate-900/95 border border-slate-800 hover:border-cyan-500/50 rounded-3xl p-4 shadow-xl transition-all duration-300 flex flex-col justify-between hover:shadow-cyan-500/10 hover:-translate-y-1 group">
+            <div>
+              <div class="relative w-full aspect-square rounded-2xl overflow-hidden mb-3 bg-slate-950 border border-slate-800 cursor-pointer shadow-inner" onclick="window.loadSongToKaraoke('${safeTitle}', '${safeArtist}', '${t.previewUrl}', '${t.artwork}', ${t.duration})">
+                <img src="${t.artwork}" alt="${t.title}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" onerror="this.onerror=null; this.src='images/portal_music.svg';">
+                <span class="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border backdrop-blur-md ${t.levelBadgeClass}">
+                  ${t.level}
+                </span>
+                <span class="absolute top-2.5 right-2.5 px-2.5 py-0.5 rounded-full bg-slate-950/85 text-[10px] font-mono font-bold text-cyan-300 border border-cyan-500/40 backdrop-blur-md">
+                  ${durLabel}
+                </span>
+              </div>
+              <h4 class="text-sm font-black text-white truncate" title="${t.title}">${t.title}</h4>
+              <p class="text-xs text-cyan-400 font-bold truncate mb-1.5">${t.artist}</p>
+              <p class="text-[11px] text-slate-400 line-clamp-2 leading-snug">${t.pedagogy}</p>
+            </div>
+            <div class="mt-3.5 pt-3 border-t border-slate-800/80">
+              <button type="button" onclick="window.loadSongToKaraoke('${safeTitle}', '${safeArtist}', '${t.previewUrl}', '${t.artwork}', ${t.duration})"
+                class="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-black text-xs transition cursor-pointer flex items-center justify-center gap-1.5 shadow-lg shadow-cyan-600/30 active:scale-95">
+                <span>🎤</span>
+                <span>Estudiar Canción</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      target.innerHTML = `
+        <div class="relative w-full bg-slate-900/60 border border-slate-800/80 rounded-3xl p-5 shadow-2xl backdrop-blur-xl">
+          <div class="flex items-center justify-between mb-4 px-1">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-black text-white uppercase tracking-wider flex items-center gap-1.5">
+                <span>🔥</span> Trending Learning Tracks
+              </span>
+              <span class="text-[10px] text-cyan-300 bg-cyan-950/80 border border-cyan-500/40 px-2.5 py-0.5 rounded-full font-bold">
+                10 Canciones Recomendadas
+              </span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button type="button" onclick="window.slideTrendingCarousel(-1)" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs font-bold transition flex items-center justify-center cursor-pointer active:scale-95 shadow" title="Anterior">
+                ◀
+              </button>
+              <button type="button" onclick="window.slideTrendingCarousel(1)" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs font-bold transition flex items-center justify-center cursor-pointer active:scale-95 shadow" title="Siguiente">
+                ▶
+              </button>
+            </div>
+          </div>
+          <div id="trendingCarouselScroll" class="trending-carousel-scroll flex gap-4 overflow-x-auto pb-3 pt-1 snap-x scroll-smooth select-none">
+            ${cardsHtml}
+          </div>
+        </div>
+      `;
+
+      // Touch swipe
+      const scrollEl = document.getElementById('trendingCarouselScroll');
+      if (scrollEl && typeof scrollEl.addEventListener === 'function') {
+        let touchStartX = 0;
+        let touchEndX = 0;
+        scrollEl.addEventListener('touchstart', e => {
+          if (e.changedTouches && e.changedTouches[0]) touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+        scrollEl.addEventListener('touchend', e => {
+          if (e.changedTouches && e.changedTouches[0]) {
+            touchEndX = e.changedTouches[0].screenX;
+            if (touchStartX - touchEndX > 50) window.slideTrendingCarousel(1);
+            else if (touchEndX - touchStartX > 50) window.slideTrendingCarousel(-1);
+          }
+        }, { passive: true });
+      }
+    };
+
+    window.clearMusicSearchInput = function() {
+      const input = document.getElementById('musicSearchInput');
+      const clearBtn = document.getElementById('musicSearchClearBtn');
+      const resultsGrid = document.getElementById('musicResultsGrid');
+      const suggestions = document.getElementById('musicSearchSuggestions');
+      const trendingSection = document.getElementById('musicTrendingSection');
+
+      if (input) {
+        input.value = '';
+        try { input.focus(); } catch (e) {}
+      }
+      if (clearBtn) {
+        clearBtn.classList.add('hidden');
+        clearBtn.style.display = 'none';
+      }
+      if (resultsGrid) {
+        resultsGrid.innerHTML = '';
+        resultsGrid.style.display = 'none';
+        resultsGrid.classList.add('hidden');
+      }
+      if (suggestions) {
+        suggestions.innerHTML = '';
+        suggestions.style.display = 'none';
+        suggestions.classList.add('hidden');
+      }
+      if (trendingSection) {
+        trendingSection.style.display = 'block';
+        trendingSection.classList.remove('hidden');
+      }
+      window._lastSearchedWebSongs = null;
+    };
+
+    window.toggleCinemaMode = function() {
+      const lyricsCol = document.getElementById('musicLyricsRightCol');
+      const stageGrid = document.getElementById('musicStageColumnsGrid');
+      const label = document.getElementById('cinemaModeToggleLabel');
+      window._isCinemaModeActive = !window._isCinemaModeActive;
+
+      if (window._isCinemaModeActive) {
+        if (lyricsCol) {
+          lyricsCol.style.display = 'none';
+          lyricsCol.classList.add('hidden');
+        }
+        if (stageGrid) {
+          stageGrid.className = 'grid grid-cols-1 gap-4';
+        }
+        if (label) {
+          label.textContent = '🎤 Modo Karaoke con Letra';
+        }
+        if (typeof showFloatingToast === 'function') {
+          showFloatingToast('Modo Cine: Video Ampliado', '🎬');
+        }
+      } else {
+        if (lyricsCol) {
+          lyricsCol.style.display = 'flex';
+          lyricsCol.classList.remove('hidden');
+        }
+        if (stageGrid) {
+          stageGrid.className = 'grid grid-cols-1 lg:grid-cols-2 gap-4';
+        }
+        if (label) {
+          label.textContent = '🎬 Modo Cine / Video Completo';
+        }
+        if (typeof showFloatingToast === 'function') {
+          showFloatingToast('Modo Karaoke con Letra Activado', '🎤');
+        }
+      }
+    };
+    window.toggleHoloStageViewMode = window.toggleCinemaMode;
+
+    window.parseRawLyricsIntoStanzas = function(rawLyricsText, totalDurationSec) {
+      if (!rawLyricsText) return [];
+      const cleaned = rawLyricsText.replace(/^Paroles de la chanson.*$/im, '').trim();
+      let blocks = [];
+
+      if (cleaned.includes('\n\n')) {
+        blocks = cleaned.split(/\r?\n\s*\r?\n+/).map(b => b.trim()).filter(Boolean);
+      } else {
+        const lines = cleaned.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+        for (let i = 0; i < lines.length; i += 3) {
+          blocks.push(lines.slice(i, i + 3).join('\n'));
+        }
+      }
+
+      blocks = blocks.slice(0, 24);
+      if (blocks.length === 0) return [];
+
+      const stepSec = Math.max(5, totalDurationSec / blocks.length);
+      return blocks.map((blk, idx) => {
+        const lines = blk.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+        const primaryLine = lines[0] || blk;
+        return {
+          time: Math.round(idx * stepSec),
+          lines: lines,
+          text: blk,
+          es: translateEnglishVerseToSpanishStudy(primaryLine)
+        };
+      });
+    };
+
     window.searchGlobalMusic = async function(term) {
       const inputEl = document.getElementById('musicSearchInput');
       const query = (typeof term === 'string' ? term : (inputEl ? inputEl.value : '')).trim();
       const resultsGrid = document.getElementById('musicResultsGrid') || document.querySelector('.music-results-grid');
       const suggestionsEl = document.getElementById('musicSearchSuggestions');
+      const trendingSection = document.getElementById('musicTrendingSection');
 
       if (suggestionsEl) {
         suggestionsEl.classList.add('hidden');
+      }
+      if (trendingSection) {
+        trendingSection.style.display = 'none';
+        trendingSection.classList.add('hidden');
       }
 
       if (!query) {
@@ -8058,9 +8381,23 @@ window.logout = function() {
       }
       const searchSub = document.getElementById('music-search-subview');
       const playerSub = document.getElementById('music-player-subview');
+      const origVideoWrapper = document.getElementById('musicOriginalVideoWrapper');
+      const origMetaWrapper = document.getElementById('musicOriginalMetaWrapper');
+      const holoStage = document.getElementById('musicHolographicStage');
+
       if (playerSub) {
         playerSub.style.display = 'none';
         playerSub.classList.add('hidden');
+      }
+      if (holoStage) {
+        holoStage.style.display = 'none';
+        holoStage.classList.add('hidden');
+      }
+      if (origVideoWrapper) {
+        origVideoWrapper.style.display = 'block';
+      }
+      if (origMetaWrapper) {
+        origMetaWrapper.style.display = 'flex';
       }
       if (searchSub) {
         searchSub.style.display = 'block';
@@ -8103,7 +8440,8 @@ window.logout = function() {
 
         // 3. Reemplazar el iframe fijo de R.E.M. por el Escenario Holográfico Interactivo
         const iframe = document.getElementById('musicYouTubeIframe');
-        const stageWrapper = iframe ? iframe.parentElement : null;
+        const origVideoWrapper = document.getElementById('musicOriginalVideoWrapper') || (iframe ? iframe.parentElement : null);
+        const origMetaWrapper = document.getElementById('musicOriginalMetaWrapper');
 
         if (iframe) {
           iframe.style.display = 'none';
@@ -8113,6 +8451,8 @@ window.logout = function() {
             }
           } catch (e) {}
         }
+        if (origVideoWrapper) origVideoWrapper.style.display = 'none';
+        if (origMetaWrapper) origMetaWrapper.style.display = 'none';
 
         // 4. Calcular duración real de la canción completa (3 a 5 minutos)
         let totalDurationSec = (typeof durationSec === 'number' && durationSec > 30) ? durationSec : 0;
@@ -8157,80 +8497,82 @@ window.logout = function() {
           : `https://www.youtube-nocookie.com/embed?listType=search&list=${encodeURIComponent(officialSearchQuery)}&enablejsapi=1&autoplay=1&rel=0`;
 
         let holoStage = document.getElementById('musicHolographicStage');
-        if (!holoStage && stageWrapper) {
+        if (!holoStage && origVideoWrapper && origVideoWrapper.parentElement) {
           holoStage = document.createElement('div');
           holoStage.id = 'musicHolographicStage';
-          holoStage.className = 'absolute inset-0 w-full h-full bg-slate-950 flex flex-col justify-between p-3 sm:p-4 overflow-hidden select-none z-20 rounded-2xl';
-          stageWrapper.appendChild(holoStage);
+          holoStage.className = 'w-full flex flex-col gap-3 select-none rounded-2xl';
+          origVideoWrapper.parentElement.appendChild(holoStage);
         }
 
         if (holoStage) {
           holoStage.style.display = 'flex';
+          holoStage.classList.remove('hidden');
           const eqBarsHtml = Array.from({ length: 18 }, () => '<div class="holo-eq-bar"></div>').join('');
           holoStage.innerHTML = `
-            <!-- Reproductor YouTube Oficial Integrado (Full Stream) -->
-            <iframe id="musicHoloYoutubeIframe"
-              class="absolute inset-0 w-full h-full object-cover rounded-2xl transition-opacity duration-300 pointer-events-auto"
-              style="z-index: 0; opacity: 0.85;"
-              src="${fullSongEmbedUrl}"
-              title="${trackName.replace(/"/g, '&quot;')} - Official Audio"
-              frameborder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowfullscreen>
-            </iframe>
-
-            <!-- Carátula HD 600x600 con difuminado ambiental -->
-            <img src="${hdArtwork}" alt="" class="absolute inset-0 w-full h-full object-cover opacity-20 blur-2xl scale-110 pointer-events-none" style="z-index: 1;" onerror="this.style.display='none'">
-
-            <!-- Barra Superior HUD Holográfico -->
-            <div class="relative w-full flex items-center justify-between text-[10px] font-mono text-cyan-300" style="z-index: 10;">
-              <div class="flex items-center gap-2">
-                <span class="px-2.5 py-0.5 rounded-full bg-slate-950/90 border border-cyan-500/40 font-bold backdrop-blur-md">
-                  ✨ CANCIÓN COMPLETA • HD 600x600
-                </span>
-                <button type="button" onclick="window.toggleHoloStageViewMode()"
-                  class="px-2.5 py-0.5 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-slate-200 hover:text-cyan-300 text-[10px] font-bold transition cursor-pointer backdrop-blur-md active:scale-95">
-                  <span id="holoViewModeLabel">🖥️ Pantalla Completa Video</span>
-                </button>
-              </div>
-              <span id="holoStageTime" class="px-2.5 py-0.5 rounded-full bg-slate-950/90 border border-slate-700 text-cyan-300 font-bold font-mono backdrop-blur-md">
-                0:00 / ${totalDurationFormatted}
-              </span>
+            <!-- BLOQUE 1 (ARRIBA): Marco Panorámico 16:9 Exclusivo para el Video YouTube (CERO Superposición) -->
+            <div class="relative w-full rounded-2xl overflow-hidden aspect-video bg-black shadow-2xl border border-cyan-500/30" style="aspect-ratio: 16/9; width: 100%; border-radius: 16px; overflow: hidden;">
+              <iframe id="musicHoloYoutubeIframe"
+                class="w-full h-full object-cover pointer-events-auto"
+                src="${fullSongEmbedUrl}"
+                title="${trackName.replace(/"/g, '&quot;')} - Official Audio"
+                frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen>
+              </iframe>
             </div>
 
-            <!-- Panel de Control y Estado del Reproductor -->
-            <div class="relative flex flex-col sm:flex-row items-center gap-3 sm:gap-4 my-auto w-full px-2 py-2 rounded-2xl bg-slate-950/80 backdrop-blur-md border border-cyan-500/30 shadow-2xl" style="z-index: 10;">
-              <div class="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border-2 border-cyan-400/70 shadow-[0_0_30px_rgba(6,182,212,0.45)] shrink-0 bg-slate-900">
-                <img src="${hdArtwork}" alt="${trackName.replace(/"/g, '&quot;')}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='images/portal_music.svg';">
-              </div>
-              <div class="flex flex-col items-start min-w-0 flex-1 w-full">
-                <div class="flex items-center justify-between w-full">
-                  <span class="text-[10px] uppercase tracking-widest text-cyan-400 font-black">Estudio Musical • Full Track</span>
-                  <span class="text-[10px] text-slate-400 font-mono">${totalDurationFormatted}</span>
+            <!-- BLOQUE 2 (ABAJO): Barra de Controles Desacoplada e Independiente (Inmediatamente Abajo del Video) -->
+            <div class="w-full mt-3 p-3.5 rounded-2xl bg-slate-950/95 border border-cyan-500/30 shadow-2xl flex flex-col gap-2.5">
+              <!-- Fila Superior: HUD y Selector Modo Cine vs Karaoke -->
+              <div class="flex items-center justify-between text-[11px] font-mono text-cyan-300">
+                <div class="flex items-center gap-2">
+                  <span class="px-2.5 py-0.5 rounded-full bg-slate-900 border border-cyan-500/40 font-bold">
+                    ✨ CANCIÓN COMPLETA
+                  </span>
+                  <button type="button" id="cinemaModeToggleBtn" onclick="window.toggleCinemaMode()"
+                    class="px-2.5 py-0.5 rounded-full bg-cyan-950/80 hover:bg-cyan-900/90 border border-cyan-500/50 text-cyan-200 hover:text-white text-[11px] font-bold transition cursor-pointer active:scale-95 flex items-center gap-1 shadow-sm">
+                    <span id="cinemaModeToggleLabel">🎬 Modo Cine / Video Completo</span>
+                  </button>
                 </div>
-                <h4 class="text-sm sm:text-base font-black text-white truncate w-full">${trackName}</h4>
-                <p class="text-xs text-slate-300 font-semibold truncate w-full mb-2">${artistName}</p>
-                <div class="flex items-center gap-2.5 w-full flex-wrap">
+                <span id="holoStageTime" class="px-2.5 py-0.5 rounded-full bg-slate-900 border border-slate-700 text-cyan-300 font-bold font-mono">
+                  0:00 / ${totalDurationFormatted}
+                </span>
+              </div>
+
+              <!-- Fila Media: Carátula HD 600x600, Info de la Pista, Botones de Control y Ecualizador -->
+              <div class="flex items-center gap-3 w-full">
+                <div class="relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden border-2 border-cyan-400/60 shadow-[0_0_20px_rgba(6,182,212,0.35)] shrink-0 bg-slate-900">
+                  <img src="${hdArtwork}" alt="${trackName.replace(/"/g, '&quot;')}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='images/portal_music.svg';">
+                </div>
+                <div class="flex flex-col items-start min-w-0 flex-1">
+                  <div class="flex items-center justify-between w-full">
+                    <span class="text-[10px] uppercase tracking-wider text-cyan-400 font-black">Estudio Musical • Full Track</span>
+                    <span class="text-[10px] text-slate-400 font-mono">${totalDurationFormatted}</span>
+                  </div>
+                  <h4 class="text-sm font-black text-white truncate w-full">${trackName}</h4>
+                  <p class="text-xs text-slate-300 font-semibold truncate w-full mb-1">${artistName}</p>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
                   <button type="button" id="holoStagePlayBtn" onclick="window.toggleMainStageAudio()"
-                    class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-base font-black flex items-center justify-center shadow-lg shadow-cyan-500/40 cursor-pointer active:scale-95 transition">
+                    class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-base font-black flex items-center justify-center shadow-lg shadow-cyan-500/40 cursor-pointer active:scale-95 transition">
                     <span id="holoStagePlayIcon">⏸️</span>
                   </button>
                   <button type="button" id="holoStageMuteBtn" onclick="window.toggleHoloStageMute()"
                     class="w-9 h-9 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-slate-700 text-white flex items-center justify-center text-xs cursor-pointer active:scale-95 transition" title="Silenciar / Activar sonido">
                     <span id="holoStageMuteIcon">🔊</span>
                   </button>
-                  <div id="holoStageEqualizer" class="flex items-end gap-1 h-7 px-2 py-1 rounded-xl bg-slate-900/80 border border-cyan-500/30 holo-eq-playing">
+                  <div id="holoStageEqualizer" class="hidden sm:flex items-end gap-1 h-6 px-1.5 py-1 rounded-lg bg-slate-900/80 border border-cyan-500/30 holo-eq-playing">
                     ${eqBarsHtml}
                   </div>
                 </div>
               </div>
-            </div>
 
-            <!-- Barra de Progreso Interactiva de Longitud Completa (Click para adelantar/rebobinar) -->
-            <div class="relative w-full pt-1" style="z-index: 10;">
-              <div id="holoStageProgressContainer" onclick="window.seekHoloStageTrack(event)"
-                class="w-full h-3 bg-slate-900/95 rounded-full overflow-hidden border border-cyan-500/40 cursor-pointer relative group p-0.5 shadow-inner" title="Haz clic en la barra para saltar en la canción completa">
-                <div id="holoStageProgressBar" class="h-full bg-gradient-to-r from-cyan-400 via-sky-500 to-indigo-500 rounded-full transition-all duration-150" style="width: 0%;"></div>
+              <!-- Fila Inferior: Barra de Progreso Interactiva -->
+              <div class="relative w-full pt-1">
+                <div id="holoStageProgressContainer" onclick="window.seekHoloStageTrack(event)"
+                  class="w-full h-2.5 bg-slate-900 rounded-full overflow-hidden border border-cyan-500/40 cursor-pointer relative group p-0.5 shadow-inner" title="Haz clic en la barra para saltar en la canción">
+                  <div id="holoStageProgressBar" class="h-full bg-gradient-to-r from-cyan-400 via-sky-500 to-indigo-500 rounded-full transition-all duration-150" style="width: 0%;"></div>
+                </div>
               </div>
             </div>
           `;
@@ -8259,8 +8601,8 @@ window.logout = function() {
         }
 
         let finalLyrics = null;
-        const cleanTitleForApi = trackName.replace(/\\s*\\([^)]*\\)/g, '').replace(/\\s*-\\s*.*$/, '').trim() || trackName;
-        const cleanArtistForApi = artistName.replace(/\\s*&.*$/, '').trim() || artistName;
+        const cleanTitleForApi = trackName.replace(/\s*\([^)]*\)/g, '').replace(/\s*-\s*.*$/, '').trim() || trackName;
+        const cleanArtistForApi = artistName.replace(/\s*&.*$/, '').trim() || artistName;
 
         // 7A. Consulta primaria a https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}
         try {
@@ -8272,20 +8614,7 @@ window.logout = function() {
           if (ovhRes && ovhRes.ok) {
             const ovhData = await ovhRes.json();
             if (ovhData && ovhData.lyrics) {
-              const rawLines = ovhData.lyrics
-                .replace(/^Paroles de la chanson.*$/im, '')
-                .split(/\\r?\\n/)
-                .map(l => l.trim())
-                .filter(Boolean);
-              if (rawLines.length > 0) {
-                const maxLines = rawLines.slice(0, 48);
-                const stepSec = Math.max(3.5, totalDurationSec / Math.max(maxLines.length, 1));
-                finalLyrics = maxLines.map((txt, idx) => ({
-                  time: Math.round(idx * stepSec),
-                  text: txt,
-                  es: translateEnglishVerseToSpanishStudy(txt)
-                }));
-              }
+              finalLyrics = window.parseRawLyricsIntoStanzas(ovhData.lyrics, totalDurationSec);
             }
           }
         } catch (ovhErr) {
@@ -8302,13 +8631,7 @@ window.logout = function() {
               if (Array.isArray(lrcData) && lrcData.length > 0) {
                 const best = lrcData.find(item => item.syncedLyrics) || lrcData.find(item => item.plainLyrics) || lrcData[0];
                 if (best && best.plainLyrics) {
-                  const rawLines = best.plainLyrics.split(/\\r?\\n/).map(l => l.trim()).filter(Boolean).slice(0, 48);
-                  const stepSec = Math.max(3.5, totalDurationSec / Math.max(rawLines.length, 1));
-                  finalLyrics = rawLines.map((txt, idx) => ({
-                    time: Math.round(idx * stepSec),
-                    text: txt,
-                    es: translateEnglishVerseToSpanishStudy(txt)
-                  }));
+                  finalLyrics = window.parseRawLyricsIntoStanzas(best.plainLyrics, totalDurationSec);
                 }
               }
             }
@@ -8318,12 +8641,54 @@ window.logout = function() {
         // 7C. Respaldo automático de estrofas sincronizadas si la red está offline
         if (!finalLyrics || finalLyrics.length === 0) {
           finalLyrics = [
-            { time: 0, text: `${trackName} — ${artistName}`, es: `Escuchando "${trackName}" de ${artistName}` },
-            { time: 5, text: "When you were here before, couldn't look you in the eye", es: "Cuando estabas aquí antes, no podía mirarte a los ojos" },
-            { time: 10, text: "You're just like an angel, your skin makes me cry", es: "Eres justo como un ángel, tu piel me emociona" },
-            { time: 15, text: "You float like a feather in a beautiful world", es: "Flotas como una pluma en un mundo hermoso" },
-            { time: 20, text: "I wish I was special, you're so very special", es: "Desearía ser especial, tú eres tan especial" },
-            { time: 25, text: "Click any English word above to practice phonetic IPA", es: "Haz clic en cualquier palabra en inglés para practicar su fonética IPA" }
+            {
+              time: 0,
+              text: `${trackName} — ${artistName}\nWelcome to the MasterENG Karaoke Room`,
+              lines: [`${trackName} — ${artistName}`, "Welcome to the MasterENG Karaoke Room"],
+              es: `Escuchando "${trackName}" de ${artistName}`
+            },
+            {
+              time: 12,
+              text: "When you were here before\nCouldn't look you in the eye\nYou're just like an angel",
+              lines: ["When you were here before", "Couldn't look you in the eye", "You're just like an angel"],
+              es: "Cuando estabas aquí antes, no podía mirarte a los ojos"
+            },
+            {
+              time: 26,
+              text: "Your skin makes me cry\nYou float like a feather\nIn a beautiful world",
+              lines: ["Your skin makes me cry", "You float like a feather", "In a beautiful world"],
+              es: "Eres justo como un ángel, flotas como una pluma en un mundo hermoso"
+            },
+            {
+              time: 42,
+              text: "I wish I was special\nYou're so very special\nBut I'm a creep, I'm a weirdo",
+              lines: ["I wish I was special", "You're so very special", "But I'm a creep, I'm a weirdo"],
+              es: "Desearía ser especial, pero soy un bicho raro"
+            },
+            {
+              time: 58,
+              text: "What the hell am I doing here?\nI don't belong here\nI don't care if it hurts",
+              lines: ["What the hell am I doing here?", "I don't belong here", "I don't care if it hurts"],
+              es: "¿Qué diablos hago aquí? No pertenezco a este lugar"
+            },
+            {
+              time: 74,
+              text: "I wanna have control\nI want a perfect body\nI want a perfect soul",
+              lines: ["I wanna have control", "I want a perfect body", "I want a perfect soul"],
+              es: "Quiero tener el control, quiero un cuerpo y un alma perfectos"
+            },
+            {
+              time: 90,
+              text: "I want you to notice\nWhen I'm not around\nYou're so very special",
+              lines: ["I want you to notice", "When I'm not around", "You're so very special"],
+              es: "Quiero que te des cuenta cuando no estoy cerca"
+            },
+            {
+              time: 106,
+              text: "Click any English word above to practice phonetic IPA\nKeep singing and level up your fluency!",
+              lines: ["Click any English word above to practice phonetic IPA", "Keep singing and level up your fluency!"],
+              es: "Haz clic en cualquier palabra en inglés para practicar su fonética IPA"
+            }
           ];
         }
 

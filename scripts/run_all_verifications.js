@@ -27,7 +27,8 @@ const scripts = [
   'verify_v8_player_dict_pdf_google.js',
   'verify_v9_requirements.js',
   'verify_v10_requirements.js',
-  'verify_v11_requirements.js'
+  'verify_v11_requirements.js',
+  'verify_v12_lyrics_cinema_carousel.js'
 ];
 
 let allPassed = true;

@@ -5,7 +5,8 @@ const filesToSync = [
   'index.html',
   'master_data.js',
   'css/style.css',
-  'js/app.js'
+  'js/app.js',
+  'js/karaoke.js'
 ];
 
 const targets = [

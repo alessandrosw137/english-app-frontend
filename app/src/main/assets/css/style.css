@@ -381,19 +381,22 @@
 /* ========================================================
    REPRODUCTOR CON LETRAS ILUMINADAS (EFECTO SPOTIFY / APPLE MUSIC)
    ======================================================== */
+.lyric-stanza-card,
 .lyric-line {
   position: relative;
   display: block;
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 1.15rem;
+  color: rgba(255, 255, 255, 0.4) !important;
+  opacity: 0.4 !important;
+  font-size: 1.12rem;
   font-weight: 700;
-  line-height: 1.6;
-  padding: 0.65rem 0.95rem;
-  margin-bottom: 0.75rem;
-  border-radius: 0.85rem;
+  line-height: 1.8 !important;
+  padding: 0.85rem 1.15rem !important;
+  margin-bottom: 1.2rem !important;
+  border-radius: 1rem !important;
   transform: scale(1);
   transform-origin: left center;
-  transition: transform 0.35s cubic-bezier(0.2, 0, 0, 1),
+  transition: opacity 0.35s ease,
+              transform 0.35s cubic-bezier(0.2, 0, 0, 1),
               color 0.35s ease,
               text-shadow 0.35s ease,
               background-color 0.35s ease,
@@ -401,25 +404,53 @@
               box-shadow 0.35s ease;
   cursor: pointer;
   user-select: none;
-  border: 1px solid transparent;
-  background: rgba(30, 41, 59, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: rgba(15, 23, 42, 0.5) !important;
+  backdrop-filter: blur(8px);
 }
 
+.lyric-stanza-card:hover,
 .lyric-line:hover {
-  color: rgba(255, 255, 255, 0.75);
-  background: rgba(30, 41, 59, 0.5);
+  opacity: 0.75 !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+  background: rgba(30, 41, 59, 0.6) !important;
+  border-color: rgba(56, 189, 248, 0.35) !important;
 }
 
+.lyric-stanza-card.lyric-active,
 .lyric-line.lyric-active {
+  opacity: 1 !important;
   transform: scale(1.05) !important;
   color: #ffffff !important;
-  text-shadow: 0 0 14px rgba(56, 189, 248, 0.95),
-               0 0 28px rgba(99, 102, 241, 0.65),
-               0 0 42px rgba(6, 182, 212, 0.5) !important;
-  background: rgba(15, 23, 42, 0.85) !important;
-  border-color: rgba(56, 189, 248, 0.5) !important;
-  box-shadow: 0 0 25px rgba(6, 182, 212, 0.35), inset 0 0 15px rgba(56, 189, 248, 0.15) !important;
+  text-shadow: 0 0 16px rgba(56, 189, 248, 0.95),
+               0 0 32px rgba(99, 102, 241, 0.7),
+               0 0 48px rgba(6, 182, 212, 0.5) !important;
+  background: rgba(15, 23, 42, 0.95) !important;
+  border-color: rgba(56, 189, 248, 0.75) !important;
+  box-shadow: 0 0 30px rgba(6, 182, 212, 0.45), inset 0 0 15px rgba(56, 189, 248, 0.2) !important;
   z-index: 10;
+}
+
+/* Carrusel Horizontal de Canciones Sugeridas */
+.trending-carousel-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(6, 182, 212, 0.4) rgba(15, 23, 42, 0.6);
+}
+.trending-carousel-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+.trending-carousel-scroll::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 9999px;
+}
+.trending-carousel-scroll::-webkit-scrollbar-thumb {
+  background: rgba(6, 182, 212, 0.4);
+  border-radius: 9999px;
+}
+.trending-carousel-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(6, 182, 212, 0.8);
 }
 
 .lyric-word {

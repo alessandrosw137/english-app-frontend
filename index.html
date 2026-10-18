@@ -586,6 +586,7 @@
           <div id="musicTrackButtonsContainer" class="flex gap-2 overflow-x-auto py-1 flex-1"></div>
         </div>
       </div>
+      <div id="musicTrendingSection" class="w-full mt-4"></div>
     </div>
 
     <!-- SUB-VISTA B: Pantalla Dedicada Exclusiva del Reproductor (Sin Scroll) -->
@@ -598,12 +599,12 @@
           🎧 Estudio Musical (Canción Completa)
         </span>
       </div>
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-4 shadow-xl flex flex-col justify-between">
-          <div class="relative w-full rounded-2xl overflow-hidden aspect-video bg-black shadow-lg border border-slate-800/80">
+      <div id="musicStageColumnsGrid" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div id="musicPlayerLeftCol" class="bg-slate-900/90 border border-slate-800 rounded-3xl p-4 shadow-xl flex flex-col justify-between">
+          <div id="musicOriginalVideoWrapper" class="relative w-full rounded-2xl overflow-hidden aspect-video bg-black shadow-lg border border-slate-800/80">
             <iframe id="musicYouTubeIframe" class="w-full h-full" src="https://www.youtube-nocookie.com/embed/xwtdhWltSIg?enablejsapi=1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
           </div>
-          <div class="mt-4 flex flex-wrap items-center justify-between gap-2">
+          <div id="musicOriginalMetaWrapper" class="mt-4 flex flex-wrap items-center justify-between gap-2">
             <div class="min-w-0">
               <h3 id="activeMusicTitle" class="text-base font-extrabold text-white truncate">Losing My Religion</h3>
               <p id="activeMusicArtist" class="text-xs text-slate-400 truncate">R.E.M. &bull; Alternative Rock</p>
@@ -618,8 +619,9 @@
               </button>
             </div>
           </div>
+          <div id="musicHolographicStage" class="w-full flex-col gap-3 hidden" style="display: none;"></div>
         </div>
-        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-4 shadow-xl flex flex-col h-[440px]">
+        <div id="musicLyricsRightCol" class="bg-slate-900/90 border border-slate-800 rounded-3xl p-4 shadow-xl flex flex-col h-[520px]">
           <div class="flex flex-wrap items-center justify-between pb-3 border-b border-slate-800 gap-2">
             <div class="flex flex-wrap items-center gap-2">
               <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">

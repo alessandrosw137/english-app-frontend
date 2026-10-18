@@ -911,48 +911,65 @@
 
       if (badge) badge.textContent = `Estrofa 1 de ${lyrics.length}`;
 
-      container.innerHTML = lyrics.map((line, lIdx) => {
-        const lineTime = typeof line.time === 'number' ? line.time : 0;
+      container.innerHTML = lyrics.map((stanza, lIdx) => {
+        const lineTime = typeof stanza.time === 'number' ? stanza.time : 0;
         const nextTime = (lIdx < lyrics.length - 1 && typeof lyrics[lIdx + 1].time === 'number')
           ? lyrics[lIdx + 1].time
-          : lineTime + 5;
-        const lineDuration = Math.max(1, nextTime - lineTime);
+          : lineTime + 8;
+        const stanzaDuration = Math.max(2, nextTime - lineTime);
 
-        const rawWords = (line.text || '').split(/\s+/).filter(Boolean);
-        const wordsCount = rawWords.length || 1;
+        // Soporta array de líneas o texto multilínea dividido por saltos de línea
+        const verses = Array.isArray(stanza.lines) && stanza.lines.length > 0
+          ? stanza.lines
+          : (stanza.text || '').split(/\r?\n/).map(v => v.trim()).filter(Boolean);
 
-        const renderedWords = rawWords.map((w, wIdx) => {
-          const cleanWord = w.toLowerCase().replace(/[^a-z']/g, '');
-          const wStart = (lineTime + (wIdx / wordsCount) * lineDuration).toFixed(2);
-          const wEnd = (lineTime + ((wIdx + 1) / wordsCount) * lineDuration).toFixed(2);
-          const safeEscaped = escapeMusicHtml(w);
-          return `<span class="lyric-word cursor-pointer inline-block" data-w-start="${wStart}" data-w-end="${wEnd}" onclick="event.stopPropagation(); inspectLyricsWord('${cleanWord}', event)" title="Ver fonética y phrasal verbs">${safeEscaped} </span>`;
+        const totalVerses = verses.length || 1;
+        const verseDuration = stanzaDuration / totalVerses;
+
+        const renderedVerses = (verses.length > 0 ? verses : [stanza.text || '']).map((verseStr, vIdx) => {
+          const rawWords = verseStr.split(/\s+/).filter(Boolean);
+          const wordsCount = rawWords.length || 1;
+          const vStart = lineTime + (vIdx * verseDuration);
+
+          const renderedWords = rawWords.map((w, wIdx) => {
+            const cleanWord = w.toLowerCase().replace(/[^a-z']/g, '');
+            const wStart = (vStart + (wIdx / wordsCount) * verseDuration).toFixed(2);
+            const wEnd = (vStart + ((wIdx + 1) / wordsCount) * verseDuration).toFixed(2);
+            const safeEscaped = escapeMusicHtml(w);
+            return `<span class="lyric-word cursor-pointer inline-block" data-w-start="${wStart}" data-w-end="${wEnd}" onclick="event.stopPropagation(); inspectLyricsWord('${cleanWord}', event)" title="Ver fonética IPA">${safeEscaped} </span>`;
+          }).join('');
+
+          return `<div class="lyric-verse-line block leading-relaxed text-base font-semibold mb-1.5">${renderedWords}</div>`;
         }).join('');
 
-        const safeLineText = (line.text || '').replace(/'/g, "\\'");
+        const safeFullText = (verses.join(' ') || stanza.text || '').replace(/'/g, "\\'");
         const isCurrent = lIdx === currentKaraokeStanzaIndex;
-        const esText = line.es || '';
+        const esText = stanza.es || '';
 
         return `
-          <p id="karaokeStanza-${lIdx}" class="lyric-line music-stanza-row ${isCurrent ? 'lyric-active scale-[1.02] border-cyan-400 bg-cyan-950/80 shadow-[0_0_20px_rgba(6,182,212,0.45)] text-white' : ''}" data-start="${lineTime}" onclick="seekYouTubePlayer(${lineTime}, ${lIdx})">
-            <span class="flex items-center justify-between mb-1 pb-1 border-b border-slate-700/30">
-              <span class="text-[10px] font-bold text-cyan-400 uppercase tracking-wider bg-cyan-500/15 px-2 py-0.5 rounded-full border border-cyan-500/20">
-                Estrofa ${lIdx + 1} &bull; ${lineTime}s
+          <div id="karaokeStanza-${lIdx}"
+            class="lyric-line lyric-stanza-card music-stanza-row ${isCurrent ? 'lyric-active scale-[1.02] border-cyan-400 bg-cyan-950/80 text-white' : 'lyric-inactive'}"
+            data-start="${lineTime}"
+            onclick="seekYouTubePlayer(${lineTime}, ${lIdx})">
+            <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-slate-700/40">
+              <span class="text-[10px] font-extrabold text-cyan-400 uppercase tracking-widest bg-cyan-500/15 px-2.5 py-0.5 rounded-full border border-cyan-500/25">
+                ESTROFA ${lIdx + 1} &bull; ${lineTime}S
               </span>
-              <button type="button" onclick="event.stopPropagation(); speakText('${safeLineText}')" class="p-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white text-xs transition cursor-pointer" title="Escuchar estrofa nativa">
-                🔊
+              <button type="button" onclick="event.stopPropagation(); speakText('${safeFullText}')"
+                class="p-1 px-2.5 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-cyan-300 text-xs transition cursor-pointer flex items-center gap-1 border border-slate-700/60 shadow-sm active:scale-95" title="Pronunciación de la estrofa">
+                <span>🔊</span> <span class="text-[10px] font-bold">Pronunciar</span>
               </button>
-            </span>
-            <span class="lyric-words-flow block leading-relaxed text-base font-semibold">
-              ${renderedWords}
-            </span>
+            </div>
+            <div class="lyric-words-flow block space-y-1">
+              ${renderedVerses}
+            </div>
             ${esText ? `
-              <span class="music-stanza-translation text-xs text-cyan-300/90 font-medium italic mt-2 pt-1.5 border-t border-cyan-500/20 flex items-center gap-1.5 ${isGlobalSpanishTranslationActive ? '' : 'hidden'}">
-                <span class="text-[10px] uppercase font-bold text-cyan-400 tracking-wider not-italic bg-cyan-500/10 px-1.5 py-0.5 rounded border border-cyan-500/20">ES</span>
+              <div class="music-stanza-translation text-xs text-cyan-300/95 font-medium italic mt-2.5 pt-2 border-t border-cyan-500/20 flex items-center gap-1.5 ${isGlobalSpanishTranslationActive ? '' : 'hidden'}">
+                <span class="text-[10px] uppercase font-bold text-cyan-400 tracking-wider not-italic bg-cyan-500/15 px-1.5 py-0.5 rounded border border-cyan-500/25">ES</span>
                 <span>${escapeMusicHtml(esText)}</span>
-              </span>
+              </div>
             ` : ''}
-          </p>
+          </div>
         `;
       }).join('');
     }
@@ -1005,7 +1022,10 @@
         if (isCurrent) {
           if (!lineEl.classList.contains('lyric-active')) {
             lineEl.classList.add('lyric-active', 'scale-[1.02]', 'border-cyan-400', 'bg-cyan-950/80', 'text-white');
-            lineEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            lineEl.classList.remove('lyric-inactive');
+            if (typeof lineEl.scrollIntoView === 'function') {
+              lineEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
           }
 
           // Resaltado de palabra por palabra con background-clip: text de izquierda a derecha
@@ -1039,6 +1059,7 @@
         } else {
           if (lineEl.classList.contains('lyric-active')) {
             lineEl.classList.remove('lyric-active', 'scale-[1.02]', 'border-cyan-400', 'bg-cyan-950/80', 'text-white');
+            lineEl.classList.add('lyric-inactive');
             const wordSpans = lineEl.querySelectorAll('.lyric-word');
             wordSpans.forEach(wEl => {
               wEl.classList.remove('word-sung', 'word-active');
@@ -1052,6 +1073,8 @@
                 wEl.style.color = 'rgba(255, 255, 255, 0.4)';
               }
             });
+          } else if (!lineEl.classList.contains('lyric-inactive')) {
+            lineEl.classList.add('lyric-inactive');
           }
         }
       });
