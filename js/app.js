@@ -740,12 +740,7 @@
       const authUser = getStoredUser();
       const baseUsers = [
         {
-          id: 1,
-          username: 'Wilberth Alessandro Molina Cutz',
-          email: 'wilberth.admin@englishapp.com',
-          role: 'admin',
-          rank: 'Diamante',
-          exp: 1540,
+          id: 1, username: 'Wilberth Alessandro Molina Cutz', email: 'wilberth.admin@englishapp.com', role: 'admin', rank: 'Bronce', exp: 0,
           streak_days: 14,
           created_at: '2026-10-15T08:00:00.000Z'
         },
@@ -803,8 +798,7 @@
           username: authUser.username,
           email: authUser.email || 'admin.sesion@englishapp.com',
           role: authUser.role || 'admin',
-          rank: authUser.rank || 'Diamante',
-          exp: authUser.exp || 1250,
+          rank: authUser.rank || 'Bronce', exp: authUser.exp || 0,
           streak_days: 5,
           created_at: new Date().toISOString()
         });
@@ -1385,6 +1379,19 @@
           }
         }
       });
+
+            const mainHeader = document.getElementById('mainHeader') || document.querySelector('header');
+      if (targetId === 'view-auth') {
+        if (mainHeader) {
+          mainHeader.style.setProperty('display', 'none', 'important');
+          mainHeader.classList.add('auth-hidden');
+        }
+      } else {
+        if (mainHeader) {
+          mainHeader.style.setProperty('display', 'flex', 'important');
+          mainHeader.classList.remove('auth-hidden');
+        }
+      }
 
       if (targetId !== 'view-auth') {
         const loginModal = document.getElementById('login-modal') || document.querySelector('.login-container');
@@ -3085,17 +3092,26 @@ window.logout = function() {
     let currentMissionScore = 0;
     let currentMissionQuestions = [];
 
-    const MODULE_TITLES = {
-      everyday_actions: 'Módulo 01: Foundations & Daily Routine (A1)',
-      connectors: 'Módulo 02: Travel, Airport & Directions (A1-A2)',
-      social_dating: 'Módulo 03: Food, Dining & Social Life (A2)',
-      professional_english: 'Módulo 04: Workplace & Professional Tech (B1)',
-      phrasal_verbs: 'Módulo 05: Socializing & Idiomatic Slang (B1)',
-      compound_words: 'Módulo 06: Debate, Opinions & Current Events (B2)',
-      affixes_morphology: 'Módulo 07: Science, Nature & Environment (B2)',
-      grammar_path: 'Módulo 08: Literature, Storytelling & Cinema (C1)',
-      toefl_simulator: 'Módulo 09: Academic Research & TOEFL Prep (C1)',
-      internet_slang: 'Módulo 10: Master Fluency & Accent Reduction (C2)'
+        const MODULE_TITLES = {
+      phrasal_verbs: 'Módulo 01: 100 Essential Phrasal Verbs',
+      difficult_verbs: 'Módulo 02: 100 Difficult & Common Verbs',
+      power_adjectives: 'Módulo 03: 100 Power Adjectives & Descriptions',
+      native_idioms: 'Módulo 04: 100 Native Idioms & Slang Expressions',
+      connectors_linking: 'Módulo 05: 100 Connectors & Linking Words',
+      false_friends: 'Módulo 06: 100 False Friends & Confusing Words',
+      collocations: 'Módulo 07: 100 Prepositional Phrases & Collocations',
+      business_tech: 'Módulo 08: 100 Business, Tech & Engineering Terms',
+      travel_survival: 'Módulo 09: 100 Travel, Airport & Daily Survival',
+      toefl_academic: 'Módulo 10: 100 Academic & High-Score TOEFL Words',
+      everyday_actions: 'Módulo 01: 100 Essential Phrasal Verbs',
+      connectors: 'Módulo 05: 100 Connectors & Linking Words',
+      social_dating: 'Módulo 03: 100 Power Adjectives & Descriptions',
+      professional_english: 'Módulo 08: 100 Business, Tech & Engineering Terms',
+      compound_words: 'Módulo 06: 100 False Friends & Confusing Words',
+      affixes_morphology: 'Módulo 07: 100 Prepositional Phrases & Collocations',
+      grammar_path: 'Módulo 02: 100 Difficult & Common Verbs',
+      toefl_simulator: 'Módulo 10: 100 Academic & High-Score TOEFL Words',
+      internet_slang: 'Módulo 04: 100 Native Idioms & Slang Expressions'
     };
 
     function isModuleLevelCompleted(modKey, level = 1) {
@@ -3355,11 +3371,17 @@ window.logout = function() {
       filterGlossaryTerms(searchInput ? searchInput.value : '');
     };
 
-    function getCategoryBadgeColors(cat) {
+        function getCategoryBadgeColors(cat) {
       if (cat === 'Phrasal Verb') return 'bg-sky-500/20 text-sky-300 border-sky-500/40';
       if (cat === 'Verbo') return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
       if (cat === 'Idiom') return 'bg-purple-500/20 text-purple-300 border-purple-500/40';
       if (cat === 'Adjetivo') return 'bg-pink-500/20 text-pink-300 border-pink-500/40';
+      if (cat === 'Conector') return 'bg-amber-500/20 text-amber-300 border-amber-500/40';
+      if (cat === 'Falso Amigo') return 'bg-rose-500/20 text-rose-300 border-rose-500/40';
+      if (cat === 'Collocation') return 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40';
+      if (cat === 'Negocios & Tech') return 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40';
+      if (cat === 'Viajes & Supervivencia') return 'bg-teal-500/20 text-teal-300 border-teal-500/40';
+      if (cat === 'Académico TOEFL') return 'bg-violet-500/20 text-violet-300 border-violet-500/40';
       return 'bg-amber-500/20 text-amber-300 border-amber-500/40';
     }
 
@@ -6919,14 +6941,13 @@ window.logout = function() {
         });
       }
 
-      syncSettingsUiFromStorage();
+            syncSettingsUiFromStorage();
       const stored = getStoredUser();
       if (stored && stored.username) {
         updateUserExpDisplay();
         goToHomePortals();
       } else {
-        showView('view-auth');
-        updateFloatingWidgetsVisibility();
+        window.navigateTo('login');
       }
     });
   
@@ -6938,7 +6959,7 @@ window.logout = function() {
       if (e && typeof e.preventDefault === 'function') e.preventDefault();
       console.log("Accediendo como Invitado...");
       try {
-        localStorage.setItem('mastereng_user', JSON.stringify({ username: 'Invitado', role: 'guest' }));
+        localStorage.setItem('mastereng_user', JSON.stringify({ username: 'Invitado', role: 'guest', exp: 0, rank: 'Bronce' }));
         localStorage.setItem('user_role', 'guest');
         localStorage.setItem('guest_user', JSON.stringify({ username: 'Invitado', role: 'guest' }));
         localStorage.setItem('english_app_user_session', JSON.stringify({ username: 'Invitado', role: 'guest', exp: 0, rank: 'Bronce' }));
@@ -6997,15 +7018,15 @@ window.logout = function() {
         ''
       ).trim();
 
-      if ((userInput.toLowerCase() === 'admin' || userInput.toLowerCase() === 'admin@antigravity.com') && passInput === 'Admin2026!Master') {
-        const adminData = { username: 'admin', role: 'admin', exp: 1250, rank: 'Diamante', token: 'MasterENG-Admin-OfflineMasterToken-2026' };
+            if ((userInput.toLowerCase() === 'admin' || userInput.toLowerCase() === 'admin@antigravity.com') && passInput === 'Admin2026!Master') {
+        const existingStored = getStoredUser();
+        const adminExp = (existingStored && existingStored.username === 'admin' && typeof existingStored.exp === 'number') ? existingStored.exp : 0; // Progreso 100% real desde 0 (reemplaza exp: 1250 previo)
+        const adminRank = calculateRankInfo(adminExp).rank;
+        const adminData = { username: 'admin', role: 'admin', exp: adminExp, rank: adminRank, token: 'MasterENG-Admin-OfflineMasterToken-2026' };
         try {
-          localStorage.setItem('mastereng_user', JSON.stringify({ username: 'admin', role: 'admin', exp: 1250, rank: 'Diamante' }));
-          localStorage.setItem('user_role', 'admin');
-          localStorage.setItem('english_app_user_session', JSON.stringify(adminData));
-        } catch (err) { };
-        try {
-          localStorage.setItem('mastereng_user', JSON.stringify({ username: 'admin', role: 'admin' }));
+          const adminObj = { username: 'admin', role: 'admin', exp: adminExp, rank: adminRank };
+          saveStoredAuthUser(adminObj);
+          localStorage.setItem('mastereng_user', JSON.stringify(adminObj));
           localStorage.setItem('user_role', 'admin');
           localStorage.setItem('english_app_user_session', JSON.stringify(adminData));
         } catch (err) { }
@@ -7092,7 +7113,7 @@ window.logout = function() {
       return false;
     };
 
-    window.openGoogleAccountSelector = function(e) {
+        window.openGoogleAccountSelector = function(e) {
       if (e && typeof e.preventDefault === 'function') e.preventDefault();
       if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
 
@@ -7109,29 +7130,14 @@ window.logout = function() {
         savedCustomAccounts = JSON.parse(localStorage.getItem('mastereng_google_accounts') || '[]');
       } catch (err) {}
 
-      const defaultAccounts = [
-        {
-          name: 'Wilberth Alessandro Molina Cutz',
-          email: 'wilberth.molina@gmail.com',
-          role: 'admin',
-          badge: 'Administrador',
-          avatarBg: 'from-amber-500 to-purple-600'
-        },
-        {
-          name: 'Estudiante MasterENG',
-          email: 'estudiante.mastereng@gmail.com',
-          role: 'user',
-          badge: 'Cuenta Académica',
-          avatarBg: 'from-sky-500 to-indigo-600'
-        },
-        ...savedCustomAccounts.map(acc => ({
-          name: acc.name || acc.email.split('@')[0],
-          email: acc.email,
-          role: acc.role || 'user',
-          badge: 'Cuenta de Google',
-          avatarBg: 'from-emerald-500 to-teal-600'
-        }))
-      ];
+      // Privacidad absoluta: Cero tarjetas hardcodeadas de Administrador o correos privados en UI
+      const defaultAccounts = savedCustomAccounts.map(acc => ({
+        name: acc.name || acc.email.split('@')[0],
+        email: acc.email,
+        role: 'user',
+        badge: 'Cuenta de Google',
+        avatarBg: 'from-sky-500 to-indigo-600'
+      }));
 
       window._googlePickerAccounts = defaultAccounts;
 
@@ -7149,39 +7155,42 @@ window.logout = function() {
               </div>
               <div>
                 <h3 class="text-base font-black text-white">Iniciar sesión con Google</h3>
-                <p class="text-xs text-slate-400">Elige una cuenta para continuar a <span class="text-sky-400 font-bold">MasterENG</span></p>
+                <p class="text-xs text-slate-400">Acceso seguro y privado para estudiantes</p>
               </div>
             </div>
             <button type="button" onclick="window.closeAllModals()" class="close-btn w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer">&times;</button>
           </div>
 
-          <div class="py-4 space-y-2.5 max-h-60 overflow-y-auto">
-            ${defaultAccounts.map((acc, idx) => `
-              <button type="button" onclick="window.selectGooglePickerAccount(${idx})"
-                class="w-full p-3 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/70 hover:border-sky-500/60 transition flex items-center justify-between gap-3 text-left cursor-pointer group">
-                <div class="flex items-center gap-3 min-w-0">
-                  <div class="w-10 h-10 rounded-full bg-gradient-to-tr ${acc.avatarBg} flex items-center justify-center text-white font-black text-sm shrink-0 shadow">
-                    ${acc.name.charAt(0).toUpperCase()}
+          ${defaultAccounts.length > 0 ? `
+            <div class="py-3 space-y-2 max-h-48 overflow-y-auto">
+              <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Cuentas recientes:</p>
+              ${defaultAccounts.map((acc, idx) => `
+                <button type="button" onclick="window.selectGooglePickerAccount(${idx})"
+                  class="w-full p-2.5 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/70 hover:border-sky-500/60 transition flex items-center justify-between gap-3 text-left cursor-pointer group">
+                  <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-tr ${acc.avatarBg} flex items-center justify-center text-white font-bold text-xs shrink-0 shadow">
+                      ${acc.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div class="min-w-0">
+                      <p class="text-xs font-bold text-white truncate group-hover:text-sky-300 transition">${acc.name}</p>
+                      <p class="text-[10px] text-slate-400 font-mono truncate">${acc.email}</p>
+                    </div>
                   </div>
-                  <div class="min-w-0">
-                    <p class="text-xs sm:text-sm font-extrabold text-white truncate group-hover:text-sky-300 transition">${acc.name}</p>
-                    <p class="text-[11px] text-slate-400 font-mono truncate">${acc.email}</p>
-                  </div>
-                </div>
-                <span class="px-2 py-0.5 rounded-full bg-slate-900 text-[10px] font-bold text-sky-300 border border-sky-500/30 shrink-0">${acc.badge}</span>
-              </button>
-            `).join('')}
-          </div>
+                  <span class="px-2 py-0.5 rounded-full bg-slate-900 text-[9px] font-bold text-sky-300 border border-sky-500/30 shrink-0">Seleccionar</span>
+                </button>
+              `).join('')}
+            </div>
+          ` : ''}
 
-          <div class="pt-3 border-t border-slate-800 space-y-3">
-            <p class="text-[11px] font-bold text-slate-300 uppercase tracking-wider">➕ O ingresa cualquier correo de Google (@gmail.com):</p>
+          <div class="pt-3 ${defaultAccounts.length > 0 ? 'border-t border-slate-800' : ''} space-y-3">
+            <p class="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Ingresa tu cuenta de Google:</p>
             <div class="space-y-2">
-              <input type="text" id="googleCustomNameInput" placeholder="Tu nombre completo (ej. Carlos Méndez)" class="w-full px-3.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500">
-              <input type="email" id="googleCustomEmailInput" placeholder="tucorreo@gmail.com" onkeydown="if(event.key==='Enter') window.submitCustomGoogleAccount()" class="w-full px-3.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500">
+              <input type="text" id="googleCustomNameInput" placeholder="Tu nombre o alias" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500">
+              <input type="email" id="googleCustomEmailInput" placeholder="tucorreo@gmail.com" onkeydown="if(event.key==='Enter') window.submitCustomGoogleAccount()" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500">
               <p id="googlePickerErrorMsg" class="text-[11px] text-rose-400 font-semibold hidden"></p>
               <button type="button" onclick="window.submitCustomGoogleAccount()"
                 class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-bold text-xs transition shadow-lg shadow-sky-500/25 cursor-pointer flex items-center justify-center gap-2">
-                <span>Continuar con esta cuenta de Google</span>
+                <span>Continuar a MasterENG</span>
               </button>
             </div>
           </div>
@@ -7220,32 +7229,35 @@ window.logout = function() {
 
       const finalEmail = rawEmail.includes('@') ? rawEmail : (rawEmail + '@gmail.com');
       const finalName = rawName || finalEmail.split('@')[0];
-      const role = (finalName.toLowerCase().includes('wilberth') || finalEmail.startsWith('admin@')) ? 'admin' : 'user';
 
       try {
         const saved = JSON.parse(localStorage.getItem('mastereng_google_accounts') || '[]');
         if (!saved.some(a => a.email === finalEmail)) {
-          saved.push({ name: finalName, email: finalEmail, role });
+          saved.push({ name: finalName, email: finalEmail, role: 'user' });
           localStorage.setItem('mastereng_google_accounts', JSON.stringify(saved));
         }
       } catch (e) {}
 
-      window.completeGoogleAccountSignIn(finalName, finalEmail, role);
+      window.completeGoogleAccountSignIn(finalName, finalEmail, 'user');
     };
 
     window.completeGoogleAccountSignIn = function(nameOrEmail, emailOrName, role = 'user') {
       const isFirstEmail = String(nameOrEmail || '').includes('@') && !String(emailOrName || '').includes('@');
       const finalEmail = isFirstEmail ? String(nameOrEmail) : String(emailOrName || '');
       const finalName = isFirstEmail ? String(emailOrName || finalEmail.split('@')[0]) : String(nameOrEmail || finalEmail.split('@')[0]);
-      const isAdmin = role === 'admin' || (finalName && finalName.toLowerCase().includes('wilberth')) || finalEmail.startsWith('admin@');
+      
+      const existingStored = typeof getStoredUser === 'function' ? getStoredUser() : null;
+      const realExp = (existingStored && existingStored.email === finalEmail && typeof existingStored.exp === 'number') ? existingStored.exp : 0;
+      const rankInfo = typeof calculateRankInfo === 'function' ? calculateRankInfo(realExp) : { rank: 'Bronce' };
+
       const googleUser = {
         username: finalName,
         email: finalEmail,
         picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(finalName)}&background=0284c7&color=fff&bold=true`,
-        role: isAdmin ? 'admin' : 'user',
+        role: 'user', // Estrictamente usuario estudiante para Google Auth
         provider: 'google',
-        exp: isAdmin ? 1540 : 250,
-        rank: isAdmin ? 'Diamante' : 'Bronce'
+        exp: realExp,
+        rank: rankInfo.rank
       };
 
       try {
@@ -7420,17 +7432,17 @@ window.logout = function() {
     /* ========================================================
        RENDERIZADO DINÁMICO DE LOS 10 MÓDULOS DE LEARNING PATH
        ======================================================== */
-    window.OFFICIAL_LEARNING_MODULES = [
-      { id: 1, title: "Foundations & Daily Routine", level: "A1", exp: 20, words: 45, key: "everyday_actions", progress: 65 },
-      { id: 2, title: "Travel, Airport & Directions", level: "A1-A2", exp: 20, words: 50, key: "connectors", progress: 40 },
-      { id: 3, title: "Food, Dining & Social Life", level: "A2", exp: 20, words: 40, key: "social_dating", progress: 25 },
-      { id: 4, title: "Workplace & Professional Tech", level: "B1", exp: 25, words: 60, key: "professional_english", progress: 10 },
-      { id: 5, title: "Socializing & Idiomatic Slang", level: "B1", exp: 25, words: 55, key: "phrasal_verbs", progress: 0 },
-      { id: 6, title: "Debate, Opinions & Current Events", level: "B2", exp: 30, words: 50, key: "compound_words", progress: 0 },
-      { id: 7, title: "Science, Nature & Environment", level: "B2", exp: 30, words: 50, key: "affixes_morphology", progress: 0 },
-      { id: 8, title: "Literature, Storytelling & Cinema", level: "C1", exp: 35, words: 70, key: "grammar_path", progress: 0 },
-      { id: 9, title: "Academic Research & TOEFL Prep", level: "C1", exp: 40, words: 85, key: "toefl_simulator", progress: 0 },
-      { id: 10, title: "Fluency & Accent Reduction", altTitle: "Master Fluency & Accent Reduction", level: "C2", exp: 50, words: 100, key: "internet_slang", progress: 0 }
+        window.OFFICIAL_LEARNING_MODULES = [
+      { id: 1, title: "100 Essential Phrasal Verbs", altTitle: "Foundations & Daily Routine", level: "A1-B1", exp: 20, words: 100, key: "phrasal_verbs", pureCategory: "Phrasal Verb", progress: 0 },
+      { id: 2, title: "100 Difficult & Common Verbs", altTitle: "Difficult & Common Verbs", level: "A2-B1", exp: 20, words: 100, key: "difficult_verbs", pureCategory: "Verbo", progress: 0 },
+      { id: 3, title: "100 Power Adjectives & Descriptions", altTitle: "Power Adjectives & Descriptions", level: "B1-B2", exp: 20, words: 100, key: "power_adjectives", pureCategory: "Adjetivo", progress: 0 },
+      { id: 4, title: "100 Native Idioms & Slang Expressions", altTitle: "Native Idioms & Slang Expressions", level: "B2", exp: 25, words: 100, key: "native_idioms", pureCategory: "Idiom", progress: 0 },
+      { id: 5, title: "100 Connectors & Linking Words", altTitle: "Connectors & Linking Words", level: "B2-C1", exp: 25, words: 100, key: "connectors_linking", pureCategory: "Conector", progress: 0 },
+      { id: 6, title: "100 False Friends & Confusing Words", altTitle: "False Friends & Confusing Words", level: "B2", exp: 30, words: 100, key: "false_friends", pureCategory: "Falso Amigo", progress: 0 },
+      { id: 7, title: "100 Prepositional Phrases & Collocations", altTitle: "Prepositional Phrases & Collocations", level: "B2-C1", exp: 30, words: 100, key: "collocations", pureCategory: "Collocation", progress: 0 },
+      { id: 8, title: "100 Business, Tech & Engineering Terms", altTitle: "Business, Tech & Engineering Terms", level: "C1", exp: 35, words: 100, key: "business_tech", pureCategory: "Negocios & Tech", progress: 0 },
+      { id: 9, title: "100 Travel, Airport & Daily Survival", altTitle: "Travel, Airport & Daily Survival", level: "A2-B1", exp: 40, words: 100, key: "travel_survival", pureCategory: "Viajes & Supervivencia", progress: 0 },
+      { id: 10, title: "100 Academic & High-Score TOEFL Words", altTitle: "Master Fluency & Accent Reduction", level: "C1-C2", exp: 50, words: 100, key: "toefl_academic", pureCategory: "Académico TOEFL", progress: 0 }
     ];
 
     window.openLearningPath = function() {
@@ -7476,19 +7488,29 @@ window.logout = function() {
     };
     function openModuleGlossary(modId) { return window.openModuleGlossary(modId); }
 
-    window.renderOfficialLearningModules = function() {
+        window.renderOfficialLearningModules = function() {
       const g1 = document.getElementById('learning-modules-grid');
       const g2 = document.getElementById('learningModulesContainer');
       const g3 = document.querySelector('.modules-grid');
       const targets = [g1, g2, g3].filter(Boolean);
       if (!targets.length) return;
 
+      const completedObj = (function() {
+        try {
+          return JSON.parse(localStorage.getItem('user_completed_modules') || '{}');
+        } catch (e) {
+          return {};
+        }
+      })();
+
       const htmlContent = window.OFFICIAL_LEARNING_MODULES.map(mod => {
         const modData = (window.MASTER_MODULES_DATA && window.MASTER_MODULES_DATA[mod.key]) 
           ? window.MASTER_MODULES_DATA[mod.key] 
           : { items: [] };
         const sampleItems = (modData.items || []).slice(0, 3);
-        const progressPercent = typeof mod.progress === 'number' ? mod.progress : 0;
+        const isCompleted = Boolean(completedObj[`${mod.key}_lvl1`] || completedObj[`${mod.id}_lvl1`]);
+        const progressPercent = isCompleted ? 100 : (typeof mod.progress === 'number' && mod.progress > 0 ? mod.progress : 0);
+        const masteredText = isCompleted ? `${mod.words}/${mod.words} palabras dominadas` : `0/${mod.words} palabras dominadas`;
 
         return `
         <div class="module-card p-5 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-amber-500/50 shadow-xl flex flex-col justify-between transition hover:-translate-y-1 group">
@@ -7502,9 +7524,9 @@ window.logout = function() {
             <h3 class="text-base font-extrabold text-white mb-1 group-hover:text-amber-200 transition">
               ${mod.id}. ${mod.title}
             </h3>
-            <p class="text-xs text-slate-400 mb-2">${mod.words} palabras clave y ejercicios interactivos</p>
+            <p class="text-xs text-slate-400 mb-2">${masteredText} &bull; ${mod.pureCategory || 'Especializado'}</p>
 
-            <!-- Barra de Progreso -->
+            <!-- Barra de Progreso Dinámica -->
             <div class="mb-3">
               <div class="flex items-center justify-between text-[10px] font-semibold text-slate-400 mb-1">
                 <span>Progreso</span>

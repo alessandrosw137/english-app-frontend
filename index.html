@@ -83,7 +83,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body class="bg-[#0f172a] text-slate-100 min-h-screen flex flex-col">
-  <header class="navbar top-bar fixed top-0 left-0 right-0 z-50 bg-[#0f172a]/95 backdrop-blur-md border-b border-slate-800/80 h-14 flex items-center justify-between px-3 sm:px-6">
+  <header id="mainHeader" class="navbar top-bar fixed top-0 left-0 right-0 z-50 bg-[#0f172a]/95 backdrop-blur-md border-b border-slate-800/80 h-14 flex items-center justify-between px-3 sm:px-6">
     <div class="flex items-center gap-3">
       <div onclick="handleLogoClick()" class="flex items-center gap-2.5 cursor-pointer group">
         <div class="w-9 h-9 rounded-xl overflow-hidden border border-sky-400/60 shadow-lg shadow-sky-500/30 group-hover:scale-105 transition bg-slate-900">
@@ -410,93 +410,93 @@
     </div>
     <div id="learning-modules-grid" class="modules-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; padding: 2rem 1rem; max-width: 1200px; margin: 0 auto; width: 100%; box-sizing: border-box;">
       <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
-        <span style="color: #f5a623; font-weight: bold; font-size: 0.8rem;">MÓDULO 01 • NIVEL A1</span>
-        <h3 style="color: #fff; margin: 0.5rem 0;">Foundations & Daily Routine</h3>
-        <p style="color: #a0aec0; font-size: 0.85rem;">Presente simple, rutinas diarias y expresiones esenciales.</p>
+        <span style="color: #f5a623; font-weight: bold; font-size: 0.8rem;">MÓDULO 01 • NIVEL A1-B1</span>
+        <h3 style="color: #fff; margin: 0.5rem 0;">100 Essential Phrasal Verbs</h3>
+        <p style="color: #a0aec0; font-size: 0.85rem;">100 verbos compuestos nativos estructurados con significado y pronunciación.</p>
         <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
           <button type="button" class="btn-mission" data-module="1" style="flex: 1; padding: 10px; border-radius: 8px; background: #3182ce; color: #fff; border: none; cursor: pointer; font-weight: bold;" onclick="window.openModuleMission(1)">🎯 Misión</button>
-          <button type="button" class="btn-glossary" data-module="1" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary('everyday_actions')">📖 Glosario</button>
+          <button type="button" class="btn-glossary" data-module="1" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary(1)">📖 Glosario</button>
         </div>
       </div>
       <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
-        <span style="color: #f5a623; font-weight: bold; font-size: 0.8rem;">MÓDULO 02 • NIVEL A1-A2</span>
-        <h3 style="color: #fff; margin: 0.5rem 0;">Travel, Airport & Directions</h3>
-        <p style="color: #a0aec0; font-size: 0.85rem;">Vocabulario de aeropuertos, traslados y direcciones.</p>
+        <span style="color: #f5a623; font-weight: bold; font-size: 0.8rem;">MÓDULO 02 • NIVEL A2-B1</span>
+        <h3 style="color: #fff; margin: 0.5rem 0;">100 Difficult & Common Verbs</h3>
+        <p style="color: #a0aec0; font-size: 0.85rem;">100 verbos clave, irregulares y de alta frecuencia para comunicación fluida.</p>
         <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
           <button type="button" class="btn-mission" data-module="2" style="flex: 1; padding: 10px; border-radius: 8px; background: #3182ce; color: #fff; border: none; cursor: pointer; font-weight: bold;" onclick="window.openModuleMission(2)">🎯 Misión</button>
-          <button type="button" class="btn-glossary" data-module="2" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary('connectors')">📖 Glosario</button>
+          <button type="button" class="btn-glossary" data-module="2" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary(2)">📖 Glosario</button>
         </div>
       </div>
       <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
-        <span style="color: #f5a623; font-weight: bold; font-size: 0.8rem;">MÓDULO 03 • NIVEL A2</span>
-        <h3 style="color: #fff; margin: 0.5rem 0;">Food, Dining & Social Life</h3>
-        <p style="color: #a0aec0; font-size: 0.85rem;">Restaurantes, comidas, compras y vida social cotidiana.</p>
+        <span style="color: #f5a623; font-weight: bold; font-size: 0.8rem;">MÓDULO 03 • NIVEL B1-B2</span>
+        <h3 style="color: #fff; margin: 0.5rem 0;">100 Power Adjectives & Descriptions</h3>
+        <p style="color: #a0aec0; font-size: 0.85rem;">100 adjetivos de alto impacto para descripciones precisas y elocuentes.</p>
         <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
           <button type="button" class="btn-mission" data-module="3" style="flex: 1; padding: 10px; border-radius: 8px; background: #3182ce; color: #fff; border: none; cursor: pointer; font-weight: bold;" onclick="window.openModuleMission(3)">🎯 Misión</button>
-          <button type="button" class="btn-glossary" data-module="3" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary('social_dating')">📖 Glosario</button>
+          <button type="button" class="btn-glossary" data-module="3" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary(3)">📖 Glosario</button>
         </div>
       </div>
       <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
-        <span style="color: #f5a623; font-weight: bold; font-size: 0.8rem;">MÓDULO 04 • NIVEL B1</span>
-        <h3 style="color: #fff; margin: 0.5rem 0;">Workplace & Professional Tech</h3>
-        <p style="color: #a0aec0; font-size: 0.85rem;">Entorno laboral, correos corporativos y tecnología.</p>
+        <span style="color: #f5a623; font-weight: bold; font-size: 0.8rem;">MÓDULO 04 • NIVEL B2</span>
+        <h3 style="color: #fff; margin: 0.5rem 0;">100 Native Idioms & Slang Expressions</h3>
+        <p style="color: #a0aec0; font-size: 0.85rem;">100 modismos, expresiones idiomáticas y expresiones coloquiales auténticas.</p>
         <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
           <button type="button" class="btn-mission" data-module="4" style="flex: 1; padding: 10px; border-radius: 8px; background: #3182ce; color: #fff; border: none; cursor: pointer; font-weight: bold;" onclick="window.openModuleMission(4)">🎯 Misión</button>
-          <button type="button" class="btn-glossary" data-module="4" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary('professional_english')">📖 Glosario</button>
+          <button type="button" class="btn-glossary" data-module="4" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary(4)">📖 Glosario</button>
         </div>
       </div>
       <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
-        <span style="color: #f5a623; font-weight: bold; font-size: 0.8rem;">MÓDULO 05 • NIVEL B1</span>
-        <h3 style="color: #fff; margin: 0.5rem 0;">Socializing & Idiomatic Slang</h3>
-        <p style="color: #a0aec0; font-size: 0.85rem;">Modismos coloquiales, phrasal verbs y jerga cotidiana.</p>
+        <span style="color: #f5a623; font-weight: bold; font-size: 0.8rem;">MÓDULO 05 • NIVEL B2-C1</span>
+        <h3 style="color: #fff; margin: 0.5rem 0;">100 Connectors & Linking Words</h3>
+        <p style="color: #a0aec0; font-size: 0.85rem;">100 conectores discursivos para estructurar argumentos, ensayos y debates.</p>
         <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
           <button type="button" class="btn-mission" data-module="5" style="flex: 1; padding: 10px; border-radius: 8px; background: #3182ce; color: #fff; border: none; cursor: pointer; font-weight: bold;" onclick="window.openModuleMission(5)">🎯 Misión</button>
-          <button type="button" class="btn-glossary" data-module="5" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary('phrasal_verbs')">📖 Glosario</button>
+          <button type="button" class="btn-glossary" data-module="5" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary(5)">📖 Glosario</button>
         </div>
       </div>
       <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
         <span style="color: #f5a623; font-weight: bold; font-size: 0.8rem;">MÓDULO 06 • NIVEL B2</span>
-        <h3 style="color: #fff; margin: 0.5rem 0;">Debate, Opinions & News</h3>
-        <p style="color: #a0aec0; font-size: 0.85rem;">Argumentación, noticias mundiales y opiniones formales.</p>
+        <h3 style="color: #fff; margin: 0.5rem 0;">100 False Friends & Confusing Words</h3>
+        <p style="color: #a0aec0; font-size: 0.85rem;">100 falsos amigos y parejas confusas entre inglés y español explicadas.</p>
         <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
           <button type="button" class="btn-mission" data-module="6" style="flex: 1; padding: 10px; border-radius: 8px; background: #3182ce; color: #fff; border: none; cursor: pointer; font-weight: bold;" onclick="window.openModuleMission(6)">🎯 Misión</button>
-          <button type="button" class="btn-glossary" data-module="6" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary('compound_words')">📖 Glosario</button>
+          <button type="button" class="btn-glossary" data-module="6" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary(6)">📖 Glosario</button>
         </div>
       </div>
       <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
-        <span style="color: #f5a623; font-weight: bold; font-size: 0.8rem;">MÓDULO 07 • NIVEL B2</span>
-        <h3 style="color: #fff; margin: 0.5rem 0;">Science, Nature & Environment</h3>
-        <p style="color: #a0aec0; font-size: 0.85rem;">Fenómenos naturales, sostenibilidad y avances científicos.</p>
+        <span style="color: #f5a623; font-weight: bold; font-size: 0.8rem;">MÓDULO 07 • NIVEL B2-C1</span>
+        <h3 style="color: #fff; margin: 0.5rem 0;">100 Prepositional Phrases & Collocations</h3>
+        <p style="color: #a0aec0; font-size: 0.85rem;">100 frases preposicionales y colocaciones fijas usadas por nativos.</p>
         <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
           <button type="button" class="btn-mission" data-module="7" style="flex: 1; padding: 10px; border-radius: 8px; background: #3182ce; color: #fff; border: none; cursor: pointer; font-weight: bold;" onclick="window.openModuleMission(7)">🎯 Misión</button>
-          <button type="button" class="btn-glossary" data-module="7" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary('affixes_morphology')">📖 Glosario</button>
+          <button type="button" class="btn-glossary" data-module="7" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary(7)">📖 Glosario</button>
         </div>
       </div>
       <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
         <span style="color: #f5a623; font-weight: bold; font-size: 0.8rem;">MÓDULO 08 • NIVEL C1</span>
-        <h3 style="color: #fff; margin: 0.5rem 0;">Literature, Storytelling & Cinema</h3>
-        <p style="color: #a0aec0; font-size: 0.85rem;">Cine, análisis narrativo, literatura y metáforas complejas.</p>
+        <h3 style="color: #fff; margin: 0.5rem 0;">100 Business, Tech & Engineering Terms</h3>
+        <p style="color: #a0aec0; font-size: 0.85rem;">100 términos técnicos, de ingeniería de software y negocios globales.</p>
         <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
           <button type="button" class="btn-mission" data-module="8" style="flex: 1; padding: 10px; border-radius: 8px; background: #3182ce; color: #fff; border: none; cursor: pointer; font-weight: bold;" onclick="window.openModuleMission(8)">🎯 Misión</button>
-          <button type="button" class="btn-glossary" data-module="8" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary('grammar_path')">📖 Glosario</button>
+          <button type="button" class="btn-glossary" data-module="8" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary(8)">📖 Glosario</button>
         </div>
       </div>
       <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
-        <span style="color: #f5a623; font-weight: bold; font-size: 0.8rem;">MÓDULO 09 • NIVEL C1</span>
-        <h3 style="color: #fff; margin: 0.5rem 0;">Academic Research & TOEFL Prep</h3>
-        <p style="color: #a0aec0; font-size: 0.85rem;">Ensayos académicos, lecturas densas y preparación TOEFL.</p>
+        <span style="color: #f5a623; font-weight: bold; font-size: 0.8rem;">MÓDULO 09 • NIVEL A2-B1</span>
+        <h3 style="color: #fff; margin: 0.5rem 0;">100 Travel, Airport & Daily Survival</h3>
+        <p style="color: #a0aec0; font-size: 0.85rem;">100 términos esenciales de supervivencia en aeropuertos, viajes y hoteles.</p>
         <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
           <button type="button" class="btn-mission" data-module="9" style="flex: 1; padding: 10px; border-radius: 8px; background: #3182ce; color: #fff; border: none; cursor: pointer; font-weight: bold;" onclick="window.openModuleMission(9)">🎯 Misión</button>
-          <button type="button" class="btn-glossary" data-module="9" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary('toefl_simulator')">📖 Glosario</button>
+          <button type="button" class="btn-glossary" data-module="9" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary(9)">📖 Glosario</button>
         </div>
       </div>
       <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
-        <span style="color: #f5a623; font-weight: bold; font-size: 0.8rem;">MÓDULO 10 • NIVEL C2</span>
-        <h3 style="color: #fff; margin: 0.5rem 0;">Fluency & Accent Reduction</h3>
-        <p style="color: #a0aec0; font-size: 0.85rem;">Reducción de acento, ritmo de habla nativo y entonación.</p>
+        <span style="color: #f5a623; font-weight: bold; font-size: 0.8rem;">MÓDULO 10 • NIVEL C1-C2</span>
+        <h3 style="color: #fff; margin: 0.5rem 0;">100 Academic & High-Score TOEFL Words</h3>
+        <p style="color: #a0aec0; font-size: 0.85rem;">100 palabras de vocabulario académico para máximo puntaje en TOEFL.</p>
         <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
           <button type="button" class="btn-mission" data-module="10" style="flex: 1; padding: 10px; border-radius: 8px; background: #3182ce; color: #fff; border: none; cursor: pointer; font-weight: bold;" onclick="window.openModuleMission(10)">🎯 Misión</button>
-          <button type="button" class="btn-glossary" data-module="10" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary('internet_slang')">📖 Glosario</button>
+          <button type="button" class="btn-glossary" data-module="10" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary(10)">📖 Glosario</button>
         </div>
       </div>
     </div>

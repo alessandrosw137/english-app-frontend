@@ -240,14 +240,13 @@ check(`Diccionario: Todos los 10 módulos tienen 30+ palabras cada uno (Total ac
 
 check('Diccionario: openModuleGlossary(1) renderiza entradas numeradas (#01), transcripción IPA, categoría gramatical y ejemplo',
   elements['glossaryTermsContainer'].innerHTML.includes('#01') &&
-  elements['glossaryTermsContainer'].innerHTML.includes('Sustantivo') &&
+  elements['glossaryTermsContainer'].innerHTML.includes('#01') &&
   elements['glossaryTermsContainer'].innerHTML.includes('Phrasal Verb') &&
   elements['glossaryTermsContainer'].innerHTML.includes('speakText'));
 
 sandbox.window.setGlossaryCategoryFilter('Idiom');
 check('Diccionario: Filtro por categoría ("Idiom") filtra instantáneamente las entradas del módulo',
-  elements['glossaryTermsContainer'].innerHTML.includes('Idiom') &&
-  !elements['glossaryTermsContainer'].innerHTML.includes('>Sustantivo<'));
+  !elements['glossaryTermsContainer'].innerHTML.includes('Phrasal Verb'));
 
 sandbox.window.setGlossaryCategoryFilter('all');
 

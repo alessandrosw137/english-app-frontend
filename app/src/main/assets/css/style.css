@@ -1041,3 +1041,44 @@ textarea,
 .holo-eq-playing .holo-eq-bar:nth-child(3n) { animation-duration: 0.95s; animation-delay: 0.24s; }
 .holo-eq-playing .holo-eq-bar:nth-child(4n) { animation-duration: 0.75s; animation-delay: 0.07s; }
 .holo-eq-playing .holo-eq-bar:nth-child(5n) { animation-duration: 1.05s; animation-delay: 0.19s; }
+
+
+/* ========================================================
+   V9: CENTRADO TOTAL DE LOGIN Y OCULTAMIENTO DE HEADER
+   ======================================================== */
+#login-view,
+#view-auth,
+.login-container {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: center !important;
+  min-height: 100vh !important;
+  width: 100vw !important;
+  margin: 0 !important;
+  padding: 1rem !important;
+  box-sizing: border-box !important;
+}
+
+#login-view.hidden,
+#view-auth.hidden,
+#view-auth[style*="display: none"],
+.login-container.hidden,
+.login-container[style*="display: none"] {
+  display: none !important;
+}
+
+.login-card {
+  margin: 0 auto !important;
+  max-width: 420px !important;
+  width: 100% !important;
+}
+
+body:has(#view-auth:not(.hidden):not([style*="display: none"])) header,
+body:has(#login-view:not(.hidden):not([style*="display: none"])) header,
+body:has(#view-auth:not(.hidden):not([style*="display: none"])) #mainHeader,
+body:has(#login-view:not(.hidden):not([style*="display: none"])) #mainHeader,
+header.auth-hidden,
+#mainHeader.auth-hidden {
+  display: none !important;
+}
