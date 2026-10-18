@@ -829,6 +829,11 @@
     }
 
     function selectMusicTrack(idx) {
+      if (typeof window.stopAllMedia === 'function') window.stopAllMedia();
+      const holoStage = document.getElementById('musicHolographicStage');
+      if (holoStage) holoStage.style.display = 'none';
+      const ytIframe = document.getElementById('musicYouTubeIframe');
+      if (ytIframe) ytIframe.style.display = 'block';
       currentMusicIndex = idx;
       currentKaraokeStanzaIndex = 0;
       stopMusicKaraokeSync();

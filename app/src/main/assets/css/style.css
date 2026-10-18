@@ -998,3 +998,46 @@ textarea,
   pointer-events: auto !important;
   z-index: 5 !important;
 }
+
+
+/* ========================================================
+   V8: DIVISOR HORIZONTAL DE LOGIN (.auth-divider) Y VISUALIZADOR HOLOGRÁFICO
+   ======================================================== */
+.auth-divider {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 1rem !important;
+  white-space: nowrap !important;
+  width: 100% !important;
+}
+.auth-divider-line {
+  flex: 1 1 0% !important;
+  height: 1px !important;
+  background: rgba(51, 65, 85, 0.85) !important;
+}
+.auth-divider-text {
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+}
+
+@keyframes holoEqualizerPulse {
+  0%, 100% { transform: scaleY(0.22); opacity: 0.65; }
+  50% { transform: scaleY(1); opacity: 1; }
+}
+.holo-eq-bar {
+  width: 6px;
+  height: 36px;
+  border-radius: 9999px;
+  background: linear-gradient(to top, #06b6d4, #38bdf8, #818cf8);
+  transform-origin: bottom;
+  transform: scaleY(0.25);
+  transition: transform 0.2s ease;
+}
+.holo-eq-playing .holo-eq-bar {
+  animation: holoEqualizerPulse 0.85s ease-in-out infinite;
+}
+.holo-eq-playing .holo-eq-bar:nth-child(2n) { animation-duration: 0.65s; animation-delay: 0.12s; }
+.holo-eq-playing .holo-eq-bar:nth-child(3n) { animation-duration: 0.95s; animation-delay: 0.24s; }
+.holo-eq-playing .holo-eq-bar:nth-child(4n) { animation-duration: 0.75s; animation-delay: 0.07s; }
+.holo-eq-playing .holo-eq-bar:nth-child(5n) { animation-duration: 1.05s; animation-delay: 0.19s; }

@@ -23,7 +23,8 @@ const scripts = [
   'verify_stories_requirements.js',
   'verify_music_requirements.js',
   'verify_ui_robot_pdf_landscape.js',
-  'verify_world3d_engine.js'
+  'verify_world3d_engine.js',
+  'verify_v8_player_dict_pdf_google.js'
 ];
 
 let allPassed = true;
@@ -48,7 +49,7 @@ scripts.forEach(script => {
 });
 
 if (allPassed) {
-  console.log('\n🏆 ALL 21 TEST SUITES PASSED FLAWLESSLY!');
+  console.log('\n🏆 ALL 22 TEST SUITES PASSED FLAWLESSLY!');
 } else {
   console.error('\n❌ SOME TEST SUITES FAILED!');
   process.exit(1);

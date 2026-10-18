@@ -200,11 +200,10 @@
           <span>Iniciar sesión con Google</span>
         </button>
       </div>
-      <div class="relative flex items-center justify-center my-4">
-        <div class="border-t border-slate-700/80 w-full"></div>
-        <span class="bg-[#0f172a] px-3 text-[11px] text-slate-400 uppercase tracking-widest font-semibold">o continuar
-          con cuenta</span>
-        <div class="border-t border-slate-700/80 w-full"></div>
+      <div class="auth-divider my-4" style="display: flex; align-items: center; gap: 1rem; white-space: nowrap; width: 100%;">
+        <div class="auth-divider-line border-t border-slate-700/80 flex-1"></div>
+        <span class="auth-divider-text bg-[#0f172a] px-3 text-[11px] text-slate-400 uppercase tracking-widest font-semibold whitespace-nowrap shrink-0">O CONTINUAR CON CUENTA</span>
+        <div class="auth-divider-line border-t border-slate-700/80 flex-1"></div>
       </div>
       <div class="flex rounded-2xl bg-slate-800/80 p-1 mb-5 border border-slate-700/60">
         <button type="button" id="authTabBtnLogin" onclick="switchAuthTab('login')" style="pointer-events: auto;" class="flex-1 py-2 text-xs font-bold rounded-xl transition bg-sky-600 text-white shadow">
@@ -683,8 +682,16 @@
           <button type="button" onclick="window.closeAllModals()" class="close-btn w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer text-base" style="cursor: pointer !important; pointer-events: auto !important; position: relative; z-index: 100001 !important;">&times;</button>
         </div>
       </div>
-      <div class="pt-3 pb-2">
-        <input type="text" id="glossarySearchInput" oninput="filterGlossaryTerms(this.value)" placeholder="Filtrar términos o significados en español..." class="w-full px-4 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-amber-500">
+      <div class="pt-3 pb-2 space-y-2">
+        <input type="text" id="glossarySearchInput" oninput="filterGlossaryTerms(this.value)" placeholder="Buscar por palabra en inglés, IPA, traducción o ejemplo..." class="w-full px-4 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-amber-500">
+        <div id="glossaryCategoryFilters" class="flex flex-wrap items-center gap-1.5">
+          <button type="button" onclick="window.setGlossaryCategoryFilter('all')" class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-amber-500 text-slate-950 cursor-pointer">Todos</button>
+          <button type="button" onclick="window.setGlossaryCategoryFilter('Sustantivo')" class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-slate-800 text-slate-300 border border-slate-700 cursor-pointer">Sustantivos</button>
+          <button type="button" onclick="window.setGlossaryCategoryFilter('Verbo')" class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-slate-800 text-slate-300 border border-slate-700 cursor-pointer">Verbos</button>
+          <button type="button" onclick="window.setGlossaryCategoryFilter('Phrasal Verb')" class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-slate-800 text-slate-300 border border-slate-700 cursor-pointer">Phrasal Verbs</button>
+          <button type="button" onclick="window.setGlossaryCategoryFilter('Idiom')" class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-slate-800 text-slate-300 border border-slate-700 cursor-pointer">Idioms</button>
+          <button type="button" onclick="window.setGlossaryCategoryFilter('Adjetivo')" class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-slate-800 text-slate-300 border border-slate-700 cursor-pointer">Adjetivos</button>
+        </div>
       </div>
       <div id="glossaryTermsContainer" class="flex-1 overflow-y-auto py-2 space-y-2.5"></div>
     </div>
@@ -1206,7 +1213,7 @@
       m.style.setProperty('display', 'none', 'important');
       m.classList.remove('active', 'open');
     });
-    document.querySelectorAll('#profileModal, #settingsModal, #rouletteModal, #glossaryModal, #learningMissionModal, #musicWordModal, #chatbotWindow, #adminDashboardModal, #adminConfirmDeleteModal, #adminViewProgressModal').forEach(function(m) {
+    document.querySelectorAll('#profileModal, #settingsModal, #rouletteModal, #glossaryModal, #learningMissionModal, #musicWordModal, #chatbotWindow, #adminDashboardModal, #adminConfirmDeleteModal, #adminViewProgressModal, #googleAccountPickerModal').forEach(function(m) {
       m.style.setProperty('display', 'none', 'important');
       m.classList.remove('active', 'show', 'open');
       m.classList.add('hidden');
