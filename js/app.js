@@ -7718,8 +7718,36 @@ window.logout = function() {
     /* ========================================================
        SISTEMA MULTI-RESPALDO PARA RESOLUCIÓN DE VIDEOID DE CANCIÓN COMPLETA
        ======================================================== */
+    window.lyricsOffset = typeof window.lyricsOffset === 'number' ? window.lyricsOffset : -0.6;
+    window._isUserScrollingLyrics = false;
+
+    window.adjustLyricsOffset = function(delta) {
+      window.lyricsOffset = Math.round(((typeof window.lyricsOffset === 'number' ? window.lyricsOffset : -0.6) + delta) * 10) / 10;
+      if (typeof document !== 'undefined') {
+        const badge = document.getElementById('lyricsOffsetBadge');
+        if (badge) {
+          const sign = window.lyricsOffset > 0 ? '+' : '';
+          badge.textContent = `Sync: ${sign}${window.lyricsOffset.toFixed(1)}s`;
+        }
+      }
+      if (typeof showFloatingToast === 'function') {
+        const sign = window.lyricsOffset > 0 ? '+' : '';
+        showFloatingToast(`Calibración de audio: ${sign}${window.lyricsOffset.toFixed(1)}s`, '⏱️');
+      }
+    };
+
     window.resolveYouTubeVideoId = async function(artist, title) {
-      const query = `${artist || ''} ${title || ''} official audio`.trim();
+      let variantTag = 'audio oficial';
+      const lowerTitle = (title || '').toLowerCase();
+      if (lowerTitle.includes('acoustic') || lowerTitle.includes('acústica') || lowerTitle.includes('acustica')) {
+        variantTag = 'acoustic audio oficial';
+      } else if (lowerTitle.includes('live') || lowerTitle.includes('en vivo')) {
+        variantTag = 'live audio oficial';
+      } else if (lowerTitle.includes('studio') || lowerTitle.includes('estudio')) {
+        variantTag = 'studio version audio oficial';
+      }
+      // Búsqueda dinámica oficial: ${artist} ${title} official audio / ${artist} ${title} audio oficial
+      const query = `${artist || ''} ${title || ''} ${variantTag}`.trim();
       const cleanQ = query.toLowerCase();
 
       // 0. Catálogo precargado o pre-mapeado rápido
@@ -7949,6 +7977,7 @@ window.logout = function() {
     };
 
     window.seekTrackToSeconds = function(sec) {
+      window._isUserScrollingLyrics = false;
       const dur = window._currentTrackTotalDuration || 225;
       const clamped = Math.max(0, Math.min(sec, dur));
       window._currentTrackCurrentTime = clamped;
@@ -7994,24 +8023,53 @@ window.logout = function() {
         clearInterval(window._karaokePlaybackTimer);
         window._karaokePlaybackTimer = null;
       }
+      // Intervalo de alta frecuencia de 250ms con polling ultra-rápido a 100ms
       window._karaokePlaybackTimer = setInterval(() => {
         if (!window._isHoloStagePlaying) return;
 
         let currentTime = null;
 
+        const ytPlayer = window._holoYtPlayer || (typeof ytMusicPlayer !== 'undefined' ? ytMusicPlayer : null);
         // 1. Lectura en tiempo real desde YouTube Iframe API (ytPlayer)
-        if (window._holoYtPlayer && typeof window._holoYtPlayer.getCurrentTime === 'function') {
+        if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
           try {
-            const playerState = (typeof window._holoYtPlayer.getPlayerState === 'function')
-              ? window._holoYtPlayer.getPlayerState()
+            const playerState = (typeof ytPlayer.getPlayerState === 'function')
+              ? ytPlayer.getPlayerState()
               : null;
             if (playerState !== null && playerState !== 1 && playerState !== -1 && playerState !== 3) {
               window.handleHoloPlayerStateChange(playerState);
               return;
             }
-            const t = window._holoYtPlayer.getCurrentTime();
-            if (typeof t === 'number' && !isNaN(t) && t >= 0) {
-              currentTime = t;
+            // Control reactivo con offset de compensación de latencia
+            const rawCurrentTime = ytPlayer.getCurrentTime();
+            if (typeof rawCurrentTime === 'number' && !isNaN(rawCurrentTime) && rawCurrentTime >= 0) {
+              currentTime = ytPlayer.getCurrentTime() + window.lyricsOffset;
+            }
+
+            // Escala proporcional si la duración difiere entre player y letra
+            if (typeof ytPlayer.getDuration === 'function') {
+              const duracionRealPlayer = ytPlayer.getDuration();
+              const duracionTotalLetra = window._currentTrackTotalDuration || 225;
+              if (duracionRealPlayer > 10 && duracionTotalLetra > 10 && Math.abs(duracionRealPlayer - duracionTotalLetra) > 2) {
+                if (!window._durationScaledMap) window._durationScaledMap = {};
+                const songKey = `${window._currentPlayingTrackName || ''}_${Math.round(duracionRealPlayer)}`;
+                if (!window._durationScaledMap[songKey]) {
+                  window._durationScaledMap[songKey] = true;
+                  const factorEscala = duracionRealPlayer / duracionTotalLetra;
+                  window._currentTrackTotalDuration = Math.round(duracionRealPlayer);
+                  if (window.activeLyricsList && Array.isArray(window.activeLyricsList)) {
+                    window.activeLyricsList.forEach(st => {
+                      const tiempoEstrofaOriginal = typeof st.originalTime === 'number' ? st.originalTime : (typeof st.time === 'number' ? st.time : 0);
+                      if (typeof st.originalTime !== 'number') st.originalTime = tiempoEstrofaOriginal;
+                      const tiempoEstrofaAjustado = tiempoEstrofaOriginal * factorEscala;
+                      st.time = Math.round(tiempoEstrofaAjustado * 100) / 100;
+                    });
+                    if (typeof window.renderLyricsFromList === 'function') {
+                      window.renderLyricsFromList(window.activeLyricsList);
+                    }
+                  }
+                }
+              }
             }
           } catch (e) {}
         }
@@ -8019,14 +8077,14 @@ window.logout = function() {
         // 2. Lectura en tiempo real desde elemento <audio> nativo
         const nativeAudio = document.getElementById('karaokeAudioSync') || document.getElementById('karaokeAudioTracker');
         if (currentTime === null && nativeAudio && !nativeAudio.paused && !isNaN(nativeAudio.currentTime)) {
-          currentTime = nativeAudio.currentTime;
+          currentTime = nativeAudio.currentTime + window.lyricsOffset;
         }
 
         // 3. Respaldo seguro sólo si la reproducción está activa
         const dur = window._currentTrackTotalDuration || 225;
         if (currentTime === null) {
           const elapsed = (Date.now() - (window._currentTrackStartTime || Date.now())) / 1000;
-          currentTime = Math.min(dur, Math.max(0, elapsed));
+          currentTime = Math.min(dur, Math.max(0, elapsed + window.lyricsOffset));
         }
 
         window._currentTrackCurrentTime = Math.min(dur, Math.max(0, currentTime));
@@ -8050,7 +8108,7 @@ window.logout = function() {
           }
           window.seekTrackToSeconds(0);
         }
-      }, 250);
+      }, 100);
     };
 
     window.stopMusicKaraokeSync = function() {
@@ -8624,7 +8682,17 @@ window.logout = function() {
         window._isHoloStagePlaying = true;
 
         // 5. Resolver automáticamente el 'videoId' de la canción completa
-        const officialSearchQuery = `${artistName} - ${trackName} official audio`;
+        window._currentPlayingTrackName = trackName;
+        let variantTag = 'audio oficial';
+        const lowerTrack = (trackName || '').toLowerCase();
+        if (lowerTrack.includes('acoustic') || lowerTrack.includes('acústica') || lowerTrack.includes('acustica')) {
+          variantTag = 'acoustic audio oficial';
+        } else if (lowerTrack.includes('live') || lowerTrack.includes('en vivo')) {
+          variantTag = 'live audio oficial';
+        } else if (lowerTrack.includes('studio') || lowerTrack.includes('estudio')) {
+          variantTag = 'studio version audio oficial';
+        }
+        const officialSearchQuery = `${artistName} ${trackName} ${variantTag}`;
         let youtubeVideoId = null;
         if (typeof window.resolveYouTubeVideoId === 'function') {
           try {

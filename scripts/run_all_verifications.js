@@ -28,7 +28,8 @@ const scripts = [
   'verify_v9_requirements.js',
   'verify_v10_requirements.js',
   'verify_v11_requirements.js',
-  'verify_v12_lyrics_cinema_carousel.js'
+  'verify_v12_lyrics_cinema_carousel.js',
+  'verify_v13_karaoke_delay_sync.js'
 ];
 
 let allPassed = true;
@@ -53,7 +54,7 @@ scripts.forEach(script => {
 });
 
 if (allPassed) {
-  console.log('\n🏆 ALL 24 TEST SUITES PASSED FLAWLESSLY!');
+  console.log('\n🏆 ALL 25 TEST SUITES PASSED FLAWLESSLY!');
 } else {
   console.error('\n❌ SOME TEST SUITES FAILED!');
   process.exit(1);
