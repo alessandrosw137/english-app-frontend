@@ -913,6 +913,16 @@
       activeLyricsList = track.lyrics || [];
       renderLyricsFromList(activeLyricsList);
       renderMusicTracksList();
+
+      if (typeof window.fetchLrclibSyncedLyrics === 'function') {
+        window.fetchLrclibSyncedLyrics(track.artist, track.title).then(res => {
+          if (res && res.lyrics && res.lyrics.length > 0 && currentMusicIndex === idx) {
+            activeLyricsList = res.lyrics;
+            window._isCurrentSongLrcSynced = !!res.isLrc;
+            renderLyricsFromList(activeLyricsList);
+          }
+        }).catch(() => {});
+      }
     }
 
     function renderLyrics(track) {
@@ -979,9 +989,42 @@
       const badge = document.getElementById('karaokeTimeBadge');
       if (!container || !lyrics) return;
 
-      if (badge) badge.textContent = `Estrofa 1 de ${lyrics.length}`;
+      const firstVerseTime = (lyrics.length > 0 && typeof lyrics[0].time === 'number') ? lyrics[0].time : 0;
+      const isLrc = lyrics.some(item => item.isLrcSynced) || !!window._isCurrentSongLrcSynced;
 
-      container.innerHTML = lyrics.map((stanza, lIdx) => {
+      // Distintivo sutil de sincronización: '⚡ Sincronizado LRC Oficial' vs '⏱ Sincronización aproximada'
+      let syncTypeBadge = document.getElementById('karaokeSyncTypeBadge');
+      if (!syncTypeBadge && badge && badge.parentNode) {
+        syncTypeBadge = document.createElement('span');
+        syncTypeBadge.id = 'karaokeSyncTypeBadge';
+        badge.parentNode.insertBefore(syncTypeBadge, badge);
+      }
+      if (syncTypeBadge) {
+        if (isLrc) {
+          syncTypeBadge.className = 'inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/15 px-2.5 py-0.5 rounded-full border border-emerald-500/30';
+          syncTypeBadge.innerHTML = '⚡ Sincronizado LRC Oficial';
+        } else {
+          syncTypeBadge.className = 'inline-flex items-center gap-1 text-[10px] font-bold text-amber-400 bg-amber-500/15 px-2.5 py-0.5 rounded-full border border-amber-500/30';
+          syncTypeBadge.innerHTML = '⏱ Sincronización aproximada';
+        }
+      }
+
+      if (firstVerseTime > 1.5) {
+        currentKaraokeStanzaIndex = -1;
+        if (badge) badge.textContent = '🎶 [Música Instrumental]';
+      } else {
+        currentKaraokeStanzaIndex = 0;
+        if (badge) badge.textContent = `Estrofa 1 de ${lyrics.length}`;
+      }
+
+      const introBanner = (firstVerseTime > 1.5)
+        ? `<div id="karaokeIntroBanner" class="p-3 mb-2 rounded-2xl bg-cyan-950/40 border border-cyan-500/30 text-center flex items-center justify-center gap-2 text-cyan-300 text-xs font-semibold backdrop-blur-sm shadow-inner">
+             <span class="animate-pulse text-base">🎶</span>
+             <span>[Música Instrumental] Prepárate para cantar en ${Math.round(firstVerseTime)}s...</span>
+           </div>`
+        : '';
+
+      container.innerHTML = introBanner + lyrics.map((stanza, lIdx) => {
         const lineTime = typeof stanza.time === 'number' ? stanza.time : 0;
         const nextTime = (lIdx < lyrics.length - 1 && typeof lyrics[lIdx + 1].time === 'number')
           ? lyrics[lIdx + 1].time
@@ -1018,7 +1061,7 @@
 
         return `
           <div id="karaokeStanza-${lIdx}"
-            class="lyric-line lyric-stanza-card music-stanza-row ${isCurrent ? 'lyric-active scale-[1.02] border-cyan-400 bg-cyan-950/80 text-white' : 'lyric-inactive'}"
+            class="lyric-line lyric-stanza-card music-stanza-row ${isCurrent ? 'active lyric-active scale-[1.02] border-cyan-400 bg-cyan-950/80 text-white' : 'lyric-inactive'}"
             data-start="${lineTime}"
             onclick="seekYouTubePlayer(${lineTime}, ${lIdx})">
             <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-slate-700/40">
@@ -1071,6 +1114,35 @@
       const lyrics = activeLyricsList;
       if (!lyrics || lyrics.length === 0) return;
 
+      const firstVerseTime = (typeof lyrics[0].time === 'number') ? lyrics[0].time : 0;
+      const badge = document.getElementById('karaokeTimeBadge');
+      const introBanner = document.getElementById('karaokeIntroBanner');
+
+      // Si el tiempo actual es menor que el tiempo del primer verso (intro instrumental)
+      if (firstVerseTime > 1.5 && currentTime < firstVerseTime) {
+        if (badge) badge.textContent = '🎶 [Música Instrumental]';
+        if (introBanner) introBanner.style.display = 'flex';
+        currentKaraokeStanzaIndex = -1;
+
+        const lines = document.querySelectorAll('#musicLyricsContainer .lyric-line');
+        lines.forEach(lineEl => {
+          lineEl.classList.remove('active', 'lyric-active', 'scale-[1.02]', 'border-cyan-400', 'bg-cyan-950/80', 'text-white');
+          if (!lineEl.classList.contains('lyric-inactive')) {
+            lineEl.classList.add('lyric-inactive');
+          }
+          const wordSpans = lineEl.querySelectorAll('.lyric-word');
+          wordSpans.forEach(wEl => {
+            wEl.classList.remove('word-sung', 'word-active');
+            wEl.style.backgroundSize = '0% 100%';
+            wEl.style.webkitTextFillColor = 'rgba(255, 255, 255, 0.4)';
+            wEl.style.color = 'rgba(255, 255, 255, 0.4)';
+          });
+        });
+        return;
+      }
+
+      if (introBanner) introBanner.style.display = 'none';
+
       // Buscar estrofa activa según timestamp actual
       let matchedIdx = 0;
       for (let i = 0; i < lyrics.length; i++) {
@@ -1083,7 +1155,6 @@
       }
 
       const totalStanzas = lyrics.length;
-      const badge = document.getElementById('karaokeTimeBadge');
       if (badge) badge.textContent = `Estrofa ${matchedIdx + 1} de ${totalStanzas}`;
 
       const lines = document.querySelectorAll('#musicLyricsContainer .lyric-line');
