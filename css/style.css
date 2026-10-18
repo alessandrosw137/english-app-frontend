@@ -881,4 +881,92 @@ button[onclick*="closeModal"] {
   margin: 0 auto !important;
 }
 
+/* ========================================================
+   SOLUCIÓN DE CHOQUE: DESPEJE INMEDIATO DE CAPAS FANTASMA
+   ======================================================== */
+.hidden,
+[hidden],
+[style*="display: none"],
+.modal:not(.active):not(.open):not([style*="display: flex"]):not([style*="display: block"]),
+.modal-backdrop:not(.active):not(.open):not([style*="display: flex"]):not([style*="display: block"]),
+.modal-overlay:not(.active):not(.open):not([style*="display: flex"]):not([style*="display: block"]),
+section:not([style*="display: flex"]).hidden,
+main:not([style*="display: flex"]).hidden,
+.view-section:not([style*="display: flex"]).hidden,
+[id$="-view"]:not([style*="display: flex"]).hidden,
+#view-auth.hidden,
+#view-home.hidden,
+#view-path.hidden,
+#view-stories.hidden,
+#view-music.hidden,
+#view-worldtour.hidden {
+  pointer-events: none !important;
+  user-select: none !important;
+}
 
+#canvas-container,
+#portalStarsCanvas,
+canvas:not(#threeCanvasContainer canvas) {
+  pointer-events: none !important;
+  z-index: 0 !important;
+}
+
+#view-worldtour #threeCanvasContainer canvas {
+  pointer-events: auto !important;
+}
+
+button,
+a,
+input,
+select,
+textarea,
+.btn,
+.portal-card,
+.module-card,
+.portal-btn,
+.portal-action-btn,
+.btn-mission,
+.btn-glossary,
+.close-btn,
+[role="button"],
+[data-action] {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  position: relative;
+  z-index: 1000 !important;
+}
+
+.carousel-nav-btn,
+.nav-arrow,
+.carousel-btn,
+.carousel-prev,
+.carousel-next {
+  position: absolute !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  z-index: 1000 !important;
+}
+
+.modal.active,
+.modal.open,
+.modal.show,
+.modal[style*="display: flex"],
+.modal[style*="display: block"],
+.modal-backdrop.active,
+.modal-backdrop.open,
+.modal-backdrop.show,
+.modal-backdrop[style*="display: flex"],
+.modal-backdrop[style*="display: block"],
+.modal-overlay.active,
+.modal-overlay.open,
+.modal-overlay.show,
+.modal-overlay[style*="display: flex"],
+.modal-overlay[style*="display: block"],
+.modal.active > div,
+.modal.open > div,
+.modal.show > div,
+.modal[style*="display: flex"] > div,
+.modal[style*="display: block"] > div {
+  z-index: 100000 !important;
+  pointer-events: auto !important;
+}

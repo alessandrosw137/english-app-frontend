@@ -2096,6 +2096,7 @@ window.logout = function() {
         }
 
         showFloatingToast('¡Bienvenido de nuevo, Administrador!', '✅');
+        if (typeof window.navigateTo === 'function') window.navigateTo('hub');
         goToHomePortals();
         updateFloatingWidgetsVisibility();
         return false;
