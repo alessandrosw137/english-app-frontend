@@ -453,6 +453,14 @@
   background: rgba(6, 182, 212, 0.8);
 }
 
+.trending-track-card img {
+  width: 100% !important;
+  height: 160px !important;
+  object-fit: cover !important;
+  border-radius: 14px 14px 0 0 !important;
+  display: block !important;
+}
+
 .lyric-word {
   display: inline-block;
   position: relative;

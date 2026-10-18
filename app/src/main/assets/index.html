@@ -572,7 +572,7 @@
             <div class="relative flex-1">
               <input type="text" id="musicSearchInput" oninput="handleMusicSearchInput(this.value)" onfocus="handleMusicSearchInput(this.value)" onkeydown="handleMusicSearchKey(event)" placeholder="Busca 'Losing My Religion', 'Coldplay', 'Queen', 'Adele' o pega enlace/ID de YouTube..." class="w-full pl-10 pr-9 py-3 rounded-2xl bg-slate-800/90 border border-slate-700 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition shadow-inner" autocomplete="off">
               <span class="absolute left-3.5 top-3.5 text-slate-400 text-sm pointer-events-none">🔍</span>
-              <button id="musicSearchClearBtn" type="button" onclick="clearMusicSearchInput()" class="hidden absolute right-3 top-3 w-6 h-6 rounded-full bg-slate-700/80 hover:bg-slate-600 text-slate-300 hover:text-white text-xs items-center justify-center transition cursor-pointer" title="Limpiar búsqueda">&times;</button>
+              <button id="musicSearchClearBtn" type="button" onclick="clearMusicSearchInput()" class="hidden absolute right-3 top-3 w-6 h-6 rounded-full bg-slate-700/80 hover:bg-slate-600 text-slate-300 hover:text-white text-xs items-center justify-center transition cursor-pointer" title="Limpiar búsqueda">✕</button>
             </div>
             <button type="button" onclick="window.searchGlobalMusic()" class="px-5 py-3 rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs transition cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-cyan-600/30 active:scale-95">
               <span>▶️ Buscar / Cargar</span>

@@ -7644,6 +7644,29 @@ window.logout = function() {
       }
     }, true);
 
+    // Escuchar eventos de la API de YouTube y sincronización en tiempo real
+    if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+      window.addEventListener('message', function(event) {
+        try {
+          const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+          if (!data) return;
+          if (data.event === 'onStateChange' && typeof window.handleHoloPlayerStateChange === 'function') {
+            window.handleHoloPlayerStateChange(data.info);
+          } else if (data.event === 'infoDelivery' && data.info) {
+            if (typeof data.info.playerState !== 'undefined' && typeof window.handleHoloPlayerStateChange === 'function') {
+              window.handleHoloPlayerStateChange(data.info.playerState);
+            }
+            if (typeof data.info.currentTime === 'number' && window._isHoloStagePlaying) {
+              window._currentTrackCurrentTime = data.info.currentTime;
+              if (typeof window.handleKaraokeTimeUpdate === 'function') {
+                window.handleKaraokeTimeUpdate(data.info.currentTime);
+              }
+            }
+          }
+        } catch (_) {}
+      });
+    }
+
     function translateEnglishVerseToSpanishStudy(enLine) {
       const lower = (enLine || '').toLowerCase();
       const phraseDict = [
@@ -7797,34 +7820,73 @@ window.logout = function() {
     window._currentTrackStartTime = Date.now();
     window._karaokePlaybackTimer = null;
 
+    window.handleHoloPlayerStateChange = function(state) {
+      // YT.PlayerState: ENDED = 0, PLAYING = 1, PAUSED = 2, BUFFERING = 3, CUED = 5
+      const isPlaying = state === 1 || (window.YT && window.YT.PlayerState && state === window.YT.PlayerState.PLAYING);
+      const isPaused = state === 2 || (window.YT && window.YT.PlayerState && state === window.YT.PlayerState.PAUSED);
+      const isEnded = state === 0 || (window.YT && window.YT.PlayerState && state === window.YT.PlayerState.ENDED);
+
+      const playIcon = document.getElementById('holoStagePlayIcon');
+      const eq = document.getElementById('holoStageEqualizer');
+
+      if (isPlaying) {
+        window._isHoloStagePlaying = true;
+        if (playIcon) playIcon.textContent = '⏸️';
+        if (eq) eq.classList.add('holo-eq-playing');
+        window.startKaraokeSyncTimer();
+      } else if (isPaused || isEnded) {
+        window._isHoloStagePlaying = false;
+        if (playIcon) playIcon.textContent = '▶️';
+        if (eq) eq.classList.remove('holo-eq-playing');
+        if (window._karaokePlaybackTimer) {
+          clearInterval(window._karaokePlaybackTimer);
+          window._karaokePlaybackTimer = null;
+        }
+      }
+    };
+
     window.toggleMainStageAudio = function() {
       const ytIframe = document.getElementById('musicHoloYoutubeIframe');
       const playIcon = document.getElementById('holoStagePlayIcon');
       const eq = document.getElementById('holoStageEqualizer');
 
       if (window._isHoloStagePlaying) {
-        // PAUSAR
+        // PAUSAR: Detener inmediatamente avance y congelar en la estrofa actual
         window._isHoloStagePlaying = false;
         if (window._karaokePlaybackTimer) {
           clearInterval(window._karaokePlaybackTimer);
           window._karaokePlaybackTimer = null;
+        }
+        if (window._holoYtPlayer && typeof window._holoYtPlayer.pauseVideo === 'function') {
+          try { window._holoYtPlayer.pauseVideo(); } catch (e) {}
         }
         if (ytIframe && ytIframe.contentWindow) {
           try {
             ytIframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
           } catch (e) {}
         }
+        const nativeAudio = document.getElementById('karaokeAudioSync') || document.getElementById('karaokeAudioTracker');
+        if (nativeAudio) {
+          try { nativeAudio.pause(); } catch (e) {}
+        }
         if (playIcon) playIcon.textContent = '▶️';
         if (eq) eq.classList.remove('holo-eq-playing');
       } else {
-        // REANUDAR
+        // REANUDAR: Vincular avance exclusivamente al tiempo real
         window._isHoloStagePlaying = true;
         window._currentTrackStartTime = Date.now() - ((window._currentTrackCurrentTime || 0) * 1000);
         window.startKaraokeSyncTimer();
+        if (window._holoYtPlayer && typeof window._holoYtPlayer.playVideo === 'function') {
+          try { window._holoYtPlayer.playVideo(); } catch (e) {}
+        }
         if (ytIframe && ytIframe.contentWindow) {
           try {
             ytIframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
           } catch (e) {}
+        }
+        const nativeAudio = document.getElementById('karaokeAudioSync') || document.getElementById('karaokeAudioTracker');
+        if (nativeAudio) {
+          try { nativeAudio.play(); } catch (e) {}
         }
         if (playIcon) playIcon.textContent = '⏸️';
         if (eq) eq.classList.add('holo-eq-playing');
@@ -7835,6 +7897,15 @@ window.logout = function() {
       window._isHoloMuted = !window._isHoloMuted;
       const ytIframe = document.getElementById('musicHoloYoutubeIframe');
       const muteIcon = document.getElementById('holoStageMuteIcon');
+      if (window._holoYtPlayer) {
+        try {
+          if (window._isHoloMuted && typeof window._holoYtPlayer.mute === 'function') {
+            window._holoYtPlayer.mute();
+          } else if (!window._isHoloMuted && typeof window._holoYtPlayer.unMute === 'function') {
+            window._holoYtPlayer.unMute();
+          }
+        } catch (e) {}
+      }
       if (ytIframe && ytIframe.contentWindow) {
         try {
           ytIframe.contentWindow.postMessage(JSON.stringify({
@@ -7883,6 +7954,12 @@ window.logout = function() {
       window._currentTrackCurrentTime = clamped;
       window._currentTrackStartTime = Date.now() - (clamped * 1000);
 
+      if (window._holoYtPlayer && typeof window._holoYtPlayer.seekTo === 'function') {
+        try {
+          window._holoYtPlayer.seekTo(clamped, true);
+        } catch (e) {}
+      }
+
       const ytIframe = document.getElementById('musicHoloYoutubeIframe');
       if (ytIframe && ytIframe.contentWindow) {
         try {
@@ -7892,6 +7969,11 @@ window.logout = function() {
             args: [clamped, true]
           }), '*');
         } catch (e) {}
+      }
+
+      const nativeAudio = document.getElementById('karaokeAudioSync') || document.getElementById('karaokeAudioTracker');
+      if (nativeAudio && !isNaN(nativeAudio.duration)) {
+        try { nativeAudio.currentTime = clamped; } catch (e) {}
       }
 
       const progBar = document.getElementById('holoStageProgressBar');
@@ -7910,12 +7992,44 @@ window.logout = function() {
     window.startKaraokeSyncTimer = function() {
       if (window._karaokePlaybackTimer) {
         clearInterval(window._karaokePlaybackTimer);
+        window._karaokePlaybackTimer = null;
       }
       window._karaokePlaybackTimer = setInterval(() => {
         if (!window._isHoloStagePlaying) return;
+
+        let currentTime = null;
+
+        // 1. Lectura en tiempo real desde YouTube Iframe API (ytPlayer)
+        if (window._holoYtPlayer && typeof window._holoYtPlayer.getCurrentTime === 'function') {
+          try {
+            const playerState = (typeof window._holoYtPlayer.getPlayerState === 'function')
+              ? window._holoYtPlayer.getPlayerState()
+              : null;
+            if (playerState !== null && playerState !== 1 && playerState !== -1 && playerState !== 3) {
+              window.handleHoloPlayerStateChange(playerState);
+              return;
+            }
+            const t = window._holoYtPlayer.getCurrentTime();
+            if (typeof t === 'number' && !isNaN(t) && t >= 0) {
+              currentTime = t;
+            }
+          } catch (e) {}
+        }
+
+        // 2. Lectura en tiempo real desde elemento <audio> nativo
+        const nativeAudio = document.getElementById('karaokeAudioSync') || document.getElementById('karaokeAudioTracker');
+        if (currentTime === null && nativeAudio && !nativeAudio.paused && !isNaN(nativeAudio.currentTime)) {
+          currentTime = nativeAudio.currentTime;
+        }
+
+        // 3. Respaldo seguro sólo si la reproducción está activa
         const dur = window._currentTrackTotalDuration || 225;
-        const elapsed = (Date.now() - window._currentTrackStartTime) / 1000;
-        window._currentTrackCurrentTime = Math.min(dur, Math.max(0, elapsed));
+        if (currentTime === null) {
+          const elapsed = (Date.now() - (window._currentTrackStartTime || Date.now())) / 1000;
+          currentTime = Math.min(dur, Math.max(0, elapsed));
+        }
+
+        window._currentTrackCurrentTime = Math.min(dur, Math.max(0, currentTime));
 
         const progBar = document.getElementById('holoStageProgressBar');
         const timeBadge = document.getElementById('holoStageTime');
@@ -7940,6 +8054,7 @@ window.logout = function() {
     };
 
     window.stopMusicKaraokeSync = function() {
+      window._isHoloStagePlaying = false;
       if (window._karaokePlaybackTimer) {
         clearInterval(window._karaokePlaybackTimer);
         window._karaokePlaybackTimer = null;
@@ -7965,7 +8080,7 @@ window.logout = function() {
         artist: "R.E.M.",
         level: "Intermedio",
         levelBadgeClass: "bg-amber-500/20 text-amber-300 border-amber-500/40",
-        artwork: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/bf/20/0f/bf200fa8-c516-7359-5a50-ad3173d1ee05/00602557551068.rgb.jpg/600x600bb.jpg",
+        artwork: "https://i.ytimg.com/vi/xwtdhWltSIg/hqdefault.jpg",
         previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/Music115/v4/bf/20/0f/bf200fa8-c516-7359-5a50-ad3173d1ee05/mzaf_1003460627582236896.plus.aac.p.m4a",
         duration: 268,
         pedagogy: "Aprende modismos sureños ('in the corner') y condicionales poéticos."
@@ -7975,7 +8090,7 @@ window.logout = function() {
         artist: "Coldplay",
         level: "Intermedio",
         levelBadgeClass: "bg-amber-500/20 text-amber-300 border-amber-500/40",
-        artwork: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/4e/c9/2b/4ec92bd7-7eb1-5ef2-2f3b-60b6fa48f3b2/00094639537951.rgb.jpg/600x600bb.jpg",
+        artwork: "https://i.ytimg.com/vi/dvgZkm1xWPE/hqdefault.jpg",
         previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/Music115/v4/4e/c9/2b/4ec92bd7-7eb1-5ef2-2f3b-60b6fa48f3b2/mzaf_8435860368307521743.plus.aac.p.m4a",
         duration: 242,
         pedagogy: "Domina verbos en pasado ('I used to rule the world') y metáforas históricas."
@@ -7985,7 +8100,7 @@ window.logout = function() {
         artist: "Adele",
         level: "Avanzado",
         levelBadgeClass: "bg-purple-500/20 text-purple-300 border-purple-500/40",
-        artwork: "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/35/06/f0/3506f0e9-ff65-bfbf-f4f5-51341a0e5b72/886445598687.jpg/600x600bb.jpg",
+        artwork: "https://i.ytimg.com/vi/rYEDA3JcQqw/hqdefault.jpg",
         previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/Music125/v4/35/06/f0/3506f0e9-ff65-bfbf-f4f5-51341a0e5b72/mzaf_10488689129532822941.plus.aac.p.m4a",
         duration: 228,
         pedagogy: "Excelente para enlaces consonánticos y modismos rítmicos ('could have had it all')."
@@ -7995,7 +8110,7 @@ window.logout = function() {
         artist: "Queen",
         level: "Intermedio",
         levelBadgeClass: "bg-amber-500/20 text-amber-300 border-amber-500/40",
-        artwork: "https://is1-ssl.mzstatic.com/image/thumb/Music128/v4/05/cf/54/05cf54eb-72cf-6192-3eb6-3840e60805ea/00602527718385.rgb.jpg/600x600bb.jpg",
+        artwork: "https://i.ytimg.com/vi/HgzGwKwLmgM/hqdefault.jpg",
         previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/Music128/v4/05/cf/54/05cf54eb-72cf-6192-3eb6-3840e60805ea/mzaf_15082181790409890691.plus.aac.p.m4a",
         duration: 210,
         pedagogy: "Velocidad vocal, energía y vocabulario dinámico de acción ('having a good time')."
@@ -8005,7 +8120,7 @@ window.logout = function() {
         artist: "Imagine Dragons",
         level: "Intermedio",
         levelBadgeClass: "bg-amber-500/20 text-amber-300 border-amber-500/40",
-        artwork: "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/33/c9/b0/33c9b0e1-7ca2-632b-aa45-9ec49b1ff337/17UMGIM08253.rgb.jpg/600x600bb.jpg",
+        artwork: "https://i.ytimg.com/vi/7wtfhZwyrcc/hqdefault.jpg",
         previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/Music125/v4/33/c9/b0/33c9b0e1-7ca2-632b-aa45-9ec49b1ff337/mzaf_6388480376229987625.plus.aac.p.m4a",
         duration: 204,
         pedagogy: "Narrativa en primera persona, superación y vocabulario de resiliencia."
@@ -8015,7 +8130,7 @@ window.logout = function() {
         artist: "Bruno Mars",
         level: "Fácil",
         levelBadgeClass: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40",
-        artwork: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/b8/b5/02/b8b5020d-b4b6-455b-4c5c-74ecbb7cf02a/075679958938.jpg/600x600bb.jpg",
+        artwork: "https://i.ytimg.com/vi/4JNtAtGGNRU/hqdefault.jpg",
         previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/Music115/v4/b8/b5/02/b8b5020d-b4b6-455b-4c5c-74ecbb7cf02a/mzaf_3992014167909381652.plus.aac.p.m4a",
         duration: 197,
         pedagogy: "Frases condicionales directas ('If you ever find yourself...') y números básicos."
@@ -8025,7 +8140,7 @@ window.logout = function() {
         artist: "Coldplay",
         level: "Fácil",
         levelBadgeClass: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40",
-        artwork: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/91/96/e8/9196e83d-3b1d-8526-7243-ea7cb81e2850/00724388915456.rgb.jpg/600x600bb.jpg",
+        artwork: "https://i.ytimg.com/vi/yKNxeF4KMsY/hqdefault.jpg",
         previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/Music115/v4/91/96/e8/9196e83d-3b1d-8526-7243-ea7cb81e2850/mzaf_10526715694269123898.plus.aac.p.m4a",
         duration: 269,
         pedagogy: "Adjetivos descriptivos, colores y entonación limpia a tempo moderado."
@@ -8035,8 +8150,8 @@ window.logout = function() {
         artist: "Sam Smith",
         level: "Fácil",
         levelBadgeClass: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40",
-        artwork: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/ce/20/fa/ce20fa1d-40bc-caad-16ec-9d9fc3756209/14UMGIM10243.rgb.jpg/600x600bb.jpg",
-        previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/Music115/v4/ce/20/fa/ce20fa1d-40bc-caad-16ec-9d9fc3756209/mzaf_1648057997973719001.plus.aac.p.m4a",
+        artwork: "https://i.ytimg.com/vi/pB-5XG-DbAA/hqdefault.jpg",
+        previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/Music115/v4/ce/20/fa/ce20fa1d-40bc-caad-16ec-9d9fc3756209/14UMGIM10243.rgb.jpg/600x600bb.jpg",
         duration: 172,
         pedagogy: "Oraciones cortas, verbos modales y articulación vocal sumamente clara."
       },
@@ -8045,8 +8160,8 @@ window.logout = function() {
         artist: "Radiohead",
         level: "Intermedio",
         levelBadgeClass: "bg-amber-500/20 text-amber-300 border-amber-500/40",
-        artwork: "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/10/7c/d2/107cd2fc-1ca2-14eb-373a-f116a80479f6/634904078121.png/600x600bb.jpg",
-        previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/Music116/v4/10/7c/d2/107cd2fc-1ca2-14eb-373a-f116a80479f6/mzaf_15038933256038312017.plus.aac.p.m4a",
+        artwork: "https://i.ytimg.com/vi/XFkzRNyygfk/hqdefault.jpg",
+        previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/Music116/v4/10/7c/d2/107cd2fc-1ca2-14eb-373a-f116a80479f6/634904078121.png/600x600bb.jpg",
         duration: 238,
         pedagogy: "Adjetivos de personalidad, contrastes verbales y pronunciación expresiva."
       },
@@ -8055,8 +8170,8 @@ window.logout = function() {
         artist: "Adele",
         level: "Intermedio",
         levelBadgeClass: "bg-amber-500/20 text-amber-300 border-amber-500/40",
-        artwork: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/b9/62/1d/b9621d9f-dc53-933e-e098-b8bc4594fe01/886443317761.jpg/600x600bb.jpg",
-        previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/Music115/v4/b9/62/1d/b9621d9f-dc53-933e-e098-b8bc4594fe01/mzaf_1241151659929283734.plus.aac.p.m4a",
+        artwork: "https://i.ytimg.com/vi/hLQl3WQQoQ0/hqdefault.jpg",
+        previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/Music115/v4/b9/62/1d/b9621d9f-dc53-933e-e098-b8bc4594fe01/886443317761.jpg/600x600bb.jpg",
         duration: 285,
         pedagogy: "Narrativa en pasado, recuerdos y expresiones de despedida cotidiana."
       }
@@ -8087,8 +8202,8 @@ window.logout = function() {
         return `
           <div class="trending-track-card w-64 sm:w-72 shrink-0 snap-start bg-slate-900/95 border border-slate-800 hover:border-cyan-500/50 rounded-3xl p-4 shadow-xl transition-all duration-300 flex flex-col justify-between hover:shadow-cyan-500/10 hover:-translate-y-1 group">
             <div>
-              <div class="relative w-full aspect-square rounded-2xl overflow-hidden mb-3 bg-slate-950 border border-slate-800 cursor-pointer shadow-inner" onclick="window.loadSongToKaraoke('${safeTitle}', '${safeArtist}', '${t.previewUrl}', '${t.artwork}', ${t.duration})">
-                <img src="${t.artwork}" alt="${t.title}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" onerror="this.onerror=null; this.src='images/portal_music.svg';">
+              <div class="relative w-full rounded-2xl overflow-hidden mb-3 bg-slate-950 border border-slate-800 cursor-pointer shadow-inner" style="height: 160px;" onclick="window.loadSongToKaraoke('${safeTitle}', '${safeArtist}', '${t.previewUrl}', '${t.artwork}', ${t.duration})">
+                <img src="${t.artwork}" alt="${t.title}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" style="width: 100%; height: 160px; object-fit: cover; border-radius: 14px 14px 0 0; display: block;" onerror="this.onerror=null; this.src='images/portal_music.svg';">
                 <span class="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border backdrop-blur-md ${t.levelBadgeClass}">
                   ${t.level}
                 </span>
@@ -8112,7 +8227,7 @@ window.logout = function() {
       }).join('');
 
       target.innerHTML = `
-        <div class="relative w-full bg-slate-900/60 border border-slate-800/80 rounded-3xl p-5 shadow-2xl backdrop-blur-xl">
+        <div id="trending-tracks-carousel" class="relative w-full bg-slate-900/60 border border-slate-800/80 rounded-3xl p-5 shadow-2xl backdrop-blur-xl">
           <div class="flex items-center justify-between mb-4 px-1">
             <div class="flex items-center gap-2">
               <span class="text-xs font-black text-white uppercase tracking-wider flex items-center gap-1.5">
@@ -8161,6 +8276,7 @@ window.logout = function() {
       const resultsGrid = document.getElementById('musicResultsGrid');
       const suggestions = document.getElementById('musicSearchSuggestions');
       const trendingSection = document.getElementById('musicTrendingSection');
+      const trendingCarousel = document.getElementById('trending-tracks-carousel');
 
       if (input) {
         input.value = '';
@@ -8184,7 +8300,29 @@ window.logout = function() {
         trendingSection.style.display = 'block';
         trendingSection.classList.remove('hidden');
       }
+      if (trendingCarousel) {
+        trendingCarousel.style.display = 'block';
+        trendingCarousel.classList.remove('hidden');
+      }
       window._lastSearchedWebSongs = null;
+    };
+
+    window.handleMusicSearchInput = function(val) {
+      const raw = (val || '').trim();
+      const clearBtn = document.getElementById('musicSearchClearBtn');
+      if (clearBtn) {
+        if (raw.length > 0) {
+          clearBtn.classList.remove('hidden');
+          clearBtn.style.display = 'flex';
+        } else {
+          clearBtn.classList.add('hidden');
+          clearBtn.style.display = 'none';
+        }
+      }
+      if (!raw) {
+        window.clearMusicSearchInput();
+        return;
+      }
     };
 
     window.toggleCinemaMode = function() {
@@ -8404,6 +8542,9 @@ window.logout = function() {
         searchSub.style.display = 'block';
         searchSub.classList.remove('hidden');
       }
+      if (typeof window.clearMusicSearchInput === 'function') {
+        window.clearMusicSearchInput();
+      }
       if (typeof window !== 'undefined' && typeof window.scrollTo === 'function') {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
@@ -8585,6 +8726,24 @@ window.logout = function() {
           audioTracker.pause();
           audioTracker.removeAttribute('src');
           audioTracker.style.display = 'none';
+        }
+
+        // 5.1 Enlazar reproductor de YouTube oficial para capturar eventos de reproducción y pausas en tiempo real
+        if (window.YT && window.YT.Player) {
+          try {
+            if (window._holoYtPlayer && typeof window._holoYtPlayer.destroy === 'function') {
+              try { window._holoYtPlayer.destroy(); } catch (_) {}
+            }
+            window._holoYtPlayer = new YT.Player('musicHoloYoutubeIframe', {
+              events: {
+                'onStateChange': function(ev) {
+                  if (typeof window.handleHoloPlayerStateChange === 'function') {
+                    window.handleHoloPlayerStateChange(ev.data);
+                  }
+                }
+              }
+            });
+          } catch (_) {}
         }
 
         // 6. Iniciar temporizador de sincronización en tiempo real

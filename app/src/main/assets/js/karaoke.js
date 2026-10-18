@@ -433,12 +433,36 @@
       const input = document.getElementById('musicSearchInput');
       const clearBtn = document.getElementById('musicSearchClearBtn');
       const suggestionsEl = document.getElementById('musicSearchSuggestions');
-      if (input) input.value = '';
+      const resultsGrid = document.getElementById('musicResultsGrid');
+      const trendingSection = document.getElementById('musicTrendingSection');
+      const trendingCarousel = document.getElementById('trending-tracks-carousel');
+
+      if (input) {
+        input.value = '';
+        try { input.focus(); } catch (e) {}
+      }
       if (clearBtn) {
         clearBtn.classList.add('hidden');
         clearBtn.style.display = 'none';
       }
-      if (suggestionsEl) suggestionsEl.classList.add('hidden');
+      if (suggestionsEl) {
+        suggestionsEl.innerHTML = '';
+        suggestionsEl.classList.add('hidden');
+        suggestionsEl.style.display = 'none';
+      }
+      if (resultsGrid) {
+        resultsGrid.innerHTML = '';
+        resultsGrid.style.display = 'none';
+        resultsGrid.classList.add('hidden');
+      }
+      if (trendingSection) {
+        trendingSection.style.display = 'block';
+        trendingSection.classList.remove('hidden');
+      }
+      if (trendingCarousel) {
+        trendingCarousel.style.display = 'block';
+        trendingCarousel.classList.remove('hidden');
+      }
       if (musicSearchDebounceTimer) {
         clearTimeout(musicSearchDebounceTimer);
         musicSearchDebounceTimer = null;
@@ -465,6 +489,9 @@
       if (!raw) {
         suggestionsEl.classList.add('hidden');
         renderMusicTracksList('');
+        if (typeof window.clearMusicSearchInput === 'function') {
+          window.clearMusicSearchInput();
+        }
         if (musicSearchDebounceTimer) {
           clearTimeout(musicSearchDebounceTimer);
           musicSearchDebounceTimer = null;

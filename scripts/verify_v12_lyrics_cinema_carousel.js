@@ -254,4 +254,6 @@ vm.runInContext(appJs, runtimeSandbox);
   console.log(`Total de pruebas: ${passed + failed} | Aprobadas: ${passed} | Fallidas: ${failed}`);
   if (failed > 0) process.exit(1);
   console.log('\n🎉 ¡TODOS LOS REQUISITOS V12 HAN SIDO VERIFICADOS AL 100%!');
+  process.exit(0);
 })();
+
