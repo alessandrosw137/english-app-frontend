@@ -1268,7 +1268,10 @@
 
     // ========================================================
 
-  // Exportar funciones y variables al objeto global window
+  // Exportar funciones y variables al objeto global window sin errores de referencia
+  const playMusicTrack = selectMusicTrack;
+  function quickSearchMusic(term) { const inp = document.getElementById('musicSearchInput'); if (inp) inp.value = term; if (typeof window.searchGlobalMusic === 'function') window.searchGlobalMusic(term); }
+  const searchMusicTracksInput = handleMusicSearchInput;
   window.MUSIC_SESSION_TRACKS = MUSIC_SESSION_TRACKS;
   window.renderMusicTracksList = renderMusicTracksList;
   window.renderLyricsFromList = renderLyricsFromList;
@@ -1285,6 +1288,11 @@
   window.inspectLyricsWord = inspectLyricsWord;
   window.speakMusicWord = speakMusicWord;
   window.closeMusicWordModal = closeMusicWordModal;
+  window.handleMusicSearchInput = handleMusicSearchInput;
+  window.handleMusicSearchKey = handleMusicSearchKey;
+  window.handleMusicSearchSubmit = handleMusicSearchSubmit;
+  window.clearMusicSearchInput = clearMusicSearchInput;
+  window.quickSearchMusic = quickSearchMusic;
   window.searchMusicTracksInput = searchMusicTracksInput;
   window.executeMusicSearch = executeMusicSearch;
   window.selectMusicSearchResultItem = selectMusicSearchResultItem;

@@ -736,6 +736,82 @@
         : `http://localhost:3000/api${ep}`;
     }
 
+    function getInstantDefaultAdminUsers() {
+      const authUser = getStoredUser();
+      const baseUsers = [
+        {
+          id: 1,
+          username: 'Wilberth Alessandro Molina Cutz',
+          email: 'wilberth.admin@englishapp.com',
+          role: 'admin',
+          rank: 'Diamante',
+          exp: 1540,
+          streak_days: 14,
+          created_at: '2026-10-15T08:00:00.000Z'
+        },
+        {
+          id: 2,
+          username: 'maria_gonzalez',
+          email: 'maria.g@universidad.edu',
+          role: 'user',
+          rank: 'Oro',
+          exp: 920,
+          streak_days: 8,
+          created_at: '2026-10-15T10:30:00.000Z'
+        },
+        {
+          id: 3,
+          username: 'carlos_estudiante',
+          email: 'carlos.e@colegio.com',
+          role: 'user',
+          rank: 'Plata',
+          exp: 480,
+          streak_days: 5,
+          created_at: '2026-10-15T14:15:00.000Z'
+        },
+        {
+          id: 4,
+          username: 'sofia_learning',
+          email: 'sofia.ingles@dominio.com',
+          role: 'user',
+          rank: 'Bronce',
+          exp: 210,
+          streak_days: 2,
+          created_at: '2026-10-16T09:00:00.000Z'
+        }
+      ];
+      try {
+        const localReg = JSON.parse(localStorage.getItem('english_app_registered_users') || '[]');
+        localReg.forEach((ru, idx) => {
+          if (ru && ru.username && !baseUsers.some(u => u.username === ru.username)) {
+            baseUsers.push({
+              id: 10 + idx,
+              username: ru.username,
+              email: ru.email || (ru.username + '@mastereng.com'),
+              role: ru.role || 'user',
+              rank: ru.rank || 'Bronce',
+              exp: ru.exp || 0,
+              streak_days: 1,
+              created_at: new Date().toISOString()
+            });
+          }
+        });
+      } catch (e) {}
+      if (authUser && authUser.username && !baseUsers.some(u => u.username === authUser.username)) {
+        baseUsers.unshift({
+          id: authUser.id || 99,
+          username: authUser.username,
+          email: authUser.email || 'admin.sesion@englishapp.com',
+          role: authUser.role || 'admin',
+          rank: authUser.rank || 'Diamante',
+          exp: authUser.exp || 1250,
+          streak_days: 5,
+          created_at: new Date().toISOString()
+        });
+      }
+      return baseUsers;
+    }
+
     function openAdminDashboardModal() {
       const user = getStoredUser();
       const storedRole = (typeof localStorage !== 'undefined') ? localStorage.getItem('user_role') : null;
@@ -745,9 +821,22 @@
       }
       const modal = document.getElementById('adminDashboardModal');
       if (modal) {
-        modal.style.display = 'flex';
         modal.classList.remove('hidden');
-        loadAdminUsersData();
+        modal.classList.add('active');
+        modal.style.display = 'flex';
+        modal.style.setProperty('display', 'flex', 'important');
+        modal.style.setProperty('visibility', 'visible', 'important');
+        modal.style.setProperty('pointer-events', 'auto', 'important');
+        modal.style.setProperty('z-index', '100000', 'important');
+        // Renderizar caché local en 0ms sin esperar la red
+        const instantUsers = (window.allAdminUsersList && window.allAdminUsersList.length > 0)
+          ? window.allAdminUsersList
+          : getInstantDefaultAdminUsers();
+        window.allAdminUsersList = instantUsers;
+        updateAdminMetrics(instantUsers);
+        renderAdminUsersTable(instantUsers);
+        // Sincronizar con backend en segundo plano sin bloquear UI
+        setTimeout(() => { loadAdminUsersData(true); }, 10);
       }
     }
 
@@ -755,26 +844,22 @@
       const modal = document.getElementById('adminDashboardModal');
       if (modal) {
         modal.style.display = 'none';
+        modal.style.setProperty('display', 'none', 'important');
+        modal.classList.remove('active');
         modal.classList.add('hidden');
       }
     }
 
-    async function loadAdminUsersData() {
+    async function loadAdminUsersData(silentBackground = false) {
       const refreshIcon = document.getElementById('adminRefreshIcon');
       if (refreshIcon) refreshIcon.classList.add('animate-spin');
 
       const tbody = document.getElementById('adminUsersTableBody');
-      if (tbody) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="7" class="py-8 text-center text-slate-400">
-              <div class="flex items-center justify-center gap-2">
-                <span class="animate-spin text-purple-400 text-lg">🌀</span>
-                <span>Consultando usuarios y métricas en PostgreSQL...</span>
-              </div>
-            </td>
-          </tr>
-        `;
+      if (!window.allAdminUsersList || window.allAdminUsersList.length === 0) {
+        const instant = getInstantDefaultAdminUsers();
+        window.allAdminUsersList = instant;
+        updateAdminMetrics(instant);
+        renderAdminUsersTable(instant);
       }
 
       const authUser = getStoredUser();
@@ -1028,6 +1113,9 @@
       const modal = document.getElementById('adminConfirmDeleteModal');
       if (modal) {
         modal.style.display = 'flex';
+        modal.style.setProperty('display', 'flex', 'important');
+        modal.style.setProperty('pointer-events', 'auto', 'important');
+        modal.style.setProperty('z-index', '100005', 'important');
         modal.classList.remove('hidden');
       }
     }
@@ -1134,6 +1222,9 @@
       const modal = document.getElementById('adminViewProgressModal');
       if (modal) {
         modal.style.display = 'flex';
+        modal.style.setProperty('display', 'flex', 'important');
+        modal.style.setProperty('pointer-events', 'auto', 'important');
+        modal.style.setProperty('z-index', '100005', 'important');
         modal.classList.remove('hidden');
       }
     }
@@ -1715,7 +1806,7 @@ window.logout = function() {
       } else if (typeof openPortalWithLoader === 'function') {
         openPortalWithLoader(portal);
       } else {
-        alert('Abriendo Módulos de Aprendizaje...');
+        showFloatingToast('Abriendo Módulos de Aprendizaje...', '🚀');
       }
     };
 
@@ -1737,7 +1828,7 @@ window.logout = function() {
         if (typeof window.openPortalModules === 'function') {
           window.openPortalModules(portalTarget);
         } else {
-          alert('Abriendo Módulos de Aprendizaje...');
+          showFloatingToast('Abriendo Módulos de Aprendizaje...', '🚀');
         }
         return;
       }
@@ -1999,9 +2090,7 @@ window.logout = function() {
         banner.classList.remove('hidden');
       }
       showFloatingToast(msg, type === 'error' ? '⚠️' : '🎉');
-      if (type === 'error' && typeof alert === 'function') {
-        try { alert(msg); } catch (e) { }
-      }
+      // Notificación visual integrada sin alert() bloqueante
     }
 
     function initGoogleIdentityServices() {
@@ -2606,13 +2695,39 @@ window.logout = function() {
     window.renderProfileModalContent = renderUserProfile;
 
     function openLoginFromProfile(tab) {
+      const targetTab = (tab === 'register') ? 'register' : 'login';
       window.closeAllModals();
-      if (typeof showView === 'function') {
+      if (typeof window.navigateTo === 'function') {
+        window.navigateTo('login');
+      } else if (typeof showView === 'function') {
         showView('view-auth');
       }
-      if (typeof switchAuthTab === 'function') {
-        switchAuthTab(tab || 'login');
+      // Restaurar completamente #view-auth y .login-card tras modo invitado
+      const authView = document.getElementById('view-auth');
+      if (authView) {
+        authView.classList.remove('hidden');
+        authView.style.display = 'flex';
+        authView.style.setProperty('display', 'flex', 'important');
+        authView.style.setProperty('visibility', 'visible', 'important');
+        authView.style.setProperty('pointer-events', 'auto', 'important');
+        authView.style.setProperty('z-index', '10000', 'important');
       }
+      document.querySelectorAll('#view-auth .login-card, .login-container, #login-modal').forEach(el => {
+        el.classList.remove('hidden');
+        el.style.display = 'block';
+        el.style.setProperty('display', 'block', 'important');
+        el.style.setProperty('visibility', 'visible', 'important');
+        el.style.setProperty('pointer-events', 'auto', 'important');
+      });
+      if (typeof window.switchAuthTab === 'function') {
+        window.switchAuthTab(targetTab);
+      }
+      setTimeout(() => {
+        const focusEl = targetTab === 'register'
+          ? document.getElementById('authRegUsername')
+          : document.getElementById('authLoginIdentifier');
+        if (focusEl && typeof focusEl.focus === 'function') focusEl.focus();
+      }, 60);
     }
     window.openLoginFromProfile = openLoginFromProfile;
 
@@ -2644,56 +2759,7 @@ window.logout = function() {
 
     function openProfileModal() {
       renderUserProfile();
-      const user = getStoredUser() || { username: 'Invitado', role: 'guest', exp: 0 };
-      const rankInfo = calculateRankInfo(user.exp);
-      const isGuest = user.role === 'guest' || user.username === 'Invitado';
-
-      const body = document.getElementById('profileModalBody');
-      if (!body) return;
-
-      body.innerHTML = `
-        <div class="flex items-center gap-4 p-4 rounded-2xl bg-slate-800/80 border border-slate-700/60">
-          <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-xl font-black text-white shadow-lg">
-            ${user.username ? user.username.charAt(0).toUpperCase() : '👤'}
-          </div>
-          <div>
-            <h4 class="text-base font-extrabold text-white">${user.username}</h4>
-            <p class="text-xs text-slate-400">${user.email || (isGuest ? 'Cuenta de Invitado' : 'Estudiante Registrado')}</p>
-            <div class="flex items-center gap-2 mt-1">
-              <span class="text-xs">${rankInfo.medal}</span>
-              <span class="text-xs font-bold text-amber-300">${rankInfo.rank} (${rankInfo.title})</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="p-4 rounded-2xl bg-slate-800/60 border border-slate-700/50 space-y-2">
-          <div class="flex justify-between text-xs">
-            <span class="text-slate-400 font-semibold">Progreso hacia ${rankInfo.nextTier ? rankInfo.nextTier.name : 'Rango Máximo'}</span>
-            <span class="font-bold text-amber-400">${rankInfo.exp} EXP</span>
-          </div>
-          <div class="w-full bg-slate-900 h-2.5 rounded-full overflow-hidden border border-slate-700">
-            <div class="h-full rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 transition-all duration-500" style="width: ${rankInfo.progressPercent}%;"></div>
-          </div>
-          <p class="text-[10px] text-slate-400 text-right">
-            ${rankInfo.nextTier ? 'Faltan ' + rankInfo.neededForNext + ' EXP para ' + rankInfo.nextTier.name : '¡Has alcanzado el rango máximo!'}
-          </p>
-        </div>
-
-        <div class="pt-2 space-y-2">
-          ${isGuest ? `
-            <button onclick="closeProfileModal(); showView('view-auth');" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 text-white font-bold text-xs transition shadow-lg shadow-sky-500/20 cursor-pointer">
-              🔗 Vincular Cuenta / Iniciar Sesión
-            </button>
-          ` : `
-            <button onclick="handleLogout()" class="w-full py-2.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 font-bold text-xs transition cursor-pointer">
-              🚪 Cerrar Sesión
-            </button>
-          `}
-        </div>
-      `;
-
-      const modal = document.getElementById('profileModal');
-      if (modal) modal.classList.remove('hidden');
+      toggleModal('profile-modal');
     }
 
     function closeProfileModal() {
@@ -2892,6 +2958,169 @@ window.logout = function() {
       toggleModal('roulette-modal');
     }
 
+    function closeRouletteModal() {
+      window.closeAllModals();
+    }
+
+    function spinRouletteWheel() {
+      const disk = document.getElementById('rouletteWheelDisk');
+      const spinBtn = document.getElementById('spinRouletteBtn');
+      const qCard = document.getElementById('rouletteQuestionCard');
+
+      if (spinBtn) spinBtn.disabled = true;
+      if (qCard) qCard.classList.add('hidden');
+
+      const extraSpins = 5 + Math.floor(Math.random() * 5);
+      const randomDeg = Math.floor(Math.random() * 360);
+      rouletteSpinAngle += (extraSpins * 360) + randomDeg;
+
+      if (disk) {
+        disk.style.transform = `rotate(${rouletteSpinAngle}deg)`;
+      }
+
+      showFloatingToast('Girando ruleta del conocimiento...', '🎯');
+
+      setTimeout(() => {
+        presentRouletteQuestion();
+      }, 4100);
+    }
+
+    function presentRouletteQuestion() {
+      const qCard = document.getElementById('rouletteQuestionCard');
+      const catBadge = document.getElementById('rouletteCategoryBadge');
+      const qText = document.getElementById('rouletteQuestionText');
+      const optsContainer = document.getElementById('rouletteOptionsContainer');
+      const timerEl = document.getElementById('rouletteTimer');
+
+      const randQ = ROULETTE_QUESTIONS[Math.floor(Math.random() * ROULETTE_QUESTIONS.length)];
+
+      if (catBadge) catBadge.textContent = randQ.category;
+      if (qText) qText.textContent = randQ.q;
+      if (optsContainer) {
+        optsContainer.innerHTML = randQ.options.map((opt, idx) => `
+          <button onclick="handleRouletteAnswer(${idx}, ${randQ.correct})" class="w-full text-left px-3.5 py-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-700 border border-slate-700/80 text-xs font-semibold text-slate-200 transition cursor-pointer">
+            ${String.fromCharCode(65 + idx)}) ${opt}
+          </button>
+        `).join('');
+      }
+
+      if (qCard) qCard.classList.remove('hidden');
+
+      let seconds = 30;
+      if (timerEl) timerEl.textContent = `⏱️ ${seconds}s`;
+      if (rouletteTimerInterval) clearInterval(rouletteTimerInterval);
+
+      rouletteTimerInterval = setInterval(() => {
+        seconds--;
+        if (timerEl) timerEl.textContent = `⏱️ ${seconds}s`;
+        if (seconds <= 0) {
+          clearInterval(rouletteTimerInterval);
+          showFloatingToast('¡Tiempo agotado en la ruleta!', '⏱️');
+          closeRouletteModal();
+        }
+      }, 1000);
+    }
+
+    function handleRouletteAnswer(selectedIdx, correctIdx) {
+      if (rouletteTimerInterval) clearInterval(rouletteTimerInterval);
+      if (selectedIdx === correctIdx) {
+        showFloatingToast('¡Respuesta Correcta! +15 EXP ganados', '🎉');
+        addExp(15, 'Respuesta correcta en la Ruleta');
+      } else {
+        showFloatingToast('Respuesta incorrecta. ¡Sigue practicando!', '❌');
+      }
+      setTimeout(() => closeRouletteModal(), 1200);
+    }
+
+    function toggleChatbotWindow() {
+      toggleModal('ai-tutor-modal');
+    }
+
+    function askChatbotQuestion(query) {
+      const input = document.getElementById('chatbotInput');
+      if (input) input.value = query;
+      sendChatbotMessage();
+    }
+
+    function sendChatbotMessage() {
+      const input = document.getElementById('chatbotInput');
+      const container = document.getElementById('chatbotMessagesContainer');
+      if (!input || !container) return;
+
+      const userText = input.value.trim();
+      if (!userText) return;
+
+      const userDiv = document.createElement('div');
+      userDiv.className = 'bg-sky-600/90 text-white p-2.5 rounded-2xl rounded-tr-none ml-auto max-w-[85%] font-medium';
+      userDiv.textContent = userText;
+      container.appendChild(userDiv);
+      input.value = '';
+      container.scrollTop = container.scrollHeight;
+
+      setTimeout(() => {
+        let answer = "Excelente pregunta. En inglés, la práctica contextual diaria es la clave para la fluidez.";
+        const lower = userText.toLowerCase();
+
+        if (lower.includes('make') || lower.includes('do')) {
+          answer = "'Do' se utiliza para acciones, obligaciones y tareas (ej. do homework, do exercise). 'Make' se utiliza para crear, construir o producir un resultado nuevo (ej. make coffee, make a decision).";
+        } else if (lower.includes('phrasal')) {
+          answer = "Los 5 phrasal verbs esenciales: 1) 'Give up' (Rendirse), 2) 'Look for' (Buscar), 3) 'Carry on' (Continuar), 4) 'Find out' (Descubrir), 5) 'Turn down' (Rechazar o bajar volumen).";
+        } else if (lower.includes('toefl')) {
+          answer = "Tip TOEFL: En la sección de lectura, identifica la idea principal de cada párrafo antes de responder. En comprensión auditiva, toma notas de conectores de contraste como 'however', 'although' o 'nevertheless'.";
+        } else if (lower.includes('exp') || lower.includes('puntos')) {
+          answer = "Ganas EXP completando misiones aprobadas (+20 EXP), practicando pronunciación en cuentos (+50 EXP), retos en música (+30 EXP) y preguntas en la ruleta (+15 EXP).";
+        }
+
+        const aiDiv = document.createElement('div');
+        aiDiv.className = 'bg-slate-800 p-2.5 rounded-2xl rounded-tl-none border border-slate-700 text-slate-200 max-w-[90%]';
+        aiDiv.textContent = answer;
+        container.appendChild(aiDiv);
+        container.scrollTop = container.scrollHeight;
+      }, 300);
+    }
+
+    let activeGlossaryModuleKey = 'everyday_actions';
+    let currentMissionModuleKey = 'everyday_actions';
+    let currentMissionQuestionIndex = 0;
+    let currentMissionScore = 0;
+    let currentMissionQuestions = [];
+
+    const MODULE_TITLES = {
+      everyday_actions: 'Módulo 01: Foundations & Daily Routine (A1)',
+      connectors: 'Módulo 02: Travel, Airport & Directions (A1-A2)',
+      social_dating: 'Módulo 03: Food, Dining & Social Life (A2)',
+      professional_english: 'Módulo 04: Workplace & Professional Tech (B1)',
+      phrasal_verbs: 'Módulo 05: Socializing & Idiomatic Slang (B1)',
+      compound_words: 'Módulo 06: Debate, Opinions & Current Events (B2)',
+      affixes_morphology: 'Módulo 07: Science, Nature & Environment (B2)',
+      grammar_path: 'Módulo 08: Literature, Storytelling & Cinema (C1)',
+      toefl_simulator: 'Módulo 09: Academic Research & TOEFL Prep (C1)',
+      internet_slang: 'Módulo 10: Master Fluency & Accent Reduction (C2)'
+    };
+
+    function isModuleLevelCompleted(modKey, level = 1) {
+      try {
+        const completed = JSON.parse(localStorage.getItem('user_completed_modules') || '{}');
+        return Boolean(completed[`${modKey}_lvl${level}`]);
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function markModuleLevelCompleted(modKey, level = 1) {
+      try {
+        const completed = JSON.parse(localStorage.getItem('user_completed_modules') || '{}');
+        completed[`${modKey}_lvl${level}`] = true;
+        localStorage.setItem('user_completed_modules', JSON.stringify(completed));
+      } catch (e) {}
+    }
+
+    function renderLearningModules() {
+      if (typeof window.renderOfficialLearningModules === 'function') {
+        window.renderOfficialLearningModules();
+      }
+    }
+
     function renderGlossaryItems(items) {
       const container = document.getElementById('glossaryTermsContainer');
       if (!container) return;
@@ -3079,8 +3308,8 @@ window.logout = function() {
         ? window.MASTER_MODULES_DATA[activeGlossaryModuleKey] 
         : { title: MODULE_TITLES[activeGlossaryModuleKey] || 'Glosario_Ingles', items: [] };
 
-      const safeTitle = (modData.title || 'Glosario_Ingles').replace(/[^a-zA-Z0-9_-]/g, '_');
-      const filename = 'Glosario.pdf';
+      const safeTitle = (MODULE_TITLES[activeGlossaryModuleKey] || modData.title || 'Glosario_Ingles').replace(/[^a-zA-Z0-9_-]/g, '_');
+      const filename = ('MasterENG_' + safeTitle + '.pdf') || 'Glosario.pdf';
 
       // 1. Si jsPDF está disponible en el entorno, generar documento visual de alta fidelidad
       if (window.jspdf && window.jspdf.jsPDF) {
@@ -3133,26 +3362,36 @@ window.logout = function() {
     }
 
     function openGlossaryModal(modKey) {
+      let modObj = null;
       if (typeof modKey === 'number' || (typeof modKey === 'string' && /^\d+$/.test(modKey))) {
-        const found = (window.OFFICIAL_LEARNING_MODULES || []).find(m => m.id === Number(modKey));
-        if (found && found.key) modKey = found.key;
+        modObj = (window.OFFICIAL_LEARNING_MODULES || []).find(m => m.id === Number(modKey));
+        if (modObj && modObj.key) modKey = modObj.key;
+      } else if (typeof modKey === 'string') {
+        modObj = (window.OFFICIAL_LEARNING_MODULES || []).find(m => m.key === modKey);
       }
       if (modKey) activeGlossaryModuleKey = modKey;
       const modData = (window.MASTER_MODULES_DATA && window.MASTER_MODULES_DATA[activeGlossaryModuleKey])
         ? window.MASTER_MODULES_DATA[activeGlossaryModuleKey]
         : { title: (typeof MODULE_TITLES !== 'undefined' && MODULE_TITLES[activeGlossaryModuleKey]) || 'Glosario Oficial', items: [] };
+      const displayTitle = modObj
+        ? `Glosario Módulo 0${modObj.id < 10 ? modObj.id : modObj.id} (${modObj.level}): ${modObj.title}`.replace('010', '10')
+        : (modData.title || MODULE_TITLES[activeGlossaryModuleKey] || 'Glosario Oficial');
       const titleEl = document.getElementById('glossaryModalTitle');
-      if (titleEl) titleEl.textContent = modData.title || 'Glosario Oficial';
+      const subEl = document.getElementById('glossaryModalSubtitle');
+      if (titleEl) titleEl.textContent = displayTitle;
+      if (subEl) subEl.textContent = `${(modData.items || []).length} términos con pronunciación fonética, traducción al español y ejemplos`;
       const searchInput = document.getElementById('glossarySearchInput');
       if (searchInput) searchInput.value = '';
       renderGlossaryItems(modData.items || []);
       const modal = document.getElementById('glossaryModal');
       if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('active');
         modal.style.display = 'flex';
         modal.style.setProperty('display', 'flex', 'important');
+        modal.style.setProperty('visibility', 'visible', 'important');
         modal.style.setProperty('pointer-events', 'auto', 'important');
-        modal.classList.add('active');
-        modal.classList.remove('hidden');
+        modal.style.setProperty('z-index', '100000', 'important');
       }
     }
 
@@ -6360,7 +6599,7 @@ window.logout = function() {
           localStorage.setItem('english_app_user_session', JSON.stringify(adminData));
         } catch (err) { }
 
-        alert("¡Acceso concedido como Administrador!");
+        showFloatingToast('¡Acceso concedido como Administrador!', '🛡️');
 
         const loginModal = document.getElementById('login-modal') || document.querySelector('.login-container');
         if (loginModal) {
@@ -6407,16 +6646,44 @@ window.logout = function() {
         return false;
       }
 
-      alert("Credenciales incorrectas. Para admin usa: admin / Admin2026!Master");
+      // Verificar también si es un usuario registrado localmente
+      try {
+        const regList = JSON.parse(localStorage.getItem('english_app_registered_users') || '[]');
+        const matchedUser = regList.find(u =>
+          (u.username && u.username.toLowerCase() === userInput.toLowerCase()) ||
+          (u.email && u.email.toLowerCase() === userInput.toLowerCase())
+        );
+        if (matchedUser && (!matchedUser.password || matchedUser.password === passInput)) {
+          const studentSession = {
+            username: matchedUser.username,
+            email: matchedUser.email || (matchedUser.username + '@mastereng.com'),
+            role: matchedUser.role || 'user',
+            exp: matchedUser.exp || 0,
+            rank: matchedUser.rank || 'Bronce'
+          };
+          saveStoredAuthUser(studentSession);
+          localStorage.setItem('user_role', 'user');
+          updateUserExpDisplay();
+          const viewAuthEl = document.getElementById('view-auth');
+          if (viewAuthEl) {
+            viewAuthEl.style.display = 'none';
+            viewAuthEl.classList.add('hidden');
+          }
+          showFloatingToast('¡Bienvenido de nuevo, ' + studentSession.username + '!', '✅');
+          goToHomePortals();
+          return false;
+        }
+      } catch (e) {}
+
       if (typeof showAuthAlert === 'function') {
-        showAuthAlert('Credenciales incorrectas. Para admin usa: admin / Admin2026!Master', 'error');
+        showAuthAlert('Usuario o contraseña incorrectos. Regístrate primero', 'error');
       }
       return false;
     };
 
     window.handleGoogleAuth = function(e) {
       if (e && typeof e.preventDefault === 'function') e.preventDefault();
-      alert("Iniciando acceso con cuenta de Google...");
+      showFloatingToast('Iniciando acceso con cuenta de Google...', '🔒');
       window.continueAsGuest(e);
       return false;
     };
@@ -6425,16 +6692,41 @@ window.logout = function() {
   window.goToHomePortals = goToHomePortals;
   window.openPortalWithLoader = openPortalWithLoader;
   window.getStoredUser = getStoredUser;
-  window.saveStoredUser = saveStoredUser;
+  window.saveStoredUser = saveStoredAuthUser;
+  window.saveStoredAuthUser = saveStoredAuthUser;
   window.updateUserExpDisplay = updateUserExpDisplay;
   window.addExp = addExp;
   window.showFloatingToast = showFloatingToast;
   window.openAdminDashboardModal = openAdminDashboardModal;
   window.closeAdminDashboardModal = closeAdminDashboardModal;
   window.loadAdminUsersData = loadAdminUsersData;
+  window.refreshAdminUsersData = refreshAdminUsersData;
+  window.handleAdminUserSearch = handleAdminUserSearch;
+  window.openAdminConfirmDelete = openAdminConfirmDelete;
+  window.closeAdminConfirmDelete = closeAdminConfirmDelete;
   window.executeAdminDeleteUser = executeAdminDeleteUser;
-  window.openAdminViewProgressModal = openAdminViewProgressModal;
-  window.closeAdminViewProgressModal = closeAdminViewProgressModal;
+  window.openAdminUserProgress = openAdminUserProgress;
+  window.closeAdminViewProgress = closeAdminViewProgress;
+  window.openAdminViewProgressModal = openAdminUserProgress;
+  window.closeAdminViewProgressModal = closeAdminViewProgress;
+  window.openProfileModal = openProfileModal;
+  window.closeProfileModal = closeProfileModal;
+  window.openRouletteModal = openRouletteModal;
+  window.closeRouletteModal = closeRouletteModal;
+  window.spinRouletteWheel = spinRouletteWheel;
+  window.handleRouletteAnswer = handleRouletteAnswer;
+  window.toggleChatbotWindow = toggleChatbotWindow;
+  window.askChatbotQuestion = askChatbotQuestion;
+  window.sendChatbotMessage = sendChatbotMessage;
+  window.filterGlossaryTerms = filterGlossaryTerms;
+  window.closeGlossaryModal = closeGlossaryModal;
+  window.submitMissionAnswer = submitMissionAnswer;
+  window.closeMissionModal = closeMissionModal;
+  window.selectStory = selectStory;
+  window.speakStoryParagraph = speakStoryParagraph;
+  window.toggleBilingualStoryMode = toggleBilingualStoryMode;
+  window.readEntireStoryAudio = readEntireStoryAudio;
+  window.startVoicePracticeParagraph = startVoicePracticeParagraph;
   window.checkForceUpdate = checkForceUpdate;
   window.triggerBlobDownload = triggerBlobDownload;
   window.triggerDirectDownload = triggerDirectDownload;
@@ -6494,6 +6786,11 @@ window.logout = function() {
         localStorage.setItem('mastereng_user', JSON.stringify(newUser));
         localStorage.setItem('user_role', 'user');
         localStorage.setItem('english_app_user_session', JSON.stringify(newUser));
+        const regList = JSON.parse(localStorage.getItem('english_app_registered_users') || '[]');
+        if (!regList.some(u => u.username === username)) {
+          regList.push({ ...newUser, password });
+          localStorage.setItem('english_app_registered_users', JSON.stringify(regList));
+        }
       } catch (err) { }
 
       const authView = document.getElementById('view-auth');
@@ -6633,7 +6930,7 @@ window.logout = function() {
             </div>
           </div>
           <div class="flex items-center gap-2 pt-2 border-t border-slate-800">
-            <button type="button" onclick="window.openModuleGlossary(${mod.id}); if(typeof window.downloadActiveGlossaryPdf === 'function') window.downloadActiveGlossaryPdf(${mod.id});"
+            <button type="button" onclick="window.openModuleGlossary(${mod.id})"
               class="flex-1 py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer">
               <span>📖</span>
               <span>Glosario Oficial</span>
@@ -6660,25 +6957,44 @@ window.logout = function() {
 
 
     /* ========================================================
-       BUSCADOR GLOBAL DE MÚSICA CON ITUNES SEARCH API
+       BUSCADOR GLOBAL DE MÚSICA EN VIVO (ITUNES WEB API + LRCLIB LYRICS + YT MUSIC)
        ======================================================== */
     window.searchGlobalMusic = async function(term) {
       const inputEl = document.getElementById('musicSearchInput');
-      const query = (typeof term === 'string' ? term : inputEl?.value || '').trim();
-      const resultsGrid = document.querySelector('.music-results-grid') || document.getElementById('musicResultsGrid');
+      const query = (typeof term === 'string' ? term : (inputEl ? inputEl.value : '')).trim();
+      const resultsGrid = document.getElementById('musicResultsGrid') || document.querySelector('.music-results-grid');
+      const suggestionsEl = document.getElementById('musicSearchSuggestions');
+
+      // Ocultar sugerencias emergentes de inmediato para despejar la vista
+      if (suggestionsEl) {
+        suggestionsEl.classList.add('hidden');
+      }
 
       if (!query) {
-        showFloatingToast('Escribe el título de una canción o artista', '⚠️');
+        showFloatingToast('Escribe el título de una canción o artista para buscar en la web', '🎵');
+        if (inputEl && typeof inputEl.focus === 'function') inputEl.focus();
         return;
+      }
+
+      // Si el usuario pegó directamente un enlace o ID de YouTube, cargarlo también
+      if (typeof extractYouTubeId === 'function') {
+        const ytId = extractYouTubeId(query);
+        if (ytId && (query.includes('youtube.com') || query.includes('youtu.be'))) {
+          const iframe = document.getElementById('musicYouTubeIframe');
+          if (iframe) iframe.src = `https://www.youtube-nocookie.com/embed/${ytId}?enablejsapi=1&autoplay=1&rel=0`;
+          showFloatingToast('Reproduciendo video de YouTube en sala', '🎬');
+          return;
+        }
       }
 
       if (resultsGrid) {
         resultsGrid.style.display = 'grid';
+        resultsGrid.style.setProperty('display', 'grid', 'important');
         resultsGrid.classList.remove('hidden');
         resultsGrid.innerHTML = `
-          <div class="col-span-full py-10 flex flex-col items-center justify-center gap-3 text-cyan-300">
+          <div class="col-span-full py-8 flex flex-col items-center justify-center gap-3 text-cyan-300 bg-slate-950/60 rounded-2xl border border-cyan-500/30">
             <div class="w-8 h-8 rounded-full border-2 border-cyan-400 border-t-transparent animate-spin"></div>
-            <p class="text-xs font-bold">Buscando en iTunes Music API: "${query}"...</p>
+            <p class="text-xs font-bold">Consultando catálogo musical global en vivo para "${query}"...</p>
           </div>
         `;
       }
@@ -6687,97 +7003,109 @@ window.logout = function() {
         const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=12`;
         const res = await fetch(url);
         const data = await res.json();
-        const songs = data.results || [];
+        const songs = (data && Array.isArray(data.results)) ? data.results : [];
 
         if (songs.length === 0) {
           if (resultsGrid) {
             resultsGrid.innerHTML = `
-              <div class="col-span-full py-8 text-center text-xs text-slate-400">
-                No se encontraron canciones en iTunes para "${query}". Prueba con otro artista.
+              <div class="col-span-full py-6 px-4 text-center text-xs text-slate-300 bg-slate-950/60 rounded-2xl border border-slate-800">
+                No se encontraron canciones para "${query}". Intenta con otro título o artista.
               </div>
             `;
           }
           return;
         }
 
+        window._lastSearchedWebSongs = songs;
+
         if (resultsGrid) {
           resultsGrid.innerHTML = songs.map((s, idx) => {
-            const cleanTitle = (s.trackName || 'Pista').replace(/"/g, '&quot;');
-            const cleanArtist = (s.artistName || 'Artista').replace(/"/g, '&quot;');
-            const cleanArtwork = s.artworkUrl100 || 'images/portal_music.svg';
+            const rawTitle = s.trackName || 'Song';
+            const rawArtist = s.artistName || 'Artist';
+            const cleanTitle = rawTitle.replace(/"/g, '&quot;');
+            const cleanArtist = rawArtist.replace(/"/g, '&quot;');
+            const hiResArtwork = (s.artworkUrl100 || 'images/portal_music.svg').replace('100x100bb', '300x300bb');
             const previewUrl = s.previewUrl || '';
-            const safeCall = `window.loadSongToKaraoke(\`${(s.trackName || '').replace(/['\`]/g, '')}\`, \`${(s.artistName || '').replace(/['\`]/g, '')}\`, \`${previewUrl}\`, \`${cleanArtwork}\`)`;
 
             return `
-              <div class="music-track-card p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-cyan-500/50 shadow-xl flex flex-col justify-between transition hover:-translate-y-1">
+              <div class="music-track-card p-3.5 rounded-2xl bg-slate-950/90 border border-slate-800 hover:border-cyan-400/70 shadow-xl flex flex-col justify-between transition hover:-translate-y-1 group">
                 <div>
-                  <div class="relative w-full aspect-square rounded-xl overflow-hidden mb-2.5 bg-slate-950 border border-slate-800">
-                    <img src="${cleanArtwork}" alt="${cleanTitle}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='images/portal_music.svg';">
-                    <span class="absolute top-2 right-2 px-1.5 py-0.5 rounded-full bg-slate-950/80 text-[9px] font-bold text-cyan-300 border border-cyan-500/30">iTunes 30s</span>
+                  <div class="relative w-full aspect-square rounded-xl overflow-hidden mb-2.5 bg-slate-900 border border-slate-800">
+                    <img src="${hiResArtwork}" alt="${cleanTitle}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" onerror="this.onerror=null; this.src='images/portal_music.svg';">
+                    <span class="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-slate-950/85 text-[9px] font-bold text-cyan-300 border border-cyan-500/40">Web Audio</span>
                   </div>
                   <h4 class="text-sm font-extrabold text-white truncate" title="${cleanTitle}">${cleanTitle}</h4>
-                  <p class="text-xs text-slate-400 truncate">${cleanArtist}</p>
+                  <p class="text-xs text-cyan-400/90 font-semibold truncate">${cleanArtist}</p>
                 </div>
                 <div class="mt-3 space-y-2">
-                  ${previewUrl ? `<audio controls src="${previewUrl}" class="w-full h-8" preload="none"></audio>` : ''}
-                  <button type="button" onclick="${safeCall}"
-                    class="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-cyan-500/20 active:scale-95">
-                    <span>⚡</span>
-                    <span>Cargar en Karaoke</span>
+                  ${previewUrl ? `<audio controls src="${previewUrl}" class="w-full h-8 rounded-lg" preload="none"></audio>` : ''}
+                  <button type="button" onclick="window.loadWebSongByIndex(${idx})"
+                    class="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-cyan-500/25 active:scale-95">
+                    <span>🎤</span>
+                    <span>Reproducir con Letra</span>
                   </button>
                 </div>
               </div>
             `;
           }).join('');
         }
+        showFloatingToast(`${songs.length} canciones encontradas para "${query}"`, '🎵');
       } catch (err) {
-        console.warn('Error al buscar en iTunes API:', err);
+        console.warn('Error al buscar en la web musical:', err);
         if (resultsGrid) {
           resultsGrid.innerHTML = `
-            <div class="col-span-full py-8 text-center text-xs text-rose-400">
-              Error de conexión con iTunes API. Mostrando canciones locales disponibles.
+            <div class="col-span-full py-6 text-center text-xs text-amber-300 bg-slate-950/60 rounded-2xl border border-amber-500/30">
+              No se pudo conectar con el servicio musical web en este momento. Verifica tu conexión a internet.
             </div>
           `;
         }
       }
     };
 
+    window.loadWebSongByIndex = function(idx) {
+      const s = (window._lastSearchedWebSongs || [])[idx];
+      if (!s) return;
+      const hiResArtwork = (s.artworkUrl100 || 'images/portal_music.svg').replace('100x100bb', '300x300bb');
+      window.loadSongToKaraoke(s.trackName || 'Track', s.artistName || 'Artist', s.previewUrl || '', hiResArtwork);
+    };
+
     window.loadSongToKaraoke = function(trackName, artistName, previewUrl, artworkUrl) {
-      console.log('Cargando pista en Karaoke:', trackName, artistName);
+      return (async function() {
       const titleEl = document.getElementById('activeMusicTitle');
       const artistEl = document.getElementById('activeMusicArtist');
       if (titleEl) titleEl.textContent = trackName;
       if (artistEl) artistEl.textContent = artistName;
 
-      // Generar subtítulos de entrenamiento fonético automático
-      const dynamicLyrics = [
-        { time: 0, text: `[Track] ${trackName} - ${artistName}`, translation: `Escuchando ${trackName}` },
-        { time: 4, text: "Listen carefully to the vowel sounds and rhythm", translation: "Escucha con atención los sonidos vocálicos y el ritmo" },
-        { time: 8, text: `Sing with ${artistName} to improve natural accent`, translation: `Canta con ${artistName} para mejorar tu acento natural` },
-        { time: 14, text: "Focus on connected speech and word linking", translation: "Enfócate en el habla conectada y el enlace de palabras" },
-        { time: 20, text: "Repeat phrases aloud to build muscle memory", translation: "Repite las frases en voz alta para crear memoria muscular" },
-        { time: 25, text: "Great pronunciation session! Keep up the practice", translation: "¡Excelente sesión de pronunciación! Sigue practicando" }
-      ];
-
-      const lyricsContainer = document.getElementById('musicLyricsContainer');
-      if (lyricsContainer) {
-        lyricsContainer.innerHTML = dynamicLyrics.map(line => `
-          <p class="lyric-line p-3 rounded-xl transition-all duration-300 cursor-pointer" data-start="${line.time}">
-            <span class="block text-white font-extrabold text-sm sm:text-base">${line.text}</span>
-            <span class="block text-xs text-cyan-300/80 mt-0.5">${line.translation}</span>
-          </p>
-        `).join('');
+      // Pausar YouTube previo si estaba activo
+      if (typeof window.pauseYouTubePlayer === 'function') {
+        window.pauseYouTubePlayer();
       }
 
-      // Integración con reproductor de audio nativo y sincronización timeupdate
+      // Si la canción coincide con alguna del catálogo con video oficial de YouTube, cargar también su video
+      if (Array.isArray(window.MUSIC_SESSION_TRACKS)) {
+        const matchLocal = window.MUSIC_SESSION_TRACKS.find(t =>
+          t.title.toLowerCase().includes(trackName.toLowerCase()) ||
+          trackName.toLowerCase().includes(t.title.toLowerCase())
+        );
+        const iframe = document.getElementById('musicYouTubeIframe');
+        if (matchLocal && matchLocal.ytId && iframe) {
+          iframe.src = `https://www.youtube-nocookie.com/embed/${matchLocal.ytId}?enablejsapi=1&rel=0`;
+        }
+      }
+
+      // Configurar reproductor de audio sincronizado en la tarjeta principal
       let audioTracker = document.getElementById('karaokeAudioTracker');
       if (!audioTracker) {
         audioTracker = document.createElement('audio');
         audioTracker.id = 'karaokeAudioTracker';
         audioTracker.className = 'w-full mt-3 rounded-xl';
         audioTracker.controls = true;
-        const playerCard = document.getElementById('musicPlayerCard') || document.querySelector('#view-music .grid > div') || document.body;
-        playerCard.appendChild(audioTracker);
+        const iframeParent = document.getElementById('musicYouTubeIframe')?.parentElement?.parentElement;
+        if (iframeParent) {
+          iframeParent.appendChild(audioTracker);
+        } else {
+          document.body.appendChild(audioTracker);
+        }
       }
 
       if (previewUrl) {
@@ -6788,38 +7116,88 @@ window.logout = function() {
         } catch (e) {}
       }
 
-      audioTracker.ontimeupdate = function() {
-        const currentTime = audioTracker.currentTime;
-        let matchedIdx = 0;
-        for (let i = 0; i < dynamicLyrics.length; i++) {
-          if (currentTime >= dynamicLyrics[i].time) {
-            matchedIdx = i;
-          } else {
-            break;
+      // Mostrar indicador de carga de letra real desde LRCLIB API
+      const lyricsContainer = document.getElementById('musicLyricsContainer');
+      if (lyricsContainer) {
+        lyricsContainer.innerHTML = `
+          <div class="py-8 text-center text-cyan-300 text-xs font-semibold flex flex-col items-center gap-2">
+            <div class="w-6 h-6 rounded-full border-2 border-cyan-400 border-t-transparent animate-spin"></div>
+            <span>Sincronizando letra oficial de "${trackName}" — ${artistName}...</span>
+          </div>
+        `;
+      }
+
+      let finalLyrics = null;
+      try {
+        const lrcUrl = `https://lrclib.net/api/search?q=${encodeURIComponent(trackName + ' ' + artistName)}`;
+        const lrcRes = await fetch(lrcUrl);
+        if (lrcRes.ok) {
+          const lrcData = await lrcRes.json();
+          if (Array.isArray(lrcData) && lrcData.length > 0) {
+            const best = lrcData.find(item => item.syncedLyrics) || lrcData.find(item => item.plainLyrics) || lrcData[0];
+            if (best && best.syncedLyrics) {
+              const lines = best.syncedLyrics.split(/\r?\n/);
+              const parsed = [];
+              lines.forEach(line => {
+                const m = line.match(/^\[(\d+):(\d+(?:\.\d+)?)\](.*)/);
+                if (m) {
+                  const sec = Math.floor(parseInt(m[1], 10) * 60 + parseFloat(m[2]));
+                  const txt = m[3].trim();
+                  if (txt) {
+                    parsed.push({ time: sec, text: txt, es: 'Haz clic en cualquier palabra para ver su fonética y traducción' });
+                  }
+                }
+              });
+              if (parsed.length > 0) finalLyrics = parsed.slice(0, 40);
+            } else if (best && best.plainLyrics) {
+              const lines = best.plainLyrics.split(/\r?\n/).map(l => l.trim()).filter(Boolean).slice(0, 30);
+              if (lines.length > 0) {
+                finalLyrics = lines.map((txt, idx) => ({
+                  time: idx * 4,
+                  text: txt,
+                  es: 'Haz clic en cualquier palabra para inspeccionar pronunciación IPA'
+                }));
+              }
+            }
           }
         }
-        const lines = lyricsContainer ? lyricsContainer.querySelectorAll('.lyric-line') : [];
-        lines.forEach((lineEl, idx) => {
-          if (idx === matchedIdx) {
-            if (!lineEl.classList.contains('lyric-active')) {
-              lineEl.classList.add('lyric-active', 'scale-[1.02]', 'border-cyan-400', 'bg-cyan-950/80', 'text-white');
-              lineEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-          } else {
-            lineEl.classList.remove('lyric-active', 'scale-[1.02]', 'border-cyan-400', 'bg-cyan-950/80', 'text-white');
-          }
-        });
+      } catch (lrcErr) {
+        console.warn('Fallback a letra fonética interactiva:', lrcErr);
+      }
+
+      if (!finalLyrics || finalLyrics.length === 0) {
+        finalLyrics = [
+          { time: 0, text: `${trackName} - ${artistName}`, es: `Escuchando ${trackName} de ${artistName}` },
+          { time: 4, text: "Listen carefully to the vowel sounds and natural rhythm", es: "Escucha con atención los sonidos vocálicos y el ritmo natural" },
+          { time: 9, text: `Sing along with ${artistName} to master connected speech`, es: `Canta junto a ${artistName} para dominar el habla conectada` },
+          { time: 15, text: "Click on any English word above to inspect its phonetic IPA", es: "Haz clic en cualquier palabra en inglés para ver su fonética IPA" },
+          { time: 21, text: "Repeat each verse aloud to build fluency and confidence", es: "Repite cada verso en voz alta para desarrollar fluidez y confianza" },
+          { time: 26, text: "Awesome pronunciation practice! Complete the challenge for +30 EXP", es: "¡Excelente práctica de pronunciación! Completa el reto por +30 EXP" }
+        ];
+      }
+
+      if (typeof window.renderLyricsFromList === 'function') {
+        window.renderLyricsFromList(finalLyrics);
+      } else if (lyricsContainer) {
+        lyricsContainer.innerHTML = finalLyrics.map(line => `
+          <p class="lyric-line p-3 rounded-xl transition-all duration-300 cursor-pointer" data-start="${line.time}">
+            <span class="block text-white font-extrabold text-sm sm:text-base">${line.text}</span>
+            <span class="block text-xs text-cyan-300/80 mt-0.5">${line.es || ''}</span>
+          </p>
+        `).join('');
+      }
+
+      audioTracker.ontimeupdate = function() {
+        if (typeof window.handleKaraokeTimeUpdate === 'function') {
+          window.handleKaraokeTimeUpdate(audioTracker.currentTime);
+        }
       };
 
-      showFloatingToast(`Pista "${trackName}" lista para cantar`, '🎤');
-
-      // Scroll hacia el reproductor
-      const playerCard = document.getElementById('musicPlayerCard') || document.querySelector('.music-player-container');
-      if (playerCard) {
-        playerCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
+      showFloatingToast(`Reproduciendo "${trackName}" con letra interactiva`, '🎤');
+      const lyricsBox = document.getElementById('musicLyricsContainer');
+      if (lyricsBox) lyricsBox.scrollTop = 0;
+      })();
     };
-
 
     /* ========================================================
        LISTENERS GLOBALES PARA CIERRE UNIVERSAL DE MODALES
