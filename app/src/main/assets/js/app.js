@@ -1264,19 +1264,30 @@
         return;
       }
 
+      currentActiveView = targetId;
+
       ['view-auth', 'view-home', 'view-path', 'view-stories', 'view-music', 'view-worldtour'].forEach(v => {
         const el = document.getElementById(v);
         if (el) {
           if (v === targetId) {
             el.classList.remove('hidden');
             el.style.display = 'flex';
+            el.style.setProperty('display', v === 'view-home' || v === 'view-auth' ? 'flex' : 'block', 'important');
             el.style.pointerEvents = 'auto';
+            el.style.setProperty('pointer-events', 'auto', 'important');
             el.style.visibility = 'visible';
+            el.style.setProperty('visibility', 'visible', 'important');
+            if (v === 'view-auth') {
+              el.style.setProperty('z-index', '10000', 'important');
+            }
           } else {
             el.classList.add('hidden');
             el.style.display = 'none';
+            el.style.setProperty('display', 'none', 'important');
             el.style.pointerEvents = 'none';
+            el.style.setProperty('pointer-events', 'none', 'important');
             el.style.visibility = 'hidden';
+            el.style.setProperty('visibility', 'hidden', 'important');
             if (v === 'view-auth') {
               el.style.zIndex = '-1';
             }
@@ -1288,16 +1299,22 @@
         const loginModal = document.getElementById('login-modal') || document.querySelector('.login-container');
         if (loginModal) {
           loginModal.style.display = 'none';
+          loginModal.style.setProperty('display', 'none', 'important');
           loginModal.style.pointerEvents = 'none';
+          loginModal.style.setProperty('pointer-events', 'none', 'important');
           loginModal.style.visibility = 'hidden';
           loginModal.classList.add('hidden');
         }
-        const mainApp = document.getElementById('app-main') || document.getElementById('main-content') || document.getElementById('view-home');
+        const mainApp = document.getElementById('app-main') || document.getElementById('main-content');
         if (mainApp) {
           mainApp.style.pointerEvents = 'auto';
           mainApp.style.display = 'block';
         }
         document.body.style.overflow = 'auto';
+      }
+
+      if (typeof updateFloatingWidgetsVisibility === 'function') {
+        updateFloatingWidgetsVisibility();
       }
 
       if (targetId === 'view-home' || viewId === 'hub' || viewId === 'hub-view') {
@@ -1306,9 +1323,30 @@
         }
       }
       if (targetId === 'view-path') {
+        const lpv = document.getElementById('learning-path-view');
+        if (lpv) {
+          lpv.classList.remove('hidden');
+          lpv.style.setProperty('display', 'block', 'important');
+          lpv.style.setProperty('pointer-events', 'auto', 'important');
+        }
         if (typeof window.renderOfficialLearningModules === 'function') {
           window.renderOfficialLearningModules();
         }
+      }
+      if (targetId === 'view-worldtour') {
+        setTimeout(() => {
+          try {
+            if (typeof window.initOrResumeWorld3D === 'function') window.initOrResumeWorld3D();
+            else if (typeof initThreeWorldTour === 'function') initThreeWorldTour();
+            window.dispatchEvent(new Event('resize'));
+          } catch (err) { console.error(err); }
+        }, 60);
+      }
+      if (targetId === 'view-music') {
+        if (typeof renderMusicTracksList === 'function') renderMusicTracksList();
+      }
+      if (targetId === 'view-stories') {
+        if (typeof renderStorySelector === 'function') renderStorySelector();
       }
       if (targetId !== 'view-music' && typeof pauseYouTubePlayer === 'function') {
         pauseYouTubePlayer();
@@ -1533,43 +1571,68 @@ window.logout = function() {
     window.updateCoverFlowVisuals = window.updatePortalDisplay;
 
     window.currentPortal = 0;
+    window.currentPortalIdx = 0;
+    window._lastPortalStepTime = 0;
+
     window.showPortal = function(index) {
       const cards = document.querySelectorAll('.portal-card');
       const dots = document.querySelectorAll('.carousel-dot');
       if (!cards.length) return;
-      window.currentPortal = (index + cards.length) % cards.length;
+      const total = cards.length;
+      window.currentPortal = ((index % total) + total) % total;
+      window.currentPortalIdx = window.currentPortal;
+      window.currentPortalIndex = window.currentPortal;
+      currentCoverFlowIndex = window.currentPortal;
+
       cards.forEach((c, idx) => {
-        c.style.display = (idx === window.currentPortal) ? 'flex' : 'none';
-        c.classList.toggle('active', idx === window.currentPortal);
-        if (idx === window.currentPortal) {
+        const isActive = (idx === window.currentPortal);
+        c.style.display = isActive ? 'flex' : 'none';
+        c.style.setProperty('display', isActive ? 'flex' : 'none', 'important');
+        c.classList.toggle('active', isActive);
+        c.classList.toggle('active-center', isActive);
+        if (isActive) {
+          c.classList.remove('hidden', 'side-left', 'side-right', 'hidden-back');
           c.style.opacity = '1';
           c.style.pointerEvents = 'auto';
+          c.style.setProperty('pointer-events', 'auto', 'important');
         } else {
+          c.style.opacity = '0';
           c.style.pointerEvents = 'none';
+          c.style.setProperty('pointer-events', 'none', 'important');
         }
       });
       dots.forEach((d, idx) => {
-        d.classList.toggle('active', idx === window.currentPortal);
+        const isActive = (idx === window.currentPortal);
+        d.classList.toggle('active', isActive);
+        d.classList.remove('hidden');
+        d.style.setProperty('display', 'inline-block', 'important');
+        d.className = isActive
+          ? 'carousel-dot active w-3 h-3 rounded-full bg-amber-400 transition-all duration-300 shadow cursor-pointer'
+          : 'carousel-dot w-2.5 h-2.5 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer';
       });
-      window.currentPortalIndex = window.currentPortal;
     };
+
+    window.stepPortal = function(delta) {
+      const now = Date.now();
+      if (now - (window._lastPortalStepTime || 0) < 70) return;
+      window._lastPortalStepTime = now;
+      window.showPortal((window.currentPortal || 0) + delta);
+    };
+
     window.nextPortal = function() {
-      window.showPortal(window.currentPortal + 1);
-      if (typeof navigateCoverFlow === 'function') {
-        try { navigateCoverFlow(1); } catch (e) {}
-      }
+      window.stepPortal(1);
     };
     window.prevPortal = function() {
-      window.showPortal(window.currentPortal - 1);
-      if (typeof navigateCoverFlow === 'function') {
-        try { navigateCoverFlow(-1); } catch (e) {}
-      }
+      window.stepPortal(-1);
     };
     window.updatePortalDisplay = function() {
       window.showPortal(window.currentPortal || 0);
     };
     window.updateCoverFlowVisuals = window.updatePortalDisplay;
-    window.goToPortal = function(idx) { window.showPortal(idx); };
+    window.goToPortal = function(idx) {
+      window._lastPortalStepTime = Date.now();
+      window.showPortal(idx);
+    };
 
     function navigateCoverFlow(direction) {
       if (direction > 0) {
@@ -1581,12 +1644,10 @@ window.logout = function() {
     window.navigateCoverFlow = navigateCoverFlow;
 
     window.prevSlide = function() {
-      window.prevPortal();
       navigateCoverFlow(-1);
     };
 
     window.nextSlide = function() {
-      window.nextPortal();
       navigateCoverFlow(1);
     };
 
@@ -1604,13 +1665,13 @@ window.logout = function() {
 
     window.openPortalModules = function(targetPortal) {
       const portalModules = ['path', 'worldtour', 'music', 'stories'];
-      const activeIdx = (typeof window.currentPortal === 'number') 
-        ? ((window.currentPortal % 3 + 3) % 3) 
+      const activeIdx = (typeof window.currentPortal === 'number')
+        ? ((window.currentPortal % 4 + 4) % 4)
         : 0;
       const portal = targetPortal || portalModules[activeIdx] || 'path';
       console.log('Ingresando al portal de módulos:', portal, 'Índice activo:', activeIdx);
 
-      if (portal === 'path' || activeIdx === 0) {
+      if (portal === 'path') {
         if (typeof window.navigateToView === 'function') {
           window.navigateToView('learning-path-view');
         } else if (typeof showView === 'function') {
@@ -1622,7 +1683,7 @@ window.logout = function() {
         if (typeof window.renderOfficialLearningModules === 'function') {
           window.renderOfficialLearningModules();
         }
-      } else if (portal === 'worldtour' || activeIdx === 1) {
+      } else if (portal === 'worldtour') {
         if (typeof window.navigateToView === 'function') {
           window.navigateToView('world3d-view');
         } else if (typeof showView === 'function') {
@@ -1633,7 +1694,7 @@ window.logout = function() {
         } else if (typeof initThreeWorldTour === 'function') {
           initThreeWorldTour();
         }
-      } else if (portal === 'music' || activeIdx === 2) {
+      } else if (portal === 'music') {
         if (typeof window.navigateToView === 'function') {
           window.navigateToView('music-view');
         } else if (typeof showView === 'function') {
@@ -1845,7 +1906,7 @@ window.logout = function() {
 
     function getStoredUser() {
       try {
-        const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+        const raw = localStorage.getItem(AUTH_STORAGE_KEY) || localStorage.getItem('mastereng_user');
         return raw ? JSON.parse(raw) : null;
       } catch (e) {
         return null;
@@ -1855,6 +1916,7 @@ window.logout = function() {
     function saveStoredAuthUser(user) {
       try {
         localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+        localStorage.setItem('mastereng_user', JSON.stringify(user));
       } catch (e) { }
     }
 
@@ -2394,14 +2456,25 @@ window.logout = function() {
         else if (modalId === 'roulette-modal') modal = document.getElementById('rouletteModal');
       }
       if (!modal) return;
-      const isVisible = modal.style.display === 'flex' || modal.classList.contains('active');
+      const now = Date.now();
+      if (window._lastToggleModalId === modal.id && (now - (window._lastToggleModalTime || 0)) < 120) {
+        return;
+      }
+      window._lastToggleModalId = modal.id;
+      window._lastToggleModalTime = now;
+
+      const isVisible = (modal.style.display === 'flex' || modal.classList.contains('active')) && !modal.classList.contains('hidden');
       document.querySelectorAll('.modal, .drawer').forEach(m => {
         m.style.display = 'none';
+        m.style.setProperty('display', 'none', 'important');
         m.classList.remove('active');
         m.classList.add('hidden');
       });
       if (!isVisible) {
         modal.style.display = 'flex';
+        modal.style.setProperty('display', 'flex', 'important');
+        modal.style.setProperty('pointer-events', 'auto', 'important');
+        modal.style.setProperty('visibility', 'visible', 'important');
         modal.classList.add('active');
         modal.classList.remove('hidden');
         modal.style.zIndex = '100000';
@@ -2637,31 +2710,38 @@ window.logout = function() {
       if (!isAuthenticated || currentActiveView === 'view-auth') {
         if (dock) {
           dock.style.display = 'none';
+          dock.style.setProperty('display', 'none', 'important');
           dock.classList.add('hidden');
         }
         if (robot) {
           robot.style.display = 'none';
+          robot.style.setProperty('display', 'none', 'important');
           robot.classList.add('hidden');
         }
         if (roulette) {
           roulette.style.display = 'none';
+          roulette.style.setProperty('display', 'none', 'important');
           roulette.classList.add('hidden');
         }
       } else {
         if (dock) {
           dock.style.display = 'flex';
+          dock.style.setProperty('display', 'flex', 'important');
           dock.classList.remove('hidden');
         }
         if (robot) {
           robot.style.display = 'flex';
+          robot.style.setProperty('display', 'flex', 'important');
           robot.classList.remove('hidden');
         }
         if (roulette) {
           if (currentActiveView === 'view-home') {
             roulette.style.display = 'flex';
+            roulette.style.setProperty('display', 'flex', 'important');
             roulette.classList.remove('hidden');
           } else {
             roulette.style.display = 'none';
+            roulette.style.setProperty('display', 'none', 'important');
             roulette.classList.add('hidden');
           }
         }
@@ -3053,6 +3133,10 @@ window.logout = function() {
     }
 
     function openGlossaryModal(modKey) {
+      if (typeof modKey === 'number' || (typeof modKey === 'string' && /^\d+$/.test(modKey))) {
+        const found = (window.OFFICIAL_LEARNING_MODULES || []).find(m => m.id === Number(modKey));
+        if (found && found.key) modKey = found.key;
+      }
       if (modKey) activeGlossaryModuleKey = modKey;
       const modData = (window.MASTER_MODULES_DATA && window.MASTER_MODULES_DATA[activeGlossaryModuleKey])
         ? window.MASTER_MODULES_DATA[activeGlossaryModuleKey]
@@ -3065,6 +3149,9 @@ window.logout = function() {
       const modal = document.getElementById('glossaryModal');
       if (modal) {
         modal.style.display = 'flex';
+        modal.style.setProperty('display', 'flex', 'important');
+        modal.style.setProperty('pointer-events', 'auto', 'important');
+        modal.classList.add('active');
         modal.classList.remove('hidden');
       }
     }
@@ -3074,7 +3161,11 @@ window.logout = function() {
     }
 
     function openModuleMission(modKey) {
-      currentMissionModuleKey = modKey;
+      if (typeof modKey === 'number' || (typeof modKey === 'string' && /^\d+$/.test(modKey))) {
+        const found = (window.OFFICIAL_LEARNING_MODULES || []).find(m => m.id === Number(modKey));
+        if (found && found.key) modKey = found.key;
+      }
+      currentMissionModuleKey = modKey || 'everyday_actions';
       currentMissionQuestionIndex = 0;
       currentMissionScore = 0;
 
@@ -3113,6 +3204,9 @@ window.logout = function() {
       const modal = document.getElementById('learningMissionModal');
       if (modal) {
         modal.style.display = 'flex';
+        modal.style.setProperty('display', 'flex', 'important');
+        modal.style.setProperty('pointer-events', 'auto', 'important');
+        modal.classList.add('active');
         modal.classList.remove('hidden');
       }
     }
@@ -6365,8 +6459,6 @@ window.logout = function() {
   window.handleLogoutFromSettings = handleLogoutFromSettings;
   window.syncSettingsUiFromStorage = syncSettingsUiFromStorage;
   window.updateFloatingWidgetsVisibility = updateFloatingWidgetsVisibility;
-})();
-
 
     window.handleAuthRegisterSubmit = function(e) {
       if (e && typeof e.preventDefault === 'function') e.preventDefault();
@@ -6458,23 +6550,28 @@ window.logout = function() {
     };
 
     window.openLearningMissionModal = function(modId) {
-      const mod = (window.OFFICIAL_LEARNING_MODULES || []).find(m => m.id === modId);
-      const key = mod ? mod.key : 'phrasal_verbs';
+      const mod = (window.OFFICIAL_LEARNING_MODULES || []).find(m => m.id === Number(modId) || m.key === modId);
+      const key = mod ? mod.key : (typeof modId === 'string' ? modId : 'everyday_actions');
       if (typeof openModuleMission === 'function') {
         openModuleMission(key);
       }
     };
     function openLearningMissionModal(modId) { return window.openLearningMissionModal(modId); }
+    window.openModuleMission = openModuleMission;
+    window.openLearningMission = window.openLearningMissionModal;
+    window.openGlossaryModal = openGlossaryModal;
 
     window.openModuleGlossary = function(modId) {
-      const mod = (window.OFFICIAL_LEARNING_MODULES || []).find(m => m.id === modId);
-      const key = mod ? mod.key : 'phrasal_verbs';
+      const mod = (window.OFFICIAL_LEARNING_MODULES || []).find(m => m.id === Number(modId) || m.key === modId);
+      const key = mod ? mod.key : (typeof modId === 'string' ? modId : 'everyday_actions');
       if (typeof openGlossaryModal === 'function') {
         openGlossaryModal(key);
       } else {
         const modal = document.getElementById('glossaryModal');
         if (modal) {
           modal.style.display = 'flex';
+          modal.style.setProperty('display', 'flex', 'important');
+          modal.classList.add('active');
           modal.classList.remove('hidden');
         }
       }

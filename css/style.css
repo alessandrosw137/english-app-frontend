@@ -970,3 +970,31 @@ textarea,
   z-index: 100000 !important;
   pointer-events: auto !important;
 }
+
+/* ========================================================
+   RELEASE FIX: ALINEACIÓN DE DOCK Y CANVAS ESPECÍFICOS
+   ======================================================== */
+#ai-tutor-btn,
+#roulette-btn {
+  position: relative !important;
+  inset: auto !important;
+}
+
+#rouletteWheelCanvas {
+  position: relative !important;
+  inset: auto !important;
+  width: 220px !important;
+  height: 220px !important;
+  pointer-events: auto !important;
+  z-index: 10 !important;
+}
+
+#threeCanvasContainer canvas,
+#threeWebGLMount canvas {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  pointer-events: auto !important;
+  z-index: 5 !important;
+}
