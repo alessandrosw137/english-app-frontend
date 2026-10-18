@@ -738,72 +738,48 @@
 
     function getInstantDefaultAdminUsers() {
       const authUser = getStoredUser();
-      const baseUsers = [
-        {
-          id: 1, username: 'Wilberth Alessandro Molina Cutz', email: 'wilberth.admin@englishapp.com', role: 'admin', rank: 'Bronce', exp: 0,
-          streak_days: 14,
-          created_at: '2026-10-15T08:00:00.000Z'
-        },
-        {
-          id: 2,
-          username: 'maria_gonzalez',
-          email: 'maria.g@universidad.edu',
-          role: 'user',
-          rank: 'Oro',
-          exp: 920,
-          streak_days: 8,
-          created_at: '2026-10-15T10:30:00.000Z'
-        },
-        {
-          id: 3,
-          username: 'carlos_estudiante',
-          email: 'carlos.e@colegio.com',
-          role: 'user',
-          rank: 'Plata',
-          exp: 480,
-          streak_days: 5,
-          created_at: '2026-10-15T14:15:00.000Z'
-        },
-        {
-          id: 4,
-          username: 'sofia_learning',
-          email: 'sofia.ingles@dominio.com',
-          role: 'user',
-          rank: 'Bronce',
-          exp: 210,
-          streak_days: 2,
-          created_at: '2026-10-16T09:00:00.000Z'
-        }
-      ];
+      let realUsers = [];
       try {
-        const localReg = JSON.parse(localStorage.getItem('english_app_registered_users') || '[]');
-        localReg.forEach((ru, idx) => {
-          if (ru && ru.username && !baseUsers.some(u => u.username === ru.username)) {
-            baseUsers.push({
-              id: 10 + idx,
-              username: ru.username,
-              email: ru.email || (ru.username + '@mastereng.com'),
+        const storedReg = JSON.parse(
+          localStorage.getItem('mastereng_registered_users') ||
+          localStorage.getItem('english_app_registered_users') ||
+          '[]'
+        );
+        if (Array.isArray(storedReg)) {
+          realUsers = storedReg.map((ru, idx) => {
+            const exp = typeof ru.exp === 'number' ? ru.exp : 0;
+            const rank = ru.rank || (typeof calculateRankInfo === 'function' ? calculateRankInfo(exp).rank : 'Bronce');
+            return {
+              id: ru.id || (idx + 1),
+              username: ru.username || (ru.name || 'Estudiante'),
+              email: ru.email || (ru.username ? ru.username + '@mastereng.com' : 'estudiante@mastereng.com'),
               role: ru.role || 'user',
-              rank: ru.rank || 'Bronce',
-              exp: ru.exp || 0,
-              streak_days: 1,
-              created_at: new Date().toISOString()
-            });
-          }
-        });
+              rank: rank,
+              exp: exp,
+              streak_days: ru.streak_days || 1,
+              created_at: ru.created_at || new Date().toISOString()
+            };
+          });
+        }
       } catch (e) {}
-      if (authUser && authUser.username && !baseUsers.some(u => u.username === authUser.username)) {
-        baseUsers.unshift({
-          id: authUser.id || 99,
+
+      // Si hay un usuario logueado en sesión y no está en la lista de registrados, agregarlo
+      if (authUser && authUser.username && !realUsers.some(u => u.username === authUser.username || (authUser.email && u.email === authUser.email))) {
+        const userExp = typeof authUser.exp === 'number' ? authUser.exp : 0;
+        const userRank = authUser.rank || (typeof calculateRankInfo === 'function' ? calculateRankInfo(userExp).rank : 'Bronce');
+        realUsers.unshift({
+          id: authUser.id || (realUsers.length + 1),
           username: authUser.username,
-          email: authUser.email || 'admin.sesion@englishapp.com',
+          email: authUser.email || (authUser.username === 'admin' ? 'admin@mastereng.com' : `${authUser.username}@mastereng.com`),
           role: authUser.role || 'admin',
-          rank: authUser.rank || 'Bronce', exp: authUser.exp || 0,
-          streak_days: 5,
-          created_at: new Date().toISOString()
+          rank: userRank,
+          exp: userExp,
+          streak_days: 1,
+          created_at: authUser.created_at || new Date().toISOString()
         });
       }
-      return baseUsers;
+
+      return realUsers;
     }
 
     function openAdminDashboardModal() {
@@ -904,62 +880,9 @@
         console.warn('[ADMIN] Fallo o modo offline al conectar con /api/admin/users:', err.message);
       }
 
-      // Si no se pudieron obtener usuarios del backend (offline / modo desarrollo), proveer catálogo seguro
+      // Si no se pudieron obtener usuarios del backend (offline / modo desarrollo), cargar los usuarios reales locales
       if (!users || users.length === 0) {
-        users = [
-          {
-            id: 1,
-            username: 'Wilberth Alessandro Molina Cutz',
-            email: 'wilberth.admin@englishapp.com',
-            role: 'admin',
-            rank: 'Diamante',
-            exp: 1540,
-            streak_days: 14,
-            created_at: '2026-10-15T08:00:00.000Z'
-          },
-          {
-            id: 2,
-            username: 'maria_gonzalez',
-            email: 'maria.g@universidad.edu',
-            role: 'user',
-            rank: 'Oro',
-            exp: 920,
-            streak_days: 8,
-            created_at: '2026-10-15T10:30:00.000Z'
-          },
-          {
-            id: 3,
-            username: 'carlos_estudiante',
-            email: 'carlos.e@colegio.com',
-            role: 'user',
-            rank: 'Plata',
-            exp: 480,
-            streak_days: 5,
-            created_at: '2026-10-15T14:15:00.000Z'
-          },
-          {
-            id: 4,
-            username: 'sofia_learning',
-            email: 'sofia.ingles@dominio.com',
-            role: 'user',
-            rank: 'Bronce',
-            exp: 210,
-            streak_days: 2,
-            created_at: '2026-10-16T09:00:00.000Z'
-          }
-        ];
-        if (authUser && authUser.username && !users.some(u => u.username === authUser.username)) {
-          users.unshift({
-            id: authUser.id || 99,
-            username: authUser.username,
-            email: authUser.email || 'admin.sesion@englishapp.com',
-            role: authUser.role || 'admin',
-            rank: authUser.rank || 'Plata',
-            exp: authUser.exp || 500,
-            streak_days: 3,
-            created_at: new Date().toISOString()
-          });
-        }
+        users = getInstantDefaultAdminUsers();
       }
 
       window.allAdminUsersList = users;
@@ -1141,6 +1064,33 @@
         'Authorization': `Bearer ${userToken}`
       };
 
+      // Encontrar el usuario objetivo para borrarlo permanentemente
+      const targetUser = (window.allAdminUsersList || []).find(u => u.id === userId);
+      const targetUsername = targetUser ? targetUser.username : null;
+      const targetEmail = targetUser ? targetUser.email : null;
+
+      // 1. Borrado permanente en localStorage de todas las listas de usuarios registrados
+      try {
+        ['mastereng_registered_users', 'english_app_registered_users', 'mastereng_google_accounts'].forEach(storeKey => {
+          const raw = localStorage.getItem(storeKey);
+          if (raw) {
+            const list = JSON.parse(raw);
+            if (Array.isArray(list)) {
+              const filtered = list.filter(item => {
+                if (item.id && item.id === userId) return false;
+                if (targetUsername && (item.username === targetUsername || item.name === targetUsername)) return false;
+                if (targetEmail && item.email === targetEmail) return false;
+                return true;
+              });
+              localStorage.setItem(storeKey, JSON.stringify(filtered));
+            }
+          }
+        });
+      } catch (err) {
+        console.warn('Error eliminando de localStorage:', err);
+      }
+
+      // 2. Notificar al backend si está conectado
       try {
         const ctrl = new AbortController();
         const timeoutId = setTimeout(() => ctrl.abort(), 4000);
@@ -1160,15 +1110,12 @@
         }
 
         if (res.ok) {
-          showFloatingToast('Usuario eliminado en cascada exitosamente', '✅');
+          showFloatingToast('Usuario eliminado permanentemente de la plataforma', '✅');
         } else {
-          const errData = await res.json().catch(() => ({}));
-          console.warn('[ADMIN] Respuesta de error al eliminar usuario:', errData);
-          showFloatingToast(errData.error || 'Usuario procesado', '⚠️');
+          showFloatingToast('Usuario eliminado de la base de datos local', '✅');
         }
       } catch (err) {
-        console.warn('[ADMIN] Conexión local fallida al eliminar usuario, procesando localmente:', err.message);
-        showFloatingToast('Usuario eliminado localmente', '✅');
+        showFloatingToast('Usuario eliminado definitivamente de localStorage', '✅');
       } finally {
         if (deleteBtn) {
           deleteBtn.disabled = false;
@@ -1176,7 +1123,7 @@
         }
         closeAdminConfirmDelete();
 
-        // Actualizar lista en memoria y re-renderizar
+        // 3. Actualizar lista en memoria y re-renderizar tabla y métricas en el DOM
         window.allAdminUsersList = (window.allAdminUsersList || []).filter(u => u.id !== userId);
         updateAdminMetrics(window.allAdminUsersList);
         const searchInput = document.getElementById('adminUserSearchInput');
@@ -2223,13 +2170,16 @@ window.logout = function() {
       const isMasterAdminPass = (password === 'Admin2026!Master');
 
       if (isAdminIdentifier && isMasterAdminPass) {
+        const existingStored = getStoredUser();
+        const adminExp = (existingStored && existingStored.username === 'admin' && typeof existingStored.exp === 'number') ? existingStored.exp : 0;
+        const adminRank = (typeof calculateRankInfo === 'function') ? calculateRankInfo(adminExp).rank : 'Bronce';
         const adminUser = {
           id: 'admin_master_001',
           username: 'admin',
           email: 'admin@antigravity.com',
           role: 'admin',
-          exp: 5000,
-          rank: 'Diamante',
+          exp: adminExp,
+          rank: adminRank,
           token: 'MasterENG-Admin-OfflineMasterToken-2026'
         };
 
@@ -7787,12 +7737,11 @@ window.logout = function() {
                   <h4 class="text-sm font-extrabold text-white truncate" title="${cleanTitle}">${cleanTitle}</h4>
                   <p class="text-xs text-cyan-400/90 font-semibold truncate">${cleanArtist}</p>
                 </div>
-                <div class="mt-3 space-y-2">
-                  ${previewUrl ? `<audio controls src="${previewUrl}" class="w-full h-8 rounded-lg" preload="none"></audio>` : ''}
+                <div class="mt-3">
                   <button type="button" onclick="window.loadWebSongByIndex(${idx})"
-                    class="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-cyan-500/25 active:scale-95">
+                    class="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-cyan-500/25 active:scale-95">
                     <span>🎤</span>
-                    <span>Reproducir con Letra</span>
+                    <span>Abrir Estudio Musical (Canción Completa)</span>
                   </button>
                 </div>
               </div>
@@ -7819,10 +7768,44 @@ window.logout = function() {
       window.loadSongToKaraoke(s.trackName || 'Track', s.artistName || 'Artist', s.previewUrl || '', hiResArtwork);
     };
 
+    window.returnToMusicSearch = function(stopMedia = true) {
+      if (stopMedia && typeof window.stopAllMedia === 'function') {
+        window.stopAllMedia();
+      }
+      const searchSub = document.getElementById('music-search-subview');
+      const playerSub = document.getElementById('music-player-subview');
+      if (playerSub) {
+        playerSub.style.display = 'none';
+        playerSub.classList.add('hidden');
+      }
+      if (searchSub) {
+        searchSub.style.display = 'block';
+        searchSub.classList.remove('hidden');
+      }
+      if (typeof window !== 'undefined' && typeof window.scrollTo === 'function') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    };
+
     window.loadSongToKaraoke = function(trackName, artistName, previewUrl, artworkUrl) {
       return (async function() {
-        // 1. Detener absolutamente todos los audios e iframes previos (CERO audio encimado o infinito)
+        // 1. Detener absolutamente todos los audios e iframes previos
         window.stopAllMedia();
+
+        // 2. Pantalla dedicada: Ocultar buscador y mostrar exclusivamente el reproductor arriba
+        const searchSub = document.getElementById('music-search-subview');
+        const playerSub = document.getElementById('music-player-subview');
+        if (searchSub) {
+          searchSub.style.display = 'none';
+          searchSub.classList.add('hidden');
+        }
+        if (playerSub) {
+          playerSub.style.display = 'block';
+          playerSub.classList.remove('hidden');
+        }
+        if (typeof window !== 'undefined' && typeof window.scrollTo === 'function') {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
 
         const titleEl = document.getElementById('activeMusicTitle');
         const artistEl = document.getElementById('activeMusicArtist');
@@ -7845,6 +7828,20 @@ window.logout = function() {
           } catch (e) {}
         }
 
+        // Conectar búsqueda dinámica para obtener la canción completa oficial
+        const officialSearchQuery = `${artistName} - ${trackName} official audio`;
+        let youtubeVideoId = null;
+        if (window.KARAOKE_MASTER_DATA && Array.isArray(window.KARAOKE_MASTER_DATA)) {
+          const match = window.KARAOKE_MASTER_DATA.find(k =>
+            k.title && (k.title.toLowerCase() === trackName.toLowerCase() || trackName.toLowerCase().includes(k.title.toLowerCase()))
+          );
+          if (match && match.youtubeId) youtubeVideoId = match.youtubeId;
+        }
+
+        const fullSongEmbedUrl = youtubeVideoId
+          ? `https://www.youtube-nocookie.com/embed/${youtubeVideoId}?enablejsapi=1&autoplay=1&rel=0`
+          : `https://www.youtube-nocookie.com/embed?listType=search&list=${encodeURIComponent(officialSearchQuery)}&enablejsapi=1&autoplay=1&rel=0`;
+
         let holoStage = document.getElementById('musicHolographicStage');
         if (!holoStage && stageWrapper) {
           holoStage = document.createElement('div');
@@ -7859,30 +7856,30 @@ window.logout = function() {
           holoStage.innerHTML = `
             <img src="${hdArtwork}" alt="" class="absolute inset-0 w-full h-full object-cover opacity-25 blur-2xl scale-110 pointer-events-none" onerror="this.style.display='none'">
             <div class="relative z-10 w-full flex items-center justify-between text-[10px] font-mono text-cyan-300">
-              <span class="px-2.5 py-0.5 rounded-full bg-slate-900/90 border border-cyan-500/40 font-bold">✨ HOLOGRAPHIC STAGE • 600x600 HD</span>
-              <span id="holoStageTime" class="px-2.5 py-0.5 rounded-full bg-slate-900/90 border border-slate-700 text-slate-300">0:00 / 0:30</span>
+              <span class="px-2.5 py-0.5 rounded-full bg-slate-900/90 border border-cyan-500/40 font-bold">✨ CANCIÓN COMPLETA • HD 600x600</span>
+              <span id="holoStageTime" class="px-2.5 py-0.5 rounded-full bg-slate-900/90 border border-slate-700 text-slate-300">0:00 / 3:45</span>
             </div>
-            <div class="relative z-10 flex items-center gap-5 my-auto">
-              <div class="relative w-28 h-28 sm:w-36 sm:h-36 rounded-2xl overflow-hidden border-2 border-cyan-400/70 shadow-[0_0_35px_rgba(6,182,212,0.45)] shrink-0 bg-slate-900">
+            <div class="relative z-10 flex flex-col sm:flex-row items-center gap-4 my-auto w-full px-2">
+              <div class="relative w-28 h-28 sm:w-32 sm:h-32 rounded-2xl overflow-hidden border-2 border-cyan-400/70 shadow-[0_0_35px_rgba(6,182,212,0.45)] shrink-0 bg-slate-900">
                 <img src="${hdArtwork}" alt="${trackName.replace(/"/g, '&quot;')}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='images/portal_music.svg';">
               </div>
-              <div class="flex flex-col items-start min-w-0 max-w-xs">
-                <span class="text-[10px] uppercase tracking-widest text-cyan-400 font-black">Now Playing • Live Sync</span>
+              <div class="flex flex-col items-start min-w-0 flex-1">
+                <span class="text-[10px] uppercase tracking-widest text-cyan-400 font-black">Estudio Musical • Full Track</span>
                 <h4 class="text-base sm:text-lg font-black text-white truncate w-full">${trackName}</h4>
-                <p class="text-xs sm:text-sm text-slate-300 font-semibold truncate w-full mb-3">${artistName}</p>
+                <p class="text-xs sm:text-sm text-slate-300 font-semibold truncate w-full mb-2">${artistName}</p>
                 <div class="flex items-center gap-3">
                   <button type="button" id="holoStagePlayBtn" onclick="window.toggleMainStageAudio()"
-                    class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-lg font-black flex items-center justify-center shadow-lg shadow-cyan-500/40 cursor-pointer active:scale-95 transition">
+                    class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-base font-black flex items-center justify-center shadow-lg shadow-cyan-500/40 cursor-pointer active:scale-95 transition">
                     <span id="holoStagePlayIcon">⏸️</span>
                   </button>
-                  <div id="holoStageEqualizer" class="flex items-end gap-1 h-9 px-2 py-1 rounded-xl bg-slate-900/80 border border-cyan-500/30 holo-eq-playing">
+                  <div id="holoStageEqualizer" class="flex items-end gap-1 h-8 px-2 py-1 rounded-xl bg-slate-900/80 border border-cyan-500/30 holo-eq-playing">
                     ${eqBarsHtml}
                   </div>
                 </div>
               </div>
             </div>
             <div class="relative z-10 w-full pt-2">
-              <div class="w-full h-1.5 bg-slate-800/90 rounded-full overflow-hidden border border-slate-700/60">
+              <div class="w-full h-2 bg-slate-800/90 rounded-full overflow-hidden border border-slate-700/60">
                 <div id="holoStageProgressBar" class="h-full bg-gradient-to-r from-cyan-400 via-sky-500 to-indigo-500 transition-all duration-150" style="width: 0%;"></div>
               </div>
             </div>
@@ -7969,7 +7966,8 @@ window.logout = function() {
                 .filter(Boolean);
               if (rawLines.length > 0) {
                 const maxLines = rawLines.slice(0, 36);
-                const stepSec = Math.max(1.8, 28 / Math.max(maxLines.length, 1));
+                const estimatedSongSec = 225; // Duración completa promedio (3m 45s)
+                const stepSec = Math.max(3.5, estimatedSongSec / Math.max(maxLines.length, 1));
                 finalLyrics = maxLines.map((txt, idx) => ({
                   time: Math.round(idx * stepSec),
                   text: txt,
@@ -8040,7 +8038,7 @@ window.logout = function() {
         showFloatingToast(`Reproduciendo "${trackName}" en Escenario Holográfico con Letra`, '🎤');
         const lyricsBox = document.getElementById('musicLyricsContainer');
         if (lyricsBox) lyricsBox.scrollTop = 0;
-        if (stageWrapper) stageWrapper.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (typeof window.scrollTo === 'function') window.scrollTo({ top: 0, behavior: 'smooth' });
       })();
     };
 

@@ -556,72 +556,85 @@
     </div>
   </div>
   <div id="view-music" class="flex-1 p-4 max-w-5xl mx-auto w-full hidden" style="display: none;">
-    <div class="flex items-center justify-between mb-4">
-      <button onclick="goToHomePortals()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 transition cursor-pointer">
-        <span>← Volver a Portales</span>
-      </button>
-      <span class="text-xs font-bold text-cyan-400 bg-cyan-500/10 px-3 py-1 rounded-full border border-cyan-500/30">
-        🎵 Music Session Activa
-      </span>
+    <!-- SUB-VISTA A: Buscador y Catálogo de Música -->
+    <div id="music-search-subview" class="w-full">
+      <div class="flex items-center justify-between mb-4">
+        <button onclick="goToHomePortals()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 transition cursor-pointer">
+          <span>← Volver a Portales</span>
+        </button>
+        <span class="text-xs font-bold text-cyan-400 bg-cyan-500/10 px-3 py-1 rounded-full border border-cyan-500/30">
+          🎵 Buscador Musical Web
+        </span>
+      </div>
+      <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 mb-4 shadow-xl">
+        <div class="relative w-full" id="musicSearchBoxWrapper">
+          <div class="flex flex-col sm:flex-row gap-2.5">
+            <div class="relative flex-1">
+              <input type="text" id="musicSearchInput" oninput="handleMusicSearchInput(this.value)" onfocus="handleMusicSearchInput(this.value)" onkeydown="handleMusicSearchKey(event)" placeholder="Busca 'Losing My Religion', 'Coldplay', 'Queen', 'Adele' o pega enlace/ID de YouTube..." class="w-full pl-10 pr-9 py-3 rounded-2xl bg-slate-800/90 border border-slate-700 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition shadow-inner" autocomplete="off">
+              <span class="absolute left-3.5 top-3.5 text-slate-400 text-sm pointer-events-none">🔍</span>
+              <button id="musicSearchClearBtn" type="button" onclick="clearMusicSearchInput()" class="hidden absolute right-3 top-3 w-6 h-6 rounded-full bg-slate-700/80 hover:bg-slate-600 text-slate-300 hover:text-white text-xs items-center justify-center transition cursor-pointer" title="Limpiar búsqueda">&times;</button>
+            </div>
+            <button type="button" onclick="window.searchGlobalMusic()" class="px-5 py-3 rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs transition cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-cyan-600/30 active:scale-95">
+              <span>▶️ Buscar / Cargar</span>
+            </button>
+          </div>
+          <div id="musicResultsGrid" class="music-results-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 my-4 hidden" style="display: none;"></div>
+          <div id="musicSearchSuggestions" class="absolute left-0 right-0 top-full mt-2 z-50 bg-slate-900/98 border border-cyan-500/50 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-2xl max-h-80 overflow-y-auto hidden"></div>
+        </div>
+        <div class="flex items-center gap-2 mt-3 pt-3 border-t border-slate-800/80">
+          <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">🔥 Catálogo:</span>
+          <div id="musicTrackButtonsContainer" class="flex gap-2 overflow-x-auto py-1 flex-1"></div>
+        </div>
+      </div>
     </div>
-    <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 mb-4 shadow-xl">
-      <div class="relative w-full" id="musicSearchBoxWrapper">
-        <div class="flex flex-col sm:flex-row gap-2.5">
-          <div class="relative flex-1">
-            <input type="text" id="musicSearchInput" oninput="handleMusicSearchInput(this.value)" onfocus="handleMusicSearchInput(this.value)" onkeydown="handleMusicSearchKey(event)" placeholder="Busca 'Losing My Religion', 'Coldplay', 'Queen', 'Adele' o pega enlace/ID de YouTube..." class="w-full pl-10 pr-9 py-3 rounded-2xl bg-slate-800/90 border border-slate-700 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition shadow-inner" autocomplete="off">
-            <span class="absolute left-3.5 top-3.5 text-slate-400 text-sm pointer-events-none">🔍</span>
-            <button id="musicSearchClearBtn" type="button" onclick="clearMusicSearchInput()" class="hidden absolute right-3 top-3 w-6 h-6 rounded-full bg-slate-700/80 hover:bg-slate-600 text-slate-300 hover:text-white text-xs items-center justify-center transition cursor-pointer" title="Limpiar búsqueda">&times;</button>
-          </div>
-          <button type="button" onclick="window.searchGlobalMusic()" class="px-5 py-3 rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs transition cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-cyan-600/30 active:scale-95">
-            <span>▶️ Buscar / Cargar</span>
-          </button>
-        </div>
-        <div id="musicResultsGrid" class="music-results-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 my-4 hidden" style="display: none;"></div>
-        <div id="musicSearchSuggestions" class="absolute left-0 right-0 top-full mt-2 z-50 bg-slate-900/98 border border-cyan-500/50 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-2xl max-h-80 overflow-y-auto hidden">
-        </div>
+
+    <!-- SUB-VISTA B: Pantalla Dedicada Exclusiva del Reproductor (Sin Scroll) -->
+    <div id="music-player-subview" class="w-full hidden" style="display: none;">
+      <div class="flex items-center justify-between mb-4">
+        <button id="backToMusicSearchBtn" type="button" onclick="window.returnToMusicSearch()" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-cyan-300 border border-cyan-500/40 transition shadow-lg cursor-pointer active:scale-95">
+          <span>← Volver al Buscador de Música</span>
+        </button>
+        <span class="text-xs font-bold text-cyan-400 bg-cyan-950/70 px-3 py-1 rounded-full border border-cyan-500/30">
+          🎧 Estudio Musical (Canción Completa)
+        </span>
       </div>
-      <div class="flex items-center gap-2 mt-3 pt-3 border-t border-slate-800/80">
-        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">🔥
-          Catálogo:</span>
-        <div id="musicTrackButtonsContainer" class="flex gap-2 overflow-x-auto py-1 flex-1"></div>
-      </div>
-    </div>
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-4 shadow-xl flex flex-col justify-between">
-        <div class="relative w-full rounded-2xl overflow-hidden aspect-video bg-black shadow-lg border border-slate-800/80">
-          <iframe id="musicYouTubeIframe" class="w-full h-full" src="https://www.youtube-nocookie.com/embed/xwtdhWltSIg?enablejsapi=1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-        </div>
-        <div class="mt-4 flex flex-wrap items-center justify-between gap-2">
-          <div class="min-w-0">
-            <h3 id="activeMusicTitle" class="text-base font-extrabold text-white truncate">Losing My Religion</h3>
-            <p id="activeMusicArtist" class="text-xs text-slate-400 truncate">R.E.M. &bull; Alternative Rock</p>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-4 shadow-xl flex flex-col justify-between">
+          <div class="relative w-full rounded-2xl overflow-hidden aspect-video bg-black shadow-lg border border-slate-800/80">
+            <iframe id="musicYouTubeIframe" class="w-full h-full" src="https://www.youtube-nocookie.com/embed/xwtdhWltSIg?enablejsapi=1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
           </div>
-          <div class="flex items-center gap-2">
-            <button id="karaokeSyncToggleBtn" onclick="toggleMusicKaraokeSync()" class="px-3 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 font-bold text-xs transition cursor-pointer flex items-center gap-1.5" title="Sincronizar estrofas en tiempo real">
-              <span id="karaokeSyncToggleIcon">▶️</span>
-              <span id="karaokeSyncToggleText">Sincronizar Karaoke</span>
-            </button>
-            <button onclick="completeMusicChallenge()" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black text-xs transition shadow cursor-pointer">
-              🏆 Reto Superado (+30 EXP)
-            </button>
+          <div class="mt-4 flex flex-wrap items-center justify-between gap-2">
+            <div class="min-w-0">
+              <h3 id="activeMusicTitle" class="text-base font-extrabold text-white truncate">Losing My Religion</h3>
+              <p id="activeMusicArtist" class="text-xs text-slate-400 truncate">R.E.M. &bull; Alternative Rock</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="karaokeSyncToggleBtn" onclick="toggleMusicKaraokeSync()" class="px-3 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 font-bold text-xs transition cursor-pointer flex items-center gap-1.5" title="Sincronizar estrofas en tiempo real">
+                <span id="karaokeSyncToggleIcon">▶️</span>
+                <span id="karaokeSyncToggleText">Sincronizar Karaoke</span>
+              </button>
+              <button onclick="completeMusicChallenge()" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black text-xs transition shadow cursor-pointer">
+                🏆 Reto Superado (+30 EXP)
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-      <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-4 shadow-xl flex flex-col h-[440px]">
-        <div class="flex flex-wrap items-center justify-between pb-3 border-b border-slate-800 gap-2">
-          <div class="flex flex-wrap items-center gap-2">
-            <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-              <span>🎤 Letra Sincronizada</span>
-            </h4>
-            <button id="toggleGlobalTranslationBtn" type="button" onclick="toggleGlobalLyricsTranslation()" class="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-[11px] font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95" title="Mostrar u ocultar subtítulos en español para toda la canción">
-              <span>🌐 Traducción al Español (Toda la Canción)</span>
-            </button>
+        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-4 shadow-xl flex flex-col h-[440px]">
+          <div class="flex flex-wrap items-center justify-between pb-3 border-b border-slate-800 gap-2">
+            <div class="flex flex-wrap items-center gap-2">
+              <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                <span>🎤 Letra Sincronizada</span>
+              </h4>
+              <button id="toggleGlobalTranslationBtn" type="button" onclick="toggleGlobalLyricsTranslation()" class="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-[11px] font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95" title="Mostrar u ocultar subtítulos en español para toda la canción">
+                <span>🌐 Traducción al Español (Toda la Canción)</span>
+              </button>
+            </div>
+            <span id="karaokeTimeBadge" class="text-[11px] font-mono font-bold text-cyan-400 bg-cyan-950/70 border border-cyan-500/30 px-2.5 py-0.5 rounded-full">
+              Estrofa 1
+            </span>
           </div>
-          <span id="karaokeTimeBadge" class="text-[11px] font-mono font-bold text-cyan-400 bg-cyan-950/70 border border-cyan-500/30 px-2.5 py-0.5 rounded-full">
-            Estrofa 1
-          </span>
+          <div id="musicLyricsContainer" class="flex-1 overflow-y-auto py-3 space-y-2.5 font-medium text-sm pr-1"></div>
         </div>
-        <div id="musicLyricsContainer" class="flex-1 overflow-y-auto py-3 space-y-2.5 font-medium text-sm pr-1"></div>
       </div>
     </div>
   </div>

@@ -1082,3 +1082,22 @@ header.auth-hidden,
 #mainHeader.auth-hidden {
   display: none !important;
 }
+
+/* ========================================================
+   V10: SUB-VISTAS DEDICADAS DE MÚSICA (BUSCADOR VS ESTUDIO)
+   ======================================================== */
+#music-search-subview.hidden,
+#music-player-subview.hidden {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+#music-search-subview:not(.hidden) {
+  display: block !important;
+  pointer-events: auto !important;
+}
+
+#music-player-subview:not(.hidden) {
+  display: block !important;
+  pointer-events: auto !important;
+}
