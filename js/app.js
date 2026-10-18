@@ -8242,7 +8242,8 @@ window.logout = function() {
       blocks = blocks.slice(0, 24);
       if (blocks.length === 0) return [];
 
-      const stepSec = Math.max(5, totalDurationSec / blocks.length);
+      const maxLines = blocks;
+      const stepSec = Math.max(5, totalDurationSec / Math.max(maxLines.length, 1));
       return blocks.map((blk, idx) => {
         const lines = blk.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
         const primaryLine = lines[0] || blk;
