@@ -3260,21 +3260,28 @@ window.logout = function() {
         const currentItems = Array.isArray(window.MASTER_MODULES_DATA[modKey].items)
           ? window.MASTER_MODULES_DATA[modKey].items
           : [];
-        const extras = EXTRA_MODULE_DICTIONARY[modKey] || [];
-        extras.forEach(ex => {
-          if (!currentItems.some(i => (i.term || '').toLowerCase() === ex.term.toLowerCase())) {
-            currentItems.unshift(ex);
-          }
-        });
+        if (currentItems.length < 100) {
+          const extras = EXTRA_MODULE_DICTIONARY[modKey] || [];
+          extras.forEach(ex => {
+            if (!currentItems.some(i => (i.term || '').toLowerCase() === ex.term.toLowerCase())) {
+              currentItems.push(ex);
+            }
+          });
+        }
+        currentItems.sort((a, b) =>
+          (a.term || a.word || '').localeCompare((b.term || b.word || ''), 'en', { sensitivity: 'base' })
+        );
         currentItems.forEach(item => {
-          item.category = inferGrammaticalCategory(item, modKey);
+          if (!item.category) {
+            item.category = inferGrammaticalCategory(item, modKey);
+          }
         });
         window.MASTER_MODULES_DATA[modKey].items = currentItems;
       });
       if (Array.isArray(window.OFFICIAL_LEARNING_MODULES)) {
         window.OFFICIAL_LEARNING_MODULES.forEach(m => {
           const data = window.MASTER_MODULES_DATA[m.key];
-          if (data && Array.isArray(data.items) && data.items.length > m.words) {
+          if (data && Array.isArray(data.items)) {
             m.words = data.items.length;
           }
         });
@@ -3344,7 +3351,12 @@ window.logout = function() {
         return;
       }
 
-      container.innerHTML = items.map((item, idx) => {
+      // Orden alfabético estricto (A - Z) antes de asignar la numeración secuencial (#01, #02... #100)
+      const sortedItems = [...items].sort((a, b) =>
+        (a.term || a.word || '').localeCompare((b.term || b.word || ''), 'en', { sensitivity: 'base' })
+      );
+
+      container.innerHTML = sortedItems.map((item, idx) => {
         const numStr = String(idx + 1).padStart(2, '0');
         const cat = item.category || 'Sustantivo';
         const badgeCls = getCategoryBadgeColors(cat);
@@ -3393,7 +3405,10 @@ window.logout = function() {
           (i.example && i.example.toLowerCase().includes(q))
         );
       });
-      renderGlossaryItems(filtered);
+      const sortedFiltered = [...filtered].sort((a, b) =>
+        (a.term || a.word || '').localeCompare((b.term || b.word || ''), 'en', { sensitivity: 'base' })
+      );
+      renderGlossaryItems(sortedFiltered);
     }
 
     // ========================================================
@@ -3576,7 +3591,10 @@ window.logout = function() {
 
       const modNumStr = String(modObj.id || 1).padStart(2, '0');
       const filename = ('MasterENG_Diccionario_Modulo_' + modNumStr + '.pdf') || 'Glosario.pdf';
-      const items = modData.items || [];
+      const rawItems = modData.items || [];
+      const items = [...rawItems].sort((a, b) =>
+        (a.term || a.word || '').localeCompare((b.term || b.word || ''), 'en', { sensitivity: 'base' })
+      );
       const todayStr = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
 
       // 1. Generador Editorial Profesional en jsPDF (Encabezado Azul Noche + Dorado, Zebra Striping y Numeración Página X de Y)
@@ -3765,7 +3783,11 @@ window.logout = function() {
       const searchInput = document.getElementById('glossarySearchInput');
       if (searchInput) searchInput.value = '';
       renderGlossaryCategoryPills();
-      renderGlossaryItems(modData.items || []);
+      const rawModItems = modData.items || [];
+      const sortedModItems = [...rawModItems].sort((a, b) =>
+        (a.term || a.word || '').localeCompare((b.term || b.word || ''), 'en', { sensitivity: 'base' })
+      );
+      renderGlossaryItems(sortedModItems);
       const modal = document.getElementById('glossaryModal');
       if (modal) {
         modal.classList.remove('hidden');
@@ -7420,6 +7442,7 @@ window.logout = function() {
     window.openModuleMission = openModuleMission;
     window.openLearningMission = window.openLearningMissionModal;
     window.openGlossaryModal = openGlossaryModal;
+    window.renderGlossaryItems = renderGlossaryItems;
 
     window.openModuleGlossary = function(modId) {
       const mod = (window.OFFICIAL_LEARNING_MODULES || []).find(m => m.id === Number(modId) || m.key === modId);
@@ -7457,7 +7480,10 @@ window.logout = function() {
         const modData = (window.MASTER_MODULES_DATA && window.MASTER_MODULES_DATA[mod.key]) 
           ? window.MASTER_MODULES_DATA[mod.key] 
           : { items: [] };
-        const sampleItems = (modData.items || []).slice(0, 3);
+        const sortedItems = [...(modData.items || [])].sort((a, b) =>
+          (a.term || a.word || '').localeCompare((b.term || b.word || ''), 'en', { sensitivity: 'base' })
+        );
+        const sampleItems = sortedItems.slice(0, 3);
         const isCompleted = Boolean(completedObj[`${mod.key}_lvl1`] || completedObj[`${mod.id}_lvl1`]);
         const progressPercent = isCompleted ? 100 : (typeof mod.progress === 'number' && mod.progress > 0 ? mod.progress : 0);
         const masteredText = isCompleted ? `${mod.words}/${mod.words} palabras dominadas` : `0/${mod.words} palabras dominadas`;
@@ -7493,9 +7519,12 @@ window.logout = function() {
                 <button type="button" onclick="window.openModuleGlossary(${mod.id})" class="text-[10px] font-bold text-amber-400 hover:underline cursor-pointer">Ver todos ↗</button>
               </div>
               <div class="space-y-1">
-                ${sampleItems.map(item => `
+                ${sampleItems.map((item, sIdx) => `
                   <div class="flex items-center justify-between py-0.5 border-b border-slate-900 last:border-none">
-                    <span class="text-slate-200 font-medium truncate">${item.term || ''} <span class="text-[10px] text-amber-400/80 font-mono">${item.pron || ''}</span></span>
+                    <span class="text-slate-200 font-medium truncate">
+                      <span class="text-[9px] font-mono text-amber-400 font-bold mr-1">#${String(sIdx + 1).padStart(2, '0')}</span>
+                      ${item.term || ''} <span class="text-[10px] text-amber-400/80 font-mono">${item.pron || ''}</span>
+                    </span>
                     <button type="button" onclick="speakText('${(item.term || '').replace(/'/g, "\\'")}')" class="text-amber-400 hover:text-amber-300 text-xs px-1 cursor-pointer" title="Pronunciar">🔊</button>
                   </div>
                 `).join('')}
@@ -7645,16 +7674,269 @@ window.logout = function() {
       return 'Estrofa en inglés • Haz clic en cualquier palabra para ver su fonética IPA y significado';
     }
 
+    /* ========================================================
+       SISTEMA MULTI-RESPALDO PARA RESOLUCIÓN DE VIDEOID DE CANCIÓN COMPLETA
+       ======================================================== */
+    window.resolveYouTubeVideoId = async function(artist, title) {
+      const query = `${artist || ''} ${title || ''} official audio`.trim();
+      const cleanQ = query.toLowerCase();
+
+      // 0. Catálogo precargado o pre-mapeado rápido
+      if (window.KARAOKE_MASTER_DATA && Array.isArray(window.KARAOKE_MASTER_DATA)) {
+        const match = window.KARAOKE_MASTER_DATA.find(k =>
+          k.title && (k.title.toLowerCase() === (title || '').toLowerCase() || (title || '').toLowerCase().includes(k.title.toLowerCase()))
+        );
+        if (match && match.youtubeId) return match.youtubeId;
+      }
+
+      // Pre-mapping conocido para clásicos comunes
+      const knownMap = {
+        'creep': 'XFkzRNyygfk',
+        'losing my religion': 'xwtdhWltSIg',
+        'bohemian rhapsody': 'fJ9rUzIMcZQ',
+        'hotel california': '09839DpTctU',
+        'rolling in the deep': 'rYEDA3JcQqw',
+        'shape of you': 'JGwWNGJdvx8',
+        'someone like you': 'hLQl3WQQoQ0',
+        'billie jean': 'Zi_XLOBDo_Y',
+        'smells like teen spirit': 'hTWKbfoikeg',
+        'viva la vida': 'dvgZkm1xWPE',
+        'sweet child o mine': '1w7OgIMMRc4'
+      };
+      for (const [k, vid] of Object.entries(knownMap)) {
+        if (cleanQ.includes(k)) return vid;
+      }
+
+      // Intento 1: Consulta vía CORS proxy (allorigins.win / codetabs.com) a YouTube search
+      const ytSearchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+      const proxyEndpoints = [
+        `https://api.allorigins.win/get?url=${encodeURIComponent(ytSearchUrl)}`,
+        `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(ytSearchUrl)}`
+      ];
+
+      for (const proxyUrl of proxyEndpoints) {
+        try {
+          const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+          const tid = ctrl ? setTimeout(() => ctrl.abort(), 2400) : null;
+          const res = await fetch(proxyUrl, ctrl ? { signal: ctrl.signal } : {});
+          if (tid) clearTimeout(tid);
+          if (res && res.ok) {
+            let text = '';
+            if (proxyUrl.includes('allorigins')) {
+              const json = await res.json();
+              text = (json && json.contents) ? json.contents : '';
+            } else {
+              text = await res.text();
+            }
+            if (text) {
+              const match = text.match(/"videoId":"([a-zA-Z0-9_-]{11})"/);
+              if (match && match[1]) {
+                return match[1];
+              }
+            }
+          }
+        } catch (e) {}
+      }
+
+      // Intento 2: Consulta a instancias públicas de Piped / Invidious API
+      const pipedInstances = [
+        `https://pipedapi.kavin.rocks/search?q=${encodeURIComponent(query)}&filter=videos`,
+        `https://inv.nadeko.net/api/v1/search?q=${encodeURIComponent(query)}&type=video`,
+        `https://invidious.nerdvpn.de/api/v1/search?q=${encodeURIComponent(query)}&type=video`
+      ];
+
+      for (const apiEndpoint of pipedInstances) {
+        try {
+          const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+          const tid = ctrl ? setTimeout(() => ctrl.abort(), 2400) : null;
+          const res = await fetch(apiEndpoint, ctrl ? { signal: ctrl.signal } : {});
+          if (tid) clearTimeout(tid);
+          if (res && res.ok) {
+            const data = await res.json();
+            const items = Array.isArray(data) ? data : (data && data.items ? data.items : []);
+            if (items.length > 0) {
+              const first = items[0];
+              const vid = first.videoId || (first.url ? first.url.replace('/watch?v=', '') : null);
+              if (vid && /^[a-zA-Z0-9_-]{11}$/.test(vid)) {
+                return vid;
+              }
+            }
+          }
+        } catch (e) {}
+      }
+
+      // Respaldo asegurado: Retorna null para usar embed search oficial
+      return null;
+    };
+
+    /* ========================================================
+       CONTROLADOR GLOBAL DE REPRODUCCIÓN Y SINCRONIZACIÓN
+       ======================================================== */
+    window._isHoloStagePlaying = false;
+    window._isHoloMuted = false;
+    window._currentTrackTotalDuration = 225;
+    window._currentTrackCurrentTime = 0;
+    window._currentTrackStartTime = Date.now();
+    window._karaokePlaybackTimer = null;
+
     window.toggleMainStageAudio = function() {
-      const tracker = document.getElementById('karaokeAudioTracker');
-      if (!tracker || !tracker.src) return;
-      if (tracker.paused) {
-        tracker.play().catch(e => console.warn('Play error:', e));
+      const ytIframe = document.getElementById('musicHoloYoutubeIframe');
+      const playIcon = document.getElementById('holoStagePlayIcon');
+      const eq = document.getElementById('holoStageEqualizer');
+
+      if (window._isHoloStagePlaying) {
+        // PAUSAR
+        window._isHoloStagePlaying = false;
+        if (window._karaokePlaybackTimer) {
+          clearInterval(window._karaokePlaybackTimer);
+          window._karaokePlaybackTimer = null;
+        }
+        if (ytIframe && ytIframe.contentWindow) {
+          try {
+            ytIframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+          } catch (e) {}
+        }
+        if (playIcon) playIcon.textContent = '▶️';
+        if (eq) eq.classList.remove('holo-eq-playing');
       } else {
-        tracker.pause();
+        // REANUDAR
+        window._isHoloStagePlaying = true;
+        window._currentTrackStartTime = Date.now() - ((window._currentTrackCurrentTime || 0) * 1000);
+        window.startKaraokeSyncTimer();
+        if (ytIframe && ytIframe.contentWindow) {
+          try {
+            ytIframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+          } catch (e) {}
+        }
+        if (playIcon) playIcon.textContent = '⏸️';
+        if (eq) eq.classList.add('holo-eq-playing');
       }
     };
 
+    window.toggleHoloStageMute = function() {
+      window._isHoloMuted = !window._isHoloMuted;
+      const ytIframe = document.getElementById('musicHoloYoutubeIframe');
+      const muteIcon = document.getElementById('holoStageMuteIcon');
+      if (ytIframe && ytIframe.contentWindow) {
+        try {
+          ytIframe.contentWindow.postMessage(JSON.stringify({
+            event: 'command',
+            func: window._isHoloMuted ? 'mute' : 'unMute',
+            args: ''
+          }), '*');
+        } catch (e) {}
+      }
+      if (muteIcon) muteIcon.textContent = window._isHoloMuted ? '🔇' : '🔊';
+    };
+
+    window.toggleHoloStageViewMode = function() {
+      const ytIframe = document.getElementById('musicHoloYoutubeIframe');
+      const label = document.getElementById('holoViewModeLabel');
+      if (!ytIframe) return;
+      if (ytIframe.style.zIndex === '0' || !ytIframe.style.zIndex) {
+        ytIframe.style.zIndex = '8';
+        ytIframe.style.opacity = '1';
+        if (label) label.textContent = '🌌 Modo Holograma';
+      } else {
+        ytIframe.style.zIndex = '0';
+        ytIframe.style.opacity = '0.85';
+        if (label) label.textContent = '🖥️ Pantalla Completa Video';
+      }
+    };
+
+    window.seekHoloStageTrack = function(e) {
+      const container = document.getElementById('holoStageProgressContainer') || (e && e.currentTarget);
+      if (!container) return;
+      const rect = (container.getBoundingClientRect && typeof container.getBoundingClientRect === 'function')
+        ? container.getBoundingClientRect()
+        : { left: 0, width: 300 };
+      const clientX = (e && e.clientX !== undefined)
+        ? e.clientX
+        : ((e && e.touches && e.touches[0]) ? e.touches[0].clientX : 0);
+      const clickX = Math.max(0, Math.min(rect.width, clientX - rect.left));
+      const ratio = rect.width > 0 ? (clickX / rect.width) : 0;
+      const newTime = ratio * (window._currentTrackTotalDuration || 225);
+      window.seekTrackToSeconds(newTime);
+    };
+
+    window.seekTrackToSeconds = function(sec) {
+      const dur = window._currentTrackTotalDuration || 225;
+      const clamped = Math.max(0, Math.min(sec, dur));
+      window._currentTrackCurrentTime = clamped;
+      window._currentTrackStartTime = Date.now() - (clamped * 1000);
+
+      const ytIframe = document.getElementById('musicHoloYoutubeIframe');
+      if (ytIframe && ytIframe.contentWindow) {
+        try {
+          ytIframe.contentWindow.postMessage(JSON.stringify({
+            event: 'command',
+            func: 'seekTo',
+            args: [clamped, true]
+          }), '*');
+        } catch (e) {}
+      }
+
+      const progBar = document.getElementById('holoStageProgressBar');
+      const timeBadge = document.getElementById('holoStageTime');
+      const pct = Math.min(100, (clamped / dur) * 100);
+      if (progBar) progBar.style.width = `${pct}%`;
+      if (timeBadge) {
+        const fmt = s => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
+        timeBadge.textContent = `${fmt(clamped)} / ${fmt(dur)}`;
+      }
+      if (typeof window.handleKaraokeTimeUpdate === 'function') {
+        window.handleKaraokeTimeUpdate(clamped);
+      }
+    };
+
+    window.startKaraokeSyncTimer = function() {
+      if (window._karaokePlaybackTimer) {
+        clearInterval(window._karaokePlaybackTimer);
+      }
+      window._karaokePlaybackTimer = setInterval(() => {
+        if (!window._isHoloStagePlaying) return;
+        const dur = window._currentTrackTotalDuration || 225;
+        const elapsed = (Date.now() - window._currentTrackStartTime) / 1000;
+        window._currentTrackCurrentTime = Math.min(dur, Math.max(0, elapsed));
+
+        const progBar = document.getElementById('holoStageProgressBar');
+        const timeBadge = document.getElementById('holoStageTime');
+        const pct = Math.min(100, (window._currentTrackCurrentTime / dur) * 100);
+        if (progBar) progBar.style.width = `${pct}%`;
+        if (timeBadge) {
+          const fmt = s => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
+          timeBadge.textContent = `${fmt(window._currentTrackCurrentTime)} / ${fmt(dur)}`;
+        }
+
+        if (typeof window.handleKaraokeTimeUpdate === 'function') {
+          window.handleKaraokeTimeUpdate(window._currentTrackCurrentTime);
+        }
+
+        if (window._currentTrackCurrentTime >= dur) {
+          if (typeof window.toggleMainStageAudio === 'function') {
+            window.toggleMainStageAudio();
+          }
+          window.seekTrackToSeconds(0);
+        }
+      }, 250);
+    };
+
+    window.stopMusicKaraokeSync = function() {
+      if (window._karaokePlaybackTimer) {
+        clearInterval(window._karaokePlaybackTimer);
+        window._karaokePlaybackTimer = null;
+      }
+    };
+
+    window.toggleMusicKaraokeSync = function() {
+      if (typeof window.toggleMainStageAudio === 'function') {
+        window.toggleMainStageAudio();
+      }
+    };
+
+    /* ========================================================
+       BÚSQUEDA GLOBAL DE MÚSICA CONECTADA A LA WEB (ITUNES API)
+       ======================================================== */
     window.searchGlobalMusic = async function(term) {
       const inputEl = document.getElementById('musicSearchInput');
       const query = (typeof term === 'string' ? term : (inputEl ? inputEl.value : '')).trim();
@@ -7724,15 +8006,16 @@ window.logout = function() {
             const rawArtist = s.artistName || 'Artist';
             const cleanTitle = rawTitle.replace(/"/g, '&quot;');
             const cleanArtist = rawArtist.replace(/"/g, '&quot;');
-            const hiResArtwork = (s.artworkUrl100 || 'images/portal_music.svg').replace('100x100bb', '600x600bb');
-            const previewUrl = s.previewUrl || '';
+            const hiResArtwork = (s.artworkUrl100 || 'images/portal_music.svg').replace(/100x100bb|300x300bb/g, '600x600bb');
+            const durSec = (s.trackTimeMillis && s.trackTimeMillis > 30000) ? Math.round(s.trackTimeMillis / 1000) : 238;
+            const durLabel = Math.floor(durSec / 60) + ':' + String(Math.floor(durSec % 60)).padStart(2, '0');
 
             return `
               <div class="music-track-card p-3.5 rounded-2xl bg-slate-950/90 border border-slate-800 hover:border-cyan-400/70 shadow-xl flex flex-col justify-between transition hover:-translate-y-1 group">
                 <div>
                   <div class="relative w-full aspect-square rounded-xl overflow-hidden mb-2.5 bg-slate-900 border border-slate-800 cursor-pointer" onclick="window.loadWebSongByIndex(${idx})">
                     <img src="${hiResArtwork}" alt="${cleanTitle}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" onerror="this.onerror=null; this.src='images/portal_music.svg';">
-                    <span class="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-slate-950/85 text-[9px] font-bold text-cyan-300 border border-cyan-500/40">HD 600x600</span>
+                    <span class="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-slate-950/85 text-[9px] font-bold text-cyan-300 border border-cyan-500/40">${durLabel} • HD</span>
                   </div>
                   <h4 class="text-sm font-extrabold text-white truncate" title="${cleanTitle}">${cleanTitle}</h4>
                   <p class="text-xs text-cyan-400/90 font-semibold truncate">${cleanArtist}</p>
@@ -7765,7 +8048,8 @@ window.logout = function() {
       const s = (window._lastSearchedWebSongs || [])[idx];
       if (!s) return;
       const hiResArtwork = (s.artworkUrl100 || 'images/portal_music.svg').replace(/100x100bb|300x300bb/g, '600x600bb');
-      window.loadSongToKaraoke(s.trackName || 'Track', s.artistName || 'Artist', s.previewUrl || '', hiResArtwork);
+      const durSec = (s.trackTimeMillis && s.trackTimeMillis > 30000) ? Math.round(s.trackTimeMillis / 1000) : 238;
+      window.loadSongToKaraoke(s.trackName || 'Track', s.artistName || 'Artist', '', hiResArtwork, durSec);
     };
 
     window.returnToMusicSearch = function(stopMedia = true) {
@@ -7787,7 +8071,10 @@ window.logout = function() {
       }
     };
 
-    window.loadSongToKaraoke = function(trackName, artistName, previewUrl, artworkUrl) {
+    /* ========================================================
+       REPRODUCTOR DE CANCIÓN COMPLETA (3 A 5 MINUTOS) EN ESCENARIO HOLOGRÁFICO
+       ======================================================== */
+    window.loadSongToKaraoke = function(trackName, artistName, previewUrl, artworkUrl, durationSec) {
       return (async function() {
         // 1. Detener absolutamente todos los audios e iframes previos
         window.stopAllMedia();
@@ -7814,13 +8101,12 @@ window.logout = function() {
 
         const hdArtwork = (artworkUrl || 'images/portal_music.svg').replace(/100x100bb|300x300bb/g, '600x600bb');
 
-        // 2. Reemplazar el iframe fijo de R.E.M. por el Visualizador Musical Holográfico Interactivo (600x600)
+        // 3. Reemplazar el iframe fijo de R.E.M. por el Escenario Holográfico Interactivo
         const iframe = document.getElementById('musicYouTubeIframe');
         const stageWrapper = iframe ? iframe.parentElement : null;
 
         if (iframe) {
           iframe.style.display = 'none';
-          // Detener cualquier reproducción en el iframe fijo
           try {
             if (iframe.contentWindow) {
               iframe.contentWindow.postMessage('{"event":"command","func":"stopVideo","args":""}', '*');
@@ -7828,14 +8114,42 @@ window.logout = function() {
           } catch (e) {}
         }
 
-        // Conectar búsqueda dinámica para obtener la canción completa oficial
+        // 4. Calcular duración real de la canción completa (3 a 5 minutos)
+        let totalDurationSec = (typeof durationSec === 'number' && durationSec > 30) ? durationSec : 0;
+        if (!totalDurationSec && window._lastSearchedWebSongs) {
+          const matchSong = window._lastSearchedWebSongs.find(s =>
+            s.trackName && trackName && s.trackName.toLowerCase() === trackName.toLowerCase()
+          );
+          if (matchSong && matchSong.trackTimeMillis && matchSong.trackTimeMillis > 30000) {
+            totalDurationSec = Math.round(matchSong.trackTimeMillis / 1000);
+          }
+        }
+        if (!totalDurationSec) {
+          const tLower = (trackName || '').toLowerCase();
+          if (tLower.includes('creep')) totalDurationSec = 238; // 3:58
+          else if (tLower.includes('bohemian rhapsody')) totalDurationSec = 355; // 5:55
+          else if (tLower.includes('losing my religion')) totalDurationSec = 268; // 4:28
+          else if (tLower.includes('hotel california')) totalDurationSec = 390; // 6:30
+          else totalDurationSec = 225; // 3:45 promedio
+        }
+
+        const fmtTime = s => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
+        const totalDurationFormatted = fmtTime(totalDurationSec);
+
+        window._currentTrackTotalDuration = totalDurationSec;
+        window._currentTrackCurrentTime = 0;
+        window._currentTrackStartTime = Date.now();
+        window._isHoloStagePlaying = true;
+
+        // 5. Resolver automáticamente el 'videoId' de la canción completa
         const officialSearchQuery = `${artistName} - ${trackName} official audio`;
         let youtubeVideoId = null;
-        if (window.KARAOKE_MASTER_DATA && Array.isArray(window.KARAOKE_MASTER_DATA)) {
-          const match = window.KARAOKE_MASTER_DATA.find(k =>
-            k.title && (k.title.toLowerCase() === trackName.toLowerCase() || trackName.toLowerCase().includes(k.title.toLowerCase()))
-          );
-          if (match && match.youtubeId) youtubeVideoId = match.youtubeId;
+        if (typeof window.resolveYouTubeVideoId === 'function') {
+          try {
+            youtubeVideoId = await window.resolveYouTubeVideoId(artistName, trackName);
+          } catch (e) {
+            console.warn('Error resolviendo videoId:', e);
+          }
         }
 
         const fullSongEmbedUrl = youtubeVideoId
@@ -7846,7 +8160,7 @@ window.logout = function() {
         if (!holoStage && stageWrapper) {
           holoStage = document.createElement('div');
           holoStage.id = 'musicHolographicStage';
-          holoStage.className = 'absolute inset-0 w-full h-full bg-slate-950 flex flex-col items-center justify-between p-4 overflow-hidden select-none z-20';
+          holoStage.className = 'absolute inset-0 w-full h-full bg-slate-950 flex flex-col justify-between p-3 sm:p-4 overflow-hidden select-none z-20 rounded-2xl';
           stageWrapper.appendChild(holoStage);
         }
 
@@ -7854,87 +8168,86 @@ window.logout = function() {
           holoStage.style.display = 'flex';
           const eqBarsHtml = Array.from({ length: 18 }, () => '<div class="holo-eq-bar"></div>').join('');
           holoStage.innerHTML = `
-            <img src="${hdArtwork}" alt="" class="absolute inset-0 w-full h-full object-cover opacity-25 blur-2xl scale-110 pointer-events-none" onerror="this.style.display='none'">
-            <div class="relative z-10 w-full flex items-center justify-between text-[10px] font-mono text-cyan-300">
-              <span class="px-2.5 py-0.5 rounded-full bg-slate-900/90 border border-cyan-500/40 font-bold">✨ CANCIÓN COMPLETA • HD 600x600</span>
-              <span id="holoStageTime" class="px-2.5 py-0.5 rounded-full bg-slate-900/90 border border-slate-700 text-slate-300">0:00 / 3:45</span>
+            <!-- Reproductor YouTube Oficial Integrado (Full Stream) -->
+            <iframe id="musicHoloYoutubeIframe"
+              class="absolute inset-0 w-full h-full object-cover rounded-2xl transition-opacity duration-300 pointer-events-auto"
+              style="z-index: 0; opacity: 0.85;"
+              src="${fullSongEmbedUrl}"
+              title="${trackName.replace(/"/g, '&quot;')} - Official Audio"
+              frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen>
+            </iframe>
+
+            <!-- Carátula HD 600x600 con difuminado ambiental -->
+            <img src="${hdArtwork}" alt="" class="absolute inset-0 w-full h-full object-cover opacity-20 blur-2xl scale-110 pointer-events-none" style="z-index: 1;" onerror="this.style.display='none'">
+
+            <!-- Barra Superior HUD Holográfico -->
+            <div class="relative w-full flex items-center justify-between text-[10px] font-mono text-cyan-300" style="z-index: 10;">
+              <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded-full bg-slate-950/90 border border-cyan-500/40 font-bold backdrop-blur-md">
+                  ✨ CANCIÓN COMPLETA • HD 600x600
+                </span>
+                <button type="button" onclick="window.toggleHoloStageViewMode()"
+                  class="px-2.5 py-0.5 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-slate-200 hover:text-cyan-300 text-[10px] font-bold transition cursor-pointer backdrop-blur-md active:scale-95">
+                  <span id="holoViewModeLabel">🖥️ Pantalla Completa Video</span>
+                </button>
+              </div>
+              <span id="holoStageTime" class="px-2.5 py-0.5 rounded-full bg-slate-950/90 border border-slate-700 text-cyan-300 font-bold font-mono backdrop-blur-md">
+                0:00 / ${totalDurationFormatted}
+              </span>
             </div>
-            <div class="relative z-10 flex flex-col sm:flex-row items-center gap-4 my-auto w-full px-2">
-              <div class="relative w-28 h-28 sm:w-32 sm:h-32 rounded-2xl overflow-hidden border-2 border-cyan-400/70 shadow-[0_0_35px_rgba(6,182,212,0.45)] shrink-0 bg-slate-900">
+
+            <!-- Panel de Control y Estado del Reproductor -->
+            <div class="relative flex flex-col sm:flex-row items-center gap-3 sm:gap-4 my-auto w-full px-2 py-2 rounded-2xl bg-slate-950/80 backdrop-blur-md border border-cyan-500/30 shadow-2xl" style="z-index: 10;">
+              <div class="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border-2 border-cyan-400/70 shadow-[0_0_30px_rgba(6,182,212,0.45)] shrink-0 bg-slate-900">
                 <img src="${hdArtwork}" alt="${trackName.replace(/"/g, '&quot;')}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='images/portal_music.svg';">
               </div>
-              <div class="flex flex-col items-start min-w-0 flex-1">
-                <span class="text-[10px] uppercase tracking-widest text-cyan-400 font-black">Estudio Musical • Full Track</span>
-                <h4 class="text-base sm:text-lg font-black text-white truncate w-full">${trackName}</h4>
-                <p class="text-xs sm:text-sm text-slate-300 font-semibold truncate w-full mb-2">${artistName}</p>
-                <div class="flex items-center gap-3">
+              <div class="flex flex-col items-start min-w-0 flex-1 w-full">
+                <div class="flex items-center justify-between w-full">
+                  <span class="text-[10px] uppercase tracking-widest text-cyan-400 font-black">Estudio Musical • Full Track</span>
+                  <span class="text-[10px] text-slate-400 font-mono">${totalDurationFormatted}</span>
+                </div>
+                <h4 class="text-sm sm:text-base font-black text-white truncate w-full">${trackName}</h4>
+                <p class="text-xs text-slate-300 font-semibold truncate w-full mb-2">${artistName}</p>
+                <div class="flex items-center gap-2.5 w-full flex-wrap">
                   <button type="button" id="holoStagePlayBtn" onclick="window.toggleMainStageAudio()"
-                    class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-base font-black flex items-center justify-center shadow-lg shadow-cyan-500/40 cursor-pointer active:scale-95 transition">
+                    class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-base font-black flex items-center justify-center shadow-lg shadow-cyan-500/40 cursor-pointer active:scale-95 transition">
                     <span id="holoStagePlayIcon">⏸️</span>
                   </button>
-                  <div id="holoStageEqualizer" class="flex items-end gap-1 h-8 px-2 py-1 rounded-xl bg-slate-900/80 border border-cyan-500/30 holo-eq-playing">
+                  <button type="button" id="holoStageMuteBtn" onclick="window.toggleHoloStageMute()"
+                    class="w-9 h-9 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-slate-700 text-white flex items-center justify-center text-xs cursor-pointer active:scale-95 transition" title="Silenciar / Activar sonido">
+                    <span id="holoStageMuteIcon">🔊</span>
+                  </button>
+                  <div id="holoStageEqualizer" class="flex items-end gap-1 h-7 px-2 py-1 rounded-xl bg-slate-900/80 border border-cyan-500/30 holo-eq-playing">
                     ${eqBarsHtml}
                   </div>
                 </div>
               </div>
             </div>
-            <div class="relative z-10 w-full pt-2">
-              <div class="w-full h-2 bg-slate-800/90 rounded-full overflow-hidden border border-slate-700/60">
-                <div id="holoStageProgressBar" class="h-full bg-gradient-to-r from-cyan-400 via-sky-500 to-indigo-500 transition-all duration-150" style="width: 0%;"></div>
+
+            <!-- Barra de Progreso Interactiva de Longitud Completa (Click para adelantar/rebobinar) -->
+            <div class="relative w-full pt-1" style="z-index: 10;">
+              <div id="holoStageProgressContainer" onclick="window.seekHoloStageTrack(event)"
+                class="w-full h-3 bg-slate-900/95 rounded-full overflow-hidden border border-cyan-500/40 cursor-pointer relative group p-0.5 shadow-inner" title="Haz clic en la barra para saltar en la canción completa">
+                <div id="holoStageProgressBar" class="h-full bg-gradient-to-r from-cyan-400 via-sky-500 to-indigo-500 rounded-full transition-all duration-150" style="width: 0%;"></div>
               </div>
             </div>
           `;
         }
 
-        // Configurar el reproductor maestro #karaokeAudioTracker sin loop
-        let audioTracker = document.getElementById('karaokeAudioTracker');
-        if (!audioTracker) {
-          audioTracker = document.createElement('audio');
-          audioTracker.id = 'karaokeAudioTracker';
-          audioTracker.className = 'w-full mt-3 rounded-xl';
-          audioTracker.controls = true;
-          audioTracker.loop = false;
-          const iframeParent = stageWrapper ? stageWrapper.parentElement : document.body;
-          iframeParent.appendChild(audioTracker);
-        }
-        audioTracker.loop = false;
-        audioTracker.removeAttribute('loop');
-
-        if (previewUrl) {
-          audioTracker.src = previewUrl;
-          audioTracker.style.display = 'block';
-          try {
-            await audioTracker.play();
-          } catch (e) {
-            const holoPlayIcon = document.getElementById('holoStagePlayIcon');
-            const holoEq = document.getElementById('holoStageEqualizer');
-            if (holoPlayIcon) holoPlayIcon.textContent = '▶️';
-            if (holoEq) holoEq.classList.remove('holo-eq-playing');
-          }
+        // Cero reproductor de 30 segundos: Desactivar y ocultar cualquier audioTracker residual
+        const audioTracker = document.getElementById('karaokeAudioTracker');
+        if (audioTracker) {
+          audioTracker.pause();
+          audioTracker.removeAttribute('src');
+          audioTracker.style.display = 'none';
         }
 
-        audioTracker.onplay = function() {
-          audioTracker.loop = false;
-          const holoPlayIcon = document.getElementById('holoStagePlayIcon');
-          const holoEq = document.getElementById('holoStageEqualizer');
-          if (holoPlayIcon) holoPlayIcon.textContent = '⏸️';
-          if (holoEq) holoEq.classList.add('holo-eq-playing');
-        };
-        audioTracker.onpause = function() {
-          const holoPlayIcon = document.getElementById('holoStagePlayIcon');
-          const holoEq = document.getElementById('holoStageEqualizer');
-          if (holoPlayIcon) holoPlayIcon.textContent = '▶️';
-          if (holoEq) holoEq.classList.remove('holo-eq-playing');
-        };
-        audioTracker.onended = function() {
-          audioTracker.currentTime = 0;
-          const holoPlayIcon = document.getElementById('holoStagePlayIcon');
-          const holoEq = document.getElementById('holoStageEqualizer');
-          if (holoPlayIcon) holoPlayIcon.textContent = '▶️';
-          if (holoEq) holoEq.classList.remove('holo-eq-playing');
-        };
+        // 6. Iniciar temporizador de sincronización en tiempo real
+        window.startKaraokeSyncTimer();
 
-        // 3. Consultar letra completa en tiempo real mediante https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}
+        // 7. Consultar letra completa en tiempo real
         const lyricsContainer = document.getElementById('musicLyricsContainer');
         if (lyricsContainer) {
           lyricsContainer.innerHTML = `
@@ -7946,28 +8259,27 @@ window.logout = function() {
         }
 
         let finalLyrics = null;
-        const cleanTitleForApi = trackName.replace(/\s*\([^)]*\)/g, '').replace(/\s*-\s*.*$/, '').trim() || trackName;
-        const cleanArtistForApi = artistName.replace(/\s*&.*$/, '').trim() || artistName;
+        const cleanTitleForApi = trackName.replace(/\\s*\\([^)]*\\)/g, '').replace(/\\s*-\\s*.*$/, '').trim() || trackName;
+        const cleanArtistForApi = artistName.replace(/\\s*&.*$/, '').trim() || artistName;
 
-        // 3A. Consulta primaria a https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}
+        // 7A. Consulta primaria a https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}
         try {
-          const ctrl = new AbortController();
-          const tId = setTimeout(() => ctrl.abort(), 3800);
+          const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+          const tId = ctrl ? setTimeout(() => ctrl.abort(), 3800) : null;
           const ovhUrl = `https://api.lyrics.ovh/v1/${encodeURIComponent(cleanArtistForApi)}/${encodeURIComponent(cleanTitleForApi)}`;
-          const ovhRes = await fetch(ovhUrl, { signal: ctrl.signal });
-          clearTimeout(tId);
-          if (ovhRes.ok) {
+          const ovhRes = await fetch(ovhUrl, ctrl ? { signal: ctrl.signal } : {});
+          if (tId) clearTimeout(tId);
+          if (ovhRes && ovhRes.ok) {
             const ovhData = await ovhRes.json();
             if (ovhData && ovhData.lyrics) {
               const rawLines = ovhData.lyrics
                 .replace(/^Paroles de la chanson.*$/im, '')
-                .split(/\r?\n/)
+                .split(/\\r?\\n/)
                 .map(l => l.trim())
                 .filter(Boolean);
               if (rawLines.length > 0) {
-                const maxLines = rawLines.slice(0, 36);
-                const estimatedSongSec = 225; // Duración completa promedio (3m 45s)
-                const stepSec = Math.max(3.5, estimatedSongSec / Math.max(maxLines.length, 1));
+                const maxLines = rawLines.slice(0, 48);
+                const stepSec = Math.max(3.5, totalDurationSec / Math.max(maxLines.length, 1));
                 finalLyrics = maxLines.map((txt, idx) => ({
                   time: Math.round(idx * stepSec),
                   text: txt,
@@ -7980,18 +8292,18 @@ window.logout = function() {
           console.warn('lyrics.ovh fallback a LRCLIB:', ovhErr);
         }
 
-        // 3B. Respaldo secundario con LRCLIB si lyrics.ovh no devolvió resultados
+        // 7B. Respaldo secundario con LRCLIB si lyrics.ovh no devolvió resultados
         if (!finalLyrics || finalLyrics.length === 0) {
           try {
             const lrcUrl = `https://lrclib.net/api/search?q=${encodeURIComponent(cleanTitleForApi + ' ' + cleanArtistForApi)}`;
             const lrcRes = await fetch(lrcUrl);
-            if (lrcRes.ok) {
+            if (lrcRes && lrcRes.ok) {
               const lrcData = await lrcRes.json();
               if (Array.isArray(lrcData) && lrcData.length > 0) {
                 const best = lrcData.find(item => item.syncedLyrics) || lrcData.find(item => item.plainLyrics) || lrcData[0];
                 if (best && best.plainLyrics) {
-                  const rawLines = best.plainLyrics.split(/\r?\n/).map(l => l.trim()).filter(Boolean).slice(0, 36);
-                  const stepSec = Math.max(1.8, 28 / Math.max(rawLines.length, 1));
+                  const rawLines = best.plainLyrics.split(/\\r?\\n/).map(l => l.trim()).filter(Boolean).slice(0, 48);
+                  const stepSec = Math.max(3.5, totalDurationSec / Math.max(rawLines.length, 1));
                   finalLyrics = rawLines.map((txt, idx) => ({
                     time: Math.round(idx * stepSec),
                     text: txt,
@@ -8003,7 +8315,7 @@ window.logout = function() {
           } catch (lrcErr) {}
         }
 
-        // 3C. Respaldo automático de estrofas sincronizadas si la red está offline
+        // 7C. Respaldo automático de estrofas sincronizadas si la red está offline
         if (!finalLyrics || finalLyrics.length === 0) {
           finalLyrics = [
             { time: 0, text: `${trackName} — ${artistName}`, es: `Escuchando "${trackName}" de ${artistName}` },
@@ -8019,23 +8331,7 @@ window.logout = function() {
           window.renderLyricsFromList(finalLyrics);
         }
 
-        audioTracker.ontimeupdate = function() {
-          const cur = audioTracker.currentTime || 0;
-          const dur = (audioTracker.duration && !isNaN(audioTracker.duration)) ? audioTracker.duration : 30;
-          const pct = Math.min(100, Math.max(0, (cur / dur) * 100));
-          const progBar = document.getElementById('holoStageProgressBar');
-          const timeBadge = document.getElementById('holoStageTime');
-          if (progBar) progBar.style.width = `${pct}%`;
-          if (timeBadge) {
-            const fmt = s => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
-            timeBadge.textContent = `${fmt(cur)} / ${fmt(dur)}`;
-          }
-          if (typeof window.handleKaraokeTimeUpdate === 'function') {
-            window.handleKaraokeTimeUpdate(cur);
-          }
-        };
-
-        showFloatingToast(`Reproduciendo "${trackName}" en Escenario Holográfico con Letra`, '🎤');
+        showFloatingToast(`Reproduciendo "${trackName}" (${totalDurationFormatted}) en Canción Completa`, '🎤');
         const lyricsBox = document.getElementById('musicLyricsContainer');
         if (lyricsBox) lyricsBox.scrollTop = 0;
         if (typeof window.scrollTo === 'function') window.scrollTo({ top: 0, behavior: 'smooth' });
