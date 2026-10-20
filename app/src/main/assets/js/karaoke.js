@@ -443,7 +443,13 @@
         if (event && event.target) {
           event.target.unMute();
           event.target.setVolume(100);
-          event.target.playVideo();
+          if (window._isHoloStagePlaying || window._userInitiatedMusicPlayback) {
+            event.target.playVideo();
+          } else {
+            if (typeof event.target.pauseVideo === 'function') {
+              event.target.pauseVideo();
+            }
+          }
         }
       } catch (_) {}
       if (typeof window.logAudioDiagnosticStatus === 'function') {
@@ -913,6 +919,7 @@
     }
 
     function selectMusicTrack(idx) {
+      window._userInitiatedMusicPlayback = true;
       window.currentSongSessionId = Date.now();
       const thisSessionId = window.currentSongSessionId;
       if (typeof window.resetSongPlayerSession === 'function') {
@@ -1619,6 +1626,7 @@
   window.selectMusicSearchResultItem = selectMusicSearchResultItem;
   window.practiceVocabularyFromMusic = practiceVocabularyFromMusic;
   window.completeMusicChallenge = completeMusicChallenge;
+  window.onYouTubePlayerReady = onYouTubePlayerReady;
   window.handleKaraokeTimeUpdate = handleKaraokeTimeUpdate;
 window.updateKaraokeSync = handleKaraokeTimeUpdate;
   window.lyricsOffset = window.lyricsOffset !== undefined ? window.lyricsOffset : -0.6;
@@ -1627,6 +1635,14 @@ window.updateKaraokeSync = handleKaraokeTimeUpdate;
 
 // Función unificada de parada en window (Pausa Instantánea 0ms y Cero Audio Residual)
 window.stopAllAudioAndTimers = function() {
+  window._isHoloStagePlaying = false;
+  window._userInitiatedMusicPlayback = false;
+  if (window.ytMusicPlayer && typeof window.ytMusicPlayer.pauseVideo === 'function') {
+    try { window.ytMusicPlayer.pauseVideo(); } catch(e){}
+  }
+  if (typeof window.stopMusicKaraokeSync === 'function') {
+    try { window.stopMusicKaraokeSync(); } catch(e){}
+  }
   if (window.karaokeInterval) { clearInterval(window.karaokeInterval); window.karaokeInterval = null; }
   if (window.karaokeRaf) { cancelAnimationFrame(window.karaokeRaf); window.karaokeRaf = null; }
   if (window._karaokePlaybackTimer) { clearInterval(window._karaokePlaybackTimer); window._karaokePlaybackTimer = null; }

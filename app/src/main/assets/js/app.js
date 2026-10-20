@@ -1405,8 +1405,12 @@
       if (targetId === 'view-stories') {
         if (typeof renderStorySelector === 'function') renderStorySelector();
       }
-      if (targetId !== 'view-music' && typeof pauseYouTubePlayer === 'function') {
-        pauseYouTubePlayer();
+      if (targetId !== 'view-music') {
+        if (typeof window.stopAllAudioAndTimers === 'function') {
+          window.stopAllAudioAndTimers();
+        } else if (typeof pauseYouTubePlayer === 'function') {
+          pauseYouTubePlayer();
+        }
       }
       if (targetId !== 'view-worldtour' && typeof window.pauseWorld3D === 'function') {
         window.pauseWorld3D();
@@ -1449,6 +1453,7 @@ window.logout = function() {
     }
 
     function goToHomePortals() {
+      if (typeof window.stopAllAudioAndTimers === 'function') window.stopAllAudioAndTimers();
       if (typeof window.pauseWorld3D === 'function') window.pauseWorld3D();
       const user = getStoredUser();
       if (!user || !user.username) {
@@ -6910,6 +6915,9 @@ window.logout = function() {
     };
 
     document.addEventListener('DOMContentLoaded', () => {
+      if (typeof window.stopAllAudioAndTimers === 'function') {
+        window.stopAllAudioAndTimers();
+      }
       setupDraggableWidget('draggableRobotWidget', 'saved_robot_pos');
       setupDraggableWidget('draggableRouletteWidget', 'saved_roulette_pos');
       updateCoverFlowVisuals();
@@ -6917,7 +6925,6 @@ window.logout = function() {
       initGoogleIdentityServices();
 
       renderMusicTracksList();
-      selectMusicTrack(0);
       renderStorySelector();
       renderLearningModules();
 
@@ -8269,6 +8276,10 @@ window.logout = function() {
     };
 
     window.stopAllAudioAndTimers = function() {
+    window._isHoloStagePlaying = false;
+    window._userInitiatedMusicPlayback = false;
+    if (window.ytMusicPlayer && typeof window.ytMusicPlayer.pauseVideo === 'function') { try { window.ytMusicPlayer.pauseVideo(); } catch(e){} }
+    if (typeof window.stopMusicKaraokeSync === 'function') { try { window.stopMusicKaraokeSync(); } catch(e){} }
     if (window.karaokeInterval) { clearInterval(window.karaokeInterval); window.karaokeInterval = null; }
     if (window.karaokeRaf) { cancelAnimationFrame(window.karaokeRaf); window.karaokeRaf = null; }
     if (window._karaokePlaybackTimer) { clearInterval(window._karaokePlaybackTimer); window._karaokePlaybackTimer = null; }
