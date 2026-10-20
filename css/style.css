@@ -473,15 +473,11 @@
   background-repeat: no-repeat;
   -webkit-background-clip: text;
   background-clip: text;
-  -webkit-text-fill-color: rgba(255, 255, 255, 0.4);
-  color: rgba(255, 255, 255, 0.4);
-  transition: color 0.15s ease,
-              opacity 0.15s ease,
-              text-shadow 0.15s ease,
-              transform 0.15s ease,
-              background-size 0.18s linear;
+  color: rgba(255, 255, 255, 0.45);
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.45);
+  transition: color 0.15s ease, text-shadow 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
   padding: 0 1.5px;
-  opacity: 0.4;
+  opacity: 0.45;
 }
 
 .lyric-active .lyric-word.word-sung,
@@ -497,14 +493,17 @@
 .lyric-active .lyric-word.word-active,
 .active .lyric-word.word-active,
 .k-word.word-active,
+.k-word.lit,
+.lit,
 .word-active {
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: #ffffff !important;
   color: #ffffff !important;
   opacity: 1 !important;
-  text-shadow: 0 0 10px rgba(56, 189, 248, 0.95), 0 0 22px rgba(14, 165, 233, 0.7);
+  text-shadow: 0 0 10px rgba(56, 189, 248, 0.8), 0 0 20px rgba(56, 189, 248, 0.4);
   filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.85));
+  font-weight: bold;
   transform: scale(1.03);
 }
 

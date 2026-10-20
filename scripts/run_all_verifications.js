@@ -34,7 +34,8 @@ const scripts = [
   'verify_v15_youtube_resilience.js',
   'verify_dictionary_pdf_requirements.js',
   'verify_spatial_immersion_portal.js',
-  'verify_v16_word_by_word_karaoke.js'
+  'verify_v16_word_by_word_karaoke.js',
+  'verify_v17_flicker_free_karaoke.js'
 ];
 
 let allPassed = true;

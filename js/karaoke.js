@@ -6,18 +6,40 @@
   'use strict';
 
   // Sistema de compensación de latencia de audio (Audio Offset Calibrator)
-  window.lyricsOffset = typeof window.lyricsOffset === 'number' ? window.lyricsOffset : -0.6;
+  let lastActiveStanzaIndex = -1;
+  let lastActiveWordIndex = -1;
+  window._lastActiveStanzaIndex = -1;
+  window._lastActiveWordIndex = -1;
+
+  const savedLyricsOffset = (typeof localStorage !== 'undefined' && localStorage.getItem('mastereng_lyrics_offset'))
+    ? parseFloat(localStorage.getItem('mastereng_lyrics_offset'))
+    : null;
+  window.lyricsOffset = (typeof savedLyricsOffset === 'number' && !isNaN(savedLyricsOffset))
+    ? savedLyricsOffset
+    : -0.6;
   window._isUserScrollingLyrics = false;
   let _userScrollLyricsTimer = null;
 
   window.adjustLyricsOffset = function(delta) {
-    window.lyricsOffset = Math.round(((typeof window.lyricsOffset === 'number' ? window.lyricsOffset : -0.6) + delta) * 10) / 10;
+    let curr = (typeof window.lyricsOffset === 'number' && !isNaN(window.lyricsOffset)) ? window.lyricsOffset : -0.6;
+    let next = Math.round((curr + delta) * 10) / 10;
+    // Rango amplio de ajuste manual (-5s a +5s)
+    next = Math.max(-5.0, Math.min(5.0, next));
+    window.lyricsOffset = next;
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('mastereng_lyrics_offset', String(next));
+      }
+    } catch (_) {}
     if (typeof document !== 'undefined') {
       const badge = document.getElementById('lyricsOffsetBadge');
       if (badge) {
         const sign = window.lyricsOffset > 0 ? '+' : '';
         badge.textContent = `Sync: ${sign}${window.lyricsOffset.toFixed(1)}s`;
       }
+    }
+    if (typeof window.handleKaraokeTimeUpdate === 'function') {
+      window.handleKaraokeTimeUpdate();
     }
     if (typeof showFloatingToast === 'function') {
       const sign = window.lyricsOffset > 0 ? '+' : '';
@@ -995,8 +1017,10 @@
     function renderLyricsFromList(lyrics) {
       activeLyricsList = lyrics;
       window.activeLyricsList = lyrics;
-      window._lastActiveStanzaIndex = -999;
-      window._lastActiveWordIndex = -999;
+      lastActiveStanzaIndex = -1;
+      lastActiveWordIndex = -1;
+      window._lastActiveStanzaIndex = -1;
+      window._lastActiveWordIndex = -1;
       initLyricsScrollDetection();
       const container = document.getElementById('musicLyricsContainer');
       const badge = document.getElementById('karaokeTimeBadge');
@@ -1064,7 +1088,7 @@
             const wEnd = (vStart + ((wIdx + 1) / wordsCount) * verseDuration).toFixed(2);
             const safeEscaped = escapeMusicHtml(w);
             const currentWordIdx = wordStanzaCounter++;
-            return `<span class="k-word lyric-word cursor-pointer inline-block transition-all duration-150" data-index="${currentWordIdx}" data-w-start="${wStart}" data-w-end="${wEnd}" onclick="event.stopPropagation(); inspectLyricsWord('${cleanWord}', event)" title="Ver fonética IPA">${safeEscaped} </span>`;
+            return `<span class="k-word lyric-word cursor-pointer inline-block transition-all duration-150" data-word-idx="${currentWordIdx}" data-index="${currentWordIdx}" data-w-start="${wStart}" data-w-end="${wEnd}" onclick="event.stopPropagation(); inspectLyricsWord('${cleanWord}', event)" title="Ver fonética IPA">${safeEscaped} </span>`;
           }).join('');
 
           return `<div class="lyric-verse-line block leading-relaxed text-base font-semibold mb-1.5">${renderedWords}</div>`;
@@ -1125,23 +1149,47 @@
     }
 
     function handleKaraokeTimeUpdate(currentTime) {
-      if (typeof currentTime !== 'number' || isNaN(currentTime) || currentTime < 0) return;
       const lyrics = activeLyricsList;
       if (!lyrics || lyrics.length === 0) return;
 
-      const firstVerseTime = (typeof lyrics[0].time === 'number') ? lyrics[0].time : 0;
+      const activePlayer = window._holoYtPlayer || (typeof ytMusicPlayer !== 'undefined' ? ytMusicPlayer : null) || document.getElementById('karaokeAudioSync') || document.getElementById('karaokeAudioTracker');
+      const playbackTime = (typeof currentTime === 'number' && !isNaN(currentTime))
+        ? currentTime
+        : ((activePlayer && typeof activePlayer.getCurrentTime === 'function')
+            ? activePlayer.getCurrentTime()
+            : (activePlayer && typeof activePlayer.currentTime === 'number' ? activePlayer.currentTime : 0));
+
+      // const playbackTime = activePlayer.getCurrentTime();
+      // const calibratedTime = playbackTime + window.lyricsOffset;
+      const calibratedTime = (typeof currentTime === 'number' && !isNaN(currentTime))
+        ? currentTime
+        : (playbackTime + (typeof window.lyricsOffset === 'number' ? window.lyricsOffset : -0.6));
+
+      // Normalizar startTime en cada estrofa
+      lyrics.forEach((st) => {
+        if (typeof st.startTime !== 'number') {
+          st.startTime = (typeof st.time === 'number') ? st.time : 0;
+        }
+        st.time = st.startTime;
+      });
+
+      const firstStanza = lyrics[0];
+      const firstStanzaStartTime = firstStanza ? firstStanza.startTime : 0;
       const badge = document.getElementById('karaokeTimeBadge');
       const introBanner = document.getElementById('karaokeIntroBanner');
 
-      // Si el tiempo actual es menor que el tiempo del primer verso (intro instrumental)
-      if (firstVerseTime > 1.5 && currentTime < firstVerseTime) {
-        if (badge) badge.textContent = '🎶 [Música Instrumental]';
+      // Si calibratedTime < firstStanza.startTime, el estado debe ser estrictamente "🎶 [Intro Instrumental]"
+      if (calibratedTime < firstStanzaStartTime) {
+        if (badge) badge.textContent = '🎶 [Intro Instrumental]'; // 🎶 [Música Instrumental]
         if (introBanner && introBanner.style.display !== 'flex') introBanner.style.display = 'flex';
         currentKaraokeStanzaIndex = -1;
 
-        if (window._lastActiveStanzaIndex !== -1) {
+        if (window._lastActiveStanzaIndex !== -1 || lastActiveStanzaIndex !== -1) {
+          lastActiveStanzaIndex = -1;
           window._lastActiveStanzaIndex = -1;
+          lastActiveWordIndex = -1;
           window._lastActiveWordIndex = -1;
+
           const lines = document.querySelectorAll('#musicLyricsContainer .lyric-line');
           lines.forEach(lineEl => {
             lineEl.classList.remove('active', 'lyric-active', 'scale-[1.02]', 'border-cyan-400', 'bg-cyan-950/80', 'text-white');
@@ -1150,7 +1198,7 @@
             }
             const wordSpans = lineEl.querySelectorAll('.k-word, .lyric-word');
             wordSpans.forEach(wEl => {
-              wEl.classList.remove('word-sung', 'word-active');
+              wEl.classList.remove('lit', 'word-sung', 'word-active');
               if (!wEl.classList.contains('word-inactive')) wEl.classList.add('word-inactive');
             });
           });
@@ -1160,36 +1208,31 @@
 
       if (introBanner && introBanner.style.display !== 'none') introBanner.style.display = 'none';
 
-      // Buscar estrofa activa según timestamp actual
-      let matchedIdx = 0;
+      // Condición estricta de asignación de estrofa:
+      // calibratedTime >= currentStanza.startTime && calibratedTime < nextStanza.startTime
+      let matchedIdx = -1;
       for (let i = 0; i < lyrics.length; i++) {
-        const stanzaTime = typeof lyrics[i].time === 'number' ? lyrics[i].time : 0;
-        if (currentTime >= stanzaTime) {
+        const currentStanza = lyrics[i];
+        const nextStanza = lyrics[i + 1];
+        const nextStanzaStartTime = nextStanza
+          ? (typeof nextStanza.startTime === 'number' ? nextStanza.startTime : nextStanza.time)
+          : 999999;
+
+        if (calibratedTime >= currentStanza.startTime && calibratedTime < nextStanzaStartTime) {
           matchedIdx = i;
-        } else {
           break;
         }
       }
 
+      if (matchedIdx === -1 && lyrics.length > 0 && calibratedTime >= lyrics[lyrics.length - 1].startTime) {
+        matchedIdx = lyrics.length - 1;
+      }
+      if (matchedIdx === -1) matchedIdx = 0;
+
       const totalStanzas = lyrics.length;
-
-      // Cálculo de progresión interna del verso activo:
-      // Sea 'lineStart' el segundo de inicio del verso y 'lineEnd' el segundo del siguiente verso (duración del verso = 'lineEnd - lineStart')
-      const lineStart = typeof lyrics[matchedIdx].time === 'number' ? lyrics[matchedIdx].time : 0;
-      const lineEnd = (matchedIdx < lyrics.length - 1 && typeof lyrics[matchedIdx + 1].time === 'number')
-        ? lyrics[matchedIdx + 1].time
-        : (lineStart + (window._currentTrackTotalDuration ? Math.max(3, window._currentTrackTotalDuration - lineStart) : 6));
-      const duration = Math.max(1.5, lineEnd - lineStart);
-      const elapsed = currentTime - lineStart;
-      const progress = Math.min(1, Math.max(0, elapsed / duration));
-
-      const currentStanzaEl = document.getElementById(`karaokeStanza-${matchedIdx}`);
-      const words = currentStanzaEl ? currentStanzaEl.querySelectorAll('.k-word, .lyric-word') : [];
-      const totalWords = words.length;
-      const activeWordIndex = totalWords > 0 ? Math.min(totalWords - 1, Math.floor(progress * totalWords)) : 0;
-
-      // 1. CAMBIO DE ESTROFA (Solo si matchedIdx cambió respecto al ciclo anterior para CERO reflows innecesarios)
       const stanzaChanged = (matchedIdx !== window._lastActiveStanzaIndex);
+
+      // 1. Si la estrofa activa calculada es IGUAL a 'lastActiveStanzaIndex', NO toques las clases de las estrofas. Solo evalúa la palabra interna.
       if (stanzaChanged) {
         if (badge) badge.textContent = `Estrofa ${matchedIdx + 1} de ${totalStanzas}`;
 
@@ -1207,43 +1250,65 @@
             const otherWords = lineEl.querySelectorAll('.k-word, .lyric-word');
             if (idx < matchedIdx) {
               otherWords.forEach(wEl => {
-                if (!wEl.classList.contains('word-active')) wEl.classList.add('word-active', 'word-sung');
+                if (!wEl.classList.contains('word-active')) wEl.classList.add('lit', 'word-active', 'word-sung');
                 wEl.classList.remove('word-inactive');
               });
             } else {
               otherWords.forEach(wEl => {
-                wEl.classList.remove('word-active', 'word-sung');
+                wEl.classList.remove('lit', 'word-active', 'word-sung');
                 if (!wEl.classList.contains('word-inactive')) wEl.classList.add('word-inactive');
               });
             }
           }
         });
 
-        // Auto-scroll suave: Solo una vez por cada cambio de verso (CERO reflows constantes en cada frame)
+        // 4. El desplazamiento suave ('scrollIntoView') SOLO debe ejecutarse una única vez cuando cambie 'lastActiveStanzaIndex'.
+        const currentStanzaEl = document.getElementById(`karaokeStanza-${matchedIdx}`);
         if (currentStanzaEl && !window._isUserScrollingLyrics && typeof currentStanzaEl.scrollIntoView === 'function') {
           currentStanzaEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
+        lastActiveStanzaIndex = matchedIdx;
         window._lastActiveStanzaIndex = matchedIdx;
-        window._lastActiveWordIndex = -1; // Forzar sincronización de palabras para la nueva estrofa
+        lastActiveWordIndex = -1;
+        window._lastActiveWordIndex = -1;
         currentKaraokeStanzaIndex = matchedIdx;
       }
 
-      // 2. ILUMINACIÓN FLUIDA PALABRA POR PALABRA (Solo si activeWordIndex cambió respecto al ciclo anterior)
-      // NUNCA toques el innerHTML dentro del ciclo de reproducción
+      // Evaluación interna de palabra por palabra de la estrofa activa:
+      const activeStanza = lyrics[matchedIdx];
+      const lineStart = typeof activeStanza.startTime === 'number' ? activeStanza.startTime : (typeof activeStanza.time === 'number' ? activeStanza.time : 0);
+      const nextStanza = lyrics[matchedIdx + 1];
+      const lineEnd = nextStanza
+        ? (typeof nextStanza.startTime === 'number' ? nextStanza.startTime : nextStanza.time)
+        : (lineStart + (window._currentTrackTotalDuration ? Math.max(3, window._currentTrackTotalDuration - lineStart) : 6));
+      const duration = Math.max(1.5, lineEnd - lineStart);
+      const elapsed = calibratedTime - lineStart;
+      const progress = Math.min(1, Math.max(0, elapsed / duration));
+
+      const currentStanzaEl = document.getElementById(`karaokeStanza-${matchedIdx}`);
+      const words = currentStanzaEl ? currentStanzaEl.querySelectorAll('.k-word, .lyric-word') : [];
+      const totalWords = words.length;
+      const activeWordIndex = totalWords > 0 ? Math.min(totalWords - 1, Math.floor(progress * totalWords)) : 0;
+
+      // 2. Si la palabra activa calculada dentro de esa estrofa es IGUAL a 'lastActiveWordIndex', NO toques el DOM.
+      // 3. PROHIBIDO alterar 'innerHTML' o remover/añadir clases si los índices no han cambiado.
       // webkitBackgroundClip
       if (activeWordIndex !== window._lastActiveWordIndex) {
+        lastActiveWordIndex = activeWordIndex;
         window._lastActiveWordIndex = activeWordIndex;
         for (let w = 0; w < totalWords; w++) {
           const wEl = words[w];
           if (w <= activeWordIndex) {
             if (!wEl.classList.contains('word-active')) {
+              wEl.classList.add('lit');
               wEl.classList.add('word-active');
               wEl.classList.remove('word-inactive');
             }
           } else {
             if (!wEl.classList.contains('word-inactive')) {
               wEl.classList.add('word-inactive');
+              wEl.classList.remove('lit');
               wEl.classList.remove('word-active');
             }
           }

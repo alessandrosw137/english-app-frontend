@@ -7694,7 +7694,7 @@ window.logout = function() {
                 }
               }
               if (typeof window.handleKaraokeTimeUpdate === 'function') {
-                window.handleKaraokeTimeUpdate(data.info.currentTime);
+                window.handleKaraokeTimeUpdate(data.info.currentTime + (typeof window.lyricsOffset === 'number' ? window.lyricsOffset : -0.6));
               }
             }
           }
