@@ -1341,12 +1341,44 @@
       }
     }
 
-    function highlightKaraokeStanza(stanzaIdx, autoScroll = true) {
+        function highlightKaraokeStanza(stanzaIdx, autoScroll = true) {
       currentKaraokeStanzaIndex = stanzaIdx;
+      window._lastActiveStanzaIndex = stanzaIdx;
+      lastActiveStanzaIndex = stanzaIdx;
+      window.lastActiveStanzaIdx = stanzaIdx;
       const lyrics = activeLyricsList;
       if (!lyrics || !lyrics[stanzaIdx]) return;
       const targetTime = typeof lyrics[stanzaIdx].time === 'number' ? lyrics[stanzaIdx].time : 0;
       handleKaraokeTimeUpdate(targetTime);
+
+      const lines = document.querySelectorAll('#musicLyricsContainer .lyric-line');
+      lines.forEach((lineEl, idx) => {
+        if (idx === stanzaIdx) {
+          lineEl.classList.add('active', 'lyric-active', 'scale-[1.02]', 'border-cyan-400', 'bg-cyan-950/80', 'text-white');
+          lineEl.classList.remove('lyric-inactive');
+        } else {
+          lineEl.classList.remove('active', 'lyric-active', 'scale-[1.02]', 'border-cyan-400', 'bg-cyan-950/80', 'text-white');
+          if (!lineEl.classList.contains('lyric-inactive')) lineEl.classList.add('lyric-inactive');
+          const otherWords = lineEl.querySelectorAll('.k-word, .lyric-word');
+          if (idx < stanzaIdx) {
+            otherWords.forEach(wEl => {
+              wEl.classList.add('lit', 'word-active', 'word-sung');
+              wEl.classList.remove('word-inactive');
+            });
+          } else {
+            otherWords.forEach(wEl => {
+              wEl.classList.remove('lit', 'word-active', 'word-sung');
+              wEl.classList.add('word-inactive');
+            });
+          }
+        }
+      });
+      if (autoScroll) {
+        const currentStanzaEl = document.getElementById(`karaokeStanza-${stanzaIdx}`);
+        if (currentStanzaEl && typeof currentStanzaEl.scrollIntoView === 'function') {
+          currentStanzaEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
     }
 
     // ========================================================
@@ -1404,12 +1436,19 @@
       }
     }
 
-    function seekYouTubePlayer(seconds, stanzaIdx = null) {
+        function seekYouTubePlayer(seconds, stanzaIdx = null) {
       window._isUserScrollingLyrics = false;
       if (typeof window.seekTrackToSeconds === 'function') {
         window.seekTrackToSeconds(seconds);
       }
-      // Asegurar comando de salto en el iframe del escenario holográfico principal
+      if (window._holoYtPlayer && typeof window._holoYtPlayer.seekTo === 'function') {
+        try {
+          window._holoYtPlayer.seekTo(seconds, true);
+          if (window._isHoloStagePlaying && typeof window._holoYtPlayer.playVideo === 'function') {
+            window._holoYtPlayer.playVideo();
+          }
+        } catch (_) {}
+      }
       const holoIframe = document.getElementById('musicHoloYoutubeIframe');
       if (holoIframe && holoIframe.contentWindow) {
         try {
@@ -1425,10 +1464,6 @@
       }
       if (stanzaIdx !== null) {
         highlightKaraokeStanza(stanzaIdx, true);
-        const currentStanzaEl = document.getElementById(`karaokeStanza-${stanzaIdx}`);
-        if (currentStanzaEl && typeof currentStanzaEl.scrollIntoView === 'function') {
-          currentStanzaEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
       }
     }
 

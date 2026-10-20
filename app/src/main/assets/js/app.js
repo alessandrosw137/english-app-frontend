@@ -7693,6 +7693,11 @@ window.logout = function() {
             }
             if (typeof data.info.currentTime === 'number') {
               const ytCurTime = data.info.currentTime;
+              const isSeekingGrace = window._isSeekingGracePeriod && (Date.now() - (window._lastSeekTimestamp || 0)) < 1500;
+              if (isSeekingGrace && typeof window._lastSeekTargetSeconds === 'number') {
+                if (Math.abs(ytCurTime - window._lastSeekTargetSeconds) > 2.5) return;
+                window._isSeekingGracePeriod = false;
+              }
               window._currentTrackCurrentTime = ytCurTime;
               if (ytCurTime > 0.3) {
                 window._holoPlayerHasStartedPlaying = true;
@@ -7817,6 +7822,12 @@ window.logout = function() {
 
       // Pre-mapping conocido para clásicos comunes (Conexión Directa sin Bloqueo de Embed)
       const knownMap = {
+        'i wanna be yours': 'nyuo9-OjNNg',
+        'wanna be yours': 'nyuo9-OjNNg',
+        'do i wanna know': 'bpOSxM0rNPM',
+        '505': 'qU9mHegkTc4',
+        'r u mine': 'VQH8ZTgna3Q',
+        'arctic monkeys': 'nyuo9-OjNNg',
         'sign of the times': 'We4QQCMwyrg',
         'as it was': '4vTox2Jz2-U',
         'watermelon sugar': '7-x3uD5z1bQ',
@@ -7886,6 +7897,8 @@ window.logout = function() {
       // Mapeo conocido para versiones alternativas sin restricción de incrustación
       if (customSuffix && (customSuffix.includes('lyric') || customSuffix.includes('topic'))) {
         const knownAlt = {
+          'i wanna be yours': 'nyuo9-OjNNg',
+          'wanna be yours': 'nyuo9-OjNNg',
           'sign of the times': 'We4QQCMwyrg',
           'as it was': '4vTox2Jz2-U',
           'watermelon sugar': '7-x3uD5z1bQ',
@@ -8428,6 +8441,9 @@ window.logout = function() {
       const clamped = Math.max(0, Math.min(sec, dur));
       window._currentTrackCurrentTime = clamped;
       window._currentTrackStartTime = Date.now() - (clamped * 1000);
+      window._isSeekingGracePeriod = true;
+      window._lastSeekTimestamp = Date.now();
+      window._lastSeekTargetSeconds = clamped;
 
       // 1. YouTube Player API seek
       if (window._holoYtPlayer && typeof window._holoYtPlayer.seekTo === 'function') {
@@ -8502,13 +8518,24 @@ window.logout = function() {
               window.handleHoloPlayerStateChange(playerState);
               return;
             }
-            // Control reactivo con offset de compensación de latencia
+            // Control reactivo con offset de compensación de latencia: ytPlayer.getCurrentTime() + window.lyricsOffset
             const rawCurrentTime = ytPlayer.getCurrentTime();
+            const isSeekingGrace = window._isSeekingGracePeriod && (Date.now() - (window._lastSeekTimestamp || 0)) < 1500;
             if (typeof rawCurrentTime === 'number' && !isNaN(rawCurrentTime) && rawCurrentTime >= 0) {
-              currentTime = ytPlayer.getCurrentTime() + window.lyricsOffset;
+              if (isSeekingGrace && typeof window._lastSeekTargetSeconds === 'number') {
+                if (Math.abs(rawCurrentTime - window._lastSeekTargetSeconds) <= 2.5) {
+                  window._isSeekingGracePeriod = false;
+                  currentTime = ytPlayer.getCurrentTime() + window.lyricsOffset;
+                } else {
+                  const elapsedSinceSeek = (Date.now() - window._lastSeekTimestamp) / 1000;
+                  currentTime = window._lastSeekTargetSeconds + elapsedSinceSeek;
+                }
+              } else {
+                currentTime = ytPlayer.getCurrentTime() + window.lyricsOffset;
+              }
             }
 
-            // Escala proporcional si la duración difiere entre player y letra
+// Escala proporcional si la duración difiere entre player y letra
             if (typeof ytPlayer.getDuration === 'function') {
               const duracionRealPlayer = ytPlayer.getDuration();
               const duracionTotalLetra = window._currentTrackTotalDuration || 225;
