@@ -1402,29 +1402,27 @@
       if (typeof window.seekTrackToSeconds === 'function') {
         window.seekTrackToSeconds(seconds);
       }
-      if (ytMusicPlayer && typeof ytMusicPlayer.seekTo === 'function') {
+      // Asegurar comando de salto en el iframe del escenario holográfico principal
+      const holoIframe = document.getElementById('musicHoloYoutubeIframe');
+      if (holoIframe && holoIframe.contentWindow) {
         try {
-          ytMusicPlayer.seekTo(seconds, true);
-          ytMusicPlayer.playVideo();
+          holoIframe.contentWindow.postMessage(JSON.stringify({
+            event: 'command',
+            func: 'seekTo',
+            args: [seconds, true]
+          }), '*');
+          if (window._isHoloStagePlaying) {
+            holoIframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+          }
         } catch (_) {}
-      } else {
-        const iframe = document.getElementById('musicYouTubeIframe');
-        if (iframe && iframe.contentWindow) {
-          try {
-            iframe.contentWindow.postMessage(JSON.stringify({
-              event: 'command',
-              func: 'seekTo',
-              args: [seconds, true]
-            }), '*');
-            iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
-          } catch (_) {}
-        }
       }
-
       if (stanzaIdx !== null) {
         highlightKaraokeStanza(stanzaIdx, true);
+        const currentStanzaEl = document.getElementById(`karaokeStanza-${stanzaIdx}`);
+        if (currentStanzaEl && typeof currentStanzaEl.scrollIntoView === 'function') {
+          currentStanzaEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
       }
-      startMusicKaraokeSync();
     }
 
     function toggleMusicKaraokeSync() {
