@@ -31,7 +31,10 @@ const scripts = [
   'verify_v12_lyrics_cinema_carousel.js',
   'verify_v13_karaoke_delay_sync.js',
   'verify_v14_lrclib_sync.js',
-  'verify_v15_youtube_resilience.js'
+  'verify_v15_youtube_resilience.js',
+  'verify_dictionary_pdf_requirements.js',
+  'verify_spatial_immersion_portal.js',
+  'verify_v16_word_by_word_karaoke.js'
 ];
 
 let allPassed = true;

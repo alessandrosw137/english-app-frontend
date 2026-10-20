@@ -8952,12 +8952,128 @@ window.logout = function() {
     };
 
     /* ========================================================
+       CONTROL DE CANCELACIÓN Y LIMPIEZA INMEDIATA (CERO DELAY / CERO PISTA PREVIA)
+       ======================================================== */
+    window.resetSongPlayerSession = function() {
+      // 1. Limpiar temporizadores de reproducción y watchdogs previos
+      if (window._karaokePlaybackTimer) {
+        clearInterval(window._karaokePlaybackTimer);
+        window._karaokePlaybackTimer = null;
+      }
+      if (window._holoPlayerWatchdogTimer) {
+        clearTimeout(window._holoPlayerWatchdogTimer);
+        window._holoPlayerWatchdogTimer = null;
+      }
+
+      // 2. Detener y pausar todos los audios e iframes
+      if (typeof window.stopAllMedia === 'function') {
+        try { window.stopAllMedia(); } catch (_) {}
+      }
+
+      // Detener YouTube players activos
+      if (window._holoYtPlayer) {
+        try {
+          if (typeof window._holoYtPlayer.stopVideo === 'function') window._holoYtPlayer.stopVideo();
+          if (typeof window._holoYtPlayer.pauseVideo === 'function') window._holoYtPlayer.pauseVideo();
+        } catch (_) {}
+      }
+      if (typeof ytMusicPlayer !== 'undefined' && ytMusicPlayer) {
+        try {
+          if (typeof ytMusicPlayer.stopVideo === 'function') ytMusicPlayer.stopVideo();
+        } catch (_) {}
+      }
+
+      // Detener iframes enviando postMessage
+      const holoIframe = document.getElementById('musicHoloYoutubeIframe');
+      if (holoIframe && holoIframe.contentWindow) {
+        try {
+          holoIframe.contentWindow.postMessage('{"event":"command","func":"stopVideo","args":""}', '*');
+          holoIframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+        } catch (_) {}
+      }
+      const mainIframe = document.getElementById('musicYouTubeIframe');
+      if (mainIframe && mainIframe.contentWindow) {
+        try {
+          mainIframe.contentWindow.postMessage('{"event":"command","func":"stopVideo","args":""}', '*');
+        } catch (_) {}
+      }
+
+      // Pausar y resetear reproductor de audio nativo de sincronización
+      const nativeSyncAudio = document.getElementById('karaokeAudioSync');
+      if (nativeSyncAudio) {
+        nativeSyncAudio.pause();
+        nativeSyncAudio.currentTime = 0;
+        nativeSyncAudio.removeAttribute('src');
+        try { nativeSyncAudio.load(); } catch (_) {}
+      }
+      const audioTracker = document.getElementById('karaokeAudioTracker');
+      if (audioTracker) {
+        audioTracker.pause();
+        audioTracker.currentTime = 0;
+        audioTracker.removeAttribute('src');
+      }
+      if (window._holoAudioNativePlayer) {
+        window._holoAudioNativePlayer.pause();
+        window._holoAudioNativePlayer.currentTime = 0;
+        window._holoAudioNativePlayer.removeAttribute('src');
+      }
+
+      // Resetear estados globales
+      window._isHoloStagePlaying = false;
+      window._currentTrackCurrentTime = 0;
+      window._holoPlayerFallbackStage = 0;
+      window._holoPlayerHasStartedPlaying = false;
+      window._lastActiveStanzaIndex = -999;
+      window._lastActiveWordIndex = -999;
+      if (typeof currentKaraokeStanzaIndex !== 'undefined') {
+        currentKaraokeStanzaIndex = -1;
+      }
+
+      // 3. Limpiar inmediatamente el contenedor de letras con skeleton loader
+      const lyricsContainer = document.getElementById('musicLyricsContainer');
+      if (lyricsContainer) {
+        lyricsContainer.innerHTML = `
+          <div id="karaokeLoadingSkeleton" class="py-10 px-4 text-center flex flex-col items-center justify-center gap-3">
+            <div class="relative w-12 h-12 flex items-center justify-center">
+              <div class="w-12 h-12 rounded-full border-4 border-cyan-500/20 border-t-cyan-400 animate-spin"></div>
+              <span class="absolute text-lg animate-pulse">🎵</span>
+            </div>
+            <p class="text-cyan-300 font-semibold text-sm animate-pulse tracking-wide">
+              Cargando audio y letra sincronizada...
+            </p>
+            <div class="w-48 h-1.5 bg-slate-800 rounded-full overflow-hidden mt-1">
+              <div class="h-full bg-cyan-400 rounded-full animate-pulse" style="width: 60%;"></div>
+            </div>
+          </div>
+        `;
+      }
+
+      const badge = document.getElementById('karaokeTimeBadge');
+      if (badge) badge.textContent = 'Cargando pista...';
+      const syncTypeBadge = document.getElementById('karaokeSyncTypeBadge');
+      if (syncTypeBadge) syncTypeBadge.innerHTML = '';
+    };
+
+    /* ========================================================
        REPRODUCTOR DE CANCIÓN COMPLETA (3 A 5 MINUTOS) EN ESCENARIO HOLOGRÁFICO
        ======================================================== */
     window.loadSongToKaraoke = function(trackName, artistName, previewUrl, artworkUrl, durationSec) {
       return (async function() {
-        // 1. Detener absolutamente todos los audios e iframes previos
-        window.stopAllMedia();
+        // 1. Identificador de sesión único por canción y cancelación de peticiones asíncronas previas
+        window.currentSongSessionId = Date.now();
+        const thisSessionId = window.currentSongSessionId;
+
+        if (window._currentSongAbortController) {
+          try { window._currentSongAbortController.abort(); } catch (_) {}
+        }
+        window._currentSongAbortController = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+
+        // 2. Función de reinicio total que se ejecuta en el segundo cero al seleccionar cualquier canción
+        if (typeof window.resetSongPlayerSession === 'function') {
+          window.resetSongPlayerSession();
+        } else {
+          window.stopAllMedia();
+        }
 
         // 2. Pantalla dedicada: Ocultar buscador y mostrar exclusivamente el reproductor arriba
         const searchSub = document.getElementById('music-search-subview');
@@ -9043,6 +9159,12 @@ window.logout = function() {
           } catch (e) {
             console.warn('Error resolviendo videoId:', e);
           }
+        }
+
+        // Si una respuesta asíncrona llega pero el ID de sesión no coincide, descártala por completo
+        if (window.currentSongSessionId !== thisSessionId) {
+          console.log('[Karaoke Session] Descartando video YouTube: sesión obsoleta.');
+          return;
         }
 
         const fullSongEmbedUrl = youtubeVideoId
@@ -9222,6 +9344,10 @@ window.logout = function() {
         // 7A. Consulta primaria universal al motor LRCLIB (LRC oficial sincronizado o plainLyrics estructurada)
         try {
           const lrcResult = await window.fetchLrclibSyncedLyrics(cleanArtistForApi, cleanTitleForApi, totalDurationSec);
+          if (window.currentSongSessionId !== thisSessionId) {
+            console.log('[Karaoke Session] Descartando respuesta LRCLIB: sesión obsoleta.');
+            return;
+          }
           if (lrcResult && Array.isArray(lrcResult.lyrics) && lrcResult.lyrics.length > 0) {
             finalLyrics = lrcResult.lyrics;
             window._isCurrentSongLrcSynced = !!lrcResult.isLrc;
@@ -9295,6 +9421,11 @@ window.logout = function() {
               es: "Haz clic en cualquier palabra en inglés para practicar su fonética IPA"
             }
           ];
+        }
+
+        if (window.currentSongSessionId !== thisSessionId) {
+          console.log('[Karaoke Session] Descartando renderizado de letra: sesión obsoleta.');
+          return;
         }
 
         if (typeof window.renderLyricsFromList === 'function') {

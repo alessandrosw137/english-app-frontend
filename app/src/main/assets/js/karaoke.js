@@ -881,7 +881,13 @@
     }
 
     function selectMusicTrack(idx) {
-      if (typeof window.stopAllMedia === 'function') window.stopAllMedia();
+      window.currentSongSessionId = Date.now();
+      const thisSessionId = window.currentSongSessionId;
+      if (typeof window.resetSongPlayerSession === 'function') {
+        window.resetSongPlayerSession();
+      } else if (typeof window.stopAllMedia === 'function') {
+        window.stopAllMedia();
+      }
       const holoStage = document.getElementById('musicHolographicStage');
       if (holoStage) holoStage.style.display = 'none';
       const ytIframe = document.getElementById('musicYouTubeIframe');
@@ -989,6 +995,8 @@
     function renderLyricsFromList(lyrics) {
       activeLyricsList = lyrics;
       window.activeLyricsList = lyrics;
+      window._lastActiveStanzaIndex = -999;
+      window._lastActiveWordIndex = -999;
       initLyricsScrollDetection();
       const container = document.getElementById('musicLyricsContainer');
       const badge = document.getElementById('karaokeTimeBadge');
@@ -1044,6 +1052,7 @@
         const totalVerses = verses.length || 1;
         const verseDuration = stanzaDuration / totalVerses;
 
+        let wordStanzaCounter = 0;
         const renderedVerses = (verses.length > 0 ? verses : [stanza.text || '']).map((verseStr, vIdx) => {
           const rawWords = verseStr.split(/\s+/).filter(Boolean);
           const wordsCount = rawWords.length || 1;
@@ -1054,7 +1063,8 @@
             const wStart = (vStart + (wIdx / wordsCount) * verseDuration).toFixed(2);
             const wEnd = (vStart + ((wIdx + 1) / wordsCount) * verseDuration).toFixed(2);
             const safeEscaped = escapeMusicHtml(w);
-            return `<span class="lyric-word cursor-pointer inline-block" data-w-start="${wStart}" data-w-end="${wEnd}" onclick="event.stopPropagation(); inspectLyricsWord('${cleanWord}', event)" title="Ver fonética IPA">${safeEscaped} </span>`;
+            const currentWordIdx = wordStanzaCounter++;
+            return `<span class="k-word lyric-word cursor-pointer inline-block transition-all duration-150" data-index="${currentWordIdx}" data-w-start="${wStart}" data-w-end="${wEnd}" onclick="event.stopPropagation(); inspectLyricsWord('${cleanWord}', event)" title="Ver fonética IPA">${safeEscaped} </span>`;
           }).join('');
 
           return `<div class="lyric-verse-line block leading-relaxed text-base font-semibold mb-1.5">${renderedWords}</div>`;
@@ -1126,27 +1136,29 @@
       // Si el tiempo actual es menor que el tiempo del primer verso (intro instrumental)
       if (firstVerseTime > 1.5 && currentTime < firstVerseTime) {
         if (badge) badge.textContent = '🎶 [Música Instrumental]';
-        if (introBanner) introBanner.style.display = 'flex';
+        if (introBanner && introBanner.style.display !== 'flex') introBanner.style.display = 'flex';
         currentKaraokeStanzaIndex = -1;
 
-        const lines = document.querySelectorAll('#musicLyricsContainer .lyric-line');
-        lines.forEach(lineEl => {
-          lineEl.classList.remove('active', 'lyric-active', 'scale-[1.02]', 'border-cyan-400', 'bg-cyan-950/80', 'text-white');
-          if (!lineEl.classList.contains('lyric-inactive')) {
-            lineEl.classList.add('lyric-inactive');
-          }
-          const wordSpans = lineEl.querySelectorAll('.lyric-word');
-          wordSpans.forEach(wEl => {
-            wEl.classList.remove('word-sung', 'word-active');
-            wEl.style.backgroundSize = '0% 100%';
-            wEl.style.webkitTextFillColor = 'rgba(255, 255, 255, 0.4)';
-            wEl.style.color = 'rgba(255, 255, 255, 0.4)';
+        if (window._lastActiveStanzaIndex !== -1) {
+          window._lastActiveStanzaIndex = -1;
+          window._lastActiveWordIndex = -1;
+          const lines = document.querySelectorAll('#musicLyricsContainer .lyric-line');
+          lines.forEach(lineEl => {
+            lineEl.classList.remove('active', 'lyric-active', 'scale-[1.02]', 'border-cyan-400', 'bg-cyan-950/80', 'text-white');
+            if (!lineEl.classList.contains('lyric-inactive')) {
+              lineEl.classList.add('lyric-inactive');
+            }
+            const wordSpans = lineEl.querySelectorAll('.k-word, .lyric-word');
+            wordSpans.forEach(wEl => {
+              wEl.classList.remove('word-sung', 'word-active');
+              if (!wEl.classList.contains('word-inactive')) wEl.classList.add('word-inactive');
+            });
           });
-        });
+        }
         return;
       }
 
-      if (introBanner) introBanner.style.display = 'none';
+      if (introBanner && introBanner.style.display !== 'none') introBanner.style.display = 'none';
 
       // Buscar estrofa activa según timestamp actual
       let matchedIdx = 0;
@@ -1160,73 +1172,83 @@
       }
 
       const totalStanzas = lyrics.length;
-      if (badge) badge.textContent = `Estrofa ${matchedIdx + 1} de ${totalStanzas}`;
 
-      const lines = document.querySelectorAll('#musicLyricsContainer .lyric-line');
-      lines.forEach((lineEl, idx) => {
-        const isCurrent = (idx === matchedIdx);
-        const currentStanzaEl = lineEl;
-        if (isCurrent) {
-          if (!lineEl.classList.contains('active') || !lineEl.classList.contains('lyric-active')) {
+      // Cálculo de progresión interna del verso activo:
+      // Sea 'lineStart' el segundo de inicio del verso y 'lineEnd' el segundo del siguiente verso (duración del verso = 'lineEnd - lineStart')
+      const lineStart = typeof lyrics[matchedIdx].time === 'number' ? lyrics[matchedIdx].time : 0;
+      const lineEnd = (matchedIdx < lyrics.length - 1 && typeof lyrics[matchedIdx + 1].time === 'number')
+        ? lyrics[matchedIdx + 1].time
+        : (lineStart + (window._currentTrackTotalDuration ? Math.max(3, window._currentTrackTotalDuration - lineStart) : 6));
+      const duration = Math.max(1.5, lineEnd - lineStart);
+      const elapsed = currentTime - lineStart;
+      const progress = Math.min(1, Math.max(0, elapsed / duration));
+
+      const currentStanzaEl = document.getElementById(`karaokeStanza-${matchedIdx}`);
+      const words = currentStanzaEl ? currentStanzaEl.querySelectorAll('.k-word, .lyric-word') : [];
+      const totalWords = words.length;
+      const activeWordIndex = totalWords > 0 ? Math.min(totalWords - 1, Math.floor(progress * totalWords)) : 0;
+
+      // 1. CAMBIO DE ESTROFA (Solo si matchedIdx cambió respecto al ciclo anterior para CERO reflows innecesarios)
+      const stanzaChanged = (matchedIdx !== window._lastActiveStanzaIndex);
+      if (stanzaChanged) {
+        if (badge) badge.textContent = `Estrofa ${matchedIdx + 1} de ${totalStanzas}`;
+
+        const lines = document.querySelectorAll('#musicLyricsContainer .lyric-line');
+        lines.forEach((lineEl, idx) => {
+          if (idx === matchedIdx) {
             lineEl.classList.add('active', 'lyric-active', 'scale-[1.02]', 'border-cyan-400', 'bg-cyan-950/80', 'text-white');
             lineEl.classList.remove('lyric-inactive');
-            if (!window._isUserScrollingLyrics && typeof currentStanzaEl.scrollIntoView === 'function') {
-              currentStanzaEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          } else {
+            lineEl.classList.remove('active', 'lyric-active', 'scale-[1.02]', 'border-cyan-400', 'bg-cyan-950/80', 'text-white');
+            if (!lineEl.classList.contains('lyric-inactive')) {
+              lineEl.classList.add('lyric-inactive');
+            }
+            // Versos pasados permanecen iluminados como sung, versos futuros permanecen inactivos
+            const otherWords = lineEl.querySelectorAll('.k-word, .lyric-word');
+            if (idx < matchedIdx) {
+              otherWords.forEach(wEl => {
+                if (!wEl.classList.contains('word-active')) wEl.classList.add('word-active', 'word-sung');
+                wEl.classList.remove('word-inactive');
+              });
+            } else {
+              otherWords.forEach(wEl => {
+                wEl.classList.remove('word-active', 'word-sung');
+                if (!wEl.classList.contains('word-inactive')) wEl.classList.add('word-inactive');
+              });
             }
           }
+        });
 
-          // Resaltado de palabra por palabra con background-clip: text de izquierda a derecha
-          const wordSpans = lineEl.querySelectorAll('.lyric-word');
-          wordSpans.forEach(wEl => {
-            const wStart = parseFloat(wEl.getAttribute('data-w-start') || '0');
-            const wEnd = parseFloat(wEl.getAttribute('data-w-end') || '0');
+        // Auto-scroll suave: Solo una vez por cada cambio de verso (CERO reflows constantes en cada frame)
+        if (currentStanzaEl && !window._isUserScrollingLyrics && typeof currentStanzaEl.scrollIntoView === 'function') {
+          currentStanzaEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
 
-            if (currentTime >= wEnd) {
-              wEl.classList.add('word-sung');
-              wEl.classList.remove('word-active');
-              wEl.style.backgroundSize = '100% 100%';
-              wEl.style.webkitTextFillColor = '#ffffff';
-              wEl.style.color = '#ffffff';
-            } else if (currentTime < wStart) {
-              wEl.classList.remove('word-sung', 'word-active');
-              wEl.style.backgroundSize = '0% 100%';
-              wEl.style.webkitTextFillColor = 'rgba(255, 255, 255, 0.4)';
-              wEl.style.color = 'rgba(255, 255, 255, 0.4)';
-            } else {
-              // Palabra activa en este instante exacto
+        window._lastActiveStanzaIndex = matchedIdx;
+        window._lastActiveWordIndex = -1; // Forzar sincronización de palabras para la nueva estrofa
+        currentKaraokeStanzaIndex = matchedIdx;
+      }
+
+      // 2. ILUMINACIÓN FLUIDA PALABRA POR PALABRA (Solo si activeWordIndex cambió respecto al ciclo anterior)
+      // NUNCA toques el innerHTML dentro del ciclo de reproducción
+      // webkitBackgroundClip
+      if (activeWordIndex !== window._lastActiveWordIndex) {
+        window._lastActiveWordIndex = activeWordIndex;
+        for (let w = 0; w < totalWords; w++) {
+          const wEl = words[w];
+          if (w <= activeWordIndex) {
+            if (!wEl.classList.contains('word-active')) {
               wEl.classList.add('word-active');
-              wEl.classList.remove('word-sung');
-              const progressPct = Math.min(100, Math.max(0, ((currentTime - wStart) / (wEnd - wStart)) * 100));
-              wEl.style.backgroundSize = `${progressPct}% 100%`;
-              wEl.style.webkitBackgroundClip = 'text';
-              wEl.style.backgroundClip = 'text';
-              wEl.style.webkitTextFillColor = 'transparent';
+              wEl.classList.remove('word-inactive');
             }
-          });
-        } else {
-          if (lineEl.classList.contains('active') || lineEl.classList.contains('lyric-active')) {
-            lineEl.classList.remove('active', 'lyric-active', 'scale-[1.02]', 'border-cyan-400', 'bg-cyan-950/80', 'text-white');
-            lineEl.classList.add('lyric-inactive');
-            const wordSpans = lineEl.querySelectorAll('.lyric-word');
-            wordSpans.forEach(wEl => {
-              wEl.classList.remove('word-sung', 'word-active');
-              if (idx < matchedIdx) {
-                wEl.style.backgroundSize = '100% 100%';
-                wEl.style.webkitTextFillColor = 'rgba(255, 255, 255, 0.7)';
-                wEl.style.color = 'rgba(255, 255, 255, 0.7)';
-              } else {
-                wEl.style.backgroundSize = '0% 100%';
-                wEl.style.webkitTextFillColor = 'rgba(255, 255, 255, 0.4)';
-                wEl.style.color = 'rgba(255, 255, 255, 0.4)';
-              }
-            });
-          } else if (!lineEl.classList.contains('lyric-inactive')) {
-            lineEl.classList.add('lyric-inactive');
+          } else {
+            if (!wEl.classList.contains('word-inactive')) {
+              wEl.classList.add('word-inactive');
+              wEl.classList.remove('word-active');
+            }
           }
         }
-      });
-
-      currentKaraokeStanzaIndex = matchedIdx;
+      }
     }
 
     function highlightKaraokeStanza(stanzaIdx, autoScroll = true) {
