@@ -3370,34 +3370,40 @@ window.logout = function() {
       }
 
       // Orden alfabético estricto (A - Z) antes de asignar la numeración secuencial (#01, #02... #100)
-      const sortedItems = [...items].sort((a, b) =>
-        (a.term || a.word || '').localeCompare((b.term || b.word || ''), 'en', { sensitivity: 'base' })
-      );
+      const sortedItems = [...items].sort((a, b) => {
+        const wA = (a.word || a.term || '').trim();
+        const wB = (b.word || b.term || '').trim();
+        return wA.localeCompare(wB, 'en', { sensitivity: 'base' });
+      });
 
       container.innerHTML = sortedItems.map((item, idx) => {
         const numStr = String(idx + 1).padStart(2, '0');
         const cat = item.category || 'Sustantivo';
         const badgeCls = getCategoryBadgeColors(cat);
-        const safeTerm = (item.term || '').replace(/\\/g, "\\\\").replace(/'/g, "\\'");
-        const safeEx = (item.example || '').replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+        const wordText = item.word || item.term || '';
+        const ipaText = item.ipa || item.pron || '';
+        const transText = item.translation || item.meaning || '';
+        const exText = item.example || '';
+        const safeWord = wordText.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+        const safeEx = exText.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
 
         return `
         <div class="p-3.5 rounded-2xl bg-slate-800/85 hover:bg-slate-800 border border-slate-700/70 hover:border-amber-500/40 transition flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div class="flex-1 min-w-0">
             <div class="flex flex-wrap items-center gap-2">
               <span class="px-2 py-0.5 rounded-lg bg-slate-950 border border-slate-700 text-[10px] font-mono font-black text-amber-400">#${numStr}</span>
-              <span class="text-sm sm:text-base font-black text-white">${item.term}</span>
-              <span class="text-xs text-amber-300 font-mono bg-slate-900/80 px-2 py-0.5 rounded-md border border-slate-700/60">${item.pron || ''}</span>
+              <span class="text-sm sm:text-base font-black text-white">${wordText}</span>
+              <span class="text-xs text-amber-300 font-mono bg-slate-900/80 px-2 py-0.5 rounded-md border border-slate-700/60">${ipaText}</span>
               <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border ${badgeCls}">${cat}</span>
-              <button type="button" onclick="speakText('${safeTerm}')" class="px-2 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-amber-200 text-xs font-bold transition cursor-pointer flex items-center gap-1" title="Escuchar pronunciación nativa">
+              <button type="button" onclick="if(window.speakGlossaryWord){window.speakGlossaryWord('${safeWord}');}else{speakText('${safeWord}', 0.9);}" class="px-2 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-amber-200 text-xs font-bold transition cursor-pointer flex items-center gap-1" title="Escuchar pronunciación nativa">
                 <span>🔊</span>
                 <span class="text-[10px]">Pronunciar</span>
               </button>
             </div>
-            <p class="text-xs sm:text-sm text-emerald-300 font-bold mt-1.5">🇪🇸 ${item.meaning || ''}</p>
+            <p class="text-xs sm:text-sm text-emerald-300 font-bold mt-1.5">🇪🇸 ${transText}</p>
             <div class="mt-1.5 bg-slate-900/75 p-2.5 rounded-xl border border-slate-800 flex items-center justify-between gap-2">
-              <p class="text-xs text-slate-300 italic">"<span class="text-slate-100">${item.example || ''}</span>"</p>
-              ${item.example ? `<button type="button" onclick="speakText('${safeEx}', 0.92)" class="shrink-0 p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-300 text-xs cursor-pointer" title="Escuchar oración de ejemplo">🔊</button>` : ''}
+              <p class="text-xs text-slate-300 italic">"<span class="text-slate-100">${exText}</span>"</p>
+              ${exText ? `<button type="button" onclick="if(window.speakGlossaryWord){window.speakGlossaryWord('${safeEx}', 0.9);}else{speakText('${safeEx}', 0.9);}" class="shrink-0 p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-300 text-xs cursor-pointer" title="Escuchar oración de ejemplo">🔊</button>` : ''}
             </div>
           </div>
         </div>
@@ -3415,17 +3421,24 @@ window.logout = function() {
         const matchesCat = (activeGlossaryCategoryFilter === 'all') || (i.category === activeGlossaryCategoryFilter);
         if (!matchesCat) return false;
         if (!q) return true;
+        const w = (i.word || i.term || '').toLowerCase();
+        const p = (i.ipa || i.pron || '').toLowerCase();
+        const c = (i.category || '').toLowerCase();
+        const t = (i.translation || i.meaning || '').toLowerCase();
+        const ex = (i.example || '').toLowerCase();
         return (
-          (i.term && i.term.toLowerCase().includes(q)) ||
-          (i.pron && i.pron.toLowerCase().includes(q)) ||
-          (i.category && i.category.toLowerCase().includes(q)) ||
-          (i.meaning && i.meaning.toLowerCase().includes(q)) ||
-          (i.example && i.example.toLowerCase().includes(q))
+          w.includes(q) ||
+          p.includes(q) ||
+          c.includes(q) ||
+          t.includes(q) ||
+          ex.includes(q)
         );
       });
-      const sortedFiltered = [...filtered].sort((a, b) =>
-        (a.term || a.word || '').localeCompare((b.term || b.word || ''), 'en', { sensitivity: 'base' })
-      );
+      const sortedFiltered = [...filtered].sort((a, b) => {
+        const wA = (a.word || a.term || '').trim();
+        const wB = (b.word || b.term || '').trim();
+        return wA.localeCompare(wB, 'en', { sensitivity: 'base' });
+      });
       renderGlossaryItems(sortedFiltered);
     }
 
@@ -3593,9 +3606,12 @@ window.logout = function() {
       return new Blob([new TextEncoder().encode(pdfText)], { type: 'application/pdf' });
     }
 
-    function downloadActiveGlossaryPdf() {
+    function downloadActiveGlossaryPdf(modId) {
+      if (window.PDF_GENERATOR && typeof window.PDF_GENERATOR.generateModulePdf === 'function') {
+        return window.PDF_GENERATOR.generateModulePdf(modId || activeGlossaryModuleKey);
+      }
       enrichMasterModulesDictionary();
-      const modId = arguments[0];
+      const resolvedId = modId || arguments[0];
       if (modId) {
         const mod = (window.OFFICIAL_LEARNING_MODULES || []).find(m => m.id === Number(modId) || m.key === modId);
         if (mod && mod.key) {
