@@ -390,7 +390,12 @@
           ytMusicPlayer = new YT.Player('musicYouTubeIframe', {
             events: {
               'onReady': onYouTubePlayerReady,
-              'onStateChange': onYouTubePlayerStateChange
+              'onStateChange': onYouTubePlayerStateChange,
+              'onError': function(ev) {
+                if (typeof window.handleHoloPlayerError === 'function') {
+                  window.handleHoloPlayerError(ev.data);
+                }
+              }
             }
           });
           isYtApiReady = true;
@@ -1289,6 +1294,9 @@
 
     function seekYouTubePlayer(seconds, stanzaIdx = null) {
       window._isUserScrollingLyrics = false;
+      if (typeof window.seekTrackToSeconds === 'function') {
+        window.seekTrackToSeconds(seconds);
+      }
       if (ytMusicPlayer && typeof ytMusicPlayer.seekTo === 'function') {
         try {
           ytMusicPlayer.seekTo(seconds, true);
