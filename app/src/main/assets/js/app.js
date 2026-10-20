@@ -7995,11 +7995,11 @@ window.logout = function() {
         fallbackVisualizer.style.display = 'flex';
       }
 
-      // Activar reproductor de audio nativo garantizado
-      let nativeAudio = document.getElementById('karaokeAudioSync') || document.getElementById('karaokeAudioTracker');
+      // Activar reproductor de audio nativo garantizado (<audio id="mastereng-audio">)
+      let nativeAudio = document.getElementById('mastereng-audio') || document.getElementById('karaokeAudioSync') || document.getElementById('karaokeAudioTracker');
       if (!nativeAudio) {
         nativeAudio = document.createElement('audio');
-        nativeAudio.id = 'karaokeAudioSync';
+        nativeAudio.id = 'mastereng-audio';
         nativeAudio.style.display = 'none';
         document.body.appendChild(nativeAudio);
       }
@@ -8010,26 +8010,49 @@ window.logout = function() {
         nativeAudio.load();
       }
 
+      // Desmuteo forzado, volumen 100% y listener de error resiliente
+      nativeAudio.muted = false;
+      nativeAudio.volume = 1.0;
+      nativeAudio.onerror = function(err) {
+        if (typeof window.handleAudioSourceFallback === 'function') {
+          window.handleAudioSourceFallback(nativeAudio);
+        }
+      };
+
       // Bucle continuo para que la música no se detenga si preview dura 30s
       nativeAudio.onended = function() {
         if (window._isHoloStagePlaying && window._currentTrackCurrentTime < (window._currentTrackTotalDuration || 225)) {
           try {
             nativeAudio.currentTime = 0;
+            nativeAudio.muted = false;
+            nativeAudio.volume = 1.0;
             nativeAudio.play().catch(() => {});
           } catch (_) {}
         }
       };
 
       window._isHoloStagePlaying = true;
+      window._isHoloMuted = false;
+      const muteIcon = document.getElementById('holoStageMuteIcon');
+      if (muteIcon) muteIcon.textContent = '🔊';
       window._currentTrackStartTime = Date.now() - ((window._currentTrackCurrentTime || 0) * 1000);
       window.startKaraokeSyncTimer();
 
       try {
         const playPromise = nativeAudio.play();
         if (playPromise && typeof playPromise.catch === 'function') {
-          playPromise.catch(() => {});
+          playPromise.catch(err => {
+            console.warn("Interacción requerida para audio:", err);
+            if (typeof window.showAudioUnlockOverlay === 'function') window.showAudioUnlockOverlay();
+          });
         }
-      } catch (_) {}
+      } catch (err) {
+        console.warn("Interacción requerida para audio:", err);
+        if (typeof window.showAudioUnlockOverlay === 'function') window.showAudioUnlockOverlay();
+      }
+      if (typeof window.logAudioDiagnosticStatus === 'function') {
+        window.logAudioDiagnosticStatus('HTML5 Audio', 'Playing', 100);
+      }
 
       const playIcon = document.getElementById('holoStagePlayIcon');
       const eq = document.getElementById('holoStageEqualizer');
@@ -8048,6 +8071,9 @@ window.logout = function() {
 
       if (isPlaying) {
         window._holoPlayerHasStartedPlaying = true;
+        if (typeof window.hideAudioUnlockOverlay === 'function') {
+          window.hideAudioUnlockOverlay();
+        }
         if (window._holoPlayerWatchdogTimer) {
           clearTimeout(window._holoPlayerWatchdogTimer);
           window._holoPlayerWatchdogTimer = null;
@@ -8056,6 +8082,9 @@ window.logout = function() {
         if (playIcon) playIcon.textContent = '⏸️';
         if (eq) eq.classList.add('holo-eq-playing');
         window.startKaraokeSyncTimer();
+        if (typeof window.logAudioDiagnosticStatus === 'function') {
+          window.logAudioDiagnosticStatus('YouTube', 'Playing', 100);
+        }
       } else if (isPaused || isEnded) {
         window._isHoloStagePlaying = false;
         if (playIcon) playIcon.textContent = '▶️';
@@ -8064,6 +8093,114 @@ window.logout = function() {
           clearInterval(window._karaokePlaybackTimer);
           window._karaokePlaybackTimer = null;
         }
+      }
+    };
+
+
+    /* ========================================================
+       SISTEMA DE DIAGNÓSTICO EN TIEMPO REAL Y DESMUTEO DE AUDIO
+       ======================================================== */
+    window.logAudioDiagnosticStatus = function(overrideType, overrideState, overrideVol) {
+      const isYt = window._holoPlayerFallbackStage < 2 && (window._holoYtPlayer || document.getElementById('musicHoloYoutubeIframe'));
+      const playerType = overrideType || (isYt ? 'YouTube' : 'HTML5 Audio');
+      const playState = overrideState || (window._isHoloStagePlaying ? 'Playing' : 'Paused');
+
+      let volumePct = 100;
+      if (typeof overrideVol === 'number') {
+        volumePct = Math.round(overrideVol);
+      } else if (isYt && window._holoYtPlayer && typeof window._holoYtPlayer.getVolume === 'function') {
+        try { volumePct = Math.round(window._holoYtPlayer.getVolume()); } catch (_) { volumePct = 100; }
+      } else {
+        const audioEl = document.getElementById('mastereng-audio') || document.getElementById('karaokeAudioSync') || document.getElementById('karaokeAudioTracker');
+        if (audioEl && typeof audioEl.volume === 'number') {
+          volumePct = Math.round(audioEl.volume * 100);
+        }
+      }
+
+      const curSec = (typeof window._currentTrackCurrentTime === 'number' ? window._currentTrackCurrentTime : 0).toFixed(1);
+      const activeStanza = (typeof window._lastActiveStanzaIndex === 'number' && window._lastActiveStanzaIndex >= 0)
+        ? (window._lastActiveStanzaIndex + 1)
+        : 1;
+
+      console.log(`[Audio Diagnostic] Reproductor activo: [${playerType}] | Estado: ${playState} | Volumen: ${volumePct}% | Segundo: ${curSec}s | Estrofa activa: ${activeStanza}`);
+    };
+
+    window.showAudioUnlockOverlay = function() {
+      const overlay = document.getElementById('audioUnlockOverlay');
+      if (overlay) {
+        overlay.classList.remove('hidden');
+        overlay.style.display = 'flex';
+      }
+    };
+
+    window.hideAudioUnlockOverlay = function() {
+      const overlay = document.getElementById('audioUnlockOverlay');
+      if (overlay) {
+        overlay.classList.add('hidden');
+        overlay.style.display = 'none';
+      }
+    };
+
+    window.unlockAudioAndPlay = function() {
+      window.hideAudioUnlockOverlay();
+      window._isHoloMuted = false;
+      const muteIcon = document.getElementById('holoStageMuteIcon');
+      if (muteIcon) muteIcon.textContent = '🔊';
+
+      // 1. YouTube Player: desmutear forzado, volumen 100 y reproducir
+      if (window._holoYtPlayer) {
+        try {
+          if (typeof window._holoYtPlayer.unMute === 'function') window._holoYtPlayer.unMute();
+          if (typeof window._holoYtPlayer.setVolume === 'function') window._holoYtPlayer.setVolume(100);
+          if (typeof window._holoYtPlayer.playVideo === 'function') window._holoYtPlayer.playVideo();
+        } catch (_) {}
+      }
+      const ytIframe = document.getElementById('musicHoloYoutubeIframe');
+      if (ytIframe && ytIframe.contentWindow) {
+        try {
+          ytIframe.contentWindow.postMessage('{"event":"command","func":"unMute","args":""}', '*');
+          ytIframe.contentWindow.postMessage('{"event":"command","func":"setVolume","args":[100]}', '*');
+          ytIframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+        } catch (_) {}
+      }
+
+      // 2. Elemento nativo de audio
+      const audioEl = document.getElementById('mastereng-audio') || document.getElementById('karaokeAudioSync') || document.getElementById('karaokeAudioTracker');
+      if (audioEl) {
+        audioEl.muted = false;
+        audioEl.volume = 1.0;
+        audioEl.play().catch(err => console.warn("Interacción requerida para audio:", err));
+      }
+
+      window._isHoloStagePlaying = true;
+      const playIcon = document.getElementById('holoStagePlayIcon');
+      const eq = document.getElementById('holoStageEqualizer');
+      if (playIcon) playIcon.textContent = '⏸️';
+      if (eq) eq.classList.add('holo-eq-playing');
+      window.startKaraokeSyncTimer();
+      window.logAudioDiagnosticStatus(null, 'Playing', 100);
+    };
+
+    window.handleAudioSourceFallback = function(audioEl) {
+      if (!audioEl) return;
+      console.warn('[Audio Engine] Manejando fallback de fuente de audio...');
+      const trackName = window._currentPlayingTrackName || '';
+      if (window.MUSIC_SESSION_TRACKS && Array.isArray(window.MUSIC_SESSION_TRACKS)) {
+        const match = window.MUSIC_SESSION_TRACKS.find(t =>
+          t.title.toLowerCase().includes(trackName.toLowerCase()) ||
+          trackName.toLowerCase().includes(t.title.toLowerCase())
+        );
+        if (match && match.previewUrl && audioEl.src !== match.previewUrl) {
+          console.log('[Audio Engine] Conmutando a fuente de audio de respaldo:', match.title);
+          audioEl.src = match.previewUrl;
+          audioEl.muted = false;
+          audioEl.volume = 1.0;
+          audioEl.play().catch(e => console.warn("Interacción requerida para audio:", e));
+          return;
+        }
+      }
+      if (typeof window.handleHoloPlayerError === 'function') {
+        window.handleHoloPlayerError('AUDIO_SRC_ERROR');
       }
     };
 
@@ -8096,21 +8233,40 @@ window.logout = function() {
         if (eq) eq.classList.remove('holo-eq-playing');
         waveBars.forEach(b => b.style.animationPlayState = 'paused');
       } else {
-        // REANUDAR: Vincular avance exclusivamente al tiempo real
+        // REANUDAR: Vincular avance exclusivamente al tiempo real con desmuteo forzado y volumen al 100%
         window._isHoloStagePlaying = true;
+        window._isHoloMuted = false;
+        const muteIcon = document.getElementById('holoStageMuteIcon');
+        if (muteIcon) muteIcon.textContent = '🔊';
         window._currentTrackStartTime = Date.now() - ((window._currentTrackCurrentTime || 0) * 1000);
         window.startKaraokeSyncTimer();
         if (window._holoYtPlayer && typeof window._holoYtPlayer.playVideo === 'function' && window._holoPlayerFallbackStage < 2) {
-          try { window._holoYtPlayer.playVideo(); } catch (e) {}
+          try {
+            window._holoYtPlayer.unMute();
+            window._holoYtPlayer.setVolume(100);
+            window._holoYtPlayer.playVideo();
+          } catch (e) {}
         }
         if (ytIframe && ytIframe.contentWindow && window._holoPlayerFallbackStage < 2) {
           try {
+            ytIframe.contentWindow.postMessage('{"event":"command","func":"unMute","args":""}', '*');
+            ytIframe.contentWindow.postMessage('{"event":"command","func":"setVolume","args":[100]}', '*');
             ytIframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
           } catch (e) {}
         }
-        const nativeAudio = document.getElementById('karaokeAudioSync') || document.getElementById('karaokeAudioTracker');
+        const nativeAudio = document.getElementById('mastereng-audio') || document.getElementById('karaokeAudioSync') || document.getElementById('karaokeAudioTracker');
         if (nativeAudio && (window._holoPlayerFallbackStage >= 2 || !window._holoYtPlayer)) {
-          try { nativeAudio.play(); } catch (e) {}
+          try {
+            nativeAudio.muted = false;
+            nativeAudio.volume = 1.0;
+            nativeAudio.play().catch(err => {
+              console.warn("Interacción requerida para audio:", err);
+              if (typeof window.showAudioUnlockOverlay === 'function') window.showAudioUnlockOverlay();
+            });
+          } catch (e) {}
+        }
+        if (typeof window.logAudioDiagnosticStatus === 'function') {
+          window.logAudioDiagnosticStatus(null, 'Playing', 100);
         }
         if (playIcon) playIcon.textContent = '⏸️';
         if (eq) eq.classList.add('holo-eq-playing');
@@ -8300,6 +8456,14 @@ window.logout = function() {
 
         if (typeof window.handleKaraokeTimeUpdate === 'function') {
           window.handleKaraokeTimeUpdate(window._currentTrackCurrentTime);
+        }
+
+        // Diagnóstico de audio periódico cada ~2.5s
+        if (typeof window.logAudioDiagnosticStatus === 'function') {
+          if (!window._lastAudioDiagnosticLog || (Date.now() - window._lastAudioDiagnosticLog > 2500)) {
+            window._lastAudioDiagnosticLog = Date.now();
+            window.logAudioDiagnosticStatus();
+          }
         }
 
         if (window._currentTrackCurrentTime >= dur) {
@@ -8912,7 +9076,7 @@ window.logout = function() {
       if (!s) return;
       const hiResArtwork = (s.artworkUrl100 || 'images/portal_music.svg').replace(/100x100bb|300x300bb/g, '600x600bb');
       const durSec = (s.trackTimeMillis && s.trackTimeMillis > 30000) ? Math.round(s.trackTimeMillis / 1000) : 238;
-      window.loadSongToKaraoke(s.trackName || 'Track', s.artistName || 'Artist', '', hiResArtwork, durSec);
+      window.loadSongToKaraoke(s.trackName || 'Track', s.artistName || 'Artist', s.previewUrl || '', hiResArtwork, durSec);
     };
 
     window.returnToMusicSearch = function(stopMedia = true) {
@@ -9194,6 +9358,15 @@ window.logout = function() {
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowfullscreen>
               </iframe>
+              <!-- OVERLAY INTERACTIVO DE DESBLOQUEO DE AUDIO (Cero silencio por políticas de autoplay) -->
+              <div id="audioUnlockOverlay" class="hidden absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4 transition-all duration-300" style="display: none;">
+                <button type="button" id="audioUnlockBtn" onclick="window.unlockAudioAndPlay()"
+                  class="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 via-cyan-500 to-blue-600 hover:from-emerald-400 hover:to-blue-500 text-white font-black text-sm sm:text-base flex items-center gap-3 shadow-[0_0_30px_rgba(6,182,212,0.6)] cursor-pointer transform hover:scale-105 active:scale-95 transition">
+                  <span class="text-xl">▶</span>
+                  <span>Reproducir Audio</span>
+                </button>
+                <p class="text-xs text-cyan-300/80 mt-2.5 font-medium">Haz clic para activar el sonido de la canción</p>
+              </div>
               <!-- CONTENEDOR DE AUDIO VISUALIZADOR HOLOGRÁFICO DE RESPALDO (Oculto por defecto, se activa si hay error 101/150) -->
               <div id="holoAudioFallbackStage" class="hidden absolute inset-0 w-full h-full flex flex-col items-center justify-center p-4 text-center select-none overflow-hidden" style="display: none;">
                 <div class="relative w-28 h-28 sm:w-36 sm:h-36 rounded-full p-1 bg-gradient-to-tr from-cyan-400 via-sky-500 to-indigo-500 shadow-[0_0_50px_rgba(6,182,212,0.5)] animate-pulse mb-3">
@@ -9296,6 +9469,21 @@ window.logout = function() {
             }
             window._holoYtPlayer = new YT.Player('musicHoloYoutubeIframe', {
               events: {
+                'onReady': function(ev) {
+                  try {
+                    ev.target.unMute();
+                    ev.target.setVolume(100);
+                    ev.target.playVideo();
+                  } catch (err) {
+                    console.warn('[YouTube Engine] Autoplay bloqueado por el navegador:', err);
+                    if (typeof window.showAudioUnlockOverlay === 'function') {
+                      window.showAudioUnlockOverlay();
+                    }
+                  }
+                  if (typeof window.logAudioDiagnosticStatus === 'function') {
+                    window.logAudioDiagnosticStatus('YouTube', 'Playing', 100);
+                  }
+                },
                 'onStateChange': function(ev) {
                   if (typeof window.handleHoloPlayerStateChange === 'function') {
                     window.handleHoloPlayerStateChange(ev.data);
@@ -9309,6 +9497,27 @@ window.logout = function() {
               }
             });
           } catch (_) {}
+        }
+
+        // Comandos de desmuteo preventivo vía postMessage y listener de iframe
+        const ytIframeEl = document.getElementById('musicHoloYoutubeIframe');
+        if (ytIframeEl) {
+          const sendUnmute = () => {
+            try {
+              if (ytIframeEl.contentWindow) {
+                ytIframeEl.contentWindow.postMessage('{"event":"command","func":"unMute","args":""}', '*');
+                ytIframeEl.contentWindow.postMessage('{"event":"command","func":"setVolume","args":[100]}', '*');
+                ytIframeEl.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+              }
+            } catch (_) {}
+          };
+          if (typeof ytIframeEl.addEventListener === 'function') {
+            ytIframeEl.addEventListener('load', () => {
+              setTimeout(sendUnmute, 200);
+              setTimeout(sendUnmute, 800);
+            });
+          }
+          setTimeout(sendUnmute, 400);
         }
 
         // Watchdog de 3.2 segundos para detectar bloqueos de incrustación o falta de inicio

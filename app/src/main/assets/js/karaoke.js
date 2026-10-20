@@ -439,6 +439,16 @@
 
     function onYouTubePlayerReady(event) {
       console.log('✅ [YOUTUBE-API] Reproductor de Music Session listo');
+      try {
+        if (event && event.target) {
+          event.target.unMute();
+          event.target.setVolume(100);
+          event.target.playVideo();
+        }
+      } catch (_) {}
+      if (typeof window.logAudioDiagnosticStatus === 'function') {
+        window.logAudioDiagnosticStatus('YouTube', 'Ready', 100);
+      }
     }
 
     function onYouTubePlayerStateChange(event) {
@@ -932,15 +942,21 @@
         if (ytMusicPlayer && typeof ytMusicPlayer.loadVideoById === 'function') {
           try {
             ytMusicPlayer.loadVideoById(track.youtubeId);
+            ytMusicPlayer.unMute();
+            ytMusicPlayer.setVolume(100);
+            ytMusicPlayer.playVideo();
           } catch (_) {
-            if (iframe) iframe.src = `https://www.youtube-nocookie.com/embed/${track.youtubeId}?enablejsapi=1`;
+            if (iframe) iframe.src = `https://www.youtube-nocookie.com/embed/${track.youtubeId}?enablejsapi=1&autoplay=1`;
           }
         } else {
           if (iframe) {
-            iframe.src = `https://www.youtube-nocookie.com/embed/${track.youtubeId}?enablejsapi=1`;
+            iframe.src = `https://www.youtube-nocookie.com/embed/${track.youtubeId}?enablejsapi=1&autoplay=1`;
           }
           initYouTubePlayer();
         }
+      }
+      if (typeof window.logAudioDiagnosticStatus === 'function') {
+        window.logAudioDiagnosticStatus('YouTube', 'Playing', 100);
       }
 
       activeLyricsList = track.lyrics || [];
@@ -1475,15 +1491,28 @@
       closeMusicWordModal();
       if (ytMusicPlayer && typeof ytMusicPlayer.playVideo === 'function') {
         try {
+          ytMusicPlayer.unMute();
+          ytMusicPlayer.setVolume(100);
           ytMusicPlayer.playVideo();
         } catch (_) {}
       } else {
         const iframe = document.getElementById('musicYouTubeIframe');
         if (iframe && iframe.contentWindow) {
           try {
+            iframe.contentWindow.postMessage('{"event":"command","func":"unMute","args":""}', '*');
+            iframe.contentWindow.postMessage('{"event":"command","func":"setVolume","args":[100]}', '*');
             iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
           } catch (_) {}
         }
+      }
+      const audioEl = document.getElementById('mastereng-audio') || document.getElementById('karaokeAudioSync') || document.getElementById('karaokeAudioTracker');
+      if (audioEl && audioEl.src && audioEl.paused) {
+        audioEl.muted = false;
+        audioEl.volume = 1.0;
+        audioEl.play().catch(err => console.warn("Interacción requerida para audio:", err));
+      }
+      if (typeof window.logAudioDiagnosticStatus === 'function') {
+        window.logAudioDiagnosticStatus(null, 'Playing', 100);
       }
       startMusicKaraokeSync();
     }
