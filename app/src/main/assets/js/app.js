@@ -1408,6 +1408,9 @@
       if (targetId !== 'view-music' && typeof pauseYouTubePlayer === 'function') {
         pauseYouTubePlayer();
       }
+      if (targetId !== 'view-worldtour' && typeof window.pauseWorld3D === 'function') {
+        window.pauseWorld3D();
+      }
     };
     window.navigateToView = window.navigateTo;
 window.logout = function() {
@@ -1429,6 +1432,9 @@ window.logout = function() {
       if (viewId !== 'view-music') {
         pauseYouTubePlayer();
       }
+      if (viewId !== 'view-worldtour' && typeof window.pauseWorld3D === 'function') {
+        window.pauseWorld3D();
+      }
       return window.navigateToView(viewId);
     }
 
@@ -1443,6 +1449,7 @@ window.logout = function() {
     }
 
     function goToHomePortals() {
+      if (typeof window.pauseWorld3D === 'function') window.pauseWorld3D();
       const user = getStoredUser();
       if (!user || !user.username) {
         if (typeof window.navigateToView === 'function') window.navigateToView('login-view');

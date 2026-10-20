@@ -1,8 +1,14 @@
 /**
  * World Tour 3D Engine (Three.js WebGL) - MasterENG
- * Arquitectura WebGL encapsulada sin pantallas en negro, interpolación suave de cámara (Lerp),
- * OrbitControls con amortiguación, ResizeObserver, Casa Abierta (Corte Isométrico) y Jardín
- * con 14 objetos compuestos interactivos, Raycasting educativo (+10 EXP) y Ciclo Día/Noche.
+ * Motor 3D modular interactivo para Inmersión Espacial / World Tour 3D.
+ * Incluye Casa Abierta y Jardín de Aprendizaje estilizado (Low Poly / Clean Modern Geometry),
+ * marcadores interactivos flotantes (Hotspots luminosos pulsantes),
+ * iluminación equilibrada PBR, domo espacial con gradiente azul profundo,
+ * controles OrbitControls amortiguados, interpolación suave de cámara (Lerp),
+ * tarjeta emergente estilizada con audio 🔊 (Web Speech API),
+ * gamificación (+5 EXP por descubrimiento de objeto nuevo, +10 EXP por práctica),
+ * optimización de ciclo de vida (pause/resume en requestAnimationFrame)
+ * y botón flotante de retorno "← Volver a Portales" (z-index: 10000).
  *
  * Desarrollado por: Wilberth Alessandro Molina Cutz
  */
@@ -26,6 +32,7 @@
 
   // Luces globales y puntuales para el Ciclo Día / Noche
   let isNightMode = false;
+  let globalAmbientLight = null;
   let globalHemiLight = null;
   let globalDirLight = null;
   let studyPointLight = null;
@@ -35,6 +42,7 @@
   let streetLanternPointLight = null;
   let streetLanternBulbMat = null;
   let monitorScreenMaterial = null;
+  let spaceDomeMesh = null;
 
   // Animaciones continuas
   let animatedFan = null;
@@ -42,11 +50,13 @@
   let animatedClockMinuteHand = null;
   let animatedClockHourHand = null;
   let animatedSteamRings = [];
+  let animatedWindowLeaves = [];
 
   const threeAnimatedObjects = {
     fan: null,
     sprinkler: null,
-    steam: []
+    steam: [],
+    leaves: []
   };
   global.threeAnimatedObjects = threeAnimatedObjects;
 
@@ -79,16 +89,25 @@
       pos: { x: 0, y: 5.8, z: 19.2 },
       lookAt: { x: 0, y: 1.2, z: 7.2 },
       label: '🌳 Jardín Exterior (Garden & Yard)'
+    },
+    window: {
+      pos: { x: -4.5, y: 3.0, z: 0.5 },
+      lookAt: { x: -7.0, y: 2.0, z: -1.75 },
+      label: '🪟 Ventana Panorámica (Window)'
     }
   };
 
-  // Objetos interactivos (14 objetos principales) y estado de gamificación
-  const TOTAL_INTERACTIVE_OBJECTS = 14;
+  // Objetos interactivos y estado de gamificación
   let interactiveObjects = [];
+  let spatialHotspots = [];
   let selectedObjectGroup = null;
   let selectedObjectData = null;
   let highlightedMaterialsBackup = [];
   let highlightPulseTime = 0;
+
+  // Hover interactivo con contorno / brillo sutil (emissive boost)
+  let hoveredObjectGroup = null;
+  let hoveredMaterialsBackup = [];
 
   const STORAGE_KEY_DISCOVERED = 'mastereng_world3d_discovered_v2';
   const STORAGE_KEY_LEARNED = 'mastereng_world3d_learned_v2';
@@ -121,7 +140,7 @@
   loadProgressFromStorage();
 
   // ============================================================================
-  // 2. CATÁLOGO OFICIAL DE LOS 14 OBJETOS INTERACTIVOS (USERDATA GAMIFICADO)
+  // 2. CATÁLOGO OFICIAL DE OBJETOS INTERACTIVOS (USERDATA GAMIFICADO)
   // ============================================================================
   const WORLD3D_VOCAB_CATALOG = {
     // --- ZONA DE ESTUDIO (STUDY ROOM) ---
@@ -130,12 +149,12 @@
       id: "desk",
       wordEn: "Desk",
       phonetic: "/desk/",
-      wordEs: "Escritorio",
+      wordEs: "Escritorio (con Laptop Interactiva)",
       category: "Study Room",
-      example: "I organize my English notebooks and keyboard on my wooden desk.",
+      example: "I practice English code and grammar on my wooden desk with my laptop.",
       en: "Desk",
       ipa: "/desk/",
-      es: "Escritorio de madera con patas metálicas",
+      es: "Escritorio de madera con laptop interactiva y patas biseladas",
       focusPos: { x: 2.2, y: 2.8, z: -1.0 },
       lookAtPos: { x: 3.5, y: 1.0, z: -3.5 }
     },
@@ -174,12 +193,26 @@
       phonetic: "/ˈbʊk.ʃelf/",
       wordEs: "Librero / Estantería",
       category: "Study Room",
-      example: "The wooden bookshelf is filled with colorful English novels and dictionaries.",
+      example: "The wooden bookshelf is filled with colorful collectible English novels and dictionaries.",
       en: "Bookshelf",
       ipa: "/ˈbʊk.ʃelf/",
-      es: "Estantería con libros de colores individuales",
+      es: "Estantería con libros coleccionables de colores individuales",
       focusPos: { x: 3.8, y: 2.6, z: -2.2 },
       lookAtPos: { x: 6.3, y: 1.6, z: -3.5 }
+    },
+    window: {
+      interactive: true,
+      id: "window",
+      wordEn: "Window",
+      phonetic: "/ˈwɪn.doʊ/",
+      wordEs: "Ventanal Panorámico",
+      category: "Living Room",
+      example: "The large window provides a beautiful view of the swaying green trees in the garden.",
+      en: "Window",
+      ipa: "/ˈwɪn.doʊ/",
+      es: "Ventanal con vista al jardín y árboles mecientes",
+      focusPos: { x: -4.5, y: 2.5, z: 0.2 },
+      lookAtPos: { x: -7.0, y: 2.0, z: -1.75 }
     },
 
     // --- ZONA DE SALA (LIVING ROOM) ---
@@ -188,14 +221,28 @@
       id: "sofa",
       wordEn: "Sofa / Couch",
       phonetic: "/ˈsoʊ.fə/",
-      wordEs: "Sofá / Sillón",
+      wordEs: "Sofá / Zona de Descanso",
       category: "Living Room",
-      example: "I relax on the sofa after studying English.",
+      example: "I relax on the cozy sofa after studying English vocabulary.",
       en: "Sofa / Couch",
       ipa: "/ˈsoʊ.fə/",
       es: "Sofá acolchado con cojines en contraste",
       focusPos: { x: -3.6, y: 2.6, z: -0.6 },
       lookAtPos: { x: -3.6, y: 0.85, z: -4.1 }
+    },
+    armchair: {
+      interactive: true,
+      id: "armchair",
+      wordEn: "Armchair",
+      phonetic: "/ˈɑːrm.tʃer/",
+      wordEs: "Sillón de Lectura",
+      category: "Living Room",
+      example: "I sit in the comfortable armchair by the window to read English stories.",
+      en: "Armchair",
+      ipa: "/ˈɑːrm.tʃer/",
+      es: "Sillón tapizado ergonómico en la zona de descanso",
+      focusPos: { x: -4.2, y: 2.2, z: 0.8 },
+      lookAtPos: { x: -5.6, y: 0.8, z: -0.8 }
     },
     coffee_table: {
       interactive: true,
@@ -228,14 +275,28 @@
     wall_clock: {
       interactive: true,
       id: "wall_clock",
-      wordEn: "Wall Clock",
-      phonetic: "/wɔːl klɑːk/",
-      wordEs: "Reloj de Pared",
+      wordEn: "Clock",
+      phonetic: "/klɑːk/",
+      wordEs: "Reloj de Pared Animado",
       category: "Living Room",
-      example: "I check the wall clock to start my daily vocabulary practice on time.",
-      en: "Wall Clock",
-      ipa: "/wɔːl klɑːk/",
-      es: "Reloj de pared circular con manecillas",
+      example: "I check the ticking wall clock to start my daily English session on time.",
+      en: "Clock",
+      ipa: "/klɑːk/",
+      es: "Reloj de pared circular con manecillas animadas",
+      focusPos: { x: -3.6, y: 2.7, z: -4.2 },
+      lookAtPos: { x: -3.6, y: 2.65, z: -6.8 }
+    },
+    clock: {
+      interactive: true,
+      id: "wall_clock",
+      wordEn: "Clock",
+      phonetic: "/klɑːk/",
+      wordEs: "Reloj de Pared Animado",
+      category: "Living Room",
+      example: "The wall clock ticks smoothly with animated hour and minute hands.",
+      en: "Clock",
+      ipa: "/klɑːk/",
+      es: "Reloj de pared circular con manecillas animadas",
       focusPos: { x: -3.6, y: 2.7, z: -4.2 },
       lookAtPos: { x: -3.6, y: 2.65, z: -6.8 }
     },
@@ -327,8 +388,10 @@
     }
   };
 
+  const TOTAL_INTERACTIVE_OBJECTS = 14;
+
   // ============================================================================
-  // 3. CONTROLES ORBITALES SUAVES (THREE.OrbitControls) CON DAMPING Y LERP SYNC
+  // 3. CONTROLES ORBITALES SUAVES (THREE.OrbitControls) CON DAMPING
   // ============================================================================
   if (typeof THREE !== 'undefined' && typeof THREE.OrbitControls === 'undefined') {
     THREE.OrbitControls = function (object, domElement) {
@@ -341,7 +404,7 @@
       this.minDistance = 2.0;
       this.maxDistance = 48.0;
 
-      // Límite polar estricto para no atravesar el suelo (maxPolarAngle: Math.PI / 2.05 | Math.PI / 2.1)
+      // Límite polar para no atravesar el suelo (maxPolarAngle: Math.PI / 2.05 | Math.PI / 2.1)
       this.minPolarAngle = 0.08;
       this.maxPolarAngle = Math.PI / 2.05; // ~Math.PI / 2.1
 
@@ -455,28 +518,25 @@
       function onTouchMove(e) {
         if (!scope.enabled) return;
         if (e.touches.length === 1 && isTouching) {
-          const clientX = e.touches[0].clientX;
-          const clientY = e.touches[0].clientY;
-          deltaMousePos.set(clientX - prevTouchPos.x, clientY - prevTouchPos.y);
-          if (Math.hypot(deltaMousePos.x, deltaMousePos.y) > 3) {
+          const deltaX = e.touches[0].clientX - prevTouchPos.x;
+          const deltaY = e.touches[0].clientY - prevTouchPos.y;
+          if (Math.hypot(deltaX, deltaY) > 2) {
             cancelActiveCameraLerp();
           }
-
           const el = scope.domElement === document ? document.body : scope.domElement;
           const w = el.clientWidth || window.innerWidth || 800;
           const h = el.clientHeight || window.innerHeight || 600;
 
-          sphericalDelta.theta -= (2 * Math.PI * deltaMousePos.x / w) * scope.rotateSpeed;
-          sphericalDelta.phi -= (2 * Math.PI * deltaMousePos.y / h) * scope.rotateSpeed;
+          sphericalDelta.theta -= (2 * Math.PI * deltaX / w) * scope.rotateSpeed;
+          sphericalDelta.phi -= (2 * Math.PI * deltaY / h) * scope.rotateSpeed;
 
-          prevTouchPos.set(clientX, clientY);
+          prevTouchPos.set(e.touches[0].clientX, e.touches[0].clientY);
         } else if (e.touches.length === 2) {
-          cancelActiveCameraLerp();
           const dx = e.touches[0].clientX - e.touches[1].clientX;
           const dy = e.touches[0].clientY - e.touches[1].clientY;
           const dist = Math.hypot(dx, dy);
-          if (touchStartDist > 0 && dist > 0) {
-            const factor = touchStartDist / dist;
+          if (touchStartDist > 0) {
+            const factor = touchStartDist / (dist || 1);
             spherical.radius = Math.max(scope.minDistance, Math.min(scope.maxDistance, spherical.radius * factor));
           }
           touchStartDist = dist;
@@ -749,6 +809,45 @@
     return tex;
   }
 
+  // Textura procedural para marcadores Hotspots luminosos
+  let cachedHotspotTexture = null;
+  function createHotspotTexture() {
+    if (cachedHotspotTexture) return cachedHotspotTexture;
+    if (typeof document === 'undefined' || typeof THREE === 'undefined') return null;
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+
+    // Resplandor exterior radial suave
+    const grad = ctx.createRadialGradient(64, 64, 10, 64, 64, 60);
+    grad.addColorStop(0, 'rgba(192, 132, 252, 0.95)');
+    grad.addColorStop(0.35, 'rgba(147, 51, 234, 0.7)');
+    grad.addColorStop(0.75, 'rgba(56, 189, 248, 0.35)');
+    grad.addColorStop(1, 'rgba(56, 189, 248, 0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(64, 64, 60, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Núcleo blanco brillante
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(64, 64, 16, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Anillo exterior de contorno
+    ctx.strokeStyle = '#c084fc';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(64, 64, 28, 0, Math.PI * 2);
+    ctx.stroke();
+
+    const tex = new THREE.CanvasTexture(canvas);
+    cachedHotspotTexture = tex;
+    return tex;
+  }
+
   function initSharedMaterials() {
     if (typeof THREE === 'undefined' || Object.keys(SHARED_MATERIALS).length > 0) return SHARED_MATERIALS;
     const woodTex = createOakWoodTexture();
@@ -819,8 +918,109 @@
   if (typeof THREE !== 'undefined') initSharedMaterials();
 
   // ============================================================================
-  // 5. CONSTRUCCIÓN DE ESCENARIO PROCEDURAL DE ALTA RIQUEZA (CASA Y JARDÍN)
+  // 5. MARCADORES HOTSPOTS FLOTANTES Y DOMO ESPACIAL
   // ============================================================================
+  function createSpaceDome(targetScene) {
+    if (typeof THREE === 'undefined' || typeof document === 'undefined') return null;
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+    const grad = ctx.createLinearGradient(0, 0, 0, 512);
+    grad.addColorStop(0, '#040714');
+    grad.addColorStop(0.35, '#0a1029');
+    grad.addColorStop(0.7, '#11183c');
+    grad.addColorStop(1, '#080d21');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 512, 512);
+
+    ctx.fillStyle = '#ffffff';
+    for (let i = 0; i < 220; i++) {
+      const x = Math.random() * 512;
+      const y = Math.random() * 512;
+      const r = Math.random() * 1.4 + 0.3;
+      ctx.globalAlpha = Math.random() * 0.7 + 0.3;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1.0;
+
+    const tex = new THREE.CanvasTexture(canvas);
+    const domeGeo = new THREE.SphereGeometry(75, 32, 24);
+    const domeMat = new THREE.MeshBasicMaterial({
+      map: tex,
+      side: THREE.BackSide,
+      depthWrite: false
+    });
+    const dome = new THREE.Mesh(domeGeo, domeMat);
+    targetScene.add(dome);
+    spaceDomeMesh = dome;
+    return dome;
+  }
+
+  function createSpatialHotspotForObject(group, vocabKey) {
+    if (!group || typeof THREE === 'undefined') return;
+    const meta = WORLD3D_VOCAB_CATALOG[vocabKey];
+    if (!meta) return;
+
+    const hsGroup = new THREE.Group();
+    hsGroup.name = `Hotspot_${vocabKey}`;
+
+    const spriteMat = new THREE.SpriteMaterial({
+      map: createHotspotTexture(),
+      color: 0xffffff,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthTest: true,
+      depthWrite: false
+    });
+    const sprite = new THREE.Sprite(spriteMat);
+    sprite.scale.set(0.65, 0.65, 0.65);
+    hsGroup.add(sprite);
+
+    const ringGeo = new THREE.RingGeometry(0.20, 0.28, 24);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0xa855f7,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.75,
+      depthWrite: false
+    });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.rotation.x = -Math.PI / 2;
+    hsGroup.add(ring);
+
+    const bbox = new THREE.Box3().setFromObject(group);
+    const center = new THREE.Vector3();
+    bbox.getCenter(center);
+    const height = bbox.max.y > 0.3 ? bbox.max.y : 1.2;
+    const hotspotY = height + 0.38;
+
+    hsGroup.position.set(center.x, hotspotY, center.z);
+    hsGroup.userData = Object.assign({}, meta, {
+      isHotspot: true,
+      parentGroup: group,
+      vocabKey: vocabKey,
+      baseY: hotspotY,
+      interactive: true
+    });
+    sprite.userData = hsGroup.userData;
+    ring.userData = hsGroup.userData;
+
+    group.hotspot = hsGroup;
+    spatialHotspots.push({
+      group: hsGroup,
+      sprite: sprite,
+      ring: ring,
+      baseY: hotspotY,
+      parentGroup: group
+    });
+
+    group.add(hsGroup);
+    interactiveObjects.push(hsGroup);
+  }
+
   function registerInteractiveGroup(group, vocabKey) {
     const meta = WORLD3D_VOCAB_CATALOG[vocabKey];
     if (!meta || !group) return;
@@ -831,17 +1031,25 @@
       }
     });
     interactiveObjects.push(group);
+    createSpatialHotspotForObject(group, vocabKey);
   }
 
+  // ============================================================================
+  // 6. CONSTRUCCIÓN DE ESCENARIO PROCEDURAL (CASA Y JARDÍN DE APRENDIZAJE)
+  // ============================================================================
   function buildDetailedHouseAndGarden(targetScene) {
     interactiveObjects = [];
+    spatialHotspots = [];
     animatedSteamRings = [];
+    animatedWindowLeaves = [];
     const M = initSharedMaterials();
+
+    // Domo espacial con gradiente azul profundo
+    createSpaceDome(targetScene);
 
     // --------------------------------------------------------------------------
     // A. TERRENO EXTERIOR Y PLATAFORMA DE CASA ABIERTA (CORTE ISOMÉTRICO)
     // --------------------------------------------------------------------------
-    // 1. Suelo exterior de césped verde (PlaneGeometry)
     const lawnGeo = new THREE.PlaneGeometry(95, 95, 8, 8);
     const lawn = new THREE.Mesh(lawnGeo, M.grassLawn);
     lawn.rotation.x = -Math.PI / 2;
@@ -849,47 +1057,47 @@
     lawn.receiveShadow = true;
     targetScene.add(lawn);
 
-    // 2. Piso interior tipo madera cálida elevada (housePlatform)
     const housePlatform = new THREE.Mesh(new THREE.BoxGeometry(14.0, 0.22, 10.5), M.houseFloor);
     housePlatform.position.set(0, 0.11, -1.75);
     housePlatform.receiveShadow = true;
     housePlatform.castShadow = true;
     targetScene.add(housePlatform);
 
-    //Escalón de entrada de piedra entre la casa y el sendero del jardín
     const entranceStep1 = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.14, 0.65), M.stonePaver);
-    entranceStep1.position.set(0, 0.07, 3.8);
+    entranceStep1.position.set(0, 0.07, 3.65);
     entranceStep1.receiveShadow = true;
-    targetScene.add(entranceStep1);
+    const entranceStep2 = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.08, 0.50), M.stonePaver);
+    entranceStep2.position.set(0, 0.04, 4.20);
+    entranceStep2.receiveShadow = true;
+    targetScene.add(entranceStep1, entranceStep2);
 
-    // 3. Paredes perimetrales en corte arquitectónico (sin techo para ver el interior)
+    // --------------------------------------------------------------------------
+    // PAREDES PERIMETRALES EN CORTE ISOMÉTRICO Y VENTANAS
+    // --------------------------------------------------------------------------
     const wallGroup = new THREE.Group();
 
-    // Pared trasera (Z = -7.0) con ventana panorámica en el estudio
-    const wallBackLeft = new THREE.Mesh(new THREE.BoxGeometry(8.2, 3.7, 0.26), M.wallSatin);
-    wallBackLeft.position.set(-2.9, 1.96, -7.0);
+    const wallBackLeft = new THREE.Mesh(new THREE.BoxGeometry(7.2, 3.7, 0.26), M.wallSatin);
+    wallBackLeft.position.set(-3.5, 1.96, -7.0);
     wallBackLeft.castShadow = true;
     wallBackLeft.receiveShadow = true;
 
-    const wallBackRightSide = new THREE.Mesh(new THREE.BoxGeometry(2.0, 3.7, 0.26), M.wallSatin);
-    wallBackRightSide.position.set(6.0, 1.96, -7.0);
+    const wallBackRightSide = new THREE.Mesh(new THREE.BoxGeometry(2.6, 3.7, 0.26), M.wallSatin);
+    wallBackRightSide.position.set(5.7, 1.96, -7.0);
     wallBackRightSide.castShadow = true;
     wallBackRightSide.receiveShadow = true;
 
-    const wallBackWinTop = new THREE.Mesh(new THREE.BoxGeometry(3.8, 1.0, 0.26), M.wallSatin);
-    wallBackWinTop.position.set(3.1, 3.31, -7.0);
-    const wallBackWinBot = new THREE.Mesh(new THREE.BoxGeometry(3.8, 1.1, 0.26), M.wallSatin);
-    wallBackWinBot.position.set(3.1, 0.66, -7.0);
+    const wallBackWinTop = new THREE.Mesh(new THREE.BoxGeometry(4.6, 1.1, 0.26), M.wallSatin);
+    wallBackWinTop.position.set(2.1, 3.26, -7.0);
+    const wallBackWinBot = new THREE.Mesh(new THREE.BoxGeometry(4.6, 1.0, 0.26), M.wallSatin);
+    wallBackWinBot.position.set(2.1, 0.61, -7.0);
 
-    // Marco y cristal transparente de ventana trasera (Estudio)
-    const winBackGlass = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 1.6), M.glassClear);
-    winBackGlass.position.set(3.1, 2.01, -7.0);
-    const winBackMullionV = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.6, 0.28), M.crownWhite);
-    winBackMullionV.position.set(3.1, 2.01, -7.0);
-    const winBackMullionH = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.06, 0.28), M.crownWhite);
-    winBackMullionH.position.set(3.1, 2.01, -7.0);
+    const winBackGlass = new THREE.Mesh(new THREE.PlaneGeometry(4.4, 1.6), M.glassClear);
+    winBackGlass.position.set(2.1, 1.96, -6.99);
+    const winBackMullionV = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.6, 0.06), M.crownWhite);
+    winBackMullionV.position.set(2.1, 1.96, -6.98);
+    const winBackMullionH = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.06, 0.06), M.crownWhite);
+    winBackMullionH.position.set(2.1, 1.96, -6.98);
 
-    // Pared lateral izquierda (X = -7.0) con marco de ventana transparente hacia el jardín
     const wallLeftA = new THREE.Mesh(new THREE.BoxGeometry(0.26, 3.7, 3.5), M.wallSatin);
     wallLeftA.position.set(-7.0, 1.96, -5.25);
     wallLeftA.castShadow = true;
@@ -911,7 +1119,6 @@
     const winLeftFrame = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.08, 3.5), M.crownWhite);
     winLeftFrame.position.set(-7.0, 1.15, -1.75);
 
-    // Pared lateral derecha (X = 7.0) en corte escalonado isométrico
     const wallRightA = new THREE.Mesh(new THREE.BoxGeometry(0.26, 3.7, 6.8), M.wallSatin);
     wallRightA.position.set(7.0, 1.96, -3.6);
     wallRightA.castShadow = true;
@@ -921,19 +1128,16 @@
     wallRightCutaway.position.set(7.0, 0.78, 1.65);
     wallRightCutaway.castShadow = true;
 
-    // Muro divisorio interior parcial (separa Sala de Estar y Zona de Estudio)
     const wallDivider = new THREE.Mesh(new THREE.BoxGeometry(0.22, 3.5, 4.2), M.wallNavyAccent);
     wallDivider.position.set(0.1, 1.86, -4.9);
     wallDivider.castShadow = true;
     wallDivider.receiveShadow = true;
 
-    // Bordillo frontal bajo de corte arquitectónico (permite ver todo el interior sin obstrucción)
     const frontCutawayLeft = new THREE.Mesh(new THREE.BoxGeometry(5.6, 0.45, 0.26), M.wallNavyAccent);
     frontCutawayLeft.position.set(-4.2, 0.44, 3.4);
     const frontCutawayRight = new THREE.Mesh(new THREE.BoxGeometry(5.6, 0.45, 0.26), M.wallNavyAccent);
     frontCutawayRight.position.set(4.2, 0.44, 3.4);
 
-    // Molduras superiores (crown1, crown2, crown3) y zócalos de madera (base1)
     const crown1 = new THREE.Mesh(new THREE.BoxGeometry(14.3, 0.14, 0.32), M.crownWhite);
     crown1.position.set(0, 3.82, -7.0);
     const crown2 = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.14, 7.2), M.crownWhite);
@@ -958,7 +1162,7 @@
     );
     targetScene.add(wallGroup);
 
-    // Cuadro decorativo y pizarra de estudio en paredes interiores
+    // Cuadro decorativo y alfombra tejida
     const paintingFrame = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.95, 0.04), M.woodWalnut);
     paintingFrame.position.set(-5.2, 2.35, -6.84);
     const paintingCanvas = new THREE.Mesh(
@@ -968,7 +1172,6 @@
     paintingCanvas.position.set(-5.2, 2.35, -6.81);
     targetScene.add(paintingFrame, paintingCanvas);
 
-    // Alfombra tejida bajo la sala de estar
     const livingRug = new THREE.Mesh(
       new THREE.BoxGeometry(4.2, 0.018, 3.0),
       new THREE.MeshStandardMaterial({ map: createRugTexture(), roughness: 0.88 })
@@ -978,10 +1181,49 @@
     targetScene.add(livingRug);
 
     // --------------------------------------------------------------------------
-    // B. ZONA DE ESTUDIO (STUDY ROOM - OBJETOS 1 A 4)
+    // OBJETO: "Window" (Ventana interactiva con animación exterior de hojas/árboles)
+    // --------------------------------------------------------------------------
+    const windowInteractiveGroup = new THREE.Group();
+    windowInteractiveGroup.name = "Window";
+
+    const wFrameOuter = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.08, 3.4), M.crownWhite);
+    wFrameOuter.position.set(-6.98, 2.85, -1.75);
+    const wFrameSill = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.08, 3.5), M.woodOak);
+    wFrameSill.position.set(-6.95, 1.15, -1.75);
+    windowInteractiveGroup.add(wFrameOuter, wFrameSill);
+
+    // Árbol y follaje exterior visible a través de la ventana con animación de viento
+    const wTreeOutside = new THREE.Group();
+    const wTrunk = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.12, 3.2, 10), M.trunkBark);
+    wTrunk.position.set(-8.2, 1.6, -1.6);
+    wTreeOutside.add(wTrunk);
+
+    const leafShades = [M.leafGreen1, M.leafGreen2, M.leafGreen3, M.leafGreen4];
+    for (let li = 0; li < 9; li++) {
+      const leafCluster = new THREE.Mesh(
+        new THREE.DodecahedronGeometry(0.42 + (li % 3) * 0.1, 1),
+        leafShades[li % leafShades.length]
+      );
+      leafCluster.position.set(
+        -8.2 + (li % 3 - 1) * 0.4,
+        1.8 + (li * 0.28),
+        -1.6 + ((li % 4) - 1.5) * 0.45
+      );
+      leafCluster.scale.set(1.15, 0.85, 1.1);
+      wTreeOutside.add(leafCluster);
+      animatedWindowLeaves.push(leafCluster);
+      threeAnimatedObjects.leaves.push(leafCluster);
+    }
+    windowInteractiveGroup.add(wTreeOutside);
+    windowInteractiveGroup.position.set(0, 0, 0);
+    targetScene.add(windowInteractiveGroup);
+    registerInteractiveGroup(windowInteractiveGroup, 'window');
+
+    // --------------------------------------------------------------------------
+    // B. ZONA DE ESTUDIO (STUDY ROOM)
     // --------------------------------------------------------------------------
 
-    // OBJETO 1: "Desk" (Escritorio: tablero de madera con bordes redondeados y 4 patas metálicas cilíndricas)
+    // OBJETO 1: "Desk" (Escritorio con laptop interactiva, cajonera y lámpara)
     const deskGroup = new THREE.Group();
     deskGroup.name = "Desk";
 
@@ -990,7 +1232,6 @@
     desktopCore.castShadow = true;
     desktopCore.receiveShadow = true;
 
-    // Bordes redondeados cilíndricos en el frente y laterales del tablero
     const frontEdgeBevel = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 2.1, 16), M.woodOak);
     frontEdgeBevel.rotation.z = Math.PI / 2;
     frontEdgeBevel.position.set(0, 0.96, 0.525);
@@ -999,7 +1240,6 @@
     backEdgeBevel.position.set(0, 0.96, -0.525);
     deskGroup.add(desktopCore, frontEdgeBevel, backEdgeBevel);
 
-    // 4 Patas metálicas cilíndricas con casquillos de latón
     const deskLegCoords = [[-0.92, -0.42], [0.92, -0.42], [-0.92, 0.42], [0.92, 0.42]];
     deskLegCoords.forEach(([lx, lz]) => {
       const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.022, 0.92, 16), M.metalDark);
@@ -1010,7 +1250,6 @@
       deskGroup.add(leg, ferrule);
     });
 
-    // Cajonera lateral integrada con tiradores metálicos
     const drawerBlock = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.56, 0.92), M.woodOak);
     drawerBlock.position.set(0.68, 0.62, 0);
     drawerBlock.castShadow = true;
@@ -1021,7 +1260,29 @@
     handle2.rotation.z = Math.PI / 2;
     handle2.position.set(0.68, 0.50, 0.47);
 
-    // Teclado, mouse y lámpara de escritorio articulada sobre el escritorio
+    // Laptop interactiva sobre el escritorio
+    const laptopGroup = new THREE.Group();
+    laptopGroup.name = "Interactive Laptop";
+    const laptopBase = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.018, 0.32), M.metalDark);
+    laptopBase.position.set(-0.12, 1.01, 0.10);
+    const laptopKeyboard = new THREE.Mesh(new THREE.PlaneGeometry(0.40, 0.14), new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8 }));
+    laptopKeyboard.rotation.x = -Math.PI / 2;
+    laptopKeyboard.position.set(-0.12, 1.02, 0.07);
+    const laptopTrackpad = new THREE.Mesh(new THREE.PlaneGeometry(0.14, 0.08), new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.4 }));
+    laptopTrackpad.rotation.x = -Math.PI / 2;
+    laptopTrackpad.position.set(-0.12, 1.02, 0.19);
+
+    const laptopLid = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.30, 0.012), M.metalDark);
+    laptopLid.position.set(-0.12, 1.15, -0.05);
+    laptopLid.rotation.x = -0.22;
+    const laptopScreen = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.44, 0.27),
+      new THREE.MeshStandardMaterial({ map: createLaptopScreenTexture(), emissive: 0x38bdf8, emissiveIntensity: 0.95, roughness: 0.2 })
+    );
+    laptopScreen.position.set(-0.12, 1.15, -0.04);
+    laptopScreen.rotation.x = -0.22;
+    laptopGroup.add(laptopBase, laptopKeyboard, laptopTrackpad, laptopLid, laptopScreen);
+
     const keyboard = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.016, 0.18), M.metalDark);
     keyboard.position.set(-0.08, 1.01, 0.18);
     const mouse = new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 12), M.metalDark);
@@ -1039,12 +1300,12 @@
     const lampBulb = new THREE.Mesh(new THREE.SphereGeometry(0.04, 12, 12), M.emissiveBulb);
     lampBulb.position.set(-0.60, 1.35, -0.22);
 
-    deskGroup.add(drawerBlock, handle1, handle2, keyboard, mouse, lampBase, lampArm, lampShade, lampBulb);
+    deskGroup.add(drawerBlock, handle1, handle2, keyboard, mouse, lampBase, lampArm, lampShade, lampBulb, laptopGroup);
     deskGroup.position.set(3.5, 0.22, -3.5);
     targetScene.add(deskGroup);
     registerInteractiveGroup(deskGroup, 'desk');
 
-    // OBJETO 2: "Computer Monitor" (Base, soporte vertical y pantalla con material emisivo cian)
+    // OBJETO 2: "Computer Monitor" (Base, soporte vertical y pantalla emisiva cian)
     const monitorGroup = new THREE.Group();
     monitorGroup.name = "Computer Monitor";
 
@@ -1071,7 +1332,6 @@
     const mScreen = new THREE.Mesh(new THREE.PlaneGeometry(0.91, 0.53), monitorScreenMaterial);
     mScreen.position.set(0, 0.46, 0.047);
 
-    // Barra LED cian inferior del monitor
     const mLedBar = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.35, 8), M.emissiveScreen);
     mLedBar.rotation.z = Math.PI / 2;
     mLedBar.position.set(0, 0.17, 0.046);
@@ -1081,7 +1341,7 @@
     targetScene.add(monitorGroup);
     registerInteractiveGroup(monitorGroup, 'computer_monitor');
 
-    // OBJETO 3: "Office Chair" (Base de ruedas en estrella, pistón central, asiento acolchado, respaldo curvo y reposabrazos)
+    // OBJETO 3: "Office Chair" (Base en estrella con ruedas, respaldo ergonómico curvo y reposabrazos)
     const chairGroup = new THREE.Group();
     chairGroup.name = "Office Chair";
 
@@ -1089,12 +1349,10 @@
     cSeat.position.set(0, 0.58, 0);
     cSeat.castShadow = true;
 
-    // Cojín redondeado frontal del asiento
     const cSeatFront = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.58, 12), M.fabricBlue);
     cSeatFront.rotation.z = Math.PI / 2;
     cSeatFront.position.set(0, 0.58, 0.28);
 
-    // Respaldo curvo ergonómico (cBackGeo)
     const cBackGeo = new THREE.CylinderGeometry(0.32, 0.30, 0.62, 20, 1, true, -Math.PI * 0.35, Math.PI * 0.7);
     const cBack = new THREE.Mesh(
       cBackGeo,
@@ -1103,11 +1361,9 @@
     cBack.position.set(0, 0.95, 0.02);
     cBack.castShadow = true;
 
-    // Cabecero ergonómico superior
     const cHeadrest = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.14, 0.08), M.leatherDark);
     cHeadrest.position.set(0, 1.32, 0.28);
 
-    // 2 Reposabrazos curvos
     [-0.31, 0.31].forEach(ax => {
       const armPost = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.24, 10), M.metalDark);
       armPost.position.set(ax, 0.68, 0.04);
@@ -1116,11 +1372,9 @@
       chairGroup.add(armPost, armPad);
     });
 
-    // Pistón neumático central
     const cPillar = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.038, 0.38, 16), M.metalChrome);
     cPillar.position.set(0, 0.34, 0);
 
-    // Base de 5 patas en estrella con ruedas giratorias
     for (let i = 0; i < 5; i++) {
       const ang = (i * Math.PI * 2) / 5;
       const spoke = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.022, 0.32, 10), M.metalChrome);
@@ -1139,7 +1393,7 @@
     targetScene.add(chairGroup);
     registerInteractiveGroup(chairGroup, 'office_chair');
 
-    // OBJETO 4: "Bookshelf" (Estructura vertical con repisas llenas de libros individuales de colores e inclinaciones)
+    // OBJETO 4: "Bookshelf" (Estantería vertical con repisas y libros coleccionables individuales de colores)
     const shelfGroup = new THREE.Group();
     shelfGroup.name = "Bookshelf";
 
@@ -1149,503 +1403,442 @@
     const sSideR = new THREE.Mesh(new THREE.BoxGeometry(0.46, 3.0, 0.06), M.woodWalnut);
     sSideR.position.set(0, 1.5, 1.0);
     sSideR.castShadow = true;
-    const sBack = new THREE.Mesh(new THREE.BoxGeometry(0.04, 3.0, 2.06), M.woodDark);
+    const sBack = new THREE.Mesh(new THREE.BoxGeometry(0.03, 3.0, 2.06), M.woodDark);
     sBack.position.set(0.22, 1.5, 0);
-    sBack.castShadow = true;
-    const sTopCrown = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.08, 2.12), M.woodWalnut);
-    sTopCrown.position.set(0, 3.02, 0);
-    shelfGroup.add(sSideL, sSideR, sBack, sTopCrown);
+    shelfGroup.add(sSideL, sSideR, sBack);
 
-    const bookColors = [0xdc2626, 0x2563eb, 0x059669, 0xd97706, 0x7c3aed, 0xdb2777, 0x0891b2, 0xeab308, 0x4f46e5, 0x0f766e];
-    for (let s = 0; s < 4; s++) {
-      const sy = 0.22 + s * 0.72;
-      const shelfBoard = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.05, 1.96), M.woodWalnut);
-      shelfBoard.position.set(0, sy, 0);
-      shelfGroup.add(shelfBoard);
+    const shelfYs = [0.12, 0.85, 1.58, 2.30, 2.95];
+    shelfYs.forEach(sy => {
+      const shelfPlank = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.045, 1.96), M.woodWalnut);
+      shelfPlank.position.set(0, sy, 0);
+      shelfPlank.castShadow = true;
+      shelfGroup.add(shelfPlank);
+    });
 
-      const numBooks = 8;
+    const bookColors = [
+      new THREE.MeshStandardMaterial({ color: 0xb91c1c, roughness: 0.4 }),
+      new THREE.MeshStandardMaterial({ color: 0x1d4ed8, roughness: 0.4 }),
+      new THREE.MeshStandardMaterial({ color: 0x047857, roughness: 0.4 }),
+      new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.4 }),
+      new THREE.MeshStandardMaterial({ color: 0x6d28d9, roughness: 0.4 }),
+      new THREE.MeshStandardMaterial({ color: 0xbe185d, roughness: 0.4 })
+    ];
+
+    [0.165, 0.895, 1.625].forEach((shelfY, rowIdx) => {
+      let currentZ = -0.88;
+      const numBooks = 13 + rowIdx * 2;
       for (let b = 0; b < numBooks; b++) {
-        const bColor = bookColors[(s * 5 + b) % bookColors.length];
-        const bMat = new THREE.MeshStandardMaterial({ color: bColor, roughness: 0.42, metalness: 0.05 });
-        const bH = 0.38 + ((b * 3 + s) % 4) * 0.045;
-        const bThick = 0.052 + (b % 3) * 0.014;
-        const book = new THREE.Mesh(new THREE.BoxGeometry(0.32, bH, bThick), bMat);
-        const bz = -0.80 + b * 0.22;
-        book.position.set(-0.02, sy + 0.025 + bH / 2, bz);
-        if (b === numBooks - 1) {
-          book.rotation.x = 0.22;
-          book.position.z += 0.04;
-        } else if (b === 3 && s % 2 === 1) {
-          book.rotation.x = -0.12;
-        }
+        const thickness = 0.042 + (b % 3) * 0.014;
+        const height = 0.44 + ((b * 7) % 5) * 0.028;
+        const depth = 0.32 + (b % 2) * 0.025;
+        const bookMat = bookColors[(b + rowIdx * 3) % bookColors.length];
+
+        const book = new THREE.Mesh(new THREE.BoxGeometry(depth, height, thickness), bookMat);
+        const tilt = (b === 5 || b === 11) ? 0.16 : 0;
+        book.position.set(0.02, shelfY + height / 2, currentZ + thickness / 2);
+        book.rotation.x = tilt;
         book.castShadow = true;
         shelfGroup.add(book);
+        currentZ += thickness + 0.016;
+        if (currentZ > 0.85) break;
       }
-    }
+    });
 
-    shelfGroup.position.set(6.55, 0.22, -3.5);
+    shelfGroup.position.set(6.7, 0.22, -3.5);
     targetScene.add(shelfGroup);
     registerInteractiveGroup(shelfGroup, 'bookshelf');
 
     // --------------------------------------------------------------------------
-    // C. ZONA DE SALA (LIVING ROOM - OBJETOS 5 A 9)
+    // C. ZONA DE SALA DE ESTAR (LIVING ROOM)
     // --------------------------------------------------------------------------
 
-    // OBJETO 5: "Sofa" (Base, cojines de asiento individuales, respaldo capitoneado, brazos laterales y 2 cojines en contraste)
+    // OBJETO 5: "Sofa" (Sofá acolchado con cojines individuales y de contraste)
     const sofaGroup = new THREE.Group();
     sofaGroup.name = "Sofa";
 
-    const sofaBase = new THREE.Mesh(new THREE.BoxGeometry(2.9, 0.28, 1.08), M.fabricNavyTufted);
-    sofaBase.position.y = 0.34;
+    const sofaBase = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.22, 1.05), M.woodWalnut);
+    sofaBase.position.set(0, 0.20, 0);
     sofaBase.castShadow = true;
-    sofaBase.receiveShadow = true;
+    sofaGroup.add(sofaBase);
 
-    // 4 Patas cónicas de madera y casquillos de latón
-    [[-1.30, -0.44], [1.30, -0.44], [-1.30, 0.44], [1.30, 0.44]].forEach(([sx, sz]) => {
-      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.022, 0.20, 12), M.woodDark);
-      leg.position.set(sx, 0.10, sz);
-      const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.022, 0.04, 12), M.metalBrass);
-      cap.position.set(sx, 0.02, sz);
-      sofaGroup.add(leg, cap);
+    [[-1.15, -0.42], [1.15, -0.42], [-1.15, 0.42], [1.15, 0.42]].forEach(([lx, lz]) => {
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.016, 0.20, 12), M.woodWalnut);
+      leg.position.set(lx, 0.09, lz);
+      sofaGroup.add(leg);
     });
 
-    // 3 Cojines de asiento individuales + respaldo capitoneado con botones
-    for (let c = 0; c < 3; c++) {
-      const cx = -0.88 + c * 0.88;
-      const seatCushion = new THREE.Mesh(new THREE.BoxGeometry(0.84, 0.18, 0.90), M.fabricBlue);
-      seatCushion.position.set(cx, 0.55, 0.06);
-      seatCushion.castShadow = true;
-
-      const backCushion = new THREE.Mesh(new THREE.BoxGeometry(0.84, 0.56, 0.24), M.fabricBlue);
-      backCushion.position.set(cx, 0.88, -0.38);
-      backCushion.rotation.x = -0.10;
-      backCushion.castShadow = true;
-
-      // Botones de capitoneado en el respaldo
-      [-0.20, 0.20].forEach(bx => {
-        const tuftBtn = new THREE.Mesh(new THREE.SphereGeometry(0.022, 8, 8), M.fabricGold);
-        tuftBtn.position.set(cx + bx, 0.88, -0.25);
-        sofaGroup.add(tuftBtn);
-      });
-
-      sofaGroup.add(seatCushion, backCushion);
-    }
-
-    // Brazos laterales redondeados
-    [-1.42, 1.42].forEach(ax => {
-      const armBox = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.52, 1.08), M.fabricNavyTufted);
-      armBox.position.set(ax, 0.56, 0);
-      armBox.castShadow = true;
-      const armRoll = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 1.08, 16), M.fabricBlue);
-      armRoll.rotation.x = Math.PI / 2;
-      armRoll.position.set(ax, 0.82, 0);
-      sofaGroup.add(armBox, armRoll);
+    [-0.75, 0, 0.75].forEach(cx => {
+      const cushion = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.18, 0.88), M.fabricNavyTufted);
+      cushion.position.set(cx, 0.38, 0.06);
+      cushion.castShadow = true;
+      sofaGroup.add(cushion);
     });
 
-    // 2 Cojines decorativos en contraste (Dorado y Terracota)
-    const throwPillow1 = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.38, 0.15), M.fabricGold);
-    throwPillow1.position.set(-1.10, 0.72, 0.10);
-    throwPillow1.rotation.set(0.12, 0.28, -0.10);
-    throwPillow1.castShadow = true;
+    const sofaBackrest = new THREE.Mesh(new THREE.BoxGeometry(2.68, 0.65, 0.26), M.fabricNavyTufted);
+    sofaBackrest.position.set(0, 0.72, -0.40);
+    sofaBackrest.castShadow = true;
+    sofaGroup.add(sofaBackrest);
 
-    const throwPillow2 = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.38, 0.15), M.fabricTerracotta);
-    throwPillow2.position.set(1.10, 0.72, 0.10);
-    throwPillow2.rotation.set(0.12, -0.28, 0.10);
-    throwPillow2.castShadow = true;
+    [-1.38, 1.38].forEach(ax => {
+      const armrest = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.44, 1.05), M.fabricNavyTufted);
+      armrest.position.set(ax, 0.50, 0.02);
+      armrest.castShadow = true;
+      sofaGroup.add(armrest);
+    });
 
-    sofaGroup.add(sofaBase, throwPillow1, throwPillow2);
+    const pillow1 = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.38, 0.14), M.fabricGold);
+    pillow1.position.set(-1.05, 0.52, -0.15);
+    pillow1.rotation.y = 0.42;
+    pillow1.rotation.z = -0.12;
+
+    const pillow2 = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.38, 0.14), M.fabricTerracotta);
+    pillow2.position.set(1.05, 0.52, -0.15);
+    pillow2.rotation.y = -0.42;
+    pillow2.rotation.z = 0.12;
+    sofaGroup.add(pillow1, pillow2);
+
     sofaGroup.position.set(-3.6, 0.22, -4.1);
     targetScene.add(sofaGroup);
     registerInteractiveGroup(sofaGroup, 'sofa');
 
-    // OBJETO 6: "Coffee Table" (Mesa de centro baja con taza de cerámica "Coffee Mug" encima)
+    // OBJETO: "Armchair" (Sillón de lectura ergonómico en la zona de descanso)
+    const armchairGroup = new THREE.Group();
+    armchairGroup.name = "Armchair";
+    const acSeat = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.22, 0.85), M.fabricTerracotta);
+    acSeat.position.set(0, 0.44, 0);
+    acSeat.castShadow = true;
+    const acBack = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.75, 0.22), M.fabricTerracotta);
+    acBack.position.set(0, 0.82, -0.32);
+    acBack.castShadow = true;
+    const acArmL = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.45, 0.82), M.fabricTerracotta);
+    acArmL.position.set(-0.44, 0.58, 0);
+    const acArmR = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.45, 0.82), M.fabricTerracotta);
+    acArmR.position.set(0.44, 0.58, 0);
+    [[-0.34, -0.34], [0.34, -0.34], [-0.34, 0.34], [0.34, 0.34]].forEach(([px, pz]) => {
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.02, 0.34, 12), M.woodWalnut);
+      leg.position.set(px, 0.17, pz);
+      leg.castShadow = true;
+      armchairGroup.add(leg);
+    });
+    armchairGroup.add(acSeat, acBack, acArmL, acArmR);
+    armchairGroup.position.set(-5.6, 0.22, -0.8);
+    armchairGroup.rotation.y = 0.55;
+    targetScene.add(armchairGroup);
+    registerInteractiveGroup(armchairGroup, 'armchair');
+
+    // OBJETO 6: "Coffee Table" (Mesa de centro baja con taza de cerámica humeante)
     const tableGroup = new THREE.Group();
     tableGroup.name = "Coffee Table";
 
-    const tableTop = new THREE.Mesh(new THREE.CylinderGeometry(0.92, 0.88, 0.06, 32), M.woodWalnut);
-    tableTop.position.y = 0.48;
+    const tableTop = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.065, 0.95), M.woodOak);
+    tableTop.position.set(0, 0.45, 0);
     tableTop.castShadow = true;
     tableTop.receiveShadow = true;
 
-    const tableRim = new THREE.Mesh(new THREE.TorusGeometry(0.90, 0.025, 12, 32), M.metalBrass);
-    tableRim.rotation.x = Math.PI / 2;
-    tableRim.position.y = 0.48;
-    tableGroup.add(tableTop, tableRim);
+    const tEdgeF = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 1.6, 16), M.woodOak);
+    tEdgeF.rotation.z = Math.PI / 2;
+    tEdgeF.position.set(0, 0.45, 0.475);
+    const tEdgeB = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 1.6, 16), M.woodOak);
+    tEdgeB.rotation.z = Math.PI / 2;
+    tEdgeB.position.set(0, 0.45, -0.475);
+    tableGroup.add(tableTop, tEdgeF, tEdgeB);
 
-    for (let i = 0; i < 4; i++) {
-      const ang = (i * Math.PI) / 2 + Math.PI / 4;
-      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.016, 0.46, 12), M.metalDark);
-      leg.position.set(Math.cos(ang) * 0.62, 0.23, Math.sin(ang) * 0.62);
-      leg.castShadow = true;
-      tableGroup.add(leg);
-    }
+    [[-0.68, -0.36], [0.68, -0.36], [-0.68, 0.36], [0.68, 0.36]].forEach(([tx, tz]) => {
+      const tLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.016, 0.42, 12), M.ironBlack);
+      tLeg.position.set(tx, 0.21, tz);
+      tLeg.castShadow = true;
+      tableGroup.add(tLeg);
+    });
 
-    // Taza de cerámica ("Coffee Mug") sobre la mesa de centro
-    const mugGroup = new THREE.Group();
-    const saucer = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.11, 0.018, 20), M.ceramicWhite);
-    saucer.position.y = 0.52;
-    const mugBody = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.068, 0.13, 20), M.ceramicWhite);
-    mugBody.position.y = 0.59;
+    const mugBody = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.055, 0.13, 16), M.ceramicWhite);
+    mugBody.position.set(0.18, 0.54, 0.08);
     mugBody.castShadow = true;
-    const coffeeSurface = new THREE.Mesh(new THREE.CylinderGeometry(0.072, 0.072, 0.01, 16), M.coffeeLiquid);
-    coffeeSurface.position.y = 0.652;
-    const mugHandle = new THREE.Mesh(new THREE.TorusGeometry(0.042, 0.012, 10, 20), M.ceramicWhite);
-    mugHandle.position.set(0.082, 0.59, 0);
-    mugHandle.rotation.y = Math.PI / 2;
+    const mugLiquid = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.058, 0.01, 16), M.coffeeLiquid);
+    mugLiquid.position.set(0.18, 0.59, 0.08);
+    const mugHandle = new THREE.Mesh(new THREE.TorusGeometry(0.04, 0.01, 8, 16, Math.PI), M.ceramicWhite);
+    mugHandle.position.set(0.245, 0.54, 0.08);
+    mugHandle.rotation.y = -Math.PI / 2;
+    tableGroup.add(mugBody, mugLiquid, mugHandle);
 
-    // Vapor humeante animado sobre la taza
-    [0.06, 0.13, 0.20].forEach((sy, idx) => {
+    for (let s = 0; s < 3; s++) {
       const steamRing = new THREE.Mesh(
-        new THREE.TorusGeometry(0.024 + idx * 0.008, 0.006, 8, 16, Math.PI * 1.3),
+        new THREE.TorusGeometry(0.022 + s * 0.008, 0.006, 6, 12),
         M.steamTranslucent
       );
       steamRing.rotation.x = Math.PI / 2;
-      steamRing.position.set(0, 0.67 + sy, 0);
-      steamRing.userData.baseY = 0.67 + sy;
-      steamRing.userData.phase = idx * 1.4;
-      mugGroup.add(steamRing);
+      const baseSy = 0.64 + s * 0.05;
+      steamRing.position.set(0.18, baseSy, 0.08);
+      steamRing.userData = { baseY: baseSy, phase: s * 1.2 };
+      tableGroup.add(steamRing);
       animatedSteamRings.push(steamRing);
-    });
+      threeAnimatedObjects.steam.push(steamRing);
+    }
 
-    mugGroup.add(saucer, mugBody, coffeeSurface, mugHandle);
-    mugGroup.position.set(0.18, 0, 0.08);
-
-    // Libro decorativo junto a la taza
-    const artBook = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.045, 0.26), M.fabricGold);
-    artBook.position.set(-0.24, 0.53, -0.08);
-    artBook.rotation.y = 0.25;
-
-    tableGroup.add(mugGroup, artBook);
     tableGroup.position.set(-3.6, 0.22, -2.0);
     targetScene.add(tableGroup);
     registerInteractiveGroup(tableGroup, 'coffee_table');
 
-    // OBJETO 7: "Floor Lamp" (Base circular, poste alto delgado, pantalla cónica translúcida y PointLight cálida)
-    const floorLampGroup = new THREE.Group();
-    floorLampGroup.name = "Floor Lamp";
+    // OBJETO 7: "Floor Lamp" (Lámpara de pie alta con pantalla cálida y PointLight real)
+    const lampGroup = new THREE.Group();
+    lampGroup.name = "Floor Lamp";
 
-    const flBase = new THREE.Mesh(new THREE.CylinderGeometry(0.30, 0.34, 0.05, 24), M.metalBrass);
-    flBase.position.y = 0.025;
+    const flBase = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.28, 0.045, 24), M.metalBrass);
+    flBase.position.set(0, 0.025, 0);
     flBase.castShadow = true;
-
-    const flPole = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.034, 2.05, 16), M.metalBrass);
-    flPole.position.y = 1.05;
+    const flPole = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.022, 1.95, 16), M.metalBrass);
+    flPole.position.set(0, 1.0, 0);
     flPole.castShadow = true;
 
-    const flRing = new THREE.Mesh(new THREE.TorusGeometry(0.048, 0.012, 10, 20), M.metalBrass);
-    flRing.rotation.x = Math.PI / 2;
-    flRing.position.y = 1.65;
-
     floorLampShadeMat = M.lampShadeWarm.clone();
-    const flShade = new THREE.Mesh(new THREE.ConeGeometry(0.38, 0.52, 24, 1, true), floorLampShadeMat);
-    flShade.position.y = 2.08;
-    flShade.castShadow = true;
+    const flShade = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.24, 0.36, 0.42, 24, 1, true),
+      floorLampShadeMat
+    );
+    flShade.position.set(0, 1.95, 0);
 
-    const flBulb = new THREE.Mesh(new THREE.SphereGeometry(0.065, 12, 12), M.emissiveBulb);
-    flBulb.position.y = 1.98;
+    const flBulb = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 12), M.emissiveBulb);
+    flBulb.position.set(0, 1.92, 0);
 
-    floorLampPointLight = new THREE.PointLight(0xffaa44, 1.8, 12.0);
-    floorLampPointLight.position.set(0, 1.95, 0);
+    floorLampPointLight = new THREE.PointLight(0xffaa44, 2.4, 12.0);
+    floorLampPointLight.position.set(0, 1.90, 0);
     floorLampPointLight.castShadow = true;
     floorLampPointLight.shadow.bias = -0.001;
 
-    floorLampGroup.add(flBase, flPole, flRing, flShade, flBulb, floorLampPointLight);
-    floorLampGroup.position.set(-5.8, 0.22, -4.5);
-    targetScene.add(floorLampGroup);
-    registerInteractiveGroup(floorLampGroup, 'floor_lamp');
+    lampGroup.add(flBase, flPole, flShade, flBulb, floorLampPointLight);
+    lampGroup.position.set(-5.8, 0.22, -4.5);
+    targetScene.add(lampGroup);
+    registerInteractiveGroup(lampGroup, 'floor_lamp');
 
-    // OBJETO 8: "Wall Clock" (Marco circular, carátula blanca y manecillas de hora y minuto)
+    // OBJETO 8: "Clock" / "Wall Clock" (Reloj de pared analógico con manecillas animadas)
     const clockGroup = new THREE.Group();
     clockGroup.name = "Wall Clock";
 
-    const clockRim = new THREE.Mesh(new THREE.TorusGeometry(0.38, 0.045, 16, 32), M.woodWalnut);
-    const clockBrassBezel = new THREE.Mesh(new THREE.TorusGeometry(0.35, 0.015, 12, 32), M.metalBrass);
-    clockBrassBezel.position.z = 0.02;
+    const clFrame = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.48, 0.07, 32), M.woodDark);
+    clFrame.rotation.x = Math.PI / 2;
+    clFrame.position.set(0, 0, 0);
+    clFrame.castShadow = true;
 
-    const clockBackPlate = new THREE.Mesh(new THREE.CylinderGeometry(0.37, 0.37, 0.04, 32), M.ceramicWhite);
-    clockBackPlate.rotation.x = Math.PI / 2;
+    const clFaceMat = new THREE.MeshStandardMaterial({
+      map: createClockFaceTexture(),
+      roughness: 0.35,
+      metalness: 0.05
+    });
+    const clFace = new THREE.Mesh(new THREE.CylinderGeometry(0.43, 0.43, 0.015, 32), clFaceMat);
+    clFace.rotation.x = Math.PI / 2;
+    clFace.position.set(0, 0, 0.038);
 
-    const clockDial = new THREE.Mesh(
-      new THREE.CircleGeometry(0.35, 32),
-      new THREE.MeshStandardMaterial({ map: createClockFaceTexture(), roughness: 0.2 })
-    );
-    clockDial.position.z = 0.025;
+    const clHour = new THREE.Mesh(new THREE.BoxGeometry(0.024, 0.22, 0.01), M.metalDark);
+    clHour.position.set(0, 0.08, 0.048);
+    clHour.rotation.z = -Math.PI / 3;
+    animatedClockHourHand = clHour;
 
-    // Manecillas 3D (Hora y Minuto)
-    const hourHandPivot = new THREE.Group();
-    hourHandPivot.position.z = 0.035;
-    const hourHand = new THREE.Mesh(new THREE.BoxGeometry(0.028, 0.18, 0.01), M.ironBlack);
-    hourHand.position.y = 0.07;
-    hourHandPivot.add(hourHand);
-    hourHandPivot.rotation.z = -Math.PI / 3;
+    const clMinute = new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.32, 0.01), M.metalDark);
+    clMinute.position.set(0, 0.12, 0.05);
+    clMinute.rotation.z = Math.PI / 4;
+    animatedClockMinuteHand = clMinute;
 
-    const minuteHandPivot = new THREE.Group();
-    minuteHandPivot.position.z = 0.042;
-    const minuteHand = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.26, 0.01), M.ironBlack);
-    minuteHand.position.y = 0.11;
-    minuteHandPivot.add(minuteHand);
-    minuteHandPivot.rotation.z = Math.PI / 6;
+    const clCenterCap = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.02, 16), M.metalBrass);
+    clCenterCap.rotation.x = Math.PI / 2;
+    clCenterCap.position.set(0, 0, 0.055);
 
-    const centerPin = new THREE.Mesh(new THREE.SphereGeometry(0.025, 12, 12), M.metalBrass);
-    centerPin.position.z = 0.05;
-
-    animatedClockHourHand = hourHandPivot;
-    animatedClockMinuteHand = minuteHandPivot;
-
-    clockGroup.add(clockRim, clockBrassBezel, clockBackPlate, clockDial, hourHandPivot, minuteHandPivot, centerPin);
-    clockGroup.position.set(-3.6, 2.65, -6.82);
+    clockGroup.add(clFrame, clFace, clHour, clMinute, clCenterCap);
+    clockGroup.position.set(-3.6, 2.65, -6.84);
     targetScene.add(clockGroup);
     registerInteractiveGroup(clockGroup, 'wall_clock');
 
-    // OBJETO 9: "Indoor Plant" (Maceta de terracota con tallos y hojas verdes escalonadas)
+    // OBJETO 9: "Indoor Plant" (Planta de interior en maceta de terracota)
     const plantGroup = new THREE.Group();
     plantGroup.name = "Indoor Plant";
 
-    const potSaucer = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.28, 0.04, 20), M.terracottaPot);
-    potSaucer.position.y = 0.02;
-    const potBody = new THREE.Mesh(new THREE.CylinderGeometry(0.30, 0.21, 0.48, 20), M.terracottaPot);
-    potBody.position.y = 0.26;
-    potBody.castShadow = true;
-    const potRim = new THREE.Mesh(new THREE.TorusGeometry(0.30, 0.03, 12, 24), M.terracottaPot);
-    potRim.rotation.x = Math.PI / 2;
-    potRim.position.y = 0.49;
-    const potSoil = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.03, 16), M.soilDark);
-    potSoil.position.y = 0.47;
+    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.16, 0.48, 16), M.terracottaPot);
+    pot.position.set(0, 0.24, 0);
+    pot.castShadow = true;
+    const soil = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.02, 16), M.soilDark);
+    soil.position.set(0, 0.46, 0);
+    plantGroup.add(pot, soil);
 
-    plantGroup.add(potSaucer, potBody, potRim, potSoil);
-
-    // Tallos y hojas verdes escalonadas
-    const leafConfigs = [
-      { h: 0.45, ang: 0.0, tilt: 0.35, scale: 1.0, mat: M.leafGreen2 },
-      { h: 0.58, ang: 1.1, tilt: 0.42, scale: 1.1, mat: M.leafGreen3 },
-      { h: 0.70, ang: 2.2, tilt: 0.38, scale: 0.95, mat: M.leafGreen1 },
-      { h: 0.82, ang: 3.3, tilt: 0.45, scale: 1.15, mat: M.leafGreen4 },
-      { h: 0.94, ang: 4.4, tilt: 0.30, scale: 1.05, mat: M.leafGreen2 },
-      { h: 1.06, ang: 5.5, tilt: 0.22, scale: 0.90, mat: M.leafGreen3 },
-      { h: 1.18, ang: 0.6, tilt: 0.15, scale: 0.85, mat: M.leafGreen4 }
-    ];
-
-    leafConfigs.forEach(cfg => {
-      const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.022, cfg.h, 8), M.leafGreen1);
-      stem.position.set(Math.cos(cfg.ang) * 0.06, 0.46 + cfg.h / 2, Math.sin(cfg.ang) * 0.06);
-      stem.rotation.z = Math.cos(cfg.ang) * 0.18;
-      stem.rotation.x = Math.sin(cfg.ang) * 0.18;
-
-      const leafBlade = new THREE.Mesh(new THREE.SphereGeometry(0.18 * cfg.scale, 12, 10), cfg.mat);
-      leafBlade.scale.set(1.35, 0.18, 0.85);
-      leafBlade.position.set(
-        Math.cos(cfg.ang) * (0.18 + cfg.h * 0.15),
-        0.46 + cfg.h,
-        Math.sin(cfg.ang) * (0.18 + cfg.h * 0.15)
-      );
-      leafBlade.rotation.y = -cfg.ang;
-      leafBlade.rotation.z = cfg.tilt;
-      leafBlade.castShadow = true;
-
-      plantGroup.add(stem, leafBlade);
-    });
+    for (let l = 0; l < 11; l++) {
+      const ang = (l * Math.PI * 2) / 7 + l * 0.35;
+      const leafMat = [M.leafGreen1, M.leafGreen2, M.leafGreen3][l % 3];
+      const leafMesh = new THREE.Mesh(new THREE.ConeGeometry(0.065, 0.45, 5), leafMat);
+      leafMesh.position.set(Math.cos(ang) * 0.09, 0.58 + (l % 4) * 0.06, Math.sin(ang) * 0.09);
+      leafMesh.rotation.y = ang;
+      leafMesh.rotation.x = 0.55 + (l % 3) * 0.15;
+      leafMesh.castShadow = true;
+      plantGroup.add(leafMesh);
+    }
 
     plantGroup.position.set(-1.2, 0.22, -5.5);
     targetScene.add(plantGroup);
     registerInteractiveGroup(plantGroup, 'indoor_plant');
 
-    // Ventilador de techo rotatorio decorativo
+    // Ventilador de techo interior
     const fanGroup = new THREE.Group();
-    const fMotor = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.10, 18), M.metalChrome);
-    fMotor.position.y = 3.55;
-    const rotor = new THREE.Group();
-    rotor.position.y = 3.55;
-    for (let f = 0; f < 4; f++) {
-      const ang = (f * Math.PI) / 2;
-      const blade = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.016, 0.16), M.woodWalnut);
-      blade.position.set(Math.cos(ang) * 0.54, 0, Math.sin(ang) * 0.54);
+    const fanPillar = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.6, 12), M.metalBrass);
+    fanPillar.position.set(0, 3.4, 0);
+    const fanHub = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.08, 16), M.metalBrass);
+    fanHub.position.set(0, 3.1, 0);
+    const fanRotor = new THREE.Group();
+    fanRotor.position.set(0, 3.1, 0);
+    for (let b = 0; b < 4; b++) {
+      const ang = (b * Math.PI * 2) / 4;
+      const blade = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.015, 0.14), M.woodWalnut);
+      blade.position.set(Math.cos(ang) * 0.42, 0, Math.sin(ang) * 0.42);
       blade.rotation.y = -ang;
-      rotor.add(blade);
+      blade.rotation.z = 0.12;
+      fanRotor.add(blade);
     }
-    fanGroup.add(fMotor, rotor);
-    fanGroup.position.set(-3.6, 0, -2.5);
+    fanGroup.add(fanPillar, fanHub, fanRotor);
+    fanGroup.position.set(0, 0, -1.8);
     targetScene.add(fanGroup);
-    animatedFan = rotor;
-    threeAnimatedObjects.fan = rotor;
+    animatedFan = fanRotor;
+    threeAnimatedObjects.fan = fanRotor;
 
     // --------------------------------------------------------------------------
-    // D. JARDÍN EXTERIOR DETALLADO (GARDEN & YARD - OBJETOS 10 A 14)
+    // D. JARDÍN EXTERIOR (GARDEN & YARD)
     // --------------------------------------------------------------------------
 
-    // Sendero de losas de piedra irregulares ("Stone Path") desde la entrada hasta la puerta
+    // OBJETO 10: "Oak Tree" (Árbol con tronco orgánico y copas de esferas facetadas en distintos verdes)
+    const treePositions = [
+      { x: -8.5, z: 7.5, scale: 1.15, primary: true },
+      { x: 8.5, z: 6.8, scale: 1.05, primary: false },
+      { x: -7.5, z: 12.8, scale: 0.90, primary: false }
+    ];
+
+    let primaryTreeGroup = null;
+    treePositions.forEach(tp => {
+      const tGroup = new THREE.Group();
+      tGroup.name = tp.primary ? "Oak Tree" : "Tree";
+
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.32 * tp.scale, 0.52 * tp.scale, 3.6 * tp.scale, 8), M.trunkBark);
+      trunk.position.y = 1.8 * tp.scale;
+      trunk.castShadow = true;
+      trunk.receiveShadow = true;
+      tGroup.add(trunk);
+
+      const foliageClusters = [
+        { y: 3.8, r: 1.55, mat: M.leafGreen2, ox: 0, oz: 0 },
+        { y: 4.8, r: 1.35, mat: M.leafGreen1, ox: 0.25, oz: -0.2 },
+        { y: 3.5, r: 1.10, mat: M.leafGreen3, ox: -0.65, oz: 0.4 },
+        { y: 3.6, r: 1.15, mat: M.leafGreen4, ox: 0.7, oz: 0.3 }
+      ];
+
+      foliageClusters.forEach(fc => {
+        const sphere = new THREE.Mesh(new THREE.DodecahedronGeometry(fc.r * tp.scale, 1), fc.mat);
+        sphere.position.set(fc.ox * tp.scale, fc.y * tp.scale, fc.oz * tp.scale);
+        sphere.castShadow = true;
+        sphere.receiveShadow = true;
+        tGroup.add(sphere);
+      });
+
+      tGroup.position.set(tp.x, 0, tp.z);
+      targetScene.add(tGroup);
+
+      if (tp.primary) {
+        primaryTreeGroup = tGroup;
+      }
+    });
+
+    if (primaryTreeGroup) {
+      registerInteractiveGroup(primaryTreeGroup, 'oak_tree');
+    }
+
+    // Camino de baldosas de piedra desiguales (Stone Path)
     const pathGroup = new THREE.Group();
     pathGroup.name = "Stone Path";
     const pathCoords = [
-      [0.0, 4.6], [-0.25, 5.7], [0.20, 6.8], [-0.15, 7.9],
-      [0.25, 9.0], [-0.10, 10.1], [0.15, 11.2], [0.0, 12.3]
+      [-0.4, 4.6, 0.44], [0.35, 5.5, 0.48], [-0.25, 6.4, 0.42], [0.30, 7.3, 0.50],
+      [-0.35, 8.2, 0.46], [0.20, 9.1, 0.45], [-0.15, 10.0, 0.48], [0.10, 11.0, 0.46]
     ];
-    pathCoords.forEach(([px, pz], idx) => {
-      const paver = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.45 + (idx % 3) * 0.08, 0.50, 0.06, 7),
-        M.stonePaver
-      );
-      paver.position.set(px, 0.03, pz);
-      paver.rotation.y = idx * 0.85;
+    pathCoords.forEach(([px, pz, pr], idx) => {
+      const paver = new THREE.Mesh(new THREE.CylinderGeometry(pr, pr * 1.05, 0.05, 7), M.stonePaver);
+      paver.position.set(px, 0.025, pz);
+      paver.rotation.y = idx * 0.75;
       paver.receiveShadow = true;
       pathGroup.add(paver);
     });
     targetScene.add(pathGroup);
 
-    // Cerca perimetral blanca ("Picket Fence") rodeando la propiedad con entrada abierta
+    // Cerca perimetral de estacas blancas (Picket Fence)
     const fenceGroup = new THREE.Group();
     fenceGroup.name = "Picket Fence";
-
-    function createPicketSection(length, startPos, rotY) {
+    function createPicketSection(startX, startZ, endX, endZ, numPickets) {
       const section = new THREE.Group();
-      const numPickets = Math.floor(length / 0.34);
-      for (let p = 0; p < numPickets; p++) {
-        const px = -length / 2 + p * 0.34 + 0.17;
-        const picket = new THREE.Mesh(new THREE.BoxGeometry(0.13, 1.12, 0.028), M.picketWhite);
-        picket.position.set(px, 0.56, 0);
-        picket.castShadow = true;
-        const tip = new THREE.Mesh(new THREE.ConeGeometry(0.092, 0.18, 4), M.picketWhite);
+      const dx = (endX - startX) / numPickets;
+      const dz = (endZ - startZ) / numPickets;
+      const angle = Math.atan2(endZ - startZ, endX - startX);
+
+      for (let p = 0; p <= numPickets; p++) {
+        const picket = new THREE.Group();
+        const post = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.85, 0.03), M.picketWhite);
+        post.position.y = 0.425;
+        post.castShadow = true;
+        const tip = new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.12, 4), M.picketWhite);
+        tip.position.y = 0.91;
         tip.rotation.y = Math.PI / 4;
-        tip.position.set(px, 1.21, 0);
-        section.add(picket, tip);
+        picket.add(post, tip);
+        picket.position.set(startX + dx * p, 0, startZ + dz * p);
+        picket.rotation.y = -angle;
+        section.add(picket);
       }
-      const rail1 = new THREE.Mesh(new THREE.BoxGeometry(length, 0.065, 0.035), M.picketWhite);
-      rail1.position.set(0, 0.36, 0);
-      const rail2 = new THREE.Mesh(new THREE.BoxGeometry(length, 0.065, 0.035), M.picketWhite);
-      rail2.position.set(0, 0.88, 0);
-      section.add(rail1, rail2);
-      section.position.set(startPos.x, startPos.y, startPos.z);
-      section.rotation.y = rotY;
       return section;
     }
-
-    // Tramos frontales con abertura para el sendero de entrada y tramos laterales
-    fenceGroup.add(createPicketSection(11.5, { x: -8.2, y: 0, z: 13.5 }, 0));
-    fenceGroup.add(createPicketSection(11.5, { x: 8.2, y: 0, z: 13.5 }, 0));
-    fenceGroup.add(createPicketSection(22.0, { x: -14.0, y: 0, z: 2.5 }, Math.PI / 2));
-    fenceGroup.add(createPicketSection(22.0, { x: 14.0, y: 0, z: 2.5 }, Math.PI / 2));
+    fenceGroup.add(createPicketSection(-9.5, 14.5, -1.8, 14.5, 14));
+    fenceGroup.add(createPicketSection(1.8, 14.5, 9.5, 14.5, 14));
     targetScene.add(fenceGroup);
 
-    // OBJETO 10: "Oak Tree" (Árbol de roble: tronco orgánico inclinado con ramas y copa frondosa de esferas facetadas)
-    const oakTreesMasterGroup = new THREE.Group();
-    oakTreesMasterGroup.name = "Oak Tree";
-
-    const treePositions = [
-      { x: -8.5, z: 7.5, scale: 1.22, rot: 0.08 },
-      { x: 9.8, z: 6.8, scale: 1.12, rot: -0.10 },
-      { x: -10.5, z: -4.2, scale: 1.18, rot: 0.06 }
-    ];
-
-    treePositions.forEach(tp => {
-      const tree = new THREE.Group();
-
-      // Tronco orgánico inclinado
-      const trunk = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.32 * tp.scale, 0.56 * tp.scale, 3.6 * tp.scale, 12),
-        M.trunkBark
-      );
-      trunk.position.y = 1.8 * tp.scale;
-      trunk.rotation.z = tp.rot;
-      trunk.castShadow = true;
-      trunk.receiveShadow = true;
-
-      // Raíces visibles en la base
-      for (let r = 0; r < 4; r++) {
-        const rAng = (r * Math.PI) / 2 + 0.35;
-        const root = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.20, 0.85 * tp.scale, 8), M.trunkBark);
-        root.position.set(Math.cos(rAng) * 0.45 * tp.scale, 0.18, Math.sin(rAng) * 0.45 * tp.scale);
-        root.rotation.z = Math.cos(rAng) * 0.65;
-        root.rotation.x = Math.sin(rAng) * 0.65;
-        tree.add(root);
-      }
-
-      // Ramas principales
-      const branch1 = new THREE.Mesh(new THREE.CylinderGeometry(0.15 * tp.scale, 0.24 * tp.scale, 1.7 * tp.scale, 8), M.trunkBark);
-      branch1.rotation.z = Math.PI / 4.2;
-      branch1.position.set(0.58 * tp.scale, 2.9 * tp.scale, 0);
-      const branch2 = new THREE.Mesh(new THREE.CylinderGeometry(0.15 * tp.scale, 0.24 * tp.scale, 1.7 * tp.scale, 8), M.trunkBark);
-      branch2.rotation.z = -Math.PI / 4.2;
-      branch2.position.set(-0.58 * tp.scale, 2.8 * tp.scale, 0.25 * tp.scale);
-      tree.add(trunk, branch1, branch2);
-
-      // Copa frondosa multifacética en distintos tonos de verde
-      const foliageSpheres = [
-        [0, 4.1 * tp.scale, 0, 1.68 * tp.scale, M.leafGreen1],
-        [0.95 * tp.scale, 3.65 * tp.scale, 0.42 * tp.scale, 1.28 * tp.scale, M.leafGreen2],
-        [-0.95 * tp.scale, 3.55 * tp.scale, -0.35 * tp.scale, 1.28 * tp.scale, M.leafGreen3],
-        [0.28 * tp.scale, 4.75 * tp.scale, -0.42 * tp.scale, 1.38 * tp.scale, M.leafGreen4],
-        [-0.35 * tp.scale, 4.55 * tp.scale, 0.55 * tp.scale, 1.32 * tp.scale, M.leafGreen2],
-        [0.0, 3.8 * tp.scale, 0.95 * tp.scale, 1.18 * tp.scale, M.leafGreen3]
-      ];
-      foliageSpheres.forEach(([fx, fy, fz, fr, fMat]) => {
-        const canopyPart = new THREE.Mesh(new THREE.DodecahedronGeometry(fr, 1), fMat);
-        canopyPart.position.set(fx, fy, fz);
-        canopyPart.castShadow = true;
-        canopyPart.receiveShadow = true;
-        tree.add(canopyPart);
-      });
-
-      tree.position.set(tp.x, 0, tp.z);
-      oakTreesMasterGroup.add(tree);
-    });
-
-    targetScene.add(oakTreesMasterGroup);
-    registerInteractiveGroup(oakTreesMasterGroup, 'oak_tree');
-
-    // OBJETO 11: "Park Bench" (Banca de jardín: listones de madera en asiento y respaldo con soportes de hierro forjado negro)
+    // OBJETO 11: "Park Bench" (Banca de jardín: listones de madera de roble y soportes laterales de hierro negro)
     const benchGroup = new THREE.Group();
     benchGroup.name = "Park Bench";
 
-    // 5 Listones individuales de madera en el asiento
-    for (let s = 0; s < 5; s++) {
-      const slatSeat = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.045, 0.095), M.woodPine);
-      slatSeat.position.set(0, 0.46, -0.20 + s * 0.105);
-      slatSeat.castShadow = true;
-      slatSeat.receiveShadow = true;
-      benchGroup.add(slatSeat);
-    }
+    [-0.85, 0.85].forEach(bx => {
+      const legA = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.48, 0.06), M.ironBlack);
+      legA.position.set(bx, 0.24, -0.22);
+      legA.castShadow = true;
+      const legB = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.48, 0.06), M.ironBlack);
+      legB.position.set(bx, 0.24, 0.22);
+      legB.castShadow = true;
+      const backPost = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.52, 0.05), M.ironBlack);
+      backPost.position.set(bx, 0.65, -0.22);
+      backPost.rotation.x = -0.15;
+      const seatBrace = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.48), M.ironBlack);
+      seatBrace.position.set(bx, 0.44, 0);
+      benchGroup.add(legA, legB, backPost, seatBrace);
+    });
 
-    // 4 Listones individuales de madera en el respaldo
-    for (let b = 0; b < 4; b++) {
-      const slatBack = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.09, 0.04), M.woodPine);
-      slatBack.position.set(0, 0.62 + b * 0.115, -0.26 - b * 0.015);
-      slatBack.rotation.x = -0.14;
-      slatBack.castShadow = true;
-      benchGroup.add(slatBack);
-    }
+    [-0.16, -0.05, 0.06, 0.17].forEach(sz => {
+      const slat = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.032, 0.08), M.woodOak);
+      slat.position.set(0, 0.47, sz);
+      slat.castShadow = true;
+      benchGroup.add(slat);
+    });
 
-    // Soportes laterales y reposabrazos curvos de hierro forjado negro
-    [-0.92, 0.92].forEach(bx => {
-      const legFront = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.028, 0.46, 12), M.ironBlack);
-      legFront.position.set(bx, 0.23, 0.20);
-      const legBack = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.028, 1.02, 12), M.ironBlack);
-      legBack.position.set(bx, 0.51, -0.24);
-      legBack.rotation.x = -0.08;
-      const seatFrame = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.05, 0.54), M.ironBlack);
-      seatFrame.position.set(bx, 0.43, -0.02);
-      const armRest = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.024, 10, 20, Math.PI), M.ironBlack);
-      armRest.rotation.y = Math.PI / 2;
-      armRest.position.set(bx, 0.52, -0.02);
-      benchGroup.add(legFront, legBack, seatFrame, armRest);
+    [0.55, 0.66, 0.77].forEach((by, idx) => {
+      const bSlat = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.07, 0.028), M.woodOak);
+      bSlat.position.set(0, by, -0.22 - idx * 0.02);
+      bSlat.rotation.x = -0.15;
+      bSlat.castShadow = true;
+      benchGroup.add(bSlat);
     });
 
     benchGroup.position.set(-4.5, 0, 7.5);
-    benchGroup.rotation.y = 0.35;
+    benchGroup.rotation.y = 0.32;
     targetScene.add(benchGroup);
     registerInteractiveGroup(benchGroup, 'park_bench');
 
-    // OBJETO 12: "Street Lantern" (Farol de jardín: poste clásico negro, cabezal de cristal brillante y SpotLight cálida)
+    // OBJETO 12: "Street Lantern" (Farol de jardín clásico de hierro con cristal cálido y SpotLight proyectada)
     const lanternGroup = new THREE.Group();
     lanternGroup.name = "Street Lantern";
 
-    const plinth = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.38, 0.38, 8), M.ironBlack);
-    plinth.position.y = 0.19;
+    const plinth = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.34, 0.18, 16), M.ironBlack);
+    plinth.position.y = 0.09;
     plinth.castShadow = true;
 
-    const column = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.11, 2.85, 16), M.ironBlack);
-    column.position.y = 1.78;
+    const column = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.10, 2.7, 16), M.ironBlack);
+    column.position.y = 1.53;
     column.castShadow = true;
 
-    const ringDeco = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.022, 10, 20), M.metalBrass);
+    const ringDeco = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.025, 8, 16), M.ironBlack);
     ringDeco.rotation.x = Math.PI / 2;
     ringDeco.position.y = 2.95;
 
@@ -1663,7 +1856,6 @@
     const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.065, 12, 12), streetLanternBulbMat);
     bulb.position.y = 3.28;
 
-    // SpotLight cálida que proyecta luz sobre el pasto y el sendero
     const spot = new THREE.SpotLight(0xffedd5, 3.0, 15.0, Math.PI / 3.2, 0.55, 1.2);
     spot.position.set(0, 3.28, 0);
     spot.target.position.set(-0.8, 0, 0.5);
@@ -1680,7 +1872,7 @@
     targetScene.add(lanternGroup);
     registerInteractiveGroup(lanternGroup, 'street_lantern');
 
-    // OBJETO 13: "Flower Bush" (Arbusto floral: follaje denso salpicado de pequeñas esferas de colores vivos)
+    // OBJETO 13: "Flower Bush" (Arbustos florales con pequeñas flores esféricas coloridas)
     const bushesMasterGroup = new THREE.Group();
     bushesMasterGroup.name = "Flower Bush";
 
@@ -1730,7 +1922,7 @@
     targetScene.add(bushesMasterGroup);
     registerInteractiveGroup(bushesMasterGroup, 'flower_bush');
 
-    // OBJETO 14: "Mailbox" (Buzón americano: poste de madera en la entrada con buzón superior y banderilla roja lateral)
+    // OBJETO 14: "Mailbox" (Buzón americano en la entrada con banderilla roja lateral)
     const mailboxGroup = new THREE.Group();
     mailboxGroup.name = "Mailbox";
 
@@ -1745,7 +1937,6 @@
     mbBrace.rotation.x = -Math.PI / 4;
     mbBrace.position.set(0, 0.90, 0.14);
 
-    // Cuerpo del buzón americano (base rectangular + bóveda cilíndrica superior)
     const mbBoxLower = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.18, 0.62), M.mailboxBlue);
     mbBoxLower.position.set(0, 1.19, 0.10);
     mbBoxLower.castShadow = true;
@@ -1755,14 +1946,12 @@
     mbVaultTop.position.set(0, 1.28, 0.10);
     mbVaultTop.castShadow = true;
 
-    // Compuerta frontal y tirador cromado
     const mbDoor = new THREE.Mesh(new THREE.CylinderGeometry(0.155, 0.155, 0.02, 16), M.metalChrome);
     mbDoor.rotation.x = Math.PI / 2;
     mbDoor.position.set(0, 1.28, 0.415);
     const mbHandle = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.008, 8, 12, Math.PI), M.metalChrome);
     mbHandle.position.set(0, 1.32, 0.425);
 
-    // Banderilla roja lateral ("Red Flag")
     const flagStem = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.28, 0.03), M.mailboxRedFlag);
     flagStem.position.set(0.175, 1.34, 0.22);
     const flagBanner = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.09, 0.13), M.mailboxRedFlag);
@@ -1776,7 +1965,7 @@
     targetScene.add(mailboxGroup);
     registerInteractiveGroup(mailboxGroup, 'mailbox');
 
-    // Aspersor de jardín animado complementario
+    // Aspersor de riego animado
     const sprinklerGroup = new THREE.Group();
     const spBase = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.22, 0.08, 16), M.metalDark);
     spBase.position.y = 0.04;
@@ -1800,17 +1989,22 @@
   }
 
   // ============================================================================
-  // 6. ILUMINACIÓN CINEMÁTICA PBR Y CICLO DÍA / NOCHE
+  // 7. ILUMINACIÓN CINEMÁTICA EQUILIBRADA Y CICLO DÍA / NOCHE
   // ============================================================================
   function setupCinematicLighting(targetScene) {
-    // 1. HemisphereLight para relleno ambiental global
+    // 1. Luz ambiental suave (#ffffff, intensidad 0.6)
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    targetScene.add(ambientLight);
+    globalAmbientLight = ambientLight;
+
+    // 2. HemisphereLight para relleno ambiental global suave
     const hemiLight = new THREE.HemisphereLight(0xddeeff, 0x202035, 1.2);
     targetScene.add(hemiLight);
     globalHemiLight = hemiLight;
 
-    // 2. DirectionalLight principal con sombras suaves (1024x1024)
-    const dirLight = new THREE.DirectionalLight(0xfff2dd, 1.8);
-    dirLight.position.set(12, 20, 10);
+    // 3. DirectionalLight principal con sombras suaves (posición [10, 20, 15], intensidad 1.0)
+    const dirLight = new THREE.DirectionalLight(0xfff2dd, 1.0); // THREE.DirectionalLight(0xfff2dd, 1.8)
+    dirLight.position.set(10, 20, 15); // dirLight.position.set(12, 20, 10);
     dirLight.castShadow = true;
     dirLight.shadow.camera.left = -25;
     dirLight.shadow.camera.right = 25;
@@ -1824,7 +2018,7 @@
     targetScene.add(dirLight);
     globalDirLight = dirLight;
 
-    // 3. Luz cálida puntual (PointLight) en el interior de la casa para simular lámparas de estudio
+    // 4. Luz cálida puntual (PointLight) en el interior de la casa para simular lámparas de estudio
     const studyLight = new THREE.PointLight(0xffaa44, 2.0, 15.0);
     studyLight.position.set(3.5, 2.5, -3.2);
     studyLight.castShadow = true;
@@ -1838,7 +2032,6 @@
     if (!scene) return;
 
     if (isNightMode) {
-      // Modo Noche: Cielo nocturno azul profundo, niebla suave y luces puntuales encendidas
       scene.background = new THREE.Color(0x0a0e17);
       scene.fog = new THREE.FogExp2(0x0a0e17, 0.012);
 
@@ -1853,7 +2046,6 @@
         globalDirLight.position.set(-10, 18, -8);
       }
 
-      // Encender automáticamente el farol del jardín, la lámpara de la sala, el estudio y el monitor
       if (streetLanternSpotLight) streetLanternSpotLight.intensity = 3.6;
       if (streetLanternPointLight) streetLanternPointLight.intensity = 1.8;
       if (streetLanternBulbMat) streetLanternBulbMat.emissiveIntensity = 2.8;
@@ -1862,29 +2054,27 @@
       if (studyPointLight) studyPointLight.intensity = 2.2;
       if (monitorScreenMaterial) monitorScreenMaterial.emissiveIntensity = 1.35;
     } else {
-      // Modo Día: Cielo celeste soleado luminoso y luces artificiales atenuadas
-      scene.background = new THREE.Color(0x38bdf8);
-      scene.fog = new THREE.FogExp2(0x38bdf8, 0.006);
+      scene.background = new THREE.Color(0x0a0e17);
+      scene.fog = new THREE.FogExp2(0x0a0e17, 0.005);
 
       if (globalHemiLight) {
         globalHemiLight.color.setHex(0xddeeff);
-        globalHemiLight.groundColor.setHex(0x2d5a27);
-        globalHemiLight.intensity = 1.35;
+        globalHemiLight.groundColor.setHex(0x202035);
+        globalHemiLight.intensity = 1.20;
       }
       if (globalDirLight) {
         globalDirLight.color.setHex(0xfff2dd);
-        globalDirLight.intensity = 1.85;
-        globalDirLight.position.set(12, 20, 10);
+        globalDirLight.intensity = 1.0;
+        globalDirLight.position.set(10, 20, 15);
       }
 
-      // Atenuar/apagar luces artificiales durante el día
       if (streetLanternSpotLight) streetLanternSpotLight.intensity = 0.0;
       if (streetLanternPointLight) streetLanternPointLight.intensity = 0.0;
       if (streetLanternBulbMat) streetLanternBulbMat.emissiveIntensity = 0.25;
       if (floorLampPointLight) floorLampPointLight.intensity = 0.35;
       if (floorLampShadeMat) floorLampShadeMat.emissiveIntensity = 0.20;
       if (studyPointLight) studyPointLight.intensity = 0.65;
-      if (monitorScreenMaterial) monitorScreenMaterial.emissiveIntensity = 0.80;
+      if (monitorScreenMaterial) monitorScreenMaterial.emissiveIntensity = 0.85;
     }
 
     const toggleBtn = typeof document !== 'undefined' ? document.getElementById('world3dDayNightBtn') : null;
@@ -1910,7 +2100,7 @@
   }
 
   // ============================================================================
-  // 7. HUD DE CONTROL 3D, PROGRESO (X / 14) Y TARJETA DE VOCABULARIO GAMIFICADA
+  // 8. HUD DE CONTROL 3D, PROGRESO Y TARJETA EMERGENTE ESTILIZADA
   // ============================================================================
   function updateProgressHudCounter() {
     const count = Math.min(TOTAL_INTERACTIVE_OBJECTS, discoveredObjectIds.size);
@@ -1934,7 +2124,25 @@
   function ensureWorld3DHudElements(containerEl) {
     if (typeof document === 'undefined' || !containerEl) return;
 
-    // 1. Barra de control HUD superior/inferior dentro del visor 3D
+    // Botón flotante superior izquierdo con z-index 10000 para retorno inmediato
+    let floatBackBtn = document.getElementById('world3dFloatingBackBtn');
+    if (!floatBackBtn) {
+      floatBackBtn = document.createElement('button');
+      floatBackBtn.id = 'world3dFloatingBackBtn';
+      floatBackBtn.className = 'fixed top-4 left-4 z-[10000] flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-white border border-purple-500/50 shadow-2xl backdrop-blur-md text-xs font-bold transition hover:scale-105 active:scale-95 cursor-pointer';
+      floatBackBtn.style.cssText = 'position: fixed !important; top: 16px !important; left: 16px !important; z-index: 10000 !important; pointer-events: auto !important;';
+      floatBackBtn.onclick = function() {
+        if (typeof global.goToHomePortals === 'function') {
+          global.goToHomePortals();
+        } else if (typeof global.showView === 'function') {
+          global.showView('view-home');
+        }
+      };
+      floatBackBtn.innerHTML = '<span class="text-purple-400 font-extrabold text-sm">←</span><span>Volver a Portales</span>';
+      document.body.appendChild(floatBackBtn);
+    }
+
+    // Barra de control HUD superior dentro del visor 3D
     let hudBar = document.getElementById('world3dControlHudBar');
     if (!hudBar) {
       hudBar = document.createElement('div');
@@ -1957,7 +2165,7 @@
           <div class="flex items-center gap-2.5 bg-slate-900/95 backdrop-blur-md border border-purple-500/50 px-3.5 py-1.5 rounded-xl shadow-xl">
             <div class="flex flex-col">
               <span id="world3dProgressCounter" class="text-xs font-black text-white">Objetos descubiertos: 0 / 14</span>
-              <span id="world3dLearnedSubBadge" class="text-[10px] font-bold text-emerald-400">Aprendidos: 0/14 (+10 EXP c/u)</span>
+              <span id="world3dLearnedSubBadge" class="text-[10px] font-bold text-emerald-400">Aprendidos: 0/14 (+5 EXP c/u)</span>
             </div>
             <div class="w-20 h-2 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
               <div id="world3dProgressBarFill" class="h-full bg-gradient-to-r from-purple-500 via-sky-400 to-emerald-400 transition-all duration-300" style="width: 0%;"></div>
@@ -1987,7 +2195,7 @@
       containerEl.appendChild(hudBar);
     }
 
-    // 2. Tarjeta flotante HUD de Vocabulario 3D (z-index superior)
+    // Tarjeta emergente estilizada de Vocabulario 3D (z-index superior)
     let vocabCard = document.getElementById('world3dVocabHudCard');
     if (!vocabCard) {
       vocabCard = document.createElement('div');
@@ -2049,7 +2257,7 @@
   }
 
   // ============================================================================
-  // 8. TRANSICIONES DE CÁMARA (LERP), HIGHLIGHT EMISIVO E INTERACCIÓN RAYCASTER
+  // 9. CÁMARA (LERP), RESALTADO EMISIVO Y RAYCASTING CON HOTSPOTS
   // ============================================================================
   function transitionCameraTo(posCoords, lookAtCoords) {
     if (typeof THREE === 'undefined' || !camera || !controls) return;
@@ -2062,7 +2270,6 @@
     const zone = CAMERA_ZONES[zoneKey] || CAMERA_ZONES.overview;
     transitionCameraTo(zone.pos, zone.lookAt);
 
-    // Actualizar botones legacy si existen
     const btnHouse = typeof document !== 'undefined' ? document.getElementById('scenarioBtnHouse') : null;
     const btnGarden = typeof document !== 'undefined' ? document.getElementById('scenarioBtnGarden') : null;
     if (btnHouse && btnGarden) {
@@ -2094,8 +2301,44 @@
     selectedObjectGroup = null;
   }
 
+  function clearHoverHighlight() {
+    if (hoveredMaterialsBackup.length > 0) {
+      hoveredMaterialsBackup.forEach(entry => {
+        if (entry.mesh && entry.originalMaterial && entry.mesh !== selectedObjectGroup) {
+          entry.mesh.material = entry.originalMaterial;
+        }
+      });
+      hoveredMaterialsBackup = [];
+    }
+    hoveredObjectGroup = null;
+  }
+
+  function setHoverHighlight(group) {
+    if (!group || group === selectedObjectGroup || group === hoveredObjectGroup) return;
+    clearHoverHighlight();
+    hoveredObjectGroup = group;
+
+    group.traverse(child => {
+      if (child.isMesh && child.material && child.material.clone) {
+        const origMat = child.material;
+        const clonedMat = origMat.clone();
+        if (clonedMat.emissive) {
+          clonedMat.emissive.setHex(0xa855f7);
+          clonedMat.emissiveIntensity = 0.38; // sutil contorno / emissive boost
+        }
+        child.material = clonedMat;
+        hoveredMaterialsBackup.push({
+          mesh: child,
+          originalMaterial: origMat,
+          clonedMaterial: clonedMat
+        });
+      }
+    });
+  }
+
   function highlightSelectedObject(group) {
     clearSelectedHighlight();
+    clearHoverHighlight();
     if (!group) return;
     selectedObjectGroup = group;
     highlightPulseTime = 0;
@@ -2106,7 +2349,7 @@
         const clonedMat = origMat.clone();
         if (clonedMat.emissive) {
           clonedMat.emissive.setHex(0x38bdf8);
-          clonedMat.emissiveIntensity = 0.55;
+          clonedMat.emissiveIntensity = 0.65;
         }
         child.material = clonedMat;
         highlightedMaterialsBackup.push({
@@ -2123,20 +2366,39 @@
     const data = group.userData;
     selectedObjectData = data;
 
-    // 1. Registrar objeto como descubierto
+    // 1. Otorgar +5 EXP la primera vez que interactúe con un objeto nuevo
+    const isFirstTime = !discoveredObjectIds.has(data.id);
     discoveredObjectIds.add(data.id);
     saveProgressToStorage();
     updateProgressHudCounter();
 
-    // 2. Iluminar objeto seleccionado (efecto highlight emisivo suave)
+    if (isFirstTime) {
+      if (typeof global.addExp === 'function') {
+        global.addExp(5, `Descubrimiento 3D: ${data.wordEn}`);
+      } else {
+        try {
+          const raw = localStorage.getItem('english_app_user_session') || localStorage.getItem('mastereng_user');
+          const user = raw ? JSON.parse(raw) : { username: 'Invitado', role: 'guest', exp: 0, rank: 'Bronce' };
+          user.exp = (parseInt(user.exp, 10) || 0) + 5;
+          localStorage.setItem('english_app_user_session', JSON.stringify(user));
+          localStorage.setItem('mastereng_user', JSON.stringify(user));
+          if (typeof global.updateUserExpDisplay === 'function') global.updateUserExpDisplay();
+        } catch (e) { }
+      }
+      if (typeof global.showFloatingToast === 'function') {
+        global.showFloatingToast(`✨ ¡Descubriste "${data.wordEn}"! +5 EXP`, '✨');
+      }
+    }
+
+    // 2. Resaltar el objeto con brillo sutil / emissive boost
     highlightSelectedObject(group);
 
-    // 3. Transición suave de cámara (Lerp) acercando el enfoque hacia el objeto
+    // 3. Transición suave de cámara (Lerp) hacia el objeto
     if (data.focusPos && data.lookAtPos) {
       transitionCameraTo(data.focusPos, data.lookAtPos);
     }
 
-    // 4. Mostrar tarjeta flotante HUD y pronunciar palabra en inglés
+    // 4. Desplegar tarjeta emergente estilizada y reproducir audio en inglés
     renderVocabHudCard(data);
     speakWorld3DText(data.wordEn);
   }
@@ -2146,7 +2408,6 @@
 
     const isLearned = learnedObjectIds.has(data.id);
 
-    // Actualizar tarjeta HUD dinámica
     const vocabCard = document.getElementById('world3dVocabHudCard');
     if (vocabCard) {
       const catEl = document.getElementById('hudObjCategoryBadge');
@@ -2185,7 +2446,7 @@
       vocabCard.style.display = 'block';
     }
 
-    // Sincronizar también tarjeta legacy (#threeObjectInspectCard) por compatibilidad
+    // Sincronizar tarjeta legacy (#threeObjectInspectCard)
     const legacyCard = document.getElementById('threeObjectInspectCard');
     if (legacyCard) {
       const enEl = document.getElementById('threeObjEnName');
@@ -2202,46 +2463,44 @@
   }
 
   function closeWorld3DInspectCard() {
+    clearSelectedHighlight();
+    clearHoverHighlight();
     if (typeof document === 'undefined') return;
-    const vocabCard = document.getElementById('world3dVocabHudCard');
-    if (vocabCard) {
-      vocabCard.classList.add('hidden');
-      vocabCard.style.display = 'none';
+    const card = document.getElementById('world3dVocabHudCard');
+    if (card) {
+      card.classList.add('hidden');
+      card.style.display = 'none';
     }
     const legacyCard = document.getElementById('threeObjectInspectCard');
     if (legacyCard) {
       legacyCard.classList.add('hidden');
+      legacyCard.style.display = 'none';
     }
   }
 
   function speakWorld3DText(text) {
-    if (!text) return;
-    const cleanWord = String(text).split('/')[0].trim();
-    if (typeof global.speakText === 'function') {
-      global.speakText(cleanWord);
-      return;
-    }
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      try {
-        window.speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(cleanWord);
-        u.lang = 'en-US';
-        u.rate = 0.95;
-        window.speechSynthesis.speak(u);
-      } catch (e) { }
+    if (!text || typeof window === 'undefined' || !window.speechSynthesis) return;
+    try {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-US';
+      utterance.rate = 0.90;
+      utterance.pitch = 1.0;
+      window.speechSynthesis.speak(utterance);
+    } catch (e) {
+      console.warn('SpeechSynthesis error:', e);
     }
   }
 
   function speakWorld3DObject() {
-    if (!selectedObjectData) return;
-    speakWorld3DText(`${selectedObjectData.wordEn}. ${selectedObjectData.example}`);
+    if (selectedObjectData && (selectedObjectData.wordEn || selectedObjectData.en)) {
+      speakWorld3DText(selectedObjectData.wordEn || selectedObjectData.en);
+    }
   }
 
   function practiceWorld3DObject() {
     if (!selectedObjectData) return;
     const data = selectedObjectData;
-
-    // Pronunciar palabra modelo en voz alta y otorgar +10 EXP marcando como "Aprendido ✅"
     speakWorld3DText(data.wordEn);
 
     const alreadyLearned = learnedObjectIds.has(data.id);
@@ -2250,7 +2509,6 @@
     saveProgressToStorage();
     updateProgressHudCounter();
 
-    // Otorgar +10 EXP al usuario
     if (typeof global.addExp === 'function') {
       global.addExp(10, `Vocabulario 3D: ${data.wordEn}`);
     } else {
@@ -2284,6 +2542,41 @@
     let downY = 0;
     let downTime = 0;
 
+    function handlePointerMove(e) {
+      const clientX = e.clientX !== undefined ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+      const clientY = e.clientY !== undefined ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+
+      const rect = domElement.getBoundingClientRect();
+      if (!rect || rect.width === 0 || rect.height === 0 || !camera) return;
+
+      pointer.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(pointer, camera);
+      const intersects = raycaster.intersectObjects(interactiveObjects, true);
+
+      if (intersects.length > 0) {
+        let hitObj = intersects[0].object;
+        let targetGroup = (hitObj.userData && (hitObj.userData.parentGroup || (hitObj.userData.isHotspot ? hitObj.userData.parentGroup : null))) || null;
+        if (!targetGroup) {
+          while (hitObj.parent && (!hitObj.userData || !hitObj.userData.interactive) && hitObj.parent !== scene) {
+            hitObj = hitObj.parent;
+          }
+          if (hitObj && hitObj.userData && hitObj.userData.interactive) {
+            targetGroup = hitObj;
+          }
+        }
+        if (targetGroup) {
+          domElement.style.cursor = 'pointer';
+          setHoverHighlight(targetGroup);
+          return;
+        }
+      }
+
+      domElement.style.cursor = 'grab';
+      clearHoverHighlight();
+    }
+
     function handlePointerDown(e) {
       const clientX = e.clientX !== undefined ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
       const clientY = e.clientY !== undefined ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
@@ -2299,11 +2592,11 @@
       const moveDist = Math.hypot(clientX - downX, clientY - downY);
       const elapsed = Date.now() - downTime;
 
-      // Diferenciar arrastre de cámara vs clic/toque limpio (< 10px de desplazamiento)
+      // Diferenciar arrastre de cámara vs clic o toque limpio (< 10px de desplazamiento)
       if (moveDist > 10 || elapsed > 900) return;
 
       const rect = domElement.getBoundingClientRect();
-      if (!rect || rect.width === 0 || rect.height === 0) return;
+      if (!rect || rect.width === 0 || rect.height === 0 || !camera) return;
 
       pointer.x = ((clientX - rect.left) / rect.width) * 2 - 1;
       pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
@@ -2313,25 +2606,28 @@
 
       if (intersects.length > 0) {
         let hitObj = intersects[0].object;
-        if (hitObj.userData && hitObj.userData.parentGroup) {
-          selectInteractive3DObject(hitObj.userData.parentGroup);
-          return;
+        let targetGroup = (hitObj.userData && (hitObj.userData.parentGroup || (hitObj.userData.isHotspot ? hitObj.userData.parentGroup : null))) || null;
+        if (!targetGroup) {
+          while (hitObj.parent && (!hitObj.userData || !hitObj.userData.interactive) && hitObj.parent !== scene) {
+            hitObj = hitObj.parent;
+          }
+          if (hitObj && hitObj.userData && hitObj.userData.interactive) {
+            targetGroup = hitObj;
+          }
         }
-        while (hitObj.parent && (!hitObj.userData || !hitObj.userData.interactive) && hitObj.parent !== scene) {
-          hitObj = hitObj.parent;
-        }
-        if (hitObj && hitObj.userData && hitObj.userData.interactive) {
-          selectInteractive3DObject(hitObj);
+        if (targetGroup) {
+          selectInteractive3DObject(targetGroup);
         }
       }
     }
 
+    domElement.addEventListener('pointermove', handlePointerMove, { passive: true });
     domElement.addEventListener('pointerdown', handlePointerDown, { passive: true });
     domElement.addEventListener('pointerup', handlePointerUp, { passive: true });
   }
 
   // ============================================================================
-  // 9. CICLO DE VIDA DEL MOTOR WEBGL: window.initOrResumeWorld3D()
+  // 10. CICLO DE VIDA DEL MOTOR WEBGL: window.initOrResumeWorld3D() & pauseWorld3D()
   // ============================================================================
   function cleanupOrphanCanvases(mountTarget) {
     if (!mountTarget || typeof document === 'undefined') return;
@@ -2359,21 +2655,30 @@
     };
   }
 
+  function pauseWorld3D() {
+    isWorldTourActive = false;
+    if (animFrameId) {
+      cancelAnimationFrame(animFrameId);
+      animFrameId = null;
+    }
+  }
+
   function initOrResumeWorld3D() {
     if (typeof THREE === 'undefined') return;
     if (!clock) clock = new THREE.Clock();
     initSharedMaterials();
     isWorldTourActive = true;
 
-    const viewWorldTour = document.getElementById('view-worldtour');
+    const viewWorldTour = document.getElementById('view-worldtour') || document.getElementById('world3d-view');
     if (viewWorldTour && (viewWorldTour.style.display === 'none' || viewWorldTour.classList.contains('hidden'))) {
       viewWorldTour.style.display = 'block';
       viewWorldTour.classList.remove('hidden');
     }
 
-    // Obtener contenedor (#world3d-container, #canvas-container, #world3d-canvas, #threeWebGLMount, #threeCanvasContainer)
-    let container = document.getElementById('world3d-container') ||
+    // Obtener contenedor (#world3d-view, #canvas-container, #world3d-container, #world3d-canvas, #threeCanvasContainer, #threeWebGLMount)
+    let container = document.getElementById('world3d-view') ||
                     document.getElementById('canvas-container') ||
+                    document.getElementById('world3d-container') ||
                     document.getElementById('world3d-canvas') ||
                     document.getElementById('threeCanvasContainer') ||
                     document.getElementById('threeWebGLMount') ||
@@ -2393,7 +2698,6 @@
     const hudHost = document.getElementById('threeCanvasContainer') || container || document.body;
     const mountTarget = document.getElementById('threeWebGLMount') || container || document.body;
 
-    // Limpiar cualquier canvas huérfano previo para evitar fugas de memoria WebGL
     cleanupOrphanCanvases(mountTarget);
     ensureWorld3DHudElements(hudHost);
 
@@ -2420,7 +2724,7 @@
       return;
     }
 
-    // 1. Escena con fondo e iluminación
+    // 1. Escena con fondo azul profundo
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0a0e17);
 
@@ -2431,10 +2735,10 @@
     camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 250);
     camera.position.set(CAMERA_ZONES.overview.pos.x, CAMERA_ZONES.overview.pos.y, CAMERA_ZONES.overview.pos.z);
 
-    // 3. THREE.WebGLRenderer de alto rendimiento con sombras suaves y ACESFilmicToneMapping
+    // 3. THREE.WebGLRenderer con antialias, alpha, y alto rendimiento
     renderer = new THREE.WebGLRenderer({
       antialias: true,
-      alpha: false,
+      alpha: true, /* alpha: false */
       powerPreference: "high-performance"
     });
     renderer.setSize(width, height);
@@ -2472,15 +2776,15 @@
       controls.syncSphericalFromObject();
     }
 
-    // 5. Iluminación PBR, Escenario de Casa Abierta + Jardín y Ciclo Día/Noche inicial (Modo Día soleado)
+    // 5. Iluminación equilibrada, Escenario Casa Abierta + Jardín + Domo Espacial
     setupCinematicLighting(scene);
     buildDetailedHouseAndGarden(scene);
     applyDayNightState(false);
 
-    // 6. Raycaster interactivo
+    // 6. Raycaster interactivo y Hotspots
     setupRaycasterInteraction(renderer.domElement);
 
-    // 7. Loop de renderizado con interpolación suave de cámara (Lerp) y animaciones
+    // 7. Loop de renderizado con interpolación suave de cámara (Lerp) y animaciones continuas
     function animate(now) {
       if (!isWorldTourActive) return;
       animFrameId = requestAnimationFrame(animate);
@@ -2507,7 +2811,25 @@
         controls.update();
       }
 
-      // Pulso emisivo suave sobre el objeto seleccionado
+      // Animación pulsante y flotante de los Spatial Hotspots luminosos
+      const t = (now || performance.now()) * 0.003;
+      spatialHotspots.forEach((hs, idx) => {
+        const pulse = 1.0 + Math.sin(t * 3.5 + idx * 0.8) * 0.15;
+        hs.sprite.scale.set(0.65 * pulse, 0.65 * pulse, 0.65 * pulse);
+        hs.group.position.y = hs.baseY + Math.sin(t * 2.0 + idx * 0.8) * 0.05;
+        if (hs.ring) {
+          hs.ring.scale.set(pulse * 1.2, pulse * 1.2, 1);
+          hs.ring.material.opacity = Math.max(0.2, 0.8 - (pulse - 1.0) * 2.2);
+        }
+      });
+
+      // Animación exterior de hojas/árboles en la ventana
+      animatedWindowLeaves.forEach((leaf, idx) => {
+        leaf.rotation.z = Math.sin((now || performance.now()) * 0.0025 + idx * 0.8) * 0.07;
+        leaf.position.y += Math.sin((now || performance.now()) * 0.003 + idx) * 0.001;
+      });
+
+      // Pulso emisivo sobre el objeto seleccionado
       if (selectedObjectGroup && highlightedMaterialsBackup.length > 0) {
         highlightPulseTime += delta * 4.0;
         const pulseIntensity = 0.45 + Math.sin(highlightPulseTime) * 0.25;
@@ -2518,7 +2840,7 @@
         });
       }
 
-      // Animaciones de ventilador, aspersor, vapor de café y manecillas de reloj
+      // Animaciones de ventilador, aspersor, vapor de café y reloj de pared
       if (animatedFan) animatedFan.rotation.y += delta * 4.0;
       if (animatedSprinkler) animatedSprinkler.rotation.y += delta * 6.0;
       if (animatedClockMinuteHand) animatedClockMinuteHand.rotation.z -= delta * 0.08;
@@ -2539,7 +2861,7 @@
 
     animFrameId = requestAnimationFrame(animate);
 
-    // 8. ResizeObserver además de window.resize para redimensionado instantáneo sin quedar en negro
+    // 8. ResizeObserver además de window.resize para redimensionado instantáneo sin pantalla en negro
     window.addEventListener("resize", onWindowResize);
     window.addEventListener("orientationchange", () => {
       setTimeout(onWindowResize, 80);
@@ -2563,7 +2885,7 @@
       resizeObserver.observe(hudHost);
     }
 
-    // 9. Pausa/reanudación en segundo plano para ahorro de recursos
+    // 9. Pausa automática en segundo plano para ahorro de recursos
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
         if (animFrameId) {
@@ -2588,7 +2910,7 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
 
       const container = typeof document !== 'undefined'
-        ? (document.getElementById('threeCanvasContainer') || document.getElementById('world3d-container') || document.getElementById('canvas-container'))
+        ? (document.getElementById('world3d-view') || document.getElementById('threeCanvasContainer') || document.getElementById('world3d-container') || document.getElementById('canvas-container'))
         : null;
       if (container && container.clientWidth > 60 && container.clientHeight > 60) {
         camera.aspect = container.clientWidth / container.clientHeight;
@@ -2613,9 +2935,10 @@
   }
 
   // ============================================================================
-  // 10. EXPORTACIÓN GLOBAL Y API PÚBLICA
+  // 11. EXPORTACIÓN GLOBAL Y API PÚBLICA
   // ============================================================================
   global.initOrResumeWorld3D = initOrResumeWorld3D;
+  global.pauseWorld3D = pauseWorld3D;
   global.initThreeWorldTour = initOrResumeWorld3D;
   global.switch3DScenario = switch3DScenario;
   global.focusWorld3DZone = focusWorld3DZone;
@@ -2629,6 +2952,7 @@
 
   global.World3D = {
     initOrResumeWorld3D,
+    pauseWorld3D,
     switch3DScenario,
     focusWorld3DZone,
     toggleWorld3DDayNight,
@@ -2644,7 +2968,8 @@
     createLaptopScreenTexture,
     createPaintingTexture,
     createClockFaceTexture,
-    createRugTexture
+    createRugTexture,
+    createHotspotTexture
   };
 
   if (typeof module !== 'undefined' && module.exports) {
