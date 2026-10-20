@@ -36,7 +36,8 @@ const scripts = [
   'verify_spatial_immersion_portal.js',
   'verify_v16_word_by_word_karaoke.js',
   'verify_v17_flicker_free_karaoke.js',
-  'verify_v18_audio_unmute_recovery.js'
+  'verify_v18_audio_unmute_recovery.js',
+  'verify_v19_karaoke_playback_fixes.js'
 ];
 
 let allPassed = true;

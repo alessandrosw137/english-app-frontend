@@ -517,6 +517,24 @@
   transform: scale(1);
 }
 
+
+.k-word {
+  color: rgba(255, 255, 255, 0.45);
+  transition: color 0.12s ease, text-shadow 0.12s ease;
+  /* transition: color 0.15s ease, text-shadow 0.15s ease */
+  display: inline-block;
+  opacity: 0.45;
+}
+
+.k-word.lit,
+.lit {
+  color: #ffffff !important;
+  text-shadow: 0 0 10px rgba(56, 189, 248, 0.85);
+  /* text-shadow: 0 0 10px rgba(56, 189, 248, 0.8) */
+  font-weight: 700;
+  opacity: 1 !important;
+}
+
 #karaokeLoadingSkeleton {
   min-height: 140px;
 }

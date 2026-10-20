@@ -1037,6 +1037,8 @@
       lastActiveWordIndex = -1;
       window._lastActiveStanzaIndex = -1;
       window._lastActiveWordIndex = -1;
+      window.lastActiveStanzaIdx = -1;
+      window.lastActiveWordIdx = -1;
       initLyricsScrollDetection();
       const container = document.getElementById('musicLyricsContainer');
       const badge = document.getElementById('karaokeTimeBadge');
@@ -1070,12 +1072,7 @@
         if (badge) badge.textContent = `Estrofa 1 de ${lyrics.length}`;
       }
 
-      const introBanner = (firstVerseTime > 1.5)
-        ? `<div id="karaokeIntroBanner" class="p-3 mb-2 rounded-2xl bg-cyan-950/40 border border-cyan-500/30 text-center flex items-center justify-center gap-2 text-cyan-300 text-xs font-semibold backdrop-blur-sm shadow-inner">
-             <span class="animate-pulse text-base">🎶</span>
-             <span>[Música Instrumental] Prepárate para cantar en ${Math.round(firstVerseTime)}s...</span>
-           </div>`
-        : '';
+      const introBanner = '';
 
       container.innerHTML = introBanner + lyrics.map((stanza, lIdx) => {
         const lineTime = typeof stanza.time === 'number' ? stanza.time : 0;
@@ -1104,7 +1101,7 @@
             const wEnd = (vStart + ((wIdx + 1) / wordsCount) * verseDuration).toFixed(2);
             const safeEscaped = escapeMusicHtml(w);
             const currentWordIdx = wordStanzaCounter++;
-            return `<span class="k-word lyric-word cursor-pointer inline-block transition-all duration-150" data-word-idx="${currentWordIdx}" data-index="${currentWordIdx}" data-w-start="${wStart}" data-w-end="${wEnd}" onclick="event.stopPropagation(); inspectLyricsWord('${cleanWord}', event)" title="Ver fonética IPA">${safeEscaped} </span>`;
+            return `<span class="k-word lyric-word cursor-pointer inline-block transition-all duration-150" data-widx="${currentWordIdx}" data-word-idx="${currentWordIdx}" data-index="${currentWordIdx}" data-w-start="${wStart}" data-w-end="${wEnd}" onclick="event.stopPropagation(); inspectLyricsWord('${cleanWord}', event)" title="Ver fonética IPA">${safeEscaped} </span>`;
           }).join('');
 
           return `<div class="lyric-verse-line block leading-relaxed text-base font-semibold mb-1.5">${renderedWords}</div>`;
@@ -1116,7 +1113,7 @@
 
         return `
           <div id="karaokeStanza-${lIdx}"
-            class="lyric-line lyric-stanza-card music-stanza-row ${isCurrent ? 'active lyric-active scale-[1.02] border-cyan-400 bg-cyan-950/80 text-white' : 'lyric-inactive'}"
+            class="lyric-line stanza-card lyric-stanza-card music-stanza-row ${isCurrent ? 'active lyric-active scale-[1.02] border-cyan-400 bg-cyan-950/80 text-white' : 'lyric-inactive'}" data-sidx="${lIdx}"
             data-start="${lineTime}"
             onclick="seekYouTubePlayer(${lineTime}, ${lIdx})">
             <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-slate-700/40">
@@ -1197,14 +1194,16 @@
       // Si calibratedTime < firstStanza.startTime, el estado debe ser estrictamente "🎶 [Intro Instrumental]"
       if (calibratedTime < firstStanzaStartTime) {
         if (badge) badge.textContent = '🎶 [Intro Instrumental]'; // 🎶 [Música Instrumental]
-        if (introBanner && introBanner.style.display !== 'flex') introBanner.style.display = 'flex';
+        if (introBanner) { introBanner.style.display = 'none'; if (typeof introBanner.remove === 'function') introBanner.remove(); }
         currentKaraokeStanzaIndex = -1;
 
-        if (window._lastActiveStanzaIndex !== -1 || lastActiveStanzaIndex !== -1) {
+        if (window._lastActiveStanzaIndex !== -1 || lastActiveStanzaIndex !== -1 || window.lastActiveStanzaIdx !== -1) {
           lastActiveStanzaIndex = -1;
           window._lastActiveStanzaIndex = -1;
+          window.lastActiveStanzaIdx = -1;
           lastActiveWordIndex = -1;
           window._lastActiveWordIndex = -1;
+          window.lastActiveWordIdx = -1;
 
           const lines = document.querySelectorAll('#musicLyricsContainer .lyric-line');
           lines.forEach(lineEl => {
@@ -1286,8 +1285,10 @@
 
         lastActiveStanzaIndex = matchedIdx;
         window._lastActiveStanzaIndex = matchedIdx;
+        window.lastActiveStanzaIdx = matchedIdx;
         lastActiveWordIndex = -1;
         window._lastActiveWordIndex = -1;
+        window.lastActiveWordIdx = -1;
         currentKaraokeStanzaIndex = matchedIdx;
       }
 
@@ -1313,6 +1314,7 @@
       if (activeWordIndex !== window._lastActiveWordIndex) {
         lastActiveWordIndex = activeWordIndex;
         window._lastActiveWordIndex = activeWordIndex;
+        window.lastActiveWordIdx = activeWordIndex;
         for (let w = 0; w < totalWords; w++) {
           const wEl = words[w];
           if (w <= activeWordIndex) {
@@ -1620,6 +1622,30 @@
   window.practiceVocabularyFromMusic = practiceVocabularyFromMusic;
   window.completeMusicChallenge = completeMusicChallenge;
   window.handleKaraokeTimeUpdate = handleKaraokeTimeUpdate;
+window.updateKaraokeSync = handleKaraokeTimeUpdate;
   window.lyricsOffset = window.lyricsOffset !== undefined ? window.lyricsOffset : -0.6;
   window.adjustLyricsOffset = window.adjustLyricsOffset;
 })();
+
+// Función unificada de parada en window (Pausa Instantánea 0ms y Cero Audio Residual)
+window.stopAllAudioAndTimers = function() {
+  if (window.karaokeInterval) { clearInterval(window.karaokeInterval); window.karaokeInterval = null; }
+  if (window.karaokeRaf) { cancelAnimationFrame(window.karaokeRaf); window.karaokeRaf = null; }
+  if (window._karaokePlaybackTimer) { clearInterval(window._karaokePlaybackTimer); window._karaokePlaybackTimer = null; }
+  document.querySelectorAll('audio, video').forEach(media => {
+    try { media.pause(); } catch(e){}
+  });
+  if (window.ytPlayer && typeof window.ytPlayer.pauseVideo === 'function') {
+    try { window.ytPlayer.pauseVideo(); } catch(e){}
+  }
+  if (window._holoYtPlayer && typeof window._holoYtPlayer.pauseVideo === 'function') {
+    try { window._holoYtPlayer.pauseVideo(); } catch(e){}
+  }
+  document.querySelectorAll('iframe').forEach(ifr => {
+    try {
+      if (ifr.contentWindow) {
+        ifr.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+      }
+    } catch(e){}
+  });
+};

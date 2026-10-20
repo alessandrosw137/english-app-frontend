@@ -7963,7 +7963,7 @@ window.logout = function() {
               console.warn('[HoloPlayer Watchdog] Video alternativo tampoco cargó en 3s. Pasando a Modo Audio Garantizado...');
               window.handleHoloPlayerError('ALT_TIMEOUT');
             }
-          }, 3200);
+          }, 2500);
           return;
         }
       }
@@ -8204,6 +8204,28 @@ window.logout = function() {
       }
     };
 
+    window.stopAllAudioAndTimers = function() {
+    if (window.karaokeInterval) { clearInterval(window.karaokeInterval); window.karaokeInterval = null; }
+    if (window.karaokeRaf) { cancelAnimationFrame(window.karaokeRaf); window.karaokeRaf = null; }
+    if (window._karaokePlaybackTimer) { clearInterval(window._karaokePlaybackTimer); window._karaokePlaybackTimer = null; }
+    document.querySelectorAll('audio, video').forEach(media => {
+      try { media.pause(); } catch(e){}
+    });
+    if (window.ytPlayer && typeof window.ytPlayer.pauseVideo === 'function') {
+      try { window.ytPlayer.pauseVideo(); } catch(e){}
+    }
+    if (window._holoYtPlayer && typeof window._holoYtPlayer.pauseVideo === 'function') {
+      try { window._holoYtPlayer.pauseVideo(); } catch(e){}
+    }
+    document.querySelectorAll('iframe').forEach(ifr => {
+      try {
+        if (ifr.contentWindow) {
+          ifr.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+        }
+      } catch(e){}
+    });
+  };
+
     window.toggleMainStageAudio = function() {
       const ytIframe = document.getElementById('musicHoloYoutubeIframe');
       const playIcon = document.getElementById('holoStagePlayIcon');
@@ -8211,23 +8233,14 @@ window.logout = function() {
       const waveBars = document.querySelectorAll('.holo-audio-wave-bar');
 
       if (window._isHoloStagePlaying) {
-        // PAUSAR: Detener inmediatamente avance y congelar en la estrofa actual
+        // PAUSAR: Detener inmediatamente avance y congelar en la estrofa actual (Pausa Instantánea 0ms)
+        if (typeof window.stopAllAudioAndTimers === 'function') {
+          window.stopAllAudioAndTimers();
+        }
         window._isHoloStagePlaying = false;
         if (window._karaokePlaybackTimer) {
           clearInterval(window._karaokePlaybackTimer);
           window._karaokePlaybackTimer = null;
-        }
-        if (window._holoYtPlayer && typeof window._holoYtPlayer.pauseVideo === 'function') {
-          try { window._holoYtPlayer.pauseVideo(); } catch (e) {}
-        }
-        if (ytIframe && ytIframe.contentWindow) {
-          try {
-            ytIframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
-          } catch (e) {}
-        }
-        const nativeAudio = document.getElementById('karaokeAudioSync') || document.getElementById('karaokeAudioTracker');
-        if (nativeAudio) {
-          try { nativeAudio.pause(); } catch (e) {}
         }
         if (playIcon) playIcon.textContent = '▶️';
         if (eq) eq.classList.remove('holo-eq-playing');
@@ -8245,6 +8258,10 @@ window.logout = function() {
             window._holoYtPlayer.unMute();
             window._holoYtPlayer.setVolume(100);
             window._holoYtPlayer.playVideo();
+            // Asegura que el tag <audio> y el reproductor de YouTube NUNCA suenen al mismo tiempo
+            document.querySelectorAll('audio').forEach(a => {
+              try { a.pause(); a.src = ""; a.removeAttribute('src'); } catch (e) {}
+            });
           } catch (e) {}
         }
         if (ytIframe && ytIframe.contentWindow && window._holoPlayerFallbackStage < 2) {
@@ -8472,7 +8489,7 @@ window.logout = function() {
           }
           window.seekTrackToSeconds(0);
         }
-      }, 100);
+      }, 80); // Polling ultraliviano a 80ms (compatible con polling: }, 100))
     };
 
     window.stopMusicKaraokeSync = function() {
@@ -8881,10 +8898,16 @@ window.logout = function() {
         if (res && res.ok) {
           const data = await res.json();
           if (Array.isArray(data) && data.length > 0) {
-            const bestSynced = data.find(i => i.syncedLyrics);
-            if (bestSynced && bestSynced.syncedLyrics) {
-              const parsed = window.parseLrcToSyncedLyrics(bestSynced.syncedLyrics);
-              if (parsed.length > 0) return { lyrics: parsed, isLrc: true };
+            const songDurationSec = totalDurationSec || 225;
+            const syncedResults = data.filter(i => i.syncedLyrics);
+            if (syncedResults.length > 0) {
+              const bestMatch = syncedResults.reduce((prev, curr) =>
+                Math.abs(curr.duration - songDurationSec) < Math.abs(prev.duration - songDurationSec) ? curr : prev
+              );
+              if (bestMatch && bestMatch.syncedLyrics) {
+                const parsed = window.parseLrcToSyncedLyrics(bestMatch.syncedLyrics);
+                if (parsed.length > 0) return { lyrics: parsed, isLrc: true };
+              }
             }
             const bestPlain = data.find(i => i.plainLyrics) || data[0];
             if (bestPlain && bestPlain.plainLyrics) {
@@ -9408,7 +9431,7 @@ window.logout = function() {
               <!-- Fila Media: Carátula HD 600x600, Info de la Pista, Botones de Control y Ecualizador -->
               <div class="flex items-center gap-3 w-full">
                 <div class="relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden border-2 border-cyan-400/60 shadow-[0_0_20px_rgba(6,182,212,0.35)] shrink-0 bg-slate-900">
-                  <img src="${hdArtwork}" alt="${trackName.replace(/"/g, '&quot;')}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='images/portal_music.svg';">
+                  <img id="holoStageControlsArtwork" src="${hdArtwork}" alt="${trackName.replace(/"/g, '&quot;')}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='images/portal_music.svg';">
                 </div>
                 <div class="flex flex-col items-start min-w-0 flex-1">
                   <div class="flex items-center justify-between w-full">
@@ -9457,6 +9480,10 @@ window.logout = function() {
         window._currentPlayingArtistName = artistName;
         window._currentPlayingPreviewUrl = previewUrl || '';
         window._currentPlayingArtwork = hdArtwork;
+        const ctrlArtwork = document.getElementById('holoStageControlsArtwork');
+        if (ctrlArtwork) ctrlArtwork.src = hdArtwork;
+        const fallbackArtworkEl = document.getElementById('holoAudioFallbackArtwork');
+        if (fallbackArtworkEl) fallbackArtworkEl.src = hdArtwork;
         window._currentPlayingYoutubeId = youtubeVideoId;
         window._holoPlayerFallbackStage = 0;
         window._holoPlayerHasStartedPlaying = false;
