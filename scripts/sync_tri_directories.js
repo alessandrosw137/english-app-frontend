@@ -8,7 +8,10 @@ const filesToSync = [
   'js/app.js',
   'js/karaoke.js',
   'images/ai_tutor_mascot.jpg',
-  'images/ai_tutor_mascot.svg'
+  'images/ai_tutor_mascot.svg',
+  'manifest.json',
+  'sw.js',
+  'icon.png'
 ];
 
 const targets = [

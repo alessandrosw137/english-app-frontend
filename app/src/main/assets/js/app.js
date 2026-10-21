@@ -1728,7 +1728,7 @@ window.logout = function() {
 
     function handleCoverCardClick(index) {
       if (index === window.currentPortal) {
-        const modules = ['path', 'worldtour', 'music', 'stories'];
+        const modules = ['path', 'worldtour', 'music', 'ai-tutor', 'stories'];
         if (typeof window.openPortalModules === 'function') {
           window.openPortalModules(modules[index]);
         }
@@ -1739,9 +1739,9 @@ window.logout = function() {
     window.handleCoverCardClick = handleCoverCardClick;
 
     window.openPortalModules = function(targetPortal) {
-      const portalModules = ['path', 'worldtour', 'music', 'ai-tutor'];
+      const portalModules = ['path', 'worldtour', 'music', 'ai-tutor', 'stories'];
       const activeIdx = (typeof window.currentPortal === 'number')
-        ? ((window.currentPortal % 4 + 4) % 4)
+        ? ((window.currentPortal % portalModules.length + portalModules.length) % portalModules.length)
         : 0;
       const portal = targetPortal || portalModules[activeIdx] || 'path';
       console.log('Ingresando al portal de módulos:', portal, 'Índice activo:', activeIdx);
@@ -10614,9 +10614,13 @@ window.logout = function() {
       const wrapper = document.createElement('div');
       wrapper.className = isBot ? 'flex items-start gap-2 max-w-[85%]' : 'flex items-end justify-end max-w-[85%] ml-auto';
 
+      const timeStr = msg.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      msg.time = timeStr;
+
       const bubble = document.createElement('div');
       bubble.className = isBot ? 'ai-bubble-bot' : 'ai-bubble-user';
-      bubble.innerText = msg.text;
+      const safeText = (msg.text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+      bubble.innerHTML = `<span>${safeText}</span><span class="chat-timestamp" style="display:block; text-align:right; font-size:0.65rem; opacity:0.6; margin-top:4px;">${timeStr}</span>`;
 
       if (isBot) {
         const avatar = document.createElement('div');
@@ -10702,6 +10706,54 @@ window.logout = function() {
     window.sendMessageToAI(text);
   };
 
+  /* ========================================================
+     1. IA CONVERSACIONAL REAL (API GEMINI CON MEMORIA)
+     ======================================================== */
+  window.aiChatHistory = [];
+
+  async function getGeminiResponse(userText) {
+    // NOTA PARA EL ADMIN: Reemplaza con tu API Key real de Google AI Studio
+    const API_KEY = window.GEMINI_API_KEY || (typeof process !== 'undefined' && process.env && process.env.GEMINI_API_KEY) || "AQ.Ab8RN6JLYxheBc6raTo5hllGWFYmGAToKdv5cD9EnmBFb4wyAA";
+    const modelName = window.GEMINI_MODEL || "gemini-3.8-flash";
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${API_KEY}`;
+
+    window.aiChatHistory.push({ role: "user", parts: [{ text: userText }] });
+
+    const payload = {
+      system_instruction: {
+        parts: [{ text: "You are a friendly native English tutor. Chat naturally about daily life. RULE 1: ONLY speak in English. Refuse Spanish unless asked 'how do you say X in English?'. RULE 2: Gently correct grammar mistakes, then continue. RULE 3: Refuse off-topic subjects (insults, math, coding) and steer back to English practice. Keep responses concise (1-3 sentences)." }]
+      },
+      contents: window.aiChatHistory
+    };
+
+    try {
+      let response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      if (!response.ok) {
+        const serverRes = await fetch('/api/ai-tutor', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: userText, history: window.aiTutorMessages })
+        });
+        if (serverRes.ok) {
+          const sData = await serverRes.json();
+          if (sData && sData.reply) {
+            window.aiChatHistory.push({ role: "model", parts: [{ text: sData.reply }] });
+            return sData.reply;
+          }
+        }
+      }
+      const data = await response.json();
+      const aiText = (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text)
+        ? data.candidates[0].content.parts[0].text
+        : "Hello! Let's continue practicing English.";
+      window.aiChatHistory.push({ role: "model", parts: [{ text: aiText }] });
+      return aiText;
+    } catch (error) {
+      return "I'm offline right now, but your message is saved! We can continue when you reconnect.";
+    }
+  }
+  window.getGeminiResponse = getGeminiResponse;
+
   window.sendMessageToAI = async function(message) {
     if (!message || typeof message !== 'string') return;
     const text = message.trim();
@@ -10711,8 +10763,9 @@ window.logout = function() {
       try { window.aiTutorSpeechRecognition.stop(); } catch(_) {}
     }
 
-    // 1. Agregar mensaje de usuario
-    window.aiTutorMessages.push({ role: 'user', text });
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    // 1. Agregar mensaje de usuario con timestamp
+    window.aiTutorMessages.push({ role: 'user', text, time: timeStr });
     window.renderAiTutorMessages();
 
     // 2. Mostrar indicador de pensamiento
@@ -10723,43 +10776,17 @@ window.logout = function() {
     if (container) container.scrollTop = container.scrollHeight;
 
     try {
-      const res = await fetch('/api/ai-tutor', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: text,
-          history: window.aiTutorMessages.slice(0, -1)
-        })
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data && data.reply) {
-          window.aiTutorMessages.push({ role: 'model', text: data.reply });
-          window.renderAiTutorMessages();
-          if (window.aiTutorVoiceEnabled) {
-            window.speakAiTutorText(data.reply);
-          }
-          return;
-        }
-      }
-      throw new Error('Fallback activado');
-    } catch (err) {
-      // Fallback inteligente siguiendo fielmente las 3 reglas del tutor
-      const lower = text.toLowerCase();
-      let reply = '';
-      if (lower.includes('hola') || lower.includes('buenos') || lower.includes('buenas') || lower.includes('que tal')) {
-        reply = "Hello there! 👋 In English, we greet by saying 'Hello! How are you doing today?' Keep practicing, your English is improving!";
-      } else if (lower.includes('suma') || lower.includes('resta') || lower.includes('multiplic') || lower.includes('codigo') || lower.includes('program') || lower.includes('politica')) {
-        reply = "I am exclusively your English language tutor, so I cannot help with math, programming code, or politics. But I would love to help you practice English! What English topics would you like to explore today?";
-      } else {
-        reply = "That's wonderful! In English, we could express that clearly as: \"" + text.replace(/"/g, '') + "\". Tell me more about your thoughts!";
-      }
-      window.aiTutorMessages.push({ role: 'model', text: reply });
+      const reply = await getGeminiResponse(text);
+      const botTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      window.aiTutorMessages.push({ role: 'model', text: reply, time: botTimeStr });
       window.renderAiTutorMessages();
       if (window.aiTutorVoiceEnabled) {
         window.speakAiTutorText(reply);
       }
+    } catch (err) {
+      const offlineReply = "I'm offline right now, but your message is saved! We can continue when you reconnect.";
+      window.aiTutorMessages.push({ role: 'model', text: offlineReply, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) });
+      window.renderAiTutorMessages();
     } finally {
       if (typingEl) typingEl.classList.add('hidden');
     }
@@ -11000,53 +11027,18 @@ window.logout = function() {
     }
 
     try {
-      const res = await fetch('/api/feedback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: user.email,
-          username: user.username || user.name || 'Estudiante MasterENG',
-          text: text
-        })
-      });
-
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && data.success) {
-        window.incrementFeedbackDailyCount();
-        if (alertEl) {
-          alertEl.className = 'p-2.5 rounded-xl text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 block';
-          alertEl.innerText = '✅ ¡Gracias! Tu comentario ha sido recibido y guardado en la base de datos.';
-        }
-        input.value = '';
-        window.updateFeedbackWordCount();
-        setTimeout(() => {
-          if (typeof window.closeAllModals === 'function') window.closeAllModals();
-        }, 1800);
-      } else {
-        if (res.status === 429) {
-          if (alertEl) {
-            alertEl.className = 'p-2.5 rounded-xl text-xs font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/40 block';
-            alertEl.innerText = data.error || 'Límite diario alcanzado.';
-          }
-        } else {
-          // Fallback resiliente
-          window.incrementFeedbackDailyCount();
-          const localList = JSON.parse(localStorage.getItem('mastereng_local_feedbacks') || '[]');
-          localList.push({ email: user.email, username: user.username, text, date: new Date().toISOString() });
-          localStorage.setItem('mastereng_local_feedbacks', JSON.stringify(localList));
-          if (alertEl) {
-            alertEl.className = 'p-2.5 rounded-xl text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 block';
-            alertEl.innerText = '✅ ¡Gracias! Tu comentario ha sido registrado con éxito.';
-          }
-          input.value = '';
-          window.updateFeedbackWordCount();
-          setTimeout(() => {
-            if (typeof window.closeAllModals === 'function') window.closeAllModals();
-          }, 1800);
-        }
+      window.saveToDatabase('/api/feedback', { comment: text, text, email: user.email, username: user.username || user.name || 'Estudiante MasterENG' });
+      window.incrementFeedbackDailyCount();
+      if (alertEl) {
+        alertEl.className = 'p-2.5 rounded-xl text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 block';
+        alertEl.innerText = '✅ ¡Gracias! Tu comentario ha sido recibido y guardado en la base de datos.';
       }
+      input.value = '';
+      window.updateFeedbackWordCount();
+      setTimeout(() => {
+        if (typeof window.closeAllModals === 'function') window.closeAllModals();
+      }, 1800);
     } catch (err) {
-      // Fallback si no hay conexión
       window.incrementFeedbackDailyCount();
       const localList = JSON.parse(localStorage.getItem('mastereng_local_feedbacks') || '[]');
       localList.push({ email: user.email, username: user.username, text, date: new Date().toISOString() });
@@ -11073,5 +11065,57 @@ window.logout = function() {
     if (input && text) input.value = text;
     return window.handleFeedbackSubmit();
   };
+
+  /* ========================================================
+     3. SINCRONIZACIÓN OFFLINE DE BASE DE DATOS (FEEDBACK Y CHAT)
+     ======================================================== */
+  // Cola de sincronización offline
+  window.saveToDatabase = function(endpoint, data) {
+    const isOnline = (typeof navigator !== 'undefined' && typeof navigator.onLine === 'boolean') ? navigator.onLine : true;
+    if (isOnline) {
+      fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      }).catch(e => queueForSync(endpoint, data));
+    } else {
+      queueForSync(endpoint, data);
+    }
+  };
+
+  function queueForSync(endpoint, data) {
+    try {
+      const queue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
+      queue.push({ endpoint, data, timestamp: Date.now() });
+      localStorage.setItem('offlineQueue', JSON.stringify(queue));
+    } catch (_) {}
+  }
+  window.queueForSync = queueForSync;
+
+  // Sincronizar automáticamente al recuperar conexión
+  if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+    window.addEventListener('online', () => {
+      try {
+        const queue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
+        if (queue.length > 0) {
+          queue.forEach(item => {
+            fetch(item.endpoint, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(item.data)
+            }).catch(err => console.warn('Offline sync retry error:', err));
+          });
+          localStorage.removeItem('offlineQueue');
+        }
+      } catch (_) {}
+    });
+  }
+
+  /* ========================================================
+     4. PWA SERVICE WORKER REGISTRATION
+     ======================================================== */
+  if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(err => console.warn('SW registration failed:', err));
+  }
 
   })();

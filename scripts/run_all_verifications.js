@@ -44,7 +44,8 @@ const scripts = [
   'verify_v23_lrc_universal_engine_mobile.js',
   'verify_v24_karaoke_flicker_loop_audio_overlap.js',
   'verify_v25_searched_songs_sync.js',
-  'verify_new_portal_and_feedback.js'
+  'verify_new_portal_and_feedback.js',
+  'verify_pwa_gemini_timestamps_cuentos.js'
 ];
 
 let allPassed = true;
