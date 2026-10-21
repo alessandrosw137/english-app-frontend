@@ -8579,8 +8579,12 @@ window.logout = function() {
 
         // 3. Fallback a tiempo transcurrido solo si ningún reproductor reportó tiempo
         if (currentTime === null) {
-          const elapsed = (Date.now() - (window._currentTrackStartTime || Date.now())) / 1000;
-          currentTime = Math.min(dur, Math.max(0, elapsed + window.lyricsOffset));
+          if (window._isHoloStagePlaying && window._holoPlayerHasStartedPlaying) {
+            const elapsed = (Date.now() - (window._currentTrackStartTime || Date.now())) / 1000;
+            currentTime = Math.min(dur, Math.max(0, elapsed + window.lyricsOffset));
+          } else {
+            currentTime = 0;
+          }
         }
 
         window._currentTrackCurrentTime = Math.min(dur, Math.max(0, currentTime));
@@ -8751,6 +8755,104 @@ window.logout = function() {
       }
     };
 
+    window.openMusicStudio = function(trackData) {
+      if (!trackData) return;
+      let title = 'Song';
+      let artist = 'Artist';
+      let preview = '';
+      let artwork = '';
+      let duration = 238;
+
+      if (typeof trackData === 'string') {
+        title = trackData;
+      } else if (typeof trackData === 'object') {
+        title = trackData.title || trackData.trackName || 'Song';
+        artist = trackData.artist || trackData.artistName || 'Artist';
+        preview = trackData.previewUrl || trackData.preview || '';
+        artwork = trackData.artwork || trackData.artworkUrl || '';
+        duration = trackData.duration || trackData.durationSec || 238;
+      }
+
+      // 1. Forzar enrutamiento a la vista del estudio musical (#music-player-subview)
+      const searchSub = document.getElementById('music-search-subview');
+      const playerSub = document.getElementById('music-player-subview');
+      if (searchSub) {
+        searchSub.style.display = 'none';
+        searchSub.classList.add('hidden');
+      }
+      if (playerSub) {
+        playerSub.style.display = 'block';
+        playerSub.classList.remove('hidden');
+      }
+      if (typeof window !== 'undefined' && typeof window.scrollTo === 'function') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      // 2. Iniciar reproducción
+      if (typeof window.loadSongToKaraoke === 'function') {
+        window.loadSongToKaraoke(title, artist, preview, artwork, duration);
+      }
+    };
+
+    window.seekToStanza = function(seconds) {
+      const targetSec = parseFloat(seconds);
+      if (isNaN(targetSec)) return;
+
+      const yt = window._holoYtPlayer || window.ytPlayer || (typeof ytMusicPlayer !== 'undefined' ? ytMusicPlayer : null);
+      if (yt && typeof yt.seekTo === 'function') {
+        try { yt.seekTo(targetSec, true); } catch (e) {}
+      }
+      if (window._holoYtPlayer && typeof window._holoYtPlayer.seekTo === 'function') {
+        try { window._holoYtPlayer.seekTo(targetSec, true); } catch (e) {}
+      }
+      if (window.ytPlayer && typeof window.ytPlayer.seekTo === 'function') {
+        try { window.ytPlayer.seekTo(targetSec, true); } catch (e) {}
+      }
+
+      const holoIframe = document.getElementById('musicHoloYoutubeIframe');
+      if (holoIframe && holoIframe.contentWindow) {
+        try {
+          holoIframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'seekTo', args: [targetSec, true] }), '*');
+        } catch (_) {}
+      }
+      const mainIframe = document.getElementById('musicYouTubeIframe');
+      if (mainIframe && mainIframe.contentWindow) {
+        try {
+          mainIframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'seekTo', args: [targetSec, true] }), '*');
+        } catch (_) {}
+      }
+
+      const audioEl = document.getElementById('mastereng-audio') || document.getElementById('karaokeAudioSync') || document.getElementById('karaokeAudioTracker');
+      if (audioEl) {
+        try { audioEl.currentTime = targetSec; } catch (e) {}
+      }
+      if (window._holoAudioNativePlayer) {
+        try { window._holoAudioNativePlayer.currentTime = targetSec; } catch (e) {}
+      }
+
+      window._currentTrackCurrentTime = targetSec;
+      window.lastKnownPlaybackTime = targetSec;
+      window._isSeekingGracePeriod = true;
+      window._lastSeekTimestamp = Date.now();
+      window._lastSeekTargetSeconds = targetSec;
+
+      if (typeof window.seekTrackToSeconds === 'function' && !window._isInternalSeeking) {
+        window._isInternalSeeking = true;
+        try { window.seekTrackToSeconds(targetSec); } catch (e) {}
+        window._isInternalSeeking = false;
+      }
+
+      if (window.KaraokeSyncEngine) {
+        window.KaraokeSyncEngine.lastStanzaIdx = -999;
+        window.KaraokeSyncEngine.lastWordIdx = -999;
+        window.KaraokeSyncEngine.syncFrame(targetSec, true);
+        window.KaraokeSyncEngine.updateSeekBarUI(targetSec);
+      }
+      if (typeof window.handleKaraokeTimeUpdate === 'function') {
+        window.handleKaraokeTimeUpdate(targetSec);
+      }
+    };
+
     window.renderTrendingTracksCarousel = function() {
       const target = document.getElementById('musicTrendingSection');
       if (!target) return;
@@ -8764,7 +8866,7 @@ window.logout = function() {
         return `
           <div class="trending-track-card w-64 sm:w-72 shrink-0 snap-start bg-slate-900/95 border border-slate-800 hover:border-cyan-500/50 rounded-3xl p-4 shadow-xl transition-all duration-300 flex flex-col justify-between hover:shadow-cyan-500/10 hover:-translate-y-1 group">
             <div>
-              <div class="relative w-full rounded-2xl overflow-hidden mb-3 bg-slate-950 border border-slate-800 cursor-pointer shadow-inner" style="height: 160px;" onclick="window.loadSongToKaraoke('${safeTitle}', '${safeArtist}', '${t.previewUrl}', '${t.artwork}', ${t.duration})">
+              <div class="relative w-full rounded-2xl overflow-hidden mb-3 bg-slate-950 border border-slate-800 cursor-pointer shadow-inner" style="height: 160px;" onclick="window.openMusicStudio({ title: '${safeTitle}', artist: '${safeArtist}', previewUrl: '${t.previewUrl}', artwork: '${t.artwork}', duration: ${t.duration} })">
                 <img src="${t.artwork}" alt="${t.title}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" style="width: 100%; height: 160px; object-fit: cover; border-radius: 14px 14px 0 0; display: block;" onerror="this.onerror=null; this.src='images/portal_music.svg';">
                 <span class="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border backdrop-blur-md ${t.levelBadgeClass}">
                   ${t.level}
@@ -8778,7 +8880,7 @@ window.logout = function() {
               <p class="text-[11px] text-slate-400 line-clamp-2 leading-snug">${t.pedagogy}</p>
             </div>
             <div class="mt-3.5 pt-3 border-t border-slate-800/80">
-              <button type="button" onclick="window.loadSongToKaraoke('${safeTitle}', '${safeArtist}', '${t.previewUrl}', '${t.artwork}', ${t.duration})"
+              <button type="button" onclick="window.openMusicStudio({ title: '${safeTitle}', artist: '${safeArtist}', previewUrl: '${t.previewUrl}', artwork: '${t.artwork}', duration: ${t.duration} })"
                 class="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-black text-xs transition cursor-pointer flex items-center justify-center gap-1.5 shadow-lg shadow-cyan-600/30 active:scale-95">
                 <span>🎤</span>
                 <span>Estudiar Canción</span>
@@ -9113,7 +9215,25 @@ window.logout = function() {
         this.stanzas = stanzasArray || [];
         this.lastStanzaIdx = -999;
         this.lastWordIdx = -999;
+        this.isUserSeeking = false;
+        window.lastKnownPlaybackTime = 0;
+        window._currentTrackCurrentTime = 0;
+        window.lyricsOffset = 0;
         this.renderStaticLyricsDOM();
+        const container = document.getElementById('karaoke-lyrics-container') || document.getElementById('musicLyricsContainer');
+        if (container) {
+          container.querySelectorAll('.stanza-card').forEach(el => {
+            el.classList.remove('active', 'past', 'lyric-active');
+            el.classList.add('lyric-inactive');
+          });
+          container.querySelectorAll('.k-word').forEach(el => {
+            el.classList.remove('lit', 'word-active', 'word-sung');
+            el.classList.add('word-inactive');
+          });
+        }
+        const badge = document.getElementById('karaokeTimeBadge');
+        if (badge) badge.textContent = '🎶 [Intro Instrumental]';
+        this.updateSeekBarUI(0);
         this.startLoop(this.sessionToken);
       },
 
@@ -9155,7 +9275,7 @@ window.logout = function() {
           ).join(' ');
 
           return `
-            <div class="stanza-card lyric-line lyric-stanza-card" data-sidx="${sIdx}" id="karaokeStanza-${sIdx}" onclick="window.KaraokeSyncEngine.seekToTime(${stanza.startTime})">
+            <div class="stanza-card lyric-line lyric-stanza-card" data-sidx="${sIdx}" id="karaokeStanza-${sIdx}" onclick="window.seekToStanza(${stanza.startTime})">
               <div class="stanza-header flex items-center justify-between mb-1.5 pb-1 border-b border-slate-800/60">
                 <span class="stanza-badge text-[10px] font-mono font-bold text-cyan-400 bg-cyan-950/70 border border-cyan-500/30 px-2 py-0.5 rounded">VERSO ${sIdx + 1} • ${Math.floor(stanza.startTime)}s</span>
                 <button type="button" class="stanza-tts-btn text-xs text-slate-400 hover:text-cyan-300 transition p-1 cursor-pointer" onclick="event.stopPropagation(); window.speakText ? window.speakText('${(stanza.text || '').replace(/'/g, "\\'")}') : null">🔊</button>
@@ -9175,14 +9295,18 @@ window.logout = function() {
       // Permite adelantar/atrasar desde la barra o tocando cualquier estrofa
       seekToTime(targetSeconds) {
         const sec = Math.max(0, Number(targetSeconds) || 0);
-        if (window.ytPlayer && typeof window.ytPlayer.seekTo === 'function' && window.activeMediaMode === 'youtube') {
-          try { window.ytPlayer.seekTo(sec, true); } catch (e) {}
-        }
         if (window._holoYtPlayer && typeof window._holoYtPlayer.seekTo === 'function') {
           try { window._holoYtPlayer.seekTo(sec, true); } catch (e) {}
         }
+        if (window.ytPlayer && typeof window.ytPlayer.seekTo === 'function') {
+          try { window.ytPlayer.seekTo(sec, true); } catch (e) {}
+        }
+        if (typeof window.seekToStanza === 'function') {
+          window.seekToStanza(sec);
+          return;
+        }
         const audioEl = document.getElementById('mastereng-audio');
-        if (audioEl && window.activeMediaMode === 'audio') {
+        if (audioEl) {
           try { audioEl.currentTime = sec; } catch (e) {}
         }
         window._currentTrackCurrentTime = sec;
@@ -9201,6 +9325,7 @@ window.logout = function() {
         this.lastStanzaIdx = -999;
         this.lastWordIdx = -999;
         this.syncFrame(sec, true);
+        this.updateSeekBarUI(sec);
       },
 
       getCurrentPlaybackTime() {
@@ -9778,35 +9903,44 @@ window.logout = function() {
       // Resetear estados globales
       window._isHoloStagePlaying = false;
       window._currentTrackCurrentTime = 0;
+      window.lastKnownPlaybackTime = 0;
+      window.lyricsOffset = 0;
       window._holoPlayerFallbackStage = 0;
       window._holoPlayerHasStartedPlaying = false;
       window._lastActiveStanzaIndex = -999;
       window._lastActiveWordIndex = -999;
+      if (window.KaraokeSyncEngine) {
+        window.KaraokeSyncEngine.stop();
+        window.KaraokeSyncEngine.lastStanzaIdx = -999;
+        window.KaraokeSyncEngine.lastWordIdx = -999;
+        window.KaraokeSyncEngine.isUserSeeking = false;
+      }
       if (typeof currentKaraokeStanzaIndex !== 'undefined') {
         currentKaraokeStanzaIndex = -1;
       }
 
-      // 3. Limpiar inmediatamente el contenedor de letras con skeleton loader
-      const lyricsContainer = document.getElementById('musicLyricsContainer');
-      if (lyricsContainer) {
-        lyricsContainer.innerHTML = `
-          <div id="karaokeLoadingSkeleton" class="py-10 px-4 text-center flex flex-col items-center justify-center gap-3">
-            <div class="relative w-12 h-12 flex items-center justify-center">
-              <div class="w-12 h-12 rounded-full border-4 border-cyan-500/20 border-t-cyan-400 animate-spin"></div>
-              <span class="absolute text-lg animate-pulse">🎵</span>
-            </div>
-            <p class="text-cyan-300 font-semibold text-sm animate-pulse tracking-wide">
-              Cargando audio y letra sincronizada...
-            </p>
-            <div class="w-48 h-1.5 bg-slate-800 rounded-full overflow-hidden mt-1">
-              <div class="h-full bg-cyan-400 rounded-full animate-pulse" style="width: 60%;"></div>
-            </div>
+      // 3. Limpiar inmediatamente ambos contenedores de letras con skeleton loader
+      const skeletonHtml = `
+        <div id="karaokeLoadingSkeleton" class="py-10 px-4 text-center flex flex-col items-center justify-center gap-3">
+          <div class="relative w-12 h-12 flex items-center justify-center">
+            <div class="w-12 h-12 rounded-full border-4 border-cyan-500/20 border-t-cyan-400 animate-spin"></div>
+            <span class="absolute text-lg animate-pulse">🎵</span>
           </div>
-        `;
-      }
+          <p class="text-cyan-300 font-semibold text-sm animate-pulse tracking-wide">
+            Cargando audio y letra sincronizada...
+          </p>
+          <div class="w-48 h-1.5 bg-slate-800 rounded-full overflow-hidden mt-1">
+            <div class="h-full bg-cyan-400 rounded-full animate-pulse" style="width: 60%;"></div>
+          </div>
+        </div>
+      `;
+      const lyricsContainer = document.getElementById('musicLyricsContainer');
+      if (lyricsContainer) lyricsContainer.innerHTML = skeletonHtml;
+      const kLyricsContainer = document.getElementById('karaoke-lyrics-container');
+      if (kLyricsContainer) kLyricsContainer.innerHTML = skeletonHtml;
 
       const badge = document.getElementById('karaokeTimeBadge');
-      if (badge) badge.textContent = 'Cargando pista...';
+      if (badge) badge.textContent = '🎶 [Intro Instrumental]';
       const syncTypeBadge = document.getElementById('karaokeSyncTypeBadge');
       if (syncTypeBadge) syncTypeBadge.innerHTML = '';
     };

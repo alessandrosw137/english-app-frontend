@@ -231,7 +231,8 @@
       margin: 0 auto;
       transform: none;
       transition: opacity 0.3s ease, box-shadow 0.3s ease;
-      cursor: pointer;
+      cursor: pointer !important;
+  pointer-events: auto !important;
       user-select: none;
       box-sizing: border-box;
     }
@@ -1224,7 +1225,8 @@ header.auth-hidden,
   border-radius: 14px;
   padding: 14px 16px;
   margin-bottom: 12px;
-  cursor: pointer;
+  cursor: pointer !important;
+  pointer-events: auto !important;
   opacity: 0.45;
   transform: translateZ(0);
   will-change: transform, opacity, border-color;
