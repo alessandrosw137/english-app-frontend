@@ -8493,6 +8493,12 @@ window.logout = function() {
       if (typeof window.handleKaraokeTimeUpdate === 'function') {
         window.handleKaraokeTimeUpdate(clamped);
       }
+      if (window.KaraokeSyncEngine && typeof window.KaraokeSyncEngine.syncFrame === 'function') {
+        window.KaraokeSyncEngine.lastStanzaIdx = -999;
+        window.KaraokeSyncEngine.lastWordIdx = -999;
+        window.KaraokeSyncEngine.syncFrame(clamped, true);
+        window.KaraokeSyncEngine.updateSeekBarUI(clamped);
+      }
     };
 
     window.startKaraokeSyncTimer = function() {
@@ -8977,6 +8983,453 @@ window.logout = function() {
       return result;
     };
 
+    
+    /* ========================================================
+       MODULOS 1, 2, 3, 4: MOTOR UNIVERSAL DE METADATOS, LRC Y CERO PARPADEO
+       ======================================================== */
+
+    // 1. Limpiar titulos y artistas para busquedas precisas
+    window.cleanTrackMetadata = function(rawTitle = '', rawArtist = '') {
+      const cleanTitle = (rawTitle || '')
+        .replace(/\((?:official|music|lyric|audio|video|remaster|live|version|feat|ft|explicit|clean|hd|4k|hq).*?\)/gi, '')
+        .replace(/\[(?:official|music|lyric|audio|video|remaster|live|version|feat|ft|explicit|clean|hd|4k|hq).*?\]/gi, '')
+        .replace(/\s*-\s*(?:single|ep|remastered.*|live.*)$/gi, '')
+        .trim();
+      const cleanArtist = (rawArtist || '').replace(/\s*(?:feat\.|ft\.|&|,).*$/i, '').trim();
+      return {
+        cleanTitle: cleanTitle || (rawTitle || '').trim(),
+        cleanArtist: cleanArtist || (rawArtist || '').trim()
+      };
+    };
+
+    // 2. Obtener letra sincronizada LRC que coincida EXACTAMENTE con la duracion de la pista
+    window.fetchExactSyncedLyrics = async function(artist, title, targetDurationSec = 0, signal) {
+      const { cleanTitle, cleanArtist } = window.cleanTrackMetadata(title, artist);
+      const queries = [
+        `https://lrclib.net/api/search?artist_name=${encodeURIComponent(cleanArtist)}&track_name=${encodeURIComponent(cleanTitle)}`,
+        `https://lrclib.net/api/search?q=${encodeURIComponent(cleanArtist + ' ' + cleanTitle)}`
+      ];
+
+      for (const url of queries) {
+        try {
+          const res = await fetch(url, { signal });
+          if (!res.ok) continue;
+          const list = await res.json();
+          if (!Array.isArray(list) || list.length === 0) continue;
+
+          // Filtrar solo los que tienen letra sincronizada real (LRC)
+          const syncedCandidates = list.filter(item => item.syncedLyrics && item.syncedLyrics.includes('['));
+          if (syncedCandidates.length > 0) {
+            // Ordenar por cercania exacta a la duracion de la cancion (evita desfases de versiones)
+            if (targetDurationSec > 0) {
+              syncedCandidates.sort((a, b) => 
+                Math.abs((a.duration || 0) - targetDurationSec) - Math.abs((b.duration || 0) - targetDurationSec)
+              );
+            }
+            return {
+              type: 'lrc',
+              lrcText: syncedCandidates[0].syncedLyrics,
+              lrcDuration: syncedCandidates[0].duration || targetDurationSec
+            };
+          }
+
+          // Respaldo si solo existe letra plana
+          const plainCandidate = list.find(item => item.plainLyrics);
+          if (plainCandidate) {
+            return {
+              type: 'plain',
+              plainText: plainCandidate.plainLyrics,
+              lrcDuration: plainCandidate.duration || targetDurationSec
+            };
+          }
+        } catch (e) {
+          if (e.name === 'AbortError') throw e;
+        }
+      }
+      return null;
+    };
+
+    // 3. Parser LRC universal de alta precision (soporte de milisegundos y saltos)
+    window.parseLrcUniversal = function(lrcString, totalSongDuration = 210) {
+      const lines = (lrcString || '').split(/\r?\n/);
+      const timeRegex = /\[(\d{1,2}):(\d{2})(?:[.:](\d{1,3}))?\]/g;
+      const rawEntries = [];
+
+      lines.forEach(line => {
+        const matches = [...line.matchAll(timeRegex)];
+        if (!matches.length) return;
+        const text = line.replace(timeRegex, '').trim();
+        if (!text || /^[\u266a\u266b\s-]+$/.test(text)) return; // Ignorar lineas vacias o solo simbolos musicales
+
+        matches.forEach(m => {
+          const min = parseInt(m[1], 10);
+          const sec = parseInt(m[2], 10);
+          const msRaw = m[3] || '0';
+          const ms = parseInt(msRaw.padEnd(3, '0').slice(0, 3), 10);
+          const startTime = +(min * 60 + sec + ms / 1000).toFixed(3);
+          rawEntries.push({ startTime, text });
+        });
+      });
+
+      rawEntries.sort((a, b) => a.startTime - b.startTime);
+
+      // Calcular endTime exacto para cada verso y separar palabras
+      return rawEntries.map((entry, idx) => {
+        const nextEntry = rawEntries[idx + 1];
+        const naturalEnd = nextEntry ? nextEntry.startTime : Math.max(entry.startTime + 4.5, totalSongDuration);
+        // Limitar la duracion de iluminacion de una sola frase a un maximo razonable (ej. 6.5s) para pausas instrumentales intermedias
+        const endTime = Math.min(naturalEnd, entry.startTime + 6.5);
+        const words = entry.text.split(/\s+/).filter(Boolean);
+        return {
+          index: idx,
+          startTime: entry.startTime,
+          time: entry.startTime,
+          originalTime: entry.startTime,
+          endTime: Math.max(entry.startTime + 0.4, endTime),
+          nextLineStart: naturalEnd,
+          text: entry.text,
+          lines: [entry.text],
+          words,
+          isLrcSynced: true
+        };
+      });
+    };
+
+    // 4. Motor de sincronizacion cero parpadeo + adelantar/atrasar (seek bidireccional)
+    window.KaraokeSyncEngine = {
+      rafId: null,
+      sessionToken: 0,
+      stanzas: [],
+      lastStanzaIdx: -999,
+      lastWordIdx: -999,
+      isUserSeeking: false,
+      userScrollingTimeout: null,
+      isUserTouchingLyrics: false,
+
+      // Llamar al seleccionar cualquier cancion nueva
+      initSong(stanzasArray) {
+        this.stop();
+        this.sessionToken = Date.now();
+        this.stanzas = stanzasArray || [];
+        this.lastStanzaIdx = -999;
+        this.lastWordIdx = -999;
+        this.renderStaticLyricsDOM();
+        this.startLoop(this.sessionToken);
+      },
+
+      stop() {
+        if (this.rafId) {
+          if (typeof cancelAnimationFrame === 'function') {
+            cancelAnimationFrame(this.rafId);
+          } else {
+            clearTimeout(this.rafId);
+          }
+          this.rafId = null;
+        }
+      },
+
+      // Renderiza el HTML UNA SOLA VEZ al abrir la cancion (Cero parpadeo)
+      renderStaticLyricsDOM() {
+        const container = document.getElementById('karaoke-lyrics-container') || document.getElementById('musicLyricsContainer');
+        if (!container) return;
+
+        // Detectar scroll tactil en movil para no pelear con el dedo del usuario
+        const isScrollBound = (container.dataset && container.dataset.scrollBound) || container._scrollBound;
+        if (!isScrollBound && typeof container.addEventListener === 'function') {
+          const pauseAutoScroll = () => {
+            this.isUserTouchingLyrics = true;
+            clearTimeout(this.userScrollingTimeout);
+            this.userScrollingTimeout = setTimeout(() => { this.isUserTouchingLyrics = false; }, 2500);
+          };
+          try {
+            container.addEventListener('touchstart', pauseAutoScroll, { passive: true });
+            container.addEventListener('wheel', pauseAutoScroll, { passive: true });
+          } catch (_) {}
+          if (container.dataset) container.dataset.scrollBound = 'true';
+          container._scrollBound = true;
+        }
+
+        const htmlContent = this.stanzas.map((stanza, sIdx) => {
+          const wordsSpans = (stanza.words || []).map((w, wIdx) => 
+            `<span class="k-word lyric-word inline-block cursor-pointer" data-widx="${wIdx}" data-index="${wIdx}" data-word-idx="${wIdx}" onclick="event.stopPropagation(); window.inspectLyricsWord ? window.inspectLyricsWord('${w.replace(/'/g, "\\'")}', event) : null">${w}</span>`
+          ).join(' ');
+
+          return `
+            <div class="stanza-card lyric-line lyric-stanza-card" data-sidx="${sIdx}" id="karaokeStanza-${sIdx}" onclick="window.KaraokeSyncEngine.seekToTime(${stanza.startTime})">
+              <div class="stanza-header flex items-center justify-between mb-1.5 pb-1 border-b border-slate-800/60">
+                <span class="stanza-badge text-[10px] font-mono font-bold text-cyan-400 bg-cyan-950/70 border border-cyan-500/30 px-2 py-0.5 rounded">VERSO ${sIdx + 1} • ${Math.floor(stanza.startTime)}s</span>
+                <button type="button" class="stanza-tts-btn text-xs text-slate-400 hover:text-cyan-300 transition p-1 cursor-pointer" onclick="event.stopPropagation(); window.speakText ? window.speakText('${(stanza.text || '').replace(/'/g, "\\'")}') : null">🔊</button>
+              </div>
+              <p class="stanza-text">${wordsSpans}</p>
+            </div>
+          `;
+        }).join('');
+
+        container.innerHTML = htmlContent;
+        const altContainer = document.getElementById('musicLyricsContainer');
+        if (altContainer && altContainer !== container) {
+          altContainer.innerHTML = htmlContent;
+        }
+      },
+
+      // Permite adelantar/atrasar desde la barra o tocando cualquier estrofa
+      seekToTime(targetSeconds) {
+        const sec = Math.max(0, Number(targetSeconds) || 0);
+        if (window.ytPlayer && typeof window.ytPlayer.seekTo === 'function' && window.activeMediaMode === 'youtube') {
+          try { window.ytPlayer.seekTo(sec, true); } catch (e) {}
+        }
+        if (window._holoYtPlayer && typeof window._holoYtPlayer.seekTo === 'function') {
+          try { window._holoYtPlayer.seekTo(sec, true); } catch (e) {}
+        }
+        const audioEl = document.getElementById('mastereng-audio');
+        if (audioEl && window.activeMediaMode === 'audio') {
+          try { audioEl.currentTime = sec; } catch (e) {}
+        }
+        window._currentTrackCurrentTime = sec;
+        window.lastKnownPlaybackTime = sec;
+        window._isSeekingGracePeriod = true;
+        window._lastSeekTimestamp = Date.now();
+        window._lastSeekTargetSeconds = sec;
+
+        if (typeof window.seekTrackToSeconds === 'function' && !this._internalSeeking) {
+          this._internalSeeking = true;
+          try { window.seekTrackToSeconds(sec); } catch (e) {}
+          this._internalSeeking = false;
+        }
+
+        // Forzar recalculo inmediato sin esperar al siguiente frame
+        this.lastStanzaIdx = -999;
+        this.lastWordIdx = -999;
+        this.syncFrame(sec, true);
+      },
+
+      getCurrentPlaybackTime() {
+        const yt = window.ytPlayer || window._holoYtPlayer;
+        if (window.activeMediaMode === 'youtube' && yt && typeof yt.getCurrentTime === 'function') {
+          try { return yt.getCurrentTime() || 0; } catch (e) { return 0; }
+        }
+        if (yt && typeof yt.getCurrentTime === 'function' && window._isHoloStagePlaying) {
+          try {
+            const t = yt.getCurrentTime();
+            if (typeof t === 'number' && !isNaN(t) && t >= 0) return t;
+          } catch (e) {}
+        }
+        const audioEl = document.getElementById('mastereng-audio');
+        if (audioEl && !audioEl.paused) {
+          return audioEl.currentTime || 0;
+        }
+        return window.lastKnownPlaybackTime || window._currentTrackCurrentTime || 0;
+      },
+
+      isPlayerPlaying() {
+        const yt = window.ytPlayer || window._holoYtPlayer;
+        if (window.activeMediaMode === 'youtube' && yt && typeof yt.getPlayerState === 'function') {
+          try { return yt.getPlayerState() === 1; } catch (e) { return false; }
+        }
+        if (yt && typeof yt.getPlayerState === 'function' && window._isHoloStagePlaying) {
+          try {
+            const s = yt.getPlayerState();
+            if (s === 1) return true;
+          } catch (e) {}
+        }
+        const audioEl = document.getElementById('mastereng-audio');
+        if (audioEl && !audioEl.paused && !audioEl.ended) return true;
+        return Boolean(window._isHoloStagePlaying);
+      },
+
+      startLoop(token) {
+        const scheduleNext = (typeof requestAnimationFrame === 'function')
+          ? requestAnimationFrame
+          : (cb => setTimeout(() => cb(Date.now()), 16));
+        const tick = () => {
+          if (token !== this.sessionToken) return; // Cancela hilos viejos automaticamente
+          if (this.isPlayerPlaying() && !this.isUserSeeking) {
+            const rawTime = this.getCurrentPlaybackTime();
+            window.lastKnownPlaybackTime = rawTime;
+            window._currentTrackCurrentTime = rawTime;
+            this.updateSeekBarUI(rawTime);
+            this.syncFrame(rawTime, false);
+          }
+          this.rafId = scheduleNext(tick);
+        };
+        this.rafId = scheduleNext(tick);
+      },
+
+      updateSeekBarUI(currentTime) {
+        const seekSlider = document.getElementById('karaoke-seek-slider');
+        const timeLabel = document.getElementById('karaoke-time-label');
+        const holoTime = document.getElementById('holoStageTime');
+        const holoBar = document.getElementById('holoStageProgressBar');
+        const duration = window.currentTrackDurationSec || window._currentTrackTotalDuration || 210;
+        if (seekSlider && !this.isUserSeeking) {
+          seekSlider.max = duration;
+          seekSlider.value = Math.min(duration, currentTime);
+        }
+        const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+        const formatted = `${fmt(currentTime)} / ${fmt(duration)}`;
+        if (timeLabel) {
+          timeLabel.textContent = formatted;
+        }
+        if (holoTime) {
+          holoTime.textContent = formatted;
+        }
+        if (holoBar && duration > 0) {
+          holoBar.style.width = Math.min(100, (currentTime / duration) * 100) + '%';
+        }
+      },
+
+      syncFrame(rawTime, forceScroll = false) {
+        if (!this.stanzas.length) return;
+        const offset = typeof window.lyricsOffset === 'number' ? window.lyricsOffset : 0;
+        const t = rawTime + offset;
+
+        // Encontrar que estrofa corresponde al segundo exacto (soporta saltos hacia adelante y atras)
+        let activeIdx = -1;
+        for (let i = 0; i < this.stanzas.length; i++) {
+          const s = this.stanzas[i];
+          if (t >= s.startTime && t < s.nextLineStart) {
+            activeIdx = i;
+            break;
+          }
+        }
+
+        const container = document.getElementById('karaoke-lyrics-container') || document.getElementById('musicLyricsContainer');
+        if (!container) return;
+
+        // Si estamos en la introduccion instrumental antes de la primera estrofa
+        if (activeIdx === -1 && t < this.stanzas[0].startTime) {
+          if (this.lastStanzaIdx !== -1) {
+            container.querySelectorAll('.stanza-card.active, .stanza-card.past').forEach(el => {
+              el.classList.remove('active', 'past', 'lyric-active');
+              el.classList.add('lyric-inactive');
+            });
+            container.querySelectorAll('.k-word.lit, .k-word.word-active').forEach(el => {
+              el.classList.remove('lit', 'word-active');
+              el.classList.add('word-inactive');
+            });
+            this.lastStanzaIdx = -1;
+            this.lastWordIdx = -1;
+            const badge = document.getElementById('karaokeTimeBadge');
+            if (badge) badge.textContent = '🎶 [Intro Instrumental]';
+          }
+          return;
+        }
+
+        if (activeIdx === -1) return;
+
+        // 1. Actualizar tarjeta de estrofa SOLO si cambio el indice (CERO PARPADEO)
+        if (this.lastStanzaIdx !== activeIdx || forceScroll) {
+          const allCards = container.querySelectorAll('.stanza-card');
+          allCards.forEach((card, idx) => {
+            if (idx === activeIdx) {
+              card.classList.add('active', 'lyric-active');
+              card.classList.remove('past', 'lyric-inactive');
+            } else if (idx < activeIdx) {
+              card.classList.remove('active', 'lyric-active');
+              card.classList.add('past', 'lyric-inactive');
+              // Dejar iluminadas todas las palabras de estrofas ya pasadas
+              card.querySelectorAll('.k-word').forEach(w => {
+                w.classList.add('lit', 'word-sung');
+                w.classList.remove('word-inactive');
+              });
+            } else {
+              card.classList.remove('active', 'lyric-active', 'past');
+              card.classList.add('lyric-inactive');
+              // Apagar palabras de estrofas futuras (clave cuando el usuario atrasa la cancion)
+              card.querySelectorAll('.k-word.lit, .k-word.word-active').forEach(w => {
+                w.classList.remove('lit', 'word-active', 'word-sung');
+                w.classList.add('word-inactive');
+              });
+            }
+          });
+
+          const activeCard = container.querySelector(`.stanza-card[data-sidx="${activeIdx}"]`);
+          if (activeCard && (!this.isUserTouchingLyrics || forceScroll)) {
+            if (typeof activeCard.scrollIntoView === 'function') {
+              activeCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          }
+
+          const badge = document.getElementById('karaokeTimeBadge');
+          if (badge) badge.textContent = `Estrofa ${activeIdx + 1} de ${this.stanzas.length}`;
+
+          this.lastStanzaIdx = activeIdx;
+          this.lastWordIdx = -999;
+        }
+
+        // 2. Iluminacion progresiva palabra por palabra dentro de la estrofa activa
+        const stanzaObj = this.stanzas[activeIdx];
+        const activeCard = container.querySelector(`.stanza-card[data-sidx="${activeIdx}"]`);
+        if (!activeCard || !stanzaObj) return;
+
+        const wordElements = activeCard.querySelectorAll('.k-word');
+        const totalWords = wordElements.length;
+        if (totalWords === 0) return;
+
+        const lineDuration = Math.max(0.4, stanzaObj.endTime - stanzaObj.startTime);
+        const progress = Math.min(1, Math.max(0, (t - stanzaObj.startTime) / lineDuration));
+        const currentWordIdx = Math.floor(progress * totalWords);
+
+        if (currentWordIdx !== this.lastWordIdx) {
+          wordElements.forEach((wEl, idx) => {
+            if (idx <= currentWordIdx) {
+              if (!wEl.classList.contains('lit')) {
+                wEl.classList.add('lit', 'word-active');
+                wEl.classList.remove('word-inactive');
+              }
+            } else {
+              if (wEl.classList.contains('lit') || wEl.classList.contains('word-active')) {
+                wEl.classList.remove('lit', 'word-active');
+                wEl.classList.add('word-inactive');
+              }
+            }
+          });
+          this.lastWordIdx = currentWordIdx;
+        }
+      }
+    };
+
+    // 5. Conectar eventos tactiles y de mouse al slider de progreso
+    window.initKaraokeSeekSliderEvents = function() {
+      const seekSlider = document.getElementById('karaoke-seek-slider');
+      const isSeekBound = seekSlider && ((seekSlider.dataset && seekSlider.dataset.seekBound) || seekSlider._seekBound);
+      if (seekSlider && !isSeekBound && typeof seekSlider.addEventListener === 'function') {
+        seekSlider.addEventListener('input', (e) => {
+          window.KaraokeSyncEngine.isUserSeeking = true;
+          const previewSec = parseFloat(e.target.value) || 0;
+          window.KaraokeSyncEngine.syncFrame(previewSec, false);
+          const timeLabel = document.getElementById('karaoke-time-label');
+          const duration = window.currentTrackDurationSec || window._currentTrackTotalDuration || 210;
+          if (timeLabel) {
+            const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+            timeLabel.textContent = `${fmt(previewSec)} / ${fmt(duration)}`;
+          }
+        });
+        seekSlider.addEventListener('change', (e) => {
+          const targetSec = parseFloat(e.target.value) || 0;
+          window.KaraokeSyncEngine.isUserSeeking = false;
+          window.KaraokeSyncEngine.seekToTime(targetSec);
+        });
+        if (seekSlider.dataset) seekSlider.dataset.seekBound = 'true';
+        seekSlider._seekBound = true;
+      }
+    };
+
+    if (typeof window.speakText !== 'function') {
+      window.speakText = function(text) {
+        if (!text || typeof window.speechSynthesis === 'undefined') return;
+        try {
+          window.speechSynthesis.cancel();
+          const u = new SpeechSynthesisUtterance(text);
+          u.lang = 'en-US';
+          u.rate = 0.95;
+          window.speechSynthesis.speak(u);
+        } catch (e) {
+          console.warn('[TTS] Error:', e);
+        }
+      };
+    }
+
     window.fetchLrclibSyncedLyrics = async function(artist, title, totalDurationSec) {
       const cleanTitle = (title || '').replace(/\s*\([^)]*\)/g, '').replace(/\s*-\s*.*$/, '').trim() || title || '';
       const cleanArtist = (artist || '').replace(/\s*&.*$/, '').trim() || artist || '';
@@ -9446,7 +9899,11 @@ window.logout = function() {
 
         // 5. Resolver automáticamente el 'videoId' de la canción completa
         window._currentPlayingTrackName = trackName;
-        let variantTag = 'audio oficial';
+        window.lyricsOffset = 0; // Inicializa window.lyricsOffset = 0 por defecto al cargar cancion nueva
+        const offsetBadge = document.getElementById('lyricsOffsetBadge');
+        if (offsetBadge) offsetBadge.textContent = 'Sync: 0.0s';
+        const { cleanTitle, cleanArtist } = window.cleanTrackMetadata ? window.cleanTrackMetadata(trackName, artistName) : { cleanTitle: trackName, cleanArtist: artistName };
+        let variantTag = 'official audio';
         const lowerTrack = (trackName || '').toLowerCase();
         if (lowerTrack.includes('acoustic') || lowerTrack.includes('acústica') || lowerTrack.includes('acustica')) {
           variantTag = 'acoustic audio oficial';
@@ -9455,7 +9912,7 @@ window.logout = function() {
         } else if (lowerTrack.includes('studio') || lowerTrack.includes('estudio')) {
           variantTag = 'studio version audio oficial';
         }
-        const officialSearchQuery = `${artistName} ${trackName} ${variantTag}`;
+        const officialSearchQuery = `${cleanArtist} ${cleanTitle} ${variantTag}`;
         let youtubeVideoId = null;
         if (typeof window.resolveYouTubeVideoId === 'function') {
           try {
@@ -9573,9 +10030,13 @@ window.logout = function() {
                 </div>
               </div>
 
-              <!-- Fila Inferior: Barra de Progreso Interactiva -->
-              <div class="relative w-full pt-1">
-                <div id="holoStageProgressContainer" onclick="window.seekHoloStageTrack(event)"
+              <!-- Fila Inferior: Barra de Progreso Interactiva (Seek Slider) -->
+              <div class="relative w-full pt-1 flex flex-col gap-1.5">
+                <div class="flex items-center justify-between text-xs font-mono text-cyan-300">
+                  <span id="karaoke-time-label">0:00 / ${totalDurationFormatted}</span>
+                </div>
+                <input type="range" id="karaoke-seek-slider" min="0" max="${totalDurationSec}" value="0" step="0.1" class="w-full cursor-pointer accent-cyan-400" title="Desliza para adelantar o atrasar la canción" />
+                <div id="holoStageProgressContainer" onclick="window.seekHoloStageTrack(event)" style="display:none;" class="hidden"
                   class="w-full h-2.5 bg-slate-900 rounded-full overflow-hidden border border-cyan-500/40 cursor-pointer relative group p-0.5 shadow-inner" title="Haz clic en la barra para saltar en la canción">
                   <div id="holoStageProgressBar" class="h-full bg-gradient-to-r from-cyan-400 via-sky-500 to-indigo-500 rounded-full transition-all duration-150" style="width: 0%;"></div>
                 </div>
@@ -9602,6 +10063,7 @@ window.logout = function() {
         const fallbackArtworkEl = document.getElementById('holoAudioFallbackArtwork');
         if (fallbackArtworkEl) fallbackArtworkEl.src = hdArtwork;
         window._currentPlayingYoutubeId = youtubeVideoId;
+        if (typeof window.initKaraokeSeekSliderEvents === 'function') window.initKaraokeSeekSliderEvents();
         window._holoPlayerFallbackStage = 0;
         window._holoPlayerHasStartedPlaying = false;
 
@@ -9699,7 +10161,30 @@ window.logout = function() {
 
         // 7A. Consulta primaria universal al motor LRCLIB (LRC oficial sincronizado o plainLyrics estructurada)
         try {
-          const lrcResult = await window.fetchLrclibSyncedLyrics(cleanArtistForApi, cleanTitleForApi, totalDurationSec);
+          const exactRes = await window.fetchExactSyncedLyrics(cleanArtistForApi, cleanTitleForApi, totalDurationSec, window._currentSongAbortController ? window._currentSongAbortController.signal : null);
+          if (window.currentSongSessionId !== thisSessionId) return;
+          if (exactRes) {
+            if (exactRes.type === 'lrc' && exactRes.lrcText) {
+              const parsed = window.parseLrcUniversal(exactRes.lrcText, totalDurationSec || exactRes.lrcDuration);
+              if (parsed && parsed.length > 0) {
+                finalLyrics = parsed;
+                window._isCurrentSongLrcSynced = true;
+              }
+            } else if (exactRes.type === 'plain' && exactRes.plainText) {
+              const parsed = window.parseRawLyricsIntoStanzas(exactRes.plainText, totalDurationSec, true);
+              if (parsed && parsed.length > 0) {
+                finalLyrics = parsed;
+                window._isCurrentSongLrcSynced = false;
+              }
+            }
+          }
+        } catch (exactErr) {
+          if (exactErr.name === 'AbortError') return;
+        }
+
+        try {
+          if (!finalLyrics || finalLyrics.length === 0) {
+            const lrcResult = await window.fetchLrclibSyncedLyrics(cleanArtistForApi, cleanTitleForApi, totalDurationSec);
           if (window.currentSongSessionId !== thisSessionId) {
             console.log('[Karaoke Session] Descartando respuesta LRCLIB: sesión obsoleta.');
             return;
@@ -9707,6 +10192,7 @@ window.logout = function() {
           if (lrcResult && Array.isArray(lrcResult.lyrics) && lrcResult.lyrics.length > 0) {
             finalLyrics = lrcResult.lyrics;
             window._isCurrentSongLrcSynced = !!lrcResult.isLrc;
+            }
           }
         } catch (lrcErr) {
           console.warn('[LRCLIB] Error obteniendo letra sincronizada:', lrcErr);
@@ -9784,6 +10270,9 @@ window.logout = function() {
           return;
         }
 
+        if (window.KaraokeSyncEngine && typeof window.KaraokeSyncEngine.initSong === 'function') {
+          window.KaraokeSyncEngine.initSong(finalLyrics);
+        }
         if (typeof window.renderLyricsFromList === 'function') {
           window.renderLyricsFromList(finalLyrics);
         }

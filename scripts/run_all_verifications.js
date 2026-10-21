@@ -40,7 +40,8 @@ const scripts = [
   'verify_v19_karaoke_playback_fixes.js',
   'verify_v20_universal_seek_pause_sync.js',
   'verify_v21_no_startup_autoplay.js',
-  'verify_v22_interactive_stanza_seek_sync.js'
+  'verify_v22_interactive_stanza_seek_sync.js',
+  'verify_v23_lrc_universal_engine_mobile.js'
 ];
 
 let allPassed = true;
