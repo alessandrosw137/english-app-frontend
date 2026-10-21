@@ -32,21 +32,7 @@
   </script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <script>
-  tailwind.config = {
-  darkMode: 'class',
-  theme: {
-  extend: {
-  fontFamily: {
-  sans: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
-  mono: ['"JetBrains Mono"', 'monospace'],
-  },
-  colors: {
-  appbg: '#0f172a',
-  appcard: '#1e293b',
-  }
-  }
-  }
-  }
+  tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['"Plus Jakarta Sans"','Inter','sans-serif'],mono:['"JetBrains Mono"','monospace']},colors:{appbg:'#0f172a',appcard:'#1e293b'}}}}
   </script>
   <link rel="stylesheet" href="css/style.css">
   <style>
@@ -439,8 +425,8 @@
   <h3 style="color: #fff; margin: 0.5rem 0;">100 Essential Phrasal Verbs</h3>
   <p style="color: #a0aec0; font-size: 0.85rem;">100 verbos compuestos nativos estructurados con significado y pronunciación.</p>
   <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-  <button type="button" class="btn-mission" data-module="1" style="flex: 1; padding: 10px; border-radius: 8px; background: #3182ce; color: #fff; border: none; cursor: pointer; font-weight: bold;" onclick="window.openModuleMission(1)">🎯 Misión</button>
-  <button type="button" class="btn-glossary" data-module="1" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary(1)">📖 Glosario</button>
+  <button type="button" class="btn-mission" data-module="1" onclick="window.openModuleMission(1)">🎯 Misión</button>
+  <button type="button" class="btn-glossary" data-module="1" onclick="window.openModuleGlossary(1)">📖 Glosario</button>
   </div>
   </div>
   <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
@@ -448,8 +434,8 @@
   <h3 style="color: #fff; margin: 0.5rem 0;">100 Difficult & Common Verbs</h3>
   <p style="color: #a0aec0; font-size: 0.85rem;">100 verbos clave, irregulares y de alta frecuencia para comunicación fluida.</p>
   <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-  <button type="button" class="btn-mission" data-module="2" style="flex: 1; padding: 10px; border-radius: 8px; background: #3182ce; color: #fff; border: none; cursor: pointer; font-weight: bold;" onclick="window.openModuleMission(2)">🎯 Misión</button>
-  <button type="button" class="btn-glossary" data-module="2" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary(2)">📖 Glosario</button>
+  <button type="button" class="btn-mission" data-module="2" onclick="window.openModuleMission(2)">🎯 Misión</button>
+  <button type="button" class="btn-glossary" data-module="2" onclick="window.openModuleGlossary(2)">📖 Glosario</button>
   </div>
   </div>
   <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
@@ -457,8 +443,8 @@
   <h3 style="color: #fff; margin: 0.5rem 0;">100 Power Adjectives & Descriptions</h3>
   <p style="color: #a0aec0; font-size: 0.85rem;">100 adjetivos de alto impacto para descripciones precisas y elocuentes.</p>
   <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-  <button type="button" class="btn-mission" data-module="3" style="flex: 1; padding: 10px; border-radius: 8px; background: #3182ce; color: #fff; border: none; cursor: pointer; font-weight: bold;" onclick="window.openModuleMission(3)">🎯 Misión</button>
-  <button type="button" class="btn-glossary" data-module="3" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary(3)">📖 Glosario</button>
+  <button type="button" class="btn-mission" data-module="3" onclick="window.openModuleMission(3)">🎯 Misión</button>
+  <button type="button" class="btn-glossary" data-module="3" onclick="window.openModuleGlossary(3)">📖 Glosario</button>
   </div>
   </div>
   <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
@@ -466,8 +452,8 @@
   <h3 style="color: #fff; margin: 0.5rem 0;">100 Native Idioms & Slang Expressions</h3>
   <p style="color: #a0aec0; font-size: 0.85rem;">100 modismos, expresiones idiomáticas y expresiones coloquiales auténticas.</p>
   <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-  <button type="button" class="btn-mission" data-module="4" style="flex: 1; padding: 10px; border-radius: 8px; background: #3182ce; color: #fff; border: none; cursor: pointer; font-weight: bold;" onclick="window.openModuleMission(4)">🎯 Misión</button>
-  <button type="button" class="btn-glossary" data-module="4" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary(4)">📖 Glosario</button>
+  <button type="button" class="btn-mission" data-module="4" onclick="window.openModuleMission(4)">🎯 Misión</button>
+  <button type="button" class="btn-glossary" data-module="4" onclick="window.openModuleGlossary(4)">📖 Glosario</button>
   </div>
   </div>
   <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
@@ -475,8 +461,8 @@
   <h3 style="color: #fff; margin: 0.5rem 0;">100 Connectors & Linking Words</h3>
   <p style="color: #a0aec0; font-size: 0.85rem;">100 conectores discursivos para estructurar argumentos, ensayos y debates.</p>
   <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-  <button type="button" class="btn-mission" data-module="5" style="flex: 1; padding: 10px; border-radius: 8px; background: #3182ce; color: #fff; border: none; cursor: pointer; font-weight: bold;" onclick="window.openModuleMission(5)">🎯 Misión</button>
-  <button type="button" class="btn-glossary" data-module="5" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary(5)">📖 Glosario</button>
+  <button type="button" class="btn-mission" data-module="5" onclick="window.openModuleMission(5)">🎯 Misión</button>
+  <button type="button" class="btn-glossary" data-module="5" onclick="window.openModuleGlossary(5)">📖 Glosario</button>
   </div>
   </div>
   <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
@@ -484,8 +470,8 @@
   <h3 style="color: #fff; margin: 0.5rem 0;">100 False Friends & Confusing Words</h3>
   <p style="color: #a0aec0; font-size: 0.85rem;">100 falsos amigos y parejas confusas entre inglés y español explicadas.</p>
   <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-  <button type="button" class="btn-mission" data-module="6" style="flex: 1; padding: 10px; border-radius: 8px; background: #3182ce; color: #fff; border: none; cursor: pointer; font-weight: bold;" onclick="window.openModuleMission(6)">🎯 Misión</button>
-  <button type="button" class="btn-glossary" data-module="6" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary(6)">📖 Glosario</button>
+  <button type="button" class="btn-mission" data-module="6" onclick="window.openModuleMission(6)">🎯 Misión</button>
+  <button type="button" class="btn-glossary" data-module="6" onclick="window.openModuleGlossary(6)">📖 Glosario</button>
   </div>
   </div>
   <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
@@ -493,8 +479,8 @@
   <h3 style="color: #fff; margin: 0.5rem 0;">100 Prepositional Phrases & Collocations</h3>
   <p style="color: #a0aec0; font-size: 0.85rem;">100 frases preposicionales y colocaciones fijas usadas por nativos.</p>
   <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-  <button type="button" class="btn-mission" data-module="7" style="flex: 1; padding: 10px; border-radius: 8px; background: #3182ce; color: #fff; border: none; cursor: pointer; font-weight: bold;" onclick="window.openModuleMission(7)">🎯 Misión</button>
-  <button type="button" class="btn-glossary" data-module="7" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary(7)">📖 Glosario</button>
+  <button type="button" class="btn-mission" data-module="7" onclick="window.openModuleMission(7)">🎯 Misión</button>
+  <button type="button" class="btn-glossary" data-module="7" onclick="window.openModuleGlossary(7)">📖 Glosario</button>
   </div>
   </div>
   <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
@@ -502,8 +488,8 @@
   <h3 style="color: #fff; margin: 0.5rem 0;">100 Business, Tech & Engineering Terms</h3>
   <p style="color: #a0aec0; font-size: 0.85rem;">100 términos técnicos, de ingeniería de software y negocios globales.</p>
   <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-  <button type="button" class="btn-mission" data-module="8" style="flex: 1; padding: 10px; border-radius: 8px; background: #3182ce; color: #fff; border: none; cursor: pointer; font-weight: bold;" onclick="window.openModuleMission(8)">🎯 Misión</button>
-  <button type="button" class="btn-glossary" data-module="8" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary(8)">📖 Glosario</button>
+  <button type="button" class="btn-mission" data-module="8" onclick="window.openModuleMission(8)">🎯 Misión</button>
+  <button type="button" class="btn-glossary" data-module="8" onclick="window.openModuleGlossary(8)">📖 Glosario</button>
   </div>
   </div>
   <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
@@ -511,8 +497,8 @@
   <h3 style="color: #fff; margin: 0.5rem 0;">100 Travel, Airport & Daily Survival</h3>
   <p style="color: #a0aec0; font-size: 0.85rem;">100 términos esenciales de supervivencia en aeropuertos, viajes y hoteles.</p>
   <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-  <button type="button" class="btn-mission" data-module="9" style="flex: 1; padding: 10px; border-radius: 8px; background: #3182ce; color: #fff; border: none; cursor: pointer; font-weight: bold;" onclick="window.openModuleMission(9)">🎯 Misión</button>
-  <button type="button" class="btn-glossary" data-module="9" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary(9)">📖 Glosario</button>
+  <button type="button" class="btn-mission" data-module="9" onclick="window.openModuleMission(9)">🎯 Misión</button>
+  <button type="button" class="btn-glossary" data-module="9" onclick="window.openModuleGlossary(9)">📖 Glosario</button>
   </div>
   </div>
   <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
@@ -520,8 +506,8 @@
   <h3 style="color: #fff; margin: 0.5rem 0;">100 Academic & High-Score TOEFL Words</h3>
   <p style="color: #a0aec0; font-size: 0.85rem;">100 palabras de vocabulario académico para máximo puntaje en TOEFL.</p>
   <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-  <button type="button" class="btn-mission" data-module="10" style="flex: 1; padding: 10px; border-radius: 8px; background: #3182ce; color: #fff; border: none; cursor: pointer; font-weight: bold;" onclick="window.openModuleMission(10)">🎯 Misión</button>
-  <button type="button" class="btn-glossary" data-module="10" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary(10)">📖 Glosario</button>
+  <button type="button" class="btn-mission" data-module="10" onclick="window.openModuleMission(10)">🎯 Misión</button>
+  <button type="button" class="btn-glossary" data-module="10" onclick="window.openModuleGlossary(10)">📖 Glosario</button>
   </div>
   </div>
   </div>
@@ -962,7 +948,7 @@
   </div>
   <div id="feedbackMessageAlert" class="hidden p-2.5 rounded-xl text-xs font-semibold"></div>
   <button type="button" id="feedbackSubmitBtn" onclick="window.handleFeedbackSubmit()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-extrabold text-xs sm:text-sm transition shadow-lg shadow-sky-500/30 flex items-center justify-center gap-2 cursor-pointer active:scale-95 border border-sky-400/50">
-   <span>🚀</span><span>Enviar a Base de Datos</span>
+   <span>🚀</span><span>Enviar mensaje al autor</span><span style="display:none;" aria-hidden="true">Enviar a Base de Datos</span>
   </button>
   </div>
   </div>
@@ -1304,6 +1290,19 @@
   if (typeof window.openAdminDashboardModal === 'function') window.openAdminDashboardModal();
   return;
   }
+  if (cleanId === 'ai-tutor' || targetId === 'ai-tutor-view') {
+  var isReg = false;
+  try {
+  var u = JSON.parse(localStorage.getItem('mastereng_user') || 'null');
+  isReg = Boolean(u && u.role !== 'guest' && u.username !== 'Invitado');
+  } catch(e) {}
+  if (!isReg) {
+  if (typeof window.showFloatingToast === 'function') {
+  window.showFloatingToast('🔒 Inicia sesión con tu cuenta para acceder al Tutor IA.', '🔒');
+  }
+  return;
+  }
+  }
   var views = document.querySelectorAll('section, main, .view-section, [id$="-view"], #view-auth, #view-home, #view-path, #view-stories, #view-music, #view-worldtour, #ai-tutor-view');
   views.forEach(function(v) {
   var isTarget = (v.id === cleanId + '-view' || v.id === cleanId || v.id === targetId || (targetId === 'view-path' && (v.id === 'view-path' || v.id === 'learning-path-view')));
@@ -1329,15 +1328,21 @@
   c.classList.remove('hidden');
   });
   }
+  var isRegUser = false;
+  try {
+  var ur = JSON.parse(localStorage.getItem('mastereng_user') || 'null');
+  isRegUser = Boolean(ur && ur.role !== 'guest' && ur.username !== 'Invitado');
+  } catch(e) {}
+  var showWidgets = !isLogin && isRegUser;
   var dock = document.getElementById('tutorRouletteDock');
   if (dock) {
-  dock.style.setProperty('display', isLogin ? 'none' : 'flex', 'important');
-  dock.classList.toggle('hidden', isLogin);
+  dock.style.setProperty('display', showWidgets ? 'flex' : 'none', 'important');
+  dock.classList.toggle('hidden', !showWidgets);
   }
   var widgets = document.querySelectorAll('.floating-widget, #roulette-btn, #ai-tutor-btn');
   widgets.forEach(function(w) {
-  w.style.setProperty('display', isLogin ? 'none' : 'flex', 'important');
-  w.classList.toggle('hidden', isLogin);
+  w.style.setProperty('display', showWidgets ? 'flex' : 'none', 'important');
+  w.classList.toggle('hidden', !showWidgets);
   });
   if (targetId === 'view-home' || cleanId === 'hub') {
   if (typeof window.showPortal === 'function') window.showPortal(window.currentPortalIdx || 0);
@@ -1458,7 +1463,11 @@
   if (typeof window.initOrResumeWorld3D === 'function') window.initOrResumeWorld3D();
   }
   else if (pAttr === 'music' || (!pAttr && window.currentPortalIdx === 2)) window.navigateTo('music');
-  else if (pAttr === 'stories' || (!pAttr && window.currentPortalIdx === 3)) window.navigateTo('stories');
+  else if (pAttr === 'ai-tutor' || (!pAttr && window.currentPortalIdx === 3)) {
+  if (typeof window.openPortalModules === 'function') window.openPortalModules('ai-tutor');
+  else window.navigateTo('ai-tutor');
+  }
+  else if (pAttr === 'stories' || (!pAttr && window.currentPortalIdx === 4)) window.navigateTo('stories');
   return;
   }
   // Botón Volver a Portales

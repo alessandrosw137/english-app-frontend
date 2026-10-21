@@ -1252,11 +1252,21 @@
           el.style.display = (v === viewId || v === viewId + '-view') ? 'flex' : 'none';
         }
       });
-      // Ocultar widgets en login y mostrarlos adentro
+      // Ocultar widgets en login o para usuarios invitados / no registrados
+      const isRegistered = typeof window.isUserRegistered === 'function' ? window.isUserRegistered() : (function() {
+        const user = getStoredUser();
+        return !!(user && user.role !== 'guest' && user.username !== 'Invitado');
+      })();
+      const showFloating = (!viewId.includes('login') && isRegistered);
       const widgets = document.querySelectorAll('.floating-widget, #roulette-btn, #ai-tutor-btn');
       widgets.forEach(w => {
-        w.style.display = (viewId.includes('login')) ? 'none' : 'flex';
+        w.style.display = showFloating ? 'flex' : 'none';
       });
+      const dockEl = document.getElementById('tutorRouletteDock');
+      if (dockEl) {
+        dockEl.style.display = showFloating ? 'flex' : 'none';
+        dockEl.style.setProperty('display', showFloating ? 'flex' : 'none', 'important');
+      }
 
       // Mapeo transparente para las vistas maestras existentes
       const viewMap = {
@@ -1285,6 +1295,16 @@
         'admin-view': 'adminDashboardModal'
       };
       const targetId = viewMap[viewId] || viewId;
+
+      if (targetId === 'ai-tutor-view' || viewId === 'ai-tutor' || viewId === 'ai-tutor-view' || viewId === 'view-ai-tutor') {
+        if (typeof window.isUserRegistered === 'function' && !window.isUserRegistered()) {
+          if (typeof showFloatingToast === 'function') {
+            showFloatingToast('🔒 Inicia sesión con tu cuenta para acceder al Tutor IA.', '🔒');
+          }
+          if (typeof window.openAuthModal === 'function') window.openAuthModal('login');
+          return;
+        }
+      }
 
       if (targetId === 'adminDashboardModal' || viewId === 'admin-view' || viewId === 'admin') {
         if (typeof openAdminDashboardModal === 'function') {
@@ -1437,6 +1457,14 @@ window.logout = function() {
     window.handleLogoutFromSettings = window.logout;
 
     function showView(viewId) {
+      if ((viewId === 'ai-tutor' || viewId === 'ai-tutor-view' || viewId === 'view-ai-tutor') &&
+          typeof window.isUserRegistered === 'function' && !window.isUserRegistered()) {
+        if (typeof showFloatingToast === 'function') {
+          showFloatingToast('🔒 Inicia sesión con tu cuenta para acceder al Tutor IA.', '🔒');
+        }
+        if (typeof window.openAuthModal === 'function') window.openAuthModal('login');
+        return;
+      }
       const universalBtn = document.getElementById('universalExitBtn');
       if (universalBtn) universalBtn.style.display = 'none';
       if (viewId !== 'view-music') {
@@ -1732,6 +1760,15 @@ window.logout = function() {
     function handleCoverCardClick(index) {
       if (index === window.currentPortal) {
         const modules = ['path', 'worldtour', 'music', 'ai-tutor', 'stories'];
+        if (modules[index] === 'ai-tutor' && typeof window.isUserRegistered === 'function' && !window.isUserRegistered()) {
+          if (typeof showFloatingToast === 'function') {
+            showFloatingToast('🔒 Inicia sesión con tu cuenta para acceder al Tutor IA.', '🔒');
+          } else {
+            console.warn('Acceso restringido a usuarios registrados');
+          }
+          if (typeof window.openAuthModal === 'function') window.openAuthModal('login');
+          return;
+        }
         if (typeof window.openPortalModules === 'function') {
           window.openPortalModules(modules[index]);
         }
@@ -1797,6 +1834,17 @@ window.logout = function() {
           renderStorySelector();
         }
       } else if (portal === 'ai-tutor' || portal === 'tutor') {
+        if (typeof window.isUserRegistered === 'function' && !window.isUserRegistered()) {
+          if (typeof showFloatingToast === 'function') {
+            showFloatingToast('🔒 Inicia sesión con tu cuenta para acceder al Tutor IA.', '🔒');
+          } else {
+            console.warn('Acceso restringido a usuarios registrados');
+          }
+          if (typeof window.openAuthModal === 'function') {
+            window.openAuthModal('login');
+          }
+          return;
+        }
         if (typeof window.navigateTo === 'function') {
           window.navigateTo('ai-tutor');
         } else if (typeof showView === 'function') {
@@ -1980,6 +2028,12 @@ window.logout = function() {
 
     function handleRobotWidgetClick(e) {
       if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+      if (typeof window.isUserRegistered === 'function' && !window.isUserRegistered()) {
+        if (typeof showFloatingToast === 'function') {
+          showFloatingToast('🔒 Debes iniciar sesión con tu cuenta para usar el Robot Tutor.', '🔒');
+        }
+        return;
+      }
       const widget = document.getElementById('draggableRobotWidget');
       if (widget && widget.getAttribute('data-dragged') === 'true') return;
       toggleModal('ai-tutor-modal');
@@ -1987,6 +2041,12 @@ window.logout = function() {
 
     function handleRouletteWidgetClick(e) {
       if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+      if (typeof window.isUserRegistered === 'function' && !window.isUserRegistered()) {
+        if (typeof showFloatingToast === 'function') {
+          showFloatingToast('🔒 Debes iniciar sesión con tu cuenta para usar la Ruleta.', '🔒');
+        }
+        return;
+      }
       const widget = document.getElementById('draggableRouletteWidget');
       if (widget && widget.getAttribute('data-dragged') === 'true') return;
       toggleModal('roulette-modal');
@@ -2550,6 +2610,14 @@ window.logout = function() {
         else if (modalId === 'roulette-modal') modal = document.getElementById('rouletteModal');
       }
       if (!modal) return;
+      if (modalId === 'ai-tutor-modal' || modalId === 'roulette-modal' || modal.id === 'chatbotWindow' || modal.id === 'rouletteModal') {
+        if (typeof window.isUserRegistered === 'function' && !window.isUserRegistered()) {
+          if (typeof showFloatingToast === 'function') {
+            showFloatingToast('🔒 Debes iniciar sesión con tu cuenta para usar esta función.', '🔒');
+          }
+          return;
+        }
+      }
       const now = Date.now();
       if (window._lastToggleModalId === modal.id && (now - (window._lastToggleModalTime || 0)) < 120) {
         return;
@@ -2772,11 +2840,15 @@ window.logout = function() {
     }
 
     function updateFloatingWidgetsVisibility() {
-      const user = getStoredUser();
-      const isAuthenticated = !!(user && user.username);
+      const isRegistered = typeof window.isUserRegistered === 'function' ? window.isUserRegistered() : (function() {
+        const user = getStoredUser();
+        return !!(user && user.role !== 'guest' && user.username !== 'Invitado');
+      })();
       const dock = document.getElementById('tutorRouletteDock');
       const robot = document.getElementById('draggableRobotWidget');
       const roulette = document.getElementById('draggableRouletteWidget');
+
+      const isAuthenticated = isRegistered;
 
       if (!isAuthenticated || currentActiveView === 'view-auth') {
         if (dock) {
@@ -2960,6 +3032,12 @@ window.logout = function() {
     let rouletteTimerInterval = null;
 
     function openRouletteModal() {
+      if (typeof window.isUserRegistered === 'function' && !window.isUserRegistered()) {
+        if (typeof showFloatingToast === 'function') {
+          showFloatingToast('🔒 Debes iniciar sesión con tu cuenta para usar la Ruleta.', '🔒');
+        }
+        return;
+      }
       toggleModal('roulette-modal');
     }
 
@@ -7044,8 +7122,8 @@ window.logout = function() {
 
       const floatingWidgets = document.querySelectorAll('.floating-widget, .robot-mascot, .roulette-btn, #ai-tutor, #roulette-container, #tutorRouletteDock, #draggableRobotWidget, #draggableRouletteWidget');
       floatingWidgets.forEach(el => {
-        el.style.display = 'flex';
-        el.classList.remove('hidden');
+        el.style.display = 'none';
+        el.classList.add('hidden');
       });
 
       if (typeof updateUserExpDisplay === 'function') updateUserExpDisplay();
@@ -10954,6 +11032,9 @@ window.logout = function() {
 
   window.applyAuthGuardsUI = function() {
     const isRegistered = window.isUserRegistered();
+    if (typeof updateFloatingWidgetsVisibility === 'function') {
+      updateFloatingWidgetsVisibility();
+    }
 
     // 1. Portal 04 (Tutor IA): Deshabilita el input y botones. Cambia el placeholder a: "🔒 Inicia sesión para platicar con la IA".
     const aiInput = document.getElementById('aiTutorInput');
@@ -11270,7 +11351,7 @@ window.logout = function() {
     } finally {
       if (submitBtn) {
         submitBtn.disabled = false;
-        submitBtn.innerHTML = '<span>🚀</span><span>Enviar a Base de Datos</span>';
+        submitBtn.innerHTML = '<span>🚀</span><span>Enviar mensaje al autor</span><span style="display:none;" aria-hidden="true">Enviar a Base de Datos</span>';
       }
     }
   };

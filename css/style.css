@@ -1366,3 +1366,6 @@ header.auth-hidden,
 .chat-timestamp { display:block; text-align:right; font-size:0.65rem; opacity:0.6; margin-top:4px; }
 @media (max-width: 768px) { .ai-tutor-layout { grid-template-columns: 1fr; } .ai-history-sidebar { display: none; } }
 
+
+.btn-mission { flex: 1; padding: 10px; border-radius: 8px; background: #3182ce; color: #fff; border: none; cursor: pointer; font-weight: bold; }
+.btn-glossary { flex: 1; padding: 10px; border-radius: 8px; background: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid rgba(255, 255, 255, 0.2); cursor: pointer; }
