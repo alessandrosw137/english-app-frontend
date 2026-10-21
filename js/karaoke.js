@@ -952,10 +952,19 @@
       if (ytIframe) ytIframe.style.display = 'block';
       currentMusicIndex = idx;
       currentKaraokeStanzaIndex = 0;
-      stopMusicKaraokeSync();
 
       const track = MUSIC_SESSION_TRACKS[idx];
       if (!track) return;
+
+      if (typeof window.loadSongToKaraoke === 'function') {
+        const durSec = (track.duration && track.duration.includes(':'))
+          ? (parseInt(track.duration.split(':')[0], 10) * 60 + parseInt(track.duration.split(':')[1], 10))
+          : 225;
+        window.loadSongToKaraoke(track.title, track.artist, track.previewUrl || '', track.artwork || '', durSec);
+        return;
+      }
+
+      stopMusicKaraokeSync();
 
       const titleEl = document.getElementById('activeMusicTitle');
       const artistEl = document.getElementById('activeMusicArtist');
@@ -1192,6 +1201,15 @@
     }
 
     function handleKaraokeTimeUpdate(currentTime) {
+      if (window.KaraokeSyncEngine && window.KaraokeSyncEngine.stanzas && window.KaraokeSyncEngine.stanzas.length > 0) {
+        const timeToSync = (typeof currentTime === 'number' && !isNaN(currentTime))
+          ? currentTime
+          : window.KaraokeSyncEngine.getCurrentPlaybackTime();
+        window.KaraokeSyncEngine.syncFrame(timeToSync, false);
+        window.KaraokeSyncEngine.updateSeekBarUI(timeToSync);
+        return;
+      }
+
       const lyrics = activeLyricsList;
       if (!lyrics || lyrics.length === 0) return;
 
@@ -1409,6 +1427,12 @@
     // ========================================================
     function syncKaraokeToTime() {
       if (!isKaraokeSyncRunning) return;
+      if (window.KaraokeSyncEngine && window.KaraokeSyncEngine.stanzas && window.KaraokeSyncEngine.stanzas.length > 0) {
+        const t = window.KaraokeSyncEngine.getCurrentPlaybackTime();
+        window.KaraokeSyncEngine.syncFrame(t, false);
+        window.KaraokeSyncEngine.updateSeekBarUI(t);
+        return;
+      }
       const lyrics = activeLyricsList;
       if (!lyrics || lyrics.length === 0) return;
 
@@ -1520,6 +1544,11 @@
 
       // Sincronización inmediata
       syncKaraokeToTime();
+
+      // Si KaraokeSyncEngine ya está activo con su propio bucle rAF, evitar bucles conflictivos
+      if (window.KaraokeSyncEngine && window.KaraokeSyncEngine.stanzas && window.KaraokeSyncEngine.stanzas.length > 0) {
+        return;
+      }
 
       // Intervalo de alta frecuencia de 250ms con polling ultra-rápido a 100ms
       musicKaraokeInterval = setInterval(() => {

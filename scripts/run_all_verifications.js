@@ -41,7 +41,8 @@ const scripts = [
   'verify_v20_universal_seek_pause_sync.js',
   'verify_v21_no_startup_autoplay.js',
   'verify_v22_interactive_stanza_seek_sync.js',
-  'verify_v23_lrc_universal_engine_mobile.js'
+  'verify_v23_lrc_universal_engine_mobile.js',
+  'verify_v24_karaoke_flicker_loop_audio_overlap.js'
 ];
 
 let allPassed = true;

@@ -8044,10 +8044,10 @@ window.logout = function() {
             const pState = (ytPlayer && typeof ytPlayer.getPlayerState === 'function') ? ytPlayer.getPlayerState() : null;
             if (pState === 1 || pState === 3 || window._holoPlayerHasStartedPlaying) return;
             if (!window._holoPlayerHasStartedPlaying && window._isHoloStagePlaying && window._holoPlayerFallbackStage === 1) {
-              console.warn('[HoloPlayer Watchdog] Video alternativo tampoco cargó en 3s. Pasando a Modo Audio Garantizado...');
+              console.warn('[HoloPlayer Watchdog] Video alternativo tampoco cargó en 8s. Pasando a Modo Audio Garantizado...');
               window.handleHoloPlayerError('ALT_TIMEOUT');
             }
-          }, 2500);
+          }, 8000);
           return;
         }
       }
@@ -8063,13 +8063,21 @@ window.logout = function() {
         showFloatingToast('Iniciando Escenario Holográfico de Audio en Alta Definición', '✨');
       }
 
-      // Ocultar iframe con restricción
+      // Ocultar iframe con restricción y cortar stream completamente asignando about:blank
       const iframe = document.getElementById('musicHoloYoutubeIframe');
       if (iframe) {
         iframe.style.display = 'none';
         try {
-          iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+          if (iframe.contentWindow) {
+            iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+            iframe.contentWindow.postMessage('{"event":"command","func":"stopVideo","args":""}', '*');
+          }
         } catch (_) {}
+        iframe.src = 'about:blank';
+      }
+      if (window._holoYtPlayer && typeof window._holoYtPlayer.destroy === 'function') {
+        try { window._holoYtPlayer.destroy(); } catch (_) {}
+        window._holoYtPlayer = null;
       }
 
       // Activar contenedor visualizador holográfico interactivo
@@ -8146,6 +8154,7 @@ window.logout = function() {
 
     window.handleHoloPlayerStateChange = function(state) {
       // YT.PlayerState: ENDED = 0, PLAYING = 1, PAUSED = 2, BUFFERING = 3, CUED = 5
+      if (state === 3) return; // Buffering de YouTube en progreso: no alterar estado ni forzar fallback
       const isPlaying = state === 1 || (window.YT && window.YT.PlayerState && state === window.YT.PlayerState.PLAYING);
       const isPaused = state === 2 || (window.YT && window.YT.PlayerState && state === window.YT.PlayerState.PAUSED);
       const isEnded = state === 0 || (window.YT && window.YT.PlayerState && state === window.YT.PlayerState.ENDED);
@@ -8573,8 +8582,13 @@ window.logout = function() {
         // 2. Lectura en tiempo real en modo audio nativo (<audio id="mastereng-audio">, etc.)
         const dur = window._currentTrackTotalDuration || 225;
         const nativeAudio = document.getElementById('mastereng-audio') || document.getElementById('karaokeAudioSync') || document.getElementById('karaokeAudioTracker');
-        if (currentTime === null && nativeAudio && !isNaN(nativeAudio.currentTime) && (!nativeAudio.paused || window._holoPlayerFallbackStage >= 2)) {
-          currentTime = nativeAudio.currentTime + window.lyricsOffset;
+        if (currentTime === null && nativeAudio && (!nativeAudio.paused || window._holoPlayerFallbackStage >= 2)) {
+          if (window._holoPlayerFallbackStage >= 2) {
+            const elapsed = (Date.now() - (window._currentTrackStartTime || Date.now())) / 1000;
+            currentTime = Math.min(dur, Math.max(0, elapsed + (window.lyricsOffset || 0)));
+          } else if (!isNaN(nativeAudio.currentTime)) {
+            currentTime = nativeAudio.currentTime + window.lyricsOffset;
+          }
         }
 
         // 3. Fallback a tiempo transcurrido solo si ningún reproductor reportó tiempo
@@ -8831,6 +8845,7 @@ window.logout = function() {
       }
 
       window._currentTrackCurrentTime = targetSec;
+      window._currentTrackStartTime = Date.now() - (targetSec * 1000);
       window.lastKnownPlaybackTime = targetSec;
       window._isSeekingGracePeriod = true;
       window._lastSeekTimestamp = Date.now();
@@ -9341,6 +9356,11 @@ window.logout = function() {
         }
         const audioEl = document.getElementById('mastereng-audio');
         if (audioEl && !audioEl.paused) {
+          if (window._holoPlayerFallbackStage >= 2) {
+            const dur = window._currentTrackTotalDuration || 225;
+            const elapsed = (Date.now() - (window._currentTrackStartTime || Date.now())) / 1000;
+            return Math.min(dur, Math.max(0, elapsed));
+          }
           return audioEl.currentTime || 0;
         }
         return window.lastKnownPlaybackTime || window._currentTrackCurrentTime || 0;
@@ -9865,22 +9885,36 @@ window.logout = function() {
         } catch (_) {}
       }
 
-      // Detener iframes enviando postMessage
+      // Detener iframes enviando postMessage y cortando el stream con about:blank para cero solapamiento
       const holoIframe = document.getElementById('musicHoloYoutubeIframe');
-      if (holoIframe && holoIframe.contentWindow) {
+      if (holoIframe) {
         try {
-          holoIframe.contentWindow.postMessage('{"event":"command","func":"stopVideo","args":""}', '*');
-          holoIframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+          if (holoIframe.contentWindow) {
+            holoIframe.contentWindow.postMessage('{"event":"command","func":"stopVideo","args":""}', '*');
+            holoIframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+          }
         } catch (_) {}
+        holoIframe.src = 'about:blank';
       }
       const mainIframe = document.getElementById('musicYouTubeIframe');
-      if (mainIframe && mainIframe.contentWindow) {
+      if (mainIframe) {
         try {
-          mainIframe.contentWindow.postMessage('{"event":"command","func":"stopVideo","args":""}', '*');
+          if (mainIframe.contentWindow) {
+            mainIframe.contentWindow.postMessage('{"event":"command","func":"stopVideo","args":""}', '*');
+          }
         } catch (_) {}
+        mainIframe.src = 'about:blank';
       }
 
-      // Pausar y resetear reproductor de audio nativo de sincronización
+      // Pausar y resetear todos los reproductores de audio nativos
+      document.querySelectorAll('audio').forEach(audioEl => {
+        try {
+          audioEl.pause();
+          audioEl.currentTime = 0;
+          audioEl.removeAttribute('src');
+          audioEl.load();
+        } catch (_) {}
+      });
       const nativeSyncAudio = document.getElementById('karaokeAudioSync');
       if (nativeSyncAudio) {
         nativeSyncAudio.pause();
@@ -10260,19 +10294,19 @@ window.logout = function() {
           setTimeout(sendUnmute, 400);
         }
 
-        // Watchdog de 3.2 segundos para detectar bloqueos de incrustación o falta de inicio
+        // Watchdog de 10 segundos para detectar bloqueos de incrustación o falta de inicio
         if (window._holoPlayerWatchdogTimer) clearTimeout(window._holoPlayerWatchdogTimer);
         window._holoPlayerWatchdogTimer = setTimeout(() => {
           const ytPlayer = window._holoYtPlayer;
           const pState = (ytPlayer && typeof ytPlayer.getPlayerState === 'function') ? ytPlayer.getPlayerState() : null;
           if (pState === 1 || pState === 3 || window._holoPlayerHasStartedPlaying) return;
           if (!window._holoPlayerHasStartedPlaying && window._isHoloStagePlaying && window._holoPlayerFallbackStage === 0) {
-            console.warn('[YouTube Watchdog] Video restringido o no inició en 3s, iniciando fallback...');
+            console.warn('[YouTube Watchdog] Video restringido o no inició en 10s, iniciando fallback...');
             if (typeof window.handleHoloPlayerError === 'function') {
               window.handleHoloPlayerError('TIMEOUT_OR_BLOCKED');
             }
           }
-        }, 3200);
+        }, 10000);
 
         // 6. Iniciar temporizador de sincronización en tiempo real
         window.startKaraokeSyncTimer();
