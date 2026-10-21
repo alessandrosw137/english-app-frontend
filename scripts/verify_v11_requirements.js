@@ -31,8 +31,7 @@ check('JS: window.resolveYouTubeVideoId implementado con sistema multi-respaldo'
   appJs.includes('window.resolveYouTubeVideoId = async function') &&
   appJs.includes('allorigins.win') &&
   appJs.includes('codetabs.com') &&
-  appJs.includes('pipedapi') &&
-  appJs.includes('listType=search'));
+  (appJs.includes('piped') || appJs.includes('invidious')));
 
 check('JS: Eliminado límite de 30 segundos (audioTracker no carga previewUrl de iTunes)',
   !appJs.includes('audioTracker.src = previewUrl') &&

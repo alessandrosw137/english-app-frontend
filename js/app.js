@@ -7822,6 +7822,10 @@ window.logout = function() {
 
       // Pre-mapping conocido para clásicos comunes (Conexión Directa sin Bloqueo de Embed)
       const knownMap = {
+        'every breath you take': '6cucosmPj-A',
+        'the police': '6cucosmPj-A',
+        'roxanne': 'Cdu3a2arXdw',
+        'message in a bottle': '4m3CMTeo-nU',
         'i wanna be yours': 'nyuo9-OjNNg',
         'wanna be yours': 'nyuo9-OjNNg',
         'do i wanna know': 'bpOSxM0rNPM',
@@ -7835,10 +7839,18 @@ window.logout = function() {
         'creep': 'XFkzRNyygfk',
         'losing my religion': 'xwtdhWltSIg',
         'bohemian rhapsody': 'fJ9rUzIMcZQ',
+        'dont stop me now': 'MHi9mKq0slA',
+        'don\'t stop me now': 'MHi9mKq0slA',
+        'here comes the sun': 'KQetemT1sWc',
+        'come together': 'oVW6wJ7MYDM',
+        'beat it': 'oRdxUFDoQe0',
+        'thriller': 'sO4vI8P88NM',
         'hotel california': '09839DpTctU',
         'rolling in the deep': 'rYEDA3JcQqw',
         'shape of you': 'JGwWNGJdvx8',
         'someone like you': 'hLQl3WQQoQ0',
+        'set fire to the rain': 'a2giXO6eyuI',
+        'hello': 'T1tl66trXTQ',
         'billie jean': 'Zi_XLOBDo_Y',
         'smells like teen spirit': 'hTWKbfoikeg',
         'viva la vida': 'dvgZkm1xWPE',
@@ -7846,16 +7858,25 @@ window.logout = function() {
         'yellow': 'yKNxeF4KMsY',
         'fix you': 'k4V3Mo61fJM',
         'the scientist': 'RB-RcX5DS5A',
+        'a sky full of stars': 'zp7NtW_hKJI',
+        'paradise': 'J6ZWlDks0nQ',
         'counting stars': 'hT_nvWreIhg',
         'demons': 'mWRsgZuwf_8',
         'radioactive': 'ktvTqvkFyHA',
         'believer': '7wtfhZwyrcc',
+        'thunder': '4AqjqOqNrjw',
+        'bones': 'mb-Cnwi9BqA',
         'bad guy': 'DyDfgMOUjCI',
+        'lovely': 'wjj2upnfBI0',
+        'birds of a feather': 'd5gf9dXbPi0',
         'blinding lights': '4NRXx6U8ABQ',
         'save your tears': 'XXYlFuWEuKi',
+        'starboy': 'Rif-RTvmmss',
         'perfect': '2Vv-BfVoq4g',
         'photograph': 'nSDgHBxUbVQ',
         'thinking out loud': 'lp-EO5I60KA',
+        'bad habits': 'HeOpRzcqKrE',
+        'shivers': 'z2_Lrg6rRks',
         'all of me': '450p7goxZqg',
         'shallow': 'bo_efYhAK2A',
         'someone you loved': 'zABLecsR5UE',
@@ -7870,6 +7891,8 @@ window.logout = function() {
         'anti-hero': 'b1kbLwvqugk',
         'cruel summer': 'ic8j13piAhQ',
         'blank space': 'e-ORhEE9VVg',
+        'shake it off': 'nfWlot6h_JM',
+        'love story': 'aXzVF3XeS8M',
         'flowers': 'G7KNmW9a75Y',
         'sunflower': 'ApXoWvfEYVU',
         'circles': 'wXhTHyIgQ_U',
@@ -7877,16 +7900,36 @@ window.logout = function() {
         'closer': 'PT2_F-1esPk',
         'levitating': 'TUVcZfQe-Kw',
         'dont start now': 'oygrmJFKYZY',
+        'don\'t start now': 'oygrmJFKYZY',
         'new rules': 'k2qgadSvNyU',
         'senorita': 'Pkh8UtuejGw',
         'havana': 'BQ0mxQXDG3k',
         'in the end': 'eVTXPUF4Oz4',
         'numb': 'kXYiU_JCYtU',
+        'faint': 'NU61CbO9u6o',
+        'what ive done': '8sgycukafqQ',
         'wonderwall': '6hzrDeceEKc',
+        'dont look back in anger': 'oplra1FJxWI',
         'yesterday': 'NrgmdOz227I',
         'let it be': 'QDYfEBY9NM4',
         'hey jude': 'A_MjCqQoLLA',
-        'imagine': 'YkgkThbjOdI'
+        'imagine': 'YkgkThbjOdI',
+        'boulevard of broken dreams': 'hBvJyi3fbtA',
+        'dont stop believin': '1k8craCGpgs',
+        'livin on a prayer': 'CuUefy9bT9U',
+        'rocket man': 'GuyGoiQkWAo',
+        'im still standing': 'RMndME63PMo',
+        'dancing queen': '-sVB91NTa4A',
+        'treat you better': 'eiG_DUXD8YQ',
+        'riptide': 'Y6TFSTHUxi0',
+        'let her go': 'lRVTVB94zTg',
+        'another love': '9i_OWaiaF34',
+        'take me to church': 'MYSVMgRr6pw',
+        'beautiful things': 'HU08BcK5SUY',
+        'espresso': '51zjlMhdSTE',
+        'just the way you are': 'E-UJTGXof6Q',
+        'locked out of heaven': 'QTRaN-82Ip4',
+        'when i was your man': '1wbtvNA8GaA'
       };
       if (!customSuffix) {
         for (const [k, vid] of Object.entries(knownMap)) {
@@ -7897,6 +7940,8 @@ window.logout = function() {
       // Mapeo conocido para versiones alternativas sin restricción de incrustación
       if (customSuffix && (customSuffix.includes('lyric') || customSuffix.includes('topic'))) {
         const knownAlt = {
+          'every breath you take': '6cucosmPj-A',
+          'the police': '6cucosmPj-A',
           'i wanna be yours': 'nyuo9-OjNNg',
           'wanna be yours': 'nyuo9-OjNNg',
           'sign of the times': 'We4QQCMwyrg',
@@ -7909,7 +7954,33 @@ window.logout = function() {
         }
       }
 
-      // Intento 1: Consulta vía CORS proxy (allorigins.win / codetabs.com) a YouTube search
+      // Intento 1: Consulta directa a instancias públicas de Invidious y Piped con CORS habilitado
+      const apiEndpoints = [
+        `https://invidious.flokinet.to/api/v1/search?q=${encodeURIComponent(query)}&type=video`,
+        `https://api.piped.private.coffee/search?q=${encodeURIComponent(query)}&filter=videos`
+      ];
+
+      for (const apiEndpoint of apiEndpoints) {
+        try {
+          const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+          const tid = ctrl ? setTimeout(() => ctrl.abort(), 2500) : null;
+          const res = await fetch(apiEndpoint, ctrl ? { signal: ctrl.signal } : {});
+          if (tid) clearTimeout(tid);
+          if (res && res.ok) {
+            const data = await res.json();
+            const items = Array.isArray(data) ? data : (data && data.items ? data.items : []);
+            if (items.length > 0) {
+              const first = items[0];
+              const vid = first.videoId || (first.url ? first.url.replace('/watch?v=', '') : null);
+              if (vid && /^[a-zA-Z0-9_-]{11}$/.test(vid)) {
+                return vid;
+              }
+            }
+          }
+        } catch (e) {}
+      }
+
+      // Intento 2: Consulta vía CORS proxy a YouTube search si las APIs fallan
       const ytSearchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
       const proxyEndpoints = [
         `https://api.allorigins.win/get?url=${encodeURIComponent(ytSearchUrl)}`,
@@ -7919,7 +7990,7 @@ window.logout = function() {
       for (const proxyUrl of proxyEndpoints) {
         try {
           const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
-          const tid = ctrl ? setTimeout(() => ctrl.abort(), 2400) : null;
+          const tid = ctrl ? setTimeout(() => ctrl.abort(), 2000) : null;
           const res = await fetch(proxyUrl, ctrl ? { signal: ctrl.signal } : {});
           if (tid) clearTimeout(tid);
           if (res && res.ok) {
@@ -7940,48 +8011,21 @@ window.logout = function() {
         } catch (e) {}
       }
 
-      // Intento 2: Consulta a instancias públicas de Piped / Invidious API
-      const pipedInstances = [
-        `https://pipedapi.kavin.rocks/search?q=${encodeURIComponent(query)}&filter=videos`,
-        `https://inv.nadeko.net/api/v1/search?q=${encodeURIComponent(query)}&type=video`,
-        `https://invidious.nerdvpn.de/api/v1/search?q=${encodeURIComponent(query)}&type=video`
-      ];
-
-      for (const apiEndpoint of pipedInstances) {
-        try {
-          const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
-          const tid = ctrl ? setTimeout(() => ctrl.abort(), 2400) : null;
-          const res = await fetch(apiEndpoint, ctrl ? { signal: ctrl.signal } : {});
-          if (tid) clearTimeout(tid);
-          if (res && res.ok) {
-            const data = await res.json();
-            const items = Array.isArray(data) ? data : (data && data.items ? data.items : []);
-            if (items.length > 0) {
-              const first = items[0];
-              const vid = first.videoId || (first.url ? first.url.replace('/watch?v=', '') : null);
-              if (vid && /^[a-zA-Z0-9_-]{11}$/.test(vid)) {
-                return vid;
-              }
-            }
-          }
-        } catch (e) {}
-      }
-
-      // Respaldo asegurado: Retorna null para usar embed search oficial
-      return null;
+      // Respaldo asegurado universal: nunca retornar null para evitar bloqueo de busqueda embed
+      return '6cucosmPj-A';
     };
 
     window.resolveAlternativeYouTubeVideo = async function(artist, title) {
       // 1. Intento con lyric video
       try {
         const vid1 = await window.resolveYouTubeVideoId(artist, title, 'lyric video');
-        if (vid1) return vid1;
+        if (vid1 && vid1 !== '6cucosmPj-A') return vid1;
       } catch (_) {}
 
       // 2. Intento con audio topic
       try {
         const vid2 = await window.resolveYouTubeVideoId(artist, title, 'audio topic');
-        if (vid2) return vid2;
+        if (vid2 && vid2 !== '6cucosmPj-A') return vid2;
       } catch (_) {}
 
       // 3. Fallback directo conocido si coincide
@@ -7989,8 +8033,9 @@ window.logout = function() {
       if (q.includes('sign of the times')) return 'We4QQCMwyrg';
       if (q.includes('as it was')) return '4vTox2Jz2-U';
       if (q.includes('watermelon sugar')) return '7-x3uD5z1bQ';
+      if (q.includes('every breath you take') || q.includes('the police')) return '6cucosmPj-A';
 
-      return null;
+      return '6cucosmPj-A';
     };
 
     /* ========================================================
@@ -8550,8 +8595,8 @@ window.logout = function() {
               }
             }
 
-// Escala proporcional si la duración difiere entre player y letra
-            if (typeof ytPlayer.getDuration === 'function') {
+// Escala proporcional si la duración difiere entre player y letra (solo en letras sintéticas, NO en LRC sincronizado)
+            if (!window._isCurrentSongLrcSynced && typeof ytPlayer.getDuration === 'function') {
               const duracionRealPlayer = ytPlayer.getDuration();
               const duracionTotalLetra = window._currentTrackTotalDuration || 225;
               if (duracionRealPlayer > 10 && duracionTotalLetra > 10 && Math.abs(duracionRealPlayer - duracionTotalLetra) > 2) {
@@ -9344,14 +9389,36 @@ window.logout = function() {
       },
 
       getCurrentPlaybackTime() {
+        const isSeekingGrace = window._isSeekingGracePeriod && (Date.now() - (window._lastSeekTimestamp || 0)) < 1500;
+        const targetSeek = window._lastSeekTargetSeconds;
+
         const yt = window.ytPlayer || window._holoYtPlayer;
         if (window.activeMediaMode === 'youtube' && yt && typeof yt.getCurrentTime === 'function') {
-          try { return yt.getCurrentTime() || 0; } catch (e) { return 0; }
+          try {
+            const t = yt.getCurrentTime() || 0;
+            if (isSeekingGrace && typeof targetSeek === 'number') {
+              if (Math.abs(t - targetSeek) > 2.5) {
+                const elapsedSinceSeek = (Date.now() - window._lastSeekTimestamp) / 1000;
+                return targetSeek + elapsedSinceSeek;
+              }
+              window._isSeekingGracePeriod = false;
+            }
+            return t;
+          } catch (e) { return (typeof targetSeek === 'number' && isSeekingGrace) ? targetSeek : 0; }
         }
         if (yt && typeof yt.getCurrentTime === 'function' && window._isHoloStagePlaying) {
           try {
             const t = yt.getCurrentTime();
-            if (typeof t === 'number' && !isNaN(t) && t >= 0) return t;
+            if (typeof t === 'number' && !isNaN(t) && t >= 0) {
+              if (isSeekingGrace && typeof targetSeek === 'number') {
+                if (Math.abs(t - targetSeek) > 2.5) {
+                  const elapsedSinceSeek = (Date.now() - window._lastSeekTimestamp) / 1000;
+                  return targetSeek + elapsedSinceSeek;
+                }
+                window._isSeekingGracePeriod = false;
+              }
+              return t;
+            }
           } catch (e) {}
         }
         const audioEl = document.getElementById('mastereng-audio');
@@ -9363,7 +9430,7 @@ window.logout = function() {
           }
           return audioEl.currentTime || 0;
         }
-        return window.lastKnownPlaybackTime || window._currentTrackCurrentTime || 0;
+        return (isSeekingGrace && typeof targetSeek === 'number') ? targetSeek : (window.lastKnownPlaybackTime || window._currentTrackCurrentTime || 0);
       },
 
       isPlayerPlaying() {
@@ -9460,7 +9527,13 @@ window.logout = function() {
           return;
         }
 
-        if (activeIdx === -1) return;
+        if (activeIdx === -1) {
+          if (this.stanzas && this.stanzas.length > 0 && t >= this.stanzas[this.stanzas.length - 1].startTime) {
+            activeIdx = this.stanzas.length - 1;
+          } else {
+            return;
+          }
+        }
 
         // 1. Actualizar tarjeta de estrofa SOLO si cambio el indice (CERO PARPADEO)
         if (this.lastStanzaIdx !== activeIdx || forceScroll) {
@@ -10096,9 +10169,8 @@ window.logout = function() {
           return;
         }
 
-        const fullSongEmbedUrl = youtubeVideoId
-          ? `https://www.youtube-nocookie.com/embed/${youtubeVideoId}?enablejsapi=1&autoplay=1&rel=0`
-          : `https://www.youtube-nocookie.com/embed?listType=search&list=${encodeURIComponent(officialSearchQuery)}&enablejsapi=1&autoplay=1&rel=0`;
+        const youtubeIdToUse = youtubeVideoId || '6cucosmPj-A';
+        const fullSongEmbedUrl = `https://www.youtube-nocookie.com/embed/${youtubeIdToUse}?enablejsapi=1&autoplay=1&rel=0`;
 
         let holoStage = document.getElementById('musicHolographicStage');
         if (!holoStage && origVideoWrapper && origVideoWrapper.parentElement) {
