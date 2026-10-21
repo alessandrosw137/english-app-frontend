@@ -1357,3 +1357,12 @@ header.auth-hidden,
     transform: scale(1.04);
   }
 }
+
+/* ========================================================
+   AI TUTOR SPLIT LAYOUT & SIDEBAR
+   ======================================================== */
+.ai-tutor-layout { display: grid; grid-template-columns: 1fr 300px; gap: 20px; height: 100%; }
+.ai-history-sidebar { background: rgba(15, 23, 42, 0.6); border-left: 1px solid rgba(255,255,255,0.1); padding: 15px; overflow-y: auto; border-radius: 0 14px 14px 0; }
+.chat-timestamp { display:block; text-align:right; font-size:0.65rem; opacity:0.6; margin-top:4px; }
+@media (max-width: 768px) { .ai-tutor-layout { grid-template-columns: 1fr; } .ai-history-sidebar { display: none; } }
+

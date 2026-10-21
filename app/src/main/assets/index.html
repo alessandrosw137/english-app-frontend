@@ -11,13 +11,13 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
   if (!window.tailwind) {
-   document.write('<script src="tailwind.js"><\/script>');
+  document.write('<script src="tailwind.js"><\/script>');
   }
   </script>
   <script src="three.min.js"></script>
   <script>
   if (typeof THREE === 'undefined') {
-   document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');
+  document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');
   }
   </script>
   <script src="master_data.js"></script>
@@ -33,19 +33,19 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <script>
   tailwind.config = {
-   darkMode: 'class',
-   theme: {
+  darkMode: 'class',
+  theme: {
   extend: {
   fontFamily: {
-   sans: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
-   mono: ['"JetBrains Mono"', 'monospace'],
+  sans: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
+  mono: ['"JetBrains Mono"', 'monospace'],
   },
   colors: {
-   appbg: '#0f172a',
-   appcard: '#1e293b',
+  appbg: '#0f172a',
+  appcard: '#1e293b',
   }
   }
-   }
+  }
   }
   </script>
   <link rel="stylesheet" href="css/style.css">
@@ -62,10 +62,10 @@
   .coverflow-portal-card,.portal-card{position:relative !important;top:auto !important;left:auto !important;margin:0 auto !important;transform:none !important;}
   .coverflow-portal-card:not(.active-center){display:none !important;}
   @media (orientation: landscape) {
-   body.view-worldtour-active header { display: none !important; }
-   #worldTourContainer, #threeCanvas, #threeCanvasContainer { width: 100vw !important; height: 100vh !important; position: fixed !important; inset: 0 !important; }
-   #worldTourTopBar { backdrop-filter: blur(12px) !important; border-radius: 9999px !important; }
-   #virtualJoystickContainer { transform: scale(0.9) !important; }
+  body.view-worldtour-active header { display: none !important; }
+  #worldTourContainer, #threeCanvas, #threeCanvasContainer { width: 100vw !important; height: 100vh !important; position: fixed !important; inset: 0 !important; }
+  #worldTourTopBar { backdrop-filter: blur(12px) !important; border-radius: 9999px !important; }
+  #virtualJoystickContainer { transform: scale(0.9) !important; }
   }
   header, .top-bar, .navbar { position: fixed; top: 0; left: 0; width: 100%; z-index: 9999 !important; pointer-events: auto !important; }
   .floating-widget, #ai-tutor-btn, #roulette-btn, .bottom-widgets { z-index: 9999 !important; pointer-events: auto !important; }
@@ -87,7 +87,7 @@
 <body class="bg-[#0f172a] text-slate-100 min-h-screen flex flex-col">
   <header id="mainHeader" class="navbar top-bar fixed top-0 left-0 right-0 z-50 bg-[#0f172a]/95 backdrop-blur-md border-b border-slate-800/80 h-14 flex items-center justify-between px-3 sm:px-6">
   <div class="flex items-center gap-3">
-   <div onclick="handleLogoClick()" class="flex items-center gap-2.5 cursor-pointer group">
+  <div onclick="handleLogoClick()" class="flex items-center gap-2.5 cursor-pointer group">
   <div class="w-9 h-9 rounded-xl overflow-hidden border border-sky-400/60 shadow-lg shadow-sky-500/30 group-hover:scale-105 transition bg-slate-900">
   <img src="images/app_hero_logo.jpg" alt="English App Logo" class="w-full h-full object-cover" onerror="this.onerror=null; this.src=window.FALLBACK_LOGO || 'images/app_hero_logo.svg';">
   </div>
@@ -95,29 +95,29 @@
   <h1 class="text-xs sm:text-sm font-extrabold tracking-wider bg-gradient-to-r from-sky-400 to-indigo-300 bg-clip-text text-transparent">MasterENG</h1>
   <p class="text-[9px] text-slate-400 hidden sm:block">Por: Wilberth Alessandro Molina Cutz</p>
   </div>
-   </div>
+  </div>
   </div>
   <div class="flex items-center gap-2 sm:gap-3">
-   <div id="headerConnStatus" class="flex items-center gap-1.5 px-2 py-1 rounded-full bg-slate-800/80 border border-slate-700/60 text-[10px] text-slate-300 font-mono">
+  <div id="headerConnStatus" class="flex items-center gap-1.5 px-2 py-1 rounded-full bg-slate-800/80 border border-slate-700/60 text-[10px] text-slate-300 font-mono">
   <span id="headerConnDot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
   <span id="headerConnText" class="hidden sm:inline">Online</span>
-   </div>
-   <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-800/90 border border-amber-500/30 text-xs font-bold text-amber-300 shadow-sm">
+  </div>
+  <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-800/90 border border-amber-500/30 text-xs font-bold text-amber-300 shadow-sm">
   <span id="userRankMedal">🥉</span>
   <span id="headerUserRank">Bronce</span>
   <span class="text-slate-500 font-normal">|</span>
   <span id="headerUserExp" class="text-amber-400">0 EXP</span>
-   </div>
-   <button id="headerAdminBtn" onclick="openAdminDashboardModal()" style="display: none;" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-purple-600 to-indigo-600 hover:from-amber-400 hover:via-purple-500 hover:to-indigo-500 text-white font-bold text-xs transition shadow-lg shadow-purple-600/40 cursor-pointer active:scale-95 border border-amber-300/50 hidden">
+  </div>
+  <button id="headerAdminBtn" onclick="openAdminDashboardModal()" style="display: none;" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-purple-600 to-indigo-600 hover:from-amber-400 hover:via-purple-500 hover:to-indigo-500 text-white font-bold text-xs transition shadow-lg shadow-purple-600/40 cursor-pointer active:scale-95 border border-amber-300/50 hidden">
   <span>⚙️ Panel Admin</span>
-   </button>
-   <button id="headerProfileBtn" data-action="open-profile" onclick="window.renderUserProfile(); toggleModal('profile-modal');" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-semibold text-xs transition shadow-md shadow-sky-600/30 cursor-pointer active:scale-95" data-action="openProfileModal">
+  </button>
+  <button id="headerProfileBtn" data-action="open-profile" onclick="window.renderUserProfile(); toggleModal('profile-modal');" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-semibold text-xs transition shadow-md shadow-sky-600/30 cursor-pointer active:scale-95" data-action="openProfileModal">
   <span id="headerAvatarText" class="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px]">👤</span>
   <span class="hidden sm:inline">Perfil</span>
-   </button>
-   <button id="headerSettingsBtn" data-action="open-settings" onclick="toggleModal('settings-modal'); openSettingsModal();" class="flex items-center justify-center w-8 h-8 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700/80 text-slate-200 hover:text-white font-bold text-sm transition shadow-md cursor-pointer active:scale-95" title="Ajustes y Configuración">
+  </button>
+  <button id="headerSettingsBtn" data-action="open-settings" onclick="toggleModal('settings-modal'); openSettingsModal();" class="flex items-center justify-center w-8 h-8 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700/80 text-slate-200 hover:text-white font-bold text-sm transition shadow-md cursor-pointer active:scale-95" title="Ajustes y Configuración">
   <span>⚙️</span>
-   </button>
+  </button>
   </div>
   </header>
   <img src="images/ai_tutor_mascot.svg" alt="AI Tutor Mascot" class="hidden" style="display: none;" onerror="this.onerror=null; this.src=window.FALLBACK_MASCOT;" />
@@ -125,67 +125,67 @@
   <div class="bottom-widgets">
   <div id="tutorRouletteDock" class="fixed z-50 bottom-20 right-4 sm:right-6 flex flex-row items-center gap-3 pointer-events-none hidden" style="display: none;">
   <div id="draggableRobotWidget" class="floating-widget draggable-widget pointer-events-auto flex items-center justify-center hidden" style="display: none;">
-   <div id="ai-tutor-btn" onclick="toggleModal('ai-tutor-modal'); handleRobotWidgetClick(event);" class="relative group cursor-pointer" title="Asistente de Dudas IA">
+  <div id="ai-tutor-btn" onclick="toggleModal('ai-tutor-modal'); handleRobotWidgetClick(event);" class="relative group cursor-pointer" title="Asistente de Dudas IA">
   <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-tr from-sky-500 via-cyan-400 to-indigo-600 p-0.5 shadow-2xl shadow-sky-500/40 group-hover:scale-105 transition duration-300">
   <div class="w-full h-full rounded-[14px] bg-slate-900 flex flex-col items-center justify-center relative overflow-hidden p-1.5">
-   <svg class="w-full h-full" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"> <defs> <linearGradient id="robotBodyGrad" x1="0%" y1="0%" x2="100%" y2="100%"> <stop offset="0%" stop-color="#38bdf8"/> <stop offset="50%" stop-color="#0284c7"/> <stop offset="100%" stop-color="#1e1b4b"/> </linearGradient> <linearGradient id="robotScreenGrad" x1="0%" y1="0%" x2="0%" y2="100%"> <stop offset="0%" stop-color="#0f172a"/> <stop offset="100%" stop-color="#020617"/> </linearGradient> <linearGradient id="robotEyeGrad" x1="0%" y1="0%" x2="100%" y2="100%"> <stop offset="0%" stop-color="#67e8f9"/> <stop offset="100%" stop-color="#06b6d4"/> </linearGradient> <filter id="robotGlow" x="-20%" y="-20%" width="140%" height="140%"> <feGaussianBlur stdDeviation="2" result="blur"/> <feComposite in="SourceGraphic" in2="blur" operator="over"/> </filter> </defs><g id="robotMascotGraphic"> <line x1="50" y1="20" x2="50" y2="10" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/> <circle cx="50" cy="8" r="4.5" fill="#38bdf8" filter="url(#robotGlow)"/> <circle cx="50" cy="8" r="2" fill="#ffffff"/> <rect x="14" y="38" width="6" height="18" rx="3" fill="#0284c7"/> <rect x="80" y="38" width="6" height="18" rx="3" fill="#0284c7"/> <rect x="18" y="20" width="64" height="54" rx="16" fill="url(#robotBodyGrad)" stroke="#38bdf8" stroke-width="2"/> <rect x="25" y="27" width="50" height="38" rx="10" fill="url(#robotScreenGrad)" stroke="#0ea5e9" stroke-width="1.5"/> <circle cx="39" cy="44" r="6" fill="url(#robotEyeGrad)" filter="url(#robotGlow)"/> <circle cx="61" cy="44" r="6" fill="url(#robotEyeGrad)" filter="url(#robotGlow)"/> <circle cx="41" cy="42" r="2" fill="#ffffff"/> <circle cx="63" cy="42" r="2" fill="#ffffff"/> <path d="M43 55 Q50 60 57 55" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" fill="none"/> <rect x="42" y="74" width="16" height="6" rx="2" fill="#0284c7"/> <path d="M30 80 L70 80 L76 94 L24 94 Z" fill="url(#robotBodyGrad)" opacity="0.9"/> <circle cx="50" cy="87" r="3" fill="#38bdf8" filter="url(#robotGlow)"/> </g></svg>
-   <div class="w-2 h-2 rounded-full bg-sky-400 animate-ping absolute top-1.5 right-1.5"></div>
+  <svg class="w-full h-full" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"> <defs> <linearGradient id="robotBodyGrad" x1="0%" y1="0%" x2="100%" y2="100%"> <stop offset="0%" stop-color="#38bdf8"/> <stop offset="50%" stop-color="#0284c7"/> <stop offset="100%" stop-color="#1e1b4b"/> </linearGradient> <linearGradient id="robotScreenGrad" x1="0%" y1="0%" x2="0%" y2="100%"> <stop offset="0%" stop-color="#0f172a"/> <stop offset="100%" stop-color="#020617"/> </linearGradient> <linearGradient id="robotEyeGrad" x1="0%" y1="0%" x2="100%" y2="100%"> <stop offset="0%" stop-color="#67e8f9"/> <stop offset="100%" stop-color="#06b6d4"/> </linearGradient> <filter id="robotGlow" x="-20%" y="-20%" width="140%" height="140%"> <feGaussianBlur stdDeviation="2" result="blur"/> <feComposite in="SourceGraphic" in2="blur" operator="over"/> </filter> </defs><g id="robotMascotGraphic"> <line x1="50" y1="20" x2="50" y2="10" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/> <circle cx="50" cy="8" r="4.5" fill="#38bdf8" filter="url(#robotGlow)"/> <circle cx="50" cy="8" r="2" fill="#ffffff"/> <rect x="14" y="38" width="6" height="18" rx="3" fill="#0284c7"/> <rect x="80" y="38" width="6" height="18" rx="3" fill="#0284c7"/> <rect x="18" y="20" width="64" height="54" rx="16" fill="url(#robotBodyGrad)" stroke="#38bdf8" stroke-width="2"/> <rect x="25" y="27" width="50" height="38" rx="10" fill="url(#robotScreenGrad)" stroke="#0ea5e9" stroke-width="1.5"/> <circle cx="39" cy="44" r="6" fill="url(#robotEyeGrad)" filter="url(#robotGlow)"/> <circle cx="61" cy="44" r="6" fill="url(#robotEyeGrad)" filter="url(#robotGlow)"/> <circle cx="41" cy="42" r="2" fill="#ffffff"/> <circle cx="63" cy="42" r="2" fill="#ffffff"/> <path d="M43 55 Q50 60 57 55" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" fill="none"/> <rect x="42" y="74" width="16" height="6" rx="2" fill="#0284c7"/> <path d="M30 80 L70 80 L76 94 L24 94 Z" fill="url(#robotBodyGrad)" opacity="0.9"/> <circle cx="50" cy="87" r="3" fill="#38bdf8" filter="url(#robotGlow)"/> </g></svg>
+  <div class="w-2 h-2 rounded-full bg-sky-400 animate-ping absolute top-1.5 right-1.5"></div>
   </div>
   </div>
   <div class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-400 border-2 border-slate-900 shadow"></div>
-   </div>
+  </div>
   </div>
   <div id="draggableRouletteWidget" class="floating-widget draggable-widget pointer-events-auto flex items-center justify-center hidden" style="display: none;">
-   <div id="roulette-btn" onclick="toggleModal('roulette-modal'); handleRouletteWidgetClick(event);" class="relative group cursor-pointer" title="Girar Ruleta de Preguntas para ganar +15 EXP">
+  <div id="roulette-btn" onclick="toggleModal('roulette-modal'); handleRouletteWidgetClick(event);" class="relative group cursor-pointer" title="Girar Ruleta de Preguntas para ganar +15 EXP">
   <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-tr from-amber-400 via-rose-500 to-indigo-600 p-1 shadow-xl shadow-rose-500/30 group-hover:scale-105 transition duration-300">
   <div class="w-full h-full rounded-full bg-slate-900 flex items-center justify-center relative overflow-hidden">
-   <svg class="w-full h-full animate-spin-slow" viewBox="0 0 100 100"> <path d="M50 50 L50 0 A50 50 0 0 1 100 50 Z" fill="#f43f5e" opacity="0.85"></path> <path d="M50 50 L100 50 A50 50 0 0 1 50 100 Z" fill="#8b5cf6" opacity="0.85"></path> <path d="M50 50 L50 100 A50 50 0 0 1 0 50 Z" fill="#06b6d4" opacity="0.85"></path> <path d="M50 50 L0 50 A50 50 0 0 1 50 0 Z" fill="#10b981" opacity="0.85"></path> <circle cx="50" cy="50" r="14" fill="#0f172a" stroke="#fbbf24" stroke-width="3"></circle> </svg>
-   <div class="absolute top-0 w-2.5 h-2.5 bg-amber-400 rotate-45 transform -translate-y-1 shadow"></div>
-   <span class="absolute text-[11px] font-black text-amber-300">🎯</span>
+  <svg class="w-full h-full animate-spin-slow" viewBox="0 0 100 100"> <path d="M50 50 L50 0 A50 50 0 0 1 100 50 Z" fill="#f43f5e" opacity="0.85"></path> <path d="M50 50 L100 50 A50 50 0 0 1 50 100 Z" fill="#8b5cf6" opacity="0.85"></path> <path d="M50 50 L50 100 A50 50 0 0 1 0 50 Z" fill="#06b6d4" opacity="0.85"></path> <path d="M50 50 L0 50 A50 50 0 0 1 50 0 Z" fill="#10b981" opacity="0.85"></path> <circle cx="50" cy="50" r="14" fill="#0f172a" stroke="#fbbf24" stroke-width="3"></circle> </svg>
+  <div class="absolute top-0 w-2.5 h-2.5 bg-amber-400 rotate-45 transform -translate-y-1 shadow"></div>
+  <span class="absolute text-[11px] font-black text-amber-300">🎯</span>
   </div>
   </div>
   <span class="absolute -top-2 -right-2 px-1.5 py-0.5 rounded-full bg-amber-500 text-slate-950 font-black text-[9px] shadow animate-bounce">
   +15
   </span>
-   </div>
+  </div>
   </div>
   </div>
 </div>
   <div id="portalLoadingScreen" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-slate-950/90 backdrop-blur-2xl transition-opacity duration-200 opacity-0 pointer-events-none" style="display: none;">
   <button id="universalExitBtn" onclick="forceReturnToHome()" style="display: none;" class="fixed top-4 left-4 z-[9999] hidden flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900/95 hover:bg-slate-800 border-2 border-sky-500/70 hover:border-sky-400 text-white font-bold text-xs shadow-2xl shadow-sky-950/80 backdrop-blur-md transition-all cursor-pointer group active:scale-95">
-   <span class="text-sky-400 text-sm group-hover:-translate-x-1 transition-transform">←</span>
-   <span>Volver al Menú Principal</span>
+  <span class="text-sky-400 text-sm group-hover:-translate-x-1 transition-transform">←</span>
+  <span>Volver al Menú Principal</span>
   </button>
   <div class="relative flex flex-col items-center max-w-sm px-6 text-center">
-   <div id="portalLoadingGlow" class="absolute w-64 h-64 rounded-full blur-3xl opacity-30 -z-10 bg-sky-500 transition-colors duration-300">
-   </div>
-   <div class="relative w-24 h-24 mb-5 flex items-center justify-center">
+  <div id="portalLoadingGlow" class="absolute w-64 h-64 rounded-full blur-3xl opacity-30 -z-10 bg-sky-500 transition-colors duration-300">
+  </div>
+  <div class="relative w-24 h-24 mb-5 flex items-center justify-center">
   <div id="portalLoadingRing1" class="absolute inset-0 rounded-full border-2 border-dashed border-sky-400 animate-spin-slow"></div>
   <div id="portalLoadingRing2" class="absolute inset-2 rounded-full border-2 border-indigo-400/70 animate-spin-reverse-slow"></div>
   <div id="portalLoadingIcon" class="text-3xl animate-bounce">🚀</div>
-   </div>
-   <h3 class="text-lg font-extrabold tracking-wide text-white mb-1">
+  </div>
+  <h3 class="text-lg font-extrabold tracking-wide text-white mb-1">
   Cargando entorno...
-   </h3>
-   <p id="portalLoadingSubtitle" class="text-xs text-slate-300 mb-5 font-medium">
+  </h3>
+  <p id="portalLoadingSubtitle" class="text-xs text-slate-300 mb-5 font-medium">
   Preparando experiencia interactiva...
-   </p>
-   <div class="w-full bg-slate-800/80 h-2 rounded-full overflow-hidden border border-slate-700/70 p-0.5 shadow-inner">
+  </p>
+  <div class="w-full bg-slate-800/80 h-2 rounded-full overflow-hidden border border-slate-700/70 p-0.5 shadow-inner">
   <div id="portalLoadingProgressBar" class="h-full rounded-full bg-gradient-to-r from-sky-400 via-indigo-500 to-purple-500 transition-all duration-200" style="width: 25%;"></div>
-   </div>
-   <span id="portalLoadingPercent" class="text-[10px] font-mono text-slate-400 mt-2">25%</span>
-   <button onclick="forceReturnToHome()" class="mt-5 px-4 py-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-slate-600 text-xs font-semibold text-slate-300 hover:text-white transition cursor-pointer flex items-center gap-2 shadow-lg">
+  </div>
+  <span id="portalLoadingPercent" class="text-[10px] font-mono text-slate-400 mt-2">25%</span>
+  <button onclick="forceReturnToHome()" class="mt-5 px-4 py-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-slate-600 text-xs font-semibold text-slate-300 hover:text-white transition cursor-pointer flex items-center gap-2 shadow-lg">
   <span class="text-amber-400">←</span>
   <span>Cancelar Carga y Volver al Menú</span>
-   </button>
+  </button>
   </div>
   </div>
   <div id="view-auth" class="flex-1 flex items-center justify-center p-4 relative z-10 login-container" style="position: relative; z-index: 10000 !important; pointer-events: auto !important;">
   <div class="login-card w-full max-w-md bg-slate-900/90 backdrop-blur-xl border border-slate-800/80 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-sky-950/40 relative overflow-hidden" style="position: relative; z-index: 10000 !important; pointer-events: auto !important;">
-   <div class="absolute -top-24 -right-24 w-48 h-48 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
-   <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none">
-   </div>
-   <div class="text-center mb-6">
+  <div class="absolute -top-24 -right-24 w-48 h-48 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
+  <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none">
+  </div>
+  <div class="text-center mb-6">
   <div class="w-24 h-24 mx-auto rounded-3xl p-0.5 bg-gradient-to-tr from-sky-400 via-indigo-500 to-amber-400 shadow-2xl shadow-sky-500/30 mb-3 overflow-hidden">
   <img src="images/app_hero_logo.jpg" alt="English App Emblem" class="w-full h-full object-cover rounded-[22px]" onerror="this.onerror=null; this.src=window.FALLBACK_LOGO || 'images/app_hero_logo.svg';">
   </div>
@@ -195,31 +195,31 @@
   <p class="text-xs text-slate-400 mt-1">
   Plataforma inmersiva de inglés &bull; MasterENG &bull; Wilberth Alessandro Molina Cutz
   </p>
-   </div>
-   <div class="mb-5">
+  </div>
+  <div class="mb-5">
   <button type="button" onclick="window.handleGoogleAuth(event)" style="position: relative; z-index: 10001 !important; pointer-events: auto !important;" class="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-2xl bg-white hover:bg-slate-100 text-slate-800 font-bold text-sm transition shadow-lg shadow-white/10 active:scale-98 cursor-pointer">
   <svg class="w-5 h-5" viewBox="0 0 24 24"> <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" /> <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" /> <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" /> <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" /> </svg>
   <span>Iniciar sesión con Google</span>
   </button>
-   </div>
-   <div class="auth-divider my-4" style="display: flex; align-items: center; gap: 1rem; white-space: nowrap; width: 100%;">
+  </div>
+  <div class="auth-divider my-4" style="display: flex; align-items: center; gap: 1rem; white-space: nowrap; width: 100%;">
   <div class="auth-divider-line border-t border-slate-700/80 flex-1"></div>
   <span class="auth-divider-text bg-[#0f172a] px-3 text-[11px] text-slate-400 uppercase tracking-widest font-semibold whitespace-nowrap shrink-0">O CONTINUAR CON CUENTA</span>
   <div class="auth-divider-line border-t border-slate-700/80 flex-1"></div>
-   </div>
-   <div class="flex rounded-2xl bg-slate-800/80 p-1 mb-5 border border-slate-700/60">
+  </div>
+  <div class="flex rounded-2xl bg-slate-800/80 p-1 mb-5 border border-slate-700/60">
   <button type="button" id="authTabBtnLogin" onclick="switchAuthTab('login')" style="pointer-events: auto;" class="flex-1 py-2 text-xs font-bold rounded-xl transition bg-sky-600 text-white shadow">
   Iniciar Sesión
   </button>
   <button type="button" id="authTabBtnRegister" onclick="switchAuthTab('register')" style="pointer-events: auto;" class="flex-1 py-2 text-xs font-bold rounded-xl transition text-slate-400 hover:text-slate-200">
   Registrarse
   </button>
-   </div>
-   <div id="authAlertBanner" class="hidden mb-4 p-3.5 rounded-xl text-xs font-semibold flex items-center gap-2 border transition" style="display: none;">
+  </div>
+  <div id="authAlertBanner" class="hidden mb-4 p-3.5 rounded-xl text-xs font-semibold flex items-center gap-2 border transition" style="display: none;">
   <span id="authAlertIcon" class="text-base">⚠️</span>
   <span id="authAlertText"></span>
-   </div>
-   <form id="authLoginForm" onsubmit="event.preventDefault(); handleAuthLoginSubmit(event); return false;" action="javascript:void(0);" method="dialog" class="space-y-4" style="pointer-events: auto;">
+  </div>
+  <form id="authLoginForm" onsubmit="event.preventDefault(); handleAuthLoginSubmit(event); return false;" action="javascript:void(0);" method="dialog" class="space-y-4" style="pointer-events: auto;">
   <div>
   <label for="authLoginIdentifier" class="block text-xs font-semibold text-slate-300 mb-1">Usuario o Correo Electrónico</label>
   <input type="text" id="authLoginIdentifier" name="authLoginIdentifier" autocomplete="username" placeholder="ej. usuario o correo@gmail.com" class="w-full px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 transition relative z-20 cursor-text" style="pointer-events: auto;">
@@ -231,8 +231,8 @@
   <button type="button" id="authLoginSubmitBtn" onclick="window.handleAdminLogin(event)" class="w-full py-3 rounded-2xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-bold text-sm transition shadow-lg shadow-sky-600/30 cursor-pointer active:scale-98" style="position: relative; z-index: 10001 !important; pointer-events: auto !important;">
   Entrar a mi Cuenta
   </button>
-   </form>
-   <form id="authRegisterForm" onsubmit="handleAuthRegisterSubmit(event)" class="space-y-4 hidden" style="display: none;">
+  </form>
+  <form id="authRegisterForm" onsubmit="handleAuthRegisterSubmit(event)" class="space-y-4 hidden" style="display: none;">
   <div>
   <label class="block text-xs font-semibold text-slate-300 mb-1">Nombre de Usuario (Único)</label>
   <input type="text" id="authRegUsername" required placeholder="ej. alessandro_26" class="w-full px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 transition">
@@ -252,189 +252,189 @@
   <button type="button" id="authRegisterSubmitBtn" onclick="handleAuthRegisterSubmit(event)" title="Crear Cuenta" class="w-full py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm transition shadow-lg shadow-emerald-600/30 cursor-pointer active:scale-98">
   <span class="sr-only hidden">Crear Cuenta</span><span>Crear mi Cuenta MasterENG</span>
   </button>
-   </form>
-   <div class="mt-5 pt-4 border-t border-slate-800 text-center">
+  </form>
+  <div class="mt-5 pt-4 border-t border-slate-800 text-center">
   <button type="button" onclick="localStorage.setItem('mastereng_user', JSON.stringify({role:'guest', username:'Invitado'})); window.navigateTo('hub'); if(typeof window.continueAsGuest==='function') window.continueAsGuest(event);" style="position: relative; z-index: 10001 !important; pointer-events: auto !important;" class="text-xs font-bold text-slate-400 hover:text-sky-300 transition cursor-pointer py-1.5 px-3 rounded-lg hover:bg-slate-800/50">
   ⚡ Continuar como Invitado (Acceso Rápido)
   </button>
-   </div>
+  </div>
   </div>
   </div>
   <div id="view-home" class="hub-container flex-1 flex flex-col items-center justify-center p-3 relative overflow-hidden hidden" style="display: none;">
   <canvas id="portalStarsCanvas" class="absolute inset-0 pointer-events-none w-full h-full z-0 opacity-60"></canvas>
   <div class="relative z-10 w-full max-w-xl text-center mb-3">
-   <h2 class="text-xl sm:text-2xl font-black bg-gradient-to-r from-amber-300 via-sky-300 to-purple-400 bg-clip-text text-transparent">
+  <h2 class="text-xl sm:text-2xl font-black bg-gradient-to-r from-amber-300 via-sky-300 to-purple-400 bg-clip-text text-transparent">
   TEMAS DE APRENDIZAJE
-   </h2>
+  </h2>
   </div>
   <div id="coverFlowViewport" class="coverflow-viewport hub-carousel carousel-viewport w-full max-w-xl flex items-center justify-center my-1 z-10">
-   <button type="button" onclick="window.prevPortal()" class="carousel-nav-btn prev carousel-btn carousel-prev nav-arrow absolute left-0 z-40 w-12 h-12 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-white flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition cursor-pointer" style="cursor: pointer !important; pointer-events: auto !important; z-index: 1000 !important;" data-action="prev" title="Portal Anterior">
+  <button type="button" onclick="window.prevPortal()" class="carousel-nav-btn prev carousel-btn carousel-prev nav-arrow absolute left-0 z-40 w-12 h-12 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-white flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition cursor-pointer" style="cursor: pointer !important; pointer-events: auto !important; z-index: 1000 !important;" data-action="prev" title="Portal Anterior">
   <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"> <path d="M15 19l-7-7 7-7" /> </svg>
-   </button>
-   <div id="coverFlowTrack" class="coverflow-track carousel-track">
+  </button>
+  <div id="coverFlowTrack" class="coverflow-track carousel-track">
   <div id="coverCard-0" onclick="handleCoverCardClick(0)" class="coverflow-portal-card portal-card portal-card-0 active-center" style="--portal-glow: rgba(245, 158, 11, 0.45);">
   <div class="w-full h-full flex flex-col justify-between relative overflow-hidden group">
-   <div class="absolute -top-12 -right-12 w-36 h-36 bg-amber-500/20 rounded-full blur-2xl pointer-events-none"></div>
-   <div>
-   <div class="flex items-center justify-between mb-1.5">
+  <div class="absolute -top-12 -right-12 w-36 h-36 bg-amber-500/20 rounded-full blur-2xl pointer-events-none"></div>
+  <div>
+  <div class="flex items-center justify-between mb-1.5">
   <span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-[10px] font-bold text-amber-300 uppercase tracking-widest">
   PORTAL 01 &bull; CURRÍCULO
   </span>
   <span class="text-xs font-bold text-amber-400">+20 EXP / nivel</span>
-   </div>
-   <h3 class="text-lg font-black text-amber-300 group-hover:text-amber-200 transition">
+  </div>
+  <h3 class="text-lg font-black text-amber-300 group-hover:text-amber-200 transition">
   Ruta de Aprendizaje
-   </h3>
-   <p class="text-[11px] text-slate-300 mt-1 leading-snug">
+  </h3>
+  <p class="text-[11px] text-slate-300 mt-1 leading-snug">
   Módulos de vocabulario y gramática en inglés.
-   </p>
-   </div>
-   <div class="my-3 relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden border border-amber-500/50 shadow-lg shadow-amber-950/60 shrink-0">
-   <img src="images/portal_learning_path.jpg" alt="Portal Learning Path" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onerror="this.onerror=null; this.src=window.FALLBACK_PORTAL_LEARNING || 'images/portal_learning_path.svg';">
-   <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none"></div>
-   <span class="absolute bottom-2 right-2.5 text-xs font-black text-amber-300 bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-amber-400/40">🌌 10 Módulos</span>
-   </div>
-   <button type="button" onclick="event.stopPropagation(); window.openPortalModules('path'); window.openLearningPath();" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-amber-500/30 cursor-pointer" data-action="enter-portal" data-portal="path">ENTRAR AL PORTAL</button>
+  </p>
+  </div>
+  <div class="my-3 relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden border border-amber-500/50 shadow-lg shadow-amber-950/60 shrink-0">
+  <img src="images/portal_learning_path.jpg" alt="Portal Learning Path" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onerror="this.onerror=null; this.src=window.FALLBACK_PORTAL_LEARNING || 'images/portal_learning_path.svg';">
+  <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none"></div>
+  <span class="absolute bottom-2 right-2.5 text-xs font-black text-amber-300 bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-amber-400/40">🌌 10 Módulos</span>
+  </div>
+  <button type="button" onclick="event.stopPropagation(); window.openPortalModules('path'); window.openLearningPath();" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-amber-500/30 cursor-pointer" data-action="enter-portal" data-portal="path">ENTRAR AL PORTAL</button>
   </div>
   </div>
   <div id="coverCard-1" onclick="handleCoverCardClick(1)" class="coverflow-portal-card portal-card portal-card-1 side-right" style="--portal-glow: rgba(168, 85, 247, 0.45);">
   <div class="w-full h-full flex flex-col justify-between relative overflow-hidden group">
-   <div class="absolute -top-12 -right-12 w-36 h-36 bg-purple-500/20 rounded-full blur-2xl pointer-events-none"></div>
-   <div>
-   <div class="flex items-center justify-between mb-1.5">
+  <div class="absolute -top-12 -right-12 w-36 h-36 bg-purple-500/20 rounded-full blur-2xl pointer-events-none"></div>
+  <div>
+  <div class="flex items-center justify-between mb-1.5">
   <span class="px-2.5 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/40 text-[10px] font-bold text-purple-300 uppercase tracking-widest">
   PORTAL 02 &bull; INMERSIVO 3D
   </span>
   <span class="text-xs font-bold text-purple-400">15 Objetos Interactivos</span>
-   </div>
-   <h3 class="text-lg font-black text-purple-300 group-hover:text-purple-200 transition">
+  </div>
+  <h3 class="text-lg font-black text-purple-300 group-hover:text-purple-200 transition">
   Entorno 3D
-   </h3>
-   <p class="text-[11px] text-slate-300 mt-1 leading-snug">
+  </h3>
+  <p class="text-[11px] text-slate-300 mt-1 leading-snug">
   Explora y aprende palabras interactuando en 3D.
-   </p>
-   </div>
-   <div class="my-3 relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden border border-purple-500/50 shadow-lg shadow-purple-950/60 shrink-0">
-   <img src="images/portal_worldtour.jpg" alt="Portal World Tour 3D" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onerror="this.onerror=null; this.src=window.FALLBACK_PORTAL_WORLDTOUR || 'images/portal_worldtour.svg';">
-   <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none"></div>
-   <span class="absolute bottom-2 right-2.5 text-xs font-black text-purple-300 bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-purple-400/40">🪐 Casa & Jardín 3D</span>
-   </div>
-   <button type="button" onclick="event.stopPropagation(); window.openPortalModules('worldtour'); openPortalWithLoader('worldtour'); if (typeof window.initOrResumeWorld3D === 'function') window.initOrResumeWorld3D();" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-purple-500 to-fuchsia-500 hover:from-purple-400 hover:to-fuchsia-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-purple-500/30 cursor-pointer" data-action="enter-portal" data-portal="worldtour">ENTRAR AL PORTAL</button>
+  </p>
+  </div>
+  <div class="my-3 relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden border border-purple-500/50 shadow-lg shadow-purple-950/60 shrink-0">
+  <img src="images/portal_worldtour.jpg" alt="Portal World Tour 3D" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onerror="this.onerror=null; this.src=window.FALLBACK_PORTAL_WORLDTOUR || 'images/portal_worldtour.svg';">
+  <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none"></div>
+  <span class="absolute bottom-2 right-2.5 text-xs font-black text-purple-300 bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-purple-400/40">🪐 Casa & Jardín 3D</span>
+  </div>
+  <button type="button" onclick="event.stopPropagation(); window.openPortalModules('worldtour'); openPortalWithLoader('worldtour'); if (typeof window.initOrResumeWorld3D === 'function') window.initOrResumeWorld3D();" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-purple-500 to-fuchsia-500 hover:from-purple-400 hover:to-fuchsia-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-purple-500/30 cursor-pointer" data-action="enter-portal" data-portal="worldtour">ENTRAR AL PORTAL</button>
   </div>
   </div>
   <div id="coverCard-2" onclick="handleCoverCardClick(2)" class="coverflow-portal-card portal-card portal-card-2 hidden-back" style="--portal-glow: rgba(6, 182, 212, 0.45);">
   <div class="w-full h-full flex flex-col justify-between relative overflow-hidden group">
-   <div class="absolute -top-12 -right-12 w-36 h-36 bg-cyan-500/20 rounded-full blur-2xl pointer-events-none"></div>
-   <div>
-   <div class="flex items-center justify-between mb-1.5">
+  <div class="absolute -top-12 -right-12 w-36 h-36 bg-cyan-500/20 rounded-full blur-2xl pointer-events-none"></div>
+  <div>
+  <div class="flex items-center justify-between mb-1.5">
   <span class="px-2.5 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-500/40 text-[10px] font-bold text-cyan-300 uppercase tracking-widest">
   PORTAL 03 &bull; MÚSICA & KARAOKE
   </span>
   <span class="text-xs font-bold text-cyan-400">+30 EXP / reto</span>
-   </div>
-   <h3 class="text-lg font-black text-cyan-300 group-hover:text-cyan-200 transition">
+  </div>
+  <h3 class="text-lg font-black text-cyan-300 group-hover:text-cyan-200 transition">
   Estudio Musical
-   </h3>
-   <p class="text-[11px] text-slate-300 mt-1 leading-snug">
+  </h3>
+  <p class="text-[11px] text-slate-300 mt-1 leading-snug">
   Aprende vocabulario cantando tus canciones favoritas.
-   </p>
-   </div>
-   <div class="my-3 relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden border border-cyan-500/50 shadow-lg shadow-cyan-950/60 bg-slate-950 shrink-0">
-   <img src="images/portal_music.svg" alt="Portal Music Session" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onerror="this.onerror=null; this.src=window.FALLBACK_PORTAL_MUSIC || 'images/portal_music.svg';">
-   <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none"></div>
-   <span class="absolute bottom-2 right-2.5 text-xs font-black text-cyan-300 bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-cyan-400/40">⚡ Karaoke Live</span>
-   </div>
-   <button type="button" onclick="event.stopPropagation(); window.openPortalModules('music');" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-cyan-500/30 cursor-pointer" data-action="enter-portal" data-portal="music">ENTRAR AL PORTAL</button>
+  </p>
+  </div>
+  <div class="my-3 relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden border border-cyan-500/50 shadow-lg shadow-cyan-950/60 bg-slate-950 shrink-0">
+  <img src="images/portal_music.svg" alt="Portal Music Session" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onerror="this.onerror=null; this.src=window.FALLBACK_PORTAL_MUSIC || 'images/portal_music.svg';">
+  <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none"></div>
+  <span class="absolute bottom-2 right-2.5 text-xs font-black text-cyan-300 bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-cyan-400/40">⚡ Karaoke Live</span>
+  </div>
+  <button type="button" onclick="event.stopPropagation(); window.openPortalModules('music');" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-cyan-500/30 cursor-pointer" data-action="enter-portal" data-portal="music">ENTRAR AL PORTAL</button>
   </div>
   </div>
   <div id="coverCard-3" onclick="handleCoverCardClick(3)" class="coverflow-portal-card portal-card portal-card-3 side-left" style="--portal-glow: rgba(56, 189, 248, 0.45);">
   <div class="w-full h-full flex flex-col justify-between relative overflow-hidden group">
-   <div class="absolute -top-12 -right-12 w-36 h-36 bg-sky-500/20 rounded-full blur-2xl pointer-events-none"></div>
-   <div>
-   <div class="flex items-center justify-between mb-1.5">
+  <div class="absolute -top-12 -right-12 w-36 h-36 bg-sky-500/20 rounded-full blur-2xl pointer-events-none"></div>
+  <div>
+  <div class="flex items-center justify-between mb-1.5">
   <span class="px-2.5 py-0.5 rounded-full bg-sky-500/20 border border-sky-500/40 text-[10px] font-bold text-sky-300 uppercase tracking-widest">
   PORTAL 04 &bull; INTELIGENCIA ARTIFICIAL
   </span>
   <span class="text-xs font-bold text-sky-400">+50 EXP / chat</span>
-   </div>
-   <h3 class="text-lg font-black text-sky-300 group-hover:text-sky-200 transition">
+  </div>
+  <h3 class="text-lg font-black text-sky-300 group-hover:text-sky-200 transition">
   Tutor IA Automático
-   </h3>
-   <p class="text-[11px] text-slate-300 mt-1 leading-snug">
+  </h3>
+  <p class="text-[11px] text-slate-300 mt-1 leading-snug">
   Practica tu inglés conversando por texto o voz.
-   </p>
-   </div>
-   <div class="my-3 relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden border border-sky-500/50 shadow-lg shadow-sky-950/60 shrink-0">
-   <img src="images/ai_tutor_mascot.jpg" alt="Portal Tutor IA" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onerror="this.onerror=null; this.src='images/ai_tutor_mascot.svg';">
-   <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none"></div>
-   <span class="absolute bottom-2 right-2.5 text-xs font-black text-sky-300 bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-sky-400/40">🤖 Chat & Voz</span>
-   </div>
-   <button type="button" onclick="event.stopPropagation(); window.openPortalModules('ai-tutor');" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 hover:from-sky-400 hover:to-indigo-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-sky-500/30 cursor-pointer" data-action="enter-portal" data-portal="ai-tutor">ENTRAR AL PORTAL</button>
+  </p>
+  </div>
+  <div class="my-3 relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden border border-sky-500/50 shadow-lg shadow-sky-950/60 shrink-0">
+  <img src="images/ai_tutor_mascot.jpg" alt="Portal Tutor IA" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onerror="this.onerror=null; this.src='images/ai_tutor_mascot.svg';">
+  <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none"></div>
+  <span class="absolute bottom-2 right-2.5 text-xs font-black text-sky-300 bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-sky-400/40">🤖 Chat & Voz</span>
+  </div>
+  <button type="button" onclick="event.stopPropagation(); window.openPortalModules('ai-tutor');" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 hover:from-sky-400 hover:to-indigo-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-sky-500/30 cursor-pointer" data-action="enter-portal" data-portal="ai-tutor">ENTRAR AL PORTAL</button>
   </div>
   </div>
   <div id="coverCard-4" onclick="handleCoverCardClick(4)" class="coverflow-portal-card portal-card portal-card-4 hidden-back" style="--portal-glow: rgba(16, 185, 129, 0.45);">
   <div class="w-full h-full flex flex-col justify-between relative overflow-hidden group">
-   <div class="absolute -top-12 -right-12 w-36 h-36 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none"></div>
-   <div>
-   <div class="flex items-center justify-between mb-1.5">
+  <div class="absolute -top-12 -right-12 w-36 h-36 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none"></div>
+  <div>
+  <div class="flex items-center justify-between mb-1.5">
   <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-[10px] font-bold text-emerald-300 uppercase tracking-widest">
   PORTAL 05 &bull; CUENTOS
   </span>
   <span class="text-xs font-bold text-emerald-400">+50 EXP / cuento</span>
-   </div>
-   <h3 class="text-lg font-black text-emerald-300 group-hover:text-emerald-200 transition">
+  </div>
+  <h3 class="text-lg font-black text-emerald-300 group-hover:text-emerald-200 transition">
   Cuentos y Lecturas
-   </h3>
-   <p class="text-[11px] text-slate-300 mt-1 leading-snug">
+  </h3>
+  <p class="text-[11px] text-slate-300 mt-1 leading-snug">
   Lecturas clásicas ilustradas con audio y práctica de voz.
-   </p>
-   </div>
-   <div class="my-3 relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden border border-emerald-500/50 shadow-lg shadow-emerald-950/60 shrink-0">
-   <img src="images/portal_stories.jpg" alt="Portal Cuentos" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onerror="this.onerror=null; this.src=window.FALLBACK_PORTAL_STORIES || 'images/portal_stories.svg';">
-   <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none"></div>
-   <span class="absolute bottom-2 right-2.5 text-xs font-black text-emerald-300 bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-emerald-400/40">📚 6 Cuentos</span>
-   </div>
-   <button type="button" onclick="event.stopPropagation(); window.openPortalModules('stories');" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-500/30 cursor-pointer" data-action="enter-portal" data-portal="stories">ENTRAR AL PORTAL</button>
+  </p>
+  </div>
+  <div class="my-3 relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden border border-emerald-500/50 shadow-lg shadow-emerald-950/60 shrink-0">
+  <img src="images/portal_stories.jpg" alt="Portal Cuentos" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onerror="this.onerror=null; this.src=window.FALLBACK_PORTAL_STORIES || 'images/portal_stories.svg';">
+  <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none"></div>
+  <span class="absolute bottom-2 right-2.5 text-xs font-black text-emerald-300 bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-emerald-400/40">📚 6 Cuentos</span>
+  </div>
+  <button type="button" onclick="event.stopPropagation(); window.openPortalModules('stories');" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-500/30 cursor-pointer" data-action="enter-portal" data-portal="stories">ENTRAR AL PORTAL</button>
   </div>
   </div>
-   </div>
-   <button type="button" onclick="window.nextPortal()" class="carousel-nav-btn next carousel-btn carousel-next nav-arrow absolute right-0 z-40 w-12 h-12 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-white flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition cursor-pointer" style="cursor: pointer !important; pointer-events: auto !important; z-index: 1000 !important;" data-action="next" title="Portal Siguiente">
+  </div>
+  <button type="button" onclick="window.nextPortal()" class="carousel-nav-btn next carousel-btn carousel-next nav-arrow absolute right-0 z-40 w-12 h-12 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-white flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition cursor-pointer" style="cursor: pointer !important; pointer-events: auto !important; z-index: 1000 !important;" data-action="next" title="Portal Siguiente">
   <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"> <path d="M9 5l7 7-7 7" /> </svg>
-   </button>
+  </button>
   </div>
   <div class="flex items-center gap-2.5 mt-3 z-10">
-   <span id="coverDot-0" onclick="window.goToPortal(0)" class="carousel-dot active w-3 h-3 rounded-full bg-amber-400 transition-all duration-300 shadow cursor-pointer"></span>
-   <span id="coverDot-1" onclick="window.goToPortal(1)" class="carousel-dot w-2.5 h-2.5 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer"></span>
-   <span id="coverDot-2" onclick="window.goToPortal(2)" class="carousel-dot w-2.5 h-2.5 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer"></span>
-   <span id="coverDot-3" onclick="window.goToPortal(3)" class="carousel-dot w-2.5 h-2.5 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer"></span>
-   <span id="coverDot-4" onclick="window.goToPortal(4)" class="carousel-dot w-2.5 h-2.5 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer"></span>
+  <span id="coverDot-0" onclick="window.goToPortal(0)" class="carousel-dot active w-3 h-3 rounded-full bg-amber-400 transition-all duration-300 shadow cursor-pointer"></span>
+  <span id="coverDot-1" onclick="window.goToPortal(1)" class="carousel-dot w-2.5 h-2.5 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer"></span>
+  <span id="coverDot-2" onclick="window.goToPortal(2)" class="carousel-dot w-2.5 h-2.5 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer"></span>
+  <span id="coverDot-3" onclick="window.goToPortal(3)" class="carousel-dot w-2.5 h-2.5 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer"></span>
+  <span id="coverDot-4" onclick="window.goToPortal(4)" class="carousel-dot w-2.5 h-2.5 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer"></span>
   </div>
   </div>
   <div id="view-path" class="flex-1 p-4 max-w-5xl mx-auto w-full hidden" style="display: none;">
   <div id="learning-path-view" class="learning-path-view w-full">
   <div class="flex items-center justify-between mb-4">
-   <button type="button" data-action="back-to-hub" onclick="window.navigateTo('hub'); if(typeof goToHomePortals==='function') goToHomePortals();" style="cursor: pointer; pointer-events: auto;" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 transition cursor-pointer">
+  <button type="button" data-action="back-to-hub" onclick="window.navigateTo('hub'); if(typeof goToHomePortals==='function') goToHomePortals();" style="cursor: pointer; pointer-events: auto;" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 transition cursor-pointer">
   <span>← Volver a Portales</span>
-   </button>
-   <span class="text-xs font-bold text-amber-400 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/30">
+  </button>
+  <span class="text-xs font-bold text-amber-400 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/30">
   🌟 Learning Path Activo
-   </span>
+  </span>
   </div>
   <div class="mb-6 relative rounded-3xl overflow-hidden border border-amber-500/40 bg-slate-900/90 shadow-2xl">
-   <img src="images/portal_learning_path.jpg" alt="Academia de Aprendizaje" class="w-full h-36 sm:h-44 object-cover opacity-45" onerror="this.onerror=null; this.src=window.FALLBACK_PORTAL_LEARNING || 'images/portal_learning_path.svg';">
-   <div class="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-900/75 to-slate-950/90 flex items-center justify-between px-6">
+  <img src="images/portal_learning_path.jpg" alt="Academia de Aprendizaje" class="w-full h-36 sm:h-44 object-cover opacity-45" onerror="this.onerror=null; this.src=window.FALLBACK_PORTAL_LEARNING || 'images/portal_learning_path.svg';">
+  <div class="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-900/75 to-slate-950/90 flex items-center justify-between px-6">
   <div>
   <span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/40 text-[10px] font-bold text-amber-300 uppercase tracking-widest">
-   Currículo Oficial TOEFL & Fluidez
+  Currículo Oficial TOEFL & Fluidez
   </span>
   <h2 class="text-xl sm:text-2xl font-black text-white mt-1">Academia de Aprendizaje</h2>
   <p class="text-xs text-slate-300 mt-1 max-w-xl">Explora el glosario oficial o supera las misiones interactivas para ganar +20 EXP por módulo</p>
   </div>
   <div class="hidden sm:flex w-20 h-20 rounded-2xl p-1 bg-slate-900 border-2 border-amber-400/60 shadow-xl items-center justify-center"><svg class="w-full h-full" viewBox="0 0 100 100"><use href="#robotMascotGraphic"/></svg></div>
-   </div>
+  </div>
   </div>
   <div id="learning-modules-grid" class="modules-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; padding: 2rem 1rem; max-width: 1200px; margin: 0 auto; width: 100%; box-sizing: border-box;">
-   <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
+  <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
   <span style="color: #f5a623; font-weight: bold; font-size: 0.8rem;">MÓDULO 01 • NIVEL A1-B1</span>
   <h3 style="color: #fff; margin: 0.5rem 0;">100 Essential Phrasal Verbs</h3>
   <p style="color: #a0aec0; font-size: 0.85rem;">100 verbos compuestos nativos estructurados con significado y pronunciación.</p>
@@ -442,8 +442,8 @@
   <button type="button" class="btn-mission" data-module="1" style="flex: 1; padding: 10px; border-radius: 8px; background: #3182ce; color: #fff; border: none; cursor: pointer; font-weight: bold;" onclick="window.openModuleMission(1)">🎯 Misión</button>
   <button type="button" class="btn-glossary" data-module="1" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary(1)">📖 Glosario</button>
   </div>
-   </div>
-   <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
+  </div>
+  <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
   <span style="color: #f5a623; font-weight: bold; font-size: 0.8rem;">MÓDULO 02 • NIVEL A2-B1</span>
   <h3 style="color: #fff; margin: 0.5rem 0;">100 Difficult & Common Verbs</h3>
   <p style="color: #a0aec0; font-size: 0.85rem;">100 verbos clave, irregulares y de alta frecuencia para comunicación fluida.</p>
@@ -451,8 +451,8 @@
   <button type="button" class="btn-mission" data-module="2" style="flex: 1; padding: 10px; border-radius: 8px; background: #3182ce; color: #fff; border: none; cursor: pointer; font-weight: bold;" onclick="window.openModuleMission(2)">🎯 Misión</button>
   <button type="button" class="btn-glossary" data-module="2" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary(2)">📖 Glosario</button>
   </div>
-   </div>
-   <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
+  </div>
+  <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
   <span style="color: #f5a623; font-weight: bold; font-size: 0.8rem;">MÓDULO 03 • NIVEL B1-B2</span>
   <h3 style="color: #fff; margin: 0.5rem 0;">100 Power Adjectives & Descriptions</h3>
   <p style="color: #a0aec0; font-size: 0.85rem;">100 adjetivos de alto impacto para descripciones precisas y elocuentes.</p>
@@ -460,8 +460,8 @@
   <button type="button" class="btn-mission" data-module="3" style="flex: 1; padding: 10px; border-radius: 8px; background: #3182ce; color: #fff; border: none; cursor: pointer; font-weight: bold;" onclick="window.openModuleMission(3)">🎯 Misión</button>
   <button type="button" class="btn-glossary" data-module="3" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary(3)">📖 Glosario</button>
   </div>
-   </div>
-   <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
+  </div>
+  <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
   <span style="color: #f5a623; font-weight: bold; font-size: 0.8rem;">MÓDULO 04 • NIVEL B2</span>
   <h3 style="color: #fff; margin: 0.5rem 0;">100 Native Idioms & Slang Expressions</h3>
   <p style="color: #a0aec0; font-size: 0.85rem;">100 modismos, expresiones idiomáticas y expresiones coloquiales auténticas.</p>
@@ -469,8 +469,8 @@
   <button type="button" class="btn-mission" data-module="4" style="flex: 1; padding: 10px; border-radius: 8px; background: #3182ce; color: #fff; border: none; cursor: pointer; font-weight: bold;" onclick="window.openModuleMission(4)">🎯 Misión</button>
   <button type="button" class="btn-glossary" data-module="4" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary(4)">📖 Glosario</button>
   </div>
-   </div>
-   <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
+  </div>
+  <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
   <span style="color: #f5a623; font-weight: bold; font-size: 0.8rem;">MÓDULO 05 • NIVEL B2-C1</span>
   <h3 style="color: #fff; margin: 0.5rem 0;">100 Connectors & Linking Words</h3>
   <p style="color: #a0aec0; font-size: 0.85rem;">100 conectores discursivos para estructurar argumentos, ensayos y debates.</p>
@@ -478,8 +478,8 @@
   <button type="button" class="btn-mission" data-module="5" style="flex: 1; padding: 10px; border-radius: 8px; background: #3182ce; color: #fff; border: none; cursor: pointer; font-weight: bold;" onclick="window.openModuleMission(5)">🎯 Misión</button>
   <button type="button" class="btn-glossary" data-module="5" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary(5)">📖 Glosario</button>
   </div>
-   </div>
-   <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
+  </div>
+  <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
   <span style="color: #f5a623; font-weight: bold; font-size: 0.8rem;">MÓDULO 06 • NIVEL B2</span>
   <h3 style="color: #fff; margin: 0.5rem 0;">100 False Friends & Confusing Words</h3>
   <p style="color: #a0aec0; font-size: 0.85rem;">100 falsos amigos y parejas confusas entre inglés y español explicadas.</p>
@@ -487,8 +487,8 @@
   <button type="button" class="btn-mission" data-module="6" style="flex: 1; padding: 10px; border-radius: 8px; background: #3182ce; color: #fff; border: none; cursor: pointer; font-weight: bold;" onclick="window.openModuleMission(6)">🎯 Misión</button>
   <button type="button" class="btn-glossary" data-module="6" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary(6)">📖 Glosario</button>
   </div>
-   </div>
-   <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
+  </div>
+  <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
   <span style="color: #f5a623; font-weight: bold; font-size: 0.8rem;">MÓDULO 07 • NIVEL B2-C1</span>
   <h3 style="color: #fff; margin: 0.5rem 0;">100 Prepositional Phrases & Collocations</h3>
   <p style="color: #a0aec0; font-size: 0.85rem;">100 frases preposicionales y colocaciones fijas usadas por nativos.</p>
@@ -496,8 +496,8 @@
   <button type="button" class="btn-mission" data-module="7" style="flex: 1; padding: 10px; border-radius: 8px; background: #3182ce; color: #fff; border: none; cursor: pointer; font-weight: bold;" onclick="window.openModuleMission(7)">🎯 Misión</button>
   <button type="button" class="btn-glossary" data-module="7" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary(7)">📖 Glosario</button>
   </div>
-   </div>
-   <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
+  </div>
+  <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
   <span style="color: #f5a623; font-weight: bold; font-size: 0.8rem;">MÓDULO 08 • NIVEL C1</span>
   <h3 style="color: #fff; margin: 0.5rem 0;">100 Business, Tech & Engineering Terms</h3>
   <p style="color: #a0aec0; font-size: 0.85rem;">100 términos técnicos, de ingeniería de software y negocios globales.</p>
@@ -505,8 +505,8 @@
   <button type="button" class="btn-mission" data-module="8" style="flex: 1; padding: 10px; border-radius: 8px; background: #3182ce; color: #fff; border: none; cursor: pointer; font-weight: bold;" onclick="window.openModuleMission(8)">🎯 Misión</button>
   <button type="button" class="btn-glossary" data-module="8" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary(8)">📖 Glosario</button>
   </div>
-   </div>
-   <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
+  </div>
+  <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
   <span style="color: #f5a623; font-weight: bold; font-size: 0.8rem;">MÓDULO 09 • NIVEL A2-B1</span>
   <h3 style="color: #fff; margin: 0.5rem 0;">100 Travel, Airport & Daily Survival</h3>
   <p style="color: #a0aec0; font-size: 0.85rem;">100 términos esenciales de supervivencia en aeropuertos, viajes y hoteles.</p>
@@ -514,8 +514,8 @@
   <button type="button" class="btn-mission" data-module="9" style="flex: 1; padding: 10px; border-radius: 8px; background: #3182ce; color: #fff; border: none; cursor: pointer; font-weight: bold;" onclick="window.openModuleMission(9)">🎯 Misión</button>
   <button type="button" class="btn-glossary" data-module="9" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary(9)">📖 Glosario</button>
   </div>
-   </div>
-   <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
+  </div>
+  <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
   <span style="color: #f5a623; font-weight: bold; font-size: 0.8rem;">MÓDULO 10 • NIVEL C1-C2</span>
   <h3 style="color: #fff; margin: 0.5rem 0;">100 Academic & High-Score TOEFL Words</h3>
   <p style="color: #a0aec0; font-size: 0.85rem;">100 palabras de vocabulario académico para máximo puntaje en TOEFL.</p>
@@ -523,7 +523,7 @@
   <button type="button" class="btn-mission" data-module="10" style="flex: 1; padding: 10px; border-radius: 8px; background: #3182ce; color: #fff; border: none; cursor: pointer; font-weight: bold;" onclick="window.openModuleMission(10)">🎯 Misión</button>
   <button type="button" class="btn-glossary" data-module="10" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="window.openModuleGlossary(10)">📖 Glosario</button>
   </div>
-   </div>
+  </div>
   </div>
   <div id="learningModulesContainer" class="modules-grid hidden" style="display: none;"></div>
   </div>
@@ -531,10 +531,10 @@
   <div id="view-stories" class="flex-1 p-4 max-w-5xl mx-auto w-full hidden" style="display: none;">
   <img id="storiesResilienceFallback" src="images/portal_stories.jpg" alt="Portal Cuentos" class="hidden" style="display:none;" onerror="this.onerror=null; this.src=window.FALLBACK_PORTAL_STORIES || 'images/portal_stories.svg';">
   <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
-   <button type="button" data-action="back-to-hub" onclick="window.navigateTo('hub'); if(typeof goToHomePortals==='function') goToHomePortals();" style="cursor: pointer; pointer-events: auto;" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 transition cursor-pointer">
+  <button type="button" data-action="back-to-hub" onclick="window.navigateTo('hub'); if(typeof goToHomePortals==='function') goToHomePortals();" style="cursor: pointer; pointer-events: auto;" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 transition cursor-pointer">
   <span>← Volver a Portales</span>
-   </button>
-   <div class="flex items-center gap-2">
+  </button>
+  <div class="flex items-center gap-2">
   <button id="storyBilingualToggleBtn" onclick="toggleBilingualStoryMode()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-emerald-400 border border-emerald-500/30 transition cursor-pointer">
   <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"/> </svg>
   <span id="storyBilingualToggleLabel">Modo Bilingüe: Activo</span>
@@ -543,65 +543,65 @@
   <svg class="w-3.5 h-3.5 text-white shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/> </svg>
   <span>Descargar PDF</span>
   </button>
-   </div>
+  </div>
   </div>
   <div id="storiesSelectorContainer" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 mb-6"></div>
   <div id="storyViewerCard" class="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl relative overflow-hidden">
-   <div class="flex flex-col md:flex-row gap-6 items-center mb-6 border-b border-slate-800/80 pb-6">
+  <div class="flex flex-col md:flex-row gap-6 items-center mb-6 border-b border-slate-800/80 pb-6">
   <div id="activeStoryIllustration" class="w-full md:w-80 h-44 rounded-2xl overflow-hidden bg-slate-950 flex items-center justify-center border border-slate-700/60 shadow-lg shrink-0">
   </div>
   <div class="flex-1 text-center md:text-left">
   <div class="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-2">
-   <span id="activeStoryDifficulty" class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold uppercase tracking-wider">
-   Nivel A2
-   </span>
-   <span id="activeStoryCategory" class="px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 text-[10px] font-semibold uppercase tracking-wider">
-   Fábula Clásica
-   </span>
-   <span id="activeStoryTime" class="text-xs text-slate-400 flex items-center gap-1">
-   <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/> </svg>
-   <span>Lectura Interactiva &bull; Speaking Coach (+50 EXP)</span>
-   </span>
+  <span id="activeStoryDifficulty" class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold uppercase tracking-wider">
+  Nivel A2
+  </span>
+  <span id="activeStoryCategory" class="px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 text-[10px] font-semibold uppercase tracking-wider">
+  Fábula Clásica
+  </span>
+  <span id="activeStoryTime" class="text-xs text-slate-400 flex items-center gap-1">
+  <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/> </svg>
+  <span>Lectura Interactiva &bull; Speaking Coach (+50 EXP)</span>
+  </span>
   </div>
   <h2 id="activeStoryTitle" class="text-2xl sm:text-3xl font-black text-white tracking-tight">The Three Little Pigs</h2>
   <p id="activeStorySubtitle" class="text-sm text-emerald-400/90 font-medium italic mt-0.5">Los tres cerditos</p>
   <div class="mt-3.5 flex flex-wrap gap-2 justify-center md:justify-start">
-   <button onclick="readEntireStoryAudio()" class="px-3.5 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-xs font-bold text-white transition flex items-center gap-1.5 shadow cursor-pointer">
-   <svg class="w-3.5 h-3.5 text-white shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/> </svg>
-   <span>Narrar Cuento Completo</span>
-   </button>
-   <button onclick="stopStoryNarration()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 border border-slate-700 transition flex items-center gap-1.5 cursor-pointer">
-   <svg class="w-3.5 h-3.5 text-rose-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"> <rect x="6" y="6" width="12" height="12" rx="2" stroke-linecap="round" stroke-linejoin="round"/> </svg>
-   <span>Detener Audio</span>
-   </button>
+  <button onclick="readEntireStoryAudio()" class="px-3.5 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-xs font-bold text-white transition flex items-center gap-1.5 shadow cursor-pointer">
+  <svg class="w-3.5 h-3.5 text-white shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/> </svg>
+  <span>Narrar Cuento Completo</span>
+  </button>
+  <button onclick="stopStoryNarration()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 border border-slate-700 transition flex items-center gap-1.5 cursor-pointer">
+  <svg class="w-3.5 h-3.5 text-rose-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"> <rect x="6" y="6" width="12" height="12" rx="2" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+  <span>Detener Audio</span>
+  </button>
   </div>
   </div>
-   </div>
-   <div id="storyParagraphsContainer" class="space-y-4"></div>
-   <div id="activeStoryMoralContainer" class="mt-6 pt-4 border-t border-slate-800/80"></div>
+  </div>
+  <div id="storyParagraphsContainer" class="space-y-4"></div>
+  <div id="activeStoryMoralContainer" class="mt-6 pt-4 border-t border-slate-800/80"></div>
   </div>
   </div>
   <div id="view-music" class="flex-1 p-4 max-w-5xl mx-auto w-full hidden" style="display: none;">
   <div id="music-search-subview" class="w-full">
-   <div class="flex items-center justify-between mb-4">
+  <div class="flex items-center justify-between mb-4">
   <button onclick="goToHomePortals()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 transition cursor-pointer">
   <span>← Volver a Portales</span>
   </button>
   <span class="text-xs font-bold text-cyan-400 bg-cyan-500/10 px-3 py-1 rounded-full border border-cyan-500/30">
   🎵 Buscador Musical Web
   </span>
-   </div>
-   <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 mb-4 shadow-xl">
+  </div>
+  <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 mb-4 shadow-xl">
   <div class="relative w-full" id="musicSearchBoxWrapper">
   <div class="flex flex-col sm:flex-row gap-2.5">
-   <div class="relative flex-1">
-   <input type="text" id="musicSearchInput" oninput="handleMusicSearchInput(this.value)" onfocus="handleMusicSearchInput(this.value)" onkeydown="handleMusicSearchKey(event)" placeholder="Busca 'Losing My Religion', 'Coldplay', 'Queen', 'Adele' o pega enlace/ID de YouTube..." class="w-full pl-10 pr-9 py-3 rounded-2xl bg-slate-800/90 border border-slate-700 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition shadow-inner" autocomplete="off">
-   <span class="absolute left-3.5 top-3.5 text-slate-400 text-sm pointer-events-none">🔍</span>
-   <button id="musicSearchClearBtn" type="button" onclick="clearMusicSearchInput()" class="hidden absolute right-3 top-3 w-6 h-6 rounded-full bg-slate-700/80 hover:bg-slate-600 text-slate-300 hover:text-white text-xs items-center justify-center transition cursor-pointer" title="Limpiar búsqueda">✕</button>
-   </div>
-   <button type="button" onclick="window.searchGlobalMusic()" class="px-5 py-3 rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs transition cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-cyan-600/30 active:scale-95">
-   <span>▶️ Buscar / Cargar</span>
-   </button>
+  <div class="relative flex-1">
+  <input type="text" id="musicSearchInput" oninput="handleMusicSearchInput(this.value)" onfocus="handleMusicSearchInput(this.value)" onkeydown="handleMusicSearchKey(event)" placeholder="Busca 'Losing My Religion', 'Coldplay', 'Queen', 'Adele' o pega enlace/ID de YouTube..." class="w-full pl-10 pr-9 py-3 rounded-2xl bg-slate-800/90 border border-slate-700 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition shadow-inner" autocomplete="off">
+  <span class="absolute left-3.5 top-3.5 text-slate-400 text-sm pointer-events-none">🔍</span>
+  <button id="musicSearchClearBtn" type="button" onclick="clearMusicSearchInput()" class="hidden absolute right-3 top-3 w-6 h-6 rounded-full bg-slate-700/80 hover:bg-slate-600 text-slate-300 hover:text-white text-xs items-center justify-center transition cursor-pointer" title="Limpiar búsqueda">✕</button>
+  </div>
+  <button type="button" onclick="window.searchGlobalMusic()" class="px-5 py-3 rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs transition cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-cyan-600/30 active:scale-95">
+  <span>▶️ Buscar / Cargar</span>
+  </button>
   </div>
   <div id="musicResultsGrid" class="music-results-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 my-4 hidden" style="display: none;"></div>
   <div id="musicSearchSuggestions" class="absolute left-0 right-0 top-full mt-2 z-50 bg-slate-900/98 border border-cyan-500/50 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-2xl max-h-80 overflow-y-auto hidden"></div>
@@ -610,193 +610,202 @@
   <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">🔥 Catálogo:</span>
   <div id="musicTrackButtonsContainer" class="flex gap-2 overflow-x-auto py-1 flex-1"></div>
   </div>
-   </div>
-   <div id="musicTrendingSection" class="w-full mt-4"></div>
+  </div>
+  <div id="musicTrendingSection" class="w-full mt-4"></div>
   </div>
   <div id="music-player-subview" class="w-full hidden" style="display: none;">
-   <div class="flex items-center justify-between mb-4">
+  <div class="flex items-center justify-between mb-4">
   <button id="backToMusicSearchBtn" type="button" onclick="window.returnToMusicSearch()" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-cyan-300 border border-cyan-500/40 transition shadow-lg cursor-pointer active:scale-95">
   <span>← Volver al Buscador de Música</span>
   </button>
   <span class="text-xs font-bold text-cyan-400 bg-cyan-950/70 px-3 py-1 rounded-full border border-cyan-500/30">
   🎧 Estudio Musical (Canción Completa)
   </span>
-   </div>
-   <div id="musicStageColumnsGrid" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+  </div>
+  <div id="musicStageColumnsGrid" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
   <div id="musicPlayerLeftCol" class="player-stage-column bg-slate-900/90 border border-slate-800 rounded-3xl p-4 shadow-xl flex flex-col justify-between">
   <div id="musicOriginalVideoWrapper" class="relative w-full rounded-2xl overflow-hidden aspect-video bg-black shadow-lg border border-slate-800/80">
-   <iframe id="musicYouTubeIframe" class="w-full h-full" src="https://www.youtube-nocookie.com/embed/xwtdhWltSIg?enablejsapi=1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+  <iframe id="musicYouTubeIframe" class="w-full h-full" src="https://www.youtube-nocookie.com/embed/xwtdhWltSIg?enablejsapi=1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
   <audio id="mastereng-audio" preload="auto" class="hidden" style="display:none;"></audio>
   </div>
   <div id="musicOriginalMetaWrapper" class="mt-4 flex flex-wrap items-center justify-between gap-2">
-   <div class="min-w-0">
-   <h3 id="activeMusicTitle" class="text-base font-extrabold text-white truncate">Losing My Religion</h3>
-   <p id="activeMusicArtist" class="text-xs text-slate-400 truncate">R.E.M. &bull; Alternative Rock</p>
-   </div>
-   <div class="flex items-center gap-2">
-   <button id="karaokeSyncToggleBtn" onclick="toggleMusicKaraokeSync()" class="px-3 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 font-bold text-xs transition cursor-pointer flex items-center gap-1.5" title="Sincronizar estrofas en tiempo real">
+  <div class="min-w-0">
+  <h3 id="activeMusicTitle" class="text-base font-extrabold text-white truncate">Losing My Religion</h3>
+  <p id="activeMusicArtist" class="text-xs text-slate-400 truncate">R.E.M. &bull; Alternative Rock</p>
+  </div>
+  <div class="flex items-center gap-2">
+  <button id="karaokeSyncToggleBtn" onclick="toggleMusicKaraokeSync()" class="px-3 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 font-bold text-xs transition cursor-pointer flex items-center gap-1.5" title="Sincronizar estrofas en tiempo real">
   <span id="karaokeSyncToggleIcon">▶️</span>
   <span id="karaokeSyncToggleText">Sincronizar Karaoke</span>
-   </button>
-   <button onclick="completeMusicChallenge()" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black text-xs transition shadow cursor-pointer">
+  </button>
+  <button onclick="completeMusicChallenge()" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black text-xs transition shadow cursor-pointer">
   🏆 Reto Superado (+30 EXP)
-   </button>
-   </div>
+  </button>
+  </div>
   </div>
   <div id="musicHolographicStage" class="w-full flex-col gap-3 hidden" style="display: none;">
   
   <div class="relative w-full pt-1 flex flex-col gap-1.5">
-    <div class="flex items-center justify-between text-xs font-mono text-cyan-300">
-      <span id="karaoke-time-label">0:00 / 0:00</span>
-    </div>
-    <input type="range" id="karaoke-seek-slider" min="0" max="210" value="0" step="0.1" class="w-full cursor-pointer accent-cyan-400" title="Desliza para adelantar o atrasar la canción" />
+   <div class="flex items-center justify-between text-xs font-mono text-cyan-300">
+     <span id="karaoke-time-label">0:00 / 0:00</span>
+   </div>
+   <input type="range" id="karaoke-seek-slider" min="0" max="210" value="0" step="0.1" class="w-full cursor-pointer accent-cyan-400" title="Desliza para adelantar o atrasar la canción" />
   </div>
   </div>
   </div>
   <div id="musicLyricsRightCol" class="bg-slate-900/90 border border-slate-800 rounded-3xl p-4 shadow-xl flex flex-col h-[520px]">
   <div class="flex flex-wrap items-center justify-between pb-3 border-b border-slate-800 gap-2">
-   <div class="flex flex-wrap items-center gap-2">
-   <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+  <div class="flex flex-wrap items-center gap-2">
+  <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
   <span>🎤 Letra Sincronizada</span>
-   </h4>
-   <div class="flex items-center gap-1 bg-slate-950/80 px-2 py-0.5 rounded-lg border border-slate-800 text-[10px] font-mono">
+  </h4>
+  <div class="flex items-center gap-1 bg-slate-950/80 px-2 py-0.5 rounded-lg border border-slate-800 text-[10px] font-mono">
   <button type="button" onclick="window.adjustLyricsOffset(-0.5)" class="text-slate-400 hover:text-cyan-300 cursor-pointer active:scale-95 transition" title="Adelantar letra 0.5s">⏪ -0.5s</button>
   <span id="lyricsOffsetBadge" class="text-cyan-300 font-bold px-1">Sync: -0.6s</span>
   <button type="button" onclick="window.adjustLyricsOffset(0.5)" class="text-slate-400 hover:text-cyan-300 cursor-pointer active:scale-95 transition" title="Retrasar letra 0.5s">⏩ +0.5s</button>
-   </div>
-   <button id="toggleGlobalTranslationBtn" type="button" onclick="toggleGlobalLyricsTranslation()" class="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-[11px] font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95" title="Mostrar u ocultar subtítulos en español para toda la canción">
+  </div>
+  <button id="toggleGlobalTranslationBtn" type="button" onclick="toggleGlobalLyricsTranslation()" class="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-[11px] font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95" title="Mostrar u ocultar subtítulos en español para toda la canción">
   <span>🌐 Traducción al Español (Toda la Canción)</span>
-   </button>
-   </div>
-   <span id="karaokeTimeBadge" class="text-[11px] font-mono font-bold text-cyan-400 bg-cyan-950/70 border border-cyan-500/30 px-2.5 py-0.5 rounded-full">
-   Estrofa 1
-   </span>
+  </button>
+  </div>
+  <span id="karaokeTimeBadge" class="text-[11px] font-mono font-bold text-cyan-400 bg-cyan-950/70 border border-cyan-500/30 px-2.5 py-0.5 rounded-full">
+  Estrofa 1
+  </span>
   </div>
   <div id="karaoke-lyrics-container" class="flex-1 overflow-y-auto py-3 space-y-2.5 font-medium text-sm pr-1"></div>
   <div id="musicLyricsContainer" class="hidden" style="display: none;"></div>
   </div>
-   </div>
+  </div>
   </div>
   </div>
   <div id="view-worldtour" class="flex-1 p-3 max-w-5xl mx-auto w-full hidden" style="display: none;">
   <button id="world3dFloatingBackBtn" onclick="goToHomePortals()"
-   class="fixed top-4 left-4 z-[10000] flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-white border border-purple-500/50 shadow-2xl backdrop-blur-md text-xs font-bold transition hover:scale-105 active:scale-95 cursor-pointer"
-   style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 10000 !important; pointer-events: auto !important;">
-   <span class="text-purple-400 font-extrabold text-sm">←</span>
-   <span>Volver a Portales</span>
+  class="fixed top-4 left-4 z-[10000] flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-white border border-purple-500/50 shadow-2xl backdrop-blur-md text-xs font-bold transition hover:scale-105 active:scale-95 cursor-pointer"
+  style="position: fixed !important; top: 16px !important; left: 16px !important; z-index: 10000 !important; pointer-events: auto !important;">
+  <span class="text-purple-400 font-extrabold text-sm">←</span>
+  <span>Volver a Portales</span>
   </button>
   <div id="worldTourTopBar" class="hidden items-center justify-between mb-2">
-   <button onclick="goToHomePortals()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 transition cursor-pointer">
+  <button onclick="goToHomePortals()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 transition cursor-pointer">
   <span>← Volver a Portales</span>
-   </button>
-   <div class="flex items-center gap-2">
+  </button>
+  <div class="flex items-center gap-2">
   <button id="scenarioBtnHouse" onclick="switch3DScenario('house')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-md cursor-pointer bg-purple-600 text-white border border-purple-400">
   <span>🏠 House & Rooms (15 Objetos)</span>
   </button>
   <button id="scenarioBtnGarden" onclick="switch3DScenario('garden')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer bg-slate-800 text-slate-300 hover:text-white border border-slate-700">
   <span>🌿 Backyard & Garden (12 Objetos)</span>
   </button>
-   </div>
+  </div>
   </div>
   <div id="world3d-view" class="w-full relative">
-   <div id="world3d-container" class="relative w-full rounded-3xl overflow-hidden border border-slate-800 shadow-2xl bg-[#0a0e17]">
+  <div id="world3d-container" class="relative w-full rounded-3xl overflow-hidden border border-slate-800 shadow-2xl bg-[#0a0e17]">
   <div id="canvas-container" class="canvas-container w-full relative select-none" style="height: 580px; min-height: 520px; background-color: #0a0e17;">
   <div id="threeCanvasContainer" class="w-full h-full relative">
-   <div id="threeWebGLMount" class="canvas-container absolute inset-0 w-full h-full z-10"></div>
-   <div class="absolute bottom-3 left-3 z-20 bg-slate-900/85 backdrop-blur-md px-3.5 py-2 rounded-xl border border-slate-700/80 text-[11px] text-slate-300 font-medium shadow-lg flex items-center gap-2 pointer-events-none">
-   <span class="text-purple-400 font-bold">🎮</span>
-   <span>Orbitar: Arrastrar | Zoom: Rueda / Pellizcar | Clic en objetos o Hotspots: Vocabulario 3D (+5 EXP)</span>
-   </div>
-   <div id="virtualJoystickContainer" class="hidden absolute bottom-5 left-5 z-30 w-28 h-28 rounded-full bg-slate-900/75 border-2 border-purple-500/50 backdrop-blur-md items-center justify-center touch-none select-none shadow-2xl cursor-pointer">
-   <div id="virtualJoystickKnob" class="w-12 h-12 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-500 border-2 border-white/60 shadow-lg pointer-events-none transition-transform duration-75">
-   </div>
-   </div>
-   <div id="threeObjectInspectCard" class="hidden">
-   <div class="flex items-center justify-between mb-2">
+  <div id="threeWebGLMount" class="canvas-container absolute inset-0 w-full h-full z-10"></div>
+  <div class="absolute bottom-3 left-3 z-20 bg-slate-900/85 backdrop-blur-md px-3.5 py-2 rounded-xl border border-slate-700/80 text-[11px] text-slate-300 font-medium shadow-lg flex items-center gap-2 pointer-events-none">
+  <span class="text-purple-400 font-bold">🎮</span>
+  <span>Orbitar: Arrastrar | Zoom: Rueda / Pellizcar | Clic en objetos o Hotspots: Vocabulario 3D (+5 EXP)</span>
+  </div>
+  <div id="virtualJoystickContainer" class="hidden absolute bottom-5 left-5 z-30 w-28 h-28 rounded-full bg-slate-900/75 border-2 border-purple-500/50 backdrop-blur-md items-center justify-center touch-none select-none shadow-2xl cursor-pointer">
+  <div id="virtualJoystickKnob" class="w-12 h-12 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-500 border-2 border-white/60 shadow-lg pointer-events-none transition-transform duration-75">
+  </div>
+  </div>
+  <div id="threeObjectInspectCard" class="hidden">
+  <div class="flex items-center justify-between mb-2">
   <span id="threeObjCategory" class="text-[10px] font-bold uppercase tracking-wider text-purple-400 bg-purple-500/20 px-2 py-0.5 rounded-full">Hogar</span>
   <button type="button" onclick="close3DInspectCard(); window.closeAllModals();" class="close-btn text-slate-400 hover:text-white text-sm cursor-pointer p-1" style="cursor: pointer !important; pointer-events: auto !important; position: relative; z-index: 100001 !important;">&times;</button>
-   </div>
-   <div class="flex items-center justify-between">
+  </div>
+  <div class="flex items-center justify-between">
   <h4 id="threeObjEnName" class="text-lg font-black text-white">Sofa / Couch</h4>
   <button onclick="speakCurrent3DObj()" class="p-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white transition cursor-pointer">🔊</button>
-   </div>
-   <p id="threeObjIpa" class="text-xs text-purple-300 font-mono">/ˈsoʊ.fə/</p>
-   <p id="threeObjEsName" class="text-xs text-slate-300 font-semibold mt-1">Sofá / Sillón</p>
-   <div class="mt-2.5 p-2 rounded-xl bg-slate-800/80 border border-slate-700/60 text-xs text-slate-300 italic">
+  </div>
+  <p id="threeObjIpa" class="text-xs text-purple-300 font-mono">/ˈsoʊ.fə/</p>
+  <p id="threeObjEsName" class="text-xs text-slate-300 font-semibold mt-1">Sofá / Sillón</p>
+  <div class="mt-2.5 p-2 rounded-xl bg-slate-800/80 border border-slate-700/60 text-xs text-slate-300 italic">
   "<span id="threeObjExample">I relax on the sofa after studying English.</span>"
-   </div>
-   </div>
   </div>
   </div>
-   </div>
+  </div>
+  </div>
+  </div>
   </div>
   </div>
   
   <div id="ai-tutor-view" class="flex-1 p-3 sm:p-4 max-w-4xl mx-auto w-full hidden" style="display: none;">
-   <div class="flex items-center justify-between mb-3">
+  <div class="flex items-center justify-between mb-3">
   <button type="button" data-action="back-to-hub" onclick="window.navigateTo('hub'); if(typeof goToHomePortals==='function') goToHomePortals();" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 transition cursor-pointer">
-   <span>← Volver a Portales</span>
+  <span>← Volver a Portales</span>
   </button>
   <div class="flex items-center gap-2">
-   <span class="text-xs font-bold text-sky-400 bg-sky-500/10 px-3 py-1 rounded-full border border-sky-500/30 flex items-center gap-1.5">
-    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-    <span>Tutor IA Nativo</span>
-   </span>
-   <button type="button" id="aiTutorVoiceToggleBtn" onclick="window.toggleAiTutorVoice()" class="flex items-center gap-1 px-3 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-sky-300 border border-sky-500/30 transition cursor-pointer" title="Lectura en voz alta">
-    <span id="aiTutorVoiceIcon">🔊</span>
-    <span id="aiTutorVoiceLabel" class="hidden sm:inline">Voz IA</span>
-   </button>
+  <span class="text-xs font-bold text-sky-400 bg-sky-500/10 px-3 py-1 rounded-full border border-sky-500/30 flex items-center gap-1.5">
+   <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+   <span>Tutor IA Nativo</span>
+  </span>
+  <button type="button" id="aiTutorVoiceToggleBtn" onclick="window.toggleAiTutorVoice()" class="flex items-center gap-1 px-3 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-sky-300 border border-sky-500/30 transition cursor-pointer" title="Lectura en voz alta">
+   <span id="aiTutorVoiceIcon">🔊</span>
+   <span id="aiTutorVoiceLabel" class="hidden sm:inline">Voz IA</span>
+  </button>
   </div>
-   </div>
-   <div class="ai-tutor-card">
+  </div>
+  <div class="ai-tutor-layout">
+  <div class="ai-tutor-card">
   <div class="flex items-center gap-3 pb-3 border-b border-slate-800 shrink-0">
-   <div class="w-10 h-10 rounded-2xl bg-sky-950 border border-sky-400/50 p-1 flex items-center justify-center shrink-0">
-    <img src="images/ai_tutor_mascot.jpg" alt="AI Mascot" class="w-full h-full object-cover rounded-xl" onerror="this.onerror=null; this.src='images/ai_tutor_mascot.svg';">
-   </div>
-   <div class="flex-1 min-w-0">
-    <h3 class="text-sm sm:text-base font-extrabold text-white flex items-center gap-1.5 truncate">
-     <span>Tutor IA Automático</span>
-     <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-400/30">en-US</span>
-    </h3>
-    <p class="text-[11px] text-slate-400 truncate">Conversación en inglés con corrección gramatical instantánea</p>
-   </div>
-   <button type="button" onclick="window.clearAiTutorChat()" class="text-slate-400 hover:text-rose-400 text-xs px-2 py-1 rounded-lg hover:bg-slate-800 transition cursor-pointer" title="Limpiar conversación">🗑️</button>
+  <div class="w-10 h-10 rounded-2xl bg-sky-950 border border-sky-400/50 p-1 flex items-center justify-center shrink-0">
+   <img src="images/ai_tutor_mascot.jpg" alt="AI Mascot" class="w-full h-full object-cover rounded-xl" onerror="this.onerror=null; this.src='images/ai_tutor_mascot.svg';">
+  </div>
+  <div class="flex-1 min-w-0">
+   <h3 class="text-sm sm:text-base font-extrabold text-white flex items-center gap-1.5 truncate">
+    <span>Tutor IA Automático</span>
+    <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-400/30">en-US</span>
+   </h3>
+   <p class="text-[11px] text-slate-400 truncate">Conversación en inglés con corrección gramatical instantánea</p>
+  </div>
+  <button type="button" onclick="window.clearAiTutorChat()" class="text-slate-400 hover:text-rose-400 text-xs px-2 py-1 rounded-lg hover:bg-slate-800 transition cursor-pointer" title="Limpiar conversación">🗑️</button>
   </div>
   <div id="aiTutorChatMessages" class="flex-1 overflow-y-auto py-3 space-y-3 pr-1 text-xs sm:text-sm"></div>
   <div class="pt-3 border-t border-slate-800 shrink-0 space-y-2">
-   <div id="aiTutorTypingStatus" class="hidden flex items-center gap-2 text-xs text-sky-400 font-medium px-2">
-    <div class="w-3.5 h-3.5 rounded-full border-2 border-sky-400 border-t-transparent animate-spin"></div>
-    <span class="animate-pulse">AI Tutor is thinking...</span>
-   </div>
-   <div class="flex items-end gap-2 bg-slate-950/90 border border-slate-700/80 rounded-2xl p-2 focus-within:border-sky-400 transition">
-    <textarea id="aiTutorInput" rows="1" placeholder="Type in English or press 🎤 Hablar..." onkeydown="window.handleAiTutorInputKeydown(event)" class="flex-1 bg-transparent border-0 text-slate-100 text-xs sm:text-sm placeholder-slate-500 focus:outline-none resize-none max-h-24 py-1.5 px-2 leading-relaxed"></textarea>
-    <button type="button" id="aiTutorMicBtn" onclick="window.toggleAiTutorSpeechRecognition()" class="p-2 sm:px-3 sm:py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 active:scale-95 border border-slate-700" title="Hablar por micrófono">
-     <span id="aiTutorMicIcon">🎤</span>
-     <span id="aiTutorMicText" class="hidden sm:inline">Hablar</span>
-    </button>
-    <button type="button" id="aiTutorSendBtn" onclick="window.handleAiTutorSend()" class="p-2 sm:px-3.5 sm:py-2 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-bold text-xs flex items-center gap-1 transition shadow-lg shadow-sky-500/20 cursor-pointer shrink-0 active:scale-95">
-     <span>➤</span>
-     <span class="hidden sm:inline">Enviar</span>
-    </button>
-   </div>
+  <div id="aiTutorTypingStatus" class="hidden flex items-center gap-2 text-xs text-sky-400 font-medium px-2">
+   <div class="w-3.5 h-3.5 rounded-full border-2 border-sky-400 border-t-transparent animate-spin"></div>
+   <span class="animate-pulse">AI Tutor is thinking...</span>
   </div>
+  <div class="flex items-end gap-2 bg-slate-950/90 border border-slate-700/80 rounded-2xl p-2 focus-within:border-sky-400 transition">
+   <textarea id="aiTutorInput" rows="1" placeholder="Type in English or press 🎤 Hablar..." onkeydown="window.handleAiTutorInputKeydown(event)" class="flex-1 bg-transparent border-0 text-slate-100 text-xs sm:text-sm placeholder-slate-500 focus:outline-none resize-none max-h-24 py-1.5 px-2 leading-relaxed"></textarea>
+   <button type="button" id="aiTutorMicBtn" onclick="window.toggleAiTutorSpeechRecognition()" class="p-2 sm:px-3 sm:py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 active:scale-95 border border-slate-700" title="Hablar por micrófono">
+    <span id="aiTutorMicIcon">🎤</span>
+    <span id="aiTutorMicText" class="hidden sm:inline">Hablar</span>
+   </button>
+   <button type="button" id="aiTutorSendBtn" onclick="window.handleAiTutorSend()" class="p-2 sm:px-3.5 sm:py-2 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-bold text-xs flex items-center gap-1 transition shadow-lg shadow-sky-500/20 cursor-pointer shrink-0 active:scale-95">
+    <span>➤</span>
+    <span class="hidden sm:inline">Enviar</span>
+   </button>
+  </div>
+  </div>
+  </div>
+  <aside class="ai-history-sidebar" id="aiTutorHistorySidebar">
+   <div class="flex items-center justify-between pb-2 border-b border-slate-800 mb-2.5">
+    <h4 class="text-xs font-bold text-slate-300 flex items-center gap-1"><span>🕒</span><span>Historial</span></h4>
+    <button type="button" onclick="window.startNewAiChatSession()" class="text-[10px] font-bold text-sky-400 hover:text-sky-300 px-2 py-0.5 rounded bg-sky-500/10 hover:bg-sky-500/20 transition cursor-pointer">+ Nuevo</button>
    </div>
+   <div id="aiTutorHistoryList" class="space-y-2 text-xs"></div>
+  </aside>
+  </div>
   </div>
   <div id="glossaryModal" style="display: none;" onclick="if(event.target===this) window.closeAllModals();" class="modal fixed modal-overlay modal-backdrop inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md hidden">
   <div class="w-full max-w-3xl bg-slate-900 border border-amber-500/50 rounded-3xl p-6 shadow-2xl flex flex-col max-h-[85vh] relative overflow-hidden">
-   <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+  <div class="flex items-center justify-between pb-3 border-b border-slate-800">
   <div>
   <h3 id="glossaryModalTitle" class="text-lg font-black text-white">Glosario Oficial</h3>
   <p id="glossaryModalSubtitle" class="text-xs text-slate-400">Términos, pronunciación y contexto</p>
   </div>
   <div class="flex items-center gap-2">
   <button onclick="downloadActiveGlossaryPdf()" class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 text-slate-950 font-black text-xs transition shadow-lg cursor-pointer flex items-center gap-1.5">
-   <span>📥 Descargar Todo en PDF</span>
+  <span>📥 Descargar Todo en PDF</span>
   </button>
   <button type="button" onclick="window.closeAllModals()" class="close-btn w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer text-base" style="cursor: pointer !important; pointer-events: auto !important; position: relative; z-index: 100001 !important;">&times;</button>
   </div>
-   </div>
-   <div class="pt-3 pb-2 space-y-2">
+  </div>
+  <div class="pt-3 pb-2 space-y-2">
   <input type="text" id="glossarySearchInput" oninput="filterGlossaryTerms(this.value)" placeholder="Buscar por palabra en inglés, IPA, traducción o ejemplo..." class="w-full px-4 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-amber-500">
   <div id="glossaryCategoryFilters" class="flex flex-wrap items-center gap-1.5">
   <button type="button" onclick="window.setGlossaryCategoryFilter('all')" class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-amber-500 text-slate-950 cursor-pointer">Todos</button>
@@ -806,26 +815,26 @@
   <button type="button" onclick="window.setGlossaryCategoryFilter('Idiom')" class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-slate-800 text-slate-300 border border-slate-700 cursor-pointer">Idioms</button>
   <button type="button" onclick="window.setGlossaryCategoryFilter('Adjetivo')" class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-slate-800 text-slate-300 border border-slate-700 cursor-pointer">Adjetivos</button>
   </div>
-   </div>
-   <div id="glossaryTermsContainer" class="flex-1 overflow-y-auto py-2 space-y-2.5"></div>
+  </div>
+  <div id="glossaryTermsContainer" class="flex-1 overflow-y-auto py-2 space-y-2.5"></div>
   </div>
   </div>
   <div id="learningMissionModal" style="display: none;" onclick="if(event.target===this) window.closeAllModals();" class="modal fixed modal-overlay modal-backdrop inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md hidden">
   <div class="w-full max-w-lg bg-slate-900 border border-amber-500/60 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
-   <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+  <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
   <div>
   <span class="text-[10px] font-bold uppercase tracking-wider text-amber-400 bg-amber-500/20 px-2 py-0.5 rounded-full">Misión
-   de Nivel 1</span>
+  de Nivel 1</span>
   <h3 id="missionModalTitle" class="text-base font-black text-white mt-1">Phrasal Verbs</h3>
   </div>
   <div class="flex items-center gap-2">
   <button onclick="closeMissionModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-300 hover:text-white transition cursor-pointer">
-   <span class="text-amber-400 font-bold">←</span>
-   <span>Volver</span>
+  <span class="text-amber-400 font-bold">←</span>
+  <span>Volver</span>
   </button>
   </div>
-   </div>
-   <div id="missionQuizBody">
+  </div>
+  <div id="missionQuizBody">
   <div class="flex items-center justify-between text-xs text-slate-400 mb-2">
   <span id="missionQuestionCounter" class="font-bold text-amber-400">Pregunta 1 de 3</span>
   <span class="text-[11px]">+20 EXP al aprobar (≥2/3)</span>
@@ -835,8 +844,8 @@
   </p>
   <div id="missionOptionsContainer" class="space-y-2.5 mb-4"></div>
   <div id="missionFeedbackText" class="text-xs font-semibold hidden p-2.5 rounded-xl"></div>
-   </div>
-   <div id="missionResultBody" class="hidden text-center py-4 space-y-4">
+  </div>
+  <div id="missionResultBody" class="hidden text-center py-4 space-y-4">
   <div id="missionResultIcon" class="text-5xl animate-bounce">🏆</div>
   <h4 id="missionResultTitle" class="text-xl font-black text-white">¡Misión Aprobada!</h4>
   <p id="missionResultDesc" class="text-xs text-slate-300 max-w-sm mx-auto">
@@ -847,200 +856,200 @@
   </div>
   <div>
   <button onclick="closeMissionModal()" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg cursor-pointer">
-   Continuar
+  Continuar
   </button>
   </div>
-   </div>
+  </div>
   </div>
   </div>
   <div id="profileModal" style="display: none;" data-modal="profile-modal" onclick="if(event.target===this) window.closeAllModals();" class="modal fixed modal-overlay modal-backdrop inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md hidden">
   <div class="w-full max-w-md bg-[#0f172a] border border-[#38bdf8]/60 rounded-3xl p-6 shadow-2xl relative overflow-hidden text-slate-100">
-   <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+  <div class="flex items-center justify-between pb-4 border-b border-slate-800">
   <h3 class="text-lg font-black text-white flex items-center gap-2">
   <span>👤 Perfil de Usuario</span>
   </h3>
   <button type="button" onclick="window.closeAllModals()" class="close-btn w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer text-base" style="cursor: pointer !important; pointer-events: auto !important; position: relative; z-index: 100001 !important;">&times;</button>
-   </div>
-   <div class="profile-body py-4 space-y-4 text-slate-100" id="profile-content"></div>
+  </div>
+  <div class="profile-body py-4 space-y-4 text-slate-100" id="profile-content"></div>
   </div>
   </div>
   <div id="settingsModal" style="display: none;" data-modal="settings-modal" onclick="if(event.target===this) window.closeAllModals();" class="modal fixed modal-overlay modal-backdrop inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md hidden">
   <div class="w-full max-w-md bg-[#0f172a] border border-sky-400/50 rounded-3xl p-6 shadow-2xl relative overflow-hidden text-slate-100 max-h-[90vh] overflow-y-auto">
-   <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+  <div class="flex items-center justify-between pb-4 border-b border-slate-800">
   <h3 class="text-base sm:text-lg font-black text-white flex items-center gap-2">
   <span>⚙️</span>
   <span>Ajustes y Configuración</span>
   </h3>
   <button type="button" onclick="window.closeAllModals()" class="close-btn w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer text-base" style="cursor: pointer !important; pointer-events: auto !important; position: relative; z-index: 100001 !important;">&times;</button>
-   </div>
-   <div class="py-4 space-y-5 text-xs sm:text-sm">
+  </div>
+  <div class="py-4 space-y-5 text-xs sm:text-sm">
   <div class="p-3.5 rounded-2xl bg-slate-800/60 border border-slate-700/60 space-y-2">
   <div class="flex items-center justify-between">
-   <label for="settingsMasterVolume" class="font-bold text-slate-200 flex items-center gap-2">
-   <span>🔊</span>
-   <span>Volumen General</span>
-   </label>
-   <span id="settingsVolumeDisplay" class="font-mono text-sky-400 font-extrabold text-xs px-2 py-0.5 rounded-md bg-slate-900 border border-sky-500/30">100%</span>
+  <label for="settingsMasterVolume" class="font-bold text-slate-200 flex items-center gap-2">
+  <span>🔊</span>
+  <span>Volumen General</span>
+  </label>
+  <span id="settingsVolumeDisplay" class="font-mono text-sky-400 font-extrabold text-xs px-2 py-0.5 rounded-md bg-slate-900 border border-sky-500/30">100%</span>
   </div>
   <p class="text-[11px] text-slate-400">Controla el volumen de audio, video, efectos y pronunciación (TTS).</p>
   <input type="range" id="settingsMasterVolume" min="0" max="100" value="100" oninput="handleMasterVolumeChange(this.value)" class="w-full h-2 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-sky-400 border border-slate-700">
   </div>
   <div class="p-3.5 rounded-2xl bg-slate-800/60 border border-slate-700/60 space-y-2">
   <label for="settingsThemeSelect" class="font-bold text-slate-200 flex items-center gap-2">
-   <span>🎨</span>
-   <span>Tema Visual</span>
+  <span>🎨</span>
+  <span>Tema Visual</span>
   </label>
   <p class="text-[11px] text-slate-400">Selecciona la apariencia cromática de la aplicación.</p>
   <select id="settingsThemeSelect" onchange="handleThemeChange(this.value)" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 font-medium text-xs focus:outline-none focus:border-sky-400 transition cursor-pointer">
-   <option value="dark">Modo Oscuro Profundo (Predeterminado)</option>
-   <option value="neon-light">Modo Neón / Claro</option>
+  <option value="dark">Modo Oscuro Profundo (Predeterminado)</option>
+  <option value="neon-light">Modo Neón / Claro</option>
   </select>
   </div>
   <div class="p-3.5 rounded-2xl bg-slate-800/60 border border-slate-700/60 space-y-2">
   <label for="settingsFontSelect" class="font-bold text-slate-200 flex items-center gap-2">
-   <span>🔤</span>
-   <span>Tipografía</span>
+  <span>🔤</span>
+  <span>Tipografía</span>
   </label>
   <p class="text-[11px] text-slate-400">Optimiza la lectura según tus preferencias cognitivas.</p>
   <select id="settingsFontSelect" onchange="handleFontFamilyChange(this.value)" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 font-medium text-xs focus:outline-none focus:border-sky-400 transition cursor-pointer">
-   <option value="sans">Sans Moderna</option>
-   <option value="dyslexic">Dislexia Friendly / OpenDyslexic</option>
-   <option value="classic">Clásica</option>
+  <option value="sans">Sans Moderna</option>
+  <option value="dyslexic">Dislexia Friendly / OpenDyslexic</option>
+  <option value="classic">Clásica</option>
   </select>
   </div>
   <div class="p-3.5 rounded-2xl bg-slate-800/60 border border-slate-700/60 space-y-2">
   <label for="settingsTtsSpeedSelect" class="font-bold text-slate-200 flex items-center gap-2">
-   <span>🗣️</span>
-   <span>Velocidad de Pronunciación</span>
+  <span>🗣️</span>
+  <span>Velocidad de Pronunciación</span>
   </label>
   <p class="text-[11px] text-slate-400">Ajusta el ritmo del Speaking Coach y la voz de la app.</p>
   <select id="settingsTtsSpeedSelect" onchange="handleTtsSpeedChange(this.value)" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 font-medium text-xs focus:outline-none focus:border-sky-400 transition cursor-pointer">
-   <option value="0.75">0.75x Lenta</option>
-   <option value="1.0" selected>1.0x Normal</option>
-   <option value="1.25">1.25x Rápida</option>
+  <option value="0.75">0.75x Lenta</option>
+  <option value="1.0" selected>1.0x Normal</option>
+  <option value="1.25">1.25x Rápida</option>
   </select>
   </div>
   <div class="pt-2">
   <div class="pt-1">
   <button type="button" id="settingsFeedbackBtn" onclick="window.openFeedbackModal()" class="w-full py-2.5 rounded-2xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-extrabold text-xs sm:text-sm transition shadow-lg shadow-sky-600/30 flex items-center justify-center gap-2 cursor-pointer active:scale-95 border border-sky-400/40">
-   <span>💬</span>
-   <span>Enviar Comentarios</span>
-  </button>
-   </div>
-   <button type="button" id="logout-btn" data-action="logout" onclick="window.logout(); if(typeof handleLogoutFromSettings==='function') handleLogoutFromSettings();" style="cursor: pointer; pointer-events: auto;" class="w-full py-3 rounded-2xl bg-gradient-to-r from-rose-600 via-red-600 to-rose-700 hover:from-rose-500 hover:to-red-500 text-white font-extrabold text-xs sm:text-sm transition shadow-lg shadow-rose-600/30 flex items-center justify-center gap-2 cursor-pointer active:scale-95 border border-rose-400/40">
-   <span>🚪</span>
-   <span>Cerrar Sesión</span>
+  <span>💬</span>
+  <span>Enviar Comentarios</span>
   </button>
   </div>
-   </div>
+  <button type="button" id="logout-btn" data-action="logout" onclick="window.logout(); if(typeof handleLogoutFromSettings==='function') handleLogoutFromSettings();" style="cursor: pointer; pointer-events: auto;" class="w-full py-3 rounded-2xl bg-gradient-to-r from-rose-600 via-red-600 to-rose-700 hover:from-rose-500 hover:to-red-500 text-white font-extrabold text-xs sm:text-sm transition shadow-lg shadow-rose-600/30 flex items-center justify-center gap-2 cursor-pointer active:scale-95 border border-rose-400/40">
+  <span>🚪</span>
+  <span>Cerrar Sesión</span>
+  </button>
+  </div>
+  </div>
   </div>
   </div>
   
   <div id="feedbackModal" style="display: none;" data-modal="feedback-modal" onclick="if(event.target===this) window.closeAllModals();" class="modal fixed modal-overlay modal-backdrop inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md hidden">
-   <div class="w-full max-w-md bg-[#0f172a] border border-sky-400/50 rounded-3xl p-5 shadow-2xl relative overflow-hidden text-slate-100 max-h-[90vh] overflow-y-auto">
+  <div class="w-full max-w-md bg-[#0f172a] border border-sky-400/50 rounded-3xl p-5 shadow-2xl relative overflow-hidden text-slate-100 max-h-[90vh] overflow-y-auto">
   <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-   <h3 class="text-base font-black text-white flex items-center gap-2"><span>💬</span><span>Enviar Comentarios</span></h3>
-   <button type="button" onclick="window.closeAllModals()" class="close-btn w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer text-base">&times;</button>
+  <h3 class="text-base font-black text-white flex items-center gap-2"><span>💬</span><span>Enviar Comentarios</span></h3>
+  <button type="button" onclick="window.closeAllModals()" class="close-btn w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer text-base">&times;</button>
   </div>
   <div class="py-3 space-y-3 text-xs sm:text-sm">
-   <p class="text-slate-300 text-xs">Tus opiniones y sugerencias nos ayudan a mejorar MasterENG.</p>
-   <div class="relative">
-    <textarea id="feedbackTextInput" rows="4" maxlength="1200" oninput="window.updateFeedbackWordCount()" placeholder="Escribe tu comentario aquí (máximo 100 palabras)..." class="w-full p-3 rounded-2xl bg-slate-900 border border-slate-700 focus:border-sky-400 focus:outline-none text-slate-100 text-xs sm:text-sm placeholder-slate-500 resize-none transition"></textarea>
-    <div class="flex items-center justify-between mt-1 text-[11px] text-slate-400">
-     <span id="feedbackWordCountBadge" class="font-mono text-sky-400 font-bold">0 / 100 palabras</span>
-     <span id="feedbackDailyLimitBadge" class="text-slate-500">Envíos hoy: 0/5</span>
-    </div>
+  <p class="text-slate-300 text-xs">Tus opiniones y sugerencias nos ayudan a mejorar MasterENG.</p>
+  <div class="relative">
+   <textarea id="feedbackTextInput" rows="4" maxlength="1200" oninput="window.updateFeedbackWordCount()" placeholder="Escribe tu comentario aquí (máximo 100 palabras)..." class="w-full p-3 rounded-2xl bg-slate-900 border border-slate-700 focus:border-sky-400 focus:outline-none text-slate-100 text-xs sm:text-sm placeholder-slate-500 resize-none transition"></textarea>
+   <div class="flex items-center justify-between mt-1 text-[11px] text-slate-400">
+    <span id="feedbackWordCountBadge" class="font-mono text-sky-400 font-bold">0 / 100 palabras</span>
+    <span id="feedbackDailyLimitBadge" class="text-slate-500">Envíos hoy: 0/5</span>
    </div>
-   <div id="feedbackMessageAlert" class="hidden p-2.5 rounded-xl text-xs font-semibold"></div>
-   <button type="button" id="feedbackSubmitBtn" onclick="window.handleFeedbackSubmit()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-extrabold text-xs sm:text-sm transition shadow-lg shadow-sky-500/30 flex items-center justify-center gap-2 cursor-pointer active:scale-95 border border-sky-400/50">
-    <span>🚀</span><span>Enviar a Base de Datos</span>
-   </button>
   </div>
-   </div>
+  <div id="feedbackMessageAlert" class="hidden p-2.5 rounded-xl text-xs font-semibold"></div>
+  <button type="button" id="feedbackSubmitBtn" onclick="window.handleFeedbackSubmit()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-extrabold text-xs sm:text-sm transition shadow-lg shadow-sky-500/30 flex items-center justify-center gap-2 cursor-pointer active:scale-95 border border-sky-400/50">
+   <span>🚀</span><span>Enviar a Base de Datos</span>
+  </button>
+  </div>
+  </div>
   </div>
   <div id="rouletteModal" style="display: none;" data-modal="roulette-modal" onclick="if(event.target===this) window.closeAllModals();" class="modal fixed modal-overlay modal-backdrop inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md hidden">
   <div class="w-full max-w-2xl bg-slate-900 border border-amber-500/60 rounded-3xl p-4 sm:p-6 shadow-2xl text-center relative overflow-hidden max-h-[92vh] flex flex-col">
-   <div class="flex items-center justify-between pb-3 border-b border-slate-800 shrink-0">
+  <div class="flex items-center justify-between pb-3 border-b border-slate-800 shrink-0">
   <h3 class="text-sm font-black text-amber-300 uppercase tracking-wider flex items-center gap-2">
   <span>🎯 Ruleta del Conocimiento</span>
   <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">+15 EXP</span>
   </h3>
   <button type="button" onclick="window.closeAllModals()" class="close-btn text-slate-400 hover:text-white text-base cursor-pointer p-1" style="cursor: pointer !important; pointer-events: auto !important; position: relative; z-index: 100001 !important;">&times;</button>
-   </div>
-   <div class="py-4 overflow-y-auto flex-1 flex flex-col md:flex-row items-center justify-center gap-6">
+  </div>
+  <div class="py-4 overflow-y-auto flex-1 flex flex-col md:flex-row items-center justify-center gap-6">
   <div class="flex flex-col items-center justify-center bg-slate-800/60 border border-slate-700/70 rounded-2xl p-4 w-full md:w-56 shrink-0 text-center shadow-lg">
   <div class="w-16 h-16 sm:w-20 sm:h-20 mb-2 relative">
-   <svg class="w-full h-full" viewBox="0 0 100 100"><use href="#robotMascotGraphic"/></svg>
-   <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping absolute top-1 right-1"></div>
+  <svg class="w-full h-full" viewBox="0 0 100 100"><use href="#robotMascotGraphic"/></svg>
+  <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping absolute top-1 right-1"></div>
   </div>
   <span class="text-xs font-black text-sky-400 uppercase tracking-wider">Robot Tutor IA</span>
   <p id="rouletteTutorSpeech" class="text-[11px] text-slate-300 mt-1.5 leading-snug">
-   "¡Gira la ruleta y pon a prueba tus conocimientos para ganar +15 de experiencia!"
+  "¡Gira la ruleta y pon a prueba tus conocimientos para ganar +15 de experiencia!"
   </p>
   </div>
   <div class="flex-1 flex flex-col items-center justify-center w-full">
   <div class="relative w-48 h-48 sm:w-52 sm:h-52 mx-auto my-2 flex items-center justify-center">
-   <div id="rouletteWheelDisk" class="w-full h-full rounded-full border-4 border-amber-400 shadow-xl overflow-hidden transition-transform duration-[4000ms] cubic-bezier(0.15, 0.9, 0.2, 1)">
-   <svg class="w-full h-full" viewBox="0 0 100 100"> <path d="M50 50 L50 0 A50 50 0 0 1 93.3 25 Z" fill="#ef4444"></path> <path d="M50 50 L93.3 25 A50 50 0 0 1 93.3 75 Z" fill="#f59e0b"></path> <path d="M50 50 L93.3 75 A50 50 0 0 1 50 100 Z" fill="#10b981"></path> <path d="M50 50 L50 100 A50 50 0 0 1 6.7 75 Z" fill="#06b6d4"></path> <path d="M50 50 L6.7 75 A50 50 0 0 1 6.7 25 Z" fill="#8b5cf6"></path> <path d="M50 50 L6.7 25 A50 50 0 0 1 50 0 Z" fill="#ec4899"></path> <circle cx="50" cy="50" r="12" fill="#0f172a" stroke="#fcd34d" stroke-width="2.5"></circle> </svg>
-   </div>
-   <div class="absolute top-0 w-3 h-4 bg-amber-400 rotate-180 transform -translate-y-2 shadow-lg"></div>
+  <div id="rouletteWheelDisk" class="w-full h-full rounded-full border-4 border-amber-400 shadow-xl overflow-hidden transition-transform duration-[4000ms] cubic-bezier(0.15, 0.9, 0.2, 1)">
+  <svg class="w-full h-full" viewBox="0 0 100 100"> <path d="M50 50 L50 0 A50 50 0 0 1 93.3 25 Z" fill="#ef4444"></path> <path d="M50 50 L93.3 25 A50 50 0 0 1 93.3 75 Z" fill="#f59e0b"></path> <path d="M50 50 L93.3 75 A50 50 0 0 1 50 100 Z" fill="#10b981"></path> <path d="M50 50 L50 100 A50 50 0 0 1 6.7 75 Z" fill="#06b6d4"></path> <path d="M50 50 L6.7 75 A50 50 0 0 1 6.7 25 Z" fill="#8b5cf6"></path> <path d="M50 50 L6.7 25 A50 50 0 0 1 50 0 Z" fill="#ec4899"></path> <circle cx="50" cy="50" r="12" fill="#0f172a" stroke="#fcd34d" stroke-width="2.5"></circle> </svg>
+  </div>
+  <div class="absolute top-0 w-3 h-4 bg-amber-400 rotate-180 transform -translate-y-2 shadow-lg"></div>
   </div>
   <button id="spinRouletteBtn" onclick="spinRouletteWheel()" class="py-2.5 px-6 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-sm uppercase tracking-wider transition shadow-lg shadow-amber-500/30 cursor-pointer active:scale-95">
-   Girar Ruleta
+  Girar Ruleta
   </button>
   <div id="rouletteQuestionCard" class="mt-4 p-4 rounded-2xl bg-slate-800/90 border border-slate-700 text-left w-full hidden">
-   <div class="flex items-center justify-between text-xs mb-2">
-   <span id="rouletteCategoryBadge" class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold">Grammar</span>
-   <span id="rouletteTimer" class="font-mono text-rose-400 font-black">⏱️ 30s</span>
-   </div>
-   <p id="rouletteQuestionText" class="text-sm font-bold text-white mb-3">Which sentence is correct?</p>
-   <div id="rouletteOptionsContainer" class="space-y-2"></div>
+  <div class="flex items-center justify-between text-xs mb-2">
+  <span id="rouletteCategoryBadge" class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold">Grammar</span>
+  <span id="rouletteTimer" class="font-mono text-rose-400 font-black">⏱️ 30s</span>
+  </div>
+  <p id="rouletteQuestionText" class="text-sm font-bold text-white mb-3">Which sentence is correct?</p>
+  <div id="rouletteOptionsContainer" class="space-y-2"></div>
   </div>
   </div>
-   </div>
+  </div>
   </div>
   </div>
   </div>
   <div id="chatbotWindow" data-modal="ai-tutor-modal" style="display: none;" class="drawer modal fixed bottom-20 right-4 sm:right-6 w-80 sm:w-96 bg-slate-900 border border-slate-700 rounded-3xl shadow-2xl z-50 flex flex-col h-[460px] hidden overflow-hidden">
   <div class="p-3 bg-slate-800/90 border-b border-slate-700 flex items-center justify-between">
-   <div class="flex items-center gap-2">
+  <div class="flex items-center gap-2">
   <div class="w-7 h-7 rounded-lg bg-sky-500 flex items-center justify-center text-xs font-black text-white">AI
   </div>
   <div>
   <h4 class="text-xs font-bold text-white">Asistente de Dudas</h4>
   <p class="text-[9px] text-slate-400">Opciones rápidas de soporte</p>
   </div>
-   </div>
-   <button type="button" onclick="window.closeAllModals()" class="close-btn text-slate-400 hover:text-white text-base cursor-pointer p-1" style="cursor: pointer !important; pointer-events: auto !important; position: relative; z-index: 100001 !important;">&times;</button>
+  </div>
+  <button type="button" onclick="window.closeAllModals()" class="close-btn text-slate-400 hover:text-white text-base cursor-pointer p-1" style="cursor: pointer !important; pointer-events: auto !important; position: relative; z-index: 100001 !important;">&times;</button>
   </div>
   <div class="p-2 bg-slate-950/50 border-b border-slate-800/60 flex gap-1.5 overflow-x-auto text-[10px]">
-   <button onclick="askChatbotQuestion('Diferencia entre Make y Do')" class="whitespace-nowrap px-2.5 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 cursor-pointer">Make
+  <button onclick="askChatbotQuestion('Diferencia entre Make y Do')" class="whitespace-nowrap px-2.5 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 cursor-pointer">Make
   vs Do</button>
-   <button onclick="askChatbotQuestion('Top 5 Phrasal Verbs')" class="whitespace-nowrap px-2.5 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 cursor-pointer">Phrasal
+  <button onclick="askChatbotQuestion('Top 5 Phrasal Verbs')" class="whitespace-nowrap px-2.5 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 cursor-pointer">Phrasal
   Verbs</button>
-   <button onclick="askChatbotQuestion('Consejos para TOEFL')" class="whitespace-nowrap px-2.5 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 cursor-pointer">Tips
+  <button onclick="askChatbotQuestion('Consejos para TOEFL')" class="whitespace-nowrap px-2.5 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 cursor-pointer">Tips
   TOEFL</button>
-   <button onclick="askChatbotQuestion('¿Cómo gano EXP?')" class="whitespace-nowrap px-2.5 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 cursor-pointer">Ganar
+  <button onclick="askChatbotQuestion('¿Cómo gano EXP?')" class="whitespace-nowrap px-2.5 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 cursor-pointer">Ganar
   EXP</button>
   </div>
   <div id="chatbotMessagesContainer" class="flex-1 overflow-y-auto p-3 space-y-2.5 text-xs">
-   <div class="bg-slate-800/80 p-2.5 rounded-2xl rounded-tl-none border border-slate-700 text-slate-200">
+  <div class="bg-slate-800/80 p-2.5 rounded-2xl rounded-tl-none border border-slate-700 text-slate-200">
   Selecciona una opción rápida arriba o escribe tu duda de inglés aquí abajo.
-   </div>
+  </div>
   </div>
   <div class="p-2.5 bg-slate-800/90 border-t border-slate-700 flex gap-2">
-   <input type="text" id="chatbotInput" onkeydown="if(event.key==='Enter') sendChatbotMessage()" placeholder="Escribe tu duda aquí..." class="flex-1 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-sky-500">
-   <button onclick="sendChatbotMessage()" class="px-3 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs cursor-pointer">Enviar</button>
+  <input type="text" id="chatbotInput" onkeydown="if(event.key==='Enter') sendChatbotMessage()" placeholder="Escribe tu duda aquí..." class="flex-1 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-sky-500">
+  <button onclick="sendChatbotMessage()" class="px-3 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs cursor-pointer">Enviar</button>
   </div>
   </div>
   <div id="musicWordModal" style="display: none;" onclick="if(event.target===this) window.closeAllModals();" class="modal fixed modal-overlay modal-backdrop inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md hidden">
   <div class="w-full max-w-sm bg-slate-900 border border-cyan-500/50 rounded-3xl p-5 shadow-2xl relative text-slate-100">
-   <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+  <div class="flex items-center justify-between pb-3 border-b border-slate-800">
   <span id="musicWordType" class="text-[10px] font-bold uppercase tracking-wider text-cyan-400 bg-cyan-500/20 px-2.5 py-0.5 rounded-full">Vocabulario
   Musical</span>
   <button type="button" onclick="window.closeAllModals()" class="close-btn text-slate-400 hover:text-white text-base cursor-pointer p-1" style="cursor: pointer !important; pointer-events: auto !important; position: relative; z-index: 100001 !important;">&times;</button>
-   </div>
-   <div class="py-3">
+  </div>
+  <div class="py-3">
   <div class="flex items-center justify-between">
   <h3 id="musicWordTerm" class="text-xl font-black text-white">Fire</h3>
   <button onclick="speakMusicWord()" class="p-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white cursor-pointer">🔊</button>
@@ -1053,116 +1062,116 @@
   <p id="musicWordPhrasalEs" class="text-slate-300 italic">Disparar preguntas</p>
   <p id="musicWordPhrasalEx" class="text-slate-400 text-[11px] pt-1"></p>
   </div>
-   </div>
-   <button onclick="resumeYouTubePlayer()" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 cursor-pointer mt-1">
+  </div>
+  <button onclick="resumeYouTubePlayer()" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 cursor-pointer mt-1">
   Entendido & Continuar
-   </button>
+  </button>
   </div>
   </div>
   <div id="forceUpdateOverlay" style="display: none; z-index: 999999;" class="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-slate-950/98 backdrop-blur-2xl hidden">
   <div class="w-full max-w-md bg-[#090d16] border-2 border-amber-500/70 rounded-3xl p-6 sm:p-8 shadow-2xl relative text-center text-slate-100 flex flex-col items-center">
-   <div class="w-16 h-16 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-3xl mb-4 shadow-lg shadow-amber-500/20 animate-bounce">
+  <div class="w-16 h-16 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-3xl mb-4 shadow-lg shadow-amber-500/20 animate-bounce">
   ⚠️
-   </div>
-   <span class="px-3 py-1 rounded-full bg-amber-500/20 border border-amber-400/40 text-[11px] font-bold text-amber-300 uppercase tracking-wider mb-2">
+  </div>
+  <span class="px-3 py-1 rounded-full bg-amber-500/20 border border-amber-400/40 text-[11px] font-bold text-amber-300 uppercase tracking-wider mb-2">
   Aviso del Sistema
-   </span>
-   <h2 class="text-xl sm:text-2xl font-black text-white tracking-wide mb-2">
+  </span>
+  <h2 class="text-xl sm:text-2xl font-black text-white tracking-wide mb-2">
   Actualización Requerida
-   </h2>
-   <p id="forceUpdateDescription" class="text-xs sm:text-sm text-slate-300 mb-6 leading-relaxed">
+  </h2>
+  <p id="forceUpdateDescription" class="text-xs sm:text-sm text-slate-300 mb-6 leading-relaxed">
   Para garantizar la compatibilidad con el motor 3D, la base de datos PostgreSQL y la sincronización de contenidos, debes actualizar a la versión más reciente.
-   </p>
-   <a id="forceUpdateDownloadLink" href="https://english-app-frontend-3j9w.onrender.com" target="_blank" rel="noopener noreferrer" class="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-600 hover:from-amber-400 hover:via-orange-400 hover:to-rose-500 text-white font-extrabold text-xs sm:text-sm uppercase tracking-wider transition shadow-xl shadow-amber-500/30 flex items-center justify-center gap-2 cursor-pointer active:scale-95 text-decoration-none">
+  </p>
+  <a id="forceUpdateDownloadLink" href="https://english-app-frontend-3j9w.onrender.com" target="_blank" rel="noopener noreferrer" class="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-600 hover:from-amber-400 hover:via-orange-400 hover:to-rose-500 text-white font-extrabold text-xs sm:text-sm uppercase tracking-wider transition shadow-xl shadow-amber-500/30 flex items-center justify-center gap-2 cursor-pointer active:scale-95 text-decoration-none">
   <span>📥 Descargar Actualización</span>
-   </a>
+  </a>
   </div>
   </div>
   <div id="adminDashboardModal" style="display: none;" class="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/85 backdrop-blur-md hidden">
   <div class="w-full max-w-5xl max-h-[92vh] bg-[#090d16] border border-purple-500/40 rounded-3xl p-4 sm:p-6 shadow-2xl relative flex flex-col overflow-hidden text-slate-100">
-   <div class="flex items-center justify-between pb-4 border-b border-purple-500/20 flex-wrap gap-3">
+  <div class="flex items-center justify-between pb-4 border-b border-purple-500/20 flex-wrap gap-3">
   <div class="flex items-center gap-3">
   <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-xl shadow-lg shadow-purple-500/30">
-   ⚙️
+  ⚙️
   </div>
   <div>
-   <div class="flex items-center gap-2">
-   <h3 class="text-base sm:text-lg font-black text-white tracking-wide">Consola de Administración</h3>
-   <span class="px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-400/40 text-[10px] font-bold text-purple-300">
+  <div class="flex items-center gap-2">
+  <h3 class="text-base sm:text-lg font-black text-white tracking-wide">Consola de Administración</h3>
+  <span class="px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-400/40 text-[10px] font-bold text-purple-300">
   PostgreSQL Live
-   </span>
-   </div>
-   <p class="text-xs text-slate-400">Monitoreo de cuentas, progreso académico y gestión de base de datos</p>
+  </span>
+  </div>
+  <p class="text-xs text-slate-400">Monitoreo de cuentas, progreso académico y gestión de base de datos</p>
   </div>
   </div>
   <div class="flex items-center gap-2">
   <button id="adminRefreshBtn" onclick="refreshAdminUsersData()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-purple-500/30 text-purple-300 hover:text-purple-200 text-xs font-semibold transition active:scale-95 cursor-pointer">
-   <span id="adminRefreshIcon" class="inline-block transition-transform duration-500">🔄</span>
-   <span>Refrescar Datos</span>
+  <span id="adminRefreshIcon" class="inline-block transition-transform duration-500">🔄</span>
+  <span>Refrescar Datos</span>
   </button>
   <button onclick="closeAdminDashboardModal()" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center text-sm transition cursor-pointer">
-   ✕
+  ✕
   </button>
   </div>
-   </div>
-   <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 my-4">
+  </div>
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 my-4">
   <div class="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800/80 flex items-center gap-3.5">
   <div class="w-11 h-11 rounded-xl bg-sky-500/20 border border-sky-400/30 flex items-center justify-center text-xl text-sky-400">
-   👥
+  👥
   </div>
   <div>
-   <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Total Usuarios</p>
-   <p id="adminMetricTotalUsers" class="text-xl font-black text-white">--</p>
+  <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Total Usuarios</p>
+  <p id="adminMetricTotalUsers" class="text-xl font-black text-white">--</p>
   </div>
   </div>
   <div class="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800/80 flex items-center gap-3.5">
   <div class="w-11 h-11 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-xl text-emerald-400">
-   ⚡
+  ⚡
   </div>
   <div>
-   <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Usuarios Activos</p>
-   <p id="adminMetricActiveUsers" class="text-xl font-black text-emerald-400">--</p>
+  <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Usuarios Activos</p>
+  <p id="adminMetricActiveUsers" class="text-xl font-black text-emerald-400">--</p>
   </div>
   </div>
   <div class="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800/80 flex items-center gap-3.5">
   <div class="w-11 h-11 rounded-xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center text-xl text-amber-400">
-   ✨
+  ✨
   </div>
   <div>
-   <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">EXP Global</p>
-   <p id="adminMetricGlobalExp" class="text-xl font-black text-amber-300">--</p>
+  <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">EXP Global</p>
+  <p id="adminMetricGlobalExp" class="text-xl font-black text-amber-300">--</p>
   </div>
   </div>
-   </div>
-   <div class="mb-3 flex items-center gap-2">
+  </div>
+  <div class="mb-3 flex items-center gap-2">
   <div class="relative flex-1">
   <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 text-sm">
-   🔍
+  🔍
   </span>
   <input type="text" id="adminUserSearchInput" oninput="handleAdminUserSearch(this.value)" placeholder="Buscar usuarios por ID, username o correo..." class="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-900 border border-slate-700/70 focus:border-purple-400 text-xs text-white placeholder-slate-500 outline-none transition" />
   </div>
   <div id="adminUserCountBadge" class="hidden sm:inline-flex px-3 py-2 rounded-xl bg-slate-800/90 border border-slate-700 text-xs font-mono text-slate-300 whitespace-nowrap">
   0 usuarios
   </div>
-   </div>
-   <div class="flex-1 overflow-y-auto overflow-x-auto border border-slate-800 rounded-2xl bg-slate-950/60 custom-scroll">
+  </div>
+  <div class="flex-1 overflow-y-auto overflow-x-auto border border-slate-800 rounded-2xl bg-slate-950/60 custom-scroll">
   <table class="w-full text-left text-xs min-w-[640px]">
   <thead class="bg-slate-900/90 text-[11px] text-slate-400 uppercase tracking-wider border-b border-slate-800 sticky top-0 z-10 backdrop-blur-sm">
-   <tr>
-   <th class="py-2.5 px-3 font-semibold">ID</th>
-   <th class="py-2.5 px-3 font-semibold">Usuario</th>
-   <th class="py-2.5 px-3 font-semibold">Correo</th>
-   <th class="py-2.5 px-3 font-semibold">Rango</th>
-   <th class="py-2.5 px-3 font-semibold">EXP</th>
-   <th class="py-2.5 px-3 font-semibold">Fecha de Registro</th>
-   <th class="py-2.5 px-3 font-semibold text-center">Acciones</th>
-   </tr>
+  <tr>
+  <th class="py-2.5 px-3 font-semibold">ID</th>
+  <th class="py-2.5 px-3 font-semibold">Usuario</th>
+  <th class="py-2.5 px-3 font-semibold">Correo</th>
+  <th class="py-2.5 px-3 font-semibold">Rango</th>
+  <th class="py-2.5 px-3 font-semibold">EXP</th>
+  <th class="py-2.5 px-3 font-semibold">Fecha de Registro</th>
+  <th class="py-2.5 px-3 font-semibold text-center">Acciones</th>
+  </tr>
   </thead>
   <tbody id="adminUsersTableBody" class="divide-y divide-slate-800/60 text-slate-300">
   </tbody>
   </table>
-   </div>
-   <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500 flex-wrap gap-2">
+  </div>
+  <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500 flex-wrap gap-2">
   <span class="flex items-center gap-1.5">
   <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
   Conexión segura activa con PostgreSQL (/api/admin)
@@ -1170,12 +1179,12 @@
   <button onclick="closeAdminDashboardModal()" class="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold cursor-pointer">
   Cerrar Panel
   </button>
-   </div>
+  </div>
   </div>
   </div>
   <div id="adminConfirmDeleteModal" style="display: none;" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md hidden">
   <div class="w-full max-w-md bg-[#0f172a] border border-rose-500/50 rounded-3xl p-6 shadow-2xl relative text-slate-100">
-   <div class="flex items-center gap-3 pb-3 border-b border-rose-500/20 text-rose-400">
+  <div class="flex items-center gap-3 pb-3 border-b border-rose-500/20 text-rose-400">
   <div class="w-10 h-10 rounded-2xl bg-rose-500/20 flex items-center justify-center text-xl">
   ⚠️
   </div>
@@ -1183,76 +1192,76 @@
   <h4 class="text-base font-bold text-white">Confirmar Eliminación de Usuario</h4>
   <p class="text-xs text-rose-300/80">Acción permanente e irreversible</p>
   </div>
-   </div>
-   <div class="py-4 text-xs text-slate-300 space-y-2">
+  </div>
+  <div class="py-4 text-xs text-slate-300 space-y-2">
   <p>¿Estás completamente seguro de que deseas eliminar la cuenta de <strong id="adminDeleteUserName" class="text-white font-semibold"></strong> (ID: <span id="adminDeleteUserId" class="font-mono text-rose-300"></span>)?</p>
   <div class="p-3 rounded-xl bg-rose-950/40 border border-rose-500/30 text-rose-200 text-[11px] leading-relaxed">
   ⚡ <strong>Eliminación en cascada:</strong> Se borrará el usuario de PostgreSQL junto con todas sus estadísticas, progreso de módulos y resultados de exámenes TOEFL.
   </div>
-   </div>
-   <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+  </div>
+  <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
   <button onclick="closeAdminConfirmDelete()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 cursor-pointer">
   Cancelar
   </button>
   <button id="adminConfirmDeleteBtn" onclick="executeAdminDeleteUser()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-xs font-bold text-white shadow-lg shadow-rose-600/30 cursor-pointer">
   Sí, Eliminar Usuario
   </button>
-   </div>
+  </div>
   </div>
   </div>
   <div id="adminViewProgressModal" style="display: none;" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md hidden">
   <div class="w-full max-w-lg bg-[#0f172a] border border-sky-500/50 rounded-3xl p-6 shadow-2xl relative text-slate-100 flex flex-col max-h-[85vh]">
-   <div class="flex items-center justify-between pb-3 border-b border-sky-500/20">
+  <div class="flex items-center justify-between pb-3 border-b border-sky-500/20">
   <div class="flex items-center gap-3">
   <div class="w-10 h-10 rounded-2xl bg-sky-500/20 border border-sky-400/30 flex items-center justify-center text-xl text-sky-400">
-   📊
+  📊
   </div>
   <div>
-   <h4 id="adminProgressUserName" class="text-base font-bold text-white">Progreso del Estudiante</h4>
-   <p id="adminProgressUserEmail" class="text-xs text-sky-300 font-mono">usuario@ejemplo.com</p>
+  <h4 id="adminProgressUserName" class="text-base font-bold text-white">Progreso del Estudiante</h4>
+  <p id="adminProgressUserEmail" class="text-xs text-sky-300 font-mono">usuario@ejemplo.com</p>
   </div>
   </div>
   <button onclick="closeAdminViewProgress()" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center text-xs cursor-pointer">
   ✕
   </button>
-   </div>
-   <div class="py-4 space-y-4 overflow-y-auto custom-scroll flex-1 text-xs">
+  </div>
+  <div class="py-4 space-y-4 overflow-y-auto custom-scroll flex-1 text-xs">
   <div class="grid grid-cols-3 gap-2">
   <div class="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-center">
-   <span class="text-[10px] text-slate-400 block uppercase">Nivel / Rango</span>
-   <span id="adminProgressRank" class="font-bold text-amber-400 text-sm">Bronce</span>
+  <span class="text-[10px] text-slate-400 block uppercase">Nivel / Rango</span>
+  <span id="adminProgressRank" class="font-bold text-amber-400 text-sm">Bronce</span>
   </div>
   <div class="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-center">
-   <span class="text-[10px] text-slate-400 block uppercase">Experiencia</span>
-   <span id="adminProgressExp" class="font-bold text-sky-400 text-sm">0 EXP</span>
+  <span class="text-[10px] text-slate-400 block uppercase">Experiencia</span>
+  <span id="adminProgressExp" class="font-bold text-sky-400 text-sm">0 EXP</span>
   </div>
   <div class="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-center">
-   <span class="text-[10px] text-slate-400 block uppercase">Racha de Días</span>
-   <span id="adminProgressStreak" class="font-bold text-emerald-400 text-sm">1 🔥</span>
+  <span class="text-[10px] text-slate-400 block uppercase">Racha de Días</span>
+  <span id="adminProgressStreak" class="font-bold text-emerald-400 text-sm">1 🔥</span>
   </div>
   </div>
   <div class="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800">
   <div class="flex items-center justify-between mb-2">
-   <span class="font-bold text-white">Ruta Cósmica (Módulos)</span>
-   <span id="adminProgressModulesCompleted" class="text-sky-400 font-mono text-[11px]">4 / 12 (33%)</span>
+  <span class="font-bold text-white">Ruta Cósmica (Módulos)</span>
+  <span id="adminProgressModulesCompleted" class="text-sky-400 font-mono text-[11px]">4 / 12 (33%)</span>
   </div>
   <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-   <div id="adminProgressBarModules" class="bg-gradient-to-r from-sky-400 to-blue-500 h-full w-[33%]"></div>
+  <div id="adminProgressBarModules" class="bg-gradient-to-r from-sky-400 to-blue-500 h-full w-[33%]"></div>
   </div>
   </div>
   <div class="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800">
   <div class="flex items-center justify-between mb-2">
-   <span class="font-bold text-white">Simulador TOEFL ITP</span>
-   <span id="adminProgressToeflStatus" class="text-emerald-400 font-mono text-[11px]">Puntuación: 520 pts</span>
+  <span class="font-bold text-white">Simulador TOEFL ITP</span>
+  <span id="adminProgressToeflStatus" class="text-emerald-400 font-mono text-[11px]">Puntuación: 520 pts</span>
   </div>
   <p class="text-[11px] text-slate-400">Progreso auditado y sincronizado en base de datos PostgreSQL en tiempo real.</p>
   </div>
-   </div>
-   <div class="pt-3 border-t border-slate-800 flex justify-end">
+  </div>
+  <div class="pt-3 border-t border-slate-800 flex justify-end">
   <button onclick="closeAdminViewProgress()" class="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold cursor-pointer">
   Cerrar
   </button>
-   </div>
+  </div>
   </div>
   </div>
   <div id="floatingToast" class="fixed top-16 right-4 z-50 px-4 py-2.5 rounded-2xl bg-slate-900/95 border border-sky-500/50 text-xs font-semibold text-white shadow-2xl flex items-center gap-2 transform translate-y-[-100px] opacity-0 transition-all duration-300 pointer-events-none">
@@ -1267,7 +1276,7 @@
   function downloadActiveGlossaryPdf() {
   var modId = arguments[0];
   if (window.PDF_GENERATOR && typeof window.PDF_GENERATOR.generateModulePdf === 'function') {
-   return window.PDF_GENERATOR.generateModulePdf(modId);
+  return window.PDF_GENERATOR.generateModulePdf(modId);
   }
   }
 (function() {
@@ -1276,111 +1285,111 @@
   console.log("Navegando a:", viewId);
   var cleanId = (viewId || 'hub').replace('-view', '');
   var viewMap = {
-   'login': 'view-auth',
-   'view-auth': 'view-auth',
-   'hub': 'view-home',
-   'view-home': 'view-home',
-   'learning-path': 'view-path',
-   'view-path': 'view-path',
-   'world3d': 'view-worldtour',
-   'view-worldtour': 'view-worldtour',
-   'music': 'view-music',
-   'view-music': 'view-music',
-   'stories': 'view-stories',
-   'view-stories': 'view-stories',
-   'admin': 'adminDashboardModal'
+  'login': 'view-auth',
+  'view-auth': 'view-auth',
+  'hub': 'view-home',
+  'view-home': 'view-home',
+  'learning-path': 'view-path',
+  'view-path': 'view-path',
+  'world3d': 'view-worldtour',
+  'view-worldtour': 'view-worldtour',
+  'music': 'view-music',
+  'view-music': 'view-music',
+  'stories': 'view-stories',
+  'view-stories': 'view-stories',
+  'admin': 'adminDashboardModal'
   };
   var targetId = viewMap[cleanId] || viewMap[viewId] || cleanId;
   if (targetId === 'adminDashboardModal') {
-   if (typeof window.openAdminDashboardModal === 'function') window.openAdminDashboardModal();
-   return;
+  if (typeof window.openAdminDashboardModal === 'function') window.openAdminDashboardModal();
+  return;
   }
   var views = document.querySelectorAll('section, main, .view-section, [id$="-view"], #view-auth, #view-home, #view-path, #view-stories, #view-music, #view-worldtour, #ai-tutor-view');
   views.forEach(function(v) {
-   var isTarget = (v.id === cleanId + '-view' || v.id === cleanId || v.id === targetId || (targetId === 'view-path' && (v.id === 'view-path' || v.id === 'learning-path-view')));
-   if (isTarget) {
+  var isTarget = (v.id === cleanId + '-view' || v.id === cleanId || v.id === targetId || (targetId === 'view-path' && (v.id === 'view-path' || v.id === 'learning-path-view')));
+  if (isTarget) {
   v.style.setProperty('display', (v.id === 'view-home' || v.id === 'view-auth') ? 'flex' : 'block', 'important');
   v.style.setProperty('pointer-events', 'auto', 'important');
   v.style.setProperty('visibility', 'visible', 'important');
   v.classList.remove('hidden');
-   } else {
+  } else {
   v.style.setProperty('display', 'none', 'important');
   v.style.setProperty('pointer-events', 'none', 'important');
   v.classList.add('hidden');
-   }
+  }
   });
   var isLogin = (cleanId === 'login' || targetId === 'view-auth');
   if (isLogin) {
-   var authEl = document.getElementById('view-auth');
-   if (authEl) authEl.style.setProperty('z-index', '10000', 'important');
-   document.querySelectorAll('#view-auth .login-card, .login-container, #login-modal').forEach(function(c) {
+  var authEl = document.getElementById('view-auth');
+  if (authEl) authEl.style.setProperty('z-index', '10000', 'important');
+  document.querySelectorAll('#view-auth .login-card, .login-container, #login-modal').forEach(function(c) {
   c.style.setProperty('display', 'block', 'important');
   c.style.setProperty('visibility', 'visible', 'important');
   c.style.setProperty('pointer-events', 'auto', 'important');
   c.classList.remove('hidden');
-   });
+  });
   }
   var dock = document.getElementById('tutorRouletteDock');
   if (dock) {
-   dock.style.setProperty('display', isLogin ? 'none' : 'flex', 'important');
-   dock.classList.toggle('hidden', isLogin);
+  dock.style.setProperty('display', isLogin ? 'none' : 'flex', 'important');
+  dock.classList.toggle('hidden', isLogin);
   }
   var widgets = document.querySelectorAll('.floating-widget, #roulette-btn, #ai-tutor-btn');
   widgets.forEach(function(w) {
-   w.style.setProperty('display', isLogin ? 'none' : 'flex', 'important');
-   w.classList.toggle('hidden', isLogin);
+  w.style.setProperty('display', isLogin ? 'none' : 'flex', 'important');
+  w.classList.toggle('hidden', isLogin);
   });
   if (targetId === 'view-home' || cleanId === 'hub') {
-   if (typeof window.showPortal === 'function') window.showPortal(window.currentPortalIdx || 0);
+  if (typeof window.showPortal === 'function') window.showPortal(window.currentPortalIdx || 0);
   }
   if (targetId === 'view-path') {
-   if (typeof window.renderOfficialLearningModules === 'function') window.renderOfficialLearningModules();
+  if (typeof window.renderOfficialLearningModules === 'function') window.renderOfficialLearningModules();
   }
   if (targetId === 'view-worldtour') {
-   setTimeout(function() {
+  setTimeout(function() {
   if (typeof window.initOrResumeWorld3D === 'function') window.initOrResumeWorld3D();
   else if (typeof window.initThreeWorldTour === 'function') window.initThreeWorldTour();
   window.dispatchEvent(new Event('resize'));
-   }, 60);
+  }, 60);
   }
   if (targetId === 'view-music' && typeof window.renderMusicTracksList === 'function') {
-   window.renderMusicTracksList();
+  window.renderMusicTracksList();
   }
   if (targetId === 'view-stories' && typeof window.renderStorySelector === 'function') {
-   window.renderStorySelector();
+  window.renderStorySelector();
   }
   if (targetId !== 'view-music' && typeof pauseYouTubePlayer === 'function') {
-   pauseYouTubePlayer();
+  pauseYouTubePlayer();
   }
   };
   window.navigateToView = window.navigateTo;
   // 2. Cierre Universal de Modales
   window.closeAllModals = function() {
   document.querySelectorAll('.modal, .modal-backdrop, .modal-overlay, [id$="-modal"]').forEach(function(m) {
-   m.style.setProperty('display', 'none', 'important');
-   m.classList.remove('active', 'open');
+  m.style.setProperty('display', 'none', 'important');
+  m.classList.remove('active', 'open');
   });
   document.querySelectorAll('#profileModal, #settingsModal, #feedbackModal, #rouletteModal, #glossaryModal, #learningMissionModal, #musicWordModal, #chatbotWindow, #adminDashboardModal, #adminConfirmDeleteModal, #adminViewProgressModal, #googleAccountPickerModal').forEach(function(m) {
-   m.style.setProperty('display', 'none', 'important');
-   m.classList.remove('active', 'show', 'open');
-   m.classList.add('hidden');
+  m.style.setProperty('display', 'none', 'important');
+  m.classList.remove('active', 'show', 'open');
+  m.classList.add('hidden');
   });
   };
   window.closeModal = function(modalId) {
   var modal = typeof modalId === 'string' ? (document.getElementById(modalId) || document.getElementById(modalId + 'Modal')) : modalId?.closest?.('.modal, [id$="-modal"]');
   if (modal) {
-   modal.style.setProperty('display', 'none', 'important');
-   modal.classList.remove('active', 'show', 'open');
-   modal.classList.add('hidden');
+  modal.style.setProperty('display', 'none', 'important');
+  modal.classList.remove('active', 'show', 'open');
+  modal.classList.add('hidden');
   }
   };
   // 3. Cerrar Sesión
   window.logout = function() {
   localStorage.removeItem('mastereng_user');
   try {
-   localStorage.removeItem('user_role');
-   localStorage.removeItem('english_app_user_session');
-   localStorage.removeItem('guest_user');
+  localStorage.removeItem('user_role');
+  localStorage.removeItem('english_app_user_session');
+  localStorage.removeItem('guest_user');
   } catch(e) {}
   window.closeAllModals();
   window.navigateTo('login');
@@ -1398,14 +1407,14 @@
   window.currentPortalIdx = ((window.currentPortalIdx + delta) % cards.length + cards.length) % cards.length;
   window.currentPortal = window.currentPortalIdx;
   if (typeof window.showPortal === 'function') {
-   window.showPortal(window.currentPortalIdx);
+  window.showPortal(window.currentPortalIdx);
   } else {
-   cards.forEach(function(c, i) {
+  cards.forEach(function(c, i) {
   c.style.setProperty('display', (i === window.currentPortalIdx) ? 'flex' : 'none', 'important');
-   });
-   dots.forEach(function(d, i) {
+  });
+  dots.forEach(function(d, i) {
   d.classList.toggle('active', i === window.currentPortalIdx);
-   });
+  });
   }
   };
   window.nextPortal = function() { window.cyclePortal(1); };
@@ -1415,78 +1424,78 @@
   // Botón cerrar modal (X) o backdrop
   var closeBtn = e.target.closest('.close-btn, [data-action="close"], button.close, button[onclick*="closeAllModals"], button[onclick*="closeModal"]');
   if (closeBtn || e.target.classList.contains('modal-backdrop') || e.target.classList.contains('modal-overlay')) {
-   e.preventDefault();
-   window.closeAllModals();
-   return;
+  e.preventDefault();
+  window.closeAllModals();
+  return;
   }
   // Botón Cerrar Sesión (solo cuando se hace clic en el botón real, no en un contenedor padre)
   var clickedBtn = e.target.closest('button, [role="button"]');
   var isLogout = !!(e.target.closest('#logout-btn, [data-action="logout"]') || (clickedBtn && clickedBtn.textContent && clickedBtn.textContent.trim().includes('Cerrar Sesión')));
   if (isLogout) {
-   e.preventDefault();
-   window.logout();
-   return;
+  e.preventDefault();
+  window.logout();
+  return;
   }
   // Flechas Hub
   if (e.target.closest('.carousel-nav-btn.prev, [data-action="prev"]')) {
-   e.preventDefault();
-   window.cyclePortal(-1);
-   return;
+  e.preventDefault();
+  window.cyclePortal(-1);
+  return;
   }
   if (e.target.closest('.carousel-nav-btn.next, [data-action="next"]')) {
-   e.preventDefault();
-   window.cyclePortal(1);
-   return;
+  e.preventDefault();
+  window.cyclePortal(1);
+  return;
   }
   // Botón "ENTRAR AL PORTAL"
   var enterBtn = e.target.closest('.portal-action-btn, .portal-btn, [data-action="enter-portal"]');
   if (enterBtn || (clickedBtn && clickedBtn.textContent && clickedBtn.textContent.includes('ENTRAR AL PORTAL'))) {
-   e.preventDefault();
-   var pAttr = enterBtn ? enterBtn.getAttribute('data-portal') : null;
-   if (pAttr === 'path' || (!pAttr && window.currentPortalIdx === 0)) window.navigateTo('learning-path');
-   else if (pAttr === 'worldtour' || (!pAttr && window.currentPortalIdx === 1)) {
+  e.preventDefault();
+  var pAttr = enterBtn ? enterBtn.getAttribute('data-portal') : null;
+  if (pAttr === 'path' || (!pAttr && window.currentPortalIdx === 0)) window.navigateTo('learning-path');
+  else if (pAttr === 'worldtour' || (!pAttr && window.currentPortalIdx === 1)) {
   window.navigateTo('world3d');
   if (typeof window.initOrResumeWorld3D === 'function') window.initOrResumeWorld3D();
-   }
-   else if (pAttr === 'music' || (!pAttr && window.currentPortalIdx === 2)) window.navigateTo('music');
-   else if (pAttr === 'stories' || (!pAttr && window.currentPortalIdx === 3)) window.navigateTo('stories');
-   return;
+  }
+  else if (pAttr === 'music' || (!pAttr && window.currentPortalIdx === 2)) window.navigateTo('music');
+  else if (pAttr === 'stories' || (!pAttr && window.currentPortalIdx === 3)) window.navigateTo('stories');
+  return;
   }
   // Botón Volver a Portales
   if (clickedBtn && (clickedBtn.getAttribute('data-action') === 'back-to-hub' || (clickedBtn.textContent && clickedBtn.textContent.includes('Volver a Portales')))) {
-   e.preventDefault();
-   window.navigateTo('hub');
-   return;
+  e.preventDefault();
+  window.navigateTo('hub');
+  return;
   }
   // Botón Panel Admin del Header (Apertura en 0ms)
   if (e.target.closest('#headerAdminBtn, [data-action="open-admin"]')) {
-   e.preventDefault();
-   if (typeof window.openAdminDashboardModal === 'function') {
+  e.preventDefault();
+  if (typeof window.openAdminDashboardModal === 'function') {
   window.openAdminDashboardModal();
-   }
-   return;
+  }
+  return;
   }
   // Botones Ajustes y Perfil del Header
   if (e.target.closest('#settings-btn, [data-action="open-settings"]')) {
-   e.preventDefault();
-   var sm = document.getElementById('settings-modal') || document.getElementById('settingsModal');
-   if (sm) {
+  e.preventDefault();
+  var sm = document.getElementById('settings-modal') || document.getElementById('settingsModal');
+  if (sm) {
   sm.style.setProperty('display', 'flex', 'important');
   sm.classList.add('active');
   sm.classList.remove('hidden');
-   }
-   return;
+  }
+  return;
   }
   if (e.target.closest('#profile-btn, [data-action="open-profile"]')) {
-   e.preventDefault();
-   var pm = document.getElementById('profile-modal') || document.getElementById('profileModal');
-   if (pm) {
+  e.preventDefault();
+  var pm = document.getElementById('profile-modal') || document.getElementById('profileModal');
+  if (pm) {
   if (typeof window.renderUserProfile === 'function') window.renderUserProfile();
   pm.style.setProperty('display', 'flex', 'important');
   pm.classList.add('active');
   pm.classList.remove('hidden');
-   }
-   return;
+  }
+  return;
   }
   });
   // Tecla Escape para salir de cualquier modal

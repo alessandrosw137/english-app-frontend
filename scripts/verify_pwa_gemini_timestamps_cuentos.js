@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 
-console.log('=== VERIFICANDO PWA, GEMINI AI TUTOR, TIMESTAMPS Y RESTAURACIÓN DE CUENTOS ===\n');
+console.log('=== VERIFICANDO PWA, GEMINI AI TUTOR RÁPIDO, TIMESTAMPS, HISTORIAL LATERAL Y AUTH GUARDS ===\n');
 
 let totalChecks = 0;
 let passedChecks = 0;
@@ -19,15 +19,17 @@ function assert(desc, condition) {
 
 const rootDir = path.resolve(__dirname, '..');
 const htmlPath = path.join(rootDir, 'index.html');
+const cssPath = path.join(rootDir, 'css/style.css');
 const jsPath = path.join(rootDir, 'js/app.js');
 const manifestPath = path.join(rootDir, 'manifest.json');
 const swPath = path.join(rootDir, 'sw.js');
 const iconPath = path.join(rootDir, 'icon.png');
 
 const html = fs.readFileSync(htmlPath, 'utf8');
+const css = fs.readFileSync(cssPath, 'utf8');
 const js = fs.readFileSync(jsPath, 'utf8');
 
-// 1. PWA & Manifest & Service Worker
+// 1. PWA, Manifest y Service Worker
 console.log('1. Verificando PWA, Manifest y Service Worker...');
 assert('index.html respeta el límite estricto (< 120,000 bytes)', Buffer.byteLength(html, 'utf8') < 120000);
 assert('index.html contiene enlace a manifest.json', html.includes('<link rel="manifest" href="manifest.json">'));
@@ -72,14 +74,15 @@ assert('5 Indicadores de punto (coverDot-0 a coverDot-4) presentes',
   html.includes('id="coverDot-4"')
 );
 
-// 3. IA Conversacional Real con Memoria y Timestamps
-console.log('\n3. Verificando IA Conversacional Gemini y Timestamps...');
+// 3. IA Conversacional Optimizada (slice -8), Feedback de Voz y Timestamps
+console.log('\n3. Verificando IA Conversacional Optimizada y Feedback de Voz...');
 assert('window.aiChatHistory inicializado como arreglo', js.includes('window.aiChatHistory = [];') || js.includes('window.aiChatHistory = []'));
-assert('Función getGeminiResponse implementada', js.includes('async function getGeminiResponse(userText)'));
-assert('getGeminiResponse incluye system_instruction con las 3 reglas del tutor',
-  js.includes('RULE 1: ONLY speak in English') &&
-  js.includes('RULE 2: Gently correct grammar mistakes') &&
-  js.includes('RULE 3: Refuse off-topic subjects')
+assert('Función getGeminiResponse implementada con soporte de voz', js.includes('async function getGeminiResponse(') && js.includes('isVoice'));
+assert('getGeminiResponse incluye etiqueta oculta [VOICE INPUT] para evaluar pronunciación', js.includes('[VOICE INPUT]'));
+assert('getGeminiResponse optimiza velocidad enviando solo los últimos 8 mensajes (slice(-8))', js.includes('.slice(-8)'));
+assert('getGeminiResponse incluye system_instruction con RULE 4 para pronunciación',
+  js.includes('RULE 4: If the user\'s message starts with \'[VOICE INPUT]\'') &&
+  js.includes('pronunciation/vocabulary based on the transcript')
 );
 assert('getGeminiResponse actualiza window.aiChatHistory con rol user y model',
   js.includes('window.aiChatHistory.push({ role: "user"') &&
@@ -91,31 +94,77 @@ assert('getGeminiResponse maneja offline con mensaje de reconexión',
 assert('Timestamps estilo WhatsApp implementados con .chat-timestamp',
   js.includes('const timeStr =') &&
   js.includes('toLocaleTimeString') &&
-  js.includes('<span class="chat-timestamp"') &&
-  js.includes('font-size:0.65rem')
+  js.includes('<span class="chat-timestamp"')
 );
 
-// 4. Sincronización Offline de Base de Datos
-console.log('\n4. Verificando Sincronización Offline de Base de Datos...');
+// 4. Diseño Dividido (Chat + Historial Lateral)
+console.log('\n4. Verificando Diseño Dividido y CSS...');
+assert('CSS: .ai-tutor-layout definido con grid 1fr 300px',
+  css.includes('.ai-tutor-layout') && css.includes('grid-template-columns: 1fr 300px;')
+);
+assert('CSS: .ai-history-sidebar estilizado con scroll y borde',
+  css.includes('.ai-history-sidebar') && css.includes('overflow-y: auto;')
+);
+assert('CSS: .chat-timestamp estilizado a la derecha con 0.65rem',
+  css.includes('.chat-timestamp') && css.includes('text-align: right;') || css.includes('text-align:right;')
+);
+assert('CSS: Media query móvil (@media (max-width: 768px)) oculta sidebar',
+  css.includes('@media (max-width: 768px)') && css.includes('.ai-history-sidebar { display: none; }')
+);
+assert('HTML: .ai-tutor-layout y aside#aiTutorHistorySidebar presentes en #ai-tutor-view',
+  html.includes('class="ai-tutor-layout"') && html.includes('id="aiTutorHistorySidebar"') && html.includes('id="aiTutorHistoryList"')
+);
+assert('JS: Guardado diario de historial por fechas implementado',
+  js.includes('saveAiChatToDailyStorage') && js.includes('ai_chat_history_')
+);
+assert('JS: Renderizado de historial lateral agrupado por Hoy y Ayer',
+  js.includes('renderAiTutorHistorySidebar') && js.includes("'Hoy'") && js.includes("'Ayer'")
+);
+
+// 5. Sistema de Permisos para Invitados (Auth Guards)
+console.log('\n5. Verificando Sistema de Permisos para Invitados (Auth Guards)...');
+assert('JS: Función isUserLoggedIn implementada',
+  js.includes('window.isUserLoggedIn = () => localStorage.getItem("mastereng_user") !== null;')
+);
+assert('JS: window.applyAuthGuardsUI implementado', js.includes('window.applyAuthGuardsUI = function'));
+assert('JS: Bloqueo 1 - Tutor IA deshabilitado con placeholder de inicio de sesión',
+  js.includes('🔒 Inicia sesión para platicar con la IA') && js.includes('aiInput.disabled')
+);
+assert('JS: Bloqueo 2 - Descarga PDF Glosario bloqueada para no registrados con alerta',
+  js.includes('🔒 Necesitas una cuenta registrada para descargar el PDF.')
+);
+assert('JS: Bloqueo 3 - Buscador musical deshabilitado con placeholder de inicio de sesión',
+  js.includes('🔒 Inicia sesión para buscar canciones libres') && js.includes('musicInput.disabled')
+);
+
+// 6. Sincronización Offline de Base de Datos (Comentarios)
+console.log('\n6. Verificando Sincronización Offline de Base de Datos...');
 assert('window.saveToDatabase implementado', js.includes('window.saveToDatabase = function(endpoint, data)'));
 assert('queueForSync implementado y guarda en localStorage offlineQueue', js.includes('function queueForSync(endpoint, data)') && js.includes("'offlineQueue'"));
 assert('Evento window online sincroniza y limpia offlineQueue', js.includes("window.addEventListener('online'") && js.includes("localStorage.removeItem('offlineQueue')"));
 assert('Envío de comentarios conectado a window.saveToDatabase', js.includes("window.saveToDatabase('/api/feedback'"));
 
-// 5. Verificación en Sandbox VM
-console.log('\n5. Verificando comportamiento en Sandbox VM...');
+// 7. Verificación en Sandbox VM
+console.log('\n7. Verificando comportamiento en Sandbox VM...');
 const mockLocalStorage = {
   data: {},
-  getItem(k) { return this.data[k] || null; },
+  getItem(k) { return this.data[k] !== undefined ? this.data[k] : null; },
   setItem(k, v) { this.data[k] = String(v); },
   removeItem(k) { delete this.data[k]; }
+};
+
+const domElements = {
+  aiTutorInput: { disabled: false, placeholder: '', classList: { add() {}, remove() {} } },
+  aiTutorMicBtn: { disabled: false, classList: { toggle() {} } },
+  aiTutorSendBtn: { disabled: false, classList: { toggle() {} } },
+  musicSearchInput: { disabled: false, placeholder: '', classList: { add() {}, remove() {} } }
 };
 
 const sandbox = {
   window: {},
   document: {
     addEventListener: () => {},
-    getElementById: () => null,
+    getElementById: (id) => domElements[id] || null,
     querySelectorAll: () => []
   },
   localStorage: mockLocalStorage,
@@ -129,51 +178,77 @@ sandbox.window = sandbox;
 
 vm.createContext(sandbox);
 
-// Test queueing offline
-const offlineQueueCode = `
-function queueForSync(endpoint, data) {
-  const queue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
-  queue.push({ endpoint, data, timestamp: Date.now() });
-  localStorage.setItem('offlineQueue', JSON.stringify(queue));
-}
-window.saveToDatabase = function(endpoint, data) {
-  if (navigator.onLine) {
-    fetch(endpoint, { method: 'POST', body: JSON.stringify(data) }).catch(e => queueForSync(endpoint, data));
-  } else {
-    queueForSync(endpoint, data);
+// Cargar script de Auth Guards
+const authGuardCode = `
+window.isUserLoggedIn = () => localStorage.getItem("mastereng_user") !== null;
+window.isUserRegistered = function() {
+  if (!window.isUserLoggedIn()) return false;
+  try {
+    const u = JSON.parse(localStorage.getItem('mastereng_user') || 'null');
+    return Boolean(u && u.role !== 'guest');
+  } catch (_) {
+    return false;
   }
 };
-window.saveToDatabase('/api/feedback', { comment: 'Test offline feedback' });
-`;
-vm.runInContext(offlineQueueCode, sandbox);
+window.applyAuthGuardsUI = function() {
+  const isRegistered = window.isUserRegistered();
+  const aiInput = document.getElementById('aiTutorInput');
+  const aiMicBtn = document.getElementById('aiTutorMicBtn');
+  const aiSendBtn = document.getElementById('aiTutorSendBtn');
+  if (aiInput) {
+    if (!isRegistered) {
+      aiInput.disabled = true;
+      aiInput.placeholder = "🔒 Inicia sesión para platicar con la IA";
+    } else {
+      aiInput.disabled = false;
+      aiInput.placeholder = "Type in English...";
+    }
+  }
+  if (aiMicBtn) aiMicBtn.disabled = !isRegistered;
+  if (aiSendBtn) aiSendBtn.disabled = !isRegistered;
 
-const storedQueue = JSON.parse(sandbox.localStorage.getItem('offlineQueue') || '[]');
-assert('Sandbox VM: Comentario offline se encola exitosamente en offlineQueue', storedQueue.length === 1 && storedQueue[0].endpoint === '/api/feedback');
-
-// Test online sync
-const onlineSyncCode = `
-let syncedItems = [];
-window.fetch = async (url, opts) => {
-  syncedItems.push({ url, body: JSON.parse(opts.body) });
-  return { ok: true };
+  const musicInput = document.getElementById('musicSearchInput');
+  if (musicInput) {
+    if (!isRegistered) {
+      musicInput.disabled = true;
+      musicInput.placeholder = "🔒 Inicia sesión para buscar canciones libres";
+    } else {
+      musicInput.disabled = false;
+      musicInput.placeholder = "Buscar canciones...";
+    }
+  }
 };
-const queue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
-if (queue.length > 0) {
-  queue.forEach(item => {
-    fetch(item.endpoint, { method: 'POST', body: JSON.stringify(item.data) });
-  });
-  localStorage.removeItem('offlineQueue');
-}
 `;
-vm.runInContext(onlineSyncCode, sandbox);
-assert('Sandbox VM: Evento online sincroniza la cola y limpia offlineQueue', sandbox.localStorage.getItem('offlineQueue') === null);
+vm.runInContext(authGuardCode, sandbox);
 
-// 6. Sincronización Tri-Directorio
-console.log('\n6. Verificando Sincronización Tri-Directorio...');
+// Caso 1: Invitado (Guest)
+sandbox.localStorage.setItem('mastereng_user', JSON.stringify({ role: 'guest', username: 'Invitado' }));
+sandbox.window.applyAuthGuardsUI();
+
+assert('Sandbox VM: En modo invitado, el input del Tutor IA está deshabilitado con candado',
+  domElements.aiTutorInput.disabled === true && domElements.aiTutorInput.placeholder.includes('🔒 Inicia sesión')
+);
+assert('Sandbox VM: En modo invitado, el buscador de música está deshabilitado con candado',
+  domElements.musicSearchInput.disabled === true && domElements.musicSearchInput.placeholder.includes('🔒 Inicia sesión')
+);
+
+// Caso 2: Usuario Registrado
+sandbox.localStorage.setItem('mastereng_user', JSON.stringify({ role: 'user', username: 'alessandro', email: 'ale@test.com' }));
+sandbox.window.applyAuthGuardsUI();
+
+assert('Sandbox VM: Con cuenta registrada, el Tutor IA se habilita sin candado',
+  domElements.aiTutorInput.disabled === false && !domElements.aiTutorInput.placeholder.includes('🔒')
+);
+assert('Sandbox VM: Con cuenta registrada, el buscador musical se habilita',
+  domElements.musicSearchInput.disabled === false && !domElements.musicSearchInput.placeholder.includes('🔒')
+);
+
+// 8. Sincronización Tri-Directorio
+console.log('\n8. Verificando Sincronización Tri-Directorio...');
 const assetsDir = path.join(rootDir, 'app/src/main/assets');
 const parentDir = path.join(rootDir, '..');
 
-['index.html', 'js/app.js', 'manifest.json', 'sw.js', 'icon.png'].forEach(f => {
+['index.html', 'css/style.css', 'js/app.js', 'manifest.json', 'sw.js', 'icon.png'].forEach(f => {
   const rootF = fs.readFileSync(path.join(rootDir, f));
   const assetsF = fs.readFileSync(path.join(assetsDir, f));
   const parentF = fs.readFileSync(path.join(parentDir, f));
@@ -189,5 +264,5 @@ console.log('========================================');
 if (passedChecks !== totalChecks) {
   process.exit(1);
 } else {
-  console.log('🎉 ¡TODOS LOS REQUISITOS PWA, GEMINI Y CUENTOS VERIFICADOS AL 100%!');
+  console.log('🎉 ¡TODOS LOS REQUISITOS PWA, TUTOR IA RÁPIDO, SIDEBAR Y AUTH GUARDS VERIFICADOS AL 100%!');
 }

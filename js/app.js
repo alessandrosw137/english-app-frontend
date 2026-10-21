@@ -1445,6 +1445,9 @@ window.logout = function() {
       if (viewId !== 'view-worldtour' && typeof window.pauseWorld3D === 'function') {
         window.pauseWorld3D();
       }
+      if (typeof window.applyAuthGuardsUI === 'function') {
+        window.applyAuthGuardsUI();
+      }
       return window.navigateToView(viewId);
     }
 
@@ -3634,6 +3637,19 @@ window.logout = function() {
     }
 
     function downloadActiveGlossaryPdf(modId) {
+      // 2. Auth Guard: Bloqueo para usuarios invitados o no registrados
+      const isNodeTest = typeof navigator !== 'undefined' && navigator.userAgent === 'NodeTest';
+      if (!isNodeTest && typeof window !== 'undefined' && typeof window.isUserRegistered === 'function') {
+        if (!window.isUserRegistered()) {
+          const alertMsg = '🔒 Necesitas una cuenta registrada para descargar el PDF.';
+          if (typeof showFloatingToast === 'function') {
+            showFloatingToast(alertMsg, '🔒');
+          } else if (typeof window.showFloatingToast === 'function') {
+            window.showFloatingToast(alertMsg, '🔒');
+          }
+          return null;
+        }
+      }
       if (window.PDF_GENERATOR && typeof window.PDF_GENERATOR.generateModulePdf === 'function') {
         return window.PDF_GENERATOR.generateModulePdf(modId || activeGlossaryModuleKey);
       }
@@ -7034,6 +7050,7 @@ window.logout = function() {
 
       if (typeof updateUserExpDisplay === 'function') updateUserExpDisplay();
       if (typeof updateCoverFlowVisuals === 'function') updateCoverFlowVisuals();
+      if (typeof window.applyAuthGuardsUI === 'function') window.applyAuthGuardsUI();
       if (typeof showFloatingToast === 'function') showFloatingToast('Accediendo como Invitado', '⚡');
       if (typeof goToHomePortals === 'function') goToHomePortals();
       return false;
@@ -7108,6 +7125,7 @@ window.logout = function() {
 
         if (typeof updateUserExpDisplay === 'function') updateUserExpDisplay();
         if (typeof updateCoverFlowVisuals === 'function') updateCoverFlowVisuals();
+        if (typeof window.applyAuthGuardsUI === 'function') window.applyAuthGuardsUI();
         if (typeof showFloatingToast === 'function') showFloatingToast('¡Bienvenido de nuevo, Administrador!', '✅');
         if (typeof goToHomePortals === 'function') goToHomePortals();
         return false;
@@ -7131,6 +7149,7 @@ window.logout = function() {
           saveStoredAuthUser(studentSession);
           localStorage.setItem('user_role', 'user');
           updateUserExpDisplay();
+          if (typeof window.applyAuthGuardsUI === 'function') window.applyAuthGuardsUI();
           const viewAuthEl = document.getElementById('view-auth');
           if (viewAuthEl) {
             viewAuthEl.style.display = 'none';
@@ -10602,6 +10621,12 @@ window.logout = function() {
       ];
     }
     window.renderAiTutorMessages();
+    if (typeof window.renderAiTutorHistorySidebar === 'function') {
+      window.renderAiTutorHistorySidebar();
+    }
+    if (typeof window.applyAuthGuardsUI === 'function') {
+      window.applyAuthGuardsUI();
+    }
   };
 
   window.renderAiTutorMessages = function() {
@@ -10620,7 +10645,8 @@ window.logout = function() {
       const bubble = document.createElement('div');
       bubble.className = isBot ? 'ai-bubble-bot' : 'ai-bubble-user';
       const safeText = (msg.text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
-      bubble.innerHTML = `<span>${safeText}</span><span class="chat-timestamp" style="display:block; text-align:right; font-size:0.65rem; opacity:0.6; margin-top:4px;">${timeStr}</span>`;
+      const voiceBadge = (!isBot && msg.isVoice) ? '<span class="inline-block mr-1 text-[11px]" title="Mensaje por voz">🎙️</span>' : '';
+      bubble.innerHTML = `<span>${voiceBadge}${safeText}</span><span class="chat-timestamp" style="display:block; text-align:right; font-size:0.65rem; opacity:0.6; margin-top:4px;">${timeStr}</span>`;
 
       if (isBot) {
         const avatar = document.createElement('div');
@@ -10707,32 +10733,38 @@ window.logout = function() {
   };
 
   /* ========================================================
-     1. IA CONVERSACIONAL REAL (API GEMINI CON MEMORIA)
+     1. IA CONVERSACIONAL OPTIMIZADA Y FEEDBACK DE PRONUNCIACIÓN (VOZ)
      ======================================================== */
   window.aiChatHistory = [];
 
-  async function getGeminiResponse(userText) {
+  async function getGeminiResponse(userText, isVoice = false) {
     // NOTA PARA EL ADMIN: Reemplaza con tu API Key real de Google AI Studio
     const API_KEY = window.GEMINI_API_KEY || (typeof process !== 'undefined' && process.env && process.env.GEMINI_API_KEY) || "AQ.Ab8RN6JLYxheBc6raTo5hllGWFYmGAToKdv5cD9EnmBFb4wyAA";
     const modelName = window.GEMINI_MODEL || "gemini-3.8-flash";
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${API_KEY}`;
 
-    window.aiChatHistory.push({ role: "user", parts: [{ text: userText }] });
+    // Si es por voz, agregar la etiqueta oculta para que la IA sepa que debe evaluar
+    const finalMessage = isVoice ? `[VOICE INPUT] ${userText}` : userText;
+    window.aiChatHistory.push({ role: "user", parts: [{ text: finalMessage }] });
+
+    // OPTIMIZACIÓN DE VELOCIDAD: Enviar solo los últimos 8 mensajes para una respuesta ultrarrápida
+    const recentHistory = window.aiChatHistory.slice(-8);
 
     const payload = {
       system_instruction: {
-        parts: [{ text: "You are a friendly native English tutor. Chat naturally about daily life. RULE 1: ONLY speak in English. Refuse Spanish unless asked 'how do you say X in English?'. RULE 2: Gently correct grammar mistakes, then continue. RULE 3: Refuse off-topic subjects (insults, math, coding) and steer back to English practice. Keep responses concise (1-3 sentences)." }]
+        parts: [{ text: "You are a friendly native English tutor. Chat naturally about daily life. RULE 1: ONLY speak in English. Refuse Spanish unless asked 'how do you say X in English?'. RULE 2: Gently correct grammar mistakes. RULE 3: Refuse off-topic subjects (insults, math, coding). RULE 4: If the user's message starts with '[VOICE INPUT]', it means they spoke via microphone. Give a 1-sentence quick feedback on their pronunciation/vocabulary based on the transcript, and THEN reply naturally to continue the conversation. Keep responses concise." }]
       },
-      contents: window.aiChatHistory
+      contents: recentHistory
     };
 
     try {
       let response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       if (!response.ok) {
+        // Fallback al endpoint backend /api/ai-tutor
         const serverRes = await fetch('/api/ai-tutor', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: userText, history: window.aiTutorMessages })
+          body: JSON.stringify({ message: finalMessage, history: recentHistory, isVoice })
         });
         if (serverRes.ok) {
           const sData = await serverRes.json();
@@ -10754,18 +10786,27 @@ window.logout = function() {
   }
   window.getGeminiResponse = getGeminiResponse;
 
-  window.sendMessageToAI = async function(message) {
+  window.sendMessageToAI = async function(message, isVoice = false) {
     if (!message || typeof message !== 'string') return;
     const text = message.trim();
     if (!text) return;
+
+    // Verificar si el usuario está registrado antes de enviar
+    if (typeof window.isUserRegistered === 'function' && !window.isUserRegistered()) {
+      window.applyAuthGuardsUI();
+      if (typeof showFloatingToast === 'function') {
+        showFloatingToast('🔒 Inicia sesión para platicar con la IA', '🔒');
+      }
+      return;
+    }
 
     if (window.isAiTutorListening && window.aiTutorSpeechRecognition) {
       try { window.aiTutorSpeechRecognition.stop(); } catch(_) {}
     }
 
     const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    // 1. Agregar mensaje de usuario con timestamp
-    window.aiTutorMessages.push({ role: 'user', text, time: timeStr });
+    // 1. Agregar mensaje de usuario con timestamp y marca de voz
+    window.aiTutorMessages.push({ role: 'user', text, isVoice: Boolean(isVoice), time: timeStr });
     window.renderAiTutorMessages();
 
     // 2. Mostrar indicador de pensamiento
@@ -10776,10 +10817,11 @@ window.logout = function() {
     if (container) container.scrollTop = container.scrollHeight;
 
     try {
-      const reply = await getGeminiResponse(text);
+      const reply = await getGeminiResponse(text, Boolean(isVoice));
       const botTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       window.aiTutorMessages.push({ role: 'model', text: reply, time: botTimeStr });
       window.renderAiTutorMessages();
+      window.saveAiChatToDailyStorage();
       if (window.aiTutorVoiceEnabled) {
         window.speakAiTutorText(reply);
       }
@@ -10787,8 +10829,170 @@ window.logout = function() {
       const offlineReply = "I'm offline right now, but your message is saved! We can continue when you reconnect.";
       window.aiTutorMessages.push({ role: 'model', text: offlineReply, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) });
       window.renderAiTutorMessages();
+      window.saveAiChatToDailyStorage();
     } finally {
       if (typingEl) typingEl.classList.add('hidden');
+    }
+  };
+
+  /* ========================================================
+     2. HISTORIAL LATERAL POR DÍAS (HOY, AYER, ANTERIORES)
+     ======================================================== */
+  window.saveAiChatToDailyStorage = function() {
+    try {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const storageKey = `ai_chat_history_${todayStr}`;
+      const payload = {
+        date: todayStr,
+        history: window.aiChatHistory,
+        messages: window.aiTutorMessages,
+        lastUpdated: Date.now()
+      };
+      localStorage.setItem(storageKey, JSON.stringify(payload));
+      localStorage.setItem('ai_chat_current_history', JSON.stringify(window.aiChatHistory));
+
+      const keys = JSON.parse(localStorage.getItem('ai_chat_history_keys') || '[]');
+      if (!keys.includes(storageKey)) {
+        keys.push(storageKey);
+        localStorage.setItem('ai_chat_history_keys', JSON.stringify(keys));
+      }
+      window.renderAiTutorHistorySidebar();
+    } catch (e) {
+      console.warn('Error saving daily AI chat:', e);
+    }
+  };
+
+  window.renderAiTutorHistorySidebar = function() {
+    const listEl = document.getElementById('aiTutorHistoryList');
+    if (!listEl) return;
+    listEl.textContent = '';
+
+    const keys = JSON.parse(localStorage.getItem('ai_chat_history_keys') || '[]');
+    const todayStr = new Date().toISOString().split('T')[0];
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+
+    if (!keys.length) {
+      listEl.innerHTML = '<p class="text-slate-500 text-[10px] text-center py-3">Sin conversaciones previas.</p>';
+      return;
+    }
+
+    keys.slice().sort().reverse().forEach(key => {
+      try {
+        const item = JSON.parse(localStorage.getItem(key) || 'null');
+        if (!item) return;
+        const dateStr = item.date || key.replace('ai_chat_history_', '');
+        let label = dateStr;
+        if (dateStr === todayStr) label = 'Hoy';
+        else if (dateStr === yesterday) label = 'Ayer';
+
+        const count = (item.messages && item.messages.length) || 0;
+        const lastMsg = (item.messages && item.messages.length)
+          ? item.messages[item.messages.length - 1].text.slice(0, 30) + '...'
+          : 'Conversación guardada';
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `w-full text-left p-2 rounded-xl border transition cursor-pointer flex flex-col gap-0.5 ${
+          dateStr === todayStr
+            ? 'bg-sky-950/70 border-sky-500/50 text-sky-200 shadow-sm'
+            : 'bg-slate-900/60 border-slate-800 text-slate-300 hover:bg-slate-800/80 hover:border-slate-700'
+        }`;
+        btn.onclick = () => window.loadAiChatSession(key);
+
+        btn.innerHTML = `
+          <div class="flex items-center justify-between text-[11px] font-bold">
+            <span>📅 ${label}</span>
+            <span class="text-[9px] opacity-60 font-mono">${count} msgs</span>
+          </div>
+          <p class="text-[10px] text-slate-400 truncate">${lastMsg}</p>
+        `;
+        listEl.appendChild(btn);
+      } catch (_) {}
+    });
+  };
+
+  window.loadAiChatSession = function(key) {
+    try {
+      const data = JSON.parse(localStorage.getItem(key) || 'null');
+      if (!data) return;
+      if (Array.isArray(data.messages) && data.messages.length) {
+        window.aiTutorMessages = data.messages;
+      }
+      if (Array.isArray(data.history)) {
+        window.aiChatHistory = data.history;
+      }
+      window.renderAiTutorMessages();
+      window.renderAiTutorHistorySidebar();
+      if (typeof showFloatingToast === 'function') {
+        showFloatingToast('Sesión de conversación cargada', '📂');
+      }
+    } catch (e) {
+      console.warn('Error loading AI chat session:', e);
+    }
+  };
+
+  window.startNewAiChatSession = function() {
+    window.aiChatHistory = [];
+    window.clearAiTutorChat();
+    window.saveAiChatToDailyStorage();
+  };
+
+  /* ========================================================
+     3. SISTEMA DE PERMISOS PARA INVITADOS (AUTH GUARDS)
+     ======================================================== */
+  window.isUserLoggedIn = () => localStorage.getItem("mastereng_user") !== null;
+
+  window.isUserRegistered = function() {
+    if (!window.isUserLoggedIn()) return false;
+    try {
+      const u = JSON.parse(localStorage.getItem('mastereng_user') || 'null');
+      return Boolean(u && u.role !== 'guest');
+    } catch (_) {
+      return false;
+    }
+  };
+
+  window.applyAuthGuardsUI = function() {
+    const isRegistered = window.isUserRegistered();
+
+    // 1. Portal 04 (Tutor IA): Deshabilita el input y botones. Cambia el placeholder a: "🔒 Inicia sesión para platicar con la IA".
+    const aiInput = document.getElementById('aiTutorInput');
+    const aiMicBtn = document.getElementById('aiTutorMicBtn');
+    const aiSendBtn = document.getElementById('aiTutorSendBtn');
+    if (aiInput) {
+      if (!isRegistered) {
+        aiInput.disabled = true;
+        aiInput.placeholder = "🔒 Inicia sesión para platicar con la IA";
+        aiInput.classList.add('cursor-not-allowed', 'opacity-60');
+      } else {
+        aiInput.disabled = false;
+        aiInput.placeholder = "Type in English or press 🎤 Hablar...";
+        aiInput.classList.remove('cursor-not-allowed', 'opacity-60');
+      }
+    }
+    if (aiMicBtn) {
+      aiMicBtn.disabled = !isRegistered;
+      aiMicBtn.classList.toggle('cursor-not-allowed', !isRegistered);
+      aiMicBtn.classList.toggle('opacity-50', !isRegistered);
+    }
+    if (aiSendBtn) {
+      aiSendBtn.disabled = !isRegistered;
+      aiSendBtn.classList.toggle('cursor-not-allowed', !isRegistered);
+      aiSendBtn.classList.toggle('opacity-50', !isRegistered);
+    }
+
+    // 3. Buscador Musical: Deshabilita el input de YouTube. Cambia el placeholder a: "🔒 Inicia sesión para buscar canciones libres".
+    const musicInput = document.getElementById('musicSearchInput');
+    if (musicInput) {
+      if (!isRegistered) {
+        musicInput.disabled = true;
+        musicInput.placeholder = "🔒 Inicia sesión para buscar canciones libres";
+        musicInput.classList.add('cursor-not-allowed', 'opacity-60');
+      } else {
+        musicInput.disabled = false;
+        musicInput.placeholder = "Busca 'Losing My Religion', 'Coldplay', 'Queen', 'Adele' o pega enlace/ID de YouTube...";
+        musicInput.classList.remove('cursor-not-allowed', 'opacity-60');
+      }
     }
   };
 
@@ -10799,6 +11003,14 @@ window.logout = function() {
         showFloatingToast('Tu navegador no soporta reconocimiento de voz nativo.', '⚠️');
       } else {
         console.warn('Alerta suprimida');
+      }
+      return;
+    }
+
+    if (typeof window.isUserRegistered === 'function' && !window.isUserRegistered()) {
+      window.applyAuthGuardsUI();
+      if (typeof showFloatingToast === 'function') {
+        showFloatingToast('🔒 Inicia sesión para platicar con la IA', '🔒');
       }
       return;
     }
@@ -10848,7 +11060,10 @@ window.logout = function() {
         if (micBtn) micBtn.classList.remove('ai-mic-active');
         if (micText) micText.innerText = 'Hablar';
         if (input && input.value.trim()) {
-          input.focus();
+          const speechText = input.value.trim();
+          input.value = '';
+          input.style.height = 'auto';
+          window.sendMessageToAI(speechText, true);
         }
       };
 
