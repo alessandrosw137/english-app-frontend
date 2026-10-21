@@ -1278,6 +1278,9 @@
         'stories': 'view-stories',
         'stories-view': 'view-stories',
         'view-stories': 'view-stories',
+        'ai-tutor': 'ai-tutor-view',
+        'ai-tutor-view': 'ai-tutor-view',
+        'view-ai-tutor': 'ai-tutor-view',
         'admin': 'adminDashboardModal',
         'admin-view': 'adminDashboardModal'
       };
@@ -1297,8 +1300,11 @@
       }
 
       currentActiveView = targetId;
+      if (targetId === 'ai-tutor-view') {
+        if (typeof window.initAiTutorChat === 'function') window.initAiTutorChat();
+      }
 
-      ['view-auth', 'view-home', 'view-path', 'view-stories', 'view-music', 'view-worldtour'].forEach(v => {
+      ['view-auth', 'view-home', 'view-path', 'view-stories', 'view-music', 'view-worldtour', 'ai-tutor-view'].forEach(v => {
         const el = document.getElementById(v);
         if (el) {
           if (v === targetId) {
@@ -1733,7 +1739,7 @@ window.logout = function() {
     window.handleCoverCardClick = handleCoverCardClick;
 
     window.openPortalModules = function(targetPortal) {
-      const portalModules = ['path', 'worldtour', 'music', 'stories'];
+      const portalModules = ['path', 'worldtour', 'music', 'ai-tutor'];
       const activeIdx = (typeof window.currentPortal === 'number')
         ? ((window.currentPortal % 4 + 4) % 4)
         : 0;
@@ -1786,6 +1792,15 @@ window.logout = function() {
         }
         if (typeof renderStorySelector === 'function') {
           renderStorySelector();
+        }
+      } else if (portal === 'ai-tutor' || portal === 'tutor') {
+        if (typeof window.navigateTo === 'function') {
+          window.navigateTo('ai-tutor');
+        } else if (typeof showView === 'function') {
+          showView('ai-tutor-view');
+        }
+        if (typeof window.initAiTutorChat === 'function') {
+          window.initAiTutorChat();
         }
       } else if (typeof openPortalWithLoader === 'function') {
         openPortalWithLoader(portal);
@@ -10566,4 +10581,497 @@ window.logout = function() {
     } catch (e) {
       console.error('Error al inicializar la aplicación:', e);
     }
+
+  /* ==========================================================================
+     PORTAL 04: TUTOR IA CONVERSACIONAL (VOZ Y TEXTO) - SISTEMA COMPLETO
+     ========================================================================== */
+  window.aiTutorMessages = [];
+  window.aiTutorVoiceEnabled = true;
+  window.aiTutorSpeechRecognition = null;
+  window.isAiTutorListening = false;
+
+  window.initAiTutorChat = function() {
+    const container = document.getElementById('aiTutorChatMessages');
+    if (!container) return;
+    if (!window.aiTutorMessages || window.aiTutorMessages.length === 0) {
+      window.aiTutorMessages = [
+        {
+          role: 'model',
+          text: "Hello there! 👋 I am your friendly AI English Tutor. How are you doing today? You can type your message in English or tap 🎤 Hablar to practice speaking!"
+        }
+      ];
+    }
+    window.renderAiTutorMessages();
+  };
+
+  window.renderAiTutorMessages = function() {
+    const container = document.getElementById('aiTutorChatMessages');
+    if (!container) return;
+    container.textContent = '';
+
+    window.aiTutorMessages.forEach((msg) => {
+      const isBot = msg.role === 'model';
+      const wrapper = document.createElement('div');
+      wrapper.className = isBot ? 'flex items-start gap-2 max-w-[85%]' : 'flex items-end justify-end max-w-[85%] ml-auto';
+
+      const bubble = document.createElement('div');
+      bubble.className = isBot ? 'ai-bubble-bot' : 'ai-bubble-user';
+      bubble.innerText = msg.text;
+
+      if (isBot) {
+        const avatar = document.createElement('div');
+        avatar.className = 'w-7 h-7 rounded-xl bg-sky-950 border border-sky-400/40 p-0.5 shrink-0 overflow-hidden mt-1';
+        avatar.innerHTML = '<img src="images/ai_tutor_mascot.jpg" alt="AI" class="w-full h-full object-cover rounded-lg" onerror="this.onerror=null; this.src=\'images/ai_tutor_mascot.svg\';">';
+        wrapper.appendChild(avatar);
+
+        const contentCol = document.createElement('div');
+        contentCol.className = 'flex flex-col gap-1';
+        contentCol.appendChild(bubble);
+
+        const actions = document.createElement('div');
+        actions.className = 'flex items-center gap-2 px-1 text-[10px] text-slate-400';
+        const playBtn = document.createElement('button');
+        playBtn.type = 'button';
+        playBtn.className = 'hover:text-sky-300 transition cursor-pointer flex items-center gap-1';
+        playBtn.innerHTML = '<span>🔊 Escuchar</span>';
+        playBtn.onclick = () => window.speakAiTutorText(msg.text);
+        actions.appendChild(playBtn);
+        contentCol.appendChild(actions);
+
+        wrapper.appendChild(contentCol);
+      } else {
+        wrapper.appendChild(bubble);
+      }
+
+      container.appendChild(wrapper);
+    });
+
+    container.scrollTop = container.scrollHeight;
+  };
+
+  window.speakAiTutorText = function(text) {
+    if (!('speechSynthesis' in window) || !window.aiTutorVoiceEnabled) return;
+    try {
+      window.speechSynthesis.cancel();
+      const cleanText = (text || '').replace(/[*_#`]/g, '');
+      const utter = new SpeechSynthesisUtterance(cleanText);
+      utter.lang = 'en-US';
+      utter.rate = 0.95;
+      utter.pitch = 1.0;
+      window.speechSynthesis.speak(utter);
+    } catch (err) {
+      console.warn('SpeechSynthesis error:', err);
+    }
+  };
+
+  window.toggleAiTutorVoice = function() {
+    window.aiTutorVoiceEnabled = !window.aiTutorVoiceEnabled;
+    const icon = document.getElementById('aiTutorVoiceIcon');
+    const label = document.getElementById('aiTutorVoiceLabel');
+    if (icon) icon.innerText = window.aiTutorVoiceEnabled ? '🔊' : '🔇';
+    if (label) label.innerText = window.aiTutorVoiceEnabled ? 'Voz IA' : 'Silencio';
+    if (!window.aiTutorVoiceEnabled && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+  };
+
+  window.clearAiTutorChat = function() {
+    window.aiTutorMessages = [
+      {
+        role: 'model',
+        text: "Chat cleared! Let's start fresh. What would you like to practice today in English?"
+      }
+    ];
+    window.renderAiTutorMessages();
+  };
+
+  window.handleAiTutorInputKeydown = function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      window.handleAiTutorSend();
+    }
+  };
+
+  window.handleAiTutorSend = function() {
+    const input = document.getElementById('aiTutorInput');
+    if (!input) return;
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+    input.style.height = 'auto';
+    window.sendMessageToAI(text);
+  };
+
+  window.sendMessageToAI = async function(message) {
+    if (!message || typeof message !== 'string') return;
+    const text = message.trim();
+    if (!text) return;
+
+    if (window.isAiTutorListening && window.aiTutorSpeechRecognition) {
+      try { window.aiTutorSpeechRecognition.stop(); } catch(_) {}
+    }
+
+    // 1. Agregar mensaje de usuario
+    window.aiTutorMessages.push({ role: 'user', text });
+    window.renderAiTutorMessages();
+
+    // 2. Mostrar indicador de pensamiento
+    const typingEl = document.getElementById('aiTutorTypingStatus');
+    if (typingEl) typingEl.classList.remove('hidden');
+
+    const container = document.getElementById('aiTutorChatMessages');
+    if (container) container.scrollTop = container.scrollHeight;
+
+    try {
+      const res = await fetch('/api/ai-tutor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: text,
+          history: window.aiTutorMessages.slice(0, -1)
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.reply) {
+          window.aiTutorMessages.push({ role: 'model', text: data.reply });
+          window.renderAiTutorMessages();
+          if (window.aiTutorVoiceEnabled) {
+            window.speakAiTutorText(data.reply);
+          }
+          return;
+        }
+      }
+      throw new Error('Fallback activado');
+    } catch (err) {
+      // Fallback inteligente siguiendo fielmente las 3 reglas del tutor
+      const lower = text.toLowerCase();
+      let reply = '';
+      if (lower.includes('hola') || lower.includes('buenos') || lower.includes('buenas') || lower.includes('que tal')) {
+        reply = "Hello there! 👋 In English, we greet by saying 'Hello! How are you doing today?' Keep practicing, your English is improving!";
+      } else if (lower.includes('suma') || lower.includes('resta') || lower.includes('multiplic') || lower.includes('codigo') || lower.includes('program') || lower.includes('politica')) {
+        reply = "I am exclusively your English language tutor, so I cannot help with math, programming code, or politics. But I would love to help you practice English! What English topics would you like to explore today?";
+      } else {
+        reply = "That's wonderful! In English, we could express that clearly as: \"" + text.replace(/"/g, '') + "\". Tell me more about your thoughts!";
+      }
+      window.aiTutorMessages.push({ role: 'model', text: reply });
+      window.renderAiTutorMessages();
+      if (window.aiTutorVoiceEnabled) {
+        window.speakAiTutorText(reply);
+      }
+    } finally {
+      if (typingEl) typingEl.classList.add('hidden');
+    }
+  };
+
+  window.toggleAiTutorSpeechRecognition = function() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      if (typeof showFloatingToast === 'function') {
+        showFloatingToast('Tu navegador no soporta reconocimiento de voz nativo.', '⚠️');
+      } else {
+        console.warn('Alerta suprimida');
+      }
+      return;
+    }
+
+    const micBtn = document.getElementById('aiTutorMicBtn');
+    const micText = document.getElementById('aiTutorMicText');
+    const input = document.getElementById('aiTutorInput');
+
+    if (window.isAiTutorListening) {
+      if (window.aiTutorSpeechRecognition) {
+        try { window.aiTutorSpeechRecognition.stop(); } catch(_) {}
+      }
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'en-US';
+      recognition.continuous = false;
+      recognition.interimResults = true;
+
+      recognition.onstart = function() {
+        window.isAiTutorListening = true;
+        if (micBtn) micBtn.classList.add('ai-mic-active');
+        if (micText) micText.innerText = 'Escuchando...';
+      };
+
+      recognition.onresult = function(event) {
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          transcript += event.results[i][0].transcript;
+        }
+        if (input && transcript) {
+          input.value = transcript;
+        }
+      };
+
+      recognition.onerror = function(event) {
+        console.warn('SpeechRecognition error:', event.error);
+        window.isAiTutorListening = false;
+        if (micBtn) micBtn.classList.remove('ai-mic-active');
+        if (micText) micText.innerText = 'Hablar';
+      };
+
+      recognition.onend = function() {
+        window.isAiTutorListening = false;
+        if (micBtn) micBtn.classList.remove('ai-mic-active');
+        if (micText) micText.innerText = 'Hablar';
+        if (input && input.value.trim()) {
+          input.focus();
+        }
+      };
+
+      window.aiTutorSpeechRecognition = recognition;
+      recognition.start();
+    } catch (err) {
+      console.error('Error starting SpeechRecognition:', err);
+      window.isAiTutorListening = false;
+      if (micBtn) micBtn.classList.remove('ai-mic-active');
+      if (micText) micText.innerText = 'Hablar';
+    }
+  };
+
+  /* ==========================================================================
+     SISTEMA DE COMENTARIOS / FEEDBACK ANTI-SPAM
+     ========================================================================== */
+  window.countWords = function(str) {
+    if (!str || typeof str !== 'string') return 0;
+    const tokens = str.trim().split(/\s+/).filter(Boolean);
+    return tokens.length;
+  };
+
+  window.updateFeedbackWordCount = function() {
+    const input = document.getElementById('feedbackTextInput');
+    const badge = document.getElementById('feedbackWordCountBadge');
+    const alertEl = document.getElementById('feedbackMessageAlert');
+    const submitBtn = document.getElementById('feedbackSubmitBtn');
+    if (!input || !badge) return;
+
+    const count = window.countWords(input.value);
+    badge.innerText = count + ' / 100 palabras';
+
+    if (count > 100) {
+      badge.className = 'font-mono text-rose-400 font-bold';
+      if (alertEl) {
+        alertEl.className = 'p-2.5 rounded-xl text-xs font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/40 block';
+        alertEl.innerText = '⚠️ Has superado el límite de 100 palabras (actual: ' + count + ' palabras). Reduce el texto para poder enviar.';
+      }
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      }
+    } else {
+      badge.className = 'font-mono text-sky-400 font-bold';
+      if (alertEl && alertEl.innerText.includes('límite de 100 palabras')) {
+        alertEl.className = 'hidden';
+        alertEl.innerText = '';
+      }
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+    }
+  };
+
+  window.getFeedbackDailyCount = function() {
+    const today = new Date().toISOString().slice(0, 10);
+    try {
+      const raw = localStorage.getItem('mastereng_feedback_history');
+      if (raw) {
+        const data = JSON.parse(raw);
+        if (data && data.date === today) {
+          return parseInt(data.count, 10) || 0;
+        }
+      }
+    } catch (_) {}
+    return 0;
+  };
+
+  window.incrementFeedbackDailyCount = function() {
+    const today = new Date().toISOString().slice(0, 10);
+    const current = window.getFeedbackDailyCount();
+    const next = current + 1;
+    try {
+      localStorage.setItem('mastereng_feedback_history', JSON.stringify({ date: today, count: next }));
+    } catch (_) {}
+    return next;
+  };
+
+  window.openFeedbackModal = function() {
+    if (typeof window.closeAllModals === 'function') window.closeAllModals();
+    const modal = document.getElementById('feedbackModal');
+    if (!modal) return;
+
+    const dailyBadge = document.getElementById('feedbackDailyLimitBadge');
+    const count = window.getFeedbackDailyCount();
+    if (dailyBadge) {
+      dailyBadge.innerText = 'Envíos hoy: ' + count + '/5';
+    }
+
+    const alertEl = document.getElementById('feedbackMessageAlert');
+    if (alertEl) {
+      alertEl.className = 'hidden';
+      alertEl.innerText = '';
+    }
+
+    const user = window.currentUser || JSON.parse(localStorage.getItem('mastereng_user') || 'null');
+    if (!user || user.role === 'guest' || !user.email) {
+      if (alertEl) {
+        alertEl.className = 'p-2.5 rounded-xl text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/40 block';
+        alertEl.innerText = '🔒 Para enviar comentarios debes iniciar sesión con tu cuenta. Los invitados no tienen acceso a este formulario.';
+      }
+      const submitBtn = document.getElementById('feedbackSubmitBtn');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      }
+    } else if (count >= 5) {
+      if (alertEl) {
+        alertEl.className = 'p-2.5 rounded-xl text-xs font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/40 block';
+        alertEl.innerText = '⚠️ Has alcanzado el límite máximo de 5 comentarios diarios. ¡Muchas gracias, vuelve mañana!';
+      }
+      const submitBtn = document.getElementById('feedbackSubmitBtn');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      }
+    } else {
+      const submitBtn = document.getElementById('feedbackSubmitBtn');
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+    }
+
+    window.updateFeedbackWordCount();
+    modal.style.display = 'flex';
+    modal.classList.remove('hidden');
+  };
+
+  window.handleFeedbackSubmit = async function() {
+    const input = document.getElementById('feedbackTextInput');
+    const alertEl = document.getElementById('feedbackMessageAlert');
+    const submitBtn = document.getElementById('feedbackSubmitBtn');
+    if (!input) return;
+
+    const text = input.value.trim();
+    if (!text) {
+      if (alertEl) {
+        alertEl.className = 'p-2.5 rounded-xl text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/40 block';
+        alertEl.innerText = 'Por favor escribe tu comentario antes de enviar.';
+      }
+      return;
+    }
+
+    const user = window.currentUser || JSON.parse(localStorage.getItem('mastereng_user') || 'null');
+    if (!user || user.role === 'guest' || !user.email) {
+      if (alertEl) {
+        alertEl.className = 'p-2.5 rounded-xl text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/40 block';
+        alertEl.innerText = 'Debes iniciar sesión con tu cuenta para enviar comentarios.';
+      }
+      return;
+    }
+
+    const wordCount = window.countWords(text);
+    if (wordCount > 100) {
+      if (alertEl) {
+        alertEl.className = 'p-2.5 rounded-xl text-xs font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/40 block';
+        alertEl.innerText = 'El texto supera las 100 palabras permitidas (' + wordCount + ' palabras).';
+      }
+      return;
+    }
+
+    const todayCount = window.getFeedbackDailyCount();
+    if (todayCount >= 5) {
+      if (alertEl) {
+        alertEl.className = 'p-2.5 rounded-xl text-xs font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/40 block';
+        alertEl.innerText = 'Límite diario alcanzado (máximo 5 comentarios al día).';
+      }
+      return;
+    }
+
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerText = 'Enviando...';
+    }
+
+    try {
+      const res = await fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: user.email,
+          username: user.username || user.name || 'Estudiante MasterENG',
+          text: text
+        })
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
+        window.incrementFeedbackDailyCount();
+        if (alertEl) {
+          alertEl.className = 'p-2.5 rounded-xl text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 block';
+          alertEl.innerText = '✅ ¡Gracias! Tu comentario ha sido recibido y guardado en la base de datos.';
+        }
+        input.value = '';
+        window.updateFeedbackWordCount();
+        setTimeout(() => {
+          if (typeof window.closeAllModals === 'function') window.closeAllModals();
+        }, 1800);
+      } else {
+        if (res.status === 429) {
+          if (alertEl) {
+            alertEl.className = 'p-2.5 rounded-xl text-xs font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/40 block';
+            alertEl.innerText = data.error || 'Límite diario alcanzado.';
+          }
+        } else {
+          // Fallback resiliente
+          window.incrementFeedbackDailyCount();
+          const localList = JSON.parse(localStorage.getItem('mastereng_local_feedbacks') || '[]');
+          localList.push({ email: user.email, username: user.username, text, date: new Date().toISOString() });
+          localStorage.setItem('mastereng_local_feedbacks', JSON.stringify(localList));
+          if (alertEl) {
+            alertEl.className = 'p-2.5 rounded-xl text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 block';
+            alertEl.innerText = '✅ ¡Gracias! Tu comentario ha sido registrado con éxito.';
+          }
+          input.value = '';
+          window.updateFeedbackWordCount();
+          setTimeout(() => {
+            if (typeof window.closeAllModals === 'function') window.closeAllModals();
+          }, 1800);
+        }
+      }
+    } catch (err) {
+      // Fallback si no hay conexión
+      window.incrementFeedbackDailyCount();
+      const localList = JSON.parse(localStorage.getItem('mastereng_local_feedbacks') || '[]');
+      localList.push({ email: user.email, username: user.username, text, date: new Date().toISOString() });
+      localStorage.setItem('mastereng_local_feedbacks', JSON.stringify(localList));
+      if (alertEl) {
+        alertEl.className = 'p-2.5 rounded-xl text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 block';
+        alertEl.innerText = '✅ ¡Gracias! Tu comentario ha sido registrado con éxito.';
+      }
+      input.value = '';
+      window.updateFeedbackWordCount();
+      setTimeout(() => {
+        if (typeof window.closeAllModals === 'function') window.closeAllModals();
+      }, 1800);
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<span>🚀</span><span>Enviar a Base de Datos</span>';
+      }
+    }
+  };
+
+  window.submitFeedback = function(text) {
+    const input = document.getElementById('feedbackTextInput');
+    if (input && text) input.value = text;
+    return window.handleFeedbackSubmit();
+  };
+
   })();

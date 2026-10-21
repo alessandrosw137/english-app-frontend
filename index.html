@@ -50,9 +50,9 @@
   <link rel="stylesheet" href="css/style.css">
   <style>
   .hidden,[style*="display: none"]{display:none !important;}
-  #view-auth.hidden,#view-home.hidden,#view-path.hidden,#view-stories.hidden,#view-music.hidden,#view-worldtour.hidden{display:none !important;}
+  #view-auth.hidden,#view-home.hidden,#view-path.hidden,#view-stories.hidden,#view-music.hidden,#view-worldtour.hidden,#ai-tutor-view.hidden{display:none !important;}
   #authLoginForm.hidden,#authRegisterForm.hidden{display:none !important;}
-  #glossaryModal.hidden,#learningMissionModal.hidden,#profileModal.hidden,#forceUpdateOverlay.hidden,#adminDashboardModal.hidden,#adminConfirmDeleteModal.hidden,#adminViewProgressModal.hidden,#headerAdminBtn.hidden,#rouletteModal.hidden,#musicWordModal.hidden,#settingsModal.hidden{display:none !important;}
+  #glossaryModal.hidden,#learningMissionModal.hidden,#profileModal.hidden,#forceUpdateOverlay.hidden,#adminDashboardModal.hidden,#adminConfirmDeleteModal.hidden,#adminViewProgressModal.hidden,#headerAdminBtn.hidden,#rouletteModal.hidden,#musicWordModal.hidden,#settingsModal.hidden,#feedbackModal.hidden{display:none !important;}
   #view-auth,.login-container,.login-card,#authLoginForm,#authRegisterForm{position:relative !important;z-index:10000 !important;pointer-events:auto !important;}
   #view-auth input,.login-card input,#authLoginIdentifier,#authLoginPassword,#authRegUsername,#authRegEmail,#authRegPassword,input[type="text"],input[type="password"],input[type="email"]{position:relative !important;z-index:10001 !important;pointer-events:auto !important;user-select:text !important;-webkit-user-select:text !important;}
   #view-auth button,.login-card button,#authLoginSubmitBtn,#authTabBtnLogin,#authTabBtnRegister{position:relative !important;z-index:10001 !important;pointer-events:auto !important;cursor:pointer !important;}
@@ -127,7 +127,7 @@
    <div id="ai-tutor-btn" onclick="toggleModal('ai-tutor-modal'); handleRobotWidgetClick(event);" class="relative group cursor-pointer" title="Asistente de Dudas IA">
   <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-tr from-sky-500 via-cyan-400 to-indigo-600 p-0.5 shadow-2xl shadow-sky-500/40 group-hover:scale-105 transition duration-300">
   <div class="w-full h-full rounded-[14px] bg-slate-900 flex flex-col items-center justify-center relative overflow-hidden p-1.5">
-   <svg class="w-full h-full" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"> <defs> <linearGradient id="robotBodyGrad" x1="0%" y1="0%" x2="100%" y2="100%"> <stop offset="0%" stop-color="#38bdf8"/> <stop offset="50%" stop-color="#0284c7"/> <stop offset="100%" stop-color="#1e1b4b"/> </linearGradient> <linearGradient id="robotScreenGrad" x1="0%" y1="0%" x2="0%" y2="100%"> <stop offset="0%" stop-color="#0f172a"/> <stop offset="100%" stop-color="#020617"/> </linearGradient> <linearGradient id="robotEyeGrad" x1="0%" y1="0%" x2="100%" y2="100%"> <stop offset="0%" stop-color="#67e8f9"/> <stop offset="100%" stop-color="#06b6d4"/> </linearGradient> <filter id="robotGlow" x="-20%" y="-20%" width="140%" height="140%"> <feGaussianBlur stdDeviation="2" result="blur"/> <feComposite in="SourceGraphic" in2="blur" operator="over"/> </filter> </defs> <line x1="50" y1="20" x2="50" y2="10" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/> <circle cx="50" cy="8" r="4.5" fill="#38bdf8" filter="url(#robotGlow)"/> <circle cx="50" cy="8" r="2" fill="#ffffff"/> <rect x="14" y="38" width="6" height="18" rx="3" fill="#0284c7"/> <rect x="80" y="38" width="6" height="18" rx="3" fill="#0284c7"/> <rect x="18" y="20" width="64" height="54" rx="16" fill="url(#robotBodyGrad)" stroke="#38bdf8" stroke-width="2"/> <rect x="25" y="27" width="50" height="38" rx="10" fill="url(#robotScreenGrad)" stroke="#0ea5e9" stroke-width="1.5"/> <circle cx="39" cy="44" r="6" fill="url(#robotEyeGrad)" filter="url(#robotGlow)"/> <circle cx="61" cy="44" r="6" fill="url(#robotEyeGrad)" filter="url(#robotGlow)"/> <circle cx="41" cy="42" r="2" fill="#ffffff"/> <circle cx="63" cy="42" r="2" fill="#ffffff"/> <path d="M43 55 Q50 60 57 55" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" fill="none"/> <rect x="42" y="74" width="16" height="6" rx="2" fill="#0284c7"/> <path d="M30 80 L70 80 L76 94 L24 94 Z" fill="url(#robotBodyGrad)" opacity="0.9"/> <circle cx="50" cy="87" r="3" fill="#38bdf8" filter="url(#robotGlow)"/> </svg>
+   <svg class="w-full h-full" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"> <defs> <linearGradient id="robotBodyGrad" x1="0%" y1="0%" x2="100%" y2="100%"> <stop offset="0%" stop-color="#38bdf8"/> <stop offset="50%" stop-color="#0284c7"/> <stop offset="100%" stop-color="#1e1b4b"/> </linearGradient> <linearGradient id="robotScreenGrad" x1="0%" y1="0%" x2="0%" y2="100%"> <stop offset="0%" stop-color="#0f172a"/> <stop offset="100%" stop-color="#020617"/> </linearGradient> <linearGradient id="robotEyeGrad" x1="0%" y1="0%" x2="100%" y2="100%"> <stop offset="0%" stop-color="#67e8f9"/> <stop offset="100%" stop-color="#06b6d4"/> </linearGradient> <filter id="robotGlow" x="-20%" y="-20%" width="140%" height="140%"> <feGaussianBlur stdDeviation="2" result="blur"/> <feComposite in="SourceGraphic" in2="blur" operator="over"/> </filter> </defs><g id="robotMascotGraphic"> <line x1="50" y1="20" x2="50" y2="10" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/> <circle cx="50" cy="8" r="4.5" fill="#38bdf8" filter="url(#robotGlow)"/> <circle cx="50" cy="8" r="2" fill="#ffffff"/> <rect x="14" y="38" width="6" height="18" rx="3" fill="#0284c7"/> <rect x="80" y="38" width="6" height="18" rx="3" fill="#0284c7"/> <rect x="18" y="20" width="64" height="54" rx="16" fill="url(#robotBodyGrad)" stroke="#38bdf8" stroke-width="2"/> <rect x="25" y="27" width="50" height="38" rx="10" fill="url(#robotScreenGrad)" stroke="#0ea5e9" stroke-width="1.5"/> <circle cx="39" cy="44" r="6" fill="url(#robotEyeGrad)" filter="url(#robotGlow)"/> <circle cx="61" cy="44" r="6" fill="url(#robotEyeGrad)" filter="url(#robotGlow)"/> <circle cx="41" cy="42" r="2" fill="#ffffff"/> <circle cx="63" cy="42" r="2" fill="#ffffff"/> <path d="M43 55 Q50 60 57 55" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" fill="none"/> <rect x="42" y="74" width="16" height="6" rx="2" fill="#0284c7"/> <path d="M30 80 L70 80 L76 94 L24 94 Z" fill="url(#robotBodyGrad)" opacity="0.9"/> <circle cx="50" cy="87" r="3" fill="#38bdf8" filter="url(#robotGlow)"/> </g></svg>
    <div class="w-2 h-2 rounded-full bg-sky-400 animate-ping absolute top-1.5 right-1.5"></div>
   </div>
   </div>
@@ -263,11 +263,8 @@
   <canvas id="portalStarsCanvas" class="absolute inset-0 pointer-events-none w-full h-full z-0 opacity-60"></canvas>
   <div class="relative z-10 w-full max-w-xl text-center mb-3">
    <h2 class="text-xl sm:text-2xl font-black bg-gradient-to-r from-amber-300 via-sky-300 to-purple-400 bg-clip-text text-transparent">
-  Hub de Teletransportación
+  TEMAS DE APRENDIZAJE
    </h2>
-   <p class="text-xs text-slate-400">
-  Desliza horizontalmente para seleccionar tu portal de entrenamiento
-   </p>
   </div>
   <div id="coverFlowViewport" class="coverflow-viewport hub-carousel carousel-viewport w-full max-w-xl flex items-center justify-center my-1 z-10">
    <button type="button" onclick="window.prevPortal()" class="carousel-nav-btn prev carousel-btn carousel-prev nav-arrow absolute left-0 z-40 w-12 h-12 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-white flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition cursor-pointer" style="cursor: pointer !important; pointer-events: auto !important; z-index: 1000 !important;" data-action="prev" title="Portal Anterior">
@@ -280,15 +277,15 @@
    <div>
    <div class="flex items-center justify-between mb-1.5">
     <span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-[10px] font-bold text-amber-300 uppercase tracking-widest">
-    PORTAL 01 &bull; CÓSMICO
+    PORTAL 01 &bull; CURRÍCULO
     </span>
     <span class="text-xs font-bold text-amber-400">+20 EXP / nivel</span>
    </div>
    <h3 class="text-lg font-black text-amber-300 group-hover:text-amber-200 transition">
-    Learning Path
+    Ruta de Aprendizaje
    </h3>
    <p class="text-[11px] text-slate-300 mt-1 leading-snug">
-    Academia con 10 módulos TOEFL, glosarios con descarga PDF y misiones interactivas.
+    Módulos de vocabulario y gramática en inglés.
    </p>
    </div>
    <div class="my-3 relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden border border-amber-500/50 shadow-lg shadow-amber-950/60 shrink-0">
@@ -310,10 +307,10 @@
     <span class="text-xs font-bold text-purple-400">15 Objetos Interactivos</span>
    </div>
    <h3 class="text-lg font-black text-purple-300 group-hover:text-purple-200 transition">
-    World Tour 3D
+    Entorno 3D
    </h3>
    <p class="text-[11px] text-slate-300 mt-1 leading-snug">
-    Escenario House & Rooms y Backyard en Three.js con iluminación PBR y pronunciación.
+    Explora y aprende palabras interactuando en 3D.
    </p>
    </div>
    <div class="my-3 relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden border border-purple-500/50 shadow-lg shadow-purple-950/60 shrink-0">
@@ -330,15 +327,15 @@
    <div>
    <div class="flex items-center justify-between mb-1.5">
     <span class="px-2.5 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-500/40 text-[10px] font-bold text-cyan-300 uppercase tracking-widest">
-    PORTAL 03 &bull; CYBERPUNK
+    PORTAL 03 &bull; MÚSICA & KARAOKE
     </span>
     <span class="text-xs font-bold text-cyan-400">+30 EXP / reto</span>
    </div>
    <h3 class="text-lg font-black text-cyan-300 group-hover:text-cyan-200 transition">
-    Music Jam
+    Estudio Musical
    </h3>
    <p class="text-[11px] text-slate-300 mt-1 leading-snug">
-    Buscador en vivo conectado a iTunes API con karaoke interactivo y diccionario.
+    Aprende vocabulario cantando tus canciones favoritas.
    </p>
    </div>
    <div class="my-3 relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden border border-cyan-500/50 shadow-lg shadow-cyan-950/60 bg-slate-950 shrink-0">
@@ -349,29 +346,29 @@
    <button type="button" onclick="event.stopPropagation(); window.openPortalModules('music');" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-cyan-500/30 cursor-pointer" data-action="enter-portal" data-portal="music">ENTRAR AL PORTAL</button>
   </div>
   </div>
-  <div id="coverCard-3" onclick="handleCoverCardClick(3)" class="coverflow-portal-card portal-card portal-card-3 side-left hidden" style="display: none; --portal-glow: rgba(16, 185, 129, 0.45);">
+  <div id="coverCard-3" onclick="handleCoverCardClick(3)" class="coverflow-portal-card portal-card portal-card-3 side-left" style="--portal-glow: rgba(56, 189, 248, 0.45);">
   <div class="w-full h-full flex flex-col justify-between relative overflow-hidden group">
-   <div class="absolute -top-12 -right-12 w-36 h-36 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none"></div>
+   <div class="absolute -top-12 -right-12 w-36 h-36 bg-sky-500/20 rounded-full blur-2xl pointer-events-none"></div>
    <div>
    <div class="flex items-center justify-between mb-1.5">
-    <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-[10px] font-bold text-emerald-300 uppercase tracking-widest">
-    PORTAL 04 &bull; ESMERALDA
+    <span class="px-2.5 py-0.5 rounded-full bg-sky-500/20 border border-sky-500/40 text-[10px] font-bold text-sky-300 uppercase tracking-widest">
+    PORTAL 04 &bull; INTELIGENCIA ARTIFICIAL
     </span>
-    <span class="text-xs font-bold text-emerald-400">+50 EXP / voz</span>
+    <span class="text-xs font-bold text-sky-400">+50 EXP / chat</span>
    </div>
-   <h3 class="text-lg font-black text-emerald-300 group-hover:text-emerald-200 transition">
-    Cuentos Clásicos
+   <h3 class="text-lg font-black text-sky-300 group-hover:text-sky-200 transition">
+    Tutor IA Automático
    </h3>
    <p class="text-[11px] text-slate-300 mt-1 leading-snug">
-    Biblioteca ilustrada con 6 obras clásicas, narrador nativo, práctica por micrófono y PDF.
+    Practica tu inglés conversando por texto o voz.
    </p>
    </div>
-   <div class="my-3 relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden border border-emerald-500/50 shadow-lg shadow-emerald-950/60 shrink-0">
-   <img src="images/portal_stories.jpg" alt="Portal Cuentos" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onerror="this.onerror=null; this.src=window.FALLBACK_PORTAL_STORIES || 'images/portal_stories.svg';">
+   <div class="my-3 relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden border border-sky-500/50 shadow-lg shadow-sky-950/60 shrink-0">
+   <img src="images/ai_tutor_mascot.jpg" alt="Portal Tutor IA" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onerror="this.onerror=null; this.src='images/ai_tutor_mascot.svg';">
    <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none"></div>
-   <span class="absolute bottom-2 right-2.5 text-xs font-black text-emerald-300 bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-emerald-400/40">🌲 6 Obras</span>
+   <span class="absolute bottom-2 right-2.5 text-xs font-black text-sky-300 bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-sky-400/40">🤖 Chat & Voz</span>
    </div>
-   <button type="button" onclick="event.stopPropagation(); window.openPortalModules('stories');" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-500/30 cursor-pointer" data-action="enter-portal" data-portal="stories">ENTRAR AL PORTAL</button>
+   <button type="button" onclick="event.stopPropagation(); window.openPortalModules('ai-tutor');" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 hover:from-sky-400 hover:to-indigo-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-sky-500/30 cursor-pointer" data-action="enter-portal" data-portal="ai-tutor">ENTRAR AL PORTAL</button>
   </div>
   </div>
    </div>
@@ -406,7 +403,7 @@
   <h2 class="text-xl sm:text-2xl font-black text-white mt-1">Academia de Aprendizaje</h2>
   <p class="text-xs text-slate-300 mt-1 max-w-xl">Explora el glosario oficial o supera las misiones interactivas para ganar +20 EXP por módulo</p>
   </div>
-  <div class="hidden sm:flex w-20 h-20 rounded-2xl p-1 bg-slate-900 border-2 border-amber-400/60 shadow-xl items-center justify-center"><svg class="w-full h-full" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"> <defs> <linearGradient id="robotBodyGrad" x1="0%" y1="0%" x2="100%" y2="100%"> <stop offset="0%" stop-color="#38bdf8"/> <stop offset="50%" stop-color="#0284c7"/> <stop offset="100%" stop-color="#1e1b4b"/> </linearGradient> <linearGradient id="robotScreenGrad" x1="0%" y1="0%" x2="0%" y2="100%"> <stop offset="0%" stop-color="#0f172a"/> <stop offset="100%" stop-color="#020617"/> </linearGradient> <linearGradient id="robotEyeGrad" x1="0%" y1="0%" x2="100%" y2="100%"> <stop offset="0%" stop-color="#67e8f9"/> <stop offset="100%" stop-color="#06b6d4"/> </linearGradient> <filter id="robotGlow" x="-20%" y="-20%" width="140%" height="140%"> <feGaussianBlur stdDeviation="2" result="blur"/> <feComposite in="SourceGraphic" in2="blur" operator="over"/> </filter> </defs> <line x1="50" y1="20" x2="50" y2="10" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/> <circle cx="50" cy="8" r="4.5" fill="#38bdf8" filter="url(#robotGlow)"/> <circle cx="50" cy="8" r="2" fill="#ffffff"/> <rect x="14" y="38" width="6" height="18" rx="3" fill="#0284c7"/> <rect x="80" y="38" width="6" height="18" rx="3" fill="#0284c7"/> <rect x="18" y="20" width="64" height="54" rx="16" fill="url(#robotBodyGrad)" stroke="#38bdf8" stroke-width="2"/> <rect x="25" y="27" width="50" height="38" rx="10" fill="url(#robotScreenGrad)" stroke="#0ea5e9" stroke-width="1.5"/> <circle cx="39" cy="44" r="6" fill="url(#robotEyeGrad)" filter="url(#robotGlow)"/> <circle cx="61" cy="44" r="6" fill="url(#robotEyeGrad)" filter="url(#robotGlow)"/> <circle cx="41" cy="42" r="2" fill="#ffffff"/> <circle cx="63" cy="42" r="2" fill="#ffffff"/> <path d="M43 55 Q50 60 57 55" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" fill="none"/> <rect x="42" y="74" width="16" height="6" rx="2" fill="#0284c7"/> <path d="M30 80 L70 80 L76 94 L24 94 Z" fill="url(#robotBodyGrad)" opacity="0.9"/> <circle cx="50" cy="87" r="3" fill="#38bdf8" filter="url(#robotGlow)"/> </svg></div>
+  <div class="hidden sm:flex w-20 h-20 rounded-2xl p-1 bg-slate-900 border-2 border-amber-400/60 shadow-xl items-center justify-center"><svg class="w-full h-full" viewBox="0 0 100 100"><use href="#robotMascotGraphic"/></svg></div>
    </div>
   </div>
   <div id="learning-modules-grid" class="modules-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; padding: 2rem 1rem; max-width: 1200px; margin: 0 auto; width: 100%; box-sizing: border-box;">
@@ -505,6 +502,7 @@
   </div>
   </div>
   <div id="view-stories" class="flex-1 p-4 max-w-5xl mx-auto w-full hidden" style="display: none;">
+  <img id="storiesResilienceFallback" src="images/portal_stories.jpg" alt="Portal Cuentos" class="hidden" style="display:none;" onerror="this.onerror=null; this.src=window.FALLBACK_PORTAL_STORIES || 'images/portal_stories.svg';">
   <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
    <button type="button" data-action="back-to-hub" onclick="window.navigateTo('hub'); if(typeof goToHomePortals==='function') goToHomePortals();" style="cursor: pointer; pointer-events: auto;" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 transition cursor-pointer">
   <span>← Volver a Portales</span>
@@ -710,6 +708,58 @@
    </div>
   </div>
   </div>
+  <!-- PORTAL 04: VISTA TUTOR IA CONVERSACIONAL (VOZ Y TEXTO) -->
+  <div id="ai-tutor-view" class="flex-1 p-3 sm:p-4 max-w-4xl mx-auto w-full hidden" style="display: none;">
+   <div class="flex items-center justify-between mb-3">
+    <button type="button" data-action="back-to-hub" onclick="window.navigateTo('hub'); if(typeof goToHomePortals==='function') goToHomePortals();" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 transition cursor-pointer">
+     <span>← Volver a Portales</span>
+    </button>
+    <div class="flex items-center gap-2">
+     <span class="text-xs font-bold text-sky-400 bg-sky-500/10 px-3 py-1 rounded-full border border-sky-500/30 flex items-center gap-1.5">
+      <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+      <span>Tutor IA Nativo</span>
+     </span>
+     <button type="button" id="aiTutorVoiceToggleBtn" onclick="window.toggleAiTutorVoice()" class="flex items-center gap-1 px-3 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-sky-300 border border-sky-500/30 transition cursor-pointer" title="Lectura en voz alta">
+      <span id="aiTutorVoiceIcon">🔊</span>
+      <span id="aiTutorVoiceLabel" class="hidden sm:inline">Voz IA</span>
+     </button>
+    </div>
+   </div>
+   <div class="ai-tutor-card">
+    <div class="flex items-center gap-3 pb-3 border-b border-slate-800 shrink-0">
+     <div class="w-10 h-10 rounded-2xl bg-sky-950 border border-sky-400/50 p-1 flex items-center justify-center shrink-0">
+      <img src="images/ai_tutor_mascot.jpg" alt="AI Mascot" class="w-full h-full object-cover rounded-xl" onerror="this.onerror=null; this.src='images/ai_tutor_mascot.svg';">
+     </div>
+     <div class="flex-1 min-w-0">
+      <h3 class="text-sm sm:text-base font-extrabold text-white flex items-center gap-1.5 truncate">
+       <span>Tutor IA Automático</span>
+       <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-400/30">en-US</span>
+      </h3>
+      <p class="text-[11px] text-slate-400 truncate">Conversación en inglés con corrección gramatical instantánea</p>
+     </div>
+     <button type="button" onclick="window.clearAiTutorChat()" class="text-slate-400 hover:text-rose-400 text-xs px-2 py-1 rounded-lg hover:bg-slate-800 transition cursor-pointer" title="Limpiar conversación">🗑️</button>
+    </div>
+    <div id="aiTutorChatMessages" class="flex-1 overflow-y-auto py-3 space-y-3 pr-1 text-xs sm:text-sm"></div>
+    <div class="pt-3 border-t border-slate-800 shrink-0 space-y-2">
+     <div id="aiTutorTypingStatus" class="hidden flex items-center gap-2 text-xs text-sky-400 font-medium px-2">
+      <div class="w-3.5 h-3.5 rounded-full border-2 border-sky-400 border-t-transparent animate-spin"></div>
+      <span class="animate-pulse">AI Tutor is thinking...</span>
+     </div>
+     <div class="flex items-end gap-2 bg-slate-950/90 border border-slate-700/80 rounded-2xl p-2 focus-within:border-sky-400 transition">
+      <textarea id="aiTutorInput" rows="1" placeholder="Type in English or press 🎤 Hablar..." onkeydown="window.handleAiTutorInputKeydown(event)" class="flex-1 bg-transparent border-0 text-slate-100 text-xs sm:text-sm placeholder-slate-500 focus:outline-none resize-none max-h-24 py-1.5 px-2 leading-relaxed"></textarea>
+      <button type="button" id="aiTutorMicBtn" onclick="window.toggleAiTutorSpeechRecognition()" class="p-2 sm:px-3 sm:py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 active:scale-95 border border-slate-700" title="Hablar por micrófono">
+       <span id="aiTutorMicIcon">🎤</span>
+       <span id="aiTutorMicText" class="hidden sm:inline">Hablar</span>
+      </button>
+      <button type="button" id="aiTutorSendBtn" onclick="window.handleAiTutorSend()" class="p-2 sm:px-3.5 sm:py-2 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-bold text-xs flex items-center gap-1 transition shadow-lg shadow-sky-500/20 cursor-pointer shrink-0 active:scale-95">
+       <span>➤</span>
+       <span class="hidden sm:inline">Enviar</span>
+      </button>
+     </div>
+    </div>
+   </div>
+  </div>
+
   <div id="glossaryModal" style="display: none;" onclick="if(event.target===this) window.closeAllModals();" class="modal fixed modal-overlay modal-backdrop inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md hidden">
   <div class="w-full max-w-3xl bg-slate-900 border border-amber-500/50 rounded-3xl p-6 shadow-2xl flex flex-col max-h-[85vh] relative overflow-hidden">
    <div class="flex items-center justify-between pb-3 border-b border-slate-800">
@@ -849,7 +899,13 @@
   </select>
   </div>
   <div class="pt-2">
-  <button type="button" id="logout-btn" data-action="logout" onclick="window.logout(); if(typeof handleLogoutFromSettings==='function') handleLogoutFromSettings();" style="cursor: pointer; pointer-events: auto;" class="w-full py-3 rounded-2xl bg-gradient-to-r from-rose-600 via-red-600 to-rose-700 hover:from-rose-500 hover:to-red-500 text-white font-extrabold text-xs sm:text-sm transition shadow-lg shadow-rose-600/30 flex items-center justify-center gap-2 cursor-pointer active:scale-95 border border-rose-400/40">
+  <div class="pt-1">
+    <button type="button" id="settingsFeedbackBtn" onclick="window.openFeedbackModal()" class="w-full py-2.5 rounded-2xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-extrabold text-xs sm:text-sm transition shadow-lg shadow-sky-600/30 flex items-center justify-center gap-2 cursor-pointer active:scale-95 border border-sky-400/40">
+     <span>💬</span>
+     <span>Enviar Comentarios</span>
+    </button>
+   </div>
+   <button type="button" id="logout-btn" data-action="logout" onclick="window.logout(); if(typeof handleLogoutFromSettings==='function') handleLogoutFromSettings();" style="cursor: pointer; pointer-events: auto;" class="w-full py-3 rounded-2xl bg-gradient-to-r from-rose-600 via-red-600 to-rose-700 hover:from-rose-500 hover:to-red-500 text-white font-extrabold text-xs sm:text-sm transition shadow-lg shadow-rose-600/30 flex items-center justify-center gap-2 cursor-pointer active:scale-95 border border-rose-400/40">
    <span>🚪</span>
    <span>Cerrar Sesión</span>
   </button>
@@ -857,6 +913,30 @@
    </div>
   </div>
   </div>
+  <!-- MODAL DE COMENTARIOS / FEEDBACK CON VALIDACIÓN ANTI-SPAM -->
+  <div id="feedbackModal" style="display: none;" data-modal="feedback-modal" onclick="if(event.target===this) window.closeAllModals();" class="modal fixed modal-overlay modal-backdrop inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md hidden">
+   <div class="w-full max-w-md bg-[#0f172a] border border-sky-400/50 rounded-3xl p-5 shadow-2xl relative overflow-hidden text-slate-100 max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+     <h3 class="text-base font-black text-white flex items-center gap-2"><span>💬</span><span>Enviar Comentarios</span></h3>
+     <button type="button" onclick="window.closeAllModals()" class="close-btn w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer text-base">&times;</button>
+    </div>
+    <div class="py-3 space-y-3 text-xs sm:text-sm">
+     <p class="text-slate-300 text-xs">Tus opiniones y sugerencias nos ayudan a mejorar MasterENG.</p>
+     <div class="relative">
+      <textarea id="feedbackTextInput" rows="4" maxlength="1200" oninput="window.updateFeedbackWordCount()" placeholder="Escribe tu comentario aquí (máximo 100 palabras)..." class="w-full p-3 rounded-2xl bg-slate-900 border border-slate-700 focus:border-sky-400 focus:outline-none text-slate-100 text-xs sm:text-sm placeholder-slate-500 resize-none transition"></textarea>
+      <div class="flex items-center justify-between mt-1 text-[11px] text-slate-400">
+       <span id="feedbackWordCountBadge" class="font-mono text-sky-400 font-bold">0 / 100 palabras</span>
+       <span id="feedbackDailyLimitBadge" class="text-slate-500">Envíos hoy: 0/5</span>
+      </div>
+     </div>
+     <div id="feedbackMessageAlert" class="hidden p-2.5 rounded-xl text-xs font-semibold"></div>
+     <button type="button" id="feedbackSubmitBtn" onclick="window.handleFeedbackSubmit()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-extrabold text-xs sm:text-sm transition shadow-lg shadow-sky-500/30 flex items-center justify-center gap-2 cursor-pointer active:scale-95 border border-sky-400/50">
+      <span>🚀</span><span>Enviar a Base de Datos</span>
+     </button>
+    </div>
+   </div>
+  </div>
+
   <div id="rouletteModal" style="display: none;" data-modal="roulette-modal" onclick="if(event.target===this) window.closeAllModals();" class="modal fixed modal-overlay modal-backdrop inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md hidden">
   <div class="w-full max-w-2xl bg-slate-900 border border-amber-500/60 rounded-3xl p-4 sm:p-6 shadow-2xl text-center relative overflow-hidden max-h-[92vh] flex flex-col">
    <div class="flex items-center justify-between pb-3 border-b border-slate-800 shrink-0">
@@ -869,7 +949,7 @@
    <div class="py-4 overflow-y-auto flex-1 flex flex-col md:flex-row items-center justify-center gap-6">
   <div class="flex flex-col items-center justify-center bg-slate-800/60 border border-slate-700/70 rounded-2xl p-4 w-full md:w-56 shrink-0 text-center shadow-lg">
   <div class="w-16 h-16 sm:w-20 sm:h-20 mb-2 relative">
-   <svg class="w-full h-full" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"> <defs> <linearGradient id="robotBodyGrad" x1="0%" y1="0%" x2="100%" y2="100%"> <stop offset="0%" stop-color="#38bdf8"/> <stop offset="50%" stop-color="#0284c7"/> <stop offset="100%" stop-color="#1e1b4b"/> </linearGradient> <linearGradient id="robotScreenGrad" x1="0%" y1="0%" x2="0%" y2="100%"> <stop offset="0%" stop-color="#0f172a"/> <stop offset="100%" stop-color="#020617"/> </linearGradient> <linearGradient id="robotEyeGrad" x1="0%" y1="0%" x2="100%" y2="100%"> <stop offset="0%" stop-color="#67e8f9"/> <stop offset="100%" stop-color="#06b6d4"/> </linearGradient> <filter id="robotGlow" x="-20%" y="-20%" width="140%" height="140%"> <feGaussianBlur stdDeviation="2" result="blur"/> <feComposite in="SourceGraphic" in2="blur" operator="over"/> </filter> </defs> <line x1="50" y1="20" x2="50" y2="10" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/> <circle cx="50" cy="8" r="4.5" fill="#38bdf8" filter="url(#robotGlow)"/> <circle cx="50" cy="8" r="2" fill="#ffffff"/> <rect x="14" y="38" width="6" height="18" rx="3" fill="#0284c7"/> <rect x="80" y="38" width="6" height="18" rx="3" fill="#0284c7"/> <rect x="18" y="20" width="64" height="54" rx="16" fill="url(#robotBodyGrad)" stroke="#38bdf8" stroke-width="2"/> <rect x="25" y="27" width="50" height="38" rx="10" fill="url(#robotScreenGrad)" stroke="#0ea5e9" stroke-width="1.5"/> <circle cx="39" cy="44" r="6" fill="url(#robotEyeGrad)" filter="url(#robotGlow)"/> <circle cx="61" cy="44" r="6" fill="url(#robotEyeGrad)" filter="url(#robotGlow)"/> <circle cx="41" cy="42" r="2" fill="#ffffff"/> <circle cx="63" cy="42" r="2" fill="#ffffff"/> <path d="M43 55 Q50 60 57 55" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" fill="none"/> <rect x="42" y="74" width="16" height="6" rx="2" fill="#0284c7"/> <path d="M30 80 L70 80 L76 94 L24 94 Z" fill="url(#robotBodyGrad)" opacity="0.9"/> <circle cx="50" cy="87" r="3" fill="#38bdf8" filter="url(#robotGlow)"/> </svg>
+   <svg class="w-full h-full" viewBox="0 0 100 100"><use href="#robotMascotGraphic"/></svg>
    <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping absolute top-1 right-1"></div>
   </div>
   <span class="text-xs font-black text-sky-400 uppercase tracking-wider">Robot Tutor IA</span>
@@ -1194,7 +1274,7 @@
    if (typeof window.openAdminDashboardModal === 'function') window.openAdminDashboardModal();
    return;
   }
-  var views = document.querySelectorAll('section, main, .view-section, [id$="-view"], #view-auth, #view-home, #view-path, #view-stories, #view-music, #view-worldtour');
+  var views = document.querySelectorAll('section, main, .view-section, [id$="-view"], #view-auth, #view-home, #view-path, #view-stories, #view-music, #view-worldtour, #ai-tutor-view');
   views.forEach(function(v) {
    var isTarget = (v.id === cleanId + '-view' || v.id === cleanId || v.id === targetId || (targetId === 'view-path' && (v.id === 'view-path' || v.id === 'learning-path-view')));
    if (isTarget) {
@@ -1262,7 +1342,7 @@
    m.style.setProperty('display', 'none', 'important');
    m.classList.remove('active', 'open');
   });
-  document.querySelectorAll('#profileModal, #settingsModal, #rouletteModal, #glossaryModal, #learningMissionModal, #musicWordModal, #chatbotWindow, #adminDashboardModal, #adminConfirmDeleteModal, #adminViewProgressModal, #googleAccountPickerModal').forEach(function(m) {
+  document.querySelectorAll('#profileModal, #settingsModal, #feedbackModal, #rouletteModal, #glossaryModal, #learningMissionModal, #musicWordModal, #chatbotWindow, #adminDashboardModal, #adminConfirmDeleteModal, #adminViewProgressModal, #googleAccountPickerModal').forEach(function(m) {
    m.style.setProperty('display', 'none', 'important');
    m.classList.remove('active', 'show', 'open');
    m.classList.add('hidden');

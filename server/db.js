@@ -118,6 +118,16 @@ async function initializeDatabase() {
           completed_at TIMESTAMP DEFAULT NOW()
       );
 
+      -- 5. Tabla de Feedbacks / Comentarios Anti-Spam
+      CREATE TABLE IF NOT EXISTS feedbacks (
+          id SERIAL PRIMARY KEY,
+          user_id INT REFERENCES users(id) ON DELETE SET NULL,
+          user_email VARCHAR(150),
+          username VARCHAR(100),
+          feedback_text TEXT NOT NULL,
+          created_at TIMESTAMP DEFAULT NOW()
+      );
+
       -- Sincronizar campos si module_key o module_id están vacíos
       UPDATE module_progress
       SET module_id = COALESCE(module_id, module_key),

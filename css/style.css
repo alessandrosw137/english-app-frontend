@@ -1293,3 +1293,67 @@ header.auth-hidden,
     line-height: 1.55 !important;
   }
 }
+
+/* ========================================================
+   PORTAL 04: TUTOR IA CONVERSACIONAL Y FEEDBACK ANTI-SPAM
+   ======================================================== */
+.ai-tutor-card {
+  display: flex;
+  flex-direction: column;
+  height: 75vh;
+  max-height: 700px;
+  background: rgba(15, 23, 42, 0.94);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  border-radius: 1.5rem;
+  padding: 1rem;
+  box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.8), 0 0 25px rgba(56, 189, 248, 0.15);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  position: relative;
+  overflow: hidden;
+}
+
+.ai-bubble-user {
+  align-self: flex-end;
+  background: linear-gradient(135deg, #0284c7, #2563eb);
+  color: #ffffff;
+  border-radius: 1.25rem 1.25rem 0.25rem 1.25rem;
+  padding: 0.75rem 1rem;
+  max-width: 82%;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+  word-break: break-word;
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.ai-bubble-bot {
+  align-self: flex-start;
+  background: rgba(30, 41, 59, 0.9);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: #f1f5f9;
+  border-radius: 1.25rem 1.25rem 1.25rem 0.25rem;
+  padding: 0.75rem 1rem;
+  max-width: 85%;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  word-break: break-word;
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.ai-mic-active {
+  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+  color: #ffffff !important;
+  border-color: #f87171 !important;
+  animation: aiMicPulse 1.2s infinite ease-in-out !important;
+}
+
+@keyframes aiMicPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+    transform: scale(1.04);
+  }
+}

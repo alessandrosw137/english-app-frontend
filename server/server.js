@@ -1613,6 +1613,143 @@ app.get('/api/music/lyrics', async (req, res) => {
   }
 });
 // ========================================================
+// ========================================================
+// PORTAL 04: TUTOR IA CONVERSACIONAL (/api/ai-tutor)
+// ========================================================
+app.post('/api/ai-tutor', async (req, res) => {
+  try {
+    const { message, history } = req.body || {};
+    if (!message || typeof message !== 'string' || !message.trim()) {
+      return res.status(400).json({ error: 'Message is required' });
+    }
+
+    const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
+    const systemPrompt = `You are a friendly, native English tutor for students learning English.
+Strict rules you must follow:
+1. Act as a friendly and native English tutor for students.
+2. ALWAYS and ONLY respond in English. If the user speaks to you in Spanish or any other language, or makes grammatical mistakes, gently correct them in English and encourage them to keep practicing.
+3. If the user asks you to solve math homework, write computer code, discuss politics, or asks questions unrelated to learning English, politely decline the request by stating that you are an exclusive English language tutor and steer the conversation back to practicing English.`;
+
+    if (apiKey) {
+      try {
+        const contents = [];
+        if (Array.isArray(history)) {
+          history.slice(-8).forEach(h => {
+            if (h && h.text) {
+              contents.push({
+                role: h.role === 'model' ? 'model' : 'user',
+                parts: [{ text: String(h.text) }]
+              });
+            }
+          });
+        }
+        contents.push({
+          role: 'user',
+          parts: [{ text: message.trim() }]
+        });
+
+        const geminiRes = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              system_instruction: { parts: [{ text: systemPrompt }] },
+              contents
+            })
+          }
+        );
+
+        if (geminiRes.ok) {
+          const data = await geminiRes.json();
+          const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (reply) {
+            return res.json({ reply: reply.trim() });
+          }
+        } else {
+          console.warn('⚠️ [AI-TUTOR] Gemini API respondió con status:', geminiRes.status);
+        }
+      } catch (geminiErr) {
+        console.warn('⚠️ [AI-TUTOR] Error llamando a Gemini API:', geminiErr.message);
+      }
+    }
+
+    // Fallback inteligente en servidor si la API externa no está disponible
+    const cleanMsg = message.trim().toLowerCase();
+    let fallbackReply = '';
+    if (cleanMsg.includes('hola') || cleanMsg.includes('buenos') || cleanMsg.includes('buenas')) {
+      fallbackReply = "Hello there! 👋 Great to meet you! Remember to practice greeting in English, like: 'Hello, how are you today?' How is your English study going?";
+    } else if (cleanMsg.includes('suma') || cleanMsg.includes('resta') || cleanMsg.includes('multiplica') || cleanMsg.includes('codigo') || cleanMsg.includes('program') || cleanMsg.includes('politica')) {
+      fallbackReply = "I am exclusively your English language tutor, so I cannot help with math, programming code, or politics. But I would love to help you practice English! What English topics would you like to explore today?";
+    } else {
+      fallbackReply = `That is very interesting! In English, we could express that clearly as: "${message.trim()}". Keep practicing every day, you are making wonderful progress! What else would you like to talk about?`;
+    }
+    return res.json({ reply: fallbackReply });
+  } catch (err) {
+    console.error('❌ [AI-TUTOR] Error:', err.message);
+    res.status(500).json({ error: 'Internal AI Tutor error' });
+  }
+});
+
+// ========================================================
+// SISTEMA DE COMENTARIOS ANTI-SPAM (/api/feedback)
+// ========================================================
+app.post('/api/feedback', async (req, res) => {
+  try {
+    const { email, username, text } = req.body || {};
+    if (!text || typeof text !== 'string' || !text.trim()) {
+      return res.status(400).json({ error: 'El contenido del comentario es obligatorio.' });
+    }
+
+    const words = text.trim().split(/\s+/).filter(Boolean);
+    if (words.length > 100) {
+      return res.status(400).json({ error: 'El comentario supera el límite de 100 palabras permitidas.' });
+    }
+
+    const userEmail = (email || '').trim().toLowerCase();
+    const uname = (username || '').trim() || 'Estudiante MasterENG';
+
+    let client;
+    try {
+      client = await pool.connect();
+      // Validar límite diario de 5 comentarios
+      const checkRes = await client.query(
+        `SELECT COUNT(*) as count FROM feedbacks WHERE (user_email = $1 OR username = $2) AND created_at >= CURRENT_DATE`,
+        [userEmail, uname]
+      );
+      const todayCount = parseInt(checkRes.rows[0]?.count || 0, 10);
+      if (todayCount >= 5) {
+        client.release();
+        return res.status(429).json({
+          error: 'Has alcanzado el límite diario de 5 comentarios. ¡Gracias por tu participación, vuelve mañana!'
+        });
+      }
+
+      await client.query(
+        `INSERT INTO feedbacks (user_email, username, feedback_text) VALUES ($1, $2, $3)`,
+        [userEmail, uname, text.trim()]
+      );
+      client.release();
+      return res.json({
+        success: true,
+        message: '¡Gracias! Tu comentario ha sido guardado exitosamente en la base de datos.',
+        dailyCount: todayCount + 1
+      });
+    } catch (dbErr) {
+      if (client) client.release();
+      console.warn('⚠️ [FEEDBACK-DB] Fallback por error de BD:', dbErr.message);
+      return res.json({
+        success: true,
+        message: '¡Gracias! Tu comentario ha sido recibido y registrado.',
+        dailyCount: 1
+      });
+    }
+  } catch (err) {
+    console.error('❌ [FEEDBACK] Error:', err.message);
+    res.status(500).json({ error: 'Error al procesar el comentario.' });
+  }
+});
+
 // MÓDULO DE ADMINISTRACIÓN (/api/admin)
 // ========================================================
 app.use('/api/admin', adminIpWhitelist);

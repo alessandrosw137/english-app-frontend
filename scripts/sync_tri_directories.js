@@ -6,7 +6,9 @@ const filesToSync = [
   'master_data.js',
   'css/style.css',
   'js/app.js',
-  'js/karaoke.js'
+  'js/karaoke.js',
+  'images/ai_tutor_mascot.jpg',
+  'images/ai_tutor_mascot.svg'
 ];
 
 const targets = [
@@ -17,6 +19,7 @@ const targets = [
 targets.forEach(targetDir => {
   filesToSync.forEach(file => {
     const src = path.join(__dirname, '..', file);
+    if (!fs.existsSync(src)) return;
     const dest = path.join(targetDir, file);
     const destDir = path.dirname(dest);
     if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
