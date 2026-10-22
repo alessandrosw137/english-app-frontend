@@ -1369,3 +1369,21 @@ header.auth-hidden,
 
 .btn-mission { flex: 1; padding: 10px; border-radius: 8px; background: #3182ce; color: #fff; border: none; cursor: pointer; font-weight: bold; }
 .btn-glossary { flex: 1; padding: 10px; border-radius: 8px; background: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid rgba(255, 255, 255, 0.2); cursor: pointer; }
+
+
+/* ========================================================
+   BLOQUEO ESTRICTO DE ACCESO PARA INVITADOS (GUEST LOCKDOWN)
+   ======================================================== */
+body.user-guest #tutorRouletteDock,
+body.user-guest #draggableRobotWidget,
+body.user-guest #draggableRouletteWidget,
+body.user-guest #roulette-btn,
+body.user-guest #ai-tutor-btn,
+body.user-guest #ai-tutor-view,
+body.user-guest #chatbotWindow,
+body.user-guest #rouletteModal {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+}

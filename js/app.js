@@ -7,6 +7,34 @@
   
     let starsCanvasAnimId = null;
 
+    window.isUserLoggedIn = function() {
+      try {
+        return localStorage.getItem("mastereng_user") !== null;
+      } catch (_) {
+        return false;
+      }
+    };
+
+    window.isUserRegistered = function() {
+      try {
+        const role = localStorage.getItem('user_role');
+        if (role === 'guest') return false;
+        if (localStorage.getItem('guest_user')) return false;
+        const rawMaster = localStorage.getItem('mastereng_user');
+        const rawSession = localStorage.getItem('english_app_user_session');
+        if (!rawMaster && !rawSession) return false;
+        const uMaster = rawMaster ? JSON.parse(rawMaster) : null;
+        const uSession = rawSession ? JSON.parse(rawSession) : null;
+        const u = uMaster || uSession;
+        if (!u) return false;
+        if (u.role === 'guest' || u.isGuest === true) return false;
+        if (u.username && String(u.username).trim().toLowerCase() === 'invitado') return false;
+        return true;
+      } catch (_) {
+        return false;
+      }
+    };
+
     
 
   const STORIES_DATA = [
@@ -1257,15 +1285,19 @@
         const user = getStoredUser();
         return !!(user && user.role !== 'guest' && user.username !== 'Invitado');
       })();
+      if (document.body) {
+        document.body.classList.toggle('user-guest', !isRegistered);
+      }
       const showFloating = (!viewId.includes('login') && isRegistered);
       const widgets = document.querySelectorAll('.floating-widget, #roulette-btn, #ai-tutor-btn');
       widgets.forEach(w => {
-        w.style.display = showFloating ? 'flex' : 'none';
+        w.style.setProperty('display', showFloating ? 'flex' : 'none', 'important');
+        w.classList.toggle('hidden', !showFloating);
       });
       const dockEl = document.getElementById('tutorRouletteDock');
       if (dockEl) {
-        dockEl.style.display = showFloating ? 'flex' : 'none';
         dockEl.style.setProperty('display', showFloating ? 'flex' : 'none', 'important');
+        dockEl.classList.toggle('hidden', !showFloating);
       }
 
       // Mapeo transparente para las vistas maestras existentes
@@ -2032,6 +2064,7 @@ window.logout = function() {
         if (typeof showFloatingToast === 'function') {
           showFloatingToast('🔒 Debes iniciar sesión con tu cuenta para usar el Robot Tutor.', '🔒');
         }
+        if (typeof window.openAuthModal === 'function') window.openAuthModal('login');
         return;
       }
       const widget = document.getElementById('draggableRobotWidget');
@@ -2045,6 +2078,7 @@ window.logout = function() {
         if (typeof showFloatingToast === 'function') {
           showFloatingToast('🔒 Debes iniciar sesión con tu cuenta para usar la Ruleta.', '🔒');
         }
+        if (typeof window.openAuthModal === 'function') window.openAuthModal('login');
         return;
       }
       const widget = document.getElementById('draggableRouletteWidget');
@@ -2615,6 +2649,7 @@ window.logout = function() {
           if (typeof showFloatingToast === 'function') {
             showFloatingToast('🔒 Debes iniciar sesión con tu cuenta para usar esta función.', '🔒');
           }
+          if (typeof window.openAuthModal === 'function') window.openAuthModal('login');
           return;
         }
       }
@@ -2844,6 +2879,9 @@ window.logout = function() {
         const user = getStoredUser();
         return !!(user && user.role !== 'guest' && user.username !== 'Invitado');
       })();
+      if (document.body) {
+        document.body.classList.toggle('user-guest', !isRegistered);
+      }
       const dock = document.getElementById('tutorRouletteDock');
       const robot = document.getElementById('draggableRobotWidget');
       const roulette = document.getElementById('draggableRouletteWidget');
@@ -7093,6 +7131,9 @@ window.logout = function() {
         localStorage.setItem('guest_user', JSON.stringify({ username: 'Invitado', role: 'guest' }));
         localStorage.setItem('english_app_user_session', JSON.stringify({ username: 'Invitado', role: 'guest', exp: 0, rank: 'Bronce' }));
       } catch (err) { }
+      if (document.body) {
+        document.body.classList.add('user-guest');
+      }
 
       const loginModal = document.getElementById('login-modal') || document.querySelector('.login-container');
       if (loginModal) {
@@ -10688,6 +10729,22 @@ window.logout = function() {
   window.isAiTutorListening = false;
 
   window.initAiTutorChat = function() {
+    if (typeof window.isUserRegistered === 'function' && !window.isUserRegistered()) {
+      const tutorView = document.getElementById('ai-tutor-view');
+      if (tutorView) {
+        tutorView.style.setProperty('display', 'none', 'important');
+        tutorView.classList.add('hidden');
+      }
+      if (typeof window.showFloatingToast === 'function') {
+        window.showFloatingToast('🔒 Inicia sesión con tu cuenta para acceder al Tutor IA.', '🔒');
+      }
+      if (typeof window.goToHomePortals === 'function') {
+        window.goToHomePortals();
+      } else if (typeof window.navigateTo === 'function') {
+        window.navigateTo('hub');
+      }
+      return;
+    }
     const container = document.getElementById('aiTutorChatMessages');
     if (!container) return;
     if (!window.aiTutorMessages || window.aiTutorMessages.length === 0) {
@@ -11023,7 +11080,12 @@ window.logout = function() {
   window.isUserRegistered = function() {
     if (!window.isUserLoggedIn()) return false;
     try {
+      if (localStorage.getItem('user_role') === 'guest') return false;
+      if (localStorage.getItem('guest_user')) return false;
       const u = JSON.parse(localStorage.getItem('mastereng_user') || 'null');
+      if (!u) return false;
+      if (u.role === 'guest' || u.isGuest === true) return false;
+      if (u.username && String(u.username).trim().toLowerCase() === 'invitado') return false;
       return Boolean(u && u.role !== 'guest');
     } catch (_) {
       return false;
@@ -11032,6 +11094,9 @@ window.logout = function() {
 
   window.applyAuthGuardsUI = function() {
     const isRegistered = window.isUserRegistered();
+    if (document.body) {
+      document.body.classList.toggle('user-guest', !isRegistered);
+    }
     if (typeof updateFloatingWidgetsVisibility === 'function') {
       updateFloatingWidgetsVisibility();
     }
@@ -11060,6 +11125,19 @@ window.logout = function() {
       aiSendBtn.disabled = !isRegistered;
       aiSendBtn.classList.toggle('cursor-not-allowed', !isRegistered);
       aiSendBtn.classList.toggle('opacity-50', !isRegistered);
+    }
+
+    if (!isRegistered) {
+      const tutorView = document.getElementById('ai-tutor-view');
+      if (tutorView && !tutorView.classList.contains('hidden') && tutorView.style.display !== 'none') {
+        tutorView.style.setProperty('display', 'none', 'important');
+        tutorView.classList.add('hidden');
+        if (typeof window.goToHomePortals === 'function') {
+          window.goToHomePortals();
+        } else if (typeof window.navigateTo === 'function') {
+          window.navigateTo('hub');
+        }
+      }
     }
 
     // 3. Buscador Musical: Deshabilita el input de YouTube. Cambia el placeholder a: "🔒 Inicia sesión para buscar canciones libres".
@@ -11411,7 +11489,9 @@ window.logout = function() {
      4. PWA SERVICE WORKER REGISTRATION
      ======================================================== */
   if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch(err => console.warn('SW registration failed:', err));
+    navigator.serviceWorker.register('./sw.js').then((reg) => {
+      if (reg) reg.update();
+    }).catch(err => console.warn('SW registration failed:', err));
   }
 
   })();

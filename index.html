@@ -38,6 +38,7 @@
   <style>
   .hidden,[style*="display: none"]{display:none !important;}
   #view-auth.hidden,#view-home.hidden,#view-path.hidden,#view-stories.hidden,#view-music.hidden,#view-worldtour.hidden,#ai-tutor-view.hidden{display:none !important;}
+  body.user-guest #tutorRouletteDock,body.user-guest #draggableRobotWidget,body.user-guest #draggableRouletteWidget,body.user-guest #roulette-btn,body.user-guest #ai-tutor-btn,body.user-guest #ai-tutor-view,body.user-guest #chatbotWindow,body.user-guest #rouletteModal{display:none !important;visibility:hidden !important;pointer-events:none !important;}
   #authLoginForm.hidden,#authRegisterForm.hidden{display:none !important;}
   #glossaryModal.hidden,#learningMissionModal.hidden,#profileModal.hidden,#forceUpdateOverlay.hidden,#adminDashboardModal.hidden,#adminConfirmDeleteModal.hidden,#adminViewProgressModal.hidden,#headerAdminBtn.hidden,#rouletteModal.hidden,#musicWordModal.hidden,#settingsModal.hidden,#feedbackModal.hidden{display:none !important;}
   #view-auth,.login-container,.login-card,#authLoginForm,#authRegisterForm{position:relative !important;z-index:10000 !important;pointer-events:auto !important;}
@@ -1266,6 +1267,12 @@
   }
   }
 (function() {
+  try {
+    var _r = localStorage.getItem('user_role');
+    var _mu = localStorage.getItem('mastereng_user');
+    var _isG = (_r === 'guest') || !_mu || (_mu.indexOf('"guest"') !== -1) || (_mu.indexOf('"Invitado"') !== -1) || !!localStorage.getItem('guest_user');
+    if (document.body) document.body.classList.toggle('user-guest', _isG);
+  } catch (_) {}
   // 1. Control de Vistas
   window.navigateTo = function(viewId) {
   console.log("Navegando a:", viewId);
@@ -1294,7 +1301,8 @@
   var isReg = false;
   try {
   var u = JSON.parse(localStorage.getItem('mastereng_user') || 'null');
-  isReg = Boolean(u && u.role !== 'guest' && u.username !== 'Invitado');
+  var r = localStorage.getItem('user_role');
+  isReg = Boolean(u && u.role !== 'guest' && u.username !== 'Invitado' && r !== 'guest' && !localStorage.getItem('guest_user'));
   } catch(e) {}
   if (!isReg) {
   if (typeof window.showFloatingToast === 'function') {
@@ -1331,8 +1339,10 @@
   var isRegUser = false;
   try {
   var ur = JSON.parse(localStorage.getItem('mastereng_user') || 'null');
-  isRegUser = Boolean(ur && ur.role !== 'guest' && ur.username !== 'Invitado');
+  var role = localStorage.getItem('user_role');
+  isRegUser = Boolean(ur && ur.role !== 'guest' && ur.username !== 'Invitado' && role !== 'guest' && !localStorage.getItem('guest_user'));
   } catch(e) {}
+  if (document.body) document.body.classList.toggle('user-guest', !isRegUser);
   var showWidgets = !isLogin && isRegUser;
   var dock = document.getElementById('tutorRouletteDock');
   if (dock) {
