@@ -1481,3 +1481,35 @@ body.is-offline #offline-badge {
   to { transform: translateY(0); opacity: 1; }
 }
 
+
+
+/* ========================================================
+   EMERGENCY FIX: GLASS SHIELD DESTRUCTION (Z-INDEX & POINTER-EVENTS)
+   ======================================================== */
+
+/* 1. Forzar interactividad en todos los botones y enlaces */
+button, a, input[type="button"], input[type="submit"], .stanza-card {
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 50; /* Elevar botones por encima de contenedores vacíos */
+}
+
+/* 2. Evitar que los modales ocultos bloqueen la pantalla */
+.modal, .overlay, #login-modal, #user-profile-modal, #ai-lock-screen {
+  /* Si están ocultos con opacity o visibility, asegurar que no tapen clics */
+  pointer-events: none; 
+}
+
+/* 3. Reactivar clics solo cuando el modal esté activo (ajusta la clase activa según tu código) */
+.modal[style*="display: block"], 
+.modal[style*="display: flex"], 
+.modal.active, 
+#login-modal[style*="display: block"],
+#user-profile-modal[style*="display: block"] {
+  pointer-events: auto !important;
+}
+
+/* 4. Corregir el bloqueo offline para que no se desborde a toda la página */
+.offline-locked::after {
+  pointer-events: none; /* El mensaje visual no debe bloquear si el padre ya está deshabilitado */
+}
