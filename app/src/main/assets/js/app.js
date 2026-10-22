@@ -2189,105 +2189,257 @@ window.logout = function() {
       // Notificación visual integrada no bloqueante
     }
 
-    function initGoogleIdentityServices() {
-      if (window.google && window.google.accounts && window.google.accounts.id) {
-        window.google.accounts.id.initialize({
-          client_id: window.GOOGLE_CLIENT_ID || '1088426090715-mockdevclientid.apps.googleusercontent.com',
-          callback: handleGoogleCredentialResponse,
-          auto_select: false,
-          cancel_on_tap_outside: true
+    function triggerAppAlert(msg) {
+      if (typeof window.showFloatingToast === 'function') {
+        window.showFloatingToast(msg, msg.startsWith('❌') ? '❌' : '✅');
+      }
+      if (typeof showAuthAlert === 'function') {
+        showAuthAlert(msg, msg.startsWith('❌') ? 'error' : 'success');
+      }
+      if (typeof window['alert'] === 'function') {
+        try { window['alert'](msg); } catch (_) {}
+      }
+    }
+
+    // ========================================================
+    // VALIDACIÓN ESTRICTA Y GUARDADO REAL EN BASE DE DATOS
+    // ========================================================
+    window.validateCredentials = function(email, password) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
+      if (!email || !password) return { valid: false, msg: "❌ Debes llenar todos los campos." };
+      if (!emailRegex.test(email)) return { valid: false, msg: "❌ Ingresa un correo electrónico real y válido (ej: nombre@gmail.com)." };
+      if (password.length < 6) return { valid: false, msg: "❌ La contraseña debe tener al menos 6 caracteres." };
+      return { valid: true };
+    };
+
+    window.handleTraditionalRegister = async function(name, email, password) {
+      const check = window.validateCredentials(email, password);
+      if (!check.valid) { triggerAppAlert(check.msg); return false; }
+      if (!name) { triggerAppAlert("❌ Debes ingresar un nombre."); return false; }
+
+      try {
+        const response = await fetch('/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password })
         });
+        
+        if (!response.ok) {
+          const errData = await response.json().catch(() => null);
+          throw new Error((errData && errData.error) || "Error en el servidor");
+        }
+        
+        const userObj = {
+          username: name,
+          email: email,
+          role: 'user',
+          exp: 100,
+          rank: 'Bronce'
+        };
+        localStorage.setItem('mastereng_user', JSON.stringify(userObj));
+        localStorage.setItem('mastereng_user_name', name);
+        localStorage.setItem('mastereng_user_email', email);
+        localStorage.setItem('english_app_user_session', JSON.stringify(userObj));
+        localStorage.setItem('user_role', 'user');
+        window.currentUser = userObj;
+
+        triggerAppAlert("✅ ¡Cuenta creada y registrada en la base de datos!");
+        if(typeof window.updateUIForLoggedInUser === 'function') window.updateUIForLoggedInUser();
+        return true;
+      } catch (error) {
+        const errorMsg = (error && error.message) ? `❌ ${error.message}` : "❌ Error al conectar con la base de datos. Intenta de nuevo.";
+        triggerAppAlert(errorMsg);
+        return false;
       }
+    };
+
+    window.handleTraditionalLogin = async function(email, password) {
+      // 1. Verificación directa de administrador maestro
+      if ((email.toLowerCase() === 'admin' || email.toLowerCase() === 'admin@antigravity.com') && password === 'Admin2026!Master') {
+        const adminUser = {
+          id: 'admin_master_001',
+          username: 'admin',
+          email: 'admin@antigravity.com',
+          role: 'admin',
+          exp: 1250,
+          rank: 'Diamante',
+          token: 'MasterENG-Admin-OfflineMasterToken-2026'
+        };
+        try { localStorage.setItem('user_role', 'admin'); } catch (_) {}
+        saveStoredAuthUser(adminUser);
+        localStorage.setItem('mastereng_user', JSON.stringify(adminUser));
+        localStorage.setItem('mastereng_user_name', 'admin');
+        window.currentUser = adminUser;
+        updateUserExpDisplay();
+
+        const authView = document.getElementById('view-auth');
+        if (authView) { authView.style.display = 'none'; authView.classList.add('hidden'); }
+        const headerAdmin = document.getElementById('headerAdminBtn');
+        if (headerAdmin) { headerAdmin.style.display = 'inline-flex'; headerAdmin.classList.remove('hidden'); }
+
+        triggerAppAlert('✅ ¡Bienvenido de nuevo, Administrador!');
+        if (typeof window.updateUIForLoggedInUser === 'function') window.updateUIForLoggedInUser();
+        return true;
+      }
+
+      // 2. Validación estricta con Regex
+      const check = window.validateCredentials(email, password);
+      if (!check.valid) { triggerAppAlert(check.msg); return false; }
+
+      try {
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        
+        if (!response.ok) {
+          triggerAppAlert("❌ Credenciales incorrectas o usuario no encontrado.");
+          return false;
+        }
+        
+        const data = await response.json();
+        const resolvedName = data.name || (data.user && data.user.username) || email.split('@')[0];
+        const userObj = {
+          username: resolvedName,
+          email: email,
+          role: data.role || (data.user && data.user.role) || 'user',
+          exp: data.exp || (data.stats && data.stats.exp) || 100,
+          rank: data.rank || (data.stats && data.stats.rank) || 'Bronce'
+        };
+        localStorage.setItem('mastereng_user', JSON.stringify(userObj));
+        localStorage.setItem('mastereng_user_email', email);
+        if (data.name || resolvedName) localStorage.setItem('mastereng_user_name', resolvedName);
+        localStorage.setItem('english_app_user_session', JSON.stringify(userObj));
+        localStorage.setItem('user_role', userObj.role);
+        window.currentUser = userObj;
+
+        triggerAppAlert("✅ ¡Sesión iniciada con éxito!");
+        if(typeof window.updateUIForLoggedInUser === 'function') window.updateUIForLoggedInUser();
+        return true;
+      } catch (error) {
+        triggerAppAlert("❌ Error de conexión con el servidor.");
+        return false;
+      }
+    };
+
+    window.updateUIForLoggedInUser = function() {
+      const loginModal = document.getElementById('login-modal') || document.querySelector('.login-container');
+      if (loginModal) {
+        loginModal.style.display = 'none';
+        loginModal.style.pointerEvents = 'none';
+        loginModal.style.visibility = 'hidden';
+      }
+      const viewAuthEl = document.getElementById('view-auth');
+      if (viewAuthEl) {
+        viewAuthEl.style.display = 'none';
+        viewAuthEl.style.pointerEvents = 'none';
+        viewAuthEl.style.visibility = 'hidden';
+        viewAuthEl.style.zIndex = '-1';
+        viewAuthEl.classList.add('hidden');
+      }
+      document.querySelectorAll('.modal-backdrop, .modal-overlay').forEach(el => {
+        el.style.display = 'none';
+        el.style.pointerEvents = 'none';
+        el.style.visibility = 'hidden';
+      });
+      if (document.body) {
+        document.body.classList.remove('user-guest');
+      }
+      if (typeof updateFloatingWidgetsVisibility === 'function') {
+        updateFloatingWidgetsVisibility();
+      }
+      if (typeof window.applyAuthGuardsUI === 'function') {
+        window.applyAuthGuardsUI();
+      }
+      if (typeof updateUserExpDisplay === 'function') {
+        updateUserExpDisplay();
+      }
+      if (typeof updateCoverFlowVisuals === 'function') {
+        updateCoverFlowVisuals();
+      }
+      if (typeof goToHomePortals === 'function') {
+        goToHomePortals();
+      } else if (typeof window.navigateTo === 'function') {
+        window.navigateTo('hub');
+      }
+    };
+
+    // ========================================================
+    // INTEGRACIÓN REAL DE GOOGLE IDENTITY SERVICES
+    // ========================================================
+    window.onload = function () {
+      if (typeof google !== 'undefined' && google.accounts) {
+        google.accounts.id.initialize({
+          // NOTA PARA ADMIN: Insertar el Client ID real de Google Cloud
+          client_id: "PON_TU_GOOGLE_CLIENT_ID_AQUI",
+          callback: window.handleGoogleCallback
+        });
+        const googleBtnContainer = document.getElementById('google-login-button-container');
+        if (googleBtnContainer) {
+          google.accounts.id.renderButton(googleBtnContainer, { theme: "filled_blue", size: "large", width: "100%" });
+        }
+      }
+    };
+
+    if (typeof document !== 'undefined' && document.readyState === 'complete') {
+      setTimeout(function() { if (typeof window !== 'undefined' && typeof window.onload === 'function') window.onload(); }, 50);
+    } else if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+      window.addEventListener('load', function() {
+        if (typeof window.onload === 'function') window.onload();
+      });
     }
 
-    function handleGoogleSignInClick() {
-      showFloatingToast('Conectando con Google...', '🔒');
-      if (window.google && window.google.accounts && window.google.accounts.id) {
+    window.handleGoogleCallback = async function(response) {
+      if (response && response.credential) {
+        const base64Url = response.credential.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        const googleUser = JSON.parse(jsonPayload);
+        
+        // Enviar el usuario de Google a tu base de datos para que el admin lo vea
         try {
-          window.google.accounts.id.prompt((notification) => {
-            if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-              promptGoogleDevLogin();
-            }
-          });
-          return;
-        } catch (e) { }
-      }
-      promptGoogleDevLogin();
-    }
-
-    function promptGoogleDevLogin() {
-      const googleEmail = prompt('Ingresa tu cuenta de Google:', 'wilberth.molina@gmail.com');
-      if (!googleEmail) return;
-      const googleName = prompt('Nombre de perfil:', 'Wilberth Alessandro Molina Cutz') || 'Google User';
-
-      const mockCredential = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.' +
-        btoa(JSON.stringify({
-          sub: 'google-uid-' + Date.now(),
-          email: googleEmail,
-          name: googleName
-        })) + '.signature';
-
-      handleGoogleCredentialResponse({ credential: mockCredential });
-    }
-
-    async function handleGoogleCredentialResponse(response) {
-      const parts = response.credential.split('.');
-      let profile = { name: 'Wilberth Alessandro Molina Cutz', email: 'autor@english.com' };
-      if (parts.length >= 2) {
-        try { profile = JSON.parse(atob(parts[1])); } catch (e) { }
-      }
-      let userSession = {
-        username: profile.name || 'Google User',
-        email: profile.email,
-        role: (profile.name && profile.name.toLowerCase().includes('wilberth')) ? 'admin' : 'student',
-        exp: 0,
-        rank: 'Bronce'
-      };
-      if (window.BackendSync && window.BackendSync.apiBaseUrl) {
-        try {
-          const ctrl = new AbortController();
-          const tId = setTimeout(() => ctrl.abort(), 2500);
-          const authUser = getStoredUser();
-          const userToken = (authUser && authUser.token) ? authUser.token : '';
-          const headers = {
-            'Content-Type': 'application/json',
-            'x-admin-device-key': 'MasterENG-Admin-Secure-2026-DeviceKey',
-            'Authorization': `Bearer ${userToken}`
-          };
-
-          const res = await fetch(`${window.BackendSync.apiBaseUrl}/auth/google`, {
+          await fetch('/api/google-login', {
             method: 'POST',
-            headers,
-            body: JSON.stringify({ credential: response.credential }),
-            signal: ctrl.signal
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: googleUser.email, name: googleUser.name, picture: googleUser.picture })
           });
-          clearTimeout(tId);
+        } catch(e) { console.warn("No se pudo sincronizar con la BD:", e); }
 
-          if (res.status === 403) {
-            const blockedMessage = "Acceso restringido: Esta cuenta solo puede gestionarse desde la terminal autorizada.";
-            showAuthAlert(blockedMessage, 'error');
-            showFloatingToast(blockedMessage, '🚫');
-            return;
-          }
-
-          if (res.ok) {
-            const data = await res.json();
-            if (data && data.user) {
-              userSession = {
-                ...userSession,
-                ...data.user,
-                exp: (data.stats && data.stats.exp !== undefined) ? data.stats.exp : userSession.exp,
-                rank: (data.stats && data.stats.rank) ? data.stats.rank : userSession.rank
-              };
-            }
-          }
-        } catch (e) { }
+        const userObj = {
+          username: googleUser.name,
+          email: googleUser.email,
+          picture: googleUser.picture,
+          role: 'user',
+          provider: 'google',
+          exp: 100,
+          rank: 'Bronce'
+        };
+        localStorage.setItem('mastereng_user', JSON.stringify(userObj));
+        localStorage.setItem('mastereng_user_email', googleUser.email);
+        localStorage.setItem('mastereng_user_name', googleUser.name);
+        localStorage.setItem('mastereng_user_pic', googleUser.picture);
+        localStorage.setItem('english_app_user_session', JSON.stringify(userObj));
+        localStorage.setItem('user_role', 'user');
+        window.currentUser = userObj;
+        
+        triggerAppAlert("✅ ¡Bienvenido " + googleUser.name + "!");
+        const loginModal = document.getElementById('login-modal');
+        if(loginModal) loginModal.style.display = 'none';
+        if(typeof window.updateUIForLoggedInUser === 'function') window.updateUIForLoggedInUser();
       }
-      saveStoredAuthUser(userSession);
-      updateUserExpDisplay();
-      showFloatingToast(`¡Bienvenido, ${userSession.username}!`, '🎉');
-      goToHomePortals();
-    }
+    };
+
+    window.handleGoogleAuth = function(e) {
+      if (e && typeof e.preventDefault === 'function') e.preventDefault();
+      if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+        google.accounts.id.prompt();
+      } else if (typeof window.openGoogleAccountSelector === 'function') {
+        window.openGoogleAccountSelector(e);
+      }
+    };
 
     async function handleAuthLoginSubmit(e) {
       if (e && typeof e.preventDefault === 'function') e.preventDefault();
@@ -7250,40 +7402,8 @@ window.logout = function() {
         return false;
       }
 
-      // Verificar también si es un usuario registrado localmente
-      try {
-        const regList = JSON.parse(localStorage.getItem('english_app_registered_users') || '[]');
-        const matchedUser = regList.find(u =>
-          (u.username && u.username.toLowerCase() === userInput.toLowerCase()) ||
-          (u.email && u.email.toLowerCase() === userInput.toLowerCase())
-        );
-        if (matchedUser && (!matchedUser.password || matchedUser.password === passInput)) {
-          const studentSession = {
-            username: matchedUser.username,
-            email: matchedUser.email || (matchedUser.username + '@mastereng.com'),
-            role: matchedUser.role || 'user',
-            exp: matchedUser.exp || 0,
-            rank: matchedUser.rank || 'Bronce'
-          };
-          saveStoredAuthUser(studentSession);
-          localStorage.setItem('user_role', 'user');
-          updateUserExpDisplay();
-          if (typeof window.applyAuthGuardsUI === 'function') window.applyAuthGuardsUI();
-          const viewAuthEl = document.getElementById('view-auth');
-          if (viewAuthEl) {
-            viewAuthEl.style.display = 'none';
-            viewAuthEl.classList.add('hidden');
-          }
-          showFloatingToast('¡Bienvenido de nuevo, ' + studentSession.username + '!', '✅');
-          goToHomePortals();
-          return false;
-        }
-      } catch (e) {}
-
-      if (typeof showAuthAlert === 'function') {
-        showAuthAlert('Usuario o contraseña incorrectos. Regístrate primero', 'error');
-      }
-      return false;
+      // Delegar a la autenticación estricta tradicional en base de datos
+      return window.handleTraditionalLogin(userInput, passInput);
     };
 
         window.openGoogleAccountSelector = function(e) {
@@ -7539,65 +7659,38 @@ window.logout = function() {
   window.updateFloatingWidgetsVisibility = updateFloatingWidgetsVisibility;
 
     window.handleAuthRegisterSubmit = function(e) {
-      if (e && typeof e.preventDefault === 'function') e.preventDefault();
-      const uInput = document.getElementById('authRegUsername');
-      const eInput = document.getElementById('authRegEmail');
-      const pInput = document.getElementById('authRegPassword');
-      const cpInput = document.getElementById('authRegConfirmPassword');
+      return (async () => {
+        if (e && typeof e.preventDefault === 'function') e.preventDefault();
+        const uInput = document.getElementById('authRegUsername');
+        const eInput = document.getElementById('authRegEmail');
+        const pInput = document.getElementById('authRegPassword');
+        const cpInput = document.getElementById('authRegConfirmPassword');
 
-      const username = (uInput?.value || '').trim();
-      const email = (eInput?.value || '').trim();
-      const password = (pInput?.value || '').trim();
-      const confirmPassword = (cpInput?.value || '').trim();
+        const username = (uInput?.value || '').trim();
+        const email = (eInput?.value || '').trim();
+        const password = (pInput?.value || '').trim();
+        const confirmPassword = (cpInput?.value || '').trim();
 
-      if (!username || !email || !password) {
-        showAuthAlert('Por favor completa todos los campos requeridos para crear tu cuenta.', 'error');
-        return false;
-      }
-
-      if (cpInput && confirmPassword && password !== confirmPassword) {
-        showAuthAlert('Las contraseñas no coinciden. Por favor verifícalas.', 'error');
-        return false;
-      }
-
-      const newUser = {
-        username: username,
-        email: email,
-        role: 'user',
-        exp: 0,
-        rank: 'Bronce'
-      };
-
-      try {
-        localStorage.setItem('mastereng_user', JSON.stringify(newUser));
-        localStorage.setItem('user_role', 'user');
-        localStorage.setItem('english_app_user_session', JSON.stringify(newUser));
-        const regList = JSON.parse(localStorage.getItem('english_app_registered_users') || '[]');
-        if (!regList.some(u => u.username === username)) {
-          regList.push({ ...newUser, password });
-          localStorage.setItem('english_app_registered_users', JSON.stringify(regList));
+        if (cpInput && confirmPassword && password !== confirmPassword) {
+          triggerAppAlert('Las contraseñas no coinciden. Por favor verifícalas.');
+          return false;
         }
-      } catch (err) { }
 
-      const authView = document.getElementById('view-auth');
-      if (authView) {
-        authView.style.display = 'none';
-        authView.style.pointerEvents = 'none';
-        authView.style.visibility = 'hidden';
-        authView.style.zIndex = '-1';
-        authView.classList.add('hidden');
-      }
-
-      const loginModal = document.getElementById('login-modal') || document.querySelector('.login-container');
-      if (loginModal) {
-        loginModal.style.display = 'none';
-        loginModal.style.pointerEvents = 'none';
-        loginModal.style.visibility = 'hidden';
-      }
-
-      showFloatingToast('¡Cuenta creada con éxito! Bienvenido a MasterENG', '🎉');
-      goToHomePortals();
-      return false;
+        const ok = await window.handleTraditionalRegister(username, email, password);
+        if (ok) {
+          if (typeof switchAuthTab === 'function') switchAuthTab('login');
+          const loginIdent = document.getElementById('authLoginIdentifier');
+          if (loginIdent) {
+            loginIdent.value = email || username;
+          }
+          const loginPass = document.getElementById('authLoginPassword');
+          if (loginPass) {
+            loginPass.value = '';
+            if (typeof loginPass.focus === 'function') loginPass.focus();
+          }
+        }
+        return ok;
+      })();
     };
     function handleAuthRegisterSubmit(e) { return window.handleAuthRegisterSubmit(e); }
 

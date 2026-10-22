@@ -1387,3 +1387,19 @@ body.user-guest #rouletteModal {
   pointer-events: none !important;
   opacity: 0 !important;
 }
+
+
+/* ========================================================
+   GOOGLE IDENTITY SERVICES BUTTON CONTAINER
+   ======================================================== */
+#google-login-button-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 1.25rem;
+  min-height: 44px;
+}
+#google-login-button-container iframe {
+  margin: 0 auto !important;
+}

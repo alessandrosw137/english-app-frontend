@@ -418,12 +418,12 @@ app.get('/api/app/version', (req, res) => {
   });
 });
 
-// 2. POST /api/auth/register
-app.post('/api/auth/register', async (req, res) => {
+// 2. POST /api/auth/register & POST /api/register
+const handleRegisterEndpoint = async (req, res) => {
   let client = null;
   try {
-    const { username, email, password, role } = req.body || {};
-    const cleanUser = String(username || '').trim();
+    const { username, name, email, password, role } = req.body || {};
+    const cleanUser = String(username || name || (email ? email.split('@')[0] : '')).trim();
     const cleanEmail = String(email || '').trim().toLowerCase();
     const cleanPass = password !== undefined && password !== null ? String(password) : '';
 
@@ -563,13 +563,15 @@ app.post('/api/auth/register', async (req, res) => {
   } finally {
     if (client) client.release();
   }
-});
+};
+app.post('/api/auth/register', handleRegisterEndpoint);
+app.post('/api/register', handleRegisterEndpoint);
 
-// 3. POST /api/auth/login
-app.post('/api/auth/login', async (req, res) => {
+// 3. POST /api/auth/login & POST /api/login
+const handleLoginEndpoint = async (req, res) => {
   try {
     const { username, identifier, email, password } = req.body || {};
-    const userIdent = String(identifier || username || email || '').trim();
+    const userIdent = String(email || identifier || username || '').trim();
     const rawPass = password !== undefined && password !== null ? String(password) : '';
 
     // Queda terminantemente prohibido autorizar cadenas vacías
@@ -689,15 +691,22 @@ app.post('/api/auth/login', async (req, res) => {
     console.error('❌ [AUTH-LOGIN] Error en login:', err.message);
     return handleDatabaseError(res, err, 'Error al procesar el inicio de sesión.');
   }
-});
+};
+app.post('/api/auth/login', handleLoginEndpoint);
+app.post('/api/login', handleLoginEndpoint);
 
-// 3.1. POST /api/auth/google
+// 3.1. POST /api/auth/google & POST /api/google-login
 // Maneja autenticación real con Google Identity Services (GIS)
-app.post('/api/auth/google', async (req, res) => {
+const handleGoogleAuthEndpoint = async (req, res) => {
   let client = null;
   try {
-    const { credential, profile } = req.body || {};
+    const { credential, profile, email, name, picture } = req.body || {};
     let googleData = profile || {};
+    if (email) {
+      googleData.email = email;
+      googleData.name = name || email.split('@')[0];
+      googleData.picture = picture;
+    }
 
     // Si se envió el token JWT de Google, decodificar payload
     if (credential && typeof credential === 'string') {
@@ -874,7 +883,9 @@ app.post('/api/auth/google', async (req, res) => {
   } finally {
     if (client) client.release();
   }
-});
+};
+app.post('/api/auth/google', handleGoogleAuthEndpoint);
+app.post('/api/google-login', handleGoogleAuthEndpoint);
 
 // 4. POST /api/progress & POST /api/progress/sync
 // Actualización periódica de puntos de EXP, nivel y rachas sin bloqueos de concurrencia.
