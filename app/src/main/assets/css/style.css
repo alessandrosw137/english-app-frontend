@@ -1588,3 +1588,26 @@ header button, #mainHeader button, #headerAdminBtn, #headerProfileBtn, #headerSe
 .offline-locked::after {
   pointer-events: none !important;
 }
+
+/* ========================================================
+   DESBLOQUEO GLOBAL DE CLICS (ELIMINAR GLASS SHIELD)
+   ======================================================== */
+html, body {
+  pointer-events: auto !important;
+  overflow-x: hidden;
+}
+button, a, input, select, textarea, [role="button"], .stanza-card, .portal-card {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  position: relative;
+}
+/* Todo modal u overlay oculto jamás debe capturar clics */
+.modal:not(.active)[style*="display: none"],
+.overlay:not(.active)[style*="display: none"],
+#login-modal[style*="display: none"],
+#user-profile-modal[style*="display: none"],
+#ai-lock-screen[style*="display: none"] {
+  pointer-events: none !important;
+  z-index: -1 !important;
+  display: none !important;
+}

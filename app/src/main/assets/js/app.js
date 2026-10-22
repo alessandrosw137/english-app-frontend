@@ -2603,9 +2603,9 @@ window.logout = function() {
     window.onload = function () {
   try {
     // Inicialización de Google Auth segura
-    if (typeof google !== 'undefined' && google.accounts) {
+    if (typeof google !== 'undefined' && google.accounts && typeof window.GOOGLE_CLIENT_ID === 'string' && !window.GOOGLE_CLIENT_ID.includes('PON_TU')) {
       google.accounts.id.initialize({
-        client_id: "PON_TU_GOOGLE_CLIENT_ID_AQUI", // Reemplazar luego
+        client_id: window.GOOGLE_CLIENT_ID,
         callback: window.handleGoogleCallback
       });
       const googleBtnContainer = document.getElementById('google-login-button-container');
@@ -12100,3 +12100,169 @@ if (typeof window !== 'undefined' && typeof window.addEventListener === 'functio
     } catch(e) { console.warn("Error en auto-login:", e); }
   });
 }
+
+
+// --- INICIO DEL MOTOR UNIVERSAL DE NAVEGACIÓN Y DESBLOQUEO ---
+(function() {
+  // 1. Motor de cambio de pantallas
+  window.switchMasterView = function(viewName) {
+    if (typeof window.navigateTo === 'function') {
+      try { window.navigateTo(viewName); } catch (_) {}
+    }
+    if (typeof window.showView === 'function') {
+      try { window.showView(viewName); } catch (_) {}
+    }
+    const viewMap = {
+      'hub': 'view-hub',
+      'home': 'view-home',
+      'learning': 'view-learning',
+      'learning-path': 'view-learning',
+      'stories': 'view-stories',
+      'music': 'view-music',
+      'world3d': 'view-world3d',
+      'ai-tutor': 'ai-tutor-view'
+    };
+    const targetId = viewMap[viewName] || viewName;
+    document.querySelectorAll('.app-view, [id^="view-"]').forEach(v => {
+      v.style.display = 'none';
+      v.classList.add('hidden');
+    });
+    const targetView = document.getElementById(targetId) || document.getElementById('view-' + viewName);
+    if (targetView) {
+      targetView.style.display = 'block';
+      targetView.classList.remove('hidden');
+    }
+    if (viewName === 'music-search') {
+      const searchView = document.getElementById('music-search-subview') || document.querySelector('[id*="music-search"], [id*="music"]');
+      if (searchView) {
+        searchView.style.display = 'block';
+        searchView.classList.remove('hidden');
+      }
+    }
+  };
+
+  // 2. Cerrar sesión garantizado
+  window.handleLogout = function(e) {
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+    try {
+      localStorage.removeItem('mastereng_user');
+      localStorage.removeItem('mastereng_user_name');
+      localStorage.removeItem('mastereng_user_pic');
+      localStorage.removeItem('mastereng_role');
+      localStorage.removeItem('user_role');
+      localStorage.removeItem('english_app_user_session');
+      localStorage.removeItem('guest_user');
+      window.aiChatHistory = [];
+    } catch (_) {}
+    if (typeof window.logout === 'function') {
+      try { window.logout(); } catch (_) {}
+    }
+    if (typeof window.showFloatingToast === 'function') {
+      window.showFloatingToast('👋 Has cerrado sesión correctamente.');
+    }
+    if (typeof window.navigateTo === 'function') {
+      try { window.navigateTo('login'); } catch (_) {}
+    }
+    const authView = document.getElementById('view-auth') || document.getElementById('login-view');
+    if (authView) {
+      authView.style.display = 'flex';
+      authView.classList.remove('hidden');
+    }
+    const headerAdmin = document.getElementById('headerAdminBtn');
+    if (headerAdmin) {
+      headerAdmin.style.display = 'none';
+      headerAdmin.classList.add('hidden');
+    }
+  };
+
+  // 3. Panel de Administrador Funcional conectado a Base de Datos / LocalStorage
+  window.openAdminPanel = async function(e) {
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+    if (typeof window.openAdminDashboardModal === 'function') {
+      return window.openAdminDashboardModal(e);
+    }
+    const modal = document.getElementById('adminDashboardModal') || document.getElementById('admin-dashboard-view');
+    if (modal) {
+      modal.classList.remove('hidden');
+      modal.classList.add('active');
+      modal.style.removeProperty('display');
+      modal.style.setProperty('display', 'flex', 'important');
+      modal.style.setProperty('visibility', 'visible', 'important');
+      modal.style.setProperty('pointer-events', 'auto', 'important');
+      modal.style.setProperty('z-index', '100005', 'important');
+    }
+  };
+
+  // 4. Asegurar enlace global de Google Account Selector
+  if (typeof window.openGoogleAccountSelector !== 'function') {
+    window.openGoogleAccountSelector = function(e) {
+      if (e && typeof e.preventDefault === 'function') e.preventDefault();
+      if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+      const modal = document.getElementById('googleAccountPickerModal');
+      if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.remove('hidden');
+        modal.classList.add('active');
+      }
+    };
+  }
+
+  // 5. DELEGACIÓN GLOBAL DE CLICS EN FASE DE CAPTURA (RESCATA TODOS LOS BOTONES DE LA PÁGINA)
+  if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+    document.addEventListener('click', function(e) {
+      const btn = e.target && e.target.closest ? e.target.closest('button, a, [role="button"], .btn, .portal-btn') : null;
+      if (!btn) return;
+
+      const text = (btn.innerText || btn.textContent || '').trim().toLowerCase();
+
+      // Botón: Cerrar Sesión
+      if (text.includes('cerrar sesión') || text.includes('cerrar sesion')) {
+        window.handleLogout(e);
+        return;
+      }
+
+      // Botón: Panel Admin
+      if (text.includes('panel admin')) {
+        window.openAdminPanel(e);
+        return;
+      }
+
+      // Botón: Volver al Buscador de Música
+      if (text.includes('volver al buscador')) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        window.switchMasterView('music-search');
+        return;
+      }
+
+      // Botón: Volver a Portales / Volver al Hub
+      if (text.includes('volver a portales') || text.includes('volver al hub') || text.includes('volver al inicio')) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        window.switchMasterView('hub');
+        return;
+      }
+
+      // Botón: Iniciar sesión con Google
+      if (text.includes('google') && btn.id !== 'googleAccountPickerCancelBtn' && !btn.id.includes('g-oauth')) {
+        if (typeof window.openGoogleAccountSelector === 'function') {
+          window.openGoogleAccountSelector(e);
+          return;
+        }
+      }
+
+      // Botón: Cerrar cualquier Modal con "×" o "X"
+      if (text === '×' || text === 'x' || text === '✕' || (btn.classList && (btn.classList.contains('close-modal') || btn.classList.contains('btn-close') || btn.classList.contains('close-btn')))) {
+        const parentModal = btn.closest('.modal, [id*="modal"], [class*="modal"], [style*="position: fixed"]');
+        if (parentModal && parentModal.id !== 'adminDashboardModal' && parentModal.id !== 'admin-dashboard-view') {
+          parentModal.style.display = 'none';
+          if (parentModal.classList) {
+            parentModal.classList.remove('active');
+            parentModal.classList.add('hidden');
+          }
+        }
+      }
+    }, true); // true = Fase de captura
+  }
+})();
+// --- FIN DEL MOTOR UNIVERSAL ---
