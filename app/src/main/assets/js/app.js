@@ -696,9 +696,8 @@
       // Control condicional del botón "⚙️ Panel Admin"
       const adminBtn = document.getElementById('headerAdminBtn');
       if (adminBtn) {
-        const storedRole = (typeof localStorage !== 'undefined') ? localStorage.getItem('user_role') : null;
-        const isUserAdmin = (user && (user.role === 'admin' || user.username === 'admin' || (user.email && (user.email.includes('alessandro') || user.email.includes('admin'))))) || storedRole === 'admin';
-        if (isUserAdmin || (user && user.role === 'admin')) {
+        const isUserAdmin = Boolean(user && user.role === 'admin' && user.username === 'admin');
+        if (isUserAdmin && user.role === 'admin') {
           adminBtn.style.display = 'inline-flex';
           adminBtn.classList.remove('hidden');
         } else {
@@ -818,8 +817,7 @@
       _lastAdminOpenTime = now;
 
       let user = getStoredUser();
-      let storedRole = (typeof localStorage !== 'undefined') ? localStorage.getItem('user_role') : null;
-      const isRecognizedAdmin = (user && (user.role === 'admin' || user.username === 'admin' || (user.email && (user.email.includes('admin') || user.email.includes('alessandro'))))) || storedRole === 'admin';
+      const isRecognizedAdmin = Boolean(user && user.role === 'admin' && user.username === 'admin');
 
       if (!isRecognizedAdmin) {
         const pass = (typeof window !== 'undefined' && typeof window['prompt'] === 'function')
@@ -1464,6 +1462,17 @@
       if (typeof updateFloatingWidgetsVisibility === 'function') {
         updateFloatingWidgetsVisibility();
       }
+      const activeUser = (typeof getStoredUser === 'function') ? getStoredUser() : null;
+      const headerAdmin = document.getElementById('headerAdminBtn');
+      if (headerAdmin) {
+        if (activeUser && activeUser.role === 'admin' && activeUser.username === 'admin') {
+          headerAdmin.style.display = 'inline-flex';
+          headerAdmin.classList.remove('hidden');
+        } else {
+          headerAdmin.style.display = 'none';
+          headerAdmin.classList.add('hidden');
+        }
+      }
 
       if (targetId === 'view-home' || viewId === 'hub' || viewId === 'hub-view') {
         if (typeof window.showPortal === 'function') {
@@ -1528,6 +1537,11 @@ window.logout = function() {
         localStorage.removeItem('english_app_user_session');
         localStorage.removeItem('guest_user');
       } catch (e) {}
+      const headerAdmin = document.getElementById('headerAdminBtn');
+      if (headerAdmin) {
+        headerAdmin.style.display = 'none';
+        headerAdmin.classList.add('hidden');
+      }
       window.closeAllModals();
       window.navigateTo('login');
     };
@@ -2414,6 +2428,17 @@ window.logout = function() {
       if (typeof updateFloatingWidgetsVisibility === 'function') {
         updateFloatingWidgetsVisibility();
       }
+      const activeUser = (typeof getStoredUser === 'function') ? getStoredUser() : null;
+      const headerAdmin = document.getElementById('headerAdminBtn');
+      if (headerAdmin) {
+        if (activeUser && activeUser.role === 'admin' && activeUser.username === 'admin') {
+          headerAdmin.style.display = 'inline-flex';
+          headerAdmin.classList.remove('hidden');
+        } else {
+          headerAdmin.style.display = 'none';
+          headerAdmin.classList.add('hidden');
+        }
+      }
       if (typeof window.applyAuthGuardsUI === 'function') {
         window.applyAuthGuardsUI();
       }
@@ -2985,7 +3010,7 @@ window.logout = function() {
         const exp = parseInt(user.exp, 10) || 0;
         const rankInfo = typeof calculateRankInfo === 'function' ? calculateRankInfo(exp) : { rank: 'Bronce', medal: '🥉', title: 'Novato', progressPercent: 0 };
         const level = Math.floor(exp / 100) + 1;
-        const isAdmin = user.role === 'admin' || (user.email && (user.email.includes('alessandro') || user.email.includes('admin'))) || (typeof localStorage !== 'undefined' && localStorage.getItem('user_role') === 'admin');
+        const isAdmin = Boolean(user && user.role === 'admin' && user.username === 'admin');
 
         container.innerHTML = `
           <div class="flex items-center gap-4 p-4 rounded-2xl bg-slate-800/80 border border-slate-700/60 shadow-lg">
@@ -3099,6 +3124,17 @@ window.logout = function() {
       }
       if (typeof updateFloatingWidgetsVisibility === 'function') {
         updateFloatingWidgetsVisibility();
+      }
+      const activeUser = (typeof getStoredUser === 'function') ? getStoredUser() : null;
+      const headerAdmin = document.getElementById('headerAdminBtn');
+      if (headerAdmin) {
+        if (activeUser && activeUser.role === 'admin' && activeUser.username === 'admin') {
+          headerAdmin.style.display = 'inline-flex';
+          headerAdmin.classList.remove('hidden');
+        } else {
+          headerAdmin.style.display = 'none';
+          headerAdmin.classList.add('hidden');
+        }
       }
       if (typeof showFloatingToast === 'function') {
         showFloatingToast('Sesión cerrada correctamente', '👋');
@@ -7416,6 +7452,12 @@ window.logout = function() {
         el.classList.add('hidden');
       });
 
+      const headerAdmin = document.getElementById('headerAdminBtn');
+      if (headerAdmin) {
+        headerAdmin.style.display = 'none';
+        headerAdmin.classList.add('hidden');
+      }
+
       if (typeof updateUserExpDisplay === 'function') updateUserExpDisplay();
       if (typeof updateCoverFlowVisuals === 'function') updateCoverFlowVisuals();
       if (typeof window.applyAuthGuardsUI === 'function') window.applyAuthGuardsUI();
@@ -7648,14 +7690,11 @@ window.logout = function() {
       const realExp = (existingStored && existingStored.email === finalEmail && typeof existingStored.exp === 'number') ? existingStored.exp : 0;
       const rankInfo = typeof calculateRankInfo === 'function' ? calculateRankInfo(realExp) : { rank: 'Bronce' };
 
-      const isAlessandroAdmin = finalEmail.includes('alessandro') || finalEmail.includes('admin') || finalName.toLowerCase().includes('alessandro');
-      const assignedRole = isAlessandroAdmin ? 'admin' : 'user';
-
       const googleUser = {
         username: finalName,
         email: finalEmail,
         picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(finalName)}&background=0284c7&color=fff&bold=true`,
-        role: assignedRole,
+        role: 'user',
         provider: 'google',
         exp: realExp,
         rank: rankInfo.rank
@@ -7663,13 +7702,19 @@ window.logout = function() {
 
       try {
         saveStoredAuthUser(googleUser);
-        localStorage.setItem('user_role', googleUser.role);
+        localStorage.setItem('user_role', 'user');
         const regList = JSON.parse(localStorage.getItem('english_app_registered_users') || '[]');
         if (!regList.some(u => u.email === finalEmail)) {
           regList.push(googleUser);
           localStorage.setItem('english_app_registered_users', JSON.stringify(regList));
         }
       } catch (e) {}
+
+      const headerAdmin = document.getElementById('headerAdminBtn');
+      if (headerAdmin) {
+        headerAdmin.style.display = 'none';
+        headerAdmin.classList.add('hidden');
+      }
 
       const pickerModal = document.getElementById('googleAccountPickerModal');
       if (pickerModal) {
@@ -11383,6 +11428,17 @@ window.logout = function() {
     const isRegistered = window.isUserRegistered();
     if (document.body) {
       document.body.classList.toggle('user-guest', !isRegistered);
+    }
+    const activeUser = (typeof getStoredUser === 'function') ? getStoredUser() : null;
+    const headerAdmin = document.getElementById('headerAdminBtn');
+    if (headerAdmin) {
+      if (activeUser && activeUser.role === 'admin' && activeUser.username === 'admin') {
+        headerAdmin.style.display = 'inline-flex';
+        headerAdmin.classList.remove('hidden');
+      } else {
+        headerAdmin.style.display = 'none';
+        headerAdmin.classList.add('hidden');
+      }
     }
     if (typeof updateFloatingWidgetsVisibility === 'function') {
       updateFloatingWidgetsVisibility();
