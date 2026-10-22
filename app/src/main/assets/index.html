@@ -1493,8 +1493,9 @@
   if (e.target.closest('#headerAdminBtn, [data-action="open-admin"]')) {
   e.preventDefault();
   if (e.stopPropagation) e.stopPropagation();
+  window.closeAllModals();
   if (typeof window.openAdminDashboardModal === 'function') {
-  window.openAdminDashboardModal();
+  window.openAdminDashboardModal(e);
   }
   return;
   }

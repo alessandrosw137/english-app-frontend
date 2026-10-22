@@ -865,7 +865,7 @@
     function isCurrentUserAdmin() {
       try {
         if (localStorage.getItem('user_role') === 'admin') return true;
-        const raw = localStorage.getItem(AUTH_STORAGE_KEY) || localStorage.getItem('mastereng_user');
+        const raw = localStorage.getItem('english_app_user_session') || localStorage.getItem('mastereng_user');
         if (raw) {
           try {
             const u = JSON.parse(raw);
@@ -1001,8 +1001,9 @@
       }
     };
 
-    function openAdminDashboardModal() {
+    function openAdminDashboardModal(e) {
       try {
+        if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
         if (window.event && window.event.stopPropagation) window.event.stopPropagation();
       } catch (_) {}
       if (isCurrentUserAdmin()) {
@@ -3187,7 +3188,7 @@ window.logout = function() {
 
           <div class="pt-2 space-y-2.5">
             ${isAdmin ? `
-              <button type="button" onclick="openAdminDashboardModal();" data-action="open-admin"
+              <button type="button" onclick="event.stopPropagation(); window.closeAllModals(); openAdminDashboardModal(event);" data-action="open-admin"
                 class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 via-purple-600 to-indigo-600 hover:from-amber-400 hover:via-purple-500 hover:to-indigo-500 text-white font-bold text-xs transition shadow-lg shadow-purple-600/30 flex items-center justify-center gap-2 cursor-pointer active:scale-95 border border-amber-300/40">
                 <span>⚙️</span>
                 <span>Panel Admin</span>
@@ -7894,7 +7895,7 @@ window.logout = function() {
     window.handleGoogleAuth = function(e) {
       return window.openGoogleAccountSelector(e);
     };
-    handleGoogleSignInClick = function(e) {
+    window.handleGoogleSignInClick = function(e) {
       return window.openGoogleAccountSelector(e);
     };
 

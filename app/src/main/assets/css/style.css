@@ -1484,32 +1484,107 @@ body.is-offline #offline-badge {
 
 
 /* ========================================================
-   EMERGENCY FIX: GLASS SHIELD DESTRUCTION (Z-INDEX & POINTER-EVENTS)
+   EMERGENCY FIX: GLASS SHIELD DESTRUCTION & TOTAL INTERACTIVITY
    ======================================================== */
 
-/* 1. Forzar interactividad en todos los botones y enlaces */
-button, a, input[type="button"], input[type="submit"], .stanza-card {
+/* 1. Forzar interactividad y respuesta tactil inmediata en botones y enlaces */
+button, a, [role="button"], input[type="button"], input[type="submit"], .stanza-card, .portal-btn, .carousel-btn, .close-btn {
   pointer-events: auto !important;
-  position: relative;
-  z-index: 50; /* Elevar botones por encima de contenedores vacíos */
+  cursor: pointer !important;
+  -webkit-tap-highlight-color: rgba(56, 189, 248, 0.2);
+  touch-action: manipulation;
 }
 
-/* 2. Evitar que los modales ocultos bloqueen la pantalla */
-.modal, .overlay, #login-modal, #user-profile-modal, #ai-lock-screen {
-  /* Si están ocultos con opacity o visibility, asegurar que no tapen clics */
-  pointer-events: none; 
+/* 2. Header, navbar y sus botones elevados por encima del coverflow y containers */
+header, #mainHeader, .top-bar, .navbar {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  z-index: 99999 !important;
+  pointer-events: auto !important;
 }
 
-/* 3. Reactivar clics solo cuando el modal esté activo (ajusta la clase activa según tu código) */
+header button, #mainHeader button, #headerAdminBtn, #headerProfileBtn, #headerSettingsBtn {
+  position: relative !important;
+  z-index: 100000 !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+/* 3. Modales activos: maxima visibilidad, z-index superior e interactividad */
+.modal:not(.hidden),
 .modal[style*="display: block"], 
 .modal[style*="display: flex"], 
 .modal.active, 
 #login-modal[style*="display: block"],
-#user-profile-modal[style*="display: block"] {
+#user-profile-modal[style*="display: block"],
+#profileModal:not(.hidden),
+#adminDashboardModal:not(.hidden),
+#adminDashboardModal.active,
+#adminSecurityPromptModal:not(.hidden),
+#settingsModal:not(.hidden),
+#rouletteModal:not(.hidden),
+#chatbotWindow:not(.hidden),
+#adminConfirmDeleteModal:not(.hidden),
+#adminViewProgressModal:not(.hidden) {
+  display: flex !important;
+  visibility: visible !important;
   pointer-events: auto !important;
+  z-index: 100005 !important;
 }
 
-/* 4. Corregir el bloqueo offline para que no se desborde a toda la página */
+/* Contenedores interiores de modales y tarjetas activas */
+.modal:not(.hidden) > div,
+.modal.active > div,
+#adminDashboardModal:not(.hidden) > div,
+#profileModal:not(.hidden) > div,
+#settingsModal:not(.hidden) > div {
+  pointer-events: auto !important;
+  position: relative !important;
+  z-index: 100006 !important;
+}
+
+/* Botones dentro de cualquier modal activo: elevacion total y clic asegurado */
+.modal:not(.hidden) button,
+.modal.active button,
+#adminDashboardModal:not(.hidden) button,
+#profileModal:not(.hidden) button,
+#settingsModal:not(.hidden) button,
+#adminDashboardModal button,
+#profileModal button {
+  pointer-events: auto !important;
+  position: relative !important;
+  z-index: 100007 !important;
+  cursor: pointer !important;
+}
+
+/* 4. Modales ocultos: destruidos y completamente transparentes a clics */
+.modal.hidden,
+.modal[style*="display: none"],
+.overlay,
+#login-modal.hidden,
+#user-profile-modal.hidden,
+#ai-lock-screen.hidden,
+#adminDashboardModal.hidden,
+#adminDashboardModal[style*="display: none"],
+#profileModal.hidden,
+#profileModal[style*="display: none"],
+#settingsModal.hidden,
+#settingsModal[style*="display: none"],
+#rouletteModal.hidden,
+#chatbotWindow.hidden,
+#adminConfirmDeleteModal.hidden,
+#adminViewProgressModal.hidden,
+.modal-backdrop.hidden,
+.modal-overlay.hidden {
+  display: none !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+  z-index: -1 !important;
+}
+
+/* 5. Asegurar que las etiquetas offline no desborden a toda la pagina */
 .offline-locked::after {
-  pointer-events: none; /* El mensaje visual no debe bloquear si el padre ya está deshabilitado */
+  pointer-events: none !important;
 }
