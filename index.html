@@ -96,7 +96,7 @@
   <span class="text-slate-500 font-normal">|</span>
   <span id="headerUserExp" class="text-amber-400">0 EXP</span>
   </div>
-  <button id="headerAdminBtn" onclick="openAdminDashboardModal()" style="display: none;" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-purple-600 to-indigo-600 hover:from-amber-400 hover:via-purple-500 hover:to-indigo-500 text-white font-bold text-xs transition shadow-lg shadow-purple-600/40 cursor-pointer active:scale-95 border border-amber-300/50 hidden">
+  <button id="headerAdminBtn" onclick="openAdminDashboardModal()" style="display: none;" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-purple-600 to-indigo-600 hover:from-amber-400 hover:via-purple-500 hover:to-indigo-500 text-white font-bold text-xs transition shadow-lg shadow-purple-600/40 cursor-pointer active:scale-95 border border-amber-300/50 hidden" data-action="open-admin">
   <span>⚙️ Panel Admin</span>
   </button>
   <button id="headerProfileBtn" data-action="open-profile" onclick="window.renderUserProfile(); toggleModal('profile-modal');" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-semibold text-xs transition shadow-md shadow-sky-600/30 cursor-pointer active:scale-95" data-action="openProfileModal">
@@ -1433,8 +1433,14 @@
   // 5. Escuchador Maestro de Clics por Delegación
   document.addEventListener('click', function(e) {
   // Botón cerrar modal (X) o backdrop
-  var closeBtn = e.target.closest('.close-btn, [data-action="close"], button.close, button[onclick*="closeAllModals"], button[onclick*="closeModal"]');
-  if (closeBtn || e.target.classList.contains('modal-backdrop') || e.target.classList.contains('modal-overlay')) {
+  var closeBtn = e.target.closest('.close-btn, [data-action="close"], button.close');
+  if (!closeBtn) {
+    var candClose = e.target.closest('button[onclick*="closeAllModals"], button[onclick*="closeModal"]');
+    if (candClose && !candClose.closest('#headerAdminBtn, [data-action="open-admin"], [onclick*="openAdminDashboardModal"]')) {
+      closeBtn = candClose;
+    }
+  }
+  if (closeBtn || ((e.target.classList.contains('modal-backdrop') || e.target.classList.contains('modal-overlay')) && !e.target.closest('#adminDashboardModal, #adminConfirmDeleteModal, #adminViewProgressModal, #adminSecurityPromptModal'))) {
   e.preventDefault();
   window.closeAllModals();
   return;
@@ -1485,6 +1491,7 @@
   // Botón Panel Admin del Header (Apertura en 0ms)
   if (e.target.closest('#headerAdminBtn, [data-action="open-admin"]')) {
   e.preventDefault();
+  if (e.stopPropagation) e.stopPropagation();
   if (typeof window.openAdminDashboardModal === 'function') {
   window.openAdminDashboardModal();
   }

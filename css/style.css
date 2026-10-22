@@ -139,6 +139,17 @@
     #musicWordModal:not(.hidden),
     #adminDashboardModal:not(.hidden) {
       display: flex !important;
+      visibility: visible !important;
+      pointer-events: auto !important;
+      opacity: 1 !important;
+    }
+
+    #adminDashboardModal {
+      z-index: 100005 !important;
+    }
+
+    #adminSecurityPromptModal {
+      z-index: 100010 !important;
     }
 
     /* Utilidades mínimas de interfaz dark slate */
