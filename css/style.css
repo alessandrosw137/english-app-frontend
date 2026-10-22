@@ -1403,3 +1403,69 @@ body.user-guest #rouletteModal {
 #google-login-button-container iframe {
   margin: 0 auto !important;
 }
+
+/* ========================================================
+   OFFLINE MODE, NETWORK LOCKS & PWA AUTO-UPDATE TOAST
+   ======================================================== */
+#offline-badge {
+  display: none;
+  background: linear-gradient(90deg, #dc2626, #b91c1c);
+  color: #ffffff;
+  text-align: center;
+  padding: 8px 14px;
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+  position: sticky;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 99999;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+}
+
+body.is-offline #offline-badge {
+  display: block !important;
+}
+
+.offline-locked {
+  opacity: 0.55 !important;
+  pointer-events: none !important;
+  position: relative !important;
+  cursor: not-allowed !important;
+  filter: grayscale(0.7) !important;
+}
+
+.offline-locked::after {
+  content: " 🔒 (Solo Online)";
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #f87171;
+  display: inline-block;
+  margin-left: 6px;
+}
+
+.update-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #ffffff;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.88rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  z-index: 100000;
+  animation: slideUpToast 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+@keyframes slideUpToast {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+

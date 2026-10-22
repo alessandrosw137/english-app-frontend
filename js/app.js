@@ -1846,6 +1846,12 @@ window.logout = function() {
           if (typeof window.openAuthModal === 'function') window.openAuthModal('login');
           return;
         }
+        if (modules[index] === 'ai-tutor' && typeof navigator !== 'undefined' && navigator.onLine === false) {
+          if (typeof showFloatingToast === 'function') {
+            showFloatingToast('⚠️ El Tutor IA requiere conexión a internet.', '🔒');
+          }
+          return;
+        }
         if (typeof window.openPortalModules === 'function') {
           window.openPortalModules(modules[index]);
         }
@@ -1919,6 +1925,12 @@ window.logout = function() {
           }
           if (typeof window.openAuthModal === 'function') {
             window.openAuthModal('login');
+          }
+          return;
+        }
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+          if (typeof showFloatingToast === 'function') {
+            showFloatingToast('⚠️ El Tutor IA requiere conexión a internet.', '🔒');
           }
           return;
         }
@@ -7337,11 +7349,19 @@ window.logout = function() {
         });
       }
 
-            syncSettingsUiFromStorage();
+      syncSettingsUiFromStorage();
+      if (typeof window.updateNetworkStatus === 'function') {
+        window.updateNetworkStatus();
+      }
+      const isReg = (typeof window.isUserRegistered === 'function') ? window.isUserRegistered() : false;
       const stored = getStoredUser();
-      if (stored && stored.username) {
-        updateUserExpDisplay();
-        goToHomePortals();
+      if (isReg || (stored && stored.username && stored.role !== 'guest')) {
+        if (typeof window.updateUIForLoggedInUser === 'function') {
+          window.updateUIForLoggedInUser();
+        } else {
+          updateUserExpDisplay();
+          goToHomePortals();
+        }
       } else {
         window.navigateTo('login');
       }
@@ -10121,6 +10141,12 @@ window.logout = function() {
     };
 
     window.searchGlobalMusic = async function(term) {
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        if (typeof showFloatingToast === 'function') {
+          showFloatingToast('⚠️ La búsqueda de música requiere conexión a internet.', '🔒');
+        }
+        return;
+      }
       const inputEl = document.getElementById('musicSearchInput');
       const query = (typeof term === 'string' ? term : (inputEl ? inputEl.value : '')).trim();
       const resultsGrid = document.getElementById('musicResultsGrid') || document.querySelector('.music-results-grid');
@@ -10925,6 +10951,53 @@ window.logout = function() {
   window.aiTutorSpeechRecognition = null;
   window.isAiTutorListening = false;
 
+  window.getAiChatUserKey = function() {
+    try {
+      const raw = localStorage.getItem('mastereng_user');
+      if (!raw) return 'ai_chat_guest';
+      const u = JSON.parse(raw);
+      const emailOrName = (u.email || u.username || 'user').trim().toLowerCase();
+      return `ai_chat_${emailOrName}`;
+    } catch (_) {
+      const rawStr = (localStorage.getItem('mastereng_user') || 'user').trim().toLowerCase();
+      return `ai_chat_${rawStr}`;
+    }
+  };
+
+  window.loadUserChatHistory = function() {
+    try {
+      const key = window.getAiChatUserKey();
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        const data = JSON.parse(raw);
+        if (Array.isArray(data.messages) && data.messages.length > 0) {
+          window.aiTutorMessages = data.messages;
+        }
+        if (Array.isArray(data.history) && data.history.length > 0) {
+          window.aiChatHistory = data.history;
+        }
+        return true;
+      }
+    } catch (e) {
+      console.warn('Error loading user AI chat:', e);
+    }
+    return false;
+  };
+
+  window.saveUserChatHistory = function() {
+    try {
+      const key = window.getAiChatUserKey();
+      const payload = {
+        messages: window.aiTutorMessages || [],
+        history: window.aiChatHistory || [],
+        lastUpdated: Date.now()
+      };
+      localStorage.setItem(key, JSON.stringify(payload));
+    } catch (e) {
+      console.warn('Error saving user AI chat:', e);
+    }
+  };
+
   window.initAiTutorChat = function() {
     if (typeof window.isUserRegistered === 'function' && !window.isUserRegistered()) {
       const tutorView = document.getElementById('ai-tutor-view');
@@ -10944,7 +11017,8 @@ window.logout = function() {
     }
     const container = document.getElementById('aiTutorChatMessages');
     if (!container) return;
-    if (!window.aiTutorMessages || window.aiTutorMessages.length === 0) {
+    const hasLoaded = window.loadUserChatHistory();
+    if (!hasLoaded || !window.aiTutorMessages || window.aiTutorMessages.length === 0) {
       window.aiTutorMessages = [
         {
           role: 'model',
@@ -11044,6 +11118,10 @@ window.logout = function() {
         text: "Chat cleared! Let's start fresh. What would you like to practice today in English?"
       }
     ];
+    window.aiChatHistory = [];
+    if (typeof window.saveUserChatHistory === 'function') {
+      window.saveUserChatHistory();
+    }
     window.renderAiTutorMessages();
   };
 
@@ -11140,6 +11218,15 @@ window.logout = function() {
     // 1. Agregar mensaje de usuario con timestamp y marca de voz
     window.aiTutorMessages.push({ role: 'user', text, isVoice: Boolean(isVoice), time: timeStr });
     window.renderAiTutorMessages();
+    if (typeof window.saveUserChatHistory === 'function') {
+      window.saveUserChatHistory();
+    }
+
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      if (typeof showFloatingToast === 'function') {
+        showFloatingToast('⚠️ Sin conexión. El Tutor IA responderá al reconectar.', '🔒');
+      }
+    }
 
     // 2. Mostrar indicador de pensamiento
     const typingEl = document.getElementById('aiTutorTypingStatus');
@@ -11172,6 +11259,9 @@ window.logout = function() {
      ======================================================== */
   window.saveAiChatToDailyStorage = function() {
     try {
+      if (typeof window.saveUserChatHistory === 'function') {
+        window.saveUserChatHistory();
+      }
       const todayStr = new Date().toISOString().split('T')[0];
       const storageKey = `ai_chat_history_${todayStr}`;
       const payload = {
@@ -11638,8 +11728,51 @@ window.logout = function() {
   };
 
   /* ========================================================
-     3. SINCRONIZACIÓN OFFLINE DE BASE DE DATOS (FEEDBACK Y CHAT)
+     3. SINCRONIZACIÓN OFFLINE DE BASE DE DATOS Y ESTADO DE RED
      ======================================================== */
+  window.updateNetworkStatus = function() {
+    const isOnline = (typeof navigator !== 'undefined' && typeof navigator.onLine === 'boolean') ? navigator.onLine : true;
+    const badge = document.getElementById('offline-badge');
+    const connDot = document.getElementById('headerConnDot');
+    const connText = document.getElementById('headerConnText');
+
+    if (!isOnline) {
+      if (document.body) document.body.classList.add('is-offline');
+      if (badge) badge.style.display = 'block';
+      if (connDot) {
+        connDot.className = 'w-2 h-2 rounded-full bg-rose-500';
+      }
+      if (connText) connText.textContent = 'Offline';
+
+      document.querySelectorAll('.requires-network').forEach(el => {
+        el.classList.add('offline-locked');
+        if (el.tagName === 'INPUT' || el.tagName === 'BUTTON') {
+          el.setAttribute('data-offline-disabled', 'true');
+          el.disabled = true;
+        }
+      });
+    } else {
+      if (document.body) document.body.classList.remove('is-offline');
+      if (badge) badge.style.display = 'none';
+      if (connDot) {
+        connDot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+      }
+      if (connText) connText.textContent = 'Online';
+
+      document.querySelectorAll('.requires-network').forEach(el => {
+        el.classList.remove('offline-locked');
+        if (el.getAttribute('data-offline-disabled') === 'true') {
+          el.removeAttribute('data-offline-disabled');
+          if (typeof window.isUserRegistered === 'function' && window.isUserRegistered()) {
+            el.disabled = false;
+          } else if (!el.id.includes('aiTutor') && !el.id.includes('musicSearch')) {
+            el.disabled = false;
+          }
+        }
+      });
+    }
+  };
+
   // Cola de sincronización offline
   window.saveToDatabase = function(endpoint, data) {
     const isOnline = (typeof navigator !== 'undefined' && typeof navigator.onLine === 'boolean') ? navigator.onLine : true;
@@ -11666,6 +11799,9 @@ window.logout = function() {
   // Sincronizar automáticamente al recuperar conexión
   if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
     window.addEventListener('online', () => {
+      if (typeof window.updateNetworkStatus === 'function') {
+        window.updateNetworkStatus();
+      }
       try {
         const queue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
         if (queue.length > 0) {
@@ -11680,15 +11816,42 @@ window.logout = function() {
         }
       } catch (_) {}
     });
+
+    window.addEventListener('offline', () => {
+      if (typeof window.updateNetworkStatus === 'function') {
+        window.updateNetworkStatus();
+      }
+    });
   }
 
   /* ========================================================
-     4. PWA SERVICE WORKER REGISTRATION
+     4. PWA SERVICE WORKER REGISTRATION (AUTO-UPDATE & NETWORK-FIRST)
      ======================================================== */
   if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').then((reg) => {
-      if (reg) reg.update();
-    }).catch(err => console.warn('SW registration failed:', err));
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').then((reg) => {
+        if (!reg) return;
+        reg.onupdatefound = () => {
+          const installingWorker = reg.installing;
+          if (!installingWorker) return;
+          installingWorker.onstatechange = () => {
+            if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              console.log("Nueva actualización disponible. Recargando app...");
+              const toast = document.createElement('div');
+              toast.className = 'update-toast';
+              toast.innerText = '🚀 Aplicando nueva actualización...';
+              document.body.appendChild(toast);
+              setTimeout(() => {
+                window.location.reload();
+              }, 1500);
+            }
+          };
+        };
+        if (typeof reg.update === 'function') {
+          reg.update().catch(() => {});
+        }
+      }).catch(err => console.warn('SW registration failed:', err));
+    });
   }
 
   })();

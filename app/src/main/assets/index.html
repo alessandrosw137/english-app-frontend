@@ -72,6 +72,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body class="bg-[#0f172a] text-slate-100 min-h-screen flex flex-col">
+  <div id="offline-badge">⚠️ Estás usando la app sin conexión. Algunas funciones están limitadas.</div>
   <header id="mainHeader" class="navbar top-bar fixed top-0 left-0 right-0 z-50 bg-[#0f172a]/95 backdrop-blur-md border-b border-slate-800/80 h-14 flex items-center justify-between px-3 sm:px-6">
   <div class="flex items-center gap-3">
   <div onclick="handleLogoClick()" class="flex items-center gap-2.5 cursor-pointer group">
@@ -183,7 +184,7 @@
   Plataforma inmersiva de inglés &bull; MasterENG &bull; Wilberth Alessandro Molina Cutz
   </p>
   </div>
-  <div id="google-login-button-container" class="mb-5 w-full flex justify-center min-h-[44px]"></div>
+  <div id="google-login-button-container" class="requires-network mb-5 w-full flex justify-center min-h-[44px]"></div>
   <div class="auth-divider my-4" style="display: flex; align-items: center; gap: 1rem; white-space: nowrap; width: 100%;">
   <div class="auth-divider-line border-t border-slate-700/80 flex-1"></div>
   <span class="auth-divider-text bg-[#0f172a] px-3 text-[11px] text-slate-400 uppercase tracking-widest font-semibold whitespace-nowrap shrink-0">O CONTINUAR CON CUENTA</span>
@@ -329,7 +330,7 @@
   <button type="button" onclick="event.stopPropagation(); window.openPortalModules('music');" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-cyan-500/30 cursor-pointer" data-action="enter-portal" data-portal="music">ENTRAR AL PORTAL</button>
   </div>
   </div>
-  <div id="coverCard-3" onclick="handleCoverCardClick(3)" class="coverflow-portal-card portal-card portal-card-3 side-left" style="--portal-glow: rgba(56, 189, 248, 0.45);">
+  <div id="coverCard-3" onclick="handleCoverCardClick(3)" class="coverflow-portal-card portal-card portal-card-3 side-left requires-network" style="--portal-glow: rgba(56, 189, 248, 0.45);">
   <div class="w-full h-full flex flex-col justify-between relative overflow-hidden group">
   <div class="absolute -top-12 -right-12 w-36 h-36 bg-sky-500/20 rounded-full blur-2xl pointer-events-none"></div>
   <div>
@@ -577,7 +578,7 @@
   <div class="relative w-full" id="musicSearchBoxWrapper">
   <div class="flex flex-col sm:flex-row gap-2.5">
   <div class="relative flex-1">
-  <input type="text" id="musicSearchInput" oninput="handleMusicSearchInput(this.value)" onfocus="handleMusicSearchInput(this.value)" onkeydown="handleMusicSearchKey(event)" placeholder="Busca 'Losing My Religion', 'Coldplay', 'Queen', 'Adele' o pega enlace/ID de YouTube..." class="w-full pl-10 pr-9 py-3 rounded-2xl bg-slate-800/90 border border-slate-700 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition shadow-inner" autocomplete="off">
+  <input type="text" id="musicSearchInput" oninput="handleMusicSearchInput(this.value)" onfocus="handleMusicSearchInput(this.value)" onkeydown="handleMusicSearchKey(event)" placeholder="Busca 'Losing My Religion', 'Coldplay', 'Queen', 'Adele' o pega enlace/ID de YouTube..." class="requires-network w-full pl-10 pr-9 py-3 rounded-2xl bg-slate-800/90 border border-slate-700 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition shadow-inner" autocomplete="off">
   <span class="absolute left-3.5 top-3.5 text-slate-400 text-sm pointer-events-none">🔍</span>
   <button id="musicSearchClearBtn" type="button" onclick="clearMusicSearchInput()" class="hidden absolute right-3 top-3 w-6 h-6 rounded-full bg-slate-700/80 hover:bg-slate-600 text-slate-300 hover:text-white text-xs items-center justify-center transition cursor-pointer" title="Limpiar búsqueda">✕</button>
   </div>

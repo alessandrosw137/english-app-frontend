@@ -1,4 +1,5 @@
-const CACHE_NAME = 'mastereng-v1';
+// mastereng-v1 Service Worker Network-First with Auto-Cache Cleanup
+const CACHE_NAME = 'mastereng-v1-cache-v3-' + Date.now();
 const ASSETS = [
   './',
   './index.html',
@@ -16,13 +17,13 @@ self.addEventListener('install', (e) => {
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.map((k) => (k !== CACHE_NAME ? caches.delete(k) : Promise.resolve())))
+      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
     ).then(() => self.clients.claim())
   );
 });
 
 self.addEventListener('fetch', (e) => {
-  if (e.request.method !== 'GET') return;
+  if (e.request.method !== 'GET' || !e.request.url.startsWith('http')) return;
   e.respondWith(
     fetch(e.request)
       .then((networkRes) => {
@@ -32,6 +33,6 @@ self.addEventListener('fetch', (e) => {
         }
         return networkRes;
       })
-      .catch(() => caches.match(e.request).then((res) => res || fetch(e.request)))
+      .catch(() => caches.match(e.request))
   );
 });
