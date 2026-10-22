@@ -84,6 +84,7 @@ try {
       process.exit(1);
     } else {
       console.log('\n🎉 ¡TODOS LOS REQUISITOS V25 VERIFICADOS AL 100%!\n');
+      process.exit(0);
     }
   })();
 } catch (e) {

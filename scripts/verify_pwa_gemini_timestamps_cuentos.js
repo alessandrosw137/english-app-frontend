@@ -265,4 +265,5 @@ if (passedChecks !== totalChecks) {
   process.exit(1);
 } else {
   console.log('🎉 ¡TODOS LOS REQUISITOS PWA, TUTOR IA RÁPIDO, SIDEBAR Y AUTH GUARDS VERIFICADOS AL 100%!');
+  process.exit(0);
 }

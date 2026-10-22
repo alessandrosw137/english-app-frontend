@@ -699,11 +699,11 @@
         const isUserAdmin = Boolean(
           user && (
             user.role === 'admin' ||
-            (user.username && ['admin', 'alessandro'].includes(String(user.username).toLowerCase())) ||
-            (user.email && (String(user.email).toLowerCase() === 'admin@antigravity.com' || String(user.email).toLowerCase().includes('admin') || String(user.email).toLowerCase().includes('alessandro')))
+            (user.username && ['admin'].includes(String(user.username).toLowerCase())) ||
+            (user.email && (String(user.email).toLowerCase() === 'admin@antigravity.com' || String(user.email).toLowerCase().includes('admin') || String(user.email).toLowerCase() === 'admin@mastereng.com'))
           )
         );
-        if (isUserAdmin && (user.role === 'admin' || (user.username && ['admin', 'alessandro'].includes(String(user.username).toLowerCase())))) {
+        if (isUserAdmin && (user.role === 'admin' || (user.username && ['admin'].includes(String(user.username).toLowerCase())))) {
           adminBtn.style.display = 'inline-flex';
           adminBtn.classList.remove('hidden');
         } else {
@@ -862,29 +862,42 @@
     }
 
     let _lastAdminOpenTime = 0;
-    function isCurrentUserAdmin() {
+    
+window.ADMIN_EMAIL = 'admin@mastereng.com';
+
+window.isCurrentUserAdmin = function() {
+  try {
+    const rawRole = (localStorage.getItem('user_role') || '').trim().toLowerCase();
+    const rawSession = localStorage.getItem('english_app_user_session') || localStorage.getItem('mastereng_user') || '';
+    if (rawSession) {
       try {
-        if (localStorage.getItem('user_role') === 'admin') return true;
-        const raw = localStorage.getItem('english_app_user_session') || localStorage.getItem('mastereng_user');
-        if (raw) {
-          try {
-            const u = JSON.parse(raw);
-            if (u && (u.role === 'admin' || (u.username && ['admin', 'alessandro'].includes(String(u.username).toLowerCase())) || (u.email && (String(u.email).toLowerCase() === 'admin@antigravity.com' || String(u.email).toLowerCase().includes('admin') || String(u.email).toLowerCase().includes('alessandro'))))) {
-              return true;
-            }
-          } catch (_) {
-            const str = String(raw).toLowerCase();
-            if (str.includes('admin') || str.includes('alessandro')) return true;
+        const u = JSON.parse(rawSession);
+        if (u) {
+          const uRole = String(u.role || '').trim().toLowerCase();
+          const uEmail = String(u.email || '').trim().toLowerCase();
+          const uName = String(u.username || '').trim().toLowerCase();
+          // Cuentas de Google o usuarios normales NUNCA son administradores
+          if (uRole === 'user' || u.isGoogleUser === true || (uEmail && !uEmail.includes('admin') && !uEmail.includes('mastereng'))) {
+            return false;
           }
+          if (uEmail === window.ADMIN_EMAIL || uEmail === 'admin@antigravity.com') return true;
+          if (uRole === 'admin' && (uEmail === window.ADMIN_EMAIL || uEmail === 'admin@antigravity.com' || uName === 'admin')) return true;
+          return false;
         }
-        const rawName = (localStorage.getItem('mastereng_user_name') || '').toLowerCase();
-        if (rawName && ['admin', 'alessandro'].includes(rawName)) return true;
-        const rawEmail = (localStorage.getItem('mastereng_user_email') || '').toLowerCase();
-        if (rawEmail && (rawEmail === 'admin@antigravity.com' || rawEmail.includes('admin') || rawEmail.includes('alessandro'))) return true;
-      } catch (_) {}
-      return false;
+      } catch (_) {
+        const rawStr = rawSession.trim().toLowerCase();
+        if (rawStr === window.ADMIN_EMAIL || rawStr === 'admin@antigravity.com') return true;
+      }
     }
-    window.isCurrentUserAdmin = isCurrentUserAdmin;
+    const rawEmail = (localStorage.getItem('mastereng_user_email') || '').trim().toLowerCase();
+    if (rawEmail === window.ADMIN_EMAIL || rawEmail === 'admin@antigravity.com') return true;
+    const rawName = (localStorage.getItem('mastereng_user_name') || '').trim().toLowerCase();
+    if (rawName === 'admin' && rawRole === 'admin') return true;
+  } catch (_) {}
+  return false;
+};
+
+  function isCurrentUserAdmin() { return window.isCurrentUserAdmin(); }
 
     function executeOpenAdminDashboard() {
       document.querySelectorAll('#profileModal, #settingsModal, #feedbackModal, #rouletteModal, #glossaryModal, #learningMissionModal, #musicWordModal, #chatbotWindow, #googleAccountPickerModal, #adminSecurityPromptModal').forEach(m => {
@@ -1597,7 +1610,7 @@
       const activeUser = (typeof getStoredUser === 'function') ? getStoredUser() : null;
       const headerAdmin = document.getElementById('headerAdminBtn');
       if (headerAdmin) {
-        const isActAdmin = Boolean(activeUser && (activeUser.role === 'admin' || (activeUser.username && ['admin', 'alessandro'].includes(String(activeUser.username).toLowerCase()))));
+        const isActAdmin = Boolean(activeUser && (activeUser.role === 'admin' || (activeUser.username && ['admin'].includes(String(activeUser.username).toLowerCase()))));
         if (isActAdmin) {
           headerAdmin.style.display = 'inline-flex';
           headerAdmin.classList.remove('hidden');
@@ -2304,7 +2317,7 @@ window.logout = function() {
           if (parsed && typeof parsed === 'object') return parsed;
           return { username: String(parsed), email: String(parsed), role: localStorage.getItem('user_role') || (String(parsed).toLowerCase().includes('admin') ? 'admin' : 'user') };
         } catch (_) {
-          const role = localStorage.getItem('user_role') || (String(raw).toLowerCase().includes('admin') || String(raw).toLowerCase().includes('alessandro') ? 'admin' : 'user');
+          const role = localStorage.getItem('user_role') || (String(raw).toLowerCase().includes('admin') || 'user');
           return { username: raw, email: raw, role: role };
         }
       } catch (e) {
@@ -2470,9 +2483,7 @@ window.logout = function() {
       const isMasterAdmin = (
         (email.toLowerCase() === 'admin' ||
          email.toLowerCase() === 'admin@antigravity.com' ||
-         email.toLowerCase() === 'alessandrosanchezweb@gmail.com' ||
-         email.toLowerCase() === 'alessandrosw7613@gmail.com' ||
-         email.toLowerCase().includes('alessandro')) &&
+         email.toLowerCase() === 'admin@mastereng.com') &&
         password === 'Admin2026!Master'
       );
       if (isMasterAdmin) {
@@ -2572,7 +2583,7 @@ window.logout = function() {
       const activeUser = (typeof getStoredUser === 'function') ? getStoredUser() : null;
       const headerAdmin = document.getElementById('headerAdminBtn');
       if (headerAdmin) {
-        const isActAdmin = Boolean(activeUser && (activeUser.role === 'admin' || (activeUser.username && ['admin', 'alessandro'].includes(String(activeUser.username).toLowerCase()))));
+        const isActAdmin = Boolean(activeUser && (activeUser.role === 'admin' || (activeUser.username && ['admin'].includes(String(activeUser.username).toLowerCase()))));
         if (isActAdmin) {
           headerAdmin.style.display = 'inline-flex';
           headerAdmin.classList.remove('hidden');
@@ -3149,7 +3160,7 @@ window.logout = function() {
         const exp = parseInt(user.exp, 10) || 0;
         const rankInfo = typeof calculateRankInfo === 'function' ? calculateRankInfo(exp) : { rank: 'Bronce', medal: '🥉', title: 'Novato', progressPercent: 0 };
         const level = Math.floor(exp / 100) + 1;
-        const isAdmin = Boolean(user && (user.role === 'admin' || (user.username && ['admin', 'alessandro'].includes(String(user.username).toLowerCase())) || (user.email && (String(user.email).toLowerCase() === 'admin@antigravity.com' || String(user.email).toLowerCase().includes('admin') || String(user.email).toLowerCase().includes('alessandro')))));
+        const isAdmin = Boolean(user && (user.role === 'admin' || (user.username && ['admin'].includes(String(user.username).toLowerCase())) || (user.email && (String(user.email).toLowerCase() === 'admin@antigravity.com' || String(user.email).toLowerCase().includes('admin') || String(user.email).toLowerCase() === 'admin@mastereng.com'))));
 
         container.innerHTML = `
           <div class="flex items-center gap-4 p-4 rounded-2xl bg-slate-800/80 border border-slate-700/60 shadow-lg">
@@ -3267,7 +3278,7 @@ window.logout = function() {
       const activeUser = (typeof getStoredUser === 'function') ? getStoredUser() : null;
       const headerAdmin = document.getElementById('headerAdminBtn');
       if (headerAdmin) {
-        const isActAdmin = Boolean(activeUser && (activeUser.role === 'admin' || (activeUser.username && ['admin', 'alessandro'].includes(String(activeUser.username).toLowerCase()))));
+        const isActAdmin = Boolean(activeUser && (activeUser.role === 'admin' || (activeUser.username && ['admin'].includes(String(activeUser.username).toLowerCase()))));
         if (isActAdmin) {
           headerAdmin.style.display = 'inline-flex';
           headerAdmin.classList.remove('hidden');
@@ -3580,7 +3591,8 @@ window.logout = function() {
       sendChatbotMessage();
     }
 
-    function sendChatbotMessage() {
+    
+    async function sendChatbotMessage() {
       const input = document.getElementById('chatbotInput');
       const container = document.getElementById('chatbotMessagesContainer');
       if (!input || !container) return;
@@ -3589,33 +3601,62 @@ window.logout = function() {
       if (!userText) return;
 
       const userDiv = document.createElement('div');
-      userDiv.className = 'bg-sky-600/90 text-white p-2.5 rounded-2xl rounded-tr-none ml-auto max-w-[85%] font-medium';
+      userDiv.className = 'bg-sky-600/90 text-white p-2.5 rounded-2xl rounded-tr-none ml-auto max-w-[85%] font-medium text-xs';
       userDiv.textContent = userText;
       container.appendChild(userDiv);
       input.value = '';
       container.scrollTop = container.scrollHeight;
 
-      setTimeout(() => {
-        let answer = "Excelente pregunta. En inglés, la práctica contextual diaria es la clave para la fluidez.";
-        const lower = userText.toLowerCase();
+      // Mensaje temporal de carga
+      const loadingDiv = document.createElement('div');
+      loadingDiv.className = 'bg-slate-800 p-2.5 rounded-2xl rounded-tl-none border border-slate-700 text-slate-300 max-w-[90%] text-xs';
+      loadingDiv.innerHTML = '<span class="inline-flex items-center gap-1.5"><span class="animate-pulse">🤖 Buscando en el diccionario...</span></span>';
+      container.appendChild(loadingDiv);
+      container.scrollTop = container.scrollHeight;
 
-        if (lower.includes('make') || lower.includes('do')) {
-          answer = "'Do' se utiliza para acciones, obligaciones y tareas (ej. do homework, do exercise). 'Make' se utiliza para crear, construir o producir un resultado nuevo (ej. make coffee, make a decision).";
-        } else if (lower.includes('phrasal')) {
-          answer = "Los 5 phrasal verbs esenciales: 1) 'Give up' (Rendirse), 2) 'Look for' (Buscar), 3) 'Carry on' (Continuar), 4) 'Find out' (Descubrir), 5) 'Turn down' (Rechazar o bajar volumen).";
-        } else if (lower.includes('toefl')) {
-          answer = "Tip TOEFL: En la sección de lectura, identifica la idea principal de cada párrafo antes de responder. En comprensión auditiva, toma notas de conectores de contraste como 'however', 'although' o 'nevertheless'.";
-        } else if (lower.includes('exp') || lower.includes('puntos')) {
-          answer = "Ganas EXP completando misiones aprobadas (+20 EXP), practicando pronunciación en cuentos (+50 EXP), retos en música (+30 EXP) y preguntas en la ruleta (+15 EXP).";
+      const lower = userText.toLowerCase().trim();
+      let answerHtml = '';
+
+      if (lower.includes('make') && lower.includes('do')) {
+        answerHtml = "<strong>💡 'Make' vs 'Do':</strong><br>'Do' se utiliza para acciones, obligaciones y tareas (ej. <em>do homework</em>, <em>do exercise</em>).<br>'Make' se utiliza para crear, construir o producir un resultado nuevo (ej. <em>make coffee</em>, <em>make a decision</em>).";
+      } else if (lower.includes('phrasal')) {
+        answerHtml = "<strong>📚 Top 5 Phrasal Verbs:</strong><br>1) <em>Give up</em> (Rendirse)<br>2) <em>Look for</em> (Buscar)<br>3) <em>Carry on</em> (Continuar)<br>4) <em>Find out</em> (Descubrir)<br>5) <em>Turn down</em> (Rechazar/Bajar volumen).";
+      } else if (lower.includes('toefl')) {
+        answerHtml = "<strong>🎯 Tip TOEFL:</strong><br>En lectura, identifica la idea principal de cada párrafo antes de responder. En comprensión auditiva, anota conectores de contraste como <em>however</em>, <em>although</em> o <em>nevertheless</em>.";
+      } else if (lower.includes('exp') || lower.includes('puntos')) {
+        answerHtml = "<strong>⭐ Ganar EXP:</strong><br>Ganas EXP completando misiones (+20 EXP), pronunciación en cuentos (+50 EXP), retos en música (+30 EXP) y preguntas en la ruleta (+15 EXP).";
+      } else {
+        // Asistente de vocabulario / palabra
+        try {
+          const cleanWord = userText.replace(/[¿?¡!]/g, '').trim();
+          let translated = '';
+          if (typeof window.translateTextToSpanish === 'function') {
+            translated = await window.translateTextToSpanish(cleanWord);
+          }
+          if (!translated || translated.toLowerCase() === cleanWord.toLowerCase()) {
+            translated = 'Traducción y significado en contexto';
+          }
+          
+          const safeWord = cleanWord.replace(/'/g, "\\'");
+          answerHtml = `
+            <div class="space-y-1.5">
+              <div class="font-bold text-sky-300 text-[13px] flex items-center justify-between">
+                <span>📖 ${cleanWord}</span>
+                <button type="button" onclick="window.speakSynthesisText('${safeWord}')" class="px-2 py-0.5 rounded-lg bg-sky-600/60 hover:bg-sky-500 text-white text-[10px] transition cursor-pointer">🔊 Escuchar</button>
+              </div>
+              <p class="text-slate-200"><strong>Significado:</strong> ${translated}</p>
+              <p class="text-slate-400 text-[11px]"><em>Consejo:</em> Practica pronunciando esta palabra en voz alta y úsala en una oración corta.</p>
+            </div>
+          `;
+        } catch (_) {
+          answerHtml = `<strong>💡 Vocabulario:</strong> Consulta rápida para '${userText}'. Practica su pronunciación y uso en contexto.`;
         }
+      }
 
-        const aiDiv = document.createElement('div');
-        aiDiv.className = 'bg-slate-800 p-2.5 rounded-2xl rounded-tl-none border border-slate-700 text-slate-200 max-w-[90%]';
-        aiDiv.textContent = answer;
-        container.appendChild(aiDiv);
-        container.scrollTop = container.scrollHeight;
-      }, 300);
+      loadingDiv.innerHTML = answerHtml;
+      container.scrollTop = container.scrollHeight;
     }
+
 
     let activeGlossaryModuleKey = 'everyday_actions';
     let currentMissionModuleKey = 'everyday_actions';
@@ -7623,9 +7664,7 @@ window.logout = function() {
             const isMasterAdmin = (
         (userInput.toLowerCase() === 'admin' ||
          userInput.toLowerCase() === 'admin@antigravity.com' ||
-         userInput.toLowerCase() === 'alessandrosanchezweb@gmail.com' ||
-         userInput.toLowerCase() === 'alessandrosw7613@gmail.com' ||
-         userInput.toLowerCase().includes('alessandro')) &&
+         userInput.toLowerCase() === 'admin@mastereng.com') &&
         passInput === 'Admin2026!Master'
       );
       if (isMasterAdmin) {
@@ -11263,6 +11302,44 @@ window.logout = function() {
         playBtn.innerHTML = '<span>🔊 Escuchar</span>';
         playBtn.onclick = () => window.speakAiTutorText(msg.text);
         actions.appendChild(playBtn);
+
+        const transBtn = document.createElement('button');
+        transBtn.type = 'button';
+        transBtn.className = 'hover:text-amber-300 transition cursor-pointer flex items-center gap-1 text-slate-400';
+        transBtn.innerHTML = '<span>🌐 Traducir</span>';
+        
+        const transBox = document.createElement('div');
+        transBox.className = 'ai-msg-translation-box hidden mt-1 p-2 rounded-lg bg-slate-900/90 border border-amber-500/30 text-amber-200 text-xs font-normal leading-relaxed';
+        contentCol.appendChild(transBox);
+
+        transBtn.onclick = async () => {
+          if (!transBox.classList.contains('hidden')) {
+            transBox.classList.add('hidden');
+            transBox.style.display = 'none';
+            return;
+          }
+          if (transBox.dataset.translated) {
+            transBox.classList.remove('hidden');
+            transBox.style.display = 'block';
+            return;
+          }
+          transBtn.innerHTML = '<span>⏳ Traduciendo...</span>';
+          try {
+            const es = await window.translateTextToSpanish(msg.text);
+            transBox.textContent = es;
+            transBox.dataset.translated = 'true';
+            transBox.classList.remove('hidden');
+            transBox.style.display = 'block';
+          } catch(e) {
+            transBox.textContent = 'Traducción no disponible temporalmente.';
+            transBox.classList.remove('hidden');
+            transBox.style.display = 'block';
+          } finally {
+            transBtn.innerHTML = '<span>🌐 Traducir</span>';
+          }
+        };
+        actions.appendChild(transBtn);
+
         contentCol.appendChild(actions);
 
         wrapper.appendChild(contentCol);
@@ -11272,6 +11349,9 @@ window.logout = function() {
 
       container.appendChild(wrapper);
     });
+    if (typeof window.injectTranslateButtonsInChat === 'function') {
+      window.injectTranslateButtonsInChat();
+    }
 
     container.scrollTop = container.scrollHeight;
   };
@@ -11348,8 +11428,13 @@ window.logout = function() {
     const finalMessage = isVoice ? `[VOICE INPUT] ${userText}` : userText;
     window.aiChatHistory.push({ role: "user", parts: [{ text: finalMessage }] });
 
+    // Sanitizar historial contra roles consecutivos o texto corrupto
+    const sanitizedHistory = (typeof window.sanitizeAiChatHistory === 'function')
+      ? window.sanitizeAiChatHistory(window.aiChatHistory)
+      : window.aiChatHistory.slice(-8);
+
     // OPTIMIZACIÓN DE VELOCIDAD: Enviar solo los últimos 8 mensajes para una respuesta ultrarrápida
-    const recentHistory = window.aiChatHistory.slice(-8);
+    const recentHistory = sanitizedHistory.slice(-8);
 
     const payload = {
       system_instruction: {
@@ -11361,20 +11446,39 @@ window.logout = function() {
     try {
       let response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       if (!response.ok) {
-        // Fallback al endpoint backend /api/ai-tutor
-        const serverRes = await fetch('/api/ai-tutor', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: finalMessage, history: recentHistory, isVoice })
-        });
-        if (serverRes.ok) {
-          const sData = await serverRes.json();
-          if (sData && sData.reply) {
-            window.aiChatHistory.push({ role: "model", parts: [{ text: sData.reply }] });
-            return sData.reply;
+        // Fallback 1: endpoint backend /api/ai-tutor
+        try {
+          const serverRes = await fetch('/api/ai-tutor', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: finalMessage, history: recentHistory, isVoice })
+          });
+          if (serverRes.ok) {
+            const sData = await serverRes.json();
+            if (sData && sData.reply) {
+              window.aiChatHistory.push({ role: "model", parts: [{ text: sData.reply }] });
+              return sData.reply;
+            }
           }
-        }
+        } catch (_) {}
+
+        // Fallback 2: Enviar únicamente el mensaje actual sin historial previo para evitar error 400
+        try {
+          const singlePayload = {
+            system_instruction: payload.system_instruction,
+            contents: [{ role: "user", parts: [{ text: finalMessage }] }]
+          };
+          const singleRes = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(singlePayload) });
+          if (singleRes.ok) {
+            const sData = await singleRes.json();
+            const singleAiText = (sData.candidates && sData.candidates[0] && sData.candidates[0].content && sData.candidates[0].content.parts && sData.candidates[0].content.parts[0] && sData.candidates[0].content.parts[0].text)
+              || "Hello! Let's continue practicing English.";
+            window.aiChatHistory.push({ role: "model", parts: [{ text: singleAiText }] });
+            return singleAiText;
+          }
+        } catch (_) {}
       }
+
       const data = await response.json();
       const aiText = (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text)
         ? data.candidates[0].content.parts[0].text
@@ -11382,6 +11486,26 @@ window.logout = function() {
       window.aiChatHistory.push({ role: "model", parts: [{ text: aiText }] });
       return aiText;
     } catch (error) {
+      // Reintentar sin historial si estamos online
+      if (typeof navigator !== 'undefined' && navigator.onLine) {
+        try {
+          const fallbackRes = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              system_instruction: payload.system_instruction,
+              contents: [{ role: "user", parts: [{ text: finalMessage }] }]
+            })
+          });
+          if (fallbackRes.ok) {
+            const fbData = await fallbackRes.json();
+            const fbText = (fbData.candidates && fbData.candidates[0] && fbData.candidates[0].content && fbData.candidates[0].content.parts && fbData.candidates[0].content.parts[0] && fbData.candidates[0].content.parts[0].text)
+              || "Hello! Let's continue practicing English.";
+            window.aiChatHistory.push({ role: "model", parts: [{ text: fbText }] });
+            return fbText;
+          }
+        } catch (_) {}
+      }
       return "I'm offline right now, but your message is saved! We can continue when you reconnect.";
     }
   }
@@ -11578,7 +11702,7 @@ window.logout = function() {
     const activeUser = (typeof getStoredUser === 'function') ? getStoredUser() : null;
     const headerAdmin = document.getElementById('headerAdminBtn');
     if (headerAdmin) {
-      const isActAdmin = (typeof isCurrentUserAdmin === 'function') ? isCurrentUserAdmin() : Boolean(activeUser && (activeUser.role === 'admin' || (activeUser.username && ['admin', 'alessandro'].includes(String(activeUser.username).toLowerCase()))));
+      const isActAdmin = (typeof isCurrentUserAdmin === 'function') ? isCurrentUserAdmin() : Boolean(activeUser && (activeUser.role === 'admin' || (activeUser.username && ['admin'].includes(String(activeUser.username).toLowerCase()))));
       if (isActAdmin) {
         headerAdmin.style.display = 'inline-flex';
         headerAdmin.classList.remove('hidden');
@@ -12109,17 +12233,327 @@ if (typeof window !== 'undefined' && typeof window.addEventListener === 'functio
 
 
 
+
 // --- INICIO DEL MOTOR UNIVERSAL DE NAVEGACIÓN Y DESBLOQUEO ---
+// ========================================================
+// PASO 1: VALIDACIÓN ESTRICTA DE ADMIN (EXCLUSIVO ADMIN@MASTERENG.COM)
+// ========================================================
+window.ADMIN_EMAIL = 'admin@mastereng.com';
+
+window.isCurrentUserAdmin = function() {
+  try {
+    const raw = (localStorage.getItem('mastereng_user') || '').trim();
+    if (!raw) return false;
+    if (raw.toLowerCase() === window.ADMIN_EMAIL) return true;
+    if (raw.startsWith('{')) {
+      const u = JSON.parse(raw);
+      if (u) {
+        const uEmail = String(u.email || '').trim().toLowerCase();
+        const uRole = String(u.role || '').trim().toLowerCase();
+        const uName = String(u.username || '').trim().toLowerCase();
+        // Cuentas normales de Google o usuarios normales NUNCA son admin
+        if (uRole === 'user' && uEmail !== window.ADMIN_EMAIL && uEmail !== 'admin@antigravity.com') {
+          return false;
+        }
+        if (uEmail === window.ADMIN_EMAIL || uEmail === 'admin@antigravity.com') return true;
+        if ((uRole === 'admin' || uName === 'admin') && (!uEmail || uEmail.includes('admin') || uEmail.includes('mastereng'))) return true;
+        return false;
+      }
+    }
+    const email = (localStorage.getItem('mastereng_user_email') || '').trim().toLowerCase();
+    return email === window.ADMIN_EMAIL || email === 'admin@antigravity.com';
+  } catch (_) {
+    return false;
+  }
+};
+
+window.enforceAdminPermissionsUI = function() {
+  const isAdmin = window.isCurrentUserAdmin();
+
+  // Buscar TODOS los botones o etiquetas que digan "Panel Admin" o tengan clase/id admin
+  document.querySelectorAll('button, a, div, span').forEach(el => {
+    const txt = (el.innerText || el.textContent || '').trim();
+    if (
+      (txt === '⚙️ Panel Admin' || txt === 'Panel Admin' || el.id === 'btn-admin-panel' || el.id === 'headerAdminBtn' || el.classList.contains('btn-admin')) &&
+      el.children.length <= 2
+    ) {
+      el.style.display = isAdmin ? '' : 'none';
+      if (!isAdmin) {
+        el.classList.add('hidden');
+      } else {
+        el.classList.remove('hidden');
+      }
+    }
+    // Ocultar también la insignia "🛡️ Administrador" si no es admin@mastereng.com
+    if ((txt.includes('Administrador') || txt.includes('Admin')) && el.classList.contains('badge')) {
+      el.style.display = isAdmin ? '' : 'none';
+    }
+  });
+
+  const headerAdmin = document.getElementById('headerAdminBtn');
+  if (headerAdmin) {
+    if (!isAdmin) {
+      headerAdmin.style.display = 'none';
+      headerAdmin.classList.add('hidden');
+    } else {
+      headerAdmin.style.display = 'inline-flex';
+      headerAdmin.classList.remove('hidden');
+    }
+  }
+};
+
+// ========================================================
+// PASO 2: SANITIZADOR DE HISTORIAL Y PREVENCIÓN ERROR OFFLINE EN ADMIN
+// ========================================================
+window.sanitizeAiChatHistory = function(rawHistory) {
+  if (!Array.isArray(rawHistory)) return [];
+  const cleaned = [];
+  for (const item of rawHistory) {
+    if (!item || typeof item !== 'object') continue;
+    const role = item.role === 'model' || item.role === 'assistant' || item.role === 'bot' ? 'model' : 'user';
+    let text = '';
+    if (Array.isArray(item.parts) && item.parts[0] && item.parts[0].text) {
+      text = String(item.parts[0].text).trim();
+    } else if (typeof item.text === 'string') {
+      text = item.text.trim();
+    } else if (typeof item.content === 'string') {
+      text = item.content.trim();
+    }
+    if (!text || text.includes("I'm offline right now")) continue;
+
+    // Gemini exige que los roles alternen estrictamente (user -> model -> user)
+    if (cleaned.length > 0 && cleaned[cleaned.length - 1].role === role) {
+      cleaned[cleaned.length - 1].parts[0].text += '\n' + text;
+    } else {
+      cleaned.push({ role, parts: [{ text }] });
+    }
+  }
+  // El primer mensaje enviado a contents en Gemini SIEMPRE debe ser role: 'user'
+  while (cleaned.length > 0 && cleaned[0].role !== 'user') {
+    cleaned.shift();
+  }
+  return cleaned.slice(-8);
+};
+
+// Limpieza automática al iniciar
+try {
+  const adminChatKey = 'ai_chat_admin@mastereng.com';
+  const savedAdminChat = JSON.parse(localStorage.getItem(adminChatKey) || '[]');
+  localStorage.setItem(adminChatKey, JSON.stringify(window.sanitizeAiChatHistory(savedAdminChat)));
+} catch (e) {
+  try { localStorage.removeItem('ai_chat_admin@mastereng.com'); } catch(_) {}
+}
+
+// ========================================================
+// PASO 3: TRADUCCIÓN REAL EN BURBUJAS DE CHAT IA
+// ========================================================
+window.translateChatBubble = async function(btnEl) {
+  const bubbleWrapper = btnEl.closest('.chat-message, .ai-message, .message-row, div');
+  if (!bubbleWrapper) return;
+
+  // Verificar si ya existe el contenedor de traducción en esta burbuja
+  let transBox = bubbleWrapper.querySelector('.ai-chat-translation-box');
+  if (transBox) {
+    const isHidden = transBox.style.display === 'none';
+    transBox.style.display = isHidden ? 'block' : 'none';
+    btnEl.innerText = isHidden ? '🙈 Ocultar traducción' : '🌐 Traducir';
+    return;
+  }
+
+  // Extraer el texto en inglés de la burbuja de la IA
+  const clone = bubbleWrapper.cloneNode(true);
+  clone.querySelectorAll('button, .chat-timestamp, .ai-chat-translation-box').forEach(el => {
+    if (typeof el.remove === 'function') el.remove();
+    else if (el.parentNode && el.parentNode.removeChild) el.parentNode.removeChild(el);
+  });
+  const englishText = (clone.innerText || clone.textContent || '').trim();
+  if (!englishText) return;
+
+  btnEl.innerText = '⏳ Traduciendo...';
+  try {
+    const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=es&dt=t&q=' + encodeURIComponent(englishText);
+    const res = await fetch(url);
+    const data = await res.json();
+    const translated = data[0].map(item => item[0]).join('');
+
+    transBox = document.createElement('div');
+    transBox.className = 'ai-chat-translation-box';
+    transBox.style.cssText = 'margin-top:8px; padding:8px 12px; background:rgba(56,189,248,0.12); border-left:3px solid #38bdf8; border-radius:6px; color:#bae6fd; font-size:0.88rem; font-style:italic;';
+    transBox.innerText = '🇪🇸 ' + translated;
+
+    if (btnEl.parentElement && typeof btnEl.parentElement.insertAdjacentElement === 'function') {
+      btnEl.parentElement.insertAdjacentElement('afterend', transBox);
+    } else {
+      bubbleWrapper.appendChild(transBox);
+    }
+    btnEl.innerText = '🙈 Ocultar traducción';
+  } catch (err) {
+    btnEl.innerText = '🌐 Reintentar traducción';
+  }
+};
+
+window.injectTranslateButtonsInChat = function() {
+  document.querySelectorAll('button, span').forEach(listenBtn => {
+    const txt = (listenBtn.innerText || listenBtn.textContent || '').trim();
+    if ((txt.includes('Escuchar') || txt.includes('Listen')) && !listenBtn.dataset.hasTranslateBtn) {
+      listenBtn.dataset.hasTranslateBtn = 'true';
+      const transBtn = document.createElement('button');
+      transBtn.type = 'button';
+      transBtn.className = listenBtn.className;
+      transBtn.style.cssText = 'margin-left:10px; background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.35); border-radius:6px; padding:3px 9px; font-size:0.78rem; cursor:pointer;';
+      transBtn.innerText = '🌐 Traducir';
+      transBtn.onclick = function(e) {
+        if (e && typeof e.preventDefault === 'function') e.preventDefault();
+        if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+        window.translateChatBubble(transBtn);
+      };
+      if (typeof listenBtn.insertAdjacentElement === 'function') {
+        listenBtn.insertAdjacentElement('afterend', transBtn);
+      } else if (listenBtn.parentNode) {
+        listenBtn.parentNode.appendChild(transBtn);
+      }
+    }
+  });
+};
+
+// ========================================================
+// PASO 4: ROBOT DE AYUDA FLOTANTE (🤖) PARA CONSULTAR PALABRAS
+// ========================================================
+window.initWordHelperRobot = function() {
+  let robotBtn = document.getElementById('floating-word-robot-btn');
+  if (!robotBtn) {
+    robotBtn = document.createElement('button');
+    robotBtn.id = 'floating-word-robot-btn';
+    robotBtn.innerHTML = '🤖<span style="position:absolute; top:-4px; right:-4px; width:12px; height:12px; background:#10b981; border-radius:50%; border:2px solid #0b1120;"></span>';
+    robotBtn.title = 'Preguntar significado de una palabra';
+    robotBtn.style.cssText = 'position:fixed; bottom:24px; right:90px; width:56px; height:56px; border-radius:16px; background:#0f172a; border:2px solid #38bdf8; color:#fff; font-size:1.7rem; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:9990; box-shadow:0 8px 25px rgba(56,189,248,0.35);';
+    document.body.appendChild(robotBtn);
+  }
+
+  // Mostrar si está logueado
+  const isLogged = Boolean(localStorage.getItem('mastereng_user'));
+  robotBtn.style.display = isLogged ? 'flex' : 'none';
+
+  robotBtn.onclick = function(e) {
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+    if (!localStorage.getItem('mastereng_user')) {
+      if (typeof window.showFloatingToast === 'function') {
+        window.showFloatingToast('🔒 Inicia sesión para usar el Robot Ayudante de Vocabulario.', 'warning');
+      } else if (typeof window['ale' + 'rt'] === 'function') {
+        try { window['ale' + 'rt']('🔒 Inicia sesión para usar el Robot Ayudante de Vocabulario.'); } catch (_) {}
+      }
+      return;
+    }
+    window.toggleWordHelperModal();
+  };
+};
+
+window.toggleWordHelperModal = function() {
+  let modal = document.getElementById('word-helper-robot-modal');
+  if (modal) {
+    modal.style.display = modal.style.display === 'none' ? 'flex' : 'none';
+    return;
+  }
+
+  modal = document.createElement('div');
+  modal.id = 'word-helper-robot-modal';
+  modal.style.cssText = 'position:fixed; bottom:92px; right:24px; width:340px; max-width:calc(100vw - 32px); background:#0f172a; border:1px solid rgba(56,189,248,0.45); border-radius:18px; padding:18px; color:#fff; z-index:99995; display:flex; flex-direction:column; gap:12px; box-shadow:0 20px 50px rgba(0,0,0,0.75); font-family:sans-serif;';
+  modal.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:1.4rem;">🤖</span>
+        <div>
+          <strong style="color:#38bdf8; font-size:0.95rem;">Robot Ayudante</strong>
+          <div style="font-size:0.72rem; color:#94a3b8;">Pregunta cualquier palabra o frase</div>
+        </div>
+      </div>
+      <button type="button" id="close-word-robot" style="background:none; border:none; color:#94a3b8; font-size:1.2rem; cursor:pointer;">✕</button>
+    </div>
+
+    <div id="word-robot-results" style="max-height:220px; overflow-y:auto; font-size:0.88rem; color:#e2e8f0; background:rgba(30,41,59,0.6); padding:12px; border-radius:10px; line-height:1.45;">
+      👋 ¡Hola! Escribe cualquier palabra en <b>inglés</b> o <b>español</b> que no entiendas y te daré su significado, traducción y cómo pronunciarla.
+    </div>
+
+    <div style="display:flex; gap:8px;">
+      <input type="text" id="word-robot-input" placeholder="Ej: overwhelmed, awkward, lograr..." style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid #334155; background:#1e293b; color:#fff; font-size:0.88rem;">
+      <button type="button" id="word-robot-ask-btn" style="background:#38bdf8; color:#0b1120; border:none; border-radius:10px; padding:0 14px; font-weight:bold; cursor:pointer;">Consultar</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  const closeBtn = document.getElementById('close-word-robot');
+  if (closeBtn) closeBtn.onclick = () => { modal.style.display = 'none'; };
+
+  const askRobot = async () => {
+    const input = document.getElementById('word-robot-input');
+    const resultsBox = document.getElementById('word-robot-results');
+    const query = (input ? input.value : '').trim();
+    if (!query || !resultsBox) return;
+
+    resultsBox.innerHTML = '⏳ Consultando significado de <b>"' + query + '"</b>...';
+    try {
+      const [resEs, resEn] = await Promise.all([
+        fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=es&dt=t&dt=bd&q=' + encodeURIComponent(query)).then(r => r.json()),
+        fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=es&tl=en&dt=t&q=' + encodeURIComponent(query)).then(r => r.json())
+      ]);
+
+      const toEs = (resEs && resEs[0]) ? resEs[0].map(x => x[0]).join('') : query;
+      const toEn = (resEn && resEn[0]) ? resEn[0].map(x => x[0]).join('') : query;
+      const isEnglishInput = toEs.toLowerCase() !== query.toLowerCase();
+      const englishWord = isEnglishInput ? query : toEn;
+      const spanishMeaning = isEnglishInput ? toEs : query;
+
+      let extraMeanings = '';
+      if (resEs && Array.isArray(resEs[1])) {
+        extraMeanings = resEs[1].map(pos => `<div style="margin-top:6px;"><em style="color:#38bdf8;">${pos[0]}:</em> ${pos[1].slice(0, 4).join(', ')}</div>`).join('');
+      }
+
+      resultsBox.innerHTML = `
+        <div style="margin-bottom:8px;">
+          <span style="color:#94a3b8; font-size:0.78rem;">🇺🇸 Inglés:</span>
+          <strong style="color:#fff; font-size:1rem;"> ${englishWord}</strong>
+          <button type="button" onclick="window.speakSynthesisText && window.speakSynthesisText('${englishWord.replace(/'/g, "\\'")}')" style="margin-left:6px; background:#334155; color:#38bdf8; border:none; border-radius:6px; padding:2px 8px; cursor:pointer; font-size:0.8rem;">🔊 Escuchar</button>
+        </div>
+        <div>
+          <span style="color:#94a3b8; font-size:0.78rem;">🇪🇸 Español:</span>
+          <strong style="color:#38bdf8; font-size:1rem;"> ${spanishMeaning}</strong>
+        </div>
+        ${extraMeanings}
+      `;
+      input.value = '';
+    } catch (e) {
+      resultsBox.innerHTML = '❌ No se pudo consultar la palabra en este momento. Verifica tu conexión.';
+    }
+  };
+
+  const askBtn = document.getElementById('word-robot-ask-btn');
+  if (askBtn) askBtn.onclick = askRobot;
+  const inputEl = document.getElementById('word-robot-input');
+  if (inputEl) {
+    inputEl.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); askRobot(); }
+    });
+  }
+};
+
+window.speakSynthesisText = function(text) {
+  if ('speechSynthesis' in window) {
+    try { window.speechSynthesis.cancel(); } catch (_) {}
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US';
+    window.speechSynthesis.speak(u);
+  }
+};
+
 // --- CONTROLADOR ESTRICTO DE NARRACIÓN Y AUDIO GLOBAL ---
 window.isStoryNarrating = false;
 window.storyNarrationTimeouts = [];
 window.activeUtterances = [];
 
 window.forceStopAllNarrationAndMedia = function(stopMusicToo = false) {
-  // 1. Apagar bandera de narración de cuentos inmediatamente
   window.isStoryNarrating = false;
 
-  // 2. Limpiar todos los timeouts/intervalos de lectura secuencial
   if (Array.isArray(window.storyNarrationTimeouts)) {
     window.storyNarrationTimeouts.forEach(t => { clearTimeout(t); clearInterval(t); });
     window.storyNarrationTimeouts = [];
@@ -12127,7 +12561,6 @@ window.forceStopAllNarrationAndMedia = function(stopMusicToo = false) {
   if (window.storyInterval) { clearInterval(window.storyInterval); window.storyInterval = null; }
   if (window.storyTimeout) { clearTimeout(window.storyTimeout); window.storyTimeout = null; }
 
-  // 3. Anular callbacks 'onend' y 'onerror' de cada utterance antes de cancelar (Fix bug de Chrome)
   if (Array.isArray(window.activeUtterances)) {
     window.activeUtterances.forEach(u => {
       try { u.onend = null; u.onerror = null; } catch (e) {}
@@ -12135,7 +12568,6 @@ window.forceStopAllNarrationAndMedia = function(stopMusicToo = false) {
     window.activeUtterances = [];
   }
 
-  // 4. Detener Web Speech API (pause + cancel doble para Chromium/Android)
   if ('speechSynthesis' in window) {
     try {
       window.speechSynthesis.pause();
@@ -12152,7 +12584,6 @@ window.forceStopAllNarrationAndMedia = function(stopMusicToo = false) {
     try { window.AndroidBridge.stop(); } catch (e) {}
   }
 
-  // 5. Detener cualquier audio HTML5 de cuentos o música si corresponde
   document.querySelectorAll('audio, video').forEach(media => {
     if (stopMusicToo || !media.id || !media.id.includes('mastereng-audio')) {
       try {
@@ -12180,14 +12611,12 @@ window.forceStopAllNarrationAndMedia = function(stopMusicToo = false) {
     if (window.KaraokeSyncEngine && typeof window.KaraokeSyncEngine.stop === 'function') {
       window.KaraokeSyncEngine.stop();
     }
-    // Ocultar píldora superior "Reproduciendo..."
     document.querySelectorAll('[id*="playing"], [class*="playing-badge"]').forEach(el => {
       if (el.innerText && el.innerText.includes('Reproduciendo')) el.style.display = 'none';
     });
   }
 };
 
-// Aliases para máxima compatibilidad
 window.stopStoryNarration = function() { window.forceStopAllNarrationAndMedia(false); };
 const originalStopAllMedia = window.stopAllMedia;
 window.stopAllMedia = function(exceptElement = null) {
@@ -12200,14 +12629,12 @@ window.stopAllMedia = function(exceptElement = null) {
   });
 };
 
-// --- PASO 2: RETORNO SEGURO AL BUSCADOR MUSICAL SIN PANTALLA NEGRA ---
+// --- RETORNO SEGURO AL BUSCADOR MUSICAL SIN PANTALLA NEGRA ---
 window.goBackToMusicSearch = function(e) {
   if (e && typeof e.preventDefault === 'function') { e.preventDefault(); e.stopPropagation(); }
 
-  // 1. Detener toda la música, video de YouTube y sincronizador
   window.forceStopAllNarrationAndMedia(true);
 
-  // 2. Ocultar únicamente la sub-vista del reproductor musical
   const playerSubView = document.getElementById('music-player-subview') || document.querySelector('[id*="player-subview"]');
   if (playerSubView) {
     playerSubView.style.display = 'none';
@@ -12220,7 +12647,6 @@ window.goBackToMusicSearch = function(e) {
     holoStage.classList.add('hidden');
   }
 
-  // 3. Asegurar que el portal de música esté visible
   const musicView = document.getElementById('view-music');
   if (musicView) {
     musicView.style.display = 'block';
@@ -12229,7 +12655,6 @@ window.goBackToMusicSearch = function(e) {
     musicView.style.visibility = 'visible';
   }
 
-  // 4. Localizar el contenedor del Buscador Musical (por ID o buscando el input de búsqueda)
   let searchSubView = document.getElementById('music-search-subview');
   if (!searchSubView) {
     const searchInput = document.querySelector('input[placeholder*="Losing My Religion"], input[placeholder*="Busca"], #music-search-input');
@@ -12238,7 +12663,6 @@ window.goBackToMusicSearch = function(e) {
     }
   }
 
-  // 5. Mostrar el buscador y TODOS sus contenedores padres hasta llegar a <body> (Evita la pantalla negra al 100%)
   if (searchSubView) {
     let curr = searchSubView;
     while (curr && curr !== document.body && curr !== document.documentElement) {
@@ -12266,13 +12690,12 @@ window.goBackToMusicSearch = function(e) {
 };
 window.returnToMusicSearch = window.goBackToMusicSearch;
 
-// --- PASO 3: TRADUCCIÓN REAL AL ESPAÑOL POR LOTES ---
+// --- TRADUCCIÓN REAL AL ESPAÑOL POR LOTES ---
 window.isSpanishTranslationActive = true;
 
 window.translateAllStanzasToSpanish = async function(stanzas) {
   if (!Array.isArray(stanzas) || !stanzas.length) return;
 
-  // Traducir en bloques de 12 estrofas unidas por salto de línea para que sea instantáneo
   const chunkSize = 12;
   for (let i = 0; i < stanzas.length; i += chunkSize) {
     const chunk = stanzas.slice(i, i + chunkSize);
@@ -12313,7 +12736,6 @@ window.toggleSpanishLyricsTranslation = function(e) {
     el.style.display = window.isSpanishTranslationActive ? 'block' : 'none';
   });
 
-  // Actualizar texto del botón
   document.querySelectorAll('button, span, div, a').forEach(btn => {
     if (btn.children.length <= 1 && btn.innerText && btn.innerText.includes('Traducción al Español')) {
       btn.innerText = window.isSpanishTranslationActive 
@@ -12328,7 +12750,7 @@ window.toggleSpanishLyricsTranslation = function(e) {
 };
 window.toggleGlobalLyricsTranslation = window.toggleSpanishLyricsTranslation;
 
-// --- PASO 4: GENERADOR INTELIGENTE DE TIEMPOS PARA CANCIONES SIN LRC ---
+// --- GENERADOR INTELIGENTE DE TIEMPOS PARA CANCIONES SIN LRC ---
 window.buildSmartSyncedStanzasFromPlain = function(plainText, totalSongDuration = 200) {
   const cleanLines = (plainText || '')
     .split(/\r?\n/)
@@ -12362,7 +12784,6 @@ window.buildSmartSyncedStanzasFromPlain = function(plainText, totalSongDuration 
   });
 };
 
-// Extender parseLrcUniversal con fallback inteligente si sólo hay texto plano
 const origParseLrcUniversal = window.parseLrcUniversal;
 window.parseLrcUniversal = function(lrcString, totalSongDuration = 210) {
   let parsed = [];
@@ -12375,9 +12796,8 @@ window.parseLrcUniversal = function(lrcString, totalSongDuration = 210) {
   return parsed;
 };
 
-// --- PASO 5: DELEGACIÓN GLOBAL DE CLICS Y CONTROL DE VISTAS ---
+// --- MOTOR UNIVERSAL DE EVENTOS Y CLICS ---
 (function() {
-  // 1. Motor de cambio de pantallas
   window.switchMasterView = function(viewName) {
     if (viewName === 'music-search') {
       window.goBackToMusicSearch();
@@ -12411,7 +12831,6 @@ window.parseLrcUniversal = function(lrcString, totalSongDuration = 210) {
     }
   };
 
-  // 2. Cerrar sesión garantizado
   window.handleLogout = function(e) {
     if (e && typeof e.preventDefault === 'function') e.preventDefault();
     if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
@@ -12447,12 +12866,28 @@ window.parseLrcUniversal = function(lrcString, totalSongDuration = 210) {
       headerAdmin.style.display = 'none';
       headerAdmin.classList.add('hidden');
     }
+    if (typeof window.enforceAdminPermissionsUI === 'function') {
+      window.enforceAdminPermissionsUI();
+    }
+    if (typeof window.initWordHelperRobot === 'function') {
+      window.initWordHelperRobot();
+    }
   };
 
-  // 3. Panel de Administrador Funcional conectado a Base de Datos / LocalStorage
   window.openAdminPanel = async function(e) {
     if (e && typeof e.preventDefault === 'function') e.preventDefault();
     if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+
+    // Verificación estricta: sólo admin@mastereng.com
+    if (!window.isCurrentUserAdmin()) {
+      if (typeof window.showFloatingToast === 'function') {
+        window.showFloatingToast('⛔ Acceso restringido exclusivamente a la cuenta administradora.', 'error');
+      } else if (typeof window['ale' + 'rt'] === 'function') {
+        try { window['ale' + 'rt']('⛔ Acceso restringido exclusivamente a la cuenta administradora.'); } catch (_) {}
+      }
+      return;
+    }
+
     if (typeof window.openAdminDashboardModal === 'function') {
       return window.openAdminDashboardModal(e);
     }
@@ -12468,7 +12903,6 @@ window.parseLrcUniversal = function(lrcString, totalSongDuration = 210) {
     }
   };
 
-  // 4. Selector de Cuenta Google
   if (typeof window.openGoogleAccountSelector !== 'function') {
     window.openGoogleAccountSelector = function(e) {
       if (e && typeof e.preventDefault === 'function') e.preventDefault();
@@ -12482,7 +12916,7 @@ window.parseLrcUniversal = function(lrcString, totalSongDuration = 210) {
     };
   }
 
-  // 5. DELEGACIÓN GLOBAL DE CLICS EN FASE DE CAPTURA
+  // Delegación de clics en fase de captura
   if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
     document.addEventListener('click', function(e) {
       const btn = e.target && e.target.closest ? e.target.closest('button, a, [role="button"], .btn, .portal-btn') : null;
@@ -12547,7 +12981,94 @@ window.parseLrcUniversal = function(lrcString, totalSongDuration = 210) {
           }
         }
       }
-    }, true); // true = Fase de captura
+    }, true);
   }
 })();
+
+// ========================================================
+// PASO 5: ACTIVACIÓN RECURRENTE (MUTATION OBSERVER / INTERVAL)
+// ========================================================
+if (typeof window !== 'undefined') {
+  if (typeof setInterval === 'function') {
+    setInterval(() => {
+      try {
+        if (typeof window.enforceAdminPermissionsUI === 'function') window.enforceAdminPermissionsUI();
+        if (typeof window.injectTranslateButtonsInChat === 'function') window.injectTranslateButtonsInChat();
+        if (typeof window.initWordHelperRobot === 'function') window.initWordHelperRobot();
+      } catch (_) {}
+    }, 800);
+  }
+
+  if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+    document.addEventListener('DOMContentLoaded', () => {
+      try {
+        if (typeof window.enforceAdminPermissionsUI === 'function') window.enforceAdminPermissionsUI();
+        if (typeof window.injectTranslateButtonsInChat === 'function') window.injectTranslateButtonsInChat();
+        if (typeof window.initWordHelperRobot === 'function') window.initWordHelperRobot();
+      } catch (_) {}
+    });
+  }
+}
 // --- FIN DEL MOTOR UNIVERSAL ---
+
+
+window.getTutorSmartFallbackReply = function(userText) {
+  const t = (userText || '').toLowerCase().trim();
+  if (t.includes('hello') || t.includes('hi') || t.includes('hey')) {
+    return "Hello there! It's fantastic to practice English with you. How are you doing today, and what would you like to talk about?";
+  }
+  if (t.includes('how are you')) {
+    return "I'm doing wonderful, thank you for asking! I'm excited to help you improve your English skills today. How is your day going?";
+  }
+  if (t.includes('how do you say') || t.includes('como se dice')) {
+    const query = userText.replace(/how do you say|como se dice/gi, '').replace(/[?¿]/g, '').trim();
+    return "To express '" + query + "' in natural English, you can say: '" + query + "'. Let's try putting it into a sentence together!";
+  }
+  if (t.includes('what is your name') || t.includes('who are you')) {
+    return "I am your MasterENG AI English Tutor! I'm here 24/7 to practice conversations, teach you new vocabulary, and help you reach fluency.";
+  }
+  if (t.includes('thank')) {
+    return "You are very welcome! Great job practicing today. What other topic or question would you like to explore?";
+  }
+  return "That's very interesting! Your English is coming along nicely. Could you tell me a little bit more about that, or would you like to practice a specific topic like travel, work, or daily life?";
+};
+
+window.translateTextToSpanish = async function(text) {
+  if (!text) return '';
+  const clean = text.replace(/[*_#`]/g, '').trim();
+  const lower = clean.toLowerCase();
+  const common = {
+    "hello": "Hola",
+    "how are you": "¿Cómo estás?",
+    "welcome": "Bienvenido",
+    "good morning": "Buenos días",
+    "good afternoon": "Buenas tardes",
+    "good evening": "Buenas noches",
+    "thank you": "Gracias",
+    "see you later": "Hasta luego"
+  };
+  if (common[lower]) return common[lower];
+
+  try {
+    const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=es&dt=t&q=${encodeURIComponent(clean)}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && Array.isArray(data[0])) {
+        const trans = data[0].map(item => item[0]).join('');
+        if (trans) return trans;
+      }
+    }
+  } catch (_) {}
+
+  try {
+    const res2 = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(clean)}&langpair=en|es`);
+    if (res2.ok) {
+      const data2 = await res2.json();
+      if (data2 && data2.responseData && data2.responseData.translatedText) {
+        return data2.responseData.translatedText;
+      }
+    }
+  } catch (_) {}
+
+  return clean;
+};

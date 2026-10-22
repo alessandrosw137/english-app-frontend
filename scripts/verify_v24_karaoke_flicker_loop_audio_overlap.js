@@ -181,7 +181,8 @@ console.log(`Total de pruebas: ${totalTests} | Aprobadas: ${passedTests} | Falli
 
 if (passedTests === totalTests) {
   console.log('\n🎉 ¡TODOS LOS REQUISITOS V24 VERIFICADOS AL 100%!');
+  process.exit(0);
 } else {
   console.error('\n❌ HAY PRUEBAS FALLIDAS EN V24.');
-  process.exitCode = 1;
+  process.exit(1);
 }

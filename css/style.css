@@ -1621,3 +1621,17 @@ button, a, input, select, textarea, [role="button"], .stanza-card, .portal-card 
   opacity: 0.9;
   transition: opacity 0.2s ease;
 }
+
+
+/* Robot de Ayuda y Traducción de Chat IA */
+#floating-word-robot-btn {
+  z-index: 9990 !important;
+  pointer-events: auto !important;
+}
+#word-helper-robot-modal {
+  z-index: 99995 !important;
+  pointer-events: auto !important;
+}
+.ai-chat-translation-box {
+  animation: fadeIn 0.2s ease-in-out;
+}

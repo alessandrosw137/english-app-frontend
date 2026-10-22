@@ -88,4 +88,5 @@ if (passedChecks !== totalChecks) {
   process.exit(1);
 } else {
   console.log('🎉 ¡TODOS LOS NUEVOS REQUISITOS VERIFICADOS CON ÉXITO AL 100%!');
+  process.exit(0);
 }
