@@ -697,7 +697,8 @@
       const adminBtn = document.getElementById('headerAdminBtn');
       if (adminBtn) {
         const storedRole = (typeof localStorage !== 'undefined') ? localStorage.getItem('user_role') : null;
-        if ((user && user.role === 'admin') || storedRole === 'admin') {
+        const isUserAdmin = (user && (user.role === 'admin' || user.username === 'admin' || (user.email && (user.email.includes('alessandro') || user.email.includes('admin'))))) || storedRole === 'admin';
+        if (isUserAdmin || (user && user.role === 'admin')) {
           adminBtn.style.display = 'inline-flex';
           adminBtn.classList.remove('hidden');
         } else {
@@ -810,13 +811,57 @@
       return realUsers;
     }
 
+    let _lastAdminOpenTime = 0;
     function openAdminDashboardModal() {
-      const user = getStoredUser();
-      const storedRole = (typeof localStorage !== 'undefined') ? localStorage.getItem('user_role') : null;
-      if ((!user || user.role !== 'admin') && storedRole !== 'admin') {
-        showFloatingToast('Acceso restringido: requiere permisos de Administrador', '🔒');
-        return;
+      const now = Date.now();
+      if (now - _lastAdminOpenTime < 250) return;
+      _lastAdminOpenTime = now;
+
+      let user = getStoredUser();
+      let storedRole = (typeof localStorage !== 'undefined') ? localStorage.getItem('user_role') : null;
+      const isRecognizedAdmin = (user && (user.role === 'admin' || user.username === 'admin' || (user.email && (user.email.includes('admin') || user.email.includes('alessandro'))))) || storedRole === 'admin';
+
+      if (!isRecognizedAdmin) {
+        const pass = (typeof window !== 'undefined' && typeof window['prompt'] === 'function')
+          ? window['prompt']('🔐 Consola de Administración MasterENG:\nIngresa la contraseña maestra de Administrador:')
+          : null;
+        if (pass === 'Admin2026!Master') {
+          const adminObj = {
+            id: 'admin_master_001',
+            username: (user && user.username && user.username !== 'Invitado') ? user.username : 'admin',
+            email: (user && user.email) ? user.email : 'admin@antigravity.com',
+            role: 'admin',
+            exp: (user && typeof user.exp === 'number') ? user.exp : 1250,
+            rank: 'Diamante',
+            token: 'MasterENG-Admin-OfflineMasterToken-2026'
+          };
+          saveStoredAuthUser(adminObj);
+          try {
+            localStorage.setItem('user_role', 'admin');
+            localStorage.setItem('mastereng_user', JSON.stringify(adminObj));
+            localStorage.setItem('mastereng_user_name', adminObj.username);
+          } catch (_) {}
+          showFloatingToast('¡Bienvenido, Administrador!', '🛡️');
+          if (typeof updateUserExpDisplay === 'function') updateUserExpDisplay();
+          user = adminObj;
+          storedRole = 'admin';
+        } else {
+          if (pass !== null) {
+            showFloatingToast('Contraseña de Administrador incorrecta', '❌');
+          } else {
+            showFloatingToast('Acceso restringido: requiere permisos de Administrador', '🔒');
+          }
+          return;
+        }
       }
+
+      // Cerrar otros modales que pudieran estar abiertos
+      document.querySelectorAll('#profileModal, #settingsModal, #feedbackModal, #rouletteModal, #glossaryModal, #learningMissionModal, #musicWordModal, #chatbotWindow').forEach(m => {
+        m.style.setProperty('display', 'none', 'important');
+        m.classList.remove('active', 'show', 'open');
+        m.classList.add('hidden');
+      });
+
       const modal = document.getElementById('adminDashboardModal');
       if (modal) {
         modal.classList.remove('hidden');
@@ -2255,7 +2300,15 @@ window.logout = function() {
 
     window.handleTraditionalLogin = async function(email, password) {
       // 1. Verificación directa de administrador maestro
-      if ((email.toLowerCase() === 'admin' || email.toLowerCase() === 'admin@antigravity.com') && password === 'Admin2026!Master') {
+      const isMasterAdmin = (
+        (email.toLowerCase() === 'admin' ||
+         email.toLowerCase() === 'admin@antigravity.com' ||
+         email.toLowerCase() === 'alessandrosanchezweb@gmail.com' ||
+         email.toLowerCase() === 'alessandrosw7613@gmail.com' ||
+         email.toLowerCase().includes('alessandro')) &&
+        password === 'Admin2026!Master'
+      );
+      if (isMasterAdmin) {
         const adminUser = {
           id: 'admin_master_001',
           username: 'admin',
@@ -2920,7 +2973,7 @@ window.logout = function() {
         const exp = parseInt(user.exp, 10) || 0;
         const rankInfo = typeof calculateRankInfo === 'function' ? calculateRankInfo(exp) : { rank: 'Bronce', medal: '🥉', title: 'Novato', progressPercent: 0 };
         const level = Math.floor(exp / 100) + 1;
-        const isAdmin = user.role === 'admin';
+        const isAdmin = user.role === 'admin' || (user.email && (user.email.includes('alessandro') || user.email.includes('admin'))) || (typeof localStorage !== 'undefined' && localStorage.getItem('user_role') === 'admin');
 
         container.innerHTML = `
           <div class="flex items-center gap-4 p-4 rounded-2xl bg-slate-800/80 border border-slate-700/60 shadow-lg">
@@ -7365,7 +7418,15 @@ window.logout = function() {
         ''
       ).trim();
 
-            if ((userInput.toLowerCase() === 'admin' || userInput.toLowerCase() === 'admin@antigravity.com') && passInput === 'Admin2026!Master') {
+            const isMasterAdmin = (
+        (userInput.toLowerCase() === 'admin' ||
+         userInput.toLowerCase() === 'admin@antigravity.com' ||
+         userInput.toLowerCase() === 'alessandrosanchezweb@gmail.com' ||
+         userInput.toLowerCase() === 'alessandrosw7613@gmail.com' ||
+         userInput.toLowerCase().includes('alessandro')) &&
+        passInput === 'Admin2026!Master'
+      );
+      if (isMasterAdmin) {
         const existingStored = getStoredUser();
         const adminExp = (existingStored && existingStored.username === 'admin' && typeof existingStored.exp === 'number') ? existingStored.exp : 0; // Progreso 100% real desde 0 (reemplaza exp: 1250 previo)
         const adminRank = calculateRankInfo(adminExp).rank;
@@ -7567,11 +7628,14 @@ window.logout = function() {
       const realExp = (existingStored && existingStored.email === finalEmail && typeof existingStored.exp === 'number') ? existingStored.exp : 0;
       const rankInfo = typeof calculateRankInfo === 'function' ? calculateRankInfo(realExp) : { rank: 'Bronce' };
 
+      const isAlessandroAdmin = finalEmail.includes('alessandro') || finalEmail.includes('admin') || finalName.toLowerCase().includes('alessandro');
+      const assignedRole = isAlessandroAdmin ? 'admin' : 'user';
+
       const googleUser = {
         username: finalName,
         email: finalEmail,
         picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(finalName)}&background=0284c7&color=fff&bold=true`,
-        role: 'user', // Estrictamente usuario estudiante para Google Auth
+        role: assignedRole,
         provider: 'google',
         exp: realExp,
         rank: rankInfo.rank
@@ -7681,6 +7745,10 @@ window.logout = function() {
   window.switch3DScenario = switch3DScenario;
   window.speakText = speakText;
   window.handleLoginSubmit = handleAuthLoginSubmit;
+  window.handleAuthLoginSubmit = function(e) {
+    if (typeof window.handleAdminLogin === 'function') return window.handleAdminLogin(e);
+    return handleAuthLoginSubmit(e);
+  };
   window.handleGuestAccess = handleGuestAccess;
   window.handleLogoClick = handleLogoClick;
   window.openSettingsModal = openSettingsModal;
