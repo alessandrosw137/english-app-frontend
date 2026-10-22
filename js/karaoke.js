@@ -1068,6 +1068,9 @@
     function renderLyricsFromList(lyrics) {
       activeLyricsList = lyrics;
       window.activeLyricsList = lyrics;
+      if (typeof window.translateAllStanzasToSpanish === 'function') {
+        try { window.translateAllStanzasToSpanish(lyrics); } catch (_) {}
+      }
       lastActiveStanzaIndex = -1;
       lastActiveWordIndex = -1;
       window._lastActiveStanzaIndex = -1;
@@ -1163,12 +1166,10 @@
             <div class="lyric-words-flow block space-y-1">
               ${renderedVerses}
             </div>
-            ${esText ? `
-              <div class="music-stanza-translation text-xs text-cyan-300/95 font-medium italic mt-2.5 pt-2 border-t border-cyan-500/20 flex items-center gap-1.5 ${isGlobalSpanishTranslationActive ? '' : 'hidden'}">
+            <div class="music-stanza-translation stanza-translation text-xs text-cyan-300/95 font-medium italic mt-2.5 pt-2 border-t border-cyan-500/20 flex items-center gap-1.5" id="stanza-es-${lIdx}" style="display: ${(typeof window.isSpanishTranslationActive !== 'undefined' ? window.isSpanishTranslationActive : isGlobalSpanishTranslationActive) ? 'flex' : 'none'};">
                 <span class="text-[10px] uppercase font-bold text-cyan-400 tracking-wider not-italic bg-cyan-500/15 px-1.5 py-0.5 rounded border border-cyan-500/25">ES</span>
-                <span>${escapeMusicHtml(esText)}</span>
+                <span>${escapeMusicHtml(stanza.textEs || esText || 'Traduciendo al español...')}</span>
               </div>
-            ` : ''}
           </div>
         `;
       }).join('');

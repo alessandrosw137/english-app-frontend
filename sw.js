@@ -1,5 +1,5 @@
 // mastereng-v1 Service Worker Network-First with Auto-Cache Cleanup
-const CACHE_NAME = 'mastereng-v-fixed-' + Date.now();
+const CACHE_NAME = 'mastereng-v-multimedia-fixed-' + Date.now();
 const ASSETS = [
   './',
   './index.html',

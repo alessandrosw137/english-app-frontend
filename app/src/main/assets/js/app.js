@@ -9850,6 +9850,9 @@ window.logout = function() {
         if (badge) badge.textContent = '🎶 [Intro Instrumental]';
         this.updateSeekBarUI(0);
         this.startLoop(this.sessionToken);
+        if (typeof window.translateAllStanzasToSpanish === 'function') {
+          try { window.translateAllStanzasToSpanish(this.stanzas); } catch (_) {}
+        }
       },
 
       stop() {
@@ -9896,6 +9899,9 @@ window.logout = function() {
                 <button type="button" class="stanza-tts-btn text-xs text-slate-400 hover:text-cyan-300 transition p-1 cursor-pointer" onclick="event.stopPropagation(); window.speakText ? window.speakText('${(stanza.text || '').replace(/'/g, "\\'")}') : null">🔊</button>
               </div>
               <p class="stanza-text">${wordsSpans}</p>
+              <p class="stanza-translation text-xs sm:text-sm text-sky-400 italic mt-2 opacity-90" id="stanza-es-${sIdx}" style="display: ${window.isSpanishTranslationActive !== false ? 'block' : 'none'}; color: #38bdf8; font-size: 0.92rem; margin-top: 8px; font-style: italic; opacity: 0.9;">
+                ${stanza.textEs ? ('🇪🇸 ' + stanza.textEs) : (stanza.es ? ('🇪🇸 ' + stanza.es) : 'Traduciendo al español...')}
+              </p>
             </div>
           `;
         }).join('');
@@ -12102,10 +12108,281 @@ if (typeof window !== 'undefined' && typeof window.addEventListener === 'functio
 }
 
 
+
 // --- INICIO DEL MOTOR UNIVERSAL DE NAVEGACIÓN Y DESBLOQUEO ---
+// --- CONTROLADOR ESTRICTO DE NARRACIÓN Y AUDIO GLOBAL ---
+window.isStoryNarrating = false;
+window.storyNarrationTimeouts = [];
+window.activeUtterances = [];
+
+window.forceStopAllNarrationAndMedia = function(stopMusicToo = false) {
+  // 1. Apagar bandera de narración de cuentos inmediatamente
+  window.isStoryNarrating = false;
+
+  // 2. Limpiar todos los timeouts/intervalos de lectura secuencial
+  if (Array.isArray(window.storyNarrationTimeouts)) {
+    window.storyNarrationTimeouts.forEach(t => { clearTimeout(t); clearInterval(t); });
+    window.storyNarrationTimeouts = [];
+  }
+  if (window.storyInterval) { clearInterval(window.storyInterval); window.storyInterval = null; }
+  if (window.storyTimeout) { clearTimeout(window.storyTimeout); window.storyTimeout = null; }
+
+  // 3. Anular callbacks 'onend' y 'onerror' de cada utterance antes de cancelar (Fix bug de Chrome)
+  if (Array.isArray(window.activeUtterances)) {
+    window.activeUtterances.forEach(u => {
+      try { u.onend = null; u.onerror = null; } catch (e) {}
+    });
+    window.activeUtterances = [];
+  }
+
+  // 4. Detener Web Speech API (pause + cancel doble para Chromium/Android)
+  if ('speechSynthesis' in window) {
+    try {
+      window.speechSynthesis.pause();
+      window.speechSynthesis.cancel();
+      setTimeout(() => {
+        if (!window.isStoryNarrating) {
+          try { window.speechSynthesis.cancel(); } catch (_) {}
+        }
+      }, 50);
+    } catch (e) {}
+  }
+
+  if (window.AndroidBridge && typeof window.AndroidBridge.stop === 'function') {
+    try { window.AndroidBridge.stop(); } catch (e) {}
+  }
+
+  // 5. Detener cualquier audio HTML5 de cuentos o música si corresponde
+  document.querySelectorAll('audio, video').forEach(media => {
+    if (stopMusicToo || !media.id || !media.id.includes('mastereng-audio')) {
+      try {
+        media.pause();
+        media.loop = false;
+        media.currentTime = 0;
+      } catch (e) {}
+    }
+  });
+
+  if (stopMusicToo) {
+    document.querySelectorAll('audio, video').forEach(m => {
+      try {
+        m.pause();
+        m.loop = false;
+        m.currentTime = 0;
+      } catch(e){}
+    });
+    if (window.ytPlayer && typeof window.ytPlayer.pauseVideo === 'function') {
+      try { window.ytPlayer.pauseVideo(); } catch(e){}
+    }
+    if (window._holoYtPlayer && typeof window._holoYtPlayer.pauseVideo === 'function') {
+      try { window._holoYtPlayer.pauseVideo(); } catch(e){}
+    }
+    if (window.KaraokeSyncEngine && typeof window.KaraokeSyncEngine.stop === 'function') {
+      window.KaraokeSyncEngine.stop();
+    }
+    // Ocultar píldora superior "Reproduciendo..."
+    document.querySelectorAll('[id*="playing"], [class*="playing-badge"]').forEach(el => {
+      if (el.innerText && el.innerText.includes('Reproduciendo')) el.style.display = 'none';
+    });
+  }
+};
+
+// Aliases para máxima compatibilidad
+window.stopStoryNarration = function() { window.forceStopAllNarrationAndMedia(false); };
+const originalStopAllMedia = window.stopAllMedia;
+window.stopAllMedia = function(exceptElement = null) {
+  window.forceStopAllNarrationAndMedia(true);
+  if (typeof originalStopAllMedia === 'function') {
+    try { originalStopAllMedia(exceptElement); } catch (_) {}
+  }
+  document.querySelectorAll('audio').forEach(a => {
+    try { a.pause(); a.loop = false; a.currentTime = 0; } catch (_) {}
+  });
+};
+
+// --- PASO 2: RETORNO SEGURO AL BUSCADOR MUSICAL SIN PANTALLA NEGRA ---
+window.goBackToMusicSearch = function(e) {
+  if (e && typeof e.preventDefault === 'function') { e.preventDefault(); e.stopPropagation(); }
+
+  // 1. Detener toda la música, video de YouTube y sincronizador
+  window.forceStopAllNarrationAndMedia(true);
+
+  // 2. Ocultar únicamente la sub-vista del reproductor musical
+  const playerSubView = document.getElementById('music-player-subview') || document.querySelector('[id*="player-subview"]');
+  if (playerSubView) {
+    playerSubView.style.display = 'none';
+    playerSubView.classList.add('hidden');
+  }
+
+  const holoStage = document.getElementById('musicHolographicStage');
+  if (holoStage) {
+    holoStage.style.display = 'none';
+    holoStage.classList.add('hidden');
+  }
+
+  // 3. Asegurar que el portal de música esté visible
+  const musicView = document.getElementById('view-music');
+  if (musicView) {
+    musicView.style.display = 'block';
+    musicView.classList.remove('hidden');
+    musicView.style.opacity = '1';
+    musicView.style.visibility = 'visible';
+  }
+
+  // 4. Localizar el contenedor del Buscador Musical (por ID o buscando el input de búsqueda)
+  let searchSubView = document.getElementById('music-search-subview');
+  if (!searchSubView) {
+    const searchInput = document.querySelector('input[placeholder*="Losing My Religion"], input[placeholder*="Busca"], #music-search-input');
+    if (searchInput) {
+      searchSubView = searchInput.closest('[id*="subview"], [id*="search"], section, .portal-container, div');
+    }
+  }
+
+  // 5. Mostrar el buscador y TODOS sus contenedores padres hasta llegar a <body> (Evita la pantalla negra al 100%)
+  if (searchSubView) {
+    let curr = searchSubView;
+    while (curr && curr !== document.body && curr !== document.documentElement) {
+      curr.classList.remove('hidden', 'd-none');
+      if (typeof window.getComputedStyle === 'function') {
+        try {
+          if (window.getComputedStyle(curr).display === 'none') {
+            curr.style.display = 'block';
+          }
+        } catch (_) {
+          curr.style.display = 'block';
+        }
+      } else {
+        curr.style.display = 'block';
+      }
+      curr.style.opacity = '1';
+      curr.style.visibility = 'visible';
+      curr = curr.parentElement;
+    }
+  }
+
+  if (typeof window.scrollTo === 'function') {
+    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (_) {}
+  }
+};
+window.returnToMusicSearch = window.goBackToMusicSearch;
+
+// --- PASO 3: TRADUCCIÓN REAL AL ESPAÑOL POR LOTES ---
+window.isSpanishTranslationActive = true;
+
+window.translateAllStanzasToSpanish = async function(stanzas) {
+  if (!Array.isArray(stanzas) || !stanzas.length) return;
+
+  // Traducir en bloques de 12 estrofas unidas por salto de línea para que sea instantáneo
+  const chunkSize = 12;
+  for (let i = 0; i < stanzas.length; i += chunkSize) {
+    const chunk = stanzas.slice(i, i + chunkSize);
+    const combinedText = chunk.map(s => s.text || (s.lines ? s.lines.join(' ') : '')).join('\n');
+    try {
+      const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=es&dt=t&q=' + encodeURIComponent(combinedText);
+      const res = await fetch(url);
+      const data = await res.json();
+      const translatedFull = data[0].map(part => part[0]).join('');
+      const translatedLines = translatedFull.split('\n');
+
+      chunk.forEach((stanza, idx) => {
+        const esLine = (translatedLines[idx] || '').trim();
+        stanza.textEs = esLine || stanza.text;
+        stanza.es = stanza.textEs;
+        const domId = (typeof stanza.index === 'number') ? ('stanza-es-' + stanza.index) : ('stanza-es-' + (i + idx));
+        const domEl = document.getElementById(domId) || document.getElementById('stanza-es-' + (i + idx));
+        if (domEl) {
+          domEl.textContent = '🇪🇸 ' + stanza.textEs;
+          domEl.style.display = window.isSpanishTranslationActive ? 'block' : 'none';
+        }
+      });
+    } catch (err) {
+      chunk.forEach((stanza, idx) => {
+        const domId = (typeof stanza.index === 'number') ? ('stanza-es-' + stanza.index) : ('stanza-es-' + (i + idx));
+        const domEl = document.getElementById(domId) || document.getElementById('stanza-es-' + (i + idx));
+        if (domEl && domEl.textContent && domEl.textContent.includes('Traduciendo')) domEl.textContent = '';
+      });
+    }
+  }
+};
+
+window.toggleSpanishLyricsTranslation = function(e) {
+  if (e && typeof e.preventDefault === 'function') { e.preventDefault(); e.stopPropagation(); }
+  window.isSpanishTranslationActive = !window.isSpanishTranslationActive;
+
+  document.querySelectorAll('.stanza-translation, .music-stanza-translation').forEach(el => {
+    el.style.display = window.isSpanishTranslationActive ? 'block' : 'none';
+  });
+
+  // Actualizar texto del botón
+  document.querySelectorAll('button, span, div, a').forEach(btn => {
+    if (btn.children.length <= 1 && btn.innerText && btn.innerText.includes('Traducción al Español')) {
+      btn.innerText = window.isSpanishTranslationActive 
+        ? '✅ Traducción al Español (Activa)' 
+        : '🌐 Traducción al Español (Inactiva)';
+    }
+  });
+
+  if (typeof window.showFloatingToast === 'function') {
+    window.showFloatingToast(window.isSpanishTranslationActive ? 'Traducción al español activada' : 'Traducción al español desactivada', '🌐');
+  }
+};
+window.toggleGlobalLyricsTranslation = window.toggleSpanishLyricsTranslation;
+
+// --- PASO 4: GENERADOR INTELIGENTE DE TIEMPOS PARA CANCIONES SIN LRC ---
+window.buildSmartSyncedStanzasFromPlain = function(plainText, totalSongDuration = 200) {
+  const cleanLines = (plainText || '')
+    .split(/\r?\n/)
+    .map(l => l.replace(/\[.*?\]/g, '').trim())
+    .filter(l => l.length > 1);
+
+  if (!cleanLines.length) return [];
+
+  const startOffset = Math.min(8, totalSongDuration * 0.05);
+  const usableDuration = Math.max(30, totalSongDuration - startOffset - 8);
+  const weights = cleanLines.map(l => Math.max(3, l.split(/\s+/).length));
+  const totalWeight = weights.reduce((a, b) => a + b, 0);
+
+  let cursorTime = startOffset;
+  return cleanLines.map((line, idx) => {
+    const slice = (weights[idx] / totalWeight) * usableDuration;
+    const startTime = +cursorTime.toFixed(2);
+    const nextStart = +(cursorTime + slice).toFixed(2);
+    cursorTime = nextStart;
+    return {
+      index: idx,
+      startTime,
+      time: startTime,
+      originalTime: startTime,
+      endTime: Math.max(startTime + 0.6, +(nextStart - 0.15).toFixed(2)),
+      nextLineStart: nextStart,
+      text: line,
+      lines: [line],
+      words: line.split(/\s+/).filter(Boolean)
+    };
+  });
+};
+
+// Extender parseLrcUniversal con fallback inteligente si sólo hay texto plano
+const origParseLrcUniversal = window.parseLrcUniversal;
+window.parseLrcUniversal = function(lrcString, totalSongDuration = 210) {
+  let parsed = [];
+  if (typeof origParseLrcUniversal === 'function') {
+    parsed = origParseLrcUniversal(lrcString, totalSongDuration) || [];
+  }
+  if (!parsed.length && lrcString && typeof lrcString === 'string' && lrcString.trim().length > 5) {
+    parsed = window.buildSmartSyncedStanzasFromPlain(lrcString, totalSongDuration);
+  }
+  return parsed;
+};
+
+// --- PASO 5: DELEGACIÓN GLOBAL DE CLICS Y CONTROL DE VISTAS ---
 (function() {
   // 1. Motor de cambio de pantallas
   window.switchMasterView = function(viewName) {
+    if (viewName === 'music-search') {
+      window.goBackToMusicSearch();
+      return;
+    }
     if (typeof window.navigateTo === 'function') {
       try { window.navigateTo(viewName); } catch (_) {}
     }
@@ -12132,13 +12409,6 @@ if (typeof window !== 'undefined' && typeof window.addEventListener === 'functio
       targetView.style.display = 'block';
       targetView.classList.remove('hidden');
     }
-    if (viewName === 'music-search') {
-      const searchView = document.getElementById('music-search-subview') || document.querySelector('[id*="music-search"], [id*="music"]');
-      if (searchView) {
-        searchView.style.display = 'block';
-        searchView.classList.remove('hidden');
-      }
-    }
   };
 
   // 2. Cerrar sesión garantizado
@@ -12155,6 +12425,9 @@ if (typeof window !== 'undefined' && typeof window.addEventListener === 'functio
       localStorage.removeItem('guest_user');
       window.aiChatHistory = [];
     } catch (_) {}
+    if (typeof window.forceStopAllNarrationAndMedia === 'function') {
+      window.forceStopAllNarrationAndMedia(true);
+    }
     if (typeof window.logout === 'function') {
       try { window.logout(); } catch (_) {}
     }
@@ -12195,7 +12468,7 @@ if (typeof window !== 'undefined' && typeof window.addEventListener === 'functio
     }
   };
 
-  // 4. Asegurar enlace global de Google Account Selector
+  // 4. Selector de Cuenta Google
   if (typeof window.openGoogleAccountSelector !== 'function') {
     window.openGoogleAccountSelector = function(e) {
       if (e && typeof e.preventDefault === 'function') e.preventDefault();
@@ -12209,13 +12482,19 @@ if (typeof window !== 'undefined' && typeof window.addEventListener === 'functio
     };
   }
 
-  // 5. DELEGACIÓN GLOBAL DE CLICS EN FASE DE CAPTURA (RESCATA TODOS LOS BOTONES DE LA PÁGINA)
+  // 5. DELEGACIÓN GLOBAL DE CLICS EN FASE DE CAPTURA
   if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
     document.addEventListener('click', function(e) {
       const btn = e.target && e.target.closest ? e.target.closest('button, a, [role="button"], .btn, .portal-btn') : null;
       if (!btn) return;
 
       const text = (btn.innerText || btn.textContent || '').trim().toLowerCase();
+
+      // Botón: Detener Audio en Cuentos
+      if (text.includes('detener audio')) {
+        window.forceStopAllNarrationAndMedia(false);
+        return;
+      }
 
       // Botón: Cerrar Sesión
       if (text.includes('cerrar sesión') || text.includes('cerrar sesion')) {
@@ -12231,15 +12510,21 @@ if (typeof window !== 'undefined' && typeof window.addEventListener === 'functio
 
       // Botón: Volver al Buscador de Música
       if (text.includes('volver al buscador')) {
-        if (typeof e.preventDefault === 'function') e.preventDefault();
-        window.switchMasterView('music-search');
+        window.goBackToMusicSearch(e);
         return;
       }
 
       // Botón: Volver a Portales / Volver al Hub
       if (text.includes('volver a portales') || text.includes('volver al hub') || text.includes('volver al inicio')) {
+        window.forceStopAllNarrationAndMedia(true);
         if (typeof e.preventDefault === 'function') e.preventDefault();
         window.switchMasterView('hub');
+        return;
+      }
+
+      // Botón: Traducción al Español
+      if (text.includes('traducción al español') || text.includes('traduccion al espanol')) {
+        window.toggleSpanishLyricsTranslation(e);
         return;
       }
 
