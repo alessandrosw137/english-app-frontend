@@ -136,7 +136,8 @@
     #learningMissionModal:not(.hidden),
     #profileModal:not(.hidden),
     #rouletteModal:not(.hidden),
-    #musicWordModal:not(.hidden) {
+    #musicWordModal:not(.hidden),
+    #adminDashboardModal:not(.hidden) {
       display: flex !important;
     }
 

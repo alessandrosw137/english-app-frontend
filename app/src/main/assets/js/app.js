@@ -696,8 +696,14 @@
       // Control condicional del botón "⚙️ Panel Admin"
       const adminBtn = document.getElementById('headerAdminBtn');
       if (adminBtn) {
-        const isUserAdmin = Boolean(user && user.role === 'admin' && user.username === 'admin');
-        if (isUserAdmin && user.role === 'admin') {
+        const isUserAdmin = Boolean(
+          user && (
+            user.role === 'admin' ||
+            (user.username && ['admin', 'alessandro'].includes(String(user.username).toLowerCase())) ||
+            (user.email && (String(user.email).toLowerCase() === 'admin@antigravity.com' || String(user.email).toLowerCase().includes('admin') || String(user.email).toLowerCase().includes('alessandro')))
+          )
+        );
+        if (isUserAdmin && (user.role === 'admin' || (user.username && ['admin', 'alessandro'].includes(String(user.username).toLowerCase())))) {
           adminBtn.style.display = 'inline-flex';
           adminBtn.classList.remove('hidden');
         } else {
@@ -812,49 +818,24 @@
 
     let _lastAdminOpenTime = 0;
     function openAdminDashboardModal() {
-      const now = Date.now();
-      if (now - _lastAdminOpenTime < 250) return;
-      _lastAdminOpenTime = now;
-
       let user = getStoredUser();
-      const isRecognizedAdmin = Boolean(user && user.role === 'admin' && user.username === 'admin');
+      const isRecognizedAdmin = Boolean(
+        user && (
+          user.role === 'admin' ||
+          (user.username && ['admin', 'alessandro'].includes(String(user.username).toLowerCase())) ||
+          (user.email && (String(user.email).toLowerCase() === 'admin@antigravity.com' || String(user.email).toLowerCase().includes('admin') || String(user.email).toLowerCase().includes('alessandro')))
+        )
+      );
 
       if (!isRecognizedAdmin) {
-        const pass = (typeof window !== 'undefined' && typeof window['prompt'] === 'function')
-          ? window['prompt']('🔐 Consola de Administración MasterENG:\nIngresa la contraseña maestra de Administrador:')
-          : null;
-        if (pass === 'Admin2026!Master') {
-          const adminObj = {
-            id: 'admin_master_001',
-            username: (user && user.username && user.username !== 'Invitado') ? user.username : 'admin',
-            email: (user && user.email) ? user.email : 'admin@antigravity.com',
-            role: 'admin',
-            exp: (user && typeof user.exp === 'number') ? user.exp : 1250,
-            rank: 'Diamante',
-            token: 'MasterENG-Admin-OfflineMasterToken-2026'
-          };
-          saveStoredAuthUser(adminObj);
-          try {
-            localStorage.setItem('user_role', 'admin');
-            localStorage.setItem('mastereng_user', JSON.stringify(adminObj));
-            localStorage.setItem('mastereng_user_name', adminObj.username);
-          } catch (_) {}
-          showFloatingToast('¡Bienvenido, Administrador!', '🛡️');
-          if (typeof updateUserExpDisplay === 'function') updateUserExpDisplay();
-          user = adminObj;
-          storedRole = 'admin';
-        } else {
-          if (pass !== null) {
-            showFloatingToast('Contraseña de Administrador incorrecta', '❌');
-          } else {
-            showFloatingToast('Acceso restringido: requiere permisos de Administrador', '🔒');
-          }
-          return;
+        if (typeof showFloatingToast === 'function') {
+          showFloatingToast('🔒 Acceso restringido: requiere permisos de Administrador', '🔒');
         }
+        return;
       }
 
       // Cerrar otros modales que pudieran estar abiertos
-      document.querySelectorAll('#profileModal, #settingsModal, #feedbackModal, #rouletteModal, #glossaryModal, #learningMissionModal, #musicWordModal, #chatbotWindow').forEach(m => {
+      document.querySelectorAll('#profileModal, #settingsModal, #feedbackModal, #rouletteModal, #glossaryModal, #learningMissionModal, #musicWordModal, #chatbotWindow, #googleAccountPickerModal').forEach(m => {
         m.style.setProperty('display', 'none', 'important');
         m.classList.remove('active', 'show', 'open');
         m.classList.add('hidden');
@@ -868,7 +849,7 @@
         modal.style.setProperty('display', 'flex', 'important');
         modal.style.setProperty('visibility', 'visible', 'important');
         modal.style.setProperty('pointer-events', 'auto', 'important');
-        modal.style.setProperty('z-index', '100000', 'important');
+        modal.style.setProperty('z-index', '100005', 'important');
         // Renderizar caché local en 0ms sin esperar la red
         const instantUsers = (window.allAdminUsersList && window.allAdminUsersList.length > 0)
           ? window.allAdminUsersList
@@ -1465,7 +1446,8 @@
       const activeUser = (typeof getStoredUser === 'function') ? getStoredUser() : null;
       const headerAdmin = document.getElementById('headerAdminBtn');
       if (headerAdmin) {
-        if (activeUser && activeUser.role === 'admin' && activeUser.username === 'admin') {
+        const isActAdmin = Boolean(activeUser && (activeUser.role === 'admin' || (activeUser.username && ['admin', 'alessandro'].includes(String(activeUser.username).toLowerCase()))));
+        if (isActAdmin) {
           headerAdmin.style.display = 'inline-flex';
           headerAdmin.classList.remove('hidden');
         } else {
@@ -2431,7 +2413,8 @@ window.logout = function() {
       const activeUser = (typeof getStoredUser === 'function') ? getStoredUser() : null;
       const headerAdmin = document.getElementById('headerAdminBtn');
       if (headerAdmin) {
-        if (activeUser && activeUser.role === 'admin' && activeUser.username === 'admin') {
+        const isActAdmin = Boolean(activeUser && (activeUser.role === 'admin' || (activeUser.username && ['admin', 'alessandro'].includes(String(activeUser.username).toLowerCase()))));
+        if (isActAdmin) {
           headerAdmin.style.display = 'inline-flex';
           headerAdmin.classList.remove('hidden');
         } else {
@@ -3010,7 +2993,7 @@ window.logout = function() {
         const exp = parseInt(user.exp, 10) || 0;
         const rankInfo = typeof calculateRankInfo === 'function' ? calculateRankInfo(exp) : { rank: 'Bronce', medal: '🥉', title: 'Novato', progressPercent: 0 };
         const level = Math.floor(exp / 100) + 1;
-        const isAdmin = Boolean(user && user.role === 'admin' && user.username === 'admin');
+        const isAdmin = Boolean(user && (user.role === 'admin' || (user.username && ['admin', 'alessandro'].includes(String(user.username).toLowerCase())) || (user.email && (String(user.email).toLowerCase() === 'admin@antigravity.com' || String(user.email).toLowerCase().includes('admin') || String(user.email).toLowerCase().includes('alessandro')))));
 
         container.innerHTML = `
           <div class="flex items-center gap-4 p-4 rounded-2xl bg-slate-800/80 border border-slate-700/60 shadow-lg">
@@ -3128,7 +3111,8 @@ window.logout = function() {
       const activeUser = (typeof getStoredUser === 'function') ? getStoredUser() : null;
       const headerAdmin = document.getElementById('headerAdminBtn');
       if (headerAdmin) {
-        if (activeUser && activeUser.role === 'admin' && activeUser.username === 'admin') {
+        const isActAdmin = Boolean(activeUser && (activeUser.role === 'admin' || (activeUser.username && ['admin', 'alessandro'].includes(String(activeUser.username).toLowerCase()))));
+        if (isActAdmin) {
           headerAdmin.style.display = 'inline-flex';
           headerAdmin.classList.remove('hidden');
         } else {
