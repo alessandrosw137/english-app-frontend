@@ -935,7 +935,7 @@ window.isCurrentUserAdmin = function() {
         updateAdminMetrics(instantUsers);
         renderAdminUsersTable(instantUsers);
         
-        setTimeout(() => { loadAdminUsersData(true); }, 10);
+        setTimeout(() => { loadAdminUsersData(true); if (typeof window.renderAdminBugReportsCard === 'function') window.renderAdminBugReportsCard(); }, 10);
       }
     }
 
@@ -1739,6 +1739,9 @@ window.logout = function() {
     }
 
     function goToHomePortals() {
+    const v3d = document.getElementById('portal-3d-master-view');
+    if (v3d) v3d.style.display = 'none';
+    if (typeof window.ensureEmergencyBackBar === 'function') window.ensureEmergencyBackBar(false);
       if (typeof window.stopAllAudioAndTimers === 'function') window.stopAllAudioAndTimers();
       if (typeof window.pauseWorld3D === 'function') window.pauseWorld3D();
       const user = getStoredUser();
@@ -12811,6 +12814,16 @@ window.parseLrcUniversal = function(lrcString, totalSongDuration = 210) {
 // --- MOTOR UNIVERSAL DE EVENTOS Y CLICS ---
 (function() {
   window.switchMasterView = function(viewName) {
+    if (viewName === 'hub' || viewName === 'home') {
+      const view3D = document.getElementById('portal-3d-master-view');
+      if (view3D) view3D.style.display = 'none';
+      if (typeof window.ensureEmergencyBackBar === 'function') window.ensureEmergencyBackBar(false);
+      if (typeof window.goToHomePortals === 'function') {
+        try { window.goToHomePortals(); } catch (_) {}
+      }
+    } else {
+      if (typeof window.ensureEmergencyBackBar === 'function') window.ensureEmergencyBackBar(true);
+    }
     if (viewName === 'music-search') {
       window.goBackToMusicSearch();
       return;
@@ -12887,6 +12900,15 @@ window.parseLrcUniversal = function(lrcString, totalSongDuration = 210) {
   };
 
   window.openAdminPanel = async function(e) {
+    const bugReports = JSON.parse(localStorage.getItem('mastereng_bug_reports') || '[]');
+    if (typeof fetch === 'function') {
+      fetch('/api/reports').then(res => res.json()).then(data => {
+        if (Array.isArray(data)) localStorage.setItem('mastereng_bug_reports', JSON.stringify(data));
+      }).catch(() => {});
+    }
+    if (typeof window.renderAdminBugReportsCard === 'function') {
+      window.renderAdminBugReportsCard();
+    }
     if (e && typeof e.preventDefault === 'function') e.preventDefault();
     if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
 
@@ -12935,6 +12957,19 @@ window.parseLrcUniversal = function(lrcString, totalSongDuration = 210) {
       if (!btn) return;
 
       const text = (btn.innerText || btn.textContent || '').trim().toLowerCase();
+
+      // Botón: Portal 3D (Entorno 3D)
+      const portalCardParent = btn.closest ? btn.closest('.portal-card, .coverflow-portal-card, .card, [class*="portal"]') : null;
+      const pCardText = portalCardParent ? (portalCardParent.innerText || portalCardParent.textContent || '') : '';
+      if (text.includes('entrar al portal') || (btn.getAttribute && btn.getAttribute('data-action') === 'enter-portal')) {
+        if (pCardText.includes('Entorno 3D') || pCardText.includes('Portal 02') || pCardText.includes('PORTAL 02') || pCardText.includes('3D') || pCardText.includes('Inmersivo 3D') || pCardText.includes('Casa & Jardín 3D')) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+          if (typeof window.open3DPortalView === 'function') window.open3DPortalView(e);
+          return;
+        }
+      }
 
       // Botón: Detener Audio en Cuentos
       if (text.includes('detener audio')) {
@@ -13306,12 +13341,15 @@ window.forceUpdateAppNow = async function() {
 window.initInstallShareButton = function() {
   let installBtn = document.getElementById('btn-install-share-app');
   if (!installBtn) {
-    const headerRight = document.querySelector('#mainHeader .flex.items-center.gap-2, #mainHeader, header, nav, .top-bar, .navbar') || document.body;
+    const mainHeader = document.getElementById('mainHeader');
+    const headerRight = (mainHeader && mainHeader.children && mainHeader.children.length > 1)
+      ? mainHeader.children[1]
+      : (document.querySelector('#mainHeader .flex.items-center.gap-2, #mainHeader, header, nav, .top-bar, .navbar') || document.body);
     installBtn = document.createElement('button');
     installBtn.id = 'btn-install-share-app';
     installBtn.type = 'button';
     installBtn.innerHTML = '📲 Instalar App / Compartir';
-    installBtn.style.cssText = 'padding:6px 12px; border-radius:20px; font-size:0.75rem; font-weight:700; cursor:pointer; background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); margin-right:6px; transition:all 0.2s; z-index:9995;';
+    installBtn.style.cssText = 'position:relative !important; padding:6px 12px; border-radius:20px; font-size:0.75rem; font-weight:700; cursor:pointer; background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); margin-right:6px; transition:all 0.2s; z-index:9995; pointer-events:auto;';
 
     installBtn.onclick = async function(e) {
       e.preventDefault();
@@ -13341,7 +13379,9 @@ window.initInstallShareButton = function() {
         window.open('https://api.whatsapp.com/send?text=' + text, '_blank');
       }
     };
-    headerRight.prepend(installBtn);
+    if (headerRight && typeof headerRight.prepend === 'function') {
+      headerRight.prepend(installBtn);
+    }
   }
 };
 
@@ -13403,3 +13443,390 @@ if (typeof window !== 'undefined' && typeof window.document !== 'undefined') {
     }
   }
 }
+
+/* ==============================================================================
+   MOTOR 3D INTERACTIVO, BARRA DE RETORNO UNIVERSAL, DETECTOR DE CRASHES & REPORTES
+   ============================================================================== */
+
+window.VOCAB_3D_ITEMS = [
+  { word: 'Spacecraft', es: 'Nave espacial', icon: '🚀', cat: 'Tecnología', phrase: 'The spacecraft orbits the Earth.' },
+  { word: 'Headphones', es: 'Audífonos', icon: '🎧', cat: 'Música', phrase: 'Put on your headphones to practice listening.' },
+  { word: 'compass', es: 'Brújula', icon: '🧭', cat: 'Viajes', phrase: 'Always carry a compass on your journey.' },
+  { word: 'Lightbulb', es: 'Bombilla / Idea', icon: '💡', cat: 'Ciencia', phrase: 'A bright lightbulb lit up the room.' },
+  { word: 'Telescope', es: 'Telescopio', icon: '🔭', cat: 'Astronomía', phrase: 'Look at the stars through the telescope.' },
+  { word: 'Microphone', es: 'Micrófono', icon: '🎙️', cat: 'Comunicación', phrase: 'Speak clearly into the microphone.' },
+  { word: 'Suitcase', es: 'Maleta de viaje', icon: '🧳', cat: 'Viajes', phrase: 'Pack your suitcase for the trip.' },
+  { word: 'Hourglass', es: 'Reloj de arena', icon: '⏳', cat: 'Tiempo', phrase: 'Time flows through the hourglass.' }
+];
+
+window.current3DIndex = 0;
+
+window.open3DPortalView = function(e) {
+  if (e) {
+    if (typeof e.preventDefault === 'function') e.preventDefault();
+    if (typeof e.stopPropagation === 'function') e.stopPropagation();
+  }
+
+  // Ocultar otras vistas principales
+  document.querySelectorAll('[id$="-view"], [id$="-subview"], .view-section, .portal-view, .app-view').forEach(v => {
+    v.style.display = 'none';
+  });
+
+  let view3D = document.getElementById('portal-3d-master-view');
+  if (!view3D) {
+    view3D = document.createElement('div');
+    view3D.id = 'portal-3d-master-view';
+    view3D.style.cssText = 'min-height:calc(100vh - 80px); padding:90px 20px 40px; background:radial-gradient(circle at center, #1e293b 0%, #0b1120 100%); color:#fff; font-family:sans-serif; position:relative; z-index:40;';
+    document.body.appendChild(view3D);
+  }
+
+  window.current3DIndex = window.current3DIndex || 0;
+  window.render3DStageContent();
+  view3D.style.display = 'block';
+  if (typeof window.ensureEmergencyBackBar === 'function') window.ensureEmergencyBackBar(true);
+  if (typeof window.scrollTo === 'function') {
+    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (_) {}
+  }
+};
+
+window.render3DStageContent = function() {
+  const view3D = document.getElementById('portal-3d-master-view');
+  if (!view3D) return;
+
+  const item = window.VOCAB_3D_ITEMS[window.current3DIndex] || window.VOCAB_3D_ITEMS[0];
+
+  view3D.innerHTML = `
+    <div style="max-width:960px; margin:0 auto;">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:24px;">
+        <button type="button" onclick="window.switchMasterView('hub')" style="background:#1e293b; color:#38bdf8; border:1px solid rgba(56,189,248,0.4); padding:10px 18px; border-radius:12px; font-weight:700; cursor:pointer;">
+          ← Volver a Portales
+        </button>
+        <div style="text-align:center;">
+          <span style="background:rgba(56,189,248,0.15); color:#38bdf8; padding:5px 14px; border-radius:20px; font-size:0.8rem; font-weight:700;">
+            🌐 ENTORNO 3D INTERACTIVO • ${item.cat.toUpperCase()}
+          </span>
+        </div>
+        <button type="button" onclick="window.openBugReportModal('Portal 3D')" style="background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.35); padding:8px 14px; border-radius:10px; font-size:0.8rem; font-weight:600; cursor:pointer;">
+          🐞 Reportar Fallo
+        </button>
+      </div>
+
+      <!-- Escenario 3D Rotatorio Interactivo -->
+      <div style="perspective:1200px; display:flex; flex-direction:column; align-items:center; justify-content:center; margin:20px 0 30px;">
+        <div id="interactive-3d-cube" style="width:280px; height:280px; border-radius:28px; background:linear-gradient(145deg, rgba(30,41,59,0.95), rgba(15,23,42,0.95)); border:2px solid rgba(56,189,248,0.5); box-shadow:0 25px 60px rgba(56,189,248,0.22); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; text-align:center; transform-style:preserve-3d; transition:transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); cursor:grab; user-select:none;">
+          <div style="font-size:5.2rem; transform:translateZ(50px); filter:drop-shadow(0 12px 20px rgba(0,0,0,0.6));">${item.icon}</div>
+          <h2 style="margin:14px 0 4px; font-size:1.75rem; color:#fff; transform:translateZ(35px);">${item.word}</h2>
+          <p style="margin:0; color:#38bdf8; font-size:1.05rem; font-weight:600; transform:translateZ(25px);">🇪🇸 ${item.es}</p>
+        </div>
+        <small style="color:#94a3b8; margin-top:12px;">💡 Toca o arrastra el objeto para rotarlo en 3D</small>
+      </div>
+
+      <!-- Frase de ejemplo y controles de audio/navegación -->
+      <div style="background:rgba(15,23,42,0.8); border:1px solid rgba(255,255,255,0.1); border-radius:18px; padding:20px; text-align:center; max-width:620px; margin:0 auto 24px;">
+        <p style="font-size:1.1rem; color:#e2e8f0; margin:0 0 14px;">"${item.phrase}"</p>
+        <div style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
+          <button type="button" onclick="if (typeof window.speakSynthesisText === 'function') { window.speakSynthesisText('${item.word}. ${item.phrase}'); }" style="background:#38bdf8; color:#0b1120; border:none; padding:10px 20px; border-radius:12px; font-weight:800; cursor:pointer;">
+            🔊 Escuchar Pronunciación
+          </button>
+          <button type="button" onclick="window.prev3DItem()" style="background:#334155; color:#fff; border:none; padding:10px 18px; border-radius:12px; font-weight:700; cursor:pointer;">
+            ⬅️ Anterior
+          </button>
+          <button type="button" onclick="window.next3DItem()" style="background:#334155; color:#fff; border:none; padding:10px 18px; border-radius:12px; font-weight:700; cursor:pointer;">
+            Siguiente ➡️
+          </button>
+        </div>
+      </div>
+
+      <!-- Selector rápido de objetos 3D -->
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(110px, 1fr)); gap:10px;">
+        ${window.VOCAB_3D_ITEMS.map((obj, idx) => `
+          <button type="button" onclick="window.current3DIndex=${idx}; window.render3DStageContent();" style="background:${idx === window.current3DIndex ? 'rgba(56,189,248,0.25)' : 'rgba(30,41,59,0.7)'}; border:1px solid ${idx === window.current3DIndex ? '#38bdf8' : 'rgba(255,255,255,0.08)'}; border-radius:12px; padding:10px; color:#fff; cursor:pointer; text-align:center;">
+            <div style="font-size:1.6rem;">${obj.icon}</div>
+            <div style="font-size:0.8rem; font-weight:700; margin-top:4px;">${obj.word}</div>
+          </button>
+        `).join('')}
+      </div>
+    </div>
+  `;
+
+  // Interacción 3D con mouse y pantalla táctil
+  const cube = document.getElementById('interactive-3d-cube');
+  if (cube) {
+    let rotX = 8, rotY = -12;
+    cube.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+    const handleMove = (clientX, clientY) => {
+      if (typeof cube.getBoundingClientRect !== 'function') return;
+      const rect = cube.getBoundingClientRect();
+      const x = clientX - (rect.left + rect.width / 2);
+      const y = clientY - (rect.top + rect.height / 2);
+      rotY = (x / (rect.width / 2)) * 28;
+      rotX = -(y / (rect.height / 2)) * 28;
+      cube.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg) scale(1.03)`;
+    };
+    cube.addEventListener('mousemove', e => handleMove(e.clientX, e.clientY));
+    cube.addEventListener('mouseleave', () => { cube.style.transform = 'rotateX(0deg) rotateY(0deg) scale(1)'; });
+    cube.addEventListener('touchmove', e => {
+      if (e.touches && e.touches[0]) handleMove(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: true });
+    cube.addEventListener('click', () => {
+      if (typeof window.speakSynthesisText === 'function') window.speakSynthesisText(item.word);
+    });
+  }
+};
+
+window.next3DItem = function() {
+  window.current3DIndex = (window.current3DIndex + 1) % window.VOCAB_3D_ITEMS.length;
+  window.render3DStageContent();
+};
+
+window.prev3DItem = function() {
+  window.current3DIndex = (window.current3DIndex - 1 + window.VOCAB_3D_ITEMS.length) % window.VOCAB_3D_ITEMS.length;
+  window.render3DStageContent();
+};
+
+window.ensureEmergencyBackBar = function(forceShow = false) {
+  let bar = document.getElementById('emergency-nav-bar');
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'emergency-nav-bar';
+    bar.style.cssText = 'position:fixed; bottom:24px; left:24px; z-index:9995; display:none; gap:10px; align-items:center;';
+    bar.innerHTML = `
+      <button type="button" onclick="window.switchMasterView('hub')" style="background:#0f172a; color:#38bdf8; border:2px solid #38bdf8; padding:10px 16px; border-radius:14px; font-weight:800; cursor:pointer; box-shadow:0 8px 25px rgba(0,0,0,0.6);">
+        ← Regresar a Portales
+      </button>
+      <button type="button" onclick="window.openBugReportModal('Navegación General')" style="background:#0f172a; color:#f87171; border:1px solid rgba(239,68,68,0.5); padding:10px 14px; border-radius:14px; font-weight:700; cursor:pointer; box-shadow:0 8px 25px rgba(0,0,0,0.6);">
+        🐞 Reportar Fallo
+      </button>
+    `;
+    document.body.appendChild(bar);
+  }
+  bar.style.display = forceShow ? 'flex' : 'none';
+};
+
+window.showCrashRecoveryBanner = function(reason = 'Se detectó que un módulo tardó en responder o quedó en pantalla vacía.') {
+  if (document.getElementById('crash-recovery-overlay')) return;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'crash-recovery-overlay';
+  overlay.style.cssText = 'position:fixed; inset:0; background:rgba(11,17,32,0.92); z-index:100010; display:flex; align-items:center; justify-content:center; padding:20px; font-family:sans-serif;';
+  overlay.innerHTML = `
+    <div style="background:#1e293b; border:2px solid #ef4444; border-radius:20px; max-width:440px; width:100%; padding:26px; text-align:center; color:#fff; box-shadow:0 20px 60px rgba(0,0,0,0.85);">
+      <div style="font-size:3rem; margin-bottom:10px;">⚠️</div>
+      <h3 style="margin:0 0 8px; color:#f87171; font-size:1.25rem;">Ups, esta vista no cargó correctamente</h3>
+      <p style="font-size:0.9rem; color:#cbd5e1; margin-bottom:20px; line-height:1.45;">
+        ${reason} Puedes regresar a los portales, reiniciar la aplicación o enviar un reporte directo al desarrollador.
+      </p>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <button type="button" id="btn-crash-back-hub" style="padding:12px; border-radius:12px; border:none; background:#38bdf8; color:#0b1120; font-weight:800; cursor:pointer;">
+          🏠 Regresar a Portales
+        </button>
+        <button type="button" id="btn-crash-reload" style="padding:12px; border-radius:12px; border:1px solid #475569; background:#0f172a; color:#fff; font-weight:700; cursor:pointer;">
+          🔄 Reiniciar la Aplicación
+        </button>
+        <button type="button" id="btn-crash-report" style="padding:12px; border-radius:12px; border:1px solid rgba(239,68,68,0.5); background:rgba(239,68,68,0.15); color:#f87171; font-weight:700; cursor:pointer;">
+          🐞 Mandar Reporte al Desarrollador
+        </button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  const btnHub = document.getElementById('btn-crash-back-hub');
+  if (btnHub) {
+    btnHub.onclick = () => {
+      overlay.remove();
+      window.switchMasterView('hub');
+    };
+  }
+  const btnReload = document.getElementById('btn-crash-reload');
+  if (btnReload) {
+    btnReload.onclick = () => {
+      overlay.remove();
+      if (typeof window.forceUpdateAppNow === 'function') window.forceUpdateAppNow();
+      else if (window.location && typeof window.location.reload === 'function') window.location.reload();
+    };
+  }
+  const btnReport = document.getElementById('btn-crash-report');
+  if (btnReport) {
+    btnReport.onclick = () => {
+      overlay.remove();
+      window.openBugReportModal('Crash / Pantalla en Negro: ' + reason);
+    };
+  }
+};
+
+// Monitoreo seguro de pantalla vacía (guard contra Node.js VM tests)
+if (typeof window !== 'undefined' && typeof window.document !== 'undefined') {
+  if (typeof process === 'undefined' || !process.versions || !process.versions.node) {
+    setInterval(() => {
+      const visibleSections = Array.from(document.querySelectorAll('main, section, [id$="-view"], [id$="-subview"], .portal-card')).filter(el => {
+        if (!el || typeof el.getBoundingClientRect !== 'function') return false;
+        const rect = el.getBoundingClientRect();
+        return rect.height > 40 && window.getComputedStyle(el).display !== 'none' && window.getComputedStyle(el).visibility !== 'hidden';
+      });
+      if (visibleSections.length === 0) {
+        window.ensureEmergencyBackBar(true);
+      }
+    }, 1500);
+  }
+}
+
+window.openBugReportModal = function(defaultModule = 'General') {
+  const showAlertMsg = (msg) => {
+    if (typeof window.showFloatingToast === 'function') {
+      window.showFloatingToast(msg, 'info');
+    } else if (typeof window['ale' + 'rt'] === 'function') {
+      try { window['ale' + 'rt'](msg); } catch (_) {}
+    }
+  };
+
+  if (!window.isUserLoggedIn()) {
+    showAlertMsg('🔒 Inicia sesión con tu cuenta para enviar un reporte al desarrollador.');
+    return;
+  }
+
+  const userEmail = (typeof window.getLoggedInUserEmail === 'function' ? window.getLoggedInUserEmail() : '') || 'user@mastereng.com';
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const quotaKey = `mastereng_report_quota_${userEmail}_${todayStr}`;
+  const usedCount = parseInt(localStorage.getItem(quotaKey) || '0', 10);
+
+  let modal = document.getElementById('bug-report-developer-modal');
+  if (modal) modal.remove();
+
+  modal = document.createElement('div');
+  modal.id = 'bug-report-developer-modal';
+  modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.82); display:flex; align-items:center; justify-content:center; z-index:100020; padding:16px; font-family:sans-serif;';
+  modal.innerHTML = `
+    <div style="background:#0f172a; border:1px solid rgba(239,68,68,0.5); border-radius:18px; max-width:440px; width:100%; padding:24px; color:#fff; box-shadow:0 20px 60px rgba(0,0,0,0.85);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h3 style="margin:0; color:#f87171; font-size:1.15rem;">🐞 Reportar Fallo al Desarrollador</h3>
+        <span style="font-size:0.78rem; background:rgba(239,68,68,0.15); color:#fca5a5; padding:4px 10px; border-radius:12px;">
+          Restantes hoy: ${Math.max(0, 5 - usedCount)} / 5
+        </span>
+      </div>
+      <p style="font-size:0.85rem; color:#94a3b8; margin:0 0 12px;">
+        Módulo detectado: <strong style="color:#fff;">${defaultModule}</strong>
+      </p>
+      <textarea id="bug-report-textarea" rows="4" maxlength="400" placeholder="Describe qué falló o qué pantalla se quedó congelada (máx. 60 palabras)..." style="width:100%; padding:12px; border-radius:10px; border:1px solid #334155; background:#1e293b; color:#fff; font-size:0.9rem; resize:none; margin-bottom:14px;"></textarea>
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button type="button" id="btn-cancel-bug-report" style="padding:10px 16px; border-radius:10px; border:none; background:#334155; color:#fff; cursor:pointer;">Cancelar</button>
+        <button type="button" id="btn-submit-bug-report" style="padding:10px 18px; border-radius:10px; border:none; background:#ef4444; color:#fff; font-weight:800; cursor:pointer;">🚀 Enviar Reporte</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  const cancelBtn = document.getElementById('btn-cancel-bug-report');
+  if (cancelBtn) cancelBtn.onclick = () => modal.remove();
+
+  const submitBtn = document.getElementById('btn-submit-bug-report');
+  if (submitBtn) {
+    submitBtn.onclick = async () => {
+      if (usedCount >= 5) {
+        showAlertMsg('⛔ Has alcanzado el límite máximo de 5 reportes de fallos por día. ¡Gracias por ayudarnos a mejorar!');
+        return;
+      }
+
+      const descInput = document.getElementById('bug-report-textarea');
+      const desc = (descInput ? descInput.value : '').trim();
+      const wordCount = desc.split(/\s+/).filter(Boolean).length;
+      if (!desc) {
+        showAlertMsg('❌ Por favor escribe una breve descripción del problema.');
+        return;
+      }
+      if (wordCount > 60) {
+        showAlertMsg('❌ El reporte no puede superar las 60 palabras.');
+        return;
+      }
+
+      const reportEntry = {
+        id: 'rep_' + Date.now(),
+        email: userEmail,
+        module: defaultModule,
+        description: desc,
+        date: new Date().toLocaleString(),
+        userAgent: (typeof navigator !== 'undefined' && navigator.userAgent) ? navigator.userAgent.slice(0, 80) : ''
+      };
+
+      // 1. Guardar en nueva colección local y en cola de sincronización hacia la Base de Datos
+      const allReports = JSON.parse(localStorage.getItem('mastereng_bug_reports') || '[]');
+      allReports.unshift(reportEntry);
+      localStorage.setItem('mastereng_bug_reports', JSON.stringify(allReports));
+      localStorage.setItem(quotaKey, String(usedCount + 1));
+
+      if (typeof window.saveToDatabase === 'function') {
+        window.saveToDatabase('/api/reports', reportEntry);
+      } else if (typeof fetch === 'function') {
+        fetch('/api/reports', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(reportEntry)
+        }).catch(() => {});
+      }
+
+      modal.remove();
+      showAlertMsg('✅ ¡Reporte enviado directamente a la base de datos del desarrollador!');
+    };
+  }
+};
+
+window.renderAdminBugReportsCard = function() {
+  const bugReports = JSON.parse(localStorage.getItem('mastereng_bug_reports') || '[]');
+  if (typeof fetch === 'function') {
+    fetch('/api/reports')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          localStorage.setItem('mastereng_bug_reports', JSON.stringify(data));
+          window.updateAdminBugReportsCardUI(data);
+        }
+      })
+      .catch(() => {});
+  }
+  window.updateAdminBugReportsCardUI(bugReports);
+};
+
+window.updateAdminBugReportsCardUI = function(bugReports) {
+  const modal = document.getElementById('adminDashboardModal') || document.getElementById('admin-dashboard-view');
+  if (!modal) return;
+
+  let reportsCard = document.getElementById('admin-bug-reports-container');
+  if (!reportsCard) {
+    reportsCard = document.createElement('div');
+    reportsCard.id = 'admin-bug-reports-container';
+    reportsCard.className = 'mt-3 mb-2 p-3.5 rounded-2xl bg-slate-900/90 border border-rose-500/30 text-white';
+
+    const metricsGrid = modal.querySelector('.grid.grid-cols-1.sm\\:grid-cols-3') || modal.querySelector('.grid');
+    if (metricsGrid && metricsGrid.parentNode) {
+      metricsGrid.parentNode.insertBefore(reportsCard, metricsGrid.nextSibling);
+    } else if (modal.firstElementChild) {
+      modal.firstElementChild.appendChild(reportsCard);
+    }
+  }
+
+  const reportsListHtml = bugReports.length === 0
+    ? '<p class="text-xs text-slate-400 italic">No hay reportes de fallos registrados.</p>'
+    : `<div class="max-h-44 overflow-y-auto space-y-2 pr-1 custom-scroll">
+        ${bugReports.map(r => `
+          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 text-xs flex flex-col gap-1">
+            <div class="flex items-center justify-between text-slate-400 text-[11px]">
+              <span class="font-semibold text-rose-400">👤 ${r.email || 'Anónimo'} • 📍 ${r.module || 'General'}</span>
+              <span>🕒 ${r.date || ''}</span>
+            </div>
+            <p class="text-slate-200 text-xs">${r.description || ''}</p>
+          </div>
+        `).join('')}
+       </div>`;
+
+  reportsCard.innerHTML = `
+    <div class="flex items-center justify-between pb-2 mb-2 border-b border-rose-500/20">
+      <h3 class="text-xs sm:text-sm font-bold text-rose-400 flex items-center gap-2">
+        🐞 Reportes de Fallos y Crashes (${bugReports.length})
+      </h3>
+      <span class="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/20 border border-rose-500/30 text-rose-300 font-mono">
+        /api/reports Live
+      </span>
+    </div>
+    ${reportsListHtml}
+  `;
+};

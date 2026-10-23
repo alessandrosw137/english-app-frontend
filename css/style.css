@@ -1691,3 +1691,37 @@ button, a, input, select, textarea, [role="button"], .stanza-card, .portal-card 
     font-size: 1.4rem !important;
   }
 }
+
+
+/* --- PORTAL 3D, EMERGENCY RETURN BAR & BUG REPORTING --- */
+#btn-install-share-app {
+  position: relative !important;
+  left: auto !important;
+  top: auto !important;
+  z-index: 9995 !important;
+  pointer-events: auto !important;
+}
+
+#emergency-nav-bar {
+  position: fixed !important;
+  bottom: 24px !important;
+  left: 24px !important;
+  z-index: 9995 !important;
+  pointer-events: auto !important;
+}
+
+#portal-3d-master-view {
+  position: relative !important;
+  z-index: 40 !important;
+  pointer-events: auto !important;
+}
+
+#crash-recovery-overlay, #bug-report-developer-modal {
+  z-index: 100020 !important;
+  pointer-events: auto !important;
+}
+
+#crash-recovery-overlay button, #bug-report-developer-modal button, #emergency-nav-bar button {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}

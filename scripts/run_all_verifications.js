@@ -45,7 +45,8 @@ const scripts = [
   'verify_v24_karaoke_flicker_loop_audio_overlap.js',
   'verify_v25_searched_songs_sync.js',
   'verify_new_portal_and_feedback.js',
-  'verify_pwa_gemini_timestamps_cuentos.js'
+  'verify_pwa_gemini_timestamps_cuentos.js',
+  'verify_v26_portal_3d_emergency_bar_and_bug_reports.js'
 ];
 
 let allPassed = true;
@@ -70,7 +71,7 @@ scripts.forEach(script => {
 });
 
 if (allPassed) {
-  console.log('\n🏆 ALL 25 TEST SUITES PASSED FLAWLESSLY!');
+  console.log('\n🏆 ALL 26 TEST SUITES PASSED FLAWLESSLY!');
 } else {
   console.error('\n❌ SOME TEST SUITES FAILED!');
   process.exit(1);
