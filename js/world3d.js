@@ -2774,6 +2774,73 @@
     }
 
     // 4. OrbitControls configurados con amortiguación y límite polar para no atravesar el suelo
+    if (typeof THREE !== 'undefined' && typeof THREE.OrbitControls === 'undefined') {
+      THREE.OrbitControls = function(cam, dom) {
+        this.camera = cam;
+        this.domElement = dom || (typeof document !== 'undefined' ? document : null);
+        this.target = new THREE.Vector3(0, 0, 0);
+        this.enableDamping = true;
+        this.dampingFactor = 0.05;
+        this.maxPolarAngle = Math.PI / 2.05; // maxPolarAngle: Math.PI / 2.1
+        this.minDistance = 2.0;
+        this.maxDistance = 48.0;
+        this.enabled = true;
+        let isDown = false;
+        let prevX = 0, prevY = 0;
+        let spherical = { radius: 24, phi: Math.PI / 3.2, theta: Math.PI / 4 };
+        this.update = function() {
+          if (!this.camera) return;
+          const sinPhiRadius = spherical.radius * Math.sin(spherical.phi);
+          this.camera.position.x = this.target.x + sinPhiRadius * Math.sin(spherical.theta);
+          this.camera.position.y = this.target.y + spherical.radius * Math.cos(spherical.phi);
+          this.camera.position.z = this.target.z + sinPhiRadius * Math.cos(spherical.theta);
+          this.camera.lookAt(this.target);
+        };
+        this.syncSphericalFromObject = function() {
+          if (!this.camera) return;
+          const offset = this.camera.position.clone().sub(this.target);
+          spherical.radius = Math.max(this.minDistance, Math.min(this.maxDistance, offset.length() || 24));
+          spherical.theta = Math.atan2(offset.x, offset.z);
+          spherical.phi = Math.acos(Math.max(-1, Math.min(1, offset.y / (spherical.radius || 1))));
+        };
+        const handleDown = (clientX, clientY) => {
+          isDown = true;
+          prevX = clientX;
+          prevY = clientY;
+        };
+        const handleMove = (clientX, clientY) => {
+          if (!isDown) return;
+          const dx = clientX - prevX;
+          const dy = clientY - prevY;
+          prevX = clientX;
+          prevY = clientY;
+          spherical.theta -= dx * 0.007;
+          spherical.phi -= dy * 0.007;
+          spherical.phi = Math.max(0.1, Math.min(this.maxPolarAngle, spherical.phi));
+          this.update();
+        };
+        const handleUp = () => { isDown = false; };
+        const handleWheel = (delta) => {
+          spherical.radius += delta * 0.02;
+          spherical.radius = Math.max(this.minDistance, Math.min(this.maxDistance, spherical.radius));
+          this.update();
+        };
+        if (this.domElement && this.domElement.addEventListener) {
+          this.domElement.addEventListener('pointerdown', (e) => handleDown(e.clientX, e.clientY));
+          window.addEventListener('pointermove', (e) => handleMove(e.clientX, e.clientY));
+          window.addEventListener('pointerup', handleUp);
+          this.domElement.addEventListener('wheel', (e) => handleWheel(e.deltaY), { passive: true });
+          this.domElement.addEventListener('touchstart', (e) => {
+            if (e.touches && e.touches[0]) handleDown(e.touches[0].clientX, e.touches[0].clientY);
+          }, { passive: true });
+          this.domElement.addEventListener('touchmove', (e) => {
+            if (e.touches && e.touches[0]) handleMove(e.touches[0].clientX, e.touches[0].clientY);
+          }, { passive: true });
+          this.domElement.addEventListener('touchend', handleUp, { passive: true });
+        }
+        this.syncSphericalFromObject();
+      };
+    }
     controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;

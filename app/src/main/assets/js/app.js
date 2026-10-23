@@ -12880,6 +12880,9 @@ window.parseLrcUniversal = function(lrcString, totalSongDuration = 210) {
     emBar.classList.add('hidden');
     emBar.style.setProperty('display', 'none', 'important');
   }
+  if (typeof window.ensureEmergencyBackBar === 'function') {
+    window.ensureEmergencyBackBar(false);
+  }
 
   // 3b. Restaurar header
   const mainHdr = document.getElementById('mainHeader') || document.querySelector('header');
@@ -12888,14 +12891,30 @@ window.parseLrcUniversal = function(lrcString, totalSongDuration = 210) {
     mainHdr.classList.remove('auth-hidden');
   }
 
-  // 3c. Activar explícitamente #view-home
+  // 3c. Activar explícitamente #view-home si hay usuario/invitado, o #view-auth si no hay sesión
+  const hasUser = typeof localStorage !== 'undefined' && (localStorage.getItem('mastereng_user') || localStorage.getItem('guest_user') || localStorage.getItem('mastereng_role'));
   const homeEl = document.getElementById('view-home');
-  if (homeEl) {
+  const authEl = document.getElementById('view-auth') || document.getElementById('login-view');
+  if (hasUser && homeEl) {
     homeEl.classList.remove('hidden');
     homeEl.style.setProperty('display', 'flex', 'important');
     homeEl.style.setProperty('pointer-events', 'auto', 'important');
     homeEl.style.setProperty('visibility', 'visible', 'important');
     homeEl.style.setProperty('opacity', '1', 'important');
+    if (authEl) {
+      authEl.classList.add('hidden');
+      authEl.style.setProperty('display', 'none', 'important');
+    }
+  } else if (!hasUser && authEl) {
+    authEl.classList.remove('hidden');
+    authEl.style.setProperty('display', 'flex', 'important');
+    authEl.style.setProperty('pointer-events', 'auto', 'important');
+    authEl.style.setProperty('visibility', 'visible', 'important');
+    authEl.style.setProperty('opacity', '1', 'important');
+    if (homeEl) {
+      homeEl.classList.add('hidden');
+      homeEl.style.setProperty('display', 'none', 'important');
+    }
   }
 
   // 4. Ejecutar exactamente la misma acción que tiene el logo "MasterENG"
@@ -13846,35 +13865,18 @@ window.showCrashRecoveryBanner = function(reason = 'Se detectó que un módulo t
   }
 };
 
-// Auto-rescate automático de pantalla negra para Portal 3D
-if (typeof window !== 'undefined' && typeof window.document !== 'undefined') {
-  if (typeof process === 'undefined' || !process.versions || !process.versions.node) {
-    setInterval(() => {
-      const view3D = document.getElementById('portal-3d-master-view');
-      const is3DAlreadyOpen = view3D && view3D.style.display !== 'none' && view3D.offsetHeight > 50;
-      if (is3DAlreadyOpen) return;
-
-      // Si el simulador 3D real Three.js está abierto, no interferir
-      const viewWT = document.getElementById('view-worldtour');
-      const isWorldTourActive = viewWT && viewWT.style.display !== 'none' && !viewWT.classList.contains('hidden') && viewWT.offsetHeight > 40;
-      if (isWorldTourActive) return;
-
-      // Verificar si el usuario cayó en la pantalla negra vacía
-      const visibleContent = Array.from(document.querySelectorAll('main, section, .portal-card, #music-player-subview, #music-search-subview, #ai-tutor-view, #admin-dashboard-view, #view-worldtour')).filter(el => {
-        if (!el || typeof el.getBoundingClientRect !== 'function') return false;
-        const r = el.getBoundingClientRect();
-        return r.height > 60 && window.getComputedStyle(el).display !== 'none' && window.getComputedStyle(el).visibility !== 'hidden' && window.getComputedStyle(el).opacity !== '0';
-      });
-
-      if (visibleContent.length === 0) {
-        // Si la pantalla quedó en negro al entrar al portal 3D, renderizar el Portal 3D automáticamente
-        if (typeof window.open3DPortalView === 'function') {
-          window.open3DPortalView();
-        }
-      }
-    }, 400);
+// Auto-rescate seguro exclusivamente para Portal 3D activo
+window.checkWorld3DRescue = function() {
+  if (typeof document === 'undefined') return;
+  const is3DActive = (document.body && document.body.classList && document.body.classList.contains('view-worldtour-active'));
+  if (!is3DActive) return;
+  const viewWT = document.getElementById('view-worldtour');
+  if (viewWT && viewWT.offsetHeight < 40) {
+    if (typeof window.open3DPortalView === 'function') {
+      window.open3DPortalView();
+    }
   }
-}
+};
 
 window.openBugReportModal = function(defaultModule = 'General') {
   const showAlertMsg = (msg) => {
