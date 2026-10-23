@@ -1527,7 +1527,12 @@ window.isCurrentUserAdmin = function() {
         'admin-view': 'adminDashboardModal'
       };
       const targetId = viewMap[viewId] || viewId;
-
+      if (targetId === 'world3d-view' || targetId === 'view-worldtour' || viewId === 'world3d' || viewId === 'worldtour') {
+        if (typeof window.open3DPortalView === 'function') {
+          window.open3DPortalView();
+          return;
+        }
+      }
       if (targetId === 'ai-tutor-view' || viewId === 'ai-tutor' || viewId === 'ai-tutor-view' || viewId === 'view-ai-tutor') {
         if (typeof window.isUserRegistered === 'function' && !window.isUserRegistered()) {
           if (typeof showFloatingToast === 'function') {
@@ -1807,8 +1812,9 @@ window.logout = function() {
         }
         window.isTransitioningView = false;
         showView(meta.view);
-        if (targetModule === 'worldtour') {
-          try { initThreeWorldTour(); } catch (err) { console.error(err); }
+        if (targetModule === 'worldtour' || targetModule === 'world3d') {
+          if (typeof window.open3DPortalView === 'function') window.open3DPortalView();
+          else try { initThreeWorldTour(); } catch (err) { console.error(err); }
         }
       }, 2000);
 
@@ -2057,15 +2063,13 @@ window.logout = function() {
           window.renderOfficialLearningModules();
         }
       } else if (portal === 'worldtour' || portal === 'world3d') {
-        if (typeof window.navigateToView === 'function') {
+        if (typeof window.open3DPortalView === 'function') {
+          window.open3DPortalView();
+          return;
+        } else if (typeof window.navigateToView === 'function') {
           window.navigateToView('world3d-view');
         } else if (typeof showView === 'function') {
           showView('view-worldtour');
-        }
-        if (typeof window.initOrResumeWorld3D === 'function') {
-          window.initOrResumeWorld3D();
-        } else if (typeof initThreeWorldTour === 'function') {
-          initThreeWorldTour();
         }
       } else if (portal === 'music') {
         if (typeof window.navigateToView === 'function') {
@@ -7999,6 +8003,7 @@ window.logout = function() {
   window.downloadActiveGlossaryPdf = downloadActiveGlossaryPdf;
   window.downloadStoryPdf = downloadStoryPdf;
   window.initThreeWorldTour = initThreeWorldTour;
+    window.initOrResumeWorld3D = function() { if (typeof window.open3DPortalView === 'function') window.open3DPortalView(); };
   window.buildRealisticHouse = buildRealisticHouse;
   window.buildRealisticBackyard = buildRealisticBackyard;
   window.switch3DScenario = switch3DScenario;
@@ -12813,48 +12818,91 @@ window.parseLrcUniversal = function(lrcString, totalSongDuration = 210) {
 
 // --- MOTOR UNIVERSAL DE EVENTOS Y CLICS ---
 (function() {
-  window.switchMasterView = function(viewName) {
-    if (viewName === 'hub' || viewName === 'home') {
-      const view3D = document.getElementById('portal-3d-master-view');
-      if (view3D) view3D.style.display = 'none';
-      if (typeof window.ensureEmergencyBackBar === 'function') window.ensureEmergencyBackBar(false);
-      if (typeof window.goToHomePortals === 'function') {
-        try { window.goToHomePortals(); } catch (_) {}
+  window.returnToMainPortals = function(e) {
+  if (e) {
+    if (typeof e.preventDefault === 'function') e.preventDefault();
+    if (typeof e.stopPropagation === 'function') e.stopPropagation();
+  }
+
+  // 1. Detener cualquier audio, narración o video en reproducción
+  if (typeof window.forceStopAllNarrationAndMedia === 'function') {
+    window.forceStopAllNarrationAndMedia(true);
+  }
+
+  // 2. Ocultar vistas secundarias e inyectadas
+  const secondaryIds = [
+    'portal-3d-master-view',
+    'music-player-subview',
+    'music-search-subview',
+    'ai-tutor-view',
+    'admin-dashboard-view',
+    'crash-recovery-overlay'
+  ];
+  secondaryIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+
+  // 3. Ocultar barra de emergencia inferior al volver al Hub
+  const emBar = document.getElementById('emergency-nav-bar');
+  if (emBar) emBar.style.display = 'none';
+
+  // 4. Ejecutar exactamente la misma acción que tiene el logo "MasterENG"
+  const logoEl = Array.from(document.querySelectorAll('header *, nav *, .navbar *, a, div, span')).find(el => {
+    const txt = (el.innerText || el.textContent || '').trim();
+    return txt === 'MasterENG' && (el.onclick || el.tagName === 'A' || el.style.cursor === 'pointer' || el.parentElement);
+  });
+
+  if (logoEl) {
+    const clickableLogo = logoEl.closest ? (logoEl.closest('[onclick], a, button, .logo, .brand') || logoEl) : logoEl;
+    if (clickableLogo && typeof clickableLogo.click === 'function' && !window._clickingLogoGuard) {
+      window._clickingLogoGuard = true;
+      try { clickableLogo.click(); } catch (err) {}
+      setTimeout(() => { window._clickingLogoGuard = false; }, 100);
+    }
+  }
+
+  // 5. Garantizar al 100% que el contenedor de "TEMAS DE APRENDIZAJE" y todos sus padres sean visibles
+  const hubHeading = Array.from(document.querySelectorAll('h1, h2, h3, div, section')).find(el => {
+    const t = (el.innerText || '').toUpperCase();
+    return t.includes('TEMAS DE APRENDIZAJE') || t.includes('HUB DE TELETRANSPORTACIÓN');
+  });
+
+  if (hubHeading) {
+    let curr = hubHeading;
+    while (curr && curr !== document.body && curr !== document.documentElement) {
+      curr.classList.remove('hidden', 'd-none', 'inactive');
+      if (window.getComputedStyle(curr).display === 'none') {
+        curr.style.display = 'block';
       }
-    } else {
-      if (typeof window.ensureEmergencyBackBar === 'function') window.ensureEmergencyBackBar(true);
+      curr.style.visibility = 'visible';
+      curr.style.opacity = '1';
+      curr = curr.parentElement;
     }
-    if (viewName === 'music-search') {
-      window.goBackToMusicSearch();
-      return;
+  } else {
+    // Si por algún motivo el DOM fue vaciado, recargar limpiamente a la raíz
+    if (typeof window !== 'undefined' && window.location) {
+      window.location.href = window.location.pathname;
     }
-    if (typeof window.navigateTo === 'function') {
-      try { window.navigateTo(viewName); } catch (_) {}
-    }
-    if (typeof window.showView === 'function') {
-      try { window.showView(viewName); } catch (_) {}
-    }
-    const viewMap = {
-      'hub': 'view-hub',
-      'home': 'view-home',
-      'learning': 'view-learning',
-      'learning-path': 'view-learning',
-      'stories': 'view-stories',
-      'music': 'view-music',
-      'world3d': 'view-worldtour', 'worldtour': 'view-worldtour',
-      'ai-tutor': 'ai-tutor-view'
-    };
-    const targetId = viewMap[viewName] || viewName;
-    document.querySelectorAll('.app-view, [id^="view-"]').forEach(v => {
-      v.style.display = 'none';
-      v.classList.add('hidden');
-    });
-    const targetView = document.getElementById(targetId) || document.getElementById('view-' + viewName);
-    if (targetView) {
-      targetView.style.display = 'block';
-      targetView.classList.remove('hidden');
-    }
-  };
+  }
+
+  if (typeof window.goToHomePortals === 'function') {
+    try { window.goToHomePortals(); } catch (_) {}
+  }
+
+  if (typeof window.scrollTo === 'function') {
+    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (_) {}
+  }
+};
+
+// Vincular switchMasterView('hub') a esta función infalible
+window.switchMasterView = function(targetMode) {
+  if (targetMode === 'hub') {
+    window.returnToMainPortals();
+  } else if (targetMode === 'music-search' && typeof window.goBackToMusicSearch === 'function') {
+    window.goBackToMusicSearch();
+  }
+};
 
   window.handleLogout = function(e) {
     if (e && typeof e.preventDefault === 'function') e.preventDefault();
@@ -12953,21 +13001,40 @@ window.parseLrcUniversal = function(lrcString, totalSongDuration = 210) {
   // Delegación de clics en fase de captura
   if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
     document.addEventListener('click', function(e) {
-      const btn = e.target && e.target.closest ? e.target.closest('button, a, [role="button"], .btn, .portal-btn') : null;
+      const btn = e.target && e.target.closest ? e.target.closest('button, a, [role="button"], .btn, .portal-btn, .portal-card, .coverflow-portal-card, [onclick]') : null;
       if (!btn) return;
 
       const text = (btn.innerText || btn.textContent || '').trim().toLowerCase();
 
-      // Botón: Portal 3D (Entorno 3D)
-      const portalCardParent = btn.closest ? btn.closest('.portal-card, .coverflow-portal-card, .card, [class*="portal"]') : null;
-      const pCardText = portalCardParent ? (portalCardParent.innerText || portalCardParent.textContent || '') : '';
-      if (text.includes('entrar al portal') || (btn.getAttribute && btn.getAttribute('data-action') === 'enter-portal')) {
-        if (pCardText.includes('Entorno 3D') || pCardText.includes('Portal 02') || pCardText.includes('PORTAL 02') || pCardText.includes('3D') || pCardText.includes('Inmersivo 3D') || pCardText.includes('Casa & Jardín 3D')) {
-          e.preventDefault();
-          e.stopPropagation();
-          if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
-          if (typeof window.open3DPortalView === 'function') window.open3DPortalView(e);
-          return;
+      // 1. Si el texto del botón pulsado incluye 'regresar a portales', 'volver a portales', 'volver al hub' o 'volver al inicio':
+      if (text.includes('regresar a portales') || text.includes('volver a portales') || text.includes('volver al hub') || text.includes('volver al inicio')) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+        if (typeof window.returnToMainPortals === 'function') window.returnToMainPortals(e);
+        return;
+      }
+
+      // 2. Si el usuario hace clic en cualquier botón o tarjeta que contenga 'entorno 3d', 'mundo 3d', 'portal 02' o si la tarjeta activa del carrusel dice '3d' y presiona 'entrar al portal':
+      const pCard = btn.closest ? btn.closest('.portal-card, .coverflow-portal-card, .card, [class*="portal"]') : null;
+      const pCardText = pCard ? (pCard.innerText || pCard.textContent || '').toLowerCase() : '';
+      if (text.includes('entorno 3d') || text.includes('mundo 3d') || text.includes('portal 02') || (text.includes('entrar al portal') && (pCardText.includes('3d') || pCardText.includes('entorno 3d') || pCardText.includes('portal 02')))) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+        if (typeof window.open3DPortalView === 'function') window.open3DPortalView(e);
+        return;
+      }
+
+      if (pCardText.includes('entorno 3d') || pCardText.includes('portal 02') || pCardText.includes('mundo 3d')) {
+        if (btn.classList && (btn.classList.contains('portal-card') || btn.classList.contains('coverflow-portal-card') || btn.closest('.portal-card'))) {
+          if (text.includes('entrar al portal') || btn.tagName === 'IMG' || text.includes('entorno 3d') || text.includes('explora y aprende')) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+            if (typeof window.open3DPortalView === 'function') window.open3DPortalView(e);
+            return;
+          }
         }
       }
 
@@ -13467,25 +13534,25 @@ window.open3DPortalView = function(e) {
     if (typeof e.stopPropagation === 'function') e.stopPropagation();
   }
 
-  // Ocultar otras vistas principales
-  document.querySelectorAll('[id$="-view"], [id$="-subview"], .view-section, .portal-view, .app-view').forEach(v => {
-    v.style.display = 'none';
-  });
-
   let view3D = document.getElementById('portal-3d-master-view');
   if (!view3D) {
     view3D = document.createElement('div');
     view3D.id = 'portal-3d-master-view';
-    view3D.style.cssText = 'min-height:calc(100vh - 80px); padding:90px 20px 40px; background:radial-gradient(circle at center, #1e293b 0%, #0b1120 100%); color:#fff; font-family:sans-serif; position:relative; z-index:40;';
     document.body.appendChild(view3D);
   }
 
-  window.current3DIndex = window.current3DIndex || 0;
-  window.render3DStageContent();
+  // Posicionamiento fijo sobre cualquier contenedor oculto para que JAMÁS se vea pantalla negra
+  view3D.style.cssText = 'position:fixed !important; top:68px !important; left:0 !important; right:0 !important; bottom:0 !important; overflow-y:auto !important; padding:30px 20px 90px !important; background:radial-gradient(circle at center, #1e293b 0%, #0b1120 100%) !important; color:#fff !important; font-family:sans-serif !important; z-index:9980 !important; display:block !important; visibility:visible !important; opacity:1 !important;';
   view3D.style.display = 'block';
-  if (typeof window.ensureEmergencyBackBar === 'function') window.ensureEmergencyBackBar(true);
-  if (typeof window.scrollTo === 'function') {
-    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (_) {}
+  view3D.style.visibility = 'visible';
+  view3D.style.opacity = '1';
+
+  window.current3DIndex = window.current3DIndex || 0;
+  if (typeof window.render3DStageContent === 'function') {
+    window.render3DStageContent();
+  }
+  if (typeof window.ensureEmergencyBackBar === 'function') {
+    window.ensureEmergencyBackBar(true);
   }
 };
 
@@ -13498,9 +13565,7 @@ window.render3DStageContent = function() {
   view3D.innerHTML = `
     <div style="max-width:960px; margin:0 auto;">
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:24px;">
-        <button type="button" onclick="window.switchMasterView('hub')" style="background:#1e293b; color:#38bdf8; border:1px solid rgba(56,189,248,0.4); padding:10px 18px; border-radius:12px; font-weight:700; cursor:pointer;">
-          ← Volver a Portales
-        </button>
+        <button type="button" onclick="window.returnToMainPortals(event)" style="background:#1e293b; color:#38bdf8; border:1px solid rgba(56,189,248,0.4); padding:10px 18px; border-radius:12px; font-weight:700; cursor:pointer;">← Volver a Portales</button>
         <div style="text-align:center;">
           <span style="background:rgba(56,189,248,0.15); color:#38bdf8; padding:5px 14px; border-radius:20px; font-size:0.8rem; font-weight:700;">
             🌐 ENTORNO 3D INTERACTIVO • ${item.cat.toUpperCase()}
@@ -13551,7 +13616,7 @@ window.render3DStageContent = function() {
 
   // Interacción 3D con mouse y pantalla táctil
   const cube = document.getElementById('interactive-3d-cube');
-  if (cube) {
+  if (cube && typeof cube.addEventListener === 'function') {
     let rotX = 8, rotY = -12;
     cube.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
     const handleMove = (clientX, clientY) => {
@@ -13591,9 +13656,7 @@ window.ensureEmergencyBackBar = function(forceShow = false) {
     bar.id = 'emergency-nav-bar';
     bar.style.cssText = 'position:fixed; bottom:24px; left:24px; z-index:9995; display:none; gap:10px; align-items:center;';
     bar.innerHTML = `
-      <button type="button" onclick="window.switchMasterView('hub')" style="background:#0f172a; color:#38bdf8; border:2px solid #38bdf8; padding:10px 16px; border-radius:14px; font-weight:800; cursor:pointer; box-shadow:0 8px 25px rgba(0,0,0,0.6);">
-        ← Regresar a Portales
-      </button>
+      <button type="button" onclick="window.returnToMainPortals(event)" style="background:#0f172a; color:#38bdf8; border:2px solid #38bdf8; padding:10px 16px; border-radius:14px; font-weight:800; cursor:pointer; box-shadow:0 8px 25px rgba(0,0,0,0.6);">← Regresar a Portales</button>
       <button type="button" onclick="window.openBugReportModal('Navegación General')" style="background:#0f172a; color:#f87171; border:1px solid rgba(239,68,68,0.5); padding:10px 14px; border-radius:14px; font-weight:700; cursor:pointer; box-shadow:0 8px 25px rgba(0,0,0,0.6);">
         🐞 Reportar Fallo
       </button>
@@ -13633,10 +13696,7 @@ window.showCrashRecoveryBanner = function(reason = 'Se detectó que un módulo t
 
   const btnHub = document.getElementById('btn-crash-back-hub');
   if (btnHub) {
-    btnHub.onclick = () => {
-      overlay.remove();
-      window.switchMasterView('hub');
-    };
+    btnHub.onclick = () => { overlay.remove(); window.returnToMainPortals(); };
   }
   const btnReload = document.getElementById('btn-crash-reload');
   if (btnReload) {
@@ -13655,19 +13715,28 @@ window.showCrashRecoveryBanner = function(reason = 'Se detectó que un módulo t
   }
 };
 
-// Monitoreo seguro de pantalla vacía (guard contra Node.js VM tests)
+// Auto-rescate automático de pantalla negra para Portal 3D
 if (typeof window !== 'undefined' && typeof window.document !== 'undefined') {
   if (typeof process === 'undefined' || !process.versions || !process.versions.node) {
     setInterval(() => {
-      const visibleSections = Array.from(document.querySelectorAll('main, section, [id$="-view"], [id$="-subview"], .portal-card')).filter(el => {
+      const view3D = document.getElementById('portal-3d-master-view');
+      const is3DAlreadyOpen = view3D && view3D.style.display !== 'none' && view3D.offsetHeight > 50;
+      if (is3DAlreadyOpen) return;
+
+      // Verificar si el usuario cayó en la pantalla negra vacía
+      const visibleContent = Array.from(document.querySelectorAll('main, section, .portal-card, #music-player-subview, #music-search-subview, #ai-tutor-view, #admin-dashboard-view')).filter(el => {
         if (!el || typeof el.getBoundingClientRect !== 'function') return false;
-        const rect = el.getBoundingClientRect();
-        return rect.height > 40 && window.getComputedStyle(el).display !== 'none' && window.getComputedStyle(el).visibility !== 'hidden';
+        const r = el.getBoundingClientRect();
+        return r.height > 60 && window.getComputedStyle(el).display !== 'none' && window.getComputedStyle(el).visibility !== 'hidden' && window.getComputedStyle(el).opacity !== '0';
       });
-      if (visibleSections.length === 0) {
-        window.ensureEmergencyBackBar(true);
+
+      if (visibleContent.length === 0) {
+        // Si la pantalla quedó en negro al entrar al portal 3D, renderizar el Portal 3D automáticamente
+        if (typeof window.open3DPortalView === 'function') {
+          window.open3DPortalView();
+        }
       }
-    }, 1500);
+    }, 400);
   }
 }
 

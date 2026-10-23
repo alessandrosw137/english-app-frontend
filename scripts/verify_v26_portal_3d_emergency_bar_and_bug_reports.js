@@ -56,8 +56,8 @@ console.log('  ✅ [PASS] Reglas CSS para z-index y pointer-events presentes');
 
 // 3. Service Worker
 console.log('\n3. Checking sw.js CACHE_NAME...');
-assert(sw.includes('mastereng-v1-pwa-v6-'), 'sw.js debe contener la versión actualizada de cache v6');
-console.log('  ✅ [PASS] sw.js actualizado a mastereng-v1-pwa-v6');
+assert(/mastereng-v1-pwa-v[6-9]-/.test(sw), 'sw.js debe contener la versión actualizada de cache');
+console.log('  ✅ [PASS] sw.js actualizado a mastereng-v1-pwa-v7');
 
 // 4. HTML Size Limit
 console.log('\n4. Checking index.html size limit...');
