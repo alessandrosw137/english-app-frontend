@@ -763,15 +763,28 @@ header, .top-bar, .navbar {
   z-index: 0 !important;
 }
 
-/* World Tour 3D Container & WebGL Canvas Stacking Context Override */
+/* World Tour 3D Container & WebGL Canvas Stacking Context Override (Fullscreen calc(100dvh - 56px)) */
+#view-worldtour:not(.hidden) {
+  display: block !important;
+  width: 100vw !important;
+  max-width: 100vw !important;
+  height: calc(100dvh - 56px) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+#view-worldtour #world3d-view,
+#view-worldtour #world3d-container,
 #view-worldtour #world3d-container #canvas-container,
 #view-worldtour #canvas-container,
 #world3d-container #canvas-container {
-  position: relative !important;
-  inset: auto !important;
+  position: absolute !important;
+  inset: 0 !important;
   width: 100% !important;
-  height: 580px !important;
-  min-height: 520px !important;
+  height: 100% !important;
+  min-height: 100% !important;
   z-index: 10 !important;
   pointer-events: auto !important;
   display: block !important;
@@ -779,10 +792,11 @@ header, .top-bar, .navbar {
 
 #view-worldtour #threeCanvasContainer,
 #view-worldtour #threeWebGLMount {
-  position: relative !important;
+  position: absolute !important;
+  inset: 0 !important;
   width: 100% !important;
   height: 100% !important;
-  min-height: 520px !important;
+  min-height: 100% !important;
   z-index: 12 !important;
   pointer-events: auto !important;
   display: block !important;
@@ -1792,8 +1806,9 @@ body:not(.portal-3d-fallback-active) #portal-3d-master-view {
 
 #world3dFloatingBackBtn {
   position: fixed !important;
-  top: 16px !important;
-  left: 16px !important;
+  top: 68px !important;
+  right: 16px !important;
+  left: auto !important;
   z-index: 10005 !important;
   pointer-events: auto !important;
   cursor: pointer !important;

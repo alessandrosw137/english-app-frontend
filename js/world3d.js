@@ -2923,12 +2923,12 @@ ensureOrbitControls();
       renderer.setSize(window.innerWidth, window.innerHeight);
 
       const container = typeof document !== 'undefined'
-        ? (document.getElementById('world3d-view') || document.getElementById('threeCanvasContainer') || document.getElementById('world3d-container') || document.getElementById('canvas-container'))
+        ? (document.getElementById('canvas-container') || document.getElementById('threeCanvasContainer') || document.getElementById('world3d-view') || document.getElementById('view-worldtour'))
         : null;
-      if (container && container.clientWidth > 60 && container.clientHeight > 60) {
+      if (container && container.clientWidth > 40 && container.clientHeight > 40) {
         camera.aspect = container.clientWidth / container.clientHeight;
         camera.updateProjectionMatrix();
-        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setSize(container.clientWidth, container.clientHeight, false);
       }
 
       if (scene) renderer.render(scene, camera);
@@ -2973,6 +2973,10 @@ ensureOrbitControls();
     practiceWorld3DObject,
     resetWorld3DCamera,
     closeWorld3DInspectCard,
+    onWindowResize,
+    get camera() { return camera; },
+    get renderer() { return renderer; },
+    get scene() { return scene; },
     WORLD3D_VOCAB_CATALOG,
     SHARED_MATERIALS,
     createOakWoodTexture,

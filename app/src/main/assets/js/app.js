@@ -1,3 +1,43 @@
+
+// --- World 3D Fullscreen Resize & Global Header Back Sync ---
+window.resizeWorld3DFullscreen = function() {
+  if (typeof window !== 'undefined' && window.World3D && typeof window.World3D.onWindowResize === 'function') {
+    window.World3D.onWindowResize();
+  } else if (typeof window !== 'undefined' && typeof window.onWindowResize === 'function') {
+    window.onWindowResize();
+  }
+};
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+  window.addEventListener('resize', function() {
+    if (typeof document !== 'undefined' && document.body && document.body.classList.contains('view-worldtour-active')) {
+      if (typeof window.resizeWorld3DFullscreen === 'function') window.resizeWorld3DFullscreen();
+    }
+  });
+}
+
+window.syncTopBackBtnVisibility = function(targetId) {
+  if (typeof document === 'undefined') return;
+  var btn = document.getElementById('headerGlobalBackBtn');
+  if (!btn) return;
+  var isHomeOrAuth = (targetId === 'view-home' || targetId === 'view-auth' || targetId === 'home' || targetId === 'login');
+  if (isHomeOrAuth) {
+    btn.classList.add('hidden');
+    btn.style.setProperty('display', 'none', 'important');
+  } else {
+    btn.classList.remove('hidden');
+    btn.style.setProperty('display', 'inline-flex', 'important');
+  }
+};
+
+
+
+
+
+
+
+
+
+
 window._realWorld3DEngine = (typeof window !== 'undefined' && window.World3D && window.World3D.initOrResumeWorld3D) ? window.World3D.initOrResumeWorld3D : ((typeof window !== 'undefined' && window.initOrResumeWorld3D) ? window.initOrResumeWorld3D : null);
 /**
  * MasterENG - Flujo Principal de Interfaz, Portales, Cuentos, 3D y Administración
