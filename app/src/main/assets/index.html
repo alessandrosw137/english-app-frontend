@@ -36,7 +36,7 @@ tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['"Plus Jakart
 </script>
 <link rel="stylesheet" href="css/style.css">
 <style>
-.hidden,[style*="display: none"]{display:none !important;}
+.hidden{display:none !important;}
 #view-auth.hidden,#view-home.hidden,#view-path.hidden,#view-stories.hidden,#view-music.hidden,#view-worldtour.hidden,#ai-tutor-view.hidden{display:none !important;}
 body.user-guest #tutorRouletteDock,body.user-guest #draggableRobotWidget,body.user-guest #draggableRouletteWidget,body.user-guest #roulette-btn,body.user-guest #ai-tutor-btn,body.user-guest #ai-tutor-view,body.user-guest #chatbotWindow,body.user-guest #rouletteModal{display:none !important;visibility:hidden !important;pointer-events:none !important;}
 #authLoginForm.hidden,#authRegisterForm.hidden{display:none !important;}
@@ -58,7 +58,7 @@ header, .top-bar, .navbar { position: fixed; top: 0; left: 0; width: 100%; z-ind
 .floating-widget, #ai-tutor-btn, #roulette-btn, .bottom-widgets { z-index: 9999 !important; pointer-events: auto !important; }
 #portalStarsCanvas,.star-bg{position:fixed;inset:0;z-index:0 !important;pointer-events:none !important;}
 #view-worldtour:not(.hidden){position:relative !important;width:100vw !important;max-width:100vw !important;height:calc(100dvh - 56px) !important;margin:0 !important;padding:0 !important;overflow:hidden !important;}
-#view-worldtour #canvas-container{position:absolute !important;inset:0 !important;width:100% !important;height:100% !important;z-index:10 !important;pointer-events:auto !important;display:block !important;}
+
 #world3d-view canvas,#view-worldtour canvas,#world3d-canvas{position:absolute !important;inset:0 !important;width:100% !important;height:100% !important;z-index:15 !important;display:block !important;pointer-events:auto !important;}
 #portal-3d-master-view.hidden,body:not(.portal-3d-fallback-active) #portal-3d-master-view{display:none !important;}
 #world3dFloatingBackBtn.hidden,body:not(.view-worldtour-active) #world3dFloatingBackBtn{display:none !important;}
@@ -430,7 +430,7 @@ Currículo Oficial TOEFL & Fluidez
 <div id="learning-modules-grid" class="modules-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; padding: 2rem 1rem; max-width: 1200px; margin: 0 auto; width: 100%; box-sizing: border-box;">
 <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
 <span style="color: #f5a623; font-weight: bold; font-size: 0.8rem;">MÓDULO 01 • NIVEL A1-B1</span>
-<h3 style="color: #fff; margin: 0.5rem 0;">100 Essential Phrasal Verbs</h3>
+<h3 style="color: #fff; margin: 0.5rem 0;">PHRASAL VERBS / VERBOS COMPUESTOS</h3>
 <p style="color: #a0aec0; font-size: 0.85rem;">100 verbos compuestos nativos estructurados con significado y pronunciación.</p>
 <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
 <button type="button" class="btn-mission" data-module="1" onclick="window.openModuleMission(1)">🎯 Misión</button>
@@ -439,7 +439,7 @@ Currículo Oficial TOEFL & Fluidez
 </div>
 <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
 <span style="color: #f5a623; font-weight: bold; font-size: 0.8rem;">MÓDULO 02 • NIVEL A2-B1</span>
-<h3 style="color: #fff; margin: 0.5rem 0;">100 Difficult & Common Verbs</h3>
+<h3 style="color: #fff; margin: 0.5rem 0;">VERBOS / VERBS</h3>
 <p style="color: #a0aec0; font-size: 0.85rem;">100 verbos clave, irregulares y de alta frecuencia para comunicación fluida.</p>
 <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
 <button type="button" class="btn-mission" data-module="2" onclick="window.openModuleMission(2)">🎯 Misión</button>
@@ -448,7 +448,7 @@ Currículo Oficial TOEFL & Fluidez
 </div>
 <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
 <span style="color: #f5a623; font-weight: bold; font-size: 0.8rem;">MÓDULO 03 • NIVEL B1-B2</span>
-<h3 style="color: #fff; margin: 0.5rem 0;">100 Power Adjectives & Descriptions</h3>
+<h3 style="color: #fff; margin: 0.5rem 0;">ADJETIVOS / ADJECTIVES</h3>
 <p style="color: #a0aec0; font-size: 0.85rem;">100 adjetivos de alto impacto para descripciones precisas y elocuentes.</p>
 <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
 <button type="button" class="btn-mission" data-module="3" onclick="window.openModuleMission(3)">🎯 Misión</button>
@@ -457,7 +457,7 @@ Currículo Oficial TOEFL & Fluidez
 </div>
 <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
 <span style="color: #f5a623; font-weight: bold; font-size: 0.8rem;">MÓDULO 04 • NIVEL B2</span>
-<h3 style="color: #fff; margin: 0.5rem 0;">100 Native Idioms & Slang Expressions</h3>
+<h3 style="color: #fff; margin: 0.5rem 0;">MODISMOS Y SLANG / IDIOMS & SLANG</h3>
 <p style="color: #a0aec0; font-size: 0.85rem;">100 modismos, expresiones idiomáticas y expresiones coloquiales auténticas.</p>
 <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
 <button type="button" class="btn-mission" data-module="4" onclick="window.openModuleMission(4)">🎯 Misión</button>
@@ -466,7 +466,7 @@ Currículo Oficial TOEFL & Fluidez
 </div>
 <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
 <span style="color: #f5a623; font-weight: bold; font-size: 0.8rem;">MÓDULO 05 • NIVEL B2-C1</span>
-<h3 style="color: #fff; margin: 0.5rem 0;">100 Connectors & Linking Words</h3>
+<h3 style="color: #fff; margin: 0.5rem 0;">CONECTORES / CONNECTORS</h3>
 <p style="color: #a0aec0; font-size: 0.85rem;">100 conectores discursivos para estructurar argumentos, ensayos y debates.</p>
 <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
 <button type="button" class="btn-mission" data-module="5" onclick="window.openModuleMission(5)">🎯 Misión</button>
@@ -475,7 +475,7 @@ Currículo Oficial TOEFL & Fluidez
 </div>
 <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
 <span style="color: #f5a623; font-weight: bold; font-size: 0.8rem;">MÓDULO 06 • NIVEL B2</span>
-<h3 style="color: #fff; margin: 0.5rem 0;">100 False Friends & Confusing Words</h3>
+<h3 style="color: #fff; margin: 0.5rem 0;">CONFUSOS Y EXPRESIONES / CONFUSING WORDS</h3>
 <p style="color: #a0aec0; font-size: 0.85rem;">100 falsos amigos y parejas confusas entre inglés y español explicadas.</p>
 <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
 <button type="button" class="btn-mission" data-module="6" onclick="window.openModuleMission(6)">🎯 Misión</button>
@@ -484,7 +484,7 @@ Currículo Oficial TOEFL & Fluidez
 </div>
 <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
 <span style="color: #f5a623; font-weight: bold; font-size: 0.8rem;">MÓDULO 07 • NIVEL B2-C1</span>
-<h3 style="color: #fff; margin: 0.5rem 0;">100 Prepositional Phrases & Collocations</h3>
+<h3 style="color: #fff; margin: 0.5rem 0;">FRASES COTIDIANAS / EVERYDAY PHRASES</h3>
 <p style="color: #a0aec0; font-size: 0.85rem;">100 frases preposicionales y colocaciones fijas usadas por nativos.</p>
 <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
 <button type="button" class="btn-mission" data-module="7" onclick="window.openModuleMission(7)">🎯 Misión</button>
@@ -493,7 +493,7 @@ Currículo Oficial TOEFL & Fluidez
 </div>
 <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
 <span style="color: #f5a623; font-weight: bold; font-size: 0.8rem;">MÓDULO 08 • NIVEL C1</span>
-<h3 style="color: #fff; margin: 0.5rem 0;">100 Business, Tech & Engineering Terms</h3>
+<h3 style="color: #fff; margin: 0.5rem 0;">TRABAJO Y TECNOLOGÍA / WORK & TECH</h3>
 <p style="color: #a0aec0; font-size: 0.85rem;">100 términos técnicos, de ingeniería de software y negocios globales.</p>
 <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
 <button type="button" class="btn-mission" data-module="8" onclick="window.openModuleMission(8)">🎯 Misión</button>
@@ -502,7 +502,7 @@ Currículo Oficial TOEFL & Fluidez
 </div>
 <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
 <span style="color: #f5a623; font-weight: bold; font-size: 0.8rem;">MÓDULO 09 • NIVEL A2-B1</span>
-<h3 style="color: #fff; margin: 0.5rem 0;">100 Travel, Airport & Daily Survival</h3>
+<h3 style="color: #fff; margin: 0.5rem 0;">CLIMA, NATURALEZA Y VIAJES / WEATHER & TRAVEL</h3>
 <p style="color: #a0aec0; font-size: 0.85rem;">100 términos esenciales de supervivencia en aeropuertos, viajes y hoteles.</p>
 <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
 <button type="button" class="btn-mission" data-module="9" onclick="window.openModuleMission(9)">🎯 Misión</button>
@@ -511,7 +511,7 @@ Currículo Oficial TOEFL & Fluidez
 </div>
 <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
 <span style="color: #f5a623; font-weight: bold; font-size: 0.8rem;">MÓDULO 10 • NIVEL C1-C2</span>
-<h3 style="color: #fff; margin: 0.5rem 0;">100 Academic & High-Score TOEFL Words</h3>
+<h3 style="color: #fff; margin: 0.5rem 0;">VOCABULARIO AVANZADO / ADVANCED VOCAB</h3>
 <p style="color: #a0aec0; font-size: 0.85rem;">100 palabras de vocabulario académico para máximo puntaje en TOEFL.</p>
 <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
 <button type="button" class="btn-mission" data-module="10" onclick="window.openModuleMission(10)">🎯 Misión</button>
@@ -672,7 +672,7 @@ Estrofa 1
 </div>
 </div>
 </div>
-<div id="view-worldtour" class="flex-1 p-3 max-w-5xl mx-auto w-full hidden" style="display: none;">
+<div id="view-worldtour" class="flex-1 w-full hidden" style="display: none;">
 <button id="world3dFloatingBackBtn" onclick="goToHomePortals()"
 class="fixed z-[10000] flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-white border border-purple-500/50 shadow-2xl backdrop-blur-md text-xs font-bold transition hover:scale-105 active:scale-95 cursor-pointer"
 style="position: fixed !important; top: 68px !important; right: 16px !important; left: auto !important; z-index: 10000 !important; pointer-events: auto !important;">
@@ -1284,9 +1284,10 @@ try {
 // 1. Control de Vistas
 window.MASTER_ROOT_VIEWS=['view-auth','view-home','view-path','view-stories','view-music','view-worldtour','ai-tutor-view'];
 window.resolveMasterViewId=function(rawId){
-var id=(rawId||'home').toString().trim().replace(/[-_]view$/,'');
-var map={'login':'view-auth','auth':'view-auth','view-auth':'view-auth','hub':'view-home','home':'view-home','portals':'view-home','view-home':'view-home','path':'view-path','learning-path':'view-path','view-path':'view-path','learning-path-view':'view-path','worldtour':'view-worldtour','world3d':'view-worldtour','view-worldtour':'view-worldtour','world3d-view':'view-worldtour','music':'view-music','view-music':'view-music','music-view':'view-music','stories':'view-stories','view-stories':'view-stories','stories-view':'view-stories','ai-tutor':'ai-tutor-view','tutor':'ai-tutor-view','ai-tutor-view':'ai-tutor-view','admin':'adminDashboardModal'};
-return map[id]||(window.MASTER_ROOT_VIEWS.indexOf(id)!==-1?id:(window.MASTER_ROOT_VIEWS.indexOf('view-'+id)!==-1?'view-'+id:'view-home'));
+var id=(rawId||'home').toString().trim();
+var cleanId=id.replace(/[-_]view$/,'');
+var map={'login':'view-auth','auth':'view-auth','view-auth':'view-auth','login-view':'view-auth','hub':'view-home','home':'view-home','portals':'view-home','view-home':'view-home','hub-view':'view-home','path':'view-path','learning-path':'view-path','learning-path-view':'view-path','view-path':'view-path','worldtour':'view-worldtour','world3d':'view-worldtour','world3d-view':'view-worldtour','view-worldtour':'view-worldtour','music':'view-music','music-view':'view-music','view-music':'view-music','stories':'view-stories','stories-view':'view-stories','view-stories':'view-stories','ai-tutor':'ai-tutor-view','tutor':'ai-tutor-view','ai-tutor-view':'ai-tutor-view','view-ai-tutor':'ai-tutor-view','admin':'adminDashboardModal','admin-view':'adminDashboardModal'};
+return map[id]||map[cleanId]||(window.MASTER_ROOT_VIEWS.indexOf(id)!==-1?id:(window.MASTER_ROOT_VIEWS.indexOf('view-'+id)!==-1?'view-'+id:'view-home'));
 };
 window.syncTopBackBtnVisibility=function(t){
 var b=document.getElementById('headerGlobalBackBtn');if(!b)return;
@@ -1344,10 +1345,12 @@ window.dispatchEvent(new Event('resize'));
 },40);
 }
 if(targetId==='view-music'){
-var sSub=document.getElementById('music-search-subview');
-var pSub=document.getElementById('music-player-subview');
-if(sSub&&(!pSub||pSub.classList.contains('hidden')||pSub.style.display==='none')){sSub.style.setProperty('display','block','important');sSub.classList.remove('hidden');}
+var vm=document.getElementById('view-music'),ms=document.getElementById('music-search-subview'),mp=document.getElementById('music-player-subview');
+if(vm){vm.classList.remove('hidden','offline-locked');vm.style.setProperty('display','block','important');vm.style.setProperty('visibility','visible','important');vm.style.setProperty('opacity','1','important');vm.style.setProperty('pointer-events','auto','important');}
+if(ms){ms.classList.remove('hidden','offline-locked');ms.style.setProperty('display','block','important');ms.style.setProperty('visibility','visible','important');ms.style.setProperty('opacity','1','important');ms.style.setProperty('pointer-events','auto','important');}
+if(mp){mp.classList.add('hidden');mp.style.setProperty('display','none','important');}
 if(typeof window.renderMusicTracksList==='function')window.renderMusicTracksList();
+if(typeof window.renderTrendingTracksCarousel==='function')window.renderTrendingTracksCarousel();
 }
 if(targetId==='view-stories'&&typeof window.renderStorySelector==='function')window.renderStorySelector();
 if(targetId!=='view-music'&&typeof pauseYouTubePlayer==='function')pauseYouTubePlayer();

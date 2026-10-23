@@ -1821,3 +1821,64 @@ body:not(.view-worldtour-active) #world3dFloatingBackBtn {
   visibility: hidden !important;
   pointer-events: none !important;
 }
+
+
+/* ==========================================================================
+   FIX FULLSCREEN MUNDO 3D (SIN APLASTAMIENTO VERTICAL) Y SALA DE MÚSICA
+   ========================================================================== */
+#view-worldtour:not(.hidden) {
+  position: fixed !important;
+  top: 56px !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: calc(100dvh - 56px) !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  z-index: 40 !important;
+  background: #0a0e17 !important;
+  display: block !important;
+  overflow: hidden !important;
+}
+
+#view-worldtour #world3d-view,
+#view-worldtour #world3d-container,
+#view-worldtour #canvas-container,
+#view-worldtour #threeCanvasContainer,
+#view-worldtour #threeWebGLMount {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100% !important;
+  max-height: none !important;
+  border-radius: 0 !important;
+  border: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: block !important;
+}
+
+#view-worldtour canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+}
+
+/* Garantizar visibilidad de la Sala de Música cuando no tenga la clase .hidden */
+#view-music:not(.hidden) {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  min-height: calc(100dvh - 70px) !important;
+}
+
+#view-music:not(.hidden) #music-search-subview:not(.hidden) {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}

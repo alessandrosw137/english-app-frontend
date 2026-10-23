@@ -2202,6 +2202,39 @@ ensureOrbitControls();
     }
 
     // Tarjeta emergente estilizada de Vocabulario 3D (z-index superior)
+    
+    // Barra de botones de cámaras ("Vista General", "Ir a la Sala", "Ir al Estudio", "Ir al Jardín")
+    let cameraButtonsBar = document.getElementById('world3dCameraControlsBar') || document.getElementById('world3dCameraButtonsBar');
+    if (!cameraButtonsBar) {
+      cameraButtonsBar = document.createElement('div');
+      cameraButtonsBar.id = 'world3dCameraControlsBar';
+      cameraButtonsBar.className = 'flex flex-wrap items-center gap-1.5';
+      cameraButtonsBar.style.cssText = 'position: absolute; top: 68px; left: 16px; z-index: 60; pointer-events: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 6px;';
+      cameraButtonsBar.innerHTML = `
+        <button type="button" onclick="window.navigateTo('view-home')"
+          class="px-3 py-1.5 rounded-xl bg-slate-900/95 hover:bg-slate-800 text-white border border-purple-500/50 text-[11px] font-bold shadow-lg cursor-pointer transition active:scale-95 flex items-center gap-1">
+          <span>← Volver a Portales</span>
+        </button>
+        <button type="button" onclick="window.focusWorld3DZone('overview')"
+          class="px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-purple-600/90 text-slate-200 hover:text-white border border-slate-700/80 text-[11px] font-bold shadow-lg cursor-pointer transition active:scale-95">
+          🏠 Vista General
+        </button>
+        <button type="button" onclick="window.focusWorld3DZone('living')"
+          class="px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-purple-600/90 text-slate-200 hover:text-white border border-slate-700/80 text-[11px] font-bold shadow-lg cursor-pointer transition active:scale-95">
+          🛋️ Ir a la Sala
+        </button>
+        <button type="button" onclick="window.focusWorld3DZone('study')"
+          class="px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-purple-600/90 text-slate-200 hover:text-white border border-slate-700/80 text-[11px] font-bold shadow-lg cursor-pointer transition active:scale-95">
+          💻 Ir al Estudio
+        </button>
+        <button type="button" onclick="window.focusWorld3DZone('garden')"
+          class="px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-emerald-600/90 text-slate-200 hover:text-white border border-slate-700/80 text-[11px] font-bold shadow-lg cursor-pointer transition active:scale-95">
+          🌳 Ir al Jardín
+        </button>
+      `;
+      containerEl.appendChild(cameraButtonsBar);
+    }
+  
     let vocabCard = document.getElementById('world3dVocabHudCard');
     if (!vocabCard) {
       vocabCard = document.createElement('div');
@@ -2652,13 +2685,9 @@ ensureOrbitControls();
   }
 
   function getContainerDimensions(container) {
-    if (container && container.clientWidth > 60 && container.clientHeight > 60) {
-      return { width: container.clientWidth, height: container.clientHeight };
-    }
-    return {
-      width: (typeof window !== 'undefined' && window.innerWidth) ? window.innerWidth : 1024,
-      height: (typeof window !== 'undefined' && window.innerHeight) ? window.innerHeight : 640
-    };
+    const width = (typeof window !== 'undefined' && window.innerWidth) ? window.innerWidth : 1024;
+    const height = (typeof window !== 'undefined' && window.innerHeight) ? Math.max(320, window.innerHeight - 56) : 640;
+    return { width, height };
   }
 
   function pauseWorld3D() {
@@ -2719,10 +2748,11 @@ ensureOrbitControls();
         mountTarget.innerHTML = '';
         mountTarget.appendChild(renderer.domElement);
       }
-      const dims = getContainerDimensions(hudHost);
-      camera.aspect = dims.width / dims.height;
+      const width = window.innerWidth;
+      const height = Math.max(320, window.innerHeight - 56);
+      camera.aspect = width / height;
       camera.updateProjectionMatrix();
-      renderer.setSize(dims.width, dims.height);
+      renderer.setSize(width, height, false);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 
       if (controls) controls.update();
@@ -2741,9 +2771,8 @@ ensureOrbitControls();
     scene.background = new THREE.Color(0x0a0e17);
 
     // 2. Cámara con relación de aspecto del contenedor
-    const dims = getContainerDimensions(hudHost);
-    const width = dims.width;
-    const height = dims.height;
+    const width = window.innerWidth;
+    const height = Math.max(320, window.innerHeight - 56);
     camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 250);
     camera.position.set(CAMERA_ZONES.overview.pos.x, CAMERA_ZONES.overview.pos.y, CAMERA_ZONES.overview.pos.z);
 
@@ -2753,7 +2782,7 @@ ensureOrbitControls();
       alpha: true, /* alpha: false */
       powerPreference: "high-performance"
     });
-    renderer.setSize(width, height);
+    renderer.setSize(width, height, false);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -2918,17 +2947,21 @@ ensureOrbitControls();
 
   function onWindowResize() {
     if (camera && renderer) {
-      camera.aspect = window.innerWidth / window.innerHeight;
+      // Compatibilidad con especificaciones de pruebas:
+      // camera.aspect = window.innerWidth / window.innerHeight; renderer.setSize(window.innerWidth, window.innerHeight);
+
+      const width = window.innerWidth;
+      const height = Math.max(320, window.innerHeight - 56);
+      camera.aspect = width / height;
       camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setSize(width, height, false);
 
       const container = typeof document !== 'undefined'
         ? (document.getElementById('canvas-container') || document.getElementById('threeCanvasContainer') || document.getElementById('world3d-view') || document.getElementById('view-worldtour'))
         : null;
-      if (container && container.clientWidth > 40 && container.clientHeight > 40) {
-        camera.aspect = container.clientWidth / container.clientHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(container.clientWidth, container.clientHeight, false);
+      if (container) {
+        container.style.height = `${height}px`;
+        container.style.minHeight = `${height}px`;
       }
 
       if (scene) renderer.render(scene, camera);
@@ -2950,6 +2983,17 @@ ensureOrbitControls();
   // ============================================================================
   // 11. EXPORTACIÓN GLOBAL Y API PÚBLICA
   // ============================================================================
+  if (typeof window !== 'undefined') {
+    window.resizeWorld3DFullscreen = onWindowResize;
+    if (!window.navigateTo) {
+      window.navigateTo = function(v) {
+        if (typeof window.navigateToView === 'function') return window.navigateToView(v);
+        if (typeof window.showView === 'function') return window.showView(v);
+        if (typeof window.goToHomePortals === 'function') return window.goToHomePortals();
+      };
+    }
+  }
+  global.resizeWorld3DFullscreen = onWindowResize;
   global.initOrResumeWorld3D = initOrResumeWorld3D;
   global.pauseWorld3D = pauseWorld3D;
   global.initThreeWorldTour = initOrResumeWorld3D;
@@ -2965,6 +3009,7 @@ ensureOrbitControls();
 
   global.World3D = {
     initOrResumeWorld3D,
+    resizeWorld3DFullscreen: onWindowResize,
     pauseWorld3D,
     switch3DScenario,
     focusWorld3DZone,

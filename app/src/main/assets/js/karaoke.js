@@ -367,6 +367,18 @@
     }
 
     function renderMusicTracksList(filter = '') {
+      const viewMusic = document.getElementById('view-music');
+      const searchSub = document.getElementById('music-search-subview');
+      if (viewMusic) {
+        viewMusic.classList.remove('hidden');
+        viewMusic.style.setProperty('display', 'block', 'important');
+      }
+      if (searchSub) {
+        searchSub.classList.remove('hidden');
+        searchSub.style.setProperty('display', 'block', 'important');
+        searchSub.style.setProperty('visibility', 'visible', 'important');
+        searchSub.style.setProperty('opacity', '1', 'important');
+      }
       const container = document.getElementById('musicTrackButtonsContainer');
       if (!container) return;
 
@@ -922,6 +934,47 @@
       }
     }
 
+    
+    function returnToMusicSearch(stopMedia = true) {
+      if (stopMedia && typeof window.stopAllMedia === 'function') {
+        try { window.stopAllMedia(); } catch (e) {}
+      } else if (stopMedia && typeof window.stopAllAudioAndTimers === 'function') {
+        try { window.stopAllAudioAndTimers(); } catch (e) {}
+      }
+
+      const viewMusic = document.getElementById('view-music');
+      const searchSub = document.getElementById('music-search-subview');
+      const playerSub = document.getElementById('music-player-subview');
+      if (searchSub) {
+        searchSub.classList.add('hidden');
+        searchSub.style.setProperty('display', 'none', 'important');
+      }
+      if (playerSub) {
+        playerSub.classList.remove('hidden');
+        playerSub.style.setProperty('display', 'block', 'important');
+      }
+      if (holoStage) {
+        holoStage.classList.add('hidden');
+        holoStage.style.setProperty('display', 'none', 'important');
+      }
+      if (origVideoWrapper) {
+        origVideoWrapper.style.display = 'block';
+      }
+      if (origMetaWrapper) {
+        origMetaWrapper.style.display = 'flex';
+      }
+      if (viewMusic) {
+        viewMusic.classList.remove('hidden');
+        viewMusic.style.setProperty('display', 'block', 'important');
+      }
+      if (searchSub) {
+        searchSub.classList.remove('hidden');
+        searchSub.style.setProperty('display', 'block', 'important');
+        searchSub.style.setProperty('visibility', 'visible', 'important');
+        searchSub.style.setProperty('opacity', '1', 'important');
+      }
+    }
+  
     function selectMusicTrack(idx) {
       window._userInitiatedMusicPlayback = true;
       window.currentSongSessionId = Date.now();
@@ -1693,6 +1746,8 @@
   function quickSearchMusic(term) { const inp = document.getElementById('musicSearchInput'); if (inp) inp.value = term; if (typeof window.searchGlobalMusic === 'function') window.searchGlobalMusic(term); }
   const searchMusicTracksInput = handleMusicSearchInput;
   window.MUSIC_SESSION_TRACKS = MUSIC_SESSION_TRACKS;
+  window.returnToMusicSearch = returnToMusicSearch;
+  window.goBackToMusicSearch = returnToMusicSearch;
   window.renderMusicTracksList = renderMusicTracksList;
   window.renderLyricsFromList = renderLyricsFromList;
   window.renderMusicLyrics = renderMusicLyrics;

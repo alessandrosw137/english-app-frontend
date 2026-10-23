@@ -4,7 +4,7 @@
 
 window.MASTER_MODULES_DATA = {
   "phrasal_verbs": {
-    title: "Módulo 01: 100 Essential Phrasal Verbs",
+    title: "PHRASAL VERBS / VERBOS COMPUESTOS",
     level: "A1-B1",
     category: "Phrasal Verb",
     badge: "Phrasal Verb",
@@ -713,7 +713,7 @@ window.MASTER_MODULES_DATA = {
 ]
   },
   "difficult_verbs": {
-    title: "Módulo 02: 100 Difficult & Common Verbs",
+    title: "VERBOS / VERBS",
     level: "A2-B1",
     category: "Verbo",
     badge: "Verbo",
@@ -1422,7 +1422,7 @@ window.MASTER_MODULES_DATA = {
 ]
   },
   "power_adjectives": {
-    title: "Módulo 03: 100 Power Adjectives & Descriptions",
+    title: "ADJETIVOS / ADJECTIVES",
     level: "B1-B2",
     category: "Adjetivo",
     badge: "Adjetivo",
@@ -2131,7 +2131,7 @@ window.MASTER_MODULES_DATA = {
 ]
   },
   "native_idioms": {
-    title: "Módulo 04: 100 Native Idioms & Slang Expressions",
+    title: "MODISMOS Y SLANG / IDIOMS & SLANG",
     level: "B2",
     category: "Idiom",
     badge: "Idiom",
@@ -2840,7 +2840,7 @@ window.MASTER_MODULES_DATA = {
 ]
   },
   "connectors_linking": {
-    title: "Módulo 05: 100 Connectors & Linking Words",
+    title: "CONECTORES / CONNECTORS",
     level: "B2-C1",
     category: "Conector",
     badge: "Conector",
@@ -3549,7 +3549,7 @@ window.MASTER_MODULES_DATA = {
 ]
   },
   "false_friends": {
-    title: "Módulo 06: 100 False Friends & Confusing Words",
+    title: "CONFUSOS Y EXPRESIONES / CONFUSING WORDS",
     level: "B2",
     category: "Falso Amigo",
     badge: "Falso Amigo",
@@ -4258,7 +4258,7 @@ window.MASTER_MODULES_DATA = {
 ]
   },
   "collocations": {
-    title: "Módulo 07: 100 Prepositional Phrases & Collocations",
+    title: "FRASES COTIDIANAS / EVERYDAY PHRASES",
     level: "B2-C1",
     category: "Collocation",
     badge: "Collocation",
@@ -4967,7 +4967,7 @@ window.MASTER_MODULES_DATA = {
 ]
   },
   "business_tech": {
-    title: "Módulo 08: 100 Business, Tech & Engineering Terms",
+    title: "TRABAJO Y TECNOLOGÍA / WORK & TECH",
     level: "C1",
     category: "Negocios & Tech",
     badge: "Negocios & Tech",
@@ -5676,7 +5676,7 @@ window.MASTER_MODULES_DATA = {
 ]
   },
   "travel_survival": {
-    title: "Módulo 09: 100 Travel, Airport & Daily Survival",
+    title: "CLIMA, NATURALEZA Y VIAJES / WEATHER & TRAVEL",
     level: "A2-B1",
     category: "Viajes & Supervivencia",
     badge: "Viajes & Supervivencia",
@@ -6385,7 +6385,7 @@ window.MASTER_MODULES_DATA = {
 ]
   },
   "toefl_academic": {
-    title: "Módulo 10: 100 Academic & High-Score TOEFL Words",
+    title: "VOCABULARIO AVANZADO / ADVANCED VOCAB",
     level: "C1-C2",
     category: "Académico TOEFL",
     badge: "Académico TOEFL",
@@ -9323,3 +9323,343 @@ if (typeof window !== 'undefined') {
     initMasterDataRuntime();
   }
 }
+
+
+
+// ----------------------------------------------------
+// RENDERIZADO DE MÓDULOS CON TÍTULOS LIMPIOS (SIN PREFIJOS NUMÉRICOS NI '100')
+// ----------------------------------------------------
+if (typeof window !== 'undefined') {
+  window.renderOfficialLearningModules = function() {
+    const g1 = document.getElementById('learning-modules-grid');
+    const g2 = document.getElementById('learningModulesContainer');
+    const g3 = document.querySelector('.modules-grid');
+    const targets = [g1, g2, g3].filter(Boolean);
+    if (!targets.length) return;
+
+    const completedObj = (function() {
+      try {
+        return JSON.parse(localStorage.getItem('user_completed_modules') || '{}');
+      } catch (e) {
+        return {};
+      }
+    })();
+
+    const modules = window.OFFICIAL_LEARNING_MODULES || [];
+    const htmlContent = modules.map(mod => {
+      const modData = (window.MASTER_MODULES_DATA && (window.MASTER_MODULES_DATA[mod.key] || window.MASTER_MODULES_DATA[mod.id])) 
+        ? (window.MASTER_MODULES_DATA[mod.key] || window.MASTER_MODULES_DATA[mod.id])
+        : { items: [] };
+      const sortedItems = [...(modData.items || [])].sort((a, b) =>
+        (a.term || a.word || '').localeCompare((b.term || b.word || ''), 'en', { sensitivity: 'base' })
+      );
+      const sampleItems = sortedItems.slice(0, 3);
+      const isCompleted = Boolean(completedObj[`${mod.key}_lvl1`] || completedObj[`${mod.id}_lvl1`]);
+      const progressPercent = isCompleted ? 100 : (typeof mod.progress === 'number' && mod.progress > 0 ? mod.progress : 0);
+      const masteredText = isCompleted ? `${mod.words}/${mod.words} palabras dominadas` : `0/${mod.words} palabras dominadas`;
+
+      return `
+      <div class="module-card p-5 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-amber-500/50 shadow-xl flex flex-col justify-between transition hover:-translate-y-1 group">
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold text-[10px] border border-amber-500/30">
+              Módulo ${mod.id} &bull; Nivel ${mod.level}
+            </span>
+            <span class="text-xs font-bold text-amber-400">+${mod.exp} EXP</span>
+          </div>
+          <h3 class="text-base font-extrabold text-white mb-1 group-hover:text-amber-200 transition">
+            ${mod.title}
+          </h3>
+          <p class="text-xs text-slate-400 mb-2">${masteredText} &bull; ${mod.pureCategory || 'Especializado'}</p>
+
+          <!-- Barra de Progreso Dinámica -->
+          <div class="mb-3">
+            <div class="flex items-center justify-between text-[10px] font-semibold text-slate-400 mb-1">
+              <span>Progreso</span>
+              <span class="text-amber-400 font-bold">${progressPercent}%</span>
+            </div>
+            <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+              <div class="bg-gradient-to-r from-amber-500 to-yellow-400 h-1.5 rounded-full transition-all duration-500" style="width: ${progressPercent}%;"></div>
+            </div>
+          </div>
+
+          <div class="mb-3 p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 text-xs">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="font-bold text-slate-300 text-[11px] uppercase tracking-wider">Vocabulario Clave</span>
+              <button type="button" onclick="window.openModuleGlossary(${mod.id})" class="text-[10px] font-bold text-amber-400 hover:underline cursor-pointer">Ver todos ↗</button>
+            </div>
+            <div class="space-y-1">
+              ${sampleItems.map((item, sIdx) => `
+                <div class="flex items-center justify-between py-0.5 border-b border-slate-900 last:border-none">
+                  <span class="text-slate-200 font-medium truncate">
+                    <span class="text-[9px] font-mono text-amber-400 font-bold mr-1">#${String(sIdx + 1).padStart(2, '0')}</span>
+                    ${item.term || ''} <span class="text-[10px] text-amber-400/80 font-mono">${item.pron || ''}</span>
+                  </span>
+                  <button type="button" onclick="speakText('${(item.term || '').replace(/'/g, "\\'")}')" class="text-amber-400 hover:text-amber-300 text-xs px-1 cursor-pointer" title="Pronunciar">🔊</button>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 pt-2 border-t border-slate-800">
+          <button type="button" onclick="window.openModuleGlossary(${mod.id})"
+            class="flex-1 py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer">
+            <span>📖</span>
+            <span>Glosario Oficial</span>
+          </button>
+          <button type="button" onclick="window.openLearningMissionModal(${mod.id})"
+            class="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 text-slate-950 text-xs font-extrabold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-amber-500/20">
+            <span>🎯</span>
+            <span>Iniciar Misión</span>
+          </button>
+        </div>
+      </div>
+    `;
+    }).join('');
+
+    targets.forEach(t => {
+      t.innerHTML = htmlContent;
+    });
+  };
+  window.renderLearningPathModules = window.renderOfficialLearningModules;
+}
+
+// ----------------------------------------------------
+// INYECCIÓN DE VOCABULARIO Y ACTUALIZACIÓN DE TÍTULOS
+// ----------------------------------------------------
+(function upgradeMasterVocabularyAndTitles() {
+  const CLEAN_TITLES = {
+    1: 'PHRASAL VERBS / VERBOS COMPUESTOS',
+    2: 'VERBOS / VERBS',
+    3: 'ADJETIVOS / ADJECTIVES',
+    4: 'MODISMOS Y SLANG / IDIOMS & SLANG',
+    5: 'CONECTORES / CONNECTORS',
+    6: 'CONFUSOS Y EXPRESIONES / CONFUSING WORDS',
+    7: 'FRASES COTIDIANAS / EVERYDAY PHRASES',
+    8: 'TRABAJO Y TECNOLOGÍA / WORK & TECH',
+    9: 'CLIMA, NATURALEZA Y VIAJES / WEATHER & TRAVEL',
+    10: 'VOCABULARIO AVANZADO / ADVANCED VOCAB',
+    phrasal_verbs: 'PHRASAL VERBS / VERBOS COMPUESTOS',
+    everyday_actions: 'PHRASAL VERBS / VERBOS COMPUESTOS',
+    difficult_verbs: 'VERBOS / VERBS',
+    grammar_path: 'VERBOS / VERBS',
+    power_adjectives: 'ADJETIVOS / ADJECTIVES',
+    social_dating: 'ADJETIVOS / ADJECTIVES',
+    native_idioms: 'MODISMOS Y SLANG / IDIOMS & SLANG',
+    internet_slang: 'MODISMOS Y SLANG / IDIOMS & SLANG',
+    connectors_linking: 'CONECTORES / CONNECTORS',
+    connectors: 'CONECTORES / CONNECTORS',
+    false_friends: 'CONFUSOS Y EXPRESIONES / CONFUSING WORDS',
+    compound_words: 'CONFUSOS Y EXPRESIONES / CONFUSING WORDS',
+    collocations: 'FRASES COTIDIANAS / EVERYDAY PHRASES',
+    affixes_morphology: 'FRASES COTIDIANAS / EVERYDAY PHRASES',
+    business_tech: 'TRABAJO Y TECNOLOGÍA / WORK & TECH',
+    professional_english: 'TRABAJO Y TECNOLOGÍA / WORK & TECH',
+    travel_survival: 'CLIMA, NATURALEZA Y VIAJES / WEATHER & TRAVEL',
+    toefl_academic: 'VOCABULARIO AVANZADO / ADVANCED VOCAB',
+    toefl_simulator: 'VOCABULARIO AVANZADO / ADVANCED VOCAB'
+  };
+
+  const NEW_USER_VOCAB = {
+    phrasal_verbs: [
+      { term: "Get rid of", pron: "/ɡet rɪd əv/", category: "Phrasal Verb", meaning: "Deshacerse de / Quitarse de encima", example: "Even the rain doesn't get rid of this muggy heat." },
+      { term: "Spit it out", pron: "/spɪt ɪt aʊt/", category: "Phrasal Verb", meaning: "Escúpelo / Dilo de una vez sin rodeos", example: "I know you have something to tell me, so spit it out!" },
+      { term: "Swell up (Swelling up)", pron: "/ˈswel.ɪŋ ʌp/", category: "Phrasal Verb", meaning: "Hincharse / Inflamarse", example: "His ankle started swelling up right after the match." },
+      { term: "Bum out (Bum me out)", pron: "/bʌm mi aʊt/", category: "Phrasal Verb", meaning: "Deprimir / Bajar el ánimo", example: "Rainy Mondays really bum me out." },
+      { term: "Pull out (Pull her out)", pron: "/pʊl hɝː aʊt/", category: "Phrasal Verb", meaning: "Sacar / Retirar hacia afuera", example: "The lifeguard jumped in to pull her out of the pool." },
+      { term: "Fog up (Fogged up)", pron: "/fɔːɡd ʌp/", category: "Phrasal Verb", meaning: "Empañarse (vidrios o ventanas)", example: "The car window is completely fogged up." },
+      { term: "Hack up", pron: "/hæk ʌp/", category: "Phrasal Verb", meaning: "Toser flema / Escupir / Cortar a hachazos", example: "He was hacking up phlegm all morning due to his cold." },
+      { term: "Drag off", pron: "/dræɡ ɔːf/", category: "Phrasal Verb", meaning: "Arrastrar a la fuerza / Llevarse a rastras", example: "Security guards had to drag off the troublemaker." },
+      { term: "Plug into", pron: "/plʌɡ ˈɪn.tuː/", category: "Phrasal Verb", meaning: "Conectar / Enchufar a", example: "Plug your charger into the wall outlet." },
+      { term: "Speed up (Speed it up)", pron: "/spiːd ɪt ʌp/", category: "Phrasal Verb", meaning: "Adelantarlo / Acelerarlo", example: "This video is slow, let's speed it up." },
+      { term: "Zoom out", pron: "/zuːm aʊt/", category: "Phrasal Verb", meaning: "Alejar la imagen / Hacer zoom para hacerlo chico", example: "Zoom out on the map so we can see the whole city." },
+      { term: "Sneak around", pron: "/sniːk əˈraʊnd/", category: "Phrasal Verb", meaning: "Andar a escondidas / Escabullirse / Merodear", example: "He's sneaking around the house." },
+      { term: "Fire away", pron: "/ˈfaɪr əˈweɪ/", category: "Phrasal Verb", meaning: "¡Dale! / ¡Dispara! (Pregunta con confianza)", example: "If you have any questions, fire away!" },
+      { term: "Juice out of", pron: "/dʒuːs aʊt əv/", category: "Phrasal Verb", meaning: "Sacar jugo de / Exprimir", example: "Squeeze hard to get all the juice out of those oranges." }
+    ],
+    difficult_verbs: [
+      { term: "To grieve", pron: "/tuː ɡriːv/", category: "Verbo", meaning: "Estar de duelo / Lamentar", example: "It takes time to grieve after a loss." },
+      { term: "Irk (Irk me)", pron: "/ɝːk/", category: "Verbo", meaning: "Irritar / Molestar", example: "It really irks me when people arrive late." },
+      { term: "To taunt", pron: "/tuː tɔːnt/", category: "Verbo", meaning: "Provocar / Burlarse de alguien", example: "Don't let the rival players taunt you." },
+      { term: "To frame", pron: "/tuː freɪm/", category: "Verbo", meaning: "Incriminar / Enmarcar", example: "The suspect claimed someone tried to frame him." },
+      { term: "To drag", pron: "/tuː dræɡ/", category: "Verbo", meaning: "Arrastrar", example: "Don't drag the heavy box across the floor." },
+      { term: "Swap (Swapping)", pron: "/ˈswɑː.pɪŋ/", category: "Verbo", meaning: "Intercambiar / Intercambiando", example: "We spent the afternoon swapping stories." },
+      { term: "To tame", pron: "/tuː teɪm/", category: "Verbo", meaning: "Domar / Controlar (I can't tame it)", example: "My hair is so messy today, I can't tame it!" },
+      { term: "To gossip", pron: "/tuː ˈɡɑː.sɪp/", category: "Verbo", meaning: "Chismosear (hablar de otros)", example: "They love to gossip during lunch break." },
+      { term: "To snoop", pron: "/tuː snuːp/", category: "Verbo", meaning: "Fisgonear / Meter las narices donde no te llaman", example: "Stop snooping through my stuff!" },
+      { term: "To glance", pron: "/tuː ɡlæns/", category: "Verbo", meaning: "Ojear / Echar una mirada rápida", example: "She glanced at her phone quickly." },
+      { term: "To peek", pron: "/tuː piːk/", category: "Verbo", meaning: "Ojear / Asomarse rápido (Let me peek)", example: "Let me peek at what you're drawing!" },
+      { term: "To browse", pron: "/tuː braʊz/", category: "Verbo", meaning: "Ojear / Hojear tiendas o páginas", example: "I was just browsing, thank you." },
+      { term: "To skim", pron: "/tuː skɪm/", category: "Verbo", meaning: "Hojear / Leer por encima rápidamente", example: "Skim the chapter to find the main ideas." },
+      { term: "Burps / Belches", pron: "/bɝːps / ˈbel.tʃɪz/", category: "Verbo", meaning: "Eructos / Eructar", example: "Drinking soda too fast gives me burps." }
+    ],
+    power_adjectives: [
+      { term: "Rotten", pron: "/ˈrɑː.tən/", category: "Adjetivo", meaning: "Podrido / Echado a perder", example: "Those apples are completely rotten." },
+      { term: "Pointless", pron: "/ˈpɔɪnt.ləs/", category: "Adjetivo", meaning: "Sin sentido / Inútil", example: "It is pointless to argue about the past." },
+      { term: "Damp", pron: "/dæmp/", category: "Adjetivo", meaning: "Poco mojado / Húmedo", example: "The grass is still damp from the morning dew." },
+      { term: "Soaked", pron: "/soʊkt/", category: "Adjetivo", meaning: "Muy mojado / Empapado", example: "We walked in the rain and got soaked." },
+      { term: "Muggy", pron: "/ˈmʌɡ.i/", category: "Adjetivo", meaning: "Bochornoso / Calor húmedo (Muggy heat)", example: "Even the rain doesn't get rid of this muggy heat." },
+      { term: "Saucy", pron: "/ˈsɔː.si/", category: "Adjetivo", meaning: "Atrevido / Picante / Coqueto", example: "He made a saucy remark and winked." },
+      { term: "Nasty", pron: "/ˈnæs.ti/", category: "Adjetivo", meaning: "Asqueroso / Desagradable", example: "There is a nasty smell coming from the trash." },
+      { term: "Rigged", pron: "/rɪɡd/", category: "Adjetivo", meaning: "Amañado / Arreglado con trampa", example: "Everyone knew the contest was rigged." },
+      { term: "Soothing", pron: "/ˈsuː.ðɪŋ/", category: "Adjetivo", meaning: "Calmante / Reconfortante", example: "The sound of rain is very soothing." },
+      { term: "Vain", pron: "/veɪn/", category: "Adjetivo", meaning: "Vanidoso / En vano", example: "All our efforts were in vain." },
+      { term: "Stoked (I'm stoked)", pron: "/stoʊkt/", category: "Adjetivo", meaning: "Súper emocionado / Entusiasmado", example: "I'm stoked for the concert tonight!" },
+      { term: "Thriving", pron: "/ˈθraɪ.vɪŋ/", category: "Adjetivo", meaning: "Prosperando / En pleno auge", example: "The local music scene is thriving." },
+      { term: "Spooky", pron: "/ˈspuː.ki/", category: "Adjetivo", meaning: "Escalofriante / Tenebroso", example: "That abandoned house looks spooky at night." },
+      { term: "Amusing", pron: "/əˈmjuː.zɪŋ/", category: "Adjetivo", meaning: "Divertido / Gracioso", example: "That was a very amusing movie." },
+      { term: "Wicked", pron: "/ˈwɪk.ɪd/", category: "Adjetivo", meaning: "Malvado / Brutal / Buenísimo (slang)", example: "He plays a wicked guitar solo." },
+      { term: "Tacky", pron: "/ˈtæk.i/", category: "Adjetivo", meaning: "Naco / De mal gusto / Corriente (You're so tacky)", example: "You're so tacky wearing that outfit!" },
+      { term: "Nosy", pron: "/ˈnoʊ.zi/", category: "Adjetivo", meaning: "Chismoso / Metiche (To be nosy)", example: "Don't be so nosy about other people's lives." }
+    ],
+    native_idioms: [
+      { term: "Pick-up line", pron: "/ˈpɪk.ʌp laɪn/", category: "Idiom", meaning: "Piropo / Frase para ligar", example: "That was the funniest pick-up line I've ever heard." },
+      { term: "I'm so into you", pron: "/aɪm soʊ ˈɪn.tuː juː/", category: "Idiom", meaning: "Me encantas / Me gustas muchísimo", example: "I can't hide it anymore, I'm so into you." },
+      { term: "Grab a bite", pron: "/ɡræb ə baɪt/", category: "Idiom", meaning: "Ir por comida / Comer algo rápido", example: "Let's grab a bite before the movie starts." },
+      { term: "Let's boogie", pron: "/lets ˈbʊɡ.i/", category: "Idiom", meaning: "¡Bailemos! / ¡Vámonos!", example: "Put on some good music and let's boogie!" },
+      { term: "It's raining cats and dogs", pron: "/ɪts ˈreɪ.nɪŋ kæts ænd dɔːɡz/", category: "Idiom", meaning: "Está diluviando / Lloviendo a cántaros", example: "Stay inside, it's raining cats and dogs!" },
+      { term: "Stand my ground", pron: "/stænd maɪ ɡraʊnd/", category: "Idiom", meaning: "Mantener mi postura / Defender mi lugar", example: "I had to stand my ground during the debate." },
+      { term: "Better out than in", pron: "/ˈbet̬.ɚ aʊt ðæn ɪn/", category: "Idiom", meaning: "Mejor afuera que adentro", example: "As Shrek always says: 'Better out than in!'" },
+      { term: "I was blown away", pron: "/aɪ wʌz bloʊn əˈweɪ/", category: "Idiom", meaning: "Me quedé impresionado / Me voló la cabeza", example: "I was blown away by her singing voice." },
+      { term: "Have a blast (Blast)", pron: "/blæst/", category: "Idiom", meaning: "Pasarla increíble / Explosión o ráfaga", example: "We had a blast at the beach yesterday!" },
+      { term: "A gander (Take a gander)", pron: "/ə ˈɡæn.dɚ/", category: "Idiom", meaning: "Un vistazo / Echar un ojo", example: "Come take a gander at this view." },
+      { term: "I miss the rage", pron: "/aɪ mɪs ðə reɪdʒ/", category: "Idiom", meaning: "Extraño la furia / la rabia", example: "Listening to that track makes me say 'I miss the rage.'" },
+      { term: "Snitch / Tattletale / Rat", pron: "/snɪtʃ / ˈtæt.əl.teɪl/", category: "Sustantivo", meaning: "Soplón (callejero / escuela / informante)", example: "Nobody likes a snitch." },
+      { term: "Hood", pron: "/hʊd/", category: "Sustantivo", meaning: "Capucha / Barrio / Pandillero (según contexto)", example: "He grew up in a tough hood." },
+      { term: "Thugs", pron: "/θʌɡz/", category: "Sustantivo", meaning: "Malandros / Matones", example: "Stay away from those street thugs." }
+    ],
+    connectors_linking: [
+      { term: "First off", pron: "/ˈfɝːst ɔːf/", category: "Conector", meaning: "Para empezar / En primer lugar", example: "First off, thank you all for coming today." },
+      { term: "By all means", pron: "/baɪ ɔːl miːnz/", category: "Conector", meaning: "Por supuesto / Faltaba más", example: "Can I sit here? By all means!" },
+      { term: "By means of", pron: "/baɪ miːnz əv/", category: "Conector", meaning: "Por medio de / Mediante", example: "We lifted the heavy load by means of a rope." },
+      { term: "Via", pron: "/ˈvaɪ.ə/", category: "Conector", meaning: "Vía / A través de", example: "We flew to Tokyo via Los Angeles." },
+      { term: "All sorts of things", pron: "/ɔːl sɔːrts əv θɪŋz/", category: "Conector", meaning: "Todo tipo de cosas", example: "The market sells all sorts of things." }
+    ],
+    false_friends: [
+      { term: "Fifty-ish (-ish)", pron: "/ˈfɪf.ti.ɪʃ/", category: "Expresión", meaning: "50 y pico / Aproximadamente cincuenta", example: "He's fifty-ish, but he looks much younger." },
+      { term: "Culprit", pron: "/ˈkʌl.prɪt/", category: "Sustantivo", meaning: "Culpable / Responsable de un fallo", example: "Police finally caught the culprit." },
+      { term: "Mumbler", pron: "/ˈmʌm.blɚ/", category: "Sustantivo", meaning: "Murmurador / Que habla entre dientes", example: "It's hard to understand him because he's a mumbler." },
+      { term: "Theft", pron: "/θeft/", category: "Sustantivo", meaning: "Robo / Hurto", example: "Car theft has decreased this year." },
+      { term: "Dread", pron: "/dred/", category: "Sustantivo", meaning: "Pavor / Temor profundo", example: "She looked at the dark cave with dread." },
+      { term: "Ghoul", pron: "/ɡuːl/", category: "Sustantivo", meaning: "Ghoul / Demonio necrófago", example: "The horror story featured a creepy ghoul." },
+      { term: "Paramour (Mr. Paramour)", pron: "/ˈpær.ə.mʊr/", category: "Sustantivo", meaning: "Señor amante / Amante secreto", example: "She met her secret paramour at midnight." },
+      { term: "Fondly", pron: "/ˈfɑːnd.li/", category: "Adverbio", meaning: "Con cariño / Con afecto", example: "I fondly remember our summer vacations." }
+    ],
+    collocations: [
+      { term: "How can you tell?", pron: "/haʊ kæn juː tel/", category: "Collocation", meaning: "¿Cómo lo sabes? / ¿Cómo te das cuenta?", example: "How can you tell he's lying?" },
+      { term: "Shall we?", pron: "/ʃæl wiː/", category: "Collocation", meaning: "¿Vamos? / ¿Empezamos?", example: "The table is ready—shall we?" },
+      { term: "How dare you!", pron: "/haʊ der juː/", category: "Collocation", meaning: "¡Cómo te atreves!", example: "How dare you speak to my mother like that!" },
+      { term: "I do hope so", pron: "/aɪ duː hoʊp soʊ/", category: "Collocation", meaning: "Ojalá que sí", example: "Will we pass the exam? I do hope so!" },
+      { term: "What led you to me?", pron: "/wʌt led juː tuː miː/", category: "Collocation", meaning: "¿Qué te trajo hasta mí?", example: "Tell me, what led you to me?" },
+      { term: "Chitchat", pron: "/ˈtʃɪt.tʃæt/", category: "Sustantivo", meaning: "Charla casual / Chisme leve", example: "Enough chitchat, let's get to work." },
+      { term: "Goosebumps / Goose pimples", pron: "/ˈɡuːs.bʌmps/", category: "Sustantivo", meaning: "Piel de gallina", example: "The cold wind gave me goosebumps." },
+      { term: "Blanket", pron: "/ˈblæŋ.kɪt/", category: "Sustantivo", meaning: "Cobija / Manta", example: "Put an extra blanket on the bed." },
+      { term: "Fat", pron: "/fæt/", category: "Sustantivo", meaning: "Grasa", example: "Trim the excess fat from the meat." }
+    ],
+    business_tech: [
+      { term: "Trucking", pron: "/ˈtrʌk.ɪŋ/", category: "Negocios & Tech", meaning: "Transporte en camión", example: "He works in the long-haul trucking business." },
+      { term: "To badge", pron: "/tuː bædʒ/", category: "Negocios & Tech", meaning: "Poner insignia / Identificar con credencial", example: "Don't forget to badge in at the office entrance." },
+      { term: "Juicing room", pron: "/ˈdʒuː.sɪŋ ruːm/", category: "Sustantivo", meaning: "Sala de exprimido", example: "The factory has a giant juicing room." },
+      { term: "Chute", pron: "/ʃuːt/", category: "Sustantivo", meaning: "Tobogán / Conducto de caída", example: "The packages slide down the metal chute." }
+    ],
+    travel_survival: [
+      { term: "Take shelter", pron: "/teɪk ˈʃel.tɚ/", category: "Viajes & Supervivencia", meaning: "Tomar refugio / Resguardarse", example: "We had to take shelter from the sudden storm." },
+      { term: "Mugginess / Humidity", pron: "/ˈmʌɡ.i.nəs/", category: "Sustantivo", meaning: "Bochorno / Calor húmedo", example: "Not even the rain breaks the mugginess." },
+      { term: "Squirrel", pron: "/ˈskwɝː.əl/", category: "Sustantivo", meaning: "Ardilla", example: "Look at that squirrel holding an acorn!" },
+      { term: "Fungi", pron: "/ˈfʌn.dʒaɪ/", category: "Sustantivo", meaning: "Hongos", example: "Wild fungi grow on damp forest logs." },
+      { term: "Snowflakes", pron: "/ˈsnoʊ.fleɪks/", category: "Sustantivo", meaning: "Copos de nieve", example: "The children caught snowflakes on their mittens." },
+      { term: "Tidal wave", pron: "/ˈtaɪ.dəl weɪv/", category: "Sustantivo", meaning: "Maremoto / Ola gigante", example: "A massive tidal wave hit the coast." }
+    ]
+  };
+
+  const RARE_WORDS = new Set([
+    'abide by', 'acquiesce', 'ameliorate', 'antediluvian', 'apocryphal',
+    'beguile', 'circumlocution', 'contumacious', 'deleterious', 'ebullient',
+    'enervate', 'ephemeral', 'equanimity', 'ersatz', 'erstwhile', 'fastidious',
+    'garrulous', 'hegemony', 'heretofore', 'iconoclast', 'idiosyncrasy',
+    'impecunious', 'inchoate', 'indefatigable', 'intransigent', 'lachrymose',
+    'loquacious', 'lugubrious', 'magnanimous', 'mendacious', 'nefarious',
+    'obfuscate', 'obsequious', 'ostentatious', 'panacea', 'paragon',
+    'parsimonious', 'recalcitrant', 'redolent', 'sagacious', 'sycophant',
+    'taciturn', 'truculent', 'vociferous'
+  ]);
+
+  if (Array.isArray(window.OFFICIAL_LEARNING_MODULES)) {
+    window.OFFICIAL_LEARNING_MODULES.forEach(function(m) {
+      m.title = CLEAN_TITLES[m.id] || CLEAN_TITLES[m.key] || m.title.replace(/^\d+\.\s*/, '').replace(/\b100\s+/i, '');
+    });
+  }
+
+  if (window.MASTER_MODULES_DATA) {
+    Object.keys(window.MASTER_MODULES_DATA).forEach(function(key) {
+      const mod = window.MASTER_MODULES_DATA[key];
+      if (!mod) return;
+      if (CLEAN_TITLES[key]) mod.title = CLEAN_TITLES[key];
+      const existing = Array.isArray(mod.items) ? mod.items : [];
+      const commonExisting = existing.filter(function(i) {
+        return !RARE_WORDS.has(String(i.term || i.word || '').trim().toLowerCase());
+      });
+
+      const aliasMap = {
+        everyday_actions: 'phrasal_verbs',
+        grammar_path: 'difficult_verbs',
+        social_dating: 'power_adjectives',
+        internet_slang: 'native_idioms',
+        connectors: 'connectors_linking',
+        compound_words: 'false_friends',
+        affixes_morphology: 'collocations',
+        professional_english: 'business_tech'
+      };
+      const targetKey = aliasMap[key] || key;
+      const additions = NEW_USER_VOCAB[targetKey] || [];
+
+      const seen = new Set();
+      const finalItems = [];
+
+      additions.forEach(function(item) {
+        const k = String(item.term).trim().toLowerCase();
+        if (!seen.has(k)) {
+          seen.add(k);
+          finalItems.push({
+            term: item.term,
+            word: item.term,
+            pron: item.pron,
+            ipa: item.pron,
+            category: item.category,
+            meaning: item.meaning,
+            translation: item.meaning,
+            example: item.example
+          });
+        }
+      });
+
+      commonExisting.forEach(function(item) {
+        const k = String(item.term || item.word || '').trim().toLowerCase();
+        if (k && !seen.has(k)) {
+          seen.add(k);
+          finalItems.push(item);
+        }
+      });
+
+      if (finalItems.length < 100) {
+        existing.forEach(function(item) {
+          if (finalItems.length >= 100) return;
+          const k = String(item.term || item.word || '').trim().toLowerCase();
+          if (k && !seen.has(k)) {
+            seen.add(k);
+            finalItems.push(item);
+          }
+        });
+      }
+
+      mod.items = finalItems.slice(0, 100);
+    });
+  }
+
+  if (typeof window !== 'undefined') {
+    window.upgradeMasterVocabularyAndTitles = upgradeMasterVocabularyAndTitles;
+  }
+  if (typeof document !== 'undefined' && document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', upgradeMasterVocabularyAndTitles);
+  }
+})();

@@ -1546,12 +1546,17 @@ window.isCurrentUserAdmin = function() {
         'login': 'view-auth',
         'login-view': 'view-auth',
         'view-auth': 'view-auth',
+        'auth': 'view-auth',
         'hub': 'view-home',
         'hub-view': 'view-home',
+        'home': 'view-home',
+        'portals': 'view-home',
         'view-home': 'view-home',
+        'path': 'view-path',
         'learning-path': 'view-path',
         'learning-path-view': 'view-path',
         'view-path': 'view-path',
+        'worldtour': 'view-worldtour',
         'world3d': 'view-worldtour',
         'world3d-view': 'view-worldtour',
         'view-worldtour': 'view-worldtour',
@@ -1562,12 +1567,14 @@ window.isCurrentUserAdmin = function() {
         'stories-view': 'view-stories',
         'view-stories': 'view-stories',
         'ai-tutor': 'ai-tutor-view',
+        'tutor': 'ai-tutor-view',
         'ai-tutor-view': 'ai-tutor-view',
         'view-ai-tutor': 'ai-tutor-view',
         'admin': 'adminDashboardModal',
         'admin-view': 'adminDashboardModal'
       };
-      const targetId = viewMap[viewId] || viewId;
+      const cleanRaw = (viewId || '').toString().trim();
+      const targetId = viewMap[cleanRaw] || viewMap[cleanRaw.replace(/[-_]view$/, '')] || cleanRaw;
       if (targetId === 'world3d-view' || targetId === 'view-worldtour' || viewId === 'world3d' || viewId === 'worldtour') {
         if (typeof window.open3DPortalView === 'function') {
           window.open3DPortalView();
@@ -1704,19 +1711,30 @@ window.isCurrentUserAdmin = function() {
         }, 60);
       }
       if (targetId === 'view-music') {
-        if (typeof renderMusicTracksList === 'function') renderMusicTracksList();
+        const vm = document.getElementById('view-music');
+        const ms = document.getElementById('music-search-subview');
+        const mp = document.getElementById('music-player-subview');
+        if (vm) {
+          vm.classList.remove('hidden', 'offline-locked');
+          vm.style.setProperty('display', 'block', 'important');
+          vm.style.setProperty('visibility', 'visible', 'important');
+          vm.style.setProperty('opacity', '1', 'important');
+          vm.style.setProperty('pointer-events', 'auto', 'important');
+        }
+        if (ms) {
+          ms.classList.remove('hidden', 'offline-locked');
+          ms.style.setProperty('display', 'block', 'important');
+          ms.style.setProperty('visibility', 'visible', 'important');
+          ms.style.setProperty('opacity', '1', 'important');
+          ms.style.setProperty('pointer-events', 'auto', 'important');
+        }
+        if (mp) {
+          mp.classList.add('hidden');
+          mp.style.setProperty('display', 'none', 'important');
+        }
+        if (typeof window.renderMusicTracksList === 'function') window.renderMusicTracksList();
         if (typeof window.clearMusicSearchInput === 'function') window.clearMusicSearchInput();
         if (typeof window.renderTrendingTracksCarousel === 'function') window.renderTrendingTracksCarousel();
-        const searchSub = document.getElementById('music-search-subview');
-        const playerSub = document.getElementById('music-player-subview');
-        if (searchSub) {
-          searchSub.style.display = 'block';
-          searchSub.classList.remove('hidden');
-        }
-        if (playerSub) {
-          playerSub.style.display = 'none';
-          playerSub.classList.add('hidden');
-        }
       }
       if (targetId === 'view-stories') {
         if (typeof renderStorySelector === 'function') renderStorySelector();
@@ -2128,7 +2146,7 @@ window.logout = function() {
         }
       } else if (portal === 'music') {
         if (typeof window.navigateToView === 'function') {
-          window.navigateToView('music-view');
+          window.navigateToView('view-music');
         } else if (typeof showView === 'function') {
           showView('view-music');
         }
@@ -3739,25 +3757,21 @@ window.logout = function() {
     let currentMissionQuestions = [];
 
         const MODULE_TITLES = {
-      phrasal_verbs: 'Módulo 01: 100 Essential Phrasal Verbs',
-      difficult_verbs: 'Módulo 02: 100 Difficult & Common Verbs',
-      power_adjectives: 'Módulo 03: 100 Power Adjectives & Descriptions',
-      native_idioms: 'Módulo 04: 100 Native Idioms & Slang Expressions',
-      connectors_linking: 'Módulo 05: 100 Connectors & Linking Words',
-      false_friends: 'Módulo 06: 100 False Friends & Confusing Words',
-      collocations: 'Módulo 07: 100 Prepositional Phrases & Collocations',
-      business_tech: 'Módulo 08: 100 Business, Tech & Engineering Terms',
-      travel_survival: 'Módulo 09: 100 Travel, Airport & Daily Survival',
-      toefl_academic: 'Módulo 10: 100 Academic & High-Score TOEFL Words',
-      everyday_actions: 'Módulo 01: 100 Essential Phrasal Verbs',
-      connectors: 'Módulo 05: 100 Connectors & Linking Words',
-      social_dating: 'Módulo 03: 100 Power Adjectives & Descriptions',
-      professional_english: 'Módulo 08: 100 Business, Tech & Engineering Terms',
-      compound_words: 'Módulo 06: 100 False Friends & Confusing Words',
-      affixes_morphology: 'Módulo 07: 100 Prepositional Phrases & Collocations',
-      grammar_path: 'Módulo 02: 100 Difficult & Common Verbs',
-      toefl_simulator: 'Módulo 10: 100 Academic & High-Score TOEFL Words',
-      internet_slang: 'Módulo 04: 100 Native Idioms & Slang Expressions'
+      phrasal_verbs: 'PHRASAL VERBS / VERBOS COMPUESTOS',
+      difficult_verbs: 'VERBOS / VERBS',
+      power_adjectives: 'ADJETIVOS / ADJECTIVES',
+      native_idioms: 'MODISMOS Y SLANG / IDIOMS & SLANG',
+      connectors_linking: 'CONECTORES / CONNECTORS',
+      false_friends: 'CONFUSOS Y EXPRESIONES / CONFUSING WORDS',
+      collocations: 'FRASES COTIDIANAS / EVERYDAY PHRASES',
+      business_tech: 'TRABAJO Y TECNOLOGÍA / WORK & TECH',
+      travel_survival: 'CLIMA, NATURALEZA Y VIAJES / WEATHER & TRAVEL',
+      toefl_academic: 'VOCABULARIO AVANZADO / ADVANCED VOCAB',
+      everyday_actions: 'PHRASAL VERBS / VERBOS COMPUESTOS',
+      connectors: 'CONECTORES / CONNECTORS',
+      social_dating: 'ADJETIVOS / ADJECTIVES',
+      professional_english: 'TRABAJO Y TECNOLOGÍA / WORK & TECH',
+      compound_words: 'CONFUSOS Y EXPRESIONES / CONFUSING WORDS',
     };
 
     function isModuleLevelCompleted(modKey, level = 1) {
@@ -8122,16 +8136,16 @@ window.logout = function() {
        RENDERIZADO DINÁMICO DE LOS 10 MÓDULOS DE LEARNING PATH
        ======================================================== */
         window.OFFICIAL_LEARNING_MODULES = [
-      { id: 1, title: "100 Essential Phrasal Verbs", altTitle: "Foundations & Daily Routine", level: "A1-B1", exp: 20, words: 100, key: "phrasal_verbs", pureCategory: "Phrasal Verb", progress: 0 },
-      { id: 2, title: "100 Difficult & Common Verbs", altTitle: "Difficult & Common Verbs", level: "A2-B1", exp: 20, words: 100, key: "difficult_verbs", pureCategory: "Verbo", progress: 0 },
-      { id: 3, title: "100 Power Adjectives & Descriptions", altTitle: "Power Adjectives & Descriptions", level: "B1-B2", exp: 20, words: 100, key: "power_adjectives", pureCategory: "Adjetivo", progress: 0 },
-      { id: 4, title: "100 Native Idioms & Slang Expressions", altTitle: "Native Idioms & Slang Expressions", level: "B2", exp: 25, words: 100, key: "native_idioms", pureCategory: "Idiom", progress: 0 },
-      { id: 5, title: "100 Connectors & Linking Words", altTitle: "Connectors & Linking Words", level: "B2-C1", exp: 25, words: 100, key: "connectors_linking", pureCategory: "Conector", progress: 0 },
-      { id: 6, title: "100 False Friends & Confusing Words", altTitle: "False Friends & Confusing Words", level: "B2", exp: 30, words: 100, key: "false_friends", pureCategory: "Falso Amigo", progress: 0 },
-      { id: 7, title: "100 Prepositional Phrases & Collocations", altTitle: "Prepositional Phrases & Collocations", level: "B2-C1", exp: 30, words: 100, key: "collocations", pureCategory: "Collocation", progress: 0 },
-      { id: 8, title: "100 Business, Tech & Engineering Terms", altTitle: "Business, Tech & Engineering Terms", level: "C1", exp: 35, words: 100, key: "business_tech", pureCategory: "Negocios & Tech", progress: 0 },
-      { id: 9, title: "100 Travel, Airport & Daily Survival", altTitle: "Travel, Airport & Daily Survival", level: "A2-B1", exp: 40, words: 100, key: "travel_survival", pureCategory: "Viajes & Supervivencia", progress: 0 },
-      { id: 10, title: "100 Academic & High-Score TOEFL Words", altTitle: "Master Fluency & Accent Reduction", level: "C1-C2", exp: 50, words: 100, key: "toefl_academic", pureCategory: "Académico TOEFL", progress: 0 }
+      { id: 1, title: "PHRASAL VERBS / VERBOS COMPUESTOS", altTitle: "PHRASAL VERBS / VERBOS COMPUESTOS", level: "A1-B1", exp: 20, words: 100, key: "phrasal_verbs", pureCategory: "Phrasal Verb", progress: 0 },
+      { id: 2, title: "VERBOS / VERBS", altTitle: "VERBOS / VERBS", level: "A2-B1", exp: 20, words: 100, key: "difficult_verbs", pureCategory: "Verbo", progress: 0 },
+      { id: 3, title: "ADJETIVOS / ADJECTIVES", altTitle: "ADJETIVOS / ADJECTIVES", level: "B1-B2", exp: 20, words: 100, key: "power_adjectives", pureCategory: "Adjetivo", progress: 0 },
+      { id: 4, title: "MODISMOS Y SLANG / IDIOMS & SLANG", altTitle: "MODISMOS Y SLANG / IDIOMS & SLANG", level: "B2", exp: 25, words: 100, key: "native_idioms", pureCategory: "Idiom", progress: 0 },
+      { id: 5, title: "CONECTORES / CONNECTORS", altTitle: "CONECTORES / CONNECTORS", level: "B2-C1", exp: 25, words: 100, key: "connectors_linking", pureCategory: "Conector", progress: 0 },
+      { id: 6, title: "CONFUSOS Y EXPRESIONES / CONFUSING WORDS", altTitle: "CONFUSOS Y EXPRESIONES / CONFUSING WORDS", level: "B2", exp: 30, words: 100, key: "false_friends", pureCategory: "Falso Amigo", progress: 0 },
+      { id: 7, title: "FRASES COTIDIANAS / EVERYDAY PHRASES", altTitle: "FRASES COTIDIANAS / EVERYDAY PHRASES", level: "B2-C1", exp: 30, words: 100, key: "collocations", pureCategory: "Collocation", progress: 0 },
+      { id: 8, title: "TRABAJO Y TECNOLOGÍA / WORK & TECH", altTitle: "TRABAJO Y TECNOLOGÍA / WORK & TECH", level: "C1", exp: 35, words: 100, key: "business_tech", pureCategory: "Negocios & Tech", progress: 0 },
+      { id: 9, title: "CLIMA, NATURALEZA Y VIAJES / WEATHER & TRAVEL", altTitle: "CLIMA, NATURALEZA Y VIAJES / WEATHER & TRAVEL", level: "A2-B1", exp: 40, words: 100, key: "travel_survival", pureCategory: "Viajes & Supervivencia", progress: 0 },
+      { id: 10, title: "VOCABULARIO AVANZADO / ADVANCED VOCAB", altTitle: "VOCABULARIO AVANZADO / ADVANCED VOCAB", level: "C1-C2", exp: 50, words: 100, key: "toefl_academic", pureCategory: "Académico TOEFL", progress: 0 }
     ];
 
     window.openLearningPath = function() {
