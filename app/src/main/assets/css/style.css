@@ -1730,3 +1730,9 @@ button, a, input, select, textarea, [role="button"], .stanza-card, .portal-card 
   pointer-events: auto !important;
   cursor: pointer !important;
 }
+
+/* Ocultar mockup 3D cuando el simulador real Three.js está activo */
+#view-worldtour:not(.hidden) ~ #portal-3d-master-view,
+body.view-worldtour-active #portal-3d-master-view {
+  display: none !important;
+}

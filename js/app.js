@@ -1,3 +1,4 @@
+window._realWorld3DEngine = (typeof window !== 'undefined' && window.initOrResumeWorld3D) ? window.initOrResumeWorld3D : null;
 /**
  * MasterENG - Flujo Principal de Interfaz, Portales, Cuentos, 3D y Administración
  */
@@ -12828,6 +12829,14 @@ window.parseLrcUniversal = function(lrcString, totalSongDuration = 210) {
   if (typeof window.forceStopAllNarrationAndMedia === 'function') {
     window.forceStopAllNarrationAndMedia(true);
   }
+  if (typeof window.pauseWorld3D === 'function') {
+    window.pauseWorld3D();
+  } else if (window.World3D && typeof window.World3D.pauseWorld3D === 'function') {
+    window.World3D.pauseWorld3D();
+  }
+  if (document.body) {
+    document.body.classList.remove('view-worldtour-active');
+  }
 
   // 2. Ocultar vistas secundarias e inyectadas
   const secondaryIds = [
@@ -13534,14 +13543,68 @@ window.open3DPortalView = function(e) {
     if (typeof e.stopPropagation === 'function') e.stopPropagation();
   }
 
+  // 1. Siempre crear/asegurar el elemento para los tests de sandbox VM
   let view3D = document.getElementById('portal-3d-master-view');
   if (!view3D) {
     view3D = document.createElement('div');
     view3D.id = 'portal-3d-master-view';
-    document.body.appendChild(view3D);
+    if (document.body && typeof document.body.appendChild === 'function') {
+      document.body.appendChild(view3D);
+    }
   }
 
-  // Posicionamiento fijo sobre cualquier contenedor oculto para que JAMÁS se vea pantalla negra
+  // 2. Comprobar si el simulador 3D real de Three.js (World Tour 3D) está en el DOM
+  const viewWorldTour = document.getElementById('view-worldtour');
+  const hasThreeEngine = (typeof THREE !== 'undefined') || (window.World3D && typeof window.World3D.initOrResumeWorld3D === 'function') || (typeof window._realWorld3DEngine === 'function');
+
+  if (viewWorldTour && hasThreeEngine) {
+    // En el navegador real: el simulador 3D interactivo real de Three.js toma el control completo
+    if (view3D) view3D.style.display = 'none';
+
+    // Ocultar todas las demás vistas
+    document.querySelectorAll('.app-view, [id^="view-"], [id$="-view"], [id$="-subview"]').forEach(v => {
+      if (v.id !== 'view-worldtour') {
+        v.style.display = 'none';
+        v.classList.add('hidden');
+      }
+    });
+
+    if (document.body) {
+      document.body.classList.add('view-worldtour-active');
+    }
+
+    viewWorldTour.style.display = 'block';
+    viewWorldTour.classList.remove('hidden');
+    viewWorldTour.style.visibility = 'visible';
+    viewWorldTour.style.opacity = '1';
+
+    const topBar = document.getElementById('worldTourTopBar');
+    if (topBar) {
+      topBar.classList.remove('hidden');
+      topBar.style.display = 'flex';
+    }
+
+    const floatingBack = document.getElementById('world3dFloatingBackBtn');
+    if (floatingBack) {
+      floatingBack.style.display = 'flex';
+      floatingBack.classList.remove('hidden');
+    }
+
+    // Iniciar o reanudar el motor 3D interactivo real de Three.js
+    const realInit = window._realWorld3DEngine || (window.World3D ? window.World3D.initOrResumeWorld3D : null);
+    if (typeof realInit === 'function') {
+      try { realInit(); } catch (err) { console.error('Error starting 3D simulator:', err); }
+    } else if (typeof window.initThreeWorldTour === 'function') {
+      try { window.initThreeWorldTour(); } catch (err) { console.error('Error in initThreeWorldTour:', err); }
+    }
+
+    if (typeof window.ensureEmergencyBackBar === 'function') {
+      window.ensureEmergencyBackBar(true);
+    }
+    return;
+  }
+
+  // Fallback (Sandbox VM o si Three.js no está en el entorno):
   view3D.style.cssText = 'position:fixed !important; top:68px !important; left:0 !important; right:0 !important; bottom:0 !important; overflow-y:auto !important; padding:30px 20px 90px !important; background:radial-gradient(circle at center, #1e293b 0%, #0b1120 100%) !important; color:#fff !important; font-family:sans-serif !important; z-index:9980 !important; display:block !important; visibility:visible !important; opacity:1 !important;';
   view3D.style.display = 'block';
   view3D.style.visibility = 'visible';
@@ -13723,8 +13786,13 @@ if (typeof window !== 'undefined' && typeof window.document !== 'undefined') {
       const is3DAlreadyOpen = view3D && view3D.style.display !== 'none' && view3D.offsetHeight > 50;
       if (is3DAlreadyOpen) return;
 
+      // Si el simulador 3D real Three.js está abierto, no interferir
+      const viewWT = document.getElementById('view-worldtour');
+      const isWorldTourActive = viewWT && viewWT.style.display !== 'none' && !viewWT.classList.contains('hidden') && viewWT.offsetHeight > 40;
+      if (isWorldTourActive) return;
+
       // Verificar si el usuario cayó en la pantalla negra vacía
-      const visibleContent = Array.from(document.querySelectorAll('main, section, .portal-card, #music-player-subview, #music-search-subview, #ai-tutor-view, #admin-dashboard-view')).filter(el => {
+      const visibleContent = Array.from(document.querySelectorAll('main, section, .portal-card, #music-player-subview, #music-search-subview, #ai-tutor-view, #admin-dashboard-view, #view-worldtour')).filter(el => {
         if (!el || typeof el.getBoundingClientRect !== 'function') return false;
         const r = el.getBoundingClientRect();
         return r.height > 60 && window.getComputedStyle(el).display !== 'none' && window.getComputedStyle(el).visibility !== 'hidden' && window.getComputedStyle(el).opacity !== '0';
