@@ -1745,6 +1745,7 @@ window.logout = function() {
     }
 
     function goToHomePortals() {
+      if (window._isReturningToPortals) return;
       if (typeof window.returnToMainPortals === 'function') {
         window.returnToMainPortals();
         return;
@@ -12303,24 +12304,18 @@ window.isCurrentUserAdmin = function() {
 
 window.enforceAdminPermissionsUI = function() {
   const isAdmin = window.isCurrentUserAdmin();
+  if (window._lastAdminEnforceState === isAdmin) {
+    return;
+  }
+  window._lastAdminEnforceState = isAdmin;
 
-  // Buscar TODOS los botones o etiquetas que digan "Panel Admin" o tengan clase/id admin
-  document.querySelectorAll('button, a, div, span').forEach(el => {
-    const txt = (el.innerText || el.textContent || '').trim();
-    if (
-      (txt === '⚙️ Panel Admin' || txt === 'Panel Admin' || el.id === 'btn-admin-panel' || el.id === 'headerAdminBtn' || el.classList.contains('btn-admin')) &&
-      el.children.length <= 2
-    ) {
-      el.style.display = isAdmin ? '' : 'none';
-      if (!isAdmin) {
-        el.classList.add('hidden');
-      } else {
-        el.classList.remove('hidden');
-      }
-    }
-    // Ocultar también la insignia "🛡️ Administrador" si no es admin@mastereng.com
-    if ((txt.includes('Administrador') || txt.includes('Admin')) && el.classList.contains('badge')) {
-      el.style.display = isAdmin ? '' : 'none';
+  const adminSelectors = '#headerAdminBtn, #btn-admin-panel, .btn-admin, [data-admin-only]';
+  document.querySelectorAll(adminSelectors).forEach(el => {
+    el.style.display = isAdmin ? '' : 'none';
+    if (!isAdmin) {
+      el.classList.add('hidden');
+    } else {
+      el.classList.remove('hidden');
     }
   });
 
@@ -12333,6 +12328,16 @@ window.enforceAdminPermissionsUI = function() {
       headerAdmin.style.display = 'inline-flex';
       headerAdmin.classList.remove('hidden');
     }
+  }
+
+  // Ocultar insignia Administrador si no es admin
+  if (!isAdmin) {
+    document.querySelectorAll('.badge').forEach(b => {
+      const txt = (b.textContent || '').trim();
+      if (txt.includes('Administrador') || txt.includes('Admin')) {
+        b.style.display = 'none';
+      }
+    });
   }
 };
 
@@ -12427,9 +12432,12 @@ window.translateChatBubble = async function(btnEl) {
 };
 
 window.injectTranslateButtonsInChat = function() {
-  document.querySelectorAll('button, span').forEach(listenBtn => {
-    const txt = (listenBtn.innerText || listenBtn.textContent || '').trim();
-    if ((txt.includes('Escuchar') || txt.includes('Listen')) && !listenBtn.dataset.hasTranslateBtn) {
+  const chatArea = document.querySelector('#chatMessages, #aiTutorChatHistory, #ai-tutor-messages, .chat-box') || document;
+  const listenBtns = chatArea.querySelectorAll('button, span');
+  listenBtns.forEach(listenBtn => {
+    if (listenBtn.dataset && listenBtn.dataset.hasTranslateBtn) return;
+    const txt = (listenBtn.textContent || '').trim();
+    if ((txt.includes('Escuchar') || txt.includes('Listen')) && listenBtn.dataset) {
       listenBtn.dataset.hasTranslateBtn = 'true';
       const transBtn = document.createElement('button');
       transBtn.type = 'button';
@@ -12837,131 +12845,97 @@ window.parseLrcUniversal = function(lrcString, totalSongDuration = 210) {
     if (typeof e.preventDefault === 'function') e.preventDefault();
     if (typeof e.stopPropagation === 'function') e.stopPropagation();
   }
+  if (window._isReturningToPortals) return;
+  window._isReturningToPortals = true;
 
-  // 1. Detener cualquier audio, narración o video en reproducción
-  if (typeof window.forceStopAllNarrationAndMedia === 'function') {
-    window.forceStopAllNarrationAndMedia(true);
-  }
-  if (typeof window.stopAllAudioAndTimers === 'function') {
-    window.stopAllAudioAndTimers();
-  }
-  if (typeof window.pauseWorld3D === 'function') {
-    try { window.pauseWorld3D(); } catch (_) {}
-  } else if (window.World3D && typeof window.World3D.pauseWorld3D === 'function') {
-    try { window.World3D.pauseWorld3D(); } catch (_) {}
-  }
-  if (document.body && document.body.classList) { document.body.classList.remove('view-worldtour-active', 'portal-3d-fallback-active'); }
-
-  // 2. Ocultar vistas secundarias e inyectadas
-  const secondaryIds = [
-    'view-worldtour',
-    'portal-3d-master-view',
-    'music-player-subview',
-    'music-search-subview',
-    'ai-tutor-view',
-    'admin-dashboard-view',
-    'crash-recovery-overlay',
-    'world3dFloatingBackBtn',
-    'worldTourTopBar'
-  ];
-  secondaryIds.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.classList.add('hidden');
-      el.style.setProperty('display', 'none', 'important');
-      el.style.setProperty('visibility', 'hidden', 'important');
-      el.style.setProperty('pointer-events', 'none', 'important');
+  try {
+    // 1. Detener cualquier audio, narración o video en reproducción
+    if (typeof window.forceStopAllNarrationAndMedia === 'function') {
+      window.forceStopAllNarrationAndMedia(true);
     }
-  });
-
-  // 3. Ocultar barra de emergencia inferior al volver al Hub
-  const emBar = document.getElementById('emergency-nav-bar');
-  if (emBar) {
-    emBar.classList.add('hidden');
-    emBar.style.setProperty('display', 'none', 'important');
-  }
-  if (typeof window.ensureEmergencyBackBar === 'function') {
-    window.ensureEmergencyBackBar(false);
-  }
-
-  // 3b. Restaurar header
-  const mainHdr = document.getElementById('mainHeader') || document.querySelector('header');
-  if (mainHdr) {
-    mainHdr.style.setProperty('display', 'flex', 'important');
-    mainHdr.classList.remove('auth-hidden');
-  }
-
-  // 3c. Activar explícitamente #view-home si hay usuario/invitado, o #view-auth si no hay sesión
-  const hasUser = typeof localStorage !== 'undefined' && (localStorage.getItem('mastereng_user') || localStorage.getItem('guest_user') || localStorage.getItem('mastereng_role'));
-  const homeEl = document.getElementById('view-home');
-  const authEl = document.getElementById('view-auth') || document.getElementById('login-view');
-  if (hasUser && homeEl) {
-    homeEl.classList.remove('hidden');
-    homeEl.style.setProperty('display', 'flex', 'important');
-    homeEl.style.setProperty('pointer-events', 'auto', 'important');
-    homeEl.style.setProperty('visibility', 'visible', 'important');
-    homeEl.style.setProperty('opacity', '1', 'important');
-    if (authEl) {
-      authEl.classList.add('hidden');
-      authEl.style.setProperty('display', 'none', 'important');
+    if (typeof window.stopAllAudioAndTimers === 'function') {
+      window.stopAllAudioAndTimers();
     }
-  } else if (!hasUser && authEl) {
-    authEl.classList.remove('hidden');
-    authEl.style.setProperty('display', 'flex', 'important');
-    authEl.style.setProperty('pointer-events', 'auto', 'important');
-    authEl.style.setProperty('visibility', 'visible', 'important');
-    authEl.style.setProperty('opacity', '1', 'important');
-    if (homeEl) {
-      homeEl.classList.add('hidden');
-      homeEl.style.setProperty('display', 'none', 'important');
+    if (typeof window.pauseWorld3D === 'function') {
+      try { window.pauseWorld3D(); } catch (_) {}
+    } else if (window.World3D && typeof window.World3D.pauseWorld3D === 'function') {
+      try { window.World3D.pauseWorld3D(); } catch (_) {}
     }
-  }
+    if (document.body && document.body.classList) { document.body.classList.remove('view-worldtour-active', 'portal-3d-fallback-active'); }
 
-  // 4. Ejecutar exactamente la misma acción que tiene el logo "MasterENG"
-  const logoEl = Array.from(document.querySelectorAll('header *, nav *, .navbar *, a, div, span')).find(el => {
-    const txt = (el.innerText || el.textContent || '').trim();
-    return txt === 'MasterENG' && (el.onclick || el.tagName === 'A' || el.style.cursor === 'pointer' || el.parentElement);
-  });
-
-  if (logoEl) {
-    const clickableLogo = logoEl.closest ? (logoEl.closest('[onclick], a, button, .logo, .brand') || logoEl) : logoEl;
-    if (clickableLogo && typeof clickableLogo.click === 'function' && !window._clickingLogoGuard) {
-      window._clickingLogoGuard = true;
-      try { clickableLogo.click(); } catch (err) {}
-      setTimeout(() => { window._clickingLogoGuard = false; }, 100);
-    }
-  }
-
-  // 5. Garantizar al 100% que el contenedor de "TEMAS DE APRENDIZAJE" y todos sus padres sean visibles
-  const hubHeading = Array.from(document.querySelectorAll('h1, h2, h3, div, section')).find(el => {
-    const t = (el.innerText || '').toUpperCase();
-    return t.includes('TEMAS DE APRENDIZAJE') || t.includes('HUB DE TELETRANSPORTACIÓN');
-  });
-
-  if (hubHeading) {
-    let curr = hubHeading;
-    while (curr && curr !== document.body && curr !== document.documentElement) {
-      curr.classList.remove('hidden', 'd-none', 'inactive');
-      if (window.getComputedStyle(curr).display === 'none') {
-        curr.style.display = 'block';
+    // 2. Ocultar vistas secundarias e inyectadas
+    const secondaryIds = [
+      'view-worldtour',
+      'portal-3d-master-view',
+      'music-player-subview',
+      'music-search-subview',
+      'ai-tutor-view',
+      'admin-dashboard-view',
+      'crash-recovery-overlay',
+      'world3dFloatingBackBtn',
+      'worldTourTopBar'
+    ];
+    secondaryIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.classList.add('hidden');
+        el.style.setProperty('display', 'none', 'important');
+        el.style.setProperty('visibility', 'hidden', 'important');
+        el.style.setProperty('pointer-events', 'none', 'important');
       }
-      curr.style.visibility = 'visible';
-      curr.style.opacity = '1';
-      curr = curr.parentElement;
-    }
-  } else {
-    // Si por algún motivo el DOM fue vaciado, recargar limpiamente a la raíz
-    if (typeof window !== 'undefined' && window.location) {
-      window.location.href = window.location.pathname;
-    }
-  }
+    });
 
-  if (typeof window.goToHomePortals === 'function') {
-    try { window.goToHomePortals(); } catch (_) {}
-  }
+    // 3. Ocultar barra de emergencia inferior al volver al Hub
+    const emBar = document.getElementById('emergency-nav-bar');
+    if (emBar) {
+      emBar.classList.add('hidden');
+      emBar.style.setProperty('display', 'none', 'important');
+    }
+    if (typeof window.ensureEmergencyBackBar === 'function') {
+      window.ensureEmergencyBackBar(false);
+    }
 
-  if (typeof window.scrollTo === 'function') {
-    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (_) {}
+    // 3b. Restaurar header
+    const mainHdr = document.getElementById('mainHeader') || document.querySelector('header');
+    if (mainHdr) {
+      mainHdr.style.setProperty('display', 'flex', 'important');
+      mainHdr.classList.remove('auth-hidden');
+    }
+
+    // 3c. Activar explícitamente #view-home si hay usuario/invitado, o #view-auth si no hay sesión
+    const hasUser = typeof localStorage !== 'undefined' && (localStorage.getItem('mastereng_user') || localStorage.getItem('guest_user') || localStorage.getItem('mastereng_role'));
+    const homeEl = document.getElementById('view-home');
+    const authEl = document.getElementById('view-auth') || document.getElementById('login-view');
+    if (hasUser && homeEl) {
+      homeEl.classList.remove('hidden');
+      homeEl.style.setProperty('display', 'flex', 'important');
+      homeEl.style.setProperty('pointer-events', 'auto', 'important');
+      homeEl.style.setProperty('visibility', 'visible', 'important');
+      homeEl.style.setProperty('opacity', '1', 'important');
+      if (authEl) {
+        authEl.classList.add('hidden');
+        authEl.style.setProperty('display', 'none', 'important');
+      }
+    } else if (!hasUser && authEl) {
+      authEl.classList.remove('hidden');
+      authEl.style.setProperty('display', 'flex', 'important');
+      authEl.style.setProperty('pointer-events', 'auto', 'important');
+      authEl.style.setProperty('visibility', 'visible', 'important');
+      authEl.style.setProperty('opacity', '1', 'important');
+      if (homeEl) {
+        homeEl.classList.add('hidden');
+        homeEl.style.setProperty('display', 'none', 'important');
+      }
+    }
+
+    if (typeof window.showPortal === 'function') {
+      try { window.showPortal(0); } catch (_) {}
+    }
+    if (typeof window.scrollTo === 'function') {
+      try { window.scrollTo({ top: 0, behavior: 'instant' }); } catch (_) {}
+    }
+  } finally {
+    setTimeout(() => { window._isReturningToPortals = false; }, 80);
   }
 };
 
@@ -13087,7 +13061,7 @@ window.switchMasterView = function(targetMode) {
       const btn = e.target && e.target.closest ? e.target.closest('button, a, [role="button"], .btn, .portal-btn, .portal-card, .coverflow-portal-card, [onclick]') : null;
       if (!btn) return;
 
-      const text = (btn.innerText || btn.textContent || '').trim().toLowerCase();
+      const text = (btn.textContent || '').trim().toLowerCase();
 
       // 1. Si el texto del botón pulsado incluye 'regresar a portales', 'volver a portales', 'volver al hub' o 'volver al inicio':
       if (text.includes('regresar a portales') || text.includes('volver a portales') || text.includes('volver al hub') || text.includes('volver al inicio')) {
@@ -13098,10 +13072,10 @@ window.switchMasterView = function(targetMode) {
         return;
       }
 
-      // 2. Si el usuario hace clic en cualquier botón o tarjeta que contenga 'entorno 3d', 'mundo 3d', 'portal 02' o si la tarjeta activa del carrusel dice '3d' y presiona 'entrar al portal':
+      // 2. Si el usuario hace clic en el portal 3D:
       const pCard = btn.closest ? btn.closest('.portal-card, .coverflow-portal-card, .card, [class*="portal"]') : null;
-      const pCardText = pCard ? (pCard.innerText || pCard.textContent || '').toLowerCase() : '';
-      if (text.includes('entorno 3d') || text.includes('mundo 3d') || text.includes('portal 02') || (text.includes('entrar al portal') && (pCardText.includes('3d') || pCardText.includes('entorno 3d') || pCardText.includes('portal 02')))) {
+      const pCardText = pCard ? (pCard.textContent || '').toLowerCase() : '';
+      if (text.includes('entorno 3d') || text.includes('mundo 3d') || (text.includes('entrar al portal') && (pCardText.includes('inmersivo 3d') || pCardText.includes('entorno 3d') || (btn.dataset && btn.dataset.portal === 'worldtour')))) {
         e.preventDefault();
         e.stopPropagation();
         if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
@@ -13109,7 +13083,7 @@ window.switchMasterView = function(targetMode) {
         return;
       }
 
-      if (pCardText.includes('entorno 3d') || pCardText.includes('portal 02') || pCardText.includes('mundo 3d')) {
+      if (pCardText.includes('entorno 3d') || pCardText.includes('inmersivo 3d') || pCardText.includes('mundo 3d')) {
         if (btn.classList && (btn.classList.contains('portal-card') || btn.classList.contains('coverflow-portal-card') || btn.closest('.portal-card'))) {
           if (text.includes('entrar al portal') || btn.tagName === 'IMG' || text.includes('entorno 3d') || text.includes('explora y aprende')) {
             e.preventDefault();
@@ -13300,37 +13274,30 @@ window.unlockAllFeaturesForLoggedUsers = function() {
   const isAdmin = window.isCurrentUserAdmin();
   const isOffline = window.isAppInOfflineMode ? window.isAppInOfflineMode() : !navigator.onLine;
 
+  const currentCheckKey = `${loggedIn}_${isAdmin}_${isOffline}`;
+  if (window._lastUnlockCheckKey === currentCheckKey) {
+    return;
+  }
+  window._lastUnlockCheckKey = currentCheckKey;
+
   // 1. El botón Panel Admin es lo ÚNICO exclusivo para admin@mastereng.com
-  document.querySelectorAll('button, a, div, span').forEach(el => {
-    const txt = (el.innerText || el.textContent || '').trim();
-    if ((txt === '⚙️ Panel Admin' || txt === 'Panel Admin' || el.id === 'btn-admin-panel' || el.classList.contains('btn-admin')) && el.children.length <= 2) {
-      el.style.display = isAdmin ? '' : 'none';
-      if (isAdmin) el.classList.remove('hidden');
-      else el.classList.add('hidden');
-    }
+  const adminEls = document.querySelectorAll('#headerAdminBtn, #btn-admin-panel, .btn-admin, [data-admin-only]');
+  adminEls.forEach(el => {
+    el.style.display = isAdmin ? '' : 'none';
+    if (isAdmin) el.classList.remove('hidden');
+    else el.classList.add('hidden');
   });
 
-  const headerAdmin = document.getElementById('headerAdminBtn');
-  if (headerAdmin) {
-    headerAdmin.style.display = isAdmin ? 'inline-flex' : 'none';
-    if (isAdmin) headerAdmin.classList.remove('hidden');
-    else headerAdmin.classList.add('hidden');
-  }
-
-  // 2. Si el usuario está logueado (sea cuenta normal o admin), DESBLOQUEAR todos los portales e inputs
+  // 2. Si el usuario está logueado, DESBLOQUEAR
   if (loggedIn) {
     const lockScreen = document.getElementById('ai-lock-screen');
     if (lockScreen) lockScreen.style.display = 'none';
 
-    document.querySelectorAll('input, textarea, button, .portal-card').forEach(el => {
+    document.querySelectorAll('.offline-locked, .guest-locked').forEach(el => {
       if (!isOffline) {
         el.disabled = false;
         el.classList.remove('offline-locked', 'guest-locked');
         el.style.pointerEvents = 'auto';
-        if (el.placeholder && el.placeholder.includes('🔒')) {
-          if (el.id && el.id.includes('music')) el.placeholder = "Busca 'Coldplay', 'Queen', 'Adele' o cualquier canción...";
-          else el.placeholder = 'Type in English or press 🎤 Hablar...';
-        }
       }
     });
 
@@ -13638,9 +13605,10 @@ window.open3DPortalView = function(e) {
       view3D.style.setProperty('display', 'none', 'important');
     }
 
-    // Ocultar todas las demás vistas
-    document.querySelectorAll('.app-view, [id^="view-"], [id$="-view"], [id$="-subview"]').forEach(v => {
-      if (v.id !== 'view-worldtour') {
+    // Ocultar solo las demás vistas principales de nivel superior
+    ['view-home', 'view-auth', 'view-path', 'view-stories', 'view-music', 'ai-tutor-view', 'login-view'].forEach(vid => {
+      const v = document.getElementById(vid);
+      if (v) {
         v.classList.add('hidden');
         v.style.setProperty('display', 'none', 'important');
       }
@@ -13652,6 +13620,14 @@ window.open3DPortalView = function(e) {
     viewWorldTour.style.setProperty('display', 'block', 'important');
     viewWorldTour.style.setProperty('visibility', 'visible', 'important');
     viewWorldTour.style.setProperty('opacity', '1', 'important');
+
+    const w3dView = document.getElementById('world3d-view');
+    if (w3dView) {
+      w3dView.classList.remove('hidden');
+      w3dView.style.setProperty('display', 'block', 'important');
+      w3dView.style.setProperty('visibility', 'visible', 'important');
+      w3dView.style.setProperty('opacity', '1', 'important');
+    }
 
     const topBar = document.getElementById('worldTourTopBar');
     if (topBar) {

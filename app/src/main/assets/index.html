@@ -20,7 +20,7 @@ if (typeof THREE === 'undefined') {
 document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');
 }
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/controls/OrbitControls.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script src="js/world3d.js"></script>
 <script>
 window.FALLBACK_LOGO = 'images/app_hero_logo.svg';
@@ -1317,6 +1317,7 @@ return;
 }
 var views = document.querySelectorAll('section, main, .view-section, [id$="-view"], #view-auth, #view-home, #view-path, #view-stories, #view-music, #view-worldtour, #ai-tutor-view');
 views.forEach(function(v) {
+if (v.id === 'world3d-view' || (v.closest && v.closest('#view-worldtour'))) return;
 var isTarget = (v.id === cleanId + '-view' || v.id === cleanId || v.id === targetId || (targetId === 'view-path' && (v.id === 'view-path' || v.id === 'learning-path-view')));
 if (isTarget) {
 v.style.setProperty('display', (v.id === 'view-home' || v.id === 'view-auth') ? 'flex' : 'block', 'important');
@@ -1374,6 +1375,7 @@ var _f = document.getElementById('world3dFloatingBackBtn'); if (_f) _f.style.set
 } else {
 if (document.body) { document.body.classList.add('view-worldtour-active'); document.body.classList.remove('portal-3d-fallback-active'); }
 var _w = document.getElementById('view-worldtour'); if (_w) { _w.classList.remove('hidden'); _w.style.setProperty('display','block','important'); _w.style.setProperty('visibility','visible','important'); }
+var _wv = document.getElementById('world3d-view'); if (_wv) { _wv.classList.remove('hidden'); _wv.style.setProperty('display','block','important'); _wv.style.setProperty('visibility','visible','important'); }
 var _p = document.getElementById('portal-3d-master-view'); if (_p) { _p.classList.add('hidden'); _p.style.setProperty('display','none','important'); }
 var _f = document.getElementById('world3dFloatingBackBtn'); if (_f) { _f.classList.remove('hidden'); _f.style.setProperty('display','flex','important'); }
 if (typeof window.ensureEmergencyBackBar === 'function') window.ensureEmergencyBackBar(true);
