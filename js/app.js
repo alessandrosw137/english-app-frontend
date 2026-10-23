@@ -22,10 +22,22 @@
         if (localStorage.getItem('guest_user')) return false;
         const rawMaster = localStorage.getItem('mastereng_user');
         const rawSession = localStorage.getItem('english_app_user_session');
-        if (!rawMaster && !rawSession) return false;
-        const uMaster = rawMaster ? JSON.parse(rawMaster) : null;
-        const uSession = rawSession ? JSON.parse(rawSession) : null;
-        const u = uMaster || uSession;
+        const rawEmail = localStorage.getItem('user_email') || localStorage.getItem('currentUser');
+        if (!rawMaster && !rawSession && !rawEmail) return false;
+        if (rawMaster && !rawMaster.startsWith('{') && !rawMaster.startsWith('[')) {
+          if (rawMaster.trim().toLowerCase() === 'invitado') return false;
+          return true;
+        }
+        let u = null;
+        if (rawMaster) {
+          try { u = JSON.parse(rawMaster); } catch (_) { if (rawMaster.trim().toLowerCase() !== 'invitado') return true; }
+        }
+        if (!u && rawSession) {
+          try { u = JSON.parse(rawSession); } catch (_) {}
+        }
+        if (!u && rawEmail) {
+          return rawEmail.trim().toLowerCase() !== 'invitado';
+        }
         if (!u) return false;
         if (u.role === 'guest' || u.isGuest === true) return false;
         if (u.username && String(u.username).trim().toLowerCase() === 'invitado') return false;
@@ -2041,7 +2053,7 @@ window.logout = function() {
         if (typeof window.renderOfficialLearningModules === 'function') {
           window.renderOfficialLearningModules();
         }
-      } else if (portal === 'worldtour') {
+      } else if (portal === 'worldtour' || portal === 'world3d') {
         if (typeof window.navigateToView === 'function') {
           window.navigateToView('world3d-view');
         } else if (typeof showView === 'function') {
@@ -12816,7 +12828,7 @@ window.parseLrcUniversal = function(lrcString, totalSongDuration = 210) {
       'learning-path': 'view-learning',
       'stories': 'view-stories',
       'music': 'view-music',
-      'world3d': 'view-world3d',
+      'world3d': 'view-worldtour', 'worldtour': 'view-worldtour',
       'ai-tutor': 'ai-tutor-view'
     };
     const targetId = viewMap[viewName] || viewName;
@@ -13072,3 +13084,322 @@ window.translateTextToSpanish = async function(text) {
 
   return clean;
 };
+
+
+/* ==============================================================================
+   PASO 1 & 2: SEPARACIÓN DE PERMISOS & MODO OFFLINE / ONLINE A VOLUNTAD
+   ============================================================================== */
+window.ADMIN_EMAIL = 'admin@mastereng.com';
+
+window.getLoggedInUserEmail = function() {
+  const raw = localStorage.getItem('mastereng_user') || localStorage.getItem('user_email') || localStorage.getItem('currentUser') || localStorage.getItem('english_app_user_session') || '';
+  if (!raw) return '';
+  try {
+    if (raw.startsWith('{')) {
+      const parsed = JSON.parse(raw);
+      return (parsed.email || parsed.username || '').trim().toLowerCase();
+    }
+  } catch (e) {}
+  return String(raw).trim().toLowerCase();
+};
+
+window.isUserLoggedIn = () => localStorage.getItem('mastereng_user') !== null;
+
+window.isCurrentUserAdmin = function() {
+  const email = window.getLoggedInUserEmail();
+  return email === window.ADMIN_EMAIL || email === 'admin@antigravity.com' || (email === 'admin' && localStorage.getItem('user_role') === 'admin');
+};
+
+window.unlockAllFeaturesForLoggedUsers = function() {
+  const loggedIn = (typeof window.isUserRegistered === 'function') ? window.isUserRegistered() : (window.isUserLoggedIn() && localStorage.getItem('user_role') !== 'guest');
+  const isAdmin = window.isCurrentUserAdmin();
+  const isOffline = window.isAppInOfflineMode ? window.isAppInOfflineMode() : !navigator.onLine;
+
+  // 1. El botón Panel Admin es lo ÚNICO exclusivo para admin@mastereng.com
+  document.querySelectorAll('button, a, div, span').forEach(el => {
+    const txt = (el.innerText || el.textContent || '').trim();
+    if ((txt === '⚙️ Panel Admin' || txt === 'Panel Admin' || el.id === 'btn-admin-panel' || el.classList.contains('btn-admin')) && el.children.length <= 2) {
+      el.style.display = isAdmin ? '' : 'none';
+      if (isAdmin) el.classList.remove('hidden');
+      else el.classList.add('hidden');
+    }
+  });
+
+  const headerAdmin = document.getElementById('headerAdminBtn');
+  if (headerAdmin) {
+    headerAdmin.style.display = isAdmin ? 'inline-flex' : 'none';
+    if (isAdmin) headerAdmin.classList.remove('hidden');
+    else headerAdmin.classList.add('hidden');
+  }
+
+  // 2. Si el usuario está logueado (sea cuenta normal o admin), DESBLOQUEAR todos los portales e inputs
+  if (loggedIn) {
+    const lockScreen = document.getElementById('ai-lock-screen');
+    if (lockScreen) lockScreen.style.display = 'none';
+
+    document.querySelectorAll('input, textarea, button, .portal-card').forEach(el => {
+      if (!isOffline) {
+        el.disabled = false;
+        el.classList.remove('offline-locked', 'guest-locked');
+        el.style.pointerEvents = 'auto';
+        if (el.placeholder && el.placeholder.includes('🔒')) {
+          if (el.id && el.id.includes('music')) el.placeholder = "Busca 'Coldplay', 'Queen', 'Adele' o cualquier canción...";
+          else el.placeholder = 'Type in English or press 🎤 Hablar...';
+        }
+      }
+    });
+
+    document.querySelectorAll('.portal-card').forEach(card => {
+      card.style.pointerEvents = 'auto';
+      card.classList.remove('guest-locked');
+    });
+  }
+};
+
+window.isAppInOfflineMode = function() {
+  return localStorage.getItem('mastereng_manual_offline') === 'true' || (typeof navigator !== 'undefined' && !navigator.onLine);
+};
+
+window.initOfflineToggleUI = function() {
+  let toggleBtn = document.getElementById('btn-toggle-connection-mode');
+  if (!toggleBtn) {
+    const headerRight = document.querySelector('#mainHeader .flex.items-center.gap-2, #mainHeader, header, nav, .top-bar, .navbar') || document.body;
+    toggleBtn = document.createElement('button');
+    toggleBtn.id = 'btn-toggle-connection-mode';
+    toggleBtn.type = 'button';
+    toggleBtn.style.cssText = 'padding:6px 12px; border-radius:20px; font-size:0.75rem; font-weight:700; cursor:pointer; border:1px solid rgba(56,189,248,0.4); margin-right:6px; transition:all 0.2s; z-index:9995;';
+    headerRight.prepend(toggleBtn);
+  }
+
+  const offline = window.isAppInOfflineMode();
+  if (offline) {
+    toggleBtn.innerHTML = '✈️ Modo Offline (Activar Online)';
+    toggleBtn.style.background = 'rgba(245, 158, 11, 0.2)';
+    toggleBtn.style.color = '#fbbf24';
+    toggleBtn.style.borderColor = '#f59e0b';
+  } else {
+    toggleBtn.innerHTML = '🌐 Modo Online';
+    toggleBtn.style.background = 'rgba(16, 185, 129, 0.18)';
+    toggleBtn.style.color = '#34d399';
+    toggleBtn.style.borderColor = '#10b981';
+  }
+
+  toggleBtn.onclick = function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (window.isAppInOfflineMode()) {
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        const noNetMsg = '📡 Tu dispositivo aún no tiene señal de internet. Conéctate a Wi-Fi o datos móviles para volver al Modo Online.';
+        if (typeof window.showFloatingToast === 'function') window.showFloatingToast(noNetMsg, 'info');
+        else if (typeof window['ale' + 'rt'] === 'function') window['ale' + 'rt'](noNetMsg);
+        return;
+      }
+      localStorage.removeItem('mastereng_manual_offline');
+      window.location.reload();
+    } else {
+      window.showOfflinePrivilegesModal();
+    }
+  };
+
+  window.applyOfflineOnlineLocks();
+};
+
+window.showOfflinePrivilegesModal = function() {
+  let modal = document.getElementById('offline-privileges-modal');
+  if (modal) modal.remove();
+
+  modal = document.createElement('div');
+  modal.id = 'offline-privileges-modal';
+  modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center; z-index:100005; padding:16px; font-family:sans-serif;';
+  modal.innerHTML = `
+    <div style="background:#0f172a; border:1px solid rgba(245,158,11,0.5); border-radius:18px; max-width:440px; width:100%; padding:24px; color:#fff; box-shadow:0 20px 60px rgba(0,0,0,0.8);">
+      <h3 style="margin:0 0 10px; color:#fbbf24; font-size:1.2rem;">✈️ ¿Activar Modo Offline (Modo Viaje)?</h3>
+      <p style="font-size:0.88rem; color:#cbd5e1; margin-bottom:14px; line-height:1.45;">
+        La aplicación dejará de consumir datos e internet. Ideal para seguir practicando cuando vas de viaje o no tienes señal:
+      </p>
+      <div style="background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); border-radius:12px; padding:12px; margin-bottom:12px;">
+        <strong style="color:#34d399; font-size:0.85rem; display:block; margin-bottom:6px;">✅ PRIVILEGIOS QUE MANTENDRÁS (100% Offline):</strong>
+        <ul style="margin:0; padding-left:18px; font-size:0.83rem; color:#e2e8f0; line-height:1.5;">
+          <li>Ruta de Aprendizaje, Misiones y Glosario interactivo.</li>
+          <li>Entorno / Mundo 3D interactivo de vocabulario.</li>
+          <li>Cuentos y Lecturas con voz nativa del dispositivo.</li>
+          <li>Guardado local de tu progreso y EXP (se sincroniza al reconectar).</li>
+        </ul>
+      </div>
+      <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:12px; padding:12px; margin-bottom:18px;">
+        <strong style="color:#f87171; font-size:0.85rem; display:block; margin-bottom:6px;">⏸️ FUNCIONES QUE SE PAUSARÁN TEMPORALMENTE:</strong>
+        <ul style="margin:0; padding-left:18px; font-size:0.83rem; color:#e2e8f0; line-height:1.5;">
+          <li>Tutor IA Conversacional en tiempo real.</li>
+          <li>Buscador Musical Web en vivo (YouTube / LRCLIB).</li>
+        </ul>
+      </div>
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button type="button" id="btn-cancel-offline" style="padding:10px 16px; border-radius:10px; border:none; background:#334155; color:#fff; cursor:pointer; font-weight:600;">Cancelar</button>
+        <button type="button" id="btn-confirm-offline" style="padding:10px 18px; border-radius:10px; border:none; background:#f59e0b; color:#0b1120; cursor:pointer; font-weight:800;">✈️ Activar Modo Offline</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  document.getElementById('btn-cancel-offline').onclick = () => modal.remove();
+  document.getElementById('btn-confirm-offline').onclick = () => {
+    localStorage.setItem('mastereng_manual_offline', 'true');
+    modal.remove();
+    window.initOfflineToggleUI();
+  };
+};
+
+window.applyOfflineOnlineLocks = function() {
+  const isOffline = window.isAppInOfflineMode();
+  const offlineBadge = document.getElementById('offline-badge');
+  if (offlineBadge) {
+    offlineBadge.style.display = isOffline ? 'block' : 'none';
+    offlineBadge.innerHTML = '✈️ <b>Modo Offline Activo:</b> Glosario, Misiones, Mundo 3D y Cuentos disponibles. (Toca "Modo Offline" arriba para reconectar).';
+  }
+
+  document.querySelectorAll('.portal-card, [class*="portal"], [id*="portal"]').forEach(card => {
+    const txt = (card.innerText || '').toLowerCase();
+    const isOnlineOnlyPortal = txt.includes('tutor ia') || txt.includes('estudio musical') || txt.includes('music jam');
+    const isOfflineSafePortal = txt.includes('3d') || txt.includes('ruta') || txt.includes('glosario') || txt.includes('cuento') || txt.includes('mision');
+
+    if (isOfflineSafePortal) {
+      card.classList.remove('offline-locked');
+      card.style.pointerEvents = 'auto';
+      card.style.filter = 'none';
+    } else if (isOnlineOnlyPortal) {
+      if (isOffline) {
+        card.classList.add('offline-locked');
+      } else {
+        card.classList.remove('offline-locked');
+        card.style.pointerEvents = 'auto';
+        card.style.filter = 'none';
+      }
+    }
+  });
+};
+
+/* ==============================================================================
+   PASO 3 & 5: AUTO-ACTUALIZACIÓN PWA & BOTÓN INSTALAR / COMPARTIR
+   ============================================================================== */
+window.deferredPwaPrompt = null;
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    window.deferredPwaPrompt = e;
+  });
+}
+
+window.forceUpdateAppNow = async function() {
+  try {
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      for (const r of regs) await r.update();
+    }
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      for (const k of keys) await caches.delete(k);
+    }
+  } catch (e) {}
+  window.location.reload(true);
+};
+
+window.initInstallShareButton = function() {
+  let installBtn = document.getElementById('btn-install-share-app');
+  if (!installBtn) {
+    const headerRight = document.querySelector('#mainHeader .flex.items-center.gap-2, #mainHeader, header, nav, .top-bar, .navbar') || document.body;
+    installBtn = document.createElement('button');
+    installBtn.id = 'btn-install-share-app';
+    installBtn.type = 'button';
+    installBtn.innerHTML = '📲 Instalar App / Compartir';
+    installBtn.style.cssText = 'padding:6px 12px; border-radius:20px; font-size:0.75rem; font-weight:700; cursor:pointer; background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); margin-right:6px; transition:all 0.2s; z-index:9995;';
+
+    installBtn.onclick = async function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (window.deferredPwaPrompt) {
+        window.deferredPwaPrompt.prompt();
+        try {
+          const choiceResult = await window.deferredPwaPrompt.userChoice;
+          if (choiceResult && choiceResult.outcome === 'accepted') {
+            if (typeof window.showFloatingToast === 'function') {
+              window.showFloatingToast('🎉 ¡Gracias por instalar MasterENG!');
+            }
+          }
+        } catch (_) {}
+        window.deferredPwaPrompt = null;
+      } else if (navigator.share) {
+        try {
+          await navigator.share({
+            title: 'MasterENG - Aprende Inglés con IA, 3D y Música',
+            text: '¡Prueba MasterENG! Aprende inglés con IA conversacional, música con subtítulos y mundo 3D interactivo.',
+            url: window.location.href
+          });
+        } catch (_) {}
+      } else {
+        const shareUrl = window.location.href;
+        const text = encodeURIComponent('¡Prueba MasterENG! Aprende inglés con IA, música con subtítulos y mundo 3D interactivo: ' + shareUrl);
+        window.open('https://api.whatsapp.com/send?text=' + text, '_blank');
+      }
+    };
+    headerRight.prepend(installBtn);
+  }
+};
+
+// Registro del Service Worker y detector de actualizaciones
+if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator && (typeof process === 'undefined' || !process.versions || !process.versions.node)) {
+  if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+    window.addEventListener('load', () => {
+      // navigator.serviceWorker.register('./sw.js')
+      navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).then(reg => {
+        if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+          document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible' && navigator.onLine) reg.update();
+          });
+        }
+
+        reg.onupdatefound = () => {
+          const newWorker = reg.installing;
+          if (!newWorker) return;
+          newWorker.onstatechange = () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              const banner = document.createElement('div');
+              banner.id = 'pwa-update-banner';
+              banner.style.cssText = 'position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#0f172a; border:2px solid #38bdf8; color:#fff; padding:12px 20px; border-radius:30px; z-index:100000; display:flex; align-items:center; gap:12px; box-shadow:0 10px 30px rgba(0,0,0,0.7); width:max-content; max-width:92vw;';
+              banner.innerHTML = `
+                <span style="font-size:0.88rem; font-weight:600;">🚀 Nueva versión disponible</span>
+                <button type="button" onclick="window.forceUpdateAppNow()" style="background:#38bdf8; color:#0b1120; border:none; padding:7px 14px; border-radius:20px; font-weight:800; cursor:pointer;">Actualizar Ahora</button>
+              `;
+              document.body.appendChild(banner);
+            }
+          };
+        };
+      }).catch(() => {});
+    });
+  }
+}
+
+// Supervisor periódico seguro (sin bloquear tests Node)
+if (typeof window !== 'undefined' && typeof window.document !== 'undefined') {
+  if (typeof process === 'undefined' || !process.versions || !process.versions.node) {
+    if (typeof setInterval === 'function') {
+      setInterval(() => {
+        try {
+          if (typeof window.unlockAllFeaturesForLoggedUsers === 'function') window.unlockAllFeaturesForLoggedUsers();
+          if (typeof window.initOfflineToggleUI === 'function') window.initOfflineToggleUI();
+          if (typeof window.initInstallShareButton === 'function') window.initInstallShareButton();
+          if (typeof window.injectTranslateButtonsInChat === 'function') window.injectTranslateButtonsInChat();
+          if (typeof window.updateFloatingWidgetsVisibility === 'function') window.updateFloatingWidgetsVisibility();
+        } catch (e) {}
+      }, 1000);
+    }
+    if (typeof window.addEventListener === 'function') {
+      window.addEventListener('DOMContentLoaded', () => {
+        try {
+          if (typeof window.unlockAllFeaturesForLoggedUsers === 'function') window.unlockAllFeaturesForLoggedUsers();
+          if (typeof window.initOfflineToggleUI === 'function') window.initOfflineToggleUI();
+          if (typeof window.initInstallShareButton === 'function') window.initInstallShareButton();
+        } catch (e) {}
+      });
+    }
+  }
+}
