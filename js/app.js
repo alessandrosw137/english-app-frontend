@@ -1,4 +1,4 @@
-window._realWorld3DEngine = (typeof window !== 'undefined' && window.initOrResumeWorld3D) ? window.initOrResumeWorld3D : null;
+window._realWorld3DEngine = (typeof window !== 'undefined' && window.World3D && window.World3D.initOrResumeWorld3D) ? window.World3D.initOrResumeWorld3D : ((typeof window !== 'undefined' && window.initOrResumeWorld3D) ? window.initOrResumeWorld3D : null);
 /**
  * MasterENG - Flujo Principal de Interfaz, Portales, Cuentos, 3D y Administración
  */
@@ -1745,9 +1745,22 @@ window.logout = function() {
     }
 
     function goToHomePortals() {
-    const v3d = document.getElementById('portal-3d-master-view');
-    if (v3d) v3d.style.display = 'none';
-    if (typeof window.ensureEmergencyBackBar === 'function') window.ensureEmergencyBackBar(false);
+      if (typeof window.returnToMainPortals === 'function') {
+        window.returnToMainPortals();
+        return;
+      }
+      const v3d = document.getElementById('portal-3d-master-view');
+      if (v3d) {
+        v3d.classList.add('hidden');
+        v3d.style.setProperty('display', 'none', 'important');
+      }
+      const wt = document.getElementById('view-worldtour');
+      if (wt) {
+        wt.classList.add('hidden');
+        wt.style.setProperty('display', 'none', 'important');
+      }
+      if (document.body && document.body.classList) { document.body.classList.remove('view-worldtour-active', 'portal-3d-fallback-active'); }
+      if (typeof window.ensureEmergencyBackBar === 'function') window.ensureEmergencyBackBar(false);
       if (typeof window.stopAllAudioAndTimers === 'function') window.stopAllAudioAndTimers();
       if (typeof window.pauseWorld3D === 'function') window.pauseWorld3D();
       const user = getStoredUser();
@@ -12829,32 +12842,61 @@ window.parseLrcUniversal = function(lrcString, totalSongDuration = 210) {
   if (typeof window.forceStopAllNarrationAndMedia === 'function') {
     window.forceStopAllNarrationAndMedia(true);
   }
+  if (typeof window.stopAllAudioAndTimers === 'function') {
+    window.stopAllAudioAndTimers();
+  }
   if (typeof window.pauseWorld3D === 'function') {
-    window.pauseWorld3D();
+    try { window.pauseWorld3D(); } catch (_) {}
   } else if (window.World3D && typeof window.World3D.pauseWorld3D === 'function') {
-    window.World3D.pauseWorld3D();
+    try { window.World3D.pauseWorld3D(); } catch (_) {}
   }
-  if (document.body) {
-    document.body.classList.remove('view-worldtour-active');
-  }
+  if (document.body && document.body.classList) { document.body.classList.remove('view-worldtour-active', 'portal-3d-fallback-active'); }
 
   // 2. Ocultar vistas secundarias e inyectadas
   const secondaryIds = [
+    'view-worldtour',
     'portal-3d-master-view',
     'music-player-subview',
     'music-search-subview',
     'ai-tutor-view',
     'admin-dashboard-view',
-    'crash-recovery-overlay'
+    'crash-recovery-overlay',
+    'world3dFloatingBackBtn',
+    'worldTourTopBar'
   ];
   secondaryIds.forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.style.display = 'none';
+    if (el) {
+      el.classList.add('hidden');
+      el.style.setProperty('display', 'none', 'important');
+      el.style.setProperty('visibility', 'hidden', 'important');
+      el.style.setProperty('pointer-events', 'none', 'important');
+    }
   });
 
   // 3. Ocultar barra de emergencia inferior al volver al Hub
   const emBar = document.getElementById('emergency-nav-bar');
-  if (emBar) emBar.style.display = 'none';
+  if (emBar) {
+    emBar.classList.add('hidden');
+    emBar.style.setProperty('display', 'none', 'important');
+  }
+
+  // 3b. Restaurar header
+  const mainHdr = document.getElementById('mainHeader') || document.querySelector('header');
+  if (mainHdr) {
+    mainHdr.style.setProperty('display', 'flex', 'important');
+    mainHdr.classList.remove('auth-hidden');
+  }
+
+  // 3c. Activar explícitamente #view-home
+  const homeEl = document.getElementById('view-home');
+  if (homeEl) {
+    homeEl.classList.remove('hidden');
+    homeEl.style.setProperty('display', 'flex', 'important');
+    homeEl.style.setProperty('pointer-events', 'auto', 'important');
+    homeEl.style.setProperty('visibility', 'visible', 'important');
+    homeEl.style.setProperty('opacity', '1', 'important');
+  }
 
   // 4. Ejecutar exactamente la misma acción que tiene el logo "MasterENG"
   const logoEl = Array.from(document.querySelectorAll('header *, nav *, .navbar *, a, div, span')).find(el => {
@@ -12929,6 +12971,19 @@ window.switchMasterView = function(targetMode) {
     if (typeof window.forceStopAllNarrationAndMedia === 'function') {
       window.forceStopAllNarrationAndMedia(true);
     }
+    if (typeof window.pauseWorld3D === 'function') {
+      try { window.pauseWorld3D(); } catch (_) {}
+    }
+    if (document.body && document.body.classList) { document.body.classList.remove('view-worldtour-active', 'portal-3d-fallback-active'); }
+    ['view-worldtour', 'portal-3d-master-view', 'emergency-nav-bar', 'world3dFloatingBackBtn', 'worldTourTopBar', 'crash-recovery-overlay'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.classList.add('hidden');
+        el.style.setProperty('display', 'none', 'important');
+        el.style.setProperty('visibility', 'hidden', 'important');
+        el.style.setProperty('pointer-events', 'none', 'important');
+      }
+    });
     if (typeof window.logout === 'function') {
       try { window.logout(); } catch (_) {}
     }
@@ -12940,7 +12995,7 @@ window.switchMasterView = function(targetMode) {
     }
     const authView = document.getElementById('view-auth') || document.getElementById('login-view');
     if (authView) {
-      authView.style.display = 'flex';
+      authView.style.setProperty('display', 'flex', 'important');
       authView.classList.remove('hidden');
     }
     const headerAdmin = document.getElementById('headerAdminBtn');
@@ -13559,39 +13614,44 @@ window.open3DPortalView = function(e) {
 
   if (viewWorldTour && hasThreeEngine) {
     // En el navegador real: el simulador 3D interactivo real de Three.js toma el control completo
-    if (view3D) view3D.style.display = 'none';
+    if (view3D) {
+      view3D.classList.add('hidden');
+      view3D.style.setProperty('display', 'none', 'important');
+    }
 
     // Ocultar todas las demás vistas
     document.querySelectorAll('.app-view, [id^="view-"], [id$="-view"], [id$="-subview"]').forEach(v => {
       if (v.id !== 'view-worldtour') {
-        v.style.display = 'none';
         v.classList.add('hidden');
+        v.style.setProperty('display', 'none', 'important');
       }
     });
 
-    if (document.body) {
-      document.body.classList.add('view-worldtour-active');
-    }
+    if (document.body && document.body.classList) { document.body.classList.add('view-worldtour-active'); document.body.classList.remove('portal-3d-fallback-active'); }
 
-    viewWorldTour.style.display = 'block';
     viewWorldTour.classList.remove('hidden');
-    viewWorldTour.style.visibility = 'visible';
-    viewWorldTour.style.opacity = '1';
+    viewWorldTour.style.setProperty('display', 'block', 'important');
+    viewWorldTour.style.setProperty('visibility', 'visible', 'important');
+    viewWorldTour.style.setProperty('opacity', '1', 'important');
 
     const topBar = document.getElementById('worldTourTopBar');
     if (topBar) {
       topBar.classList.remove('hidden');
-      topBar.style.display = 'flex';
+      topBar.style.setProperty('display', 'flex', 'important');
     }
 
     const floatingBack = document.getElementById('world3dFloatingBackBtn');
     if (floatingBack) {
-      floatingBack.style.display = 'flex';
       floatingBack.classList.remove('hidden');
+      floatingBack.style.setProperty('display', 'flex', 'important');
+      floatingBack.style.setProperty('pointer-events', 'auto', 'important');
     }
 
     // Iniciar o reanudar el motor 3D interactivo real de Three.js
-    const realInit = window._realWorld3DEngine || (window.World3D ? window.World3D.initOrResumeWorld3D : null);
+    const realInit = (window.World3D && typeof window.World3D.initOrResumeWorld3D === 'function')
+      ? window.World3D.initOrResumeWorld3D
+      : (typeof window._realWorld3DEngine === 'function' ? window._realWorld3DEngine : null);
+
     if (typeof realInit === 'function') {
       try { realInit(); } catch (err) { console.error('Error starting 3D simulator:', err); }
     } else if (typeof window.initThreeWorldTour === 'function') {
@@ -13601,10 +13661,18 @@ window.open3DPortalView = function(e) {
     if (typeof window.ensureEmergencyBackBar === 'function') {
       window.ensureEmergencyBackBar(true);
     }
+
+    setTimeout(() => {
+      try {
+        window.dispatchEvent(new Event('resize'));
+      } catch (_) {}
+    }, 60);
+
     return;
   }
 
   // Fallback (Sandbox VM o si Three.js no está en el entorno):
+  if (document.body && document.body.classList) { document.body.classList.add('portal-3d-fallback-active'); }
   view3D.style.cssText = 'position:fixed !important; top:68px !important; left:0 !important; right:0 !important; bottom:0 !important; overflow-y:auto !important; padding:30px 20px 90px !important; background:radial-gradient(circle at center, #1e293b 0%, #0b1120 100%) !important; color:#fff !important; font-family:sans-serif !important; z-index:9980 !important; display:block !important; visibility:visible !important; opacity:1 !important;';
   view3D.style.display = 'block';
   view3D.style.visibility = 'visible';

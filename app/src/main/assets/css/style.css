@@ -321,7 +321,7 @@
       body.view-worldtour-active .h-14 {
         display: none !important;
       }
-      #view-worldtour {
+      body.view-worldtour-active #view-worldtour:not(.hidden) {
         position: fixed !important;
         inset: 0 !important;
         width: 100vw !important;
@@ -335,7 +335,7 @@
         display: flex !important;
         flex-direction: column !important;
       }
-      #view-worldtour > div.relative {
+      body.view-worldtour-active #view-worldtour:not(.hidden) > div.relative {
         border-radius: 0 !important;
         border: none !important;
         width: 100vw !important;
@@ -755,6 +755,44 @@ header, .top-bar, .navbar {
   z-index: 0 !important;
 }
 
+/* World Tour 3D Container & WebGL Canvas Stacking Context Override */
+#view-worldtour #world3d-container #canvas-container,
+#view-worldtour #canvas-container,
+#world3d-container #canvas-container {
+  position: relative !important;
+  inset: auto !important;
+  width: 100% !important;
+  height: 580px !important;
+  min-height: 520px !important;
+  z-index: 10 !important;
+  pointer-events: auto !important;
+  display: block !important;
+}
+
+#view-worldtour #threeCanvasContainer,
+#view-worldtour #threeWebGLMount {
+  position: relative !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 520px !important;
+  z-index: 10 !important;
+  pointer-events: auto !important;
+  display: block !important;
+}
+
+#view-worldtour canvas,
+#view-worldtour #threeCanvasContainer canvas,
+#view-worldtour #threeWebGLMount canvas,
+#view-worldtour #world3d-canvas {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  z-index: 15 !important;
+  pointer-events: auto !important;
+  display: block !important;
+}
+
 .hub-container, .portal-card, .portal-btn, .carousel-btn, .nav-arrow {
   position: relative !important;
   z-index: 100 !important;
@@ -1004,15 +1042,18 @@ main:not([style*="display: flex"]).hidden,
   user-select: none !important;
 }
 
-#canvas-container,
 #portalStarsCanvas,
-canvas:not(#threeCanvasContainer canvas) {
+canvas.star-bg,
+.star-bg {
   pointer-events: none !important;
   z-index: 0 !important;
 }
 
-#view-worldtour #threeCanvasContainer canvas {
+#view-worldtour #threeCanvasContainer canvas,
+#view-worldtour #threeWebGLMount canvas,
+#view-worldtour canvas {
   pointer-events: auto !important;
+  z-index: 15 !important;
 }
 
 button,
@@ -1733,6 +1774,27 @@ button, a, input, select, textarea, [role="button"], .stanza-card, .portal-card 
 
 /* Ocultar mockup 3D cuando el simulador real Three.js está activo */
 #view-worldtour:not(.hidden) ~ #portal-3d-master-view,
-body.view-worldtour-active #portal-3d-master-view {
+body.view-worldtour-active #portal-3d-master-view,
+#portal-3d-master-view.hidden,
+body:not(.portal-3d-fallback-active) #portal-3d-master-view {
   display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+#world3dFloatingBackBtn {
+  position: fixed !important;
+  top: 16px !important;
+  left: 16px !important;
+  z-index: 10005 !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+#world3dFloatingBackBtn.hidden,
+#view-worldtour.hidden ~ #world3dFloatingBackBtn,
+body:not(.view-worldtour-active) #world3dFloatingBackBtn {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }

@@ -6,6 +6,7 @@ const filesToSync = [
   'master_data.js',
   'css/style.css',
   'js/app.js',
+  'js/world3d.js',
   'js/karaoke.js',
   'images/ai_tutor_mascot.jpg',
   'images/ai_tutor_mascot.svg',

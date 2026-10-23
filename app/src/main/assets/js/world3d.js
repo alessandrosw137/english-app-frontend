@@ -2131,8 +2131,11 @@
       floatBackBtn.id = 'world3dFloatingBackBtn';
       floatBackBtn.className = 'fixed top-4 left-4 z-[10000] flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-white border border-purple-500/50 shadow-2xl backdrop-blur-md text-xs font-bold transition hover:scale-105 active:scale-95 cursor-pointer';
       floatBackBtn.style.cssText = 'position: fixed !important; top: 16px !important; left: 16px !important; z-index: 10000 !important; pointer-events: auto !important;';
-      floatBackBtn.onclick = function() {
-        if (typeof global.goToHomePortals === 'function') {
+      floatBackBtn.onclick = function(e) {
+        if (e && e.preventDefault) e.preventDefault();
+        if (typeof global.returnToMainPortals === 'function') {
+          global.returnToMainPortals(e);
+        } else if (typeof global.goToHomePortals === 'function') {
           global.goToHomePortals();
         } else if (typeof global.showView === 'function') {
           global.showView('view-home');
@@ -2670,9 +2673,15 @@
     isWorldTourActive = true;
 
     const viewWorldTour = document.getElementById('view-worldtour') || document.getElementById('world3d-view');
-    if (viewWorldTour && (viewWorldTour.style.display === 'none' || viewWorldTour.classList.contains('hidden'))) {
-      viewWorldTour.style.display = 'block';
+    if (viewWorldTour) {
       viewWorldTour.classList.remove('hidden');
+      viewWorldTour.style.setProperty('display', 'block', 'important');
+      viewWorldTour.style.setProperty('visibility', 'visible', 'important');
+      viewWorldTour.style.setProperty('opacity', '1', 'important');
+    }
+    if (typeof document !== 'undefined' && document.body) {
+      document.body.classList.add('view-worldtour-active');
+      document.body.classList.remove('portal-3d-fallback-active');
     }
 
     // Obtener contenedor (#world3d-view, #canvas-container, #world3d-container, #world3d-canvas, #threeCanvasContainer, #threeWebGLMount)
@@ -2754,7 +2763,7 @@
     renderer.domElement.style.setProperty('inset', '0', 'important');
     renderer.domElement.style.setProperty('width', '100%', 'important');
     renderer.domElement.style.setProperty('height', '100%', 'important');
-    renderer.domElement.style.setProperty('z-index', '5', 'important');
+    renderer.domElement.style.setProperty('z-index', '15', 'important');
     renderer.domElement.style.setProperty('display', 'block', 'important');
     renderer.domElement.style.setProperty('pointer-events', 'auto', 'important');
     renderer.domElement.style.setProperty('touch-action', 'none', 'important');
