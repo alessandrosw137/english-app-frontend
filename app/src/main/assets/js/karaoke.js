@@ -1573,25 +1573,27 @@
 
       if (currentTime === null) return;
 
-      // Escala proporcional por duración si ytPlayer reporta duración real diferente
+      // Escala proporcional por duracion SOLO para canciones sin sincronizar con tiempo aproximado
       if (ytPlayer && typeof ytPlayer.getDuration === 'function') {
         try {
-          const duracionRealPlayer = ytPlayer.getDuration();
-          const duracionTotalLetra = window._currentTrackTotalDuration || (activeLyricsList && activeLyricsList.length > 0 ? (activeLyricsList[activeLyricsList.length - 1].time + 10) : 225);
-          if (duracionRealPlayer > 10 && duracionTotalLetra > 10 && Math.abs(duracionRealPlayer - duracionTotalLetra) > 2) {
-            if (!window._karaokeScaledMap) window._karaokeScaledMap = {};
-            const kKey = `${currentMusicIndex}_${Math.round(duracionRealPlayer)}`;
-            if (!window._karaokeScaledMap[kKey]) {
-              window._karaokeScaledMap[kKey] = true;
+          const hasApprox = activeLyricsList && activeLyricsList.length > 0 && activeLyricsList.some(s => s.isApproximatedSync);
+          if (hasApprox) {
+            const duracionRealPlayer = ytPlayer.getDuration();
+            const duracionTotalLetra = window._currentTrackTotalDuration || (activeLyricsList[activeLyricsList.length - 1].time + 10);
+            if (duracionRealPlayer > 30 && duracionTotalLetra > 30 && Math.abs(duracionRealPlayer - duracionTotalLetra) > 5) {
               const factorEscala = duracionRealPlayer / duracionTotalLetra;
-              if (activeLyricsList && Array.isArray(activeLyricsList)) {
-                activeLyricsList.forEach(st => {
-                  const tiempoEstrofaOriginal = typeof st.originalTime === 'number' ? st.originalTime : (typeof st.time === 'number' ? st.time : 0);
-                  if (typeof st.originalTime !== 'number') st.originalTime = tiempoEstrofaOriginal;
-                  const tiempoEstrofaAjustado = tiempoEstrofaOriginal * factorEscala;
-                  st.time = Math.round(tiempoEstrofaAjustado * 100) / 100;
-                });
-                renderLyricsFromList(activeLyricsList);
+              if (Math.abs(factorEscala - 1) < 0.25) {
+                if (!window._karaokeScaledMap) window._karaokeScaledMap = {};
+                const kKey = `${currentMusicIndex}_${Math.round(duracionRealPlayer)}`;
+                if (!window._karaokeScaledMap[kKey]) {
+                  window._karaokeScaledMap[kKey] = true;
+                  activeLyricsList.forEach(st => {
+                    const tiempoEstrofaOriginal = typeof st.originalTime === 'number' ? st.originalTime : (typeof st.time === 'number' ? st.time : 0);
+                    if (typeof st.originalTime !== 'number') st.originalTime = tiempoEstrofaOriginal;
+                    st.time = Math.round(tiempoEstrofaOriginal * factorEscala * 100) / 100;
+                  });
+                  renderLyricsFromList(activeLyricsList);
+                }
               }
             }
           }

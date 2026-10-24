@@ -8539,6 +8539,8 @@ window.logout = function() {
         'viva la vida': 'dvgZkm1xWPE',
         'sweet child o mine': '1w7OgIMMRc4',
         'yellow': 'yKNxeF4KMsY',
+        'count on me': '4JNtAtGGNRU',
+        'stay with me': 'pB-5XG-DbAA',
         'fix you': 'k4V3Mo61fJM',
         'the scientist': 'RB-RcX5DS5A',
         'a sky full of stars': 'zp7NtW_hKJI',
@@ -9921,10 +9923,24 @@ window.logout = function() {
 
       rawEntries.sort((a, b) => a.startTime - b.startTime);
 
+      // Fusionar lineas simultaneas o casi simultaneas (< 0.5s) para que ninguna estrofa sea saltada
+      const mergedEntries = [];
+      for (let i = 0; i < rawEntries.length; i++) {
+        const cur = rawEntries[i];
+        if (mergedEntries.length > 0) {
+          const prev = mergedEntries[mergedEntries.length - 1];
+          if (Math.abs(cur.startTime - prev.startTime) < 0.5) {
+            prev.text += ' / ' + cur.text;
+            continue;
+          }
+        }
+        mergedEntries.push({ ...cur });
+      }
+
       // Calcular endTime exacto para cada verso y separar palabras
-      return rawEntries.map((entry, idx) => {
-        const nextEntry = rawEntries[idx + 1];
-        const naturalEnd = nextEntry ? nextEntry.startTime : Math.max(entry.startTime + 4.5, totalSongDuration);
+      return mergedEntries.map((entry, idx) => {
+        const nextEntry = mergedEntries[idx + 1];
+        const naturalEnd = nextEntry ? Math.max(entry.startTime + 1.8, nextEntry.startTime) : Math.max(entry.startTime + 4.5, totalSongDuration);
         // Limitar la duracion de iluminacion de una sola frase a un maximo razonable (ej. 6.5s) para pausas instrumentales intermedias
         const endTime = Math.min(naturalEnd, entry.startTime + 6.5);
         const words = entry.text.split(/\s+/).filter(Boolean);
@@ -10187,13 +10203,14 @@ window.logout = function() {
         const offset = typeof window.lyricsOffset === 'number' ? window.lyricsOffset : 0;
         const t = rawTime + offset;
 
-        // Encontrar que estrofa corresponde al segundo exacto (soporta saltos hacia adelante y atras)
+        // Encontrar que estrofa corresponde al segundo exacto (soporta saltos y garantiza que ninguna estrofa sea saltada)
         let activeIdx = -1;
-        for (let i = 0; i < this.stanzas.length; i++) {
-          const s = this.stanzas[i];
-          if (t >= s.startTime && t < s.nextLineStart) {
-            activeIdx = i;
-            break;
+        if (t >= this.stanzas[0].startTime) {
+          for (let i = this.stanzas.length - 1; i >= 0; i--) {
+            if (t >= this.stanzas[i].startTime) {
+              activeIdx = i;
+              break;
+            }
           }
         }
 
@@ -10756,6 +10773,300 @@ window.logout = function() {
       if (syncTypeBadge) syncTypeBadge.innerHTML = '';
     };
 
+    window.RECOMMENDED_CURATED_LYRICS = {
+      'losing my religion': [
+        { startTime: 8, text: "Oh life is bigger, it's bigger than you", es: "Oh, la vida es más grande, es más grande que tú" },
+        { startTime: 13, text: "And you are not me, the lengths that I will go to", es: "Y tú no eres yo, los extremos a los que llegaré" },
+        { startTime: 18, text: "The distance in your eyes", es: "La distancia en tus ojos" },
+        { startTime: 24, text: "Oh no, I've said too much, I set it up", es: "Oh no, he dicho demasiado, lo he provocado" },
+        { startTime: 30, text: "That's me in the corner, that's me in the spotlight", es: "Ese soy yo en la esquina, ese soy yo bajo el reflector" },
+        { startTime: 36, text: "Losing my religion", es: "Perdiendo el control y mi paciencia" },
+        { startTime: 41, text: "Trying to keep up with you, and I don't know if I can do it", es: "Tratando de mantener tu ritmo, y no sé si podré lograrlo" },
+        { startTime: 47, text: "Oh no, I've said too much, I haven't said enough", es: "Oh no, he dicho demasiado, no he dicho lo suficiente" },
+        { startTime: 54, text: "I thought that I heard you laughing, I thought that I heard you sing", es: "Creí haberte escuchado reír, creí haberte escuchado cantar" },
+        { startTime: 63, text: "I think I thought I saw you try", es: "Creo que creí verte intentarlo" },
+        { startTime: 70, text: "Every whisper, of every waking hour", es: "Cada susurro, de cada hora despierto" },
+        { startTime: 76, text: "I'm choosing my confessions, trying to keep an eye on you", es: "Elijo mis confesiones, intentando no perderte de vista" },
+        { startTime: 82, text: "Like a hurt, lost and blinded fool, fool", es: "Como un tonto herido, perdido y cegado" },
+        { startTime: 89, text: "Oh no, I've said too much, I set it up", es: "Oh no, he dicho demasiado, lo he provocado" },
+        { startTime: 95, text: "Consider this, consider this the hint of the century", es: "Considera esto, considera esto la pista del siglo" },
+        { startTime: 101, text: "Consider this the slip that brought me to my knees, failed", es: "Considera esto el tropiezo que me puso de rodillas" },
+        { startTime: 108, text: "What if all these fantasies come flailing around", es: "¿Y si todas estas fantasías se vienen abajo?" },
+        { startTime: 116, text: "Now I've said too much", es: "Ahora he dicho demasiado" },
+        { startTime: 121, text: "I thought that I heard you laughing, I thought that I heard you sing", es: "Creí haberte escuchado reír, creí haberte escuchado cantar" },
+        { startTime: 130, text: "I think I thought I saw you try", es: "Creo que creí verte intentarlo" },
+        { startTime: 137, text: "But that was just a dream, that was just a dream", es: "Pero eso fue solo un sueño, solo fue un sueño" },
+        { startTime: 145, text: "That's me in the corner, that's me in the spotlight", es: "Ese soy yo en la esquina, ese soy yo bajo el reflector" },
+        { startTime: 151, text: "Losing my religion", es: "Perdiendo el control y mi paciencia" },
+        { startTime: 156, text: "Trying to keep up with you, and I don't know if I can do it", es: "Tratando de mantener tu ritmo, y no sé si podré lograrlo" },
+        { startTime: 162, text: "Oh no, I've said too much, I haven't said enough", es: "Oh no, he dicho demasiado, no he dicho lo suficiente" },
+        { startTime: 169, text: "I thought that I heard you laughing, I thought that I heard you sing", es: "Creí haberte escuchado reír, creí haberte escuchado cantar" },
+        { startTime: 178, text: "I think I thought I saw you try", es: "Creo que creí verte intentarlo" },
+        { startTime: 185, text: "But that was just a dream, try, cry, why try?", es: "Pero eso fue solo un sueño, intentar, llorar, ¿para qué intentar?" },
+        { startTime: 195, text: "That was just a dream, just a dream, just a dream", es: "Eso fue solo un sueño, solo un sueño, solo un sueño" }
+      ],
+      'viva la vida': [
+        { startTime: 12, text: "I used to rule the world, seas would rise when I gave the word", es: "Solía gobernar el mundo, los mares se elevaban cuando daba la orden" },
+        { startTime: 20, text: "Now in the morning I sleep alone, sweep the streets I used to own", es: "Ahora por la mañana duermo solo, barro las calles que solían ser mías" },
+        { startTime: 30, text: "I used to roll the dice, feel the fear in my enemy's eyes", es: "Solía tirar los dados, sentir el temor en los ojos de mis enemigos" },
+        { startTime: 38, text: "Listen as the crowd would sing: Now the old king is dead, long live the king!", es: "Escuchar a la multitud cantar: ¡El viejo rey ha muerto, larga vida al rey!" },
+        { startTime: 50, text: "One minute I held the key, next the walls were closed on me", es: "Un minuto tenía la llave, al siguiente las paredes se cerraron sobre mí" },
+        { startTime: 59, text: "And I discovered that my castles stand upon pillars of salt and pillars of sand", es: "Y descubrí que mis castillos se sostienen sobre pilares de sal y de arena" },
+        { startTime: 68, text: "I hear Jerusalem bells a-ringin', Roman cavalry choirs are singin'", es: "Oigo las campanas de Jerusalén sonar, coros de la caballería romana cantan" },
+        { startTime: 77, text: "Be my mirror, my sword and shield, my missionaries in a foreign field", es: "Sé mi espejo, mi espada y escudo, mis misioneros en tierras lejanas" },
+        { startTime: 86, text: "For some reason I can't explain, once you'd gone there was never an honest word", es: "Por alguna razón inexplicable, tras tu partida nunca hubo una palabra honesta" },
+        { startTime: 95, text: "And that was when I ruled the world", es: "Y fue entonces cuando gobernaba el mundo" },
+        { startTime: 104, text: "It was a wicked and wild wind, blew down the doors to let me in", es: "Fue un viento feroz y salvaje, derribó las puertas para dejarme entrar" },
+        { startTime: 112, text: "Shattered windows and the sound of drums, people couldn't believe what I'd become", es: "Ventanas rotas y redobles de tambores, la gente no creía en lo que me convertí" },
+        { startTime: 121, text: "Revolutionaries wait for my head on a silver plate", es: "Los revolucionarios esperan mi cabeza en bandeja de plata" },
+        { startTime: 130, text: "Just a puppet on a lonely string, oh who would ever wanna be king?", es: "Solo una marioneta en una cuerda solitaria, ¿quién querría ser rey?" },
+        { startTime: 140, text: "I hear Jerusalem bells a-ringin', Roman cavalry choirs are singin'", es: "Oigo las campanas de Jerusalén sonar, coros de caballería romana cantan" },
+        { startTime: 148, text: "Be my mirror, my sword and shield, my missionaries in a foreign field", es: "Sé mi espejo, mi espada y escudo, mis misioneros en tierras lejanas" },
+        { startTime: 157, text: "For some reason I can't explain, I know Saint Peter won't call my name", es: "Por alguna razón inexplicable, sé que San Pedro no pronunciará mi nombre" },
+        { startTime: 166, text: "Never an honest word, and that was when I ruled the world", es: "Nunca una palabra honesta, y fue entonces cuando gobernaba el mundo" },
+        { startTime: 184, text: "Oooooh, oooooh, oooooh, oooooh", es: "Oooooh, oooooh, oooooh, oooooh" },
+        { startTime: 201, text: "Hear Jerusalem bells a-ringin', Roman cavalry choirs are singin'", es: "Oye las campanas de Jerusalén sonar, coros de caballería romana cantan" },
+        { startTime: 218, text: "Never an honest word, and that was when I ruled the world", es: "Nunca una palabra honesta, y fue entonces cuando gobernaba el mundo" }
+      ],
+      'rolling in the deep': [
+        { startTime: 8, text: "There's a fire starting in my heart, reaching a fever pitch and it's bringing me out the dark", es: "Hay un fuego encendiéndose en mi corazón, alcanzando su punto álgido y sacándome de la oscuridad" },
+        { startTime: 17, text: "Finally I can see you crystal clear, go 'head and sell me out and I'll lay your ship bare", es: "Por fin puedo verte con claridad, adelante traicióname y dejaré tu barco al descubierto" },
+        { startTime: 25, text: "See how I'll leave with every piece of you, don't underestimate the things that I will do", es: "Mira cómo me marcharé con cada pedazo de ti, no subestimes lo que soy capaz de hacer" },
+        { startTime: 34, text: "The scars of your love remind me of us, they keep me thinking that we almost had it all", es: "Las cicatrices de tu amor me recuerdan a nosotros, me hacen pensar que casi lo tuvimos todo" },
+        { startTime: 42, text: "The scars of your love, they leave me breathless, I can't help feeling", es: "Las cicatrices de tu amor me dejan sin aliento, no puedo evitar sentirlo" },
+        { startTime: 51, text: "We could have had it all... Rolling in the deep!", es: "¡Pudimos haberlo tenido todo... Rodando en lo más profundo!" },
+        { startTime: 60, text: "You had my heart inside of your hand, and you played it to the beat", es: "Tenías mi corazón dentro de tu mano, y jugaste con él al compás" },
+        { startTime: 70, text: "Baby, I have no story to be told, but I've heard one on you and I'm gonna make your head burn", es: "Cariño, no tengo historias que contar, pero oí una de ti y haré que te arda la cabeza" },
+        { startTime: 78, text: "Think of me in the depths of your despair, make a home down there as mine sure won't be shared", es: "Piensa en mí en lo profundo de tu desesperación, constrúyete un hogar allí que el mío no compartiré" },
+        { startTime: 87, text: "The scars of your love remind me of us, they keep me thinking that we almost had it all", es: "Las cicatrices de tu amor me recuerdan a nosotros, me hacen pensar que casi lo tuvimos todo" },
+        { startTime: 95, text: "The scars of your love, they leave me breathless, I can't help feeling", es: "Las cicatrices de tu amor me dejan sin aliento, no puedo evitar sentirlo" },
+        { startTime: 104, text: "We could have had it all... Rolling in the deep!", es: "¡Pudimos haberlo tenido todo... Rodando en lo más profundo!" },
+        { startTime: 113, text: "You had my heart inside of your hand, and you played it to the beat", es: "Tenías mi corazón dentro de tu mano, y jugaste con él al compás" },
+        { startTime: 122, text: "Throw your soul through every open door, count your blessings to find what you look for", es: "Lanza tu alma por cada puerta abierta, cuenta tus bendiciones para hallar lo que buscas" },
+        { startTime: 131, text: "Turn my sorrow into treasured gold, you'd pay me back in kind and reap just what you sow", es: "Convierte mi pena en oro preciado, me pagarás igual y cosecharás lo que sembraste" },
+        { startTime: 148, text: "We could have had it all, we could have had it all... Rolling in the deep!", es: "¡Pudimos haberlo tenido todo... Rodando en lo más profundo!" },
+        { startTime: 165, text: "You had my heart inside of your hand, but you played it to the beat", es: "Tenías mi corazón dentro de tu mano, pero jugaste con él al compás" }
+      ],
+      'dont stop me now': [
+        { startTime: 7, text: "Tonight I'm gonna have myself a real good time, I feel alive and the world I'll turn it inside out, yeah", es: "Esta noche me la voy a pasar muy bien, me siento vivo y pondré el mundo del revés" },
+        { startTime: 18, text: "I'm floating around in ecstasy, so don't stop me now, don't stop me, 'cause I'm having a good time", es: "Floto en éxtasis, no me detengas ahora, no me pares, porque me la estoy pasando bien" },
+        { startTime: 33, text: "I'm a shooting star leaping through the sky like a tiger, defying the laws of gravity", es: "Soy una estrella fugaz saltando en el cielo como un tigre, desafiando las leyes de gravedad" },
+        { startTime: 43, text: "I'm a racing car passing by like Lady Godiva, I'm gonna go, go, go, there's no stopping me!", es: "Soy un auto de carreras pasando como Lady Godiva, ¡voy a avanzar sin que nadie me detenga!" },
+        { startTime: 50, text: "I'm burnin' through the sky, yeah, two hundred degrees, that's why they call me Mister Fahrenheit", es: "Ardo por el cielo, doscientos grados, por eso me llaman Señor Fahrenheit" },
+        { startTime: 58, text: "I'm traveling at the speed of light, I wanna make a supersonic man out of you", es: "Viajo a la velocidad de la luz, quiero convertirte en un hombre supersónico" },
+        { startTime: 64, text: "Don't stop me now, I'm having such a good time, I'm having a ball", es: "No me detengas ahora, me la estoy pasando tan bien, estoy de fiesta" },
+        { startTime: 71, text: "Don't stop me now, if you wanna have a good time, just give me a call", es: "No me detengas ahora, si quieres pasarla bien solo llámame" },
+        { startTime: 78, text: "Don't stop me now ('cause I'm havin' a good time)", es: "No me detengas ahora (porque me la estoy pasando genial)" },
+        { startTime: 85, text: "I'm a rocket ship on my way to Mars on a collision course, I am a satellite, I'm out of control", es: "Soy un cohete rumbo a Marte en curso de colisión, soy un satélite fuera de control" },
+        { startTime: 95, text: "I am a sex machine ready to reload like an atom bomb about to explode!", es: "¡Soy una máquina lista para recargar como una bomba atómica a punto de estallar!" },
+        { startTime: 102, text: "I'm burnin' through the sky, yeah, two hundred degrees, that's why they call me Mister Fahrenheit", es: "Ardo por el cielo, doscientos grados, por eso me llaman Señor Fahrenheit" },
+        { startTime: 116, text: "Don't stop me now, I'm having such a good time, I'm having a ball", es: "No me detengas ahora, me la estoy pasando tan bien" },
+        { startTime: 129, text: "Don't stop me, don't stop me, hey hey hey! Have a good time", es: "¡No me detengas, no me pares, hey hey hey! Pásala bien" },
+        { startTime: 161, text: "I'm burnin' through the sky, yeah, two hundred degrees, that's why they call me Mister Fahrenheit", es: "Ardo por el cielo, doscientos grados, por eso me llaman Señor Fahrenheit" },
+        { startTime: 175, text: "Don't stop me now, I'm having such a good time, I'm having a ball", es: "No me detengas ahora, me la estoy pasando tan bien" },
+        { startTime: 195, text: "Don't stop me now!", es: "¡No me detengas ahora!" }
+      ],
+      'believer': [
+        { startTime: 8, text: "First things first: I'ma say all the words inside my head", es: "Lo primero es lo primero: diré todo lo que llevo en mi cabeza" },
+        { startTime: 12, text: "I'm fired up and tired of the way that things have been, oh-ooh", es: "Estoy enfurecido y cansado de cómo han sido las cosas" },
+        { startTime: 16, text: "The way that things have been, oh-ooh", es: "De cómo han sido las cosas" },
+        { startTime: 20, text: "Second thing second: don't you tell me what you think that I could be", es: "Lo segundo: no me digas lo que crees que yo podría ser" },
+        { startTime: 24, text: "I'm the one at the sail, I'm the master of my sea, oh-ooh", es: "Soy quien lleva las velas, soy el dueño de mi destino" },
+        { startTime: 28, text: "The master of my sea, oh-ooh", es: "El dueño de mi destino" },
+        { startTime: 32, text: "I was broken from a young age, taking my sulking to the masses", es: "Estuve roto desde joven, llevando mis lamentos ante las masas" },
+        { startTime: 36, text: "Writing my poems for the few that look at me, took to me, shook to me, feeling me", es: "Escribiendo poemas para los pocos que me miraron y me sintieron" },
+        { startTime: 40, text: "Singing from heartache from the pain, taking my message from the veins", es: "Cantando desde el dolor del corazón, extrayendo mi mensaje de mis venas" },
+        { startTime: 43, text: "Speaking my lesson from the brain, seeing the beauty through the...", es: "Hablando mi lección desde la mente, viendo la belleza a través del..." },
+        { startTime: 47, text: "Pain! You made me a, you made me a believer, believer!", es: "¡Dolor! Me convertiste en un creyente, ¡un creyente!" },
+        { startTime: 55, text: "Pain! You break me down, you build me up, believer, believer!", es: "¡Dolor! Me derribas, me levantas, creyente, ¡un creyente!" },
+        { startTime: 63, text: "Pain! Oh, let the bullets fly, oh, let them rain", es: "¡Dolor! Deja que vuelen las balas, deja que lluevan" },
+        { startTime: 68, text: "My life, my love, my drive, it came from... Pain!", es: "Mi vida, mi amor, mi impulso provino del... ¡Dolor!" },
+        { startTime: 72, text: "You made me a, you made me a believer, believer", es: "Me convertiste en un creyente, un creyente" },
+        { startTime: 77, text: "Third things third: send a prayer to the ones up above", es: "Lo tercero: eleva una plegaria hacia los cielos" },
+        { startTime: 81, text: "All the hate that you've heard has turned your spirit to a dove, oh-ooh", es: "Todo el odio escuchado convirtió tu espíritu en una paloma" },
+        { startTime: 85, text: "Your spirit up above, oh-ooh", es: "Tu espíritu en lo alto" },
+        { startTime: 89, text: "I was choking in the crowd, building my rain up in the cloud", es: "Me asfixiaba entre la multitud, acumulando mi lluvia en las nubes" },
+        { startTime: 93, text: "Falling like ashes to the ground, hoping my feelings they would drown", es: "Cayendo como ceniza al suelo, deseando que mis sentimientos se ahogaran" },
+        { startTime: 97, text: "Till it broke open and rained down, it rained down, like...", es: "Hasta que se desató y llovió, llovió como..." },
+        { startTime: 105, text: "Pain! You made me a, you made me a believer, believer!", es: "¡Dolor! Me convertiste en un creyente, ¡un creyente!" },
+        { startTime: 113, text: "Pain! You break me down, you build me up, believer, believer!", es: "¡Dolor! Me derribas, me levantas, creyente, ¡un creyente!" },
+        { startTime: 133, text: "Last things last: by the grace of the fire and the flame", es: "Por último: por la gracia del fuego y de la llama" },
+        { startTime: 137, text: "You're the face of the future, the blood in my veins, oh-ooh", es: "Eres el rostro del porvenir, la sangre en mis venas" },
+        { startTime: 154, text: "Pain! You made me a, you made me a believer, believer!", es: "¡Dolor! Me convertiste en un creyente, ¡un creyente!" }
+      ],
+      'count on me': [
+        { startTime: 8, text: "If you ever find yourself stuck in the middle of the sea, I'll sail the world to find you", es: "Si alguna vez te encuentras atrapado en medio del mar, navegaré el mundo para encontrarte" },
+        { startTime: 19, text: "If you ever find yourself lost in the dark and you can't see, I'll be the light to guide you", es: "Si alguna vez te pierdes en la oscuridad y no puedes ver, seré la luz que te guíe" },
+        { startTime: 30, text: "We'll find out what we're made of, when we are called to help our friends in need", es: "Descubriremos de qué estamos hechos cuando nos llamen a ayudar a amigos necesitados" },
+        { startTime: 41, text: "You can count on me like one, two, three, I'll be there", es: "Puedes contar conmigo como uno, dos, tres, allí estaré" },
+        { startTime: 51, text: "And I know when I need it I can count on you like four, three, two, you'll be there", es: "Y sé que cuando lo necesite podré contar contigo como cuatro, tres, dos, allí estarás" },
+        { startTime: 61, text: "'Cause that's what friends are supposed to do, oh yeah", es: "Porque para eso están los amigos, oh sí" },
+        { startTime: 71, text: "If you toss and you turn and you just can't fall asleep, I'll sing a song beside you", es: "Si das vueltas en la cama y no logras dormir, te cantaré una canción a tu lado" },
+        { startTime: 82, text: "And if you ever forget how much you really mean to me, everyday I will remind you", es: "Y si alguna vez olvidas cuánto vales para mí, cada día te lo recordaré" },
+        { startTime: 93, text: "We'll find out what we're made of, when we are called to help our friends in need", es: "Descubriremos de qué estamos hechos cuando nos llamen a ayudar a amigos necesitados" },
+        { startTime: 104, text: "You can count on me like one, two, three, I'll be there", es: "Puedes contar conmigo como uno, dos, tres, allí estaré" },
+        { startTime: 114, text: "And I know when I need it I can count on you like four, three, two, you'll be there", es: "Y sé que cuando lo necesite podré contar contigo como cuatro, tres, dos, allí estarás" },
+        { startTime: 124, text: "'Cause that's what friends are supposed to do, oh yeah", es: "Porque para eso están los amigos, oh sí" },
+        { startTime: 133, text: "You'll always have my shoulder when you cry, I'll never let go, never say goodbye", es: "Siempre tendrás mi hombro cuando llores, nunca te soltaré, jamás diré adiós" },
+        { startTime: 144, text: "You can count on me like one, two, three, I'll be there", es: "Puedes contar conmigo como uno, dos, tres, allí estaré" },
+        { startTime: 154, text: "And I know when I need it I can count on you like four, three, two, you'll be there", es: "Y sé que cuando lo necesite podré contar contigo como cuatro, tres, dos, allí estarás" },
+        { startTime: 164, text: "You can count on me 'cause I can count on you", es: "Puedes contar conmigo porque yo puedo contar contigo" }
+      ],
+      'yellow': [
+        { startTime: 16, text: "Look at the stars, look how they shine for you", es: "Mira las estrellas, mira cómo brillan para ti" },
+        { startTime: 24, text: "And everything you do, yeah, they were all yellow", es: "Y todo lo que haces, sí, todas eran amarillas" },
+        { startTime: 37, text: "I came along, I wrote a song for you", es: "Llegué hasta aquí, escribí una canción para ti" },
+        { startTime: 45, text: "And all the things you do, and it was called 'Yellow'", es: "Y todas las cosas que haces, y se llamaba 'Yellow'" },
+        { startTime: 56, text: "So then I took my turn, oh what a thing to have done", es: "Así que llegó mi turno, qué gran cosa haber hecho" },
+        { startTime: 65, text: "And it was all yellow", es: "Y todo era amarillo" },
+        { startTime: 78, text: "Your skin, oh yeah your skin and bones", es: "Tu piel, oh sí, tu piel y tus huesos" },
+        { startTime: 86, text: "Turn into something beautiful, you know, you know I love you so", es: "Se transforman en algo hermoso, sabes, sabes que te quiero tanto" },
+        { startTime: 98, text: "You know I love you so", es: "Sabes que te quiero tanto" },
+        { startTime: 112, text: "I swam across, I jumped across for you, oh what a thing to do", es: "Nadé al otro lado, salté al otro lado por ti, qué gran cosa hacer" },
+        { startTime: 124, text: "'Cause you were all yellow, I drew a line, I drew a line for you", es: "Porque eras todo amarillo, tracé una línea por ti" },
+        { startTime: 136, text: "Oh what a thing to do, and it was all yellow", es: "Qué gran cosa hacer, y todo era amarillo" },
+        { startTime: 148, text: "Your skin, oh yeah your skin and bones", es: "Tu piel, oh sí, tu piel y tus huesos" },
+        { startTime: 157, text: "Turn into something beautiful, and you know, for you I'd bleed myself dry", es: "Se transforman en algo hermoso, y sabes, por ti me desangraría" },
+        { startTime: 169, text: "For you I'd bleed myself dry", es: "Por ti me desangraría" },
+        { startTime: 184, text: "It's true, look how they shine for you, look how they shine for you", es: "Es verdad, mira cómo brillan para ti, mira cómo brillan para ti" },
+        { startTime: 205, text: "Look at the stars, look how they shine for you, and all the things that you do", es: "Mira las estrellas, mira cómo brillan para ti, y todo lo que haces" }
+      ],
+      'stay with me': [
+        { startTime: 8, text: "Guess it's true, I'm not good at a one-night stand", es: "Supongo que es verdad, no soy bueno para aventuras de una sola noche" },
+        { startTime: 16, text: "But I still need love 'cause I'm just a man", es: "Pero aún necesito amor porque solo soy un ser humano" },
+        { startTime: 24, text: "These nights never seem to go to plan", es: "Estas noches nunca parecen salir según el plan" },
+        { startTime: 32, text: "I don't want you to leave, will you hold my hand?", es: "No quiero que te marches, ¿tomarías mi mano?" },
+        { startTime: 41, text: "Oh, won't you stay with me? 'Cause you're all I need", es: "Oh, ¿no te quedarás conmigo? Porque eres todo lo que necesito" },
+        { startTime: 49, text: "This ain't love, it's clear to see, but darling, stay with me", es: "Esto no es amor, está a la vista, pero cariño, quédate conmigo" },
+        { startTime: 66, text: "Why am I so emotional? No, it's not a good look, gain some self-control", es: "¿Por qué me pongo tan sensible? No me veo bien, debo controlarme" },
+        { startTime: 74, text: "And deep down I know this never works, but you can lay with me so it doesn't hurt", es: "Y en el fondo sé que esto nunca funciona, pero puedes recostarte conmigo para no sufrir" },
+        { startTime: 90, text: "Oh, won't you stay with me? 'Cause you're all I need", es: "Oh, ¿no te quedarás conmigo? Porque eres todo lo que necesito" },
+        { startTime: 99, text: "This ain't love, it's clear to see, but darling, stay with me", es: "Esto no es amor, está a la vista, pero cariño, quédate conmigo" },
+        { startTime: 115, text: "Oh, won't you stay with me? 'Cause you're all I need", es: "Oh, ¿no te quedarás conmigo? Porque eres todo lo que necesito" },
+        { startTime: 124, text: "This ain't love, it's clear to see, but darling, stay with me", es: "Esto no es amor, está a la vista, pero cariño, quédate conmigo" }
+      ],
+      'creep': [
+        { startTime: 12, text: "When you were here before, couldn't look you in the eye", es: "Cuando estabas aquí antes, no podía mirarte a los ojos" },
+        { startTime: 22, text: "You're just like an angel, your skin makes me cry", es: "Eres justo como un ángel, tu piel me hace llorar" },
+        { startTime: 32, text: "You float like a feather in a beautiful world", es: "Flotas como una pluma en un mundo hermoso" },
+        { startTime: 41, text: "I wish I was special, you're so very special", es: "Desearía ser especial, eres sumamente especial" },
+        { startTime: 55, text: "But I'm a creep, I'm a weirdo", es: "Pero soy un bicho raro, soy un tipo extraño" },
+        { startTime: 64, text: "What the hell am I doing here? I don't belong here", es: "¿Qué demonios hago aquí? No pertenezco a este lugar" },
+        { startTime: 78, text: "I don't care if it hurts, I wanna have control", es: "No me importa si duele, quiero tener el control" },
+        { startTime: 87, text: "I want a perfect body, I want a perfect soul", es: "Quiero un cuerpo perfecto, quiero un alma perfecta" },
+        { startTime: 97, text: "I want you to notice when I'm not around", es: "Quiero que notes cuando no estoy cerca" },
+        { startTime: 107, text: "You're so very special, I wish I was special", es: "Eres sumamente especial, desearía ser especial" },
+        { startTime: 120, text: "But I'm a creep, I'm a weirdo", es: "Pero soy un bicho raro, soy un tipo extraño" },
+        { startTime: 129, text: "What the hell am I doing here? I don't belong here, oh, oh", es: "¿Qué demonios hago aquí? No pertenezco a este lugar" },
+        { startTime: 145, text: "She's running out the door, she's running out, she run, run, run, run... Run!", es: "Ella sale corriendo por la puerta, corre, corre... ¡Corre!" },
+        { startTime: 175, text: "Whatever makes you happy, whatever you want", es: "Lo que sea que te haga feliz, lo que sea que quieras" },
+        { startTime: 187, text: "You're so very special, I wish I was special", es: "Eres sumamente especial, desearía ser especial" },
+        { startTime: 201, text: "But I'm a creep, I'm a weirdo, what the hell am I doing here? I don't belong here", es: "Pero soy un bicho raro, ¿qué demonios hago aquí? No pertenezco a este lugar" },
+        { startTime: 218, text: "I don't belong here", es: "No pertenezco a este lugar" }
+      ],
+      'someone like you': [
+        { startTime: 12, text: "I heard that you're settled down, that you found a girl and you're married now", es: "Oí que sentaste cabeza, que encontraste a una chica y te casaste" },
+        { startTime: 24, text: "I heard that your dreams came true, guess she gave you things I didn't give to you", es: "Oí que tus sueños se cumplieron, supongo que te dio cosas que yo no te di" },
+        { startTime: 36, text: "Old friend, why are you so shy? Ain't like you to hold back or hide from the light", es: "Viejo amigo, ¿por qué tan tímido? No es propio de ti ocultarte de la luz" },
+        { startTime: 47, text: "I hate to turn up out of the blue, uninvited, but I couldn't stay away, I couldn't fight it", es: "Detesto aparecer de improviso, sin invitación, pero no pude resistirme" },
+        { startTime: 59, text: "I had hoped you'd see my face and that you'd be reminded that for me, it isn't over", es: "Esperaba que vieras mi rostro y recordaras que para mí esto no ha terminado" },
+        { startTime: 69, text: "Never mind, I'll find someone like you, I wish nothing but the best for you, too", es: "No te preocupes, encontraré a alguien como tú, y te deseo solo lo mejor" },
+        { startTime: 81, text: "'Don't forget me,' I beg, 'I'll remember you said:'", es: "'No me olvides', te ruego, 'recordaré lo que dijiste:'" },
+        { startTime: 87, text: "'Sometimes it lasts in love, but sometimes it hurts instead'", es: "'A veces el amor perdura, pero a veces duele'" },
+        { startTime: 104, text: "You know how the time flies, only yesterday was the time of our lives", es: "Sabes cómo vuela el tiempo, apenas ayer fue el mejor momento de nuestras vidas" },
+        { startTime: 116, text: "We were born and raised in a summer haze, bound by the surprise of our glory days", es: "Nacimos y crecimos en la bruma del verano, unidos por la gloria de aquellos días" },
+        { startTime: 127, text: "I hate to turn up out of the blue, uninvited, but I couldn't stay away, I couldn't fight it", es: "Detesto aparecer de improviso, pero no pude resistirme" },
+        { startTime: 139, text: "I had hoped you'd see my face and that you'd be reminded that for me, it isn't over", es: "Esperaba que vieras mi rostro y recordaras que para mí no ha terminado" },
+        { startTime: 149, text: "Never mind, I'll find someone like you, I wish nothing but the best for you, too", es: "No te preocupes, encontraré a alguien como tú, te deseo solo lo mejor" },
+        { startTime: 161, text: "'Don't forget me,' I beg, 'I'll remember you said:'", es: "'No me olvides', te ruego, 'recordaré lo que dijiste:'" },
+        { startTime: 167, text: "'Sometimes it lasts in love, but sometimes it hurts instead'", es: "'A veces el amor perdura, pero a veces duele'" },
+        { startTime: 184, text: "Nothing compares, no worries or cares, regrets and mistakes, they're memories made", es: "Nada se compara, sin preocupaciones, arrepentimientos y errores son recuerdos creados" },
+        { startTime: 198, text: "Who would have known how bittersweet this would taste?", es: "¿Quién hubiera sabido qué tan agridulce sabría esto?" },
+        { startTime: 209, text: "Never mind, I'll find someone like you, I wish nothing but the best for you, too", es: "No te preocupes, encontraré a alguien como tú, te deseo lo mejor" },
+        { startTime: 221, text: "'Don't forget me,' I beg, 'I'll remember you said:'", es: "'No me olvides', te ruego, 'recordaré lo que dijiste:'" },
+        { startTime: 227, text: "'Sometimes it lasts in love, but sometimes it hurts instead'", es: "'A veces el amor perdura, pero a veces duele'" }
+      ],
+      'shape of you': [
+        { startTime: 9, text: "The club isn't the best place to find a lover, so the bar is where I go", es: "El club no es el mejor lugar para hallar un amor, así que voy al bar" },
+        { startTime: 18, text: "Me and my friends at the table doing shots, drinking fast and then we talk slow", es: "Mis amigos y yo en la mesa tomando tragos, bebiendo rápido y conversando lento" },
+        { startTime: 28, text: "Come over and start up a conversation with just me, and trust me I'll give it a chance now", es: "Acércate e inicia una conversación a solas conmigo, y créeme le daré una oportunidad" },
+        { startTime: 39, text: "Took my hand, stop, put Van the Man on the jukebox, and then we start to dance", es: "Tomó mi mano, pon a Van Morrison en la rocola y empezamos a bailar" },
+        { startTime: 49, text: "I'm in love with the shape of you, we push and pull like a magnet do", es: "Estoy enamorado de tu silueta, nos atraemos y empujamos como un imán" },
+        { startTime: 59, text: "Although my heart is falling too, I'm in love with your body", es: "Aunque mi corazón también cae rendido, me enamora tu figura" },
+        { startTime: 69, text: "Last night you were in my room, and now my bedsheets smell like you", es: "Anoche estuviste en mi cuarto, y ahora mis sábanas huelen a ti" },
+        { startTime: 79, text: "Every day discovering something brand new, I'm in love with the shape of you", es: "Cada día descubro algo nuevo, estoy enamorado de tu silueta" }
+      ],
+      'in the end': [
+        { startTime: 9, text: "It starts with one, one thing, I don't know why, it doesn't even matter how hard you try", es: "Empieza con una cosa, no sé por qué, ni siquiera importa qué tan duro lo intentes" },
+        { startTime: 19, text: "Keep that in mind, I designed this rhyme to explain in due time all I know", es: "Tenlo presente, compuse esta rima para explicarte a su debido tiempo lo que sé" },
+        { startTime: 26, text: "Time is a valuable thing, watch it fly by as the pendulum swings", es: "El tiempo es un tesoro invaluable, míralo pasar volando al compás del péndulo" },
+        { startTime: 35, text: "Watch it count down to the end of the day, the clock ticks life away", es: "Míralo descontar hasta el fin del día, el reloj consume la vida" },
+        { startTime: 44, text: "I tried so hard and got so far, but in the end it doesn't even matter", es: "Me esforcé tanto y llegué tan lejos, pero al final ni siquiera importa" },
+        { startTime: 53, text: "I had to fall to lose it all, but in the end it doesn't even matter", es: "Tuve que caer para perderlo todo, pero al final ni siquiera importa" }
+      ],
+      'bohemian rhapsody': [
+        { startTime: 4, text: "Is this the real life? Is this just fantasy?", es: "¿Es esta la vida real? ¿Es solo una fantasía?" },
+        { startTime: 11, text: "Caught in a landslide, no escape from reality", es: "Atrapado en un derrumbe, sin escape de la realidad" },
+        { startTime: 18, text: "Open your eyes, look up to the skies and see", es: "Abre tus ojos, mira hacia los cielos y contempla" },
+        { startTime: 27, text: "I'm just a poor boy, I need no sympathy", es: "Solo soy un muchacho pobre, no necesito compasión" },
+        { startTime: 33, text: "Because I'm easy come, easy go, little high, little low", es: "Porque lo que fácil viene fácil se va, un poco arriba, un poco abajo" },
+        { startTime: 42, text: "Any way the wind blows doesn't really matter to me, to me", es: "Hacia donde sople el viento realmente no me importa, a mí" },
+        { startTime: 55, text: "Mama, just killed a man, put a gun against his head, pulled my trigger, now he's dead", es: "Mamá, acabo de matar a un hombre, puse un arma en su frente, disparé y está muerto" },
+        { startTime: 73, text: "Mama, life had just begun, but now I've gone and thrown it all away", es: "Mamá, la vida apenas comenzaba, pero ahora fui y lo arruiné todo" },
+        { startTime: 87, text: "Mama, ooh, didn't mean to make you cry, if I'm not back again this time tomorrow", es: "Mamá, ooh, no quise hacerte llorar, si no estoy de regreso mañana a esta hora" },
+        { startTime: 104, text: "Carry on, carry on as if nothing really matters", es: "Sigue adelante, sigue adelante como si nada importara en verdad" }
+      ],
+      'radioactive': [
+        { startTime: 14, text: "I'm waking up to ash and dust, I wipe my brow and I sweat my rust", es: "Despierto entre cenizas y polvo, me limpio la frente y sudo todo mi óxido" },
+        { startTime: 22, text: "I'm breathing in the chemicals, I'm breaking in, shaping up", es: "Respiro las sustancias químicas, entrando en ritmo, poniéndome a tono" },
+        { startTime: 28, text: "Then checking out on the prison bus, this is it, the apocalypse", es: "Partiendo en el autobús del penal, esto es todo, el apocalipsis" },
+        { startTime: 42, text: "I'm waking up, I feel it in my bones, enough to make my systems blow", es: "Despierto, lo siento en mis huesos, suficiente para hacer estallar mis sistemas" },
+        { startTime: 49, text: "Welcome to the new age, to the new age", es: "Bienvenido a la nueva era, a la nueva era" },
+        { startTime: 56, text: "Whoa, oh, oh, oh, I'm radioactive, radioactive", es: "Whoa, oh, oh, oh, soy radiactivo, radiactivo" }
+      ]
+    };
+
+    window.getCuratedRecommendedLyrics = function(title, artist, totalSongDuration = 210) {
+      if (!title) return null;
+      const t = title.toLowerCase().trim().replace(/['"’]/g, '');
+      const a = (artist || '').toLowerCase().trim().replace(/['"’]/g, '');
+      let matchKey = null;
+
+      for (const k of Object.keys(window.RECOMMENDED_CURATED_LYRICS)) {
+        const cleanK = k.replace(/['"’]/g, '');
+        if (t.includes(cleanK) || cleanK.includes(t)) {
+          matchKey = k;
+          break;
+        }
+      }
+
+      if (!matchKey) return null;
+
+      const rawList = window.RECOMMENDED_CURATED_LYRICS[matchKey];
+      if (!Array.isArray(rawList) || !rawList.length) return null;
+
+      return rawList.map((entry, idx) => {
+        const nextEntry = rawList[idx + 1];
+        const naturalEnd = nextEntry ? Math.max(entry.startTime + 1.8, nextEntry.startTime) : Math.max(entry.startTime + 4.5, totalSongDuration);
+        const endTime = Math.min(naturalEnd, entry.startTime + 6.5);
+        const words = (entry.text || '').split(/\s+/).filter(Boolean);
+        return {
+          index: idx,
+          startTime: entry.startTime,
+          time: entry.startTime,
+          originalTime: entry.startTime,
+          endTime: Math.max(entry.startTime + 0.4, endTime),
+          nextLineStart: naturalEnd,
+          text: entry.text,
+          lines: [entry.text],
+          words,
+          textEs: entry.es,
+          es: entry.es,
+          isLrcSynced: true
+        };
+      });
+    };
+
     /* ========================================================
        REPRODUCTOR DE CANCIÓN COMPLETA (3 A 5 MINUTOS) EN ESCENARIO HOLOGRÁFICO
        ======================================================== */
@@ -11110,27 +11421,38 @@ window.logout = function() {
         const cleanTitleForApi = trackName.replace(/\s*\([^)]*\)/g, '').replace(/\s*-\s*.*$/, '').trim() || trackName;
         const cleanArtistForApi = artistName.replace(/\s*&.*$/, '').trim() || artistName;
 
+        // 7.0 Consulta prioritaria a letra curada recomendada de alta precision (Cero saltos de estrofas)
+        if (typeof window.getCuratedRecommendedLyrics === 'function') {
+          const curated = window.getCuratedRecommendedLyrics(cleanTitleForApi, cleanArtistForApi, totalDurationSec);
+          if (curated && curated.length > 0) {
+            finalLyrics = curated;
+            window._isCurrentSongLrcSynced = true;
+          }
+        }
+
         // 7A. Consulta primaria universal al motor LRCLIB (LRC oficial sincronizado o plainLyrics estructurada)
-        try {
-          const exactRes = await window.fetchExactSyncedLyrics(cleanArtistForApi, cleanTitleForApi, totalDurationSec, window._currentSongAbortController ? window._currentSongAbortController.signal : null);
-          if (window.currentSongSessionId !== thisSessionId) return;
-          if (exactRes) {
-            if (exactRes.type === 'lrc' && exactRes.lrcText) {
-              const parsed = window.parseLrcUniversal(exactRes.lrcText, totalDurationSec || exactRes.lrcDuration);
-              if (parsed && parsed.length > 0) {
-                finalLyrics = parsed;
-                window._isCurrentSongLrcSynced = true;
-              }
-            } else if (exactRes.type === 'plain' && exactRes.plainText) {
-              const parsed = window.parseRawLyricsIntoStanzas(exactRes.plainText, totalDurationSec, true);
-              if (parsed && parsed.length > 0) {
-                finalLyrics = parsed;
-                window._isCurrentSongLrcSynced = false;
+        if (!finalLyrics || finalLyrics.length === 0) {
+          try {
+            const exactRes = await window.fetchExactSyncedLyrics(cleanArtistForApi, cleanTitleForApi, totalDurationSec, window._currentSongAbortController ? window._currentSongAbortController.signal : null);
+            if (window.currentSongSessionId !== thisSessionId) return;
+            if (exactRes) {
+              if (exactRes.type === 'lrc' && exactRes.lrcText) {
+                const parsed = window.parseLrcUniversal(exactRes.lrcText, totalDurationSec || exactRes.lrcDuration);
+                if (parsed && parsed.length > 0) {
+                  finalLyrics = parsed;
+                  window._isCurrentSongLrcSynced = true;
+                }
+              } else if (exactRes.type === 'plain' && exactRes.plainText) {
+                const parsed = window.parseRawLyricsIntoStanzas(exactRes.plainText, totalDurationSec, true);
+                if (parsed && parsed.length > 0) {
+                  finalLyrics = parsed;
+                  window._isCurrentSongLrcSynced = false;
+                }
               }
             }
+          } catch (exactErr) {
+            if (exactErr.name === 'AbortError') return;
           }
-        } catch (exactErr) {
-          if (exactErr.name === 'AbortError') return;
         }
 
         try {
