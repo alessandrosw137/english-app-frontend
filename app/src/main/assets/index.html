@@ -1322,7 +1322,7 @@ if(targetId==='view-home'&&typeof window.showPortal==='function')window.showPort
 if(targetId==='view-path'&&typeof window.renderOfficialLearningModules==='function')window.renderOfficialLearningModules();
 if(targetId!=='view-worldtour'){
 if(document.body)document.body.classList.remove('view-worldtour-active','portal-3d-fallback-active');
-if(typeof window.pauseWorld3D==='function'){try{window.pauseWorld3D();}catch(_){}}
+if(typeof window.pauseWorld3D==='function'){try{window.pauseWorld3D();}catch(_){}}else if(window.World3D&&typeof window.World3D.pauseWorld3D==='function'){try{window.World3D.pauseWorld3D();}catch(_){}}
 var _w=document.getElementById('view-worldtour');if(_w){_w.classList.add('hidden');_w.style.setProperty('display','none','important');}
 var _p=document.getElementById('portal-3d-master-view');if(_p){_p.classList.add('hidden');_p.style.setProperty('display','none','important');}
 var _e=document.getElementById('emergency-nav-bar');if(_e)_e.style.setProperty('display','none','important');

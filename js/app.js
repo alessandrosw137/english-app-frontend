@@ -10874,6 +10874,10 @@ window.logout = function() {
         }
 
         const youtubeIdToUse = youtubeVideoId || '6cucosmPj-A';
+        if (window.KaraokeSyncEngine) {
+          window.KaraokeSyncEngine.currentTrack = window.KaraokeSyncEngine.currentTrack || {};
+          window.KaraokeSyncEngine.currentTrack.youtubeId = youtubeIdToUse;
+        }
         const fullSongEmbedUrl = `https://www.youtube-nocookie.com/embed/${youtubeIdToUse}?enablejsapi=1&autoplay=1&rel=0`;
 
         let holoStage = document.getElementById('musicHolographicStage');
@@ -12735,65 +12739,48 @@ window.stopAllMedia = function(exceptElement = null) {
 };
 
 // --- RETORNO SEGURO AL BUSCADOR MUSICAL SIN PANTALLA NEGRA ---
-window.goBackToMusicSearch = function(e) {
-  if (e && typeof e.preventDefault === 'function') { e.preventDefault(); e.stopPropagation(); }
-
-  window.forceStopAllNarrationAndMedia(true);
-
-  const playerSubView = document.getElementById('music-player-subview') || document.querySelector('[id*="player-subview"]');
-  if (playerSubView) {
-    playerSubView.style.display = 'none';
-    playerSubView.classList.add('hidden');
+window.returnToMusicSearch = function(e) {
+  if (e && typeof e.preventDefault === 'function') e.preventDefault();
+  
+  // 1. Apagar video, 3D y audio de tajo
+  if (typeof window.pauseYouTubePlayer === 'function') { try { window.pauseYouTubePlayer(); } catch (_) {} }
+  if (typeof window.pauseWorld3D === 'function') { try { window.pauseWorld3D(); } catch (_) {} }
+  const audioEl = document.getElementById('mastereng-audio');
+  if (audioEl) { try { audioEl.pause(); } catch (_) {} }
+  if (window.KaraokeSyncEngine && typeof window.KaraokeSyncEngine.stop === 'function') {
+    try { window.KaraokeSyncEngine.stop(); } catch (_) {}
   }
 
-  const holoStage = document.getElementById('musicHolographicStage');
-  if (holoStage) {
-    holoStage.style.display = 'none';
-    holoStage.classList.add('hidden');
+  // 2. Limpiar clases del body
+  if (document.body) {
+    document.body.classList.remove('view-worldtour-active', 'portal-3d-fallback-active');
   }
 
-  const musicView = document.getElementById('view-music');
-  if (musicView) {
-    musicView.style.display = 'block';
-    musicView.classList.remove('hidden');
-    musicView.style.opacity = '1';
-    musicView.style.visibility = 'visible';
-  }
-
-  let searchSubView = document.getElementById('music-search-subview');
-  if (!searchSubView) {
-    const searchInput = document.querySelector('input[placeholder*="Losing My Religion"], input[placeholder*="Busca"], #music-search-input');
-    if (searchInput) {
-      searchSubView = searchInput.closest('[id*="subview"], [id*="search"], section, .portal-container, div');
+  // 3. Ocultar TODAS las vistas que no sean de música
+  ['view-worldtour', 'portal-3d-master-view', 'music-player-subview', 'view-home', 'view-path', 'view-stories', 'ai-tutor-view'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.classList.add('hidden');
+      el.style.setProperty('display', 'none', 'important');
     }
+  });
+
+  // 4. Mostrar EXCLUSIVAMENTE el buscador musical
+  const viewMusic = document.getElementById('view-music');
+  const searchSub = document.getElementById('music-search-subview');
+  
+  if (viewMusic) {
+    viewMusic.classList.remove('hidden', 'offline-locked');
+    viewMusic.style.cssText = 'display: block !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; position: relative !important; z-index: 30 !important; width: 100% !important; max-width: 68rem !important; margin: 0 auto !important; padding: 1rem !important; min-height: calc(100dvh - 70px) !important;';
+  }
+  if (searchSub) {
+    searchSub.classList.remove('hidden', 'offline-locked');
+    searchSub.style.cssText = 'display: block !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; width: 100% !important;';
   }
 
-  if (searchSubView) {
-    let curr = searchSubView;
-    while (curr && curr !== document.body && curr !== document.documentElement) {
-      curr.classList.remove('hidden', 'd-none');
-      if (typeof window.getComputedStyle === 'function') {
-        try {
-          if (window.getComputedStyle(curr).display === 'none') {
-            curr.style.display = 'block';
-          }
-        } catch (_) {
-          curr.style.display = 'block';
-        }
-      } else {
-        curr.style.display = 'block';
-      }
-      curr.style.opacity = '1';
-      curr.style.visibility = 'visible';
-      curr = curr.parentElement;
-    }
-  }
-
-  if (typeof window.scrollTo === 'function') {
-    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (_) {}
-  }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 };
-window.returnToMusicSearch = window.goBackToMusicSearch;
+window.goBackToMusicSearch = window.returnToMusicSearch;
 
 // --- TRADUCCIÓN REAL AL ESPAÑOL POR LOTES ---
 window.isSpanishTranslationActive = true;
@@ -13121,6 +13108,26 @@ window.switchMasterView = function(targetMode) {
   // Delegación de clics en fase de captura
   if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
     document.addEventListener('click', function(e) {
+      // 1. Interceptar selección de canciones para despertar el reproductor de YouTube
+      const trackCardBtn = e.target && e.target.closest ? e.target.closest('.music-track-card, [onclick*="playMusicTrack"], [onclick*="selectMusicTrack"]') : null;
+      if (trackCardBtn) {
+        setTimeout(() => {
+          if (typeof window.openMusicPlayerStage === 'function') window.openMusicPlayerStage();
+          if (window.KaraokeSyncEngine && window.KaraokeSyncEngine.currentTrack && window.KaraokeSyncEngine.currentTrack.youtubeId) {
+            window.forceWakeUpYouTubePlayer(window.KaraokeSyncEngine.currentTrack.youtubeId);
+          }
+        }, 200);
+      }
+      
+      // 2. Interceptar el retorno al buscador
+      const btnText = (e.target && (e.target.innerText || e.target.textContent) || '').trim().toLowerCase();
+      if (btnText.includes('volver al buscador')) {
+        e.preventDefault();
+        e.stopPropagation();
+        window.returnToMusicSearch(e);
+        return;
+      }
+
       const btn = e.target && e.target.closest ? e.target.closest('button, a, [role="button"], .btn, .portal-btn, .portal-card, .coverflow-portal-card, [onclick]') : null;
       if (!btn) return;
 
@@ -14133,40 +14140,61 @@ window.deduplicateWorld3DBars = function() {
   const worldTour = document.getElementById('view-worldtour');
   if (!worldTour) return;
 
-  // 1. Ocultar el botón flotante suelto que se encimaba en la esquina superior izquierda
   const floatingBack = document.getElementById('world3dFloatingBackBtn');
   if (floatingBack) {
     floatingBack.classList.add('hidden');
     floatingBack.style.setProperty('display', 'none', 'important');
   }
 
-  // 2. Buscar todos los contenedores de botones que contengan "Vista General"
   const candidateBars = [];
   worldTour.querySelectorAll('div, nav').forEach(function(el) {
     const txt = (el.innerText || '').trim();
-    if (txt.includes('Vista General') && txt.includes('Ir a la Sala') && el.querySelectorAll('button').length >= 4 && el.querySelectorAll('button').length <= 7) {
-      // Verificar que sea el contenedor directo de los botones
+    if (txt.includes('Vista General') && txt.includes('Ir a la Sala')) {
       const hasDirectButtons = Array.from(el.children).some(c => c.tagName === 'BUTTON');
       if (hasDirectButtons) candidateBars.push(el);
     }
   });
 
-  // Si hay más de una barra creada, eliminar todas las duplicadas y dejar solo la primera
   if (candidateBars.length > 1) {
     for (let i = 1; i < candidateBars.length; i++) {
       candidateBars[i].remove();
     }
   }
 
-  // 3. Estilizar la única barra activa para que quede limpia, sin encimarse y bien posicionada
   if (candidateBars.length >= 1) {
     const activeBar = candidateBars[0];
     activeBar.id = 'unified-world3d-cam-bar';
-    activeBar.style.cssText = 'position: absolute !important; top: 14px !important; left: 16px !important; z-index: 80 !important; display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: 8px !important; background: rgba(15, 23, 42, 0.82) !important; backdrop-filter: blur(10px) !important; padding: 6px 10px !important; border-radius: 14px !important; border: 1px solid rgba(148, 163, 184, 0.25) !important; pointer-events: auto !important;';
+    // FIX: top: 70px para que quede exactamente debajo del header de 56px
+    activeBar.style.cssText = 'position: absolute !important; top: 70px !important; left: 16px !important; z-index: 80 !important; display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: 8px !important; background: rgba(15, 23, 42, 0.85) !important; backdrop-filter: blur(10px) !important; padding: 6px 10px !important; border-radius: 14px !important; border: 1px solid rgba(148, 163, 184, 0.3) !important; pointer-events: auto !important;';
   }
 };
 
-setInterval(function() {
+window.forceWakeUpYouTubePlayer = function(videoId) {
+  const wrapper = document.getElementById('musicOriginalVideoWrapper');
+  if (!wrapper || !videoId) return;
+
+  // Destruimos el iframe viejo que se quedó en negro
+  const oldIframe = document.getElementById('musicYouTubeIframe');
+  if (oldIframe) {
+    oldIframe.remove();
+  }
+
+  // Inyectamos un iframe nuevo forzando el autoplay y asegurando que ocupe todo el espacio
+  const newIframe = document.createElement('iframe');
+  newIframe.id = 'musicYouTubeIframe';
+  newIframe.className = 'w-full h-full absolute inset-0';
+  newIframe.style.cssText = 'width: 100% !important; height: 100% !important; border: none !important; z-index: 10 !important; pointer-events: auto !important;';
+  newIframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1&playsinline=1&rel=0`;
+  newIframe.frameBorder = '0';
+  newIframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+  newIframe.allowFullscreen = true;
+
+  wrapper.appendChild(newIframe);
+};
+
+// Sobrescribimos el vigilante automático para que, además de mostrar el reproductor, despierte el iframe
+if (window._musicStageGuardInterval) clearInterval(window._musicStageGuardInterval);
+window._musicStageGuardInterval = setInterval(function() {
   // A. Vigilar que no haya barras duplicadas en el Mundo 3D
   const wt = document.getElementById('view-worldtour');
   if (wt && !wt.classList.contains('hidden')) {
@@ -14175,19 +14203,31 @@ setInterval(function() {
     }
   }
 
-  // B. Vigilar que nunca quede pantalla negra al seleccionar una canción en Música
   const vm = document.getElementById('view-music');
   const ms = document.getElementById('music-search-subview');
   const mp = document.getElementById('music-player-subview');
+  
   if (vm && ms && mp) {
     const isMusicViewActive = !vm.classList.contains('hidden') && window.getComputedStyle(vm).display !== 'none';
     const isSearchHidden = ms.classList.contains('hidden') || window.getComputedStyle(ms).display === 'none';
     const isPlayerHidden = mp.classList.contains('hidden') || window.getComputedStyle(mp).display === 'none';
 
-    // Si estamos en Música y el buscador se ocultó al elegir canción pero el reproductor sigue oculto:
+    // Si el buscador se ocultó (porque se seleccionó una canción) pero el reproductor sigue oculto:
     if (isMusicViewActive && isSearchHidden && isPlayerHidden) {
-      window.openMusicPlayerStage();
+      if (typeof window.openMusicPlayerStage === 'function') {
+        window.openMusicPlayerStage();
+      } else {
+        mp.classList.remove('hidden');
+        mp.style.setProperty('display', 'block', 'important');
+      }
+      
+      // Buscar si hay una canción cargada para forzar el iframe
+      setTimeout(() => {
+        if (window.KaraokeSyncEngine && window.KaraokeSyncEngine.currentTrack && window.KaraokeSyncEngine.currentTrack.youtubeId) {
+          window.forceWakeUpYouTubePlayer(window.KaraokeSyncEngine.currentTrack.youtubeId);
+        }
+      }, 300);
     }
   }
-}, 250);
+}, 300);
 
