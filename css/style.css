@@ -1882,3 +1882,19 @@ body:not(.view-worldtour-active) #world3dFloatingBackBtn {
   opacity: 1 !important;
   pointer-events: auto !important;
 }
+
+/* Ocultar permanentemente el botón suelto que se encimaba sobre la barra 3D */
+#world3dFloatingBackBtn {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* Garantizar visibilidad del Reproductor Musical cuando no tenga la clase .hidden */
+#view-music:not(.hidden) #music-player-subview:not(.hidden) {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+

@@ -2203,6 +2203,44 @@ ensureOrbitControls();
 
     // Tarjeta emergente estilizada de Vocabulario 3D (z-index superior)
     
+    // Función deduplicadora que garantiza que SOLO EXISTA UNA BARRA de controles 3D sin encimarse
+    window.deduplicateWorld3DBars = function() {
+      const worldTour = document.getElementById('view-worldtour');
+      if (!worldTour) return;
+
+      // 1. Ocultar el botón flotante suelto que se encimaba en la esquina superior izquierda
+      const floatingBack = document.getElementById('world3dFloatingBackBtn');
+      if (floatingBack) {
+        floatingBack.classList.add('hidden');
+        floatingBack.style.setProperty('display', 'none', 'important');
+      }
+
+      // 2. Buscar todos los contenedores de botones que contengan "Vista General"
+      const candidateBars = [];
+      worldTour.querySelectorAll('div, nav').forEach(function(el) {
+        const txt = (el.innerText || '').trim();
+        if (txt.includes('Vista General') && txt.includes('Ir a la Sala') && el.querySelectorAll('button').length >= 4 && el.querySelectorAll('button').length <= 7) {
+          // Verificar que sea el contenedor directo de los botones
+          const hasDirectButtons = Array.from(el.children).some(c => c.tagName === 'BUTTON');
+          if (hasDirectButtons) candidateBars.push(el);
+        }
+      });
+
+      // Si hay más de una barra creada, eliminar todas las duplicadas y dejar solo la primera
+      if (candidateBars.length > 1) {
+        for (let i = 1; i < candidateBars.length; i++) {
+          candidateBars[i].remove();
+        }
+      }
+
+      // 3. Estilizar la única barra activa para que quede limpia, sin encimarse y bien posicionada
+      if (candidateBars.length >= 1) {
+        const activeBar = candidateBars[0];
+        activeBar.id = 'unified-world3d-cam-bar';
+        activeBar.style.cssText = 'position: absolute !important; top: 14px !important; left: 16px !important; z-index: 80 !important; display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: 8px !important; background: rgba(15, 23, 42, 0.82) !important; backdrop-filter: blur(10px) !important; padding: 6px 10px !important; border-radius: 14px !important; border: 1px solid rgba(148, 163, 184, 0.25) !important; pointer-events: auto !important;';
+      }
+    };
+
     // Barra de botones de cámaras ("Vista General", "Ir a la Sala", "Ir al Estudio", "Ir al Jardín")
     let cameraButtonsBar = document.getElementById('world3dCameraControlsBar') || document.getElementById('world3dCameraButtonsBar');
     if (!cameraButtonsBar) {
@@ -2233,6 +2271,11 @@ ensureOrbitControls();
         </button>
       `;
       containerEl.appendChild(cameraButtonsBar);
+    }
+
+    // Deduplicar barras de botones para que SOLO exista una barra unificada y limpia
+    if (typeof window.deduplicateWorld3DBars === 'function') {
+      window.deduplicateWorld3DBars();
     }
   
     let vocabCard = document.getElementById('world3dVocabHudCard');
@@ -3017,6 +3060,7 @@ ensureOrbitControls();
     speakWorld3DObject,
     practiceWorld3DObject,
     resetWorld3DCamera,
+    deduplicateWorld3DBars: window.deduplicateWorld3DBars,
     closeWorld3DInspectCard,
     onWindowResize,
     get camera() { return camera; },

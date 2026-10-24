@@ -673,9 +673,7 @@ Estrofa 1
 </div>
 </div>
 <div id="view-worldtour" class="flex-1 w-full hidden" style="display: none;">
-<button id="world3dFloatingBackBtn" onclick="goToHomePortals()"
-class="fixed z-[10000] flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-white border border-purple-500/50 shadow-2xl backdrop-blur-md text-xs font-bold transition hover:scale-105 active:scale-95 cursor-pointer"
-style="position: fixed !important; top: 68px !important; right: 16px !important; left: auto !important; z-index: 10000 !important; pointer-events: auto !important;">
+<button id="world3dFloatingBackBtn" onclick="goToHomePortals()" class="hidden" style="display: none !important;">
 <span class="text-purple-400 font-extrabold text-sm">←</span>
 <span>Volver a Portales</span>
 </button>
@@ -1334,7 +1332,7 @@ if(document.body){document.body.classList.add('view-worldtour-active');document.
 var _w=document.getElementById('view-worldtour');if(_w){_w.classList.remove('hidden');_w.style.setProperty('display','block','important');_w.style.setProperty('visibility','visible','important');}
 var _wv=document.getElementById('world3d-view');if(_wv){_wv.classList.remove('hidden');_wv.style.setProperty('display','block','important');_wv.style.setProperty('visibility','visible','important');}
 var _p=document.getElementById('portal-3d-master-view');if(_p){_p.classList.add('hidden');_p.style.setProperty('display','none','important');}
-var _f=document.getElementById('world3dFloatingBackBtn');if(_f){_f.classList.remove('hidden');_f.style.setProperty('display','flex','important');}
+var _f=document.getElementById('world3dFloatingBackBtn');if(_f){_f.classList.add('hidden');_f.style.setProperty('display','none','important');}
 if(typeof window.ensureEmergencyBackBar==='function')window.ensureEmergencyBackBar(true);
 setTimeout(function(){
 if(typeof window.resizeWorld3DFullscreen==='function')window.resizeWorld3DFullscreen();

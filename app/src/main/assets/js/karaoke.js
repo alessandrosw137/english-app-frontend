@@ -974,8 +974,63 @@
         searchSub.style.setProperty('opacity', '1', 'important');
       }
     }
+
+    window.openMusicPlayerStage = function() {
+      // 1. Garantizar que todas las demás vistas raíz estén ocultas EXCEPTO #view-music
+      ['view-auth', 'view-home', 'view-path', 'view-stories', 'view-worldtour', 'ai-tutor-view', 'portal-3d-master-view', 'portalLoadingScreen'].forEach(function(id) {
+        const el = document.getElementById(id);
+        if (el) {
+          el.classList.add('hidden');
+          el.style.setProperty('display', 'none', 'important');
+        }
+      });
+
+      // 2. Garantizar que el contenedor padre #view-music esté 100% visible
+      const viewMusic = document.getElementById('view-music');
+      if (viewMusic) {
+        viewMusic.classList.remove('hidden', 'offline-locked');
+        viewMusic.style.cssText = 'display: block !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; position: relative !important; z-index: 35 !important; width: 100% !important; max-width: 68rem !important; margin: 0 auto !important; padding: 1rem !important;';
+      }
+
+      // 3. Ocultar el buscador (#music-search-subview)
+      const searchSub = document.getElementById('music-search-subview');
+      if (searchSub) {
+        searchSub.classList.add('hidden');
+        searchSub.style.setProperty('display', 'none', 'important');
+      }
+
+      // 4. Mostrar el reproductor (#music-player-subview) quitando .hidden y forzando display: block !important
+      const playerSub = document.getElementById('music-player-subview');
+      if (playerSub) {
+        playerSub.classList.remove('hidden', 'offline-locked');
+        playerSub.removeAttribute('style');
+        playerSub.style.cssText = 'display: block !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; width: 100% !important;';
+      }
+
+      // 5. Asegurar que las columnas internas del reproductor (video/escenario a la izquierda y letra sincronizada a la derecha) sean visibles
+      const grid = document.getElementById('musicStageColumnsGrid');
+      if (grid) {
+        grid.classList.remove('hidden');
+        grid.style.setProperty('display', 'grid', 'important');
+      }
+      const leftCol = document.getElementById('musicPlayerLeftCol');
+      if (leftCol) {
+        leftCol.classList.remove('hidden');
+        leftCol.style.setProperty('display', 'flex', 'important');
+      }
+      const rightCol = document.getElementById('musicLyricsRightCol');
+      if (rightCol) {
+        rightCol.classList.remove('hidden');
+        rightCol.style.setProperty('display', 'flex', 'important');
+      }
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
   
     function selectMusicTrack(idx) {
+      if (typeof window.openMusicPlayerStage === 'function') {
+        window.openMusicPlayerStage();
+      }
       window._userInitiatedMusicPlayback = true;
       window.currentSongSessionId = Date.now();
       const thisSessionId = window.currentSongSessionId;
@@ -995,6 +1050,7 @@
       if (playerSub) {
         playerSub.style.display = 'block';
         playerSub.classList.remove('hidden');
+        playerSub.style.setProperty('display', 'block', 'important');
       }
       if (typeof window !== 'undefined' && typeof window.scrollTo === 'function') {
         window.scrollTo({ top: 0, behavior: 'smooth' });

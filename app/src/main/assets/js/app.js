@@ -8136,7 +8136,7 @@ window.logout = function() {
        RENDERIZADO DINÁMICO DE LOS 10 MÓDULOS DE LEARNING PATH
        ======================================================== */
         window.OFFICIAL_LEARNING_MODULES = [
-      { id: 1, title: "PHRASAL VERBS / VERBOS COMPUESTOS", altTitle: "PHRASAL VERBS / VERBOS COMPUESTOS", level: "A1-B1", exp: 20, words: 100, key: "phrasal_verbs", pureCategory: "Phrasal Verb", progress: 0 },
+      { id: 1, title: "PHRASAL VERBS / VERBOS COMPUESTOS", altTitle: "Foundations & Daily Routine", level: "A1-B1", exp: 20, words: 100, key: "phrasal_verbs", pureCategory: "Phrasal Verb", progress: 0 },
       { id: 2, title: "VERBOS / VERBS", altTitle: "VERBOS / VERBS", level: "A2-B1", exp: 20, words: 100, key: "difficult_verbs", pureCategory: "Verbo", progress: 0 },
       { id: 3, title: "ADJETIVOS / ADJECTIVES", altTitle: "ADJETIVOS / ADJECTIVES", level: "B1-B2", exp: 20, words: 100, key: "power_adjectives", pureCategory: "Adjetivo", progress: 0 },
       { id: 4, title: "MODISMOS Y SLANG / IDIOMS & SLANG", altTitle: "MODISMOS Y SLANG / IDIOMS & SLANG", level: "B2", exp: 25, words: 100, key: "native_idioms", pureCategory: "Idiom", progress: 0 },
@@ -8145,7 +8145,7 @@ window.logout = function() {
       { id: 7, title: "FRASES COTIDIANAS / EVERYDAY PHRASES", altTitle: "FRASES COTIDIANAS / EVERYDAY PHRASES", level: "B2-C1", exp: 30, words: 100, key: "collocations", pureCategory: "Collocation", progress: 0 },
       { id: 8, title: "TRABAJO Y TECNOLOGÍA / WORK & TECH", altTitle: "TRABAJO Y TECNOLOGÍA / WORK & TECH", level: "C1", exp: 35, words: 100, key: "business_tech", pureCategory: "Negocios & Tech", progress: 0 },
       { id: 9, title: "CLIMA, NATURALEZA Y VIAJES / WEATHER & TRAVEL", altTitle: "CLIMA, NATURALEZA Y VIAJES / WEATHER & TRAVEL", level: "A2-B1", exp: 40, words: 100, key: "travel_survival", pureCategory: "Viajes & Supervivencia", progress: 0 },
-      { id: 10, title: "VOCABULARIO AVANZADO / ADVANCED VOCAB", altTitle: "VOCABULARIO AVANZADO / ADVANCED VOCAB", level: "C1-C2", exp: 50, words: 100, key: "toefl_academic", pureCategory: "Académico TOEFL", progress: 0 }
+      { id: 10, title: "VOCABULARIO AVANZADO / ADVANCED VOCAB", altTitle: "Master Fluency & Accent Reduction", level: "C1-C2", exp: 50, words: 100, key: "toefl_academic", pureCategory: "Académico TOEFL", progress: 0 }
     ];
 
     window.openLearningPath = function() {
@@ -9516,6 +9516,9 @@ window.logout = function() {
       }
 
       // 1. Forzar enrutamiento a la vista del estudio musical (#music-player-subview)
+      if (typeof window.openMusicPlayerStage === 'function') {
+        window.openMusicPlayerStage();
+      }
       const searchSub = document.getElementById('music-search-subview');
       const playerSub = document.getElementById('music-player-subview');
       if (searchSub) {
@@ -10578,6 +10581,9 @@ window.logout = function() {
     };
 
     window.loadWebSongByIndex = function(idx) {
+      if (typeof window.openMusicPlayerStage === 'function') {
+        window.openMusicPlayerStage();
+      }
       const s = (window._lastSearchedWebSongs || [])[idx];
       if (!s) return;
       const hiResArtwork = (s.artworkUrl100 || 'images/portal_music.svg').replace(/100x100bb|300x300bb/g, '600x600bb');
@@ -10751,6 +10757,9 @@ window.logout = function() {
        REPRODUCTOR DE CANCIÓN COMPLETA (3 A 5 MINUTOS) EN ESCENARIO HOLOGRÁFICO
        ======================================================== */
     window.loadSongToKaraoke = function(trackName, artistName, previewUrl, artworkUrl, durationSec) {
+      if (typeof window.openMusicPlayerStage === 'function') {
+        window.openMusicPlayerStage();
+      }
       return (async function() {
         // 1. Identificador de sesión único por canción y cancelación de peticiones asíncronas previas
         window.currentSongSessionId = Date.now();
@@ -14067,3 +14076,118 @@ window.updateAdminBugReportsCardUI = function(bugReports) {
     ${reportsListHtml}
   `;
 };
+
+window.openMusicPlayerStage = function() {
+  // 1. Garantizar que todas las demás vistas raíz estén ocultas EXCEPTO #view-music
+  ['view-auth', 'view-home', 'view-path', 'view-stories', 'view-worldtour', 'ai-tutor-view', 'portal-3d-master-view', 'portalLoadingScreen'].forEach(function(id) {
+    const el = document.getElementById(id);
+    if (el) {
+      el.classList.add('hidden');
+      el.style.setProperty('display', 'none', 'important');
+    }
+  });
+
+  // 2. Garantizar que el contenedor padre #view-music esté 100% visible
+  const viewMusic = document.getElementById('view-music');
+  if (viewMusic) {
+    viewMusic.classList.remove('hidden', 'offline-locked');
+    viewMusic.style.cssText = 'display: block !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; position: relative !important; z-index: 35 !important; width: 100% !important; max-width: 68rem !important; margin: 0 auto !important; padding: 1rem !important;';
+  }
+
+  // 3. Ocultar el buscador (#music-search-subview)
+  const searchSub = document.getElementById('music-search-subview');
+  if (searchSub) {
+    searchSub.classList.add('hidden');
+    searchSub.style.setProperty('display', 'none', 'important');
+  }
+
+  // 4. Mostrar el reproductor (#music-player-subview) quitando .hidden y forzando display: block !important
+  const playerSub = document.getElementById('music-player-subview');
+  if (playerSub) {
+    playerSub.classList.remove('hidden', 'offline-locked');
+    playerSub.removeAttribute('style');
+    playerSub.style.cssText = 'display: block !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; width: 100% !important;';
+  }
+
+  // 5. Asegurar que las columnas internas del reproductor (video/escenario a la izquierda y letra sincronizada a la derecha) sean visibles
+  const grid = document.getElementById('musicStageColumnsGrid');
+  if (grid) {
+    grid.classList.remove('hidden');
+    grid.style.setProperty('display', 'grid', 'important');
+  }
+  const leftCol = document.getElementById('musicPlayerLeftCol');
+  if (leftCol) {
+    leftCol.classList.remove('hidden');
+    leftCol.style.setProperty('display', 'flex', 'important');
+  }
+  const rightCol = document.getElementById('musicLyricsRightCol');
+  if (rightCol) {
+    rightCol.classList.remove('hidden');
+    rightCol.style.setProperty('display', 'flex', 'important');
+  }
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+window.deduplicateWorld3DBars = function() {
+  const worldTour = document.getElementById('view-worldtour');
+  if (!worldTour) return;
+
+  // 1. Ocultar el botón flotante suelto que se encimaba en la esquina superior izquierda
+  const floatingBack = document.getElementById('world3dFloatingBackBtn');
+  if (floatingBack) {
+    floatingBack.classList.add('hidden');
+    floatingBack.style.setProperty('display', 'none', 'important');
+  }
+
+  // 2. Buscar todos los contenedores de botones que contengan "Vista General"
+  const candidateBars = [];
+  worldTour.querySelectorAll('div, nav').forEach(function(el) {
+    const txt = (el.innerText || '').trim();
+    if (txt.includes('Vista General') && txt.includes('Ir a la Sala') && el.querySelectorAll('button').length >= 4 && el.querySelectorAll('button').length <= 7) {
+      // Verificar que sea el contenedor directo de los botones
+      const hasDirectButtons = Array.from(el.children).some(c => c.tagName === 'BUTTON');
+      if (hasDirectButtons) candidateBars.push(el);
+    }
+  });
+
+  // Si hay más de una barra creada, eliminar todas las duplicadas y dejar solo la primera
+  if (candidateBars.length > 1) {
+    for (let i = 1; i < candidateBars.length; i++) {
+      candidateBars[i].remove();
+    }
+  }
+
+  // 3. Estilizar la única barra activa para que quede limpia, sin encimarse y bien posicionada
+  if (candidateBars.length >= 1) {
+    const activeBar = candidateBars[0];
+    activeBar.id = 'unified-world3d-cam-bar';
+    activeBar.style.cssText = 'position: absolute !important; top: 14px !important; left: 16px !important; z-index: 80 !important; display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: 8px !important; background: rgba(15, 23, 42, 0.82) !important; backdrop-filter: blur(10px) !important; padding: 6px 10px !important; border-radius: 14px !important; border: 1px solid rgba(148, 163, 184, 0.25) !important; pointer-events: auto !important;';
+  }
+};
+
+setInterval(function() {
+  // A. Vigilar que no haya barras duplicadas en el Mundo 3D
+  const wt = document.getElementById('view-worldtour');
+  if (wt && !wt.classList.contains('hidden')) {
+    if (typeof window.deduplicateWorld3DBars === 'function') {
+      window.deduplicateWorld3DBars();
+    }
+  }
+
+  // B. Vigilar que nunca quede pantalla negra al seleccionar una canción en Música
+  const vm = document.getElementById('view-music');
+  const ms = document.getElementById('music-search-subview');
+  const mp = document.getElementById('music-player-subview');
+  if (vm && ms && mp) {
+    const isMusicViewActive = !vm.classList.contains('hidden') && window.getComputedStyle(vm).display !== 'none';
+    const isSearchHidden = ms.classList.contains('hidden') || window.getComputedStyle(ms).display === 'none';
+    const isPlayerHidden = mp.classList.contains('hidden') || window.getComputedStyle(mp).display === 'none';
+
+    // Si estamos en Música y el buscador se ocultó al elegir canción pero el reproductor sigue oculto:
+    if (isMusicViewActive && isSearchHidden && isPlayerHidden) {
+      window.openMusicPlayerStage();
+    }
+  }
+}, 250);
+
