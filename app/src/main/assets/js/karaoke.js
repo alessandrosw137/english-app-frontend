@@ -936,22 +936,31 @@
 
     
     function returnToMusicSearch(stopMedia = true) {
+      window._userInitiatedMusicPlayback = false;
       if (stopMedia && typeof window.stopAllMedia === 'function') {
         try { window.stopAllMedia(); } catch (e) {}
       } else if (stopMedia && typeof window.stopAllAudioAndTimers === 'function') {
         try { window.stopAllAudioAndTimers(); } catch (e) {}
       }
+      if (typeof window.pauseYouTubePlayer === 'function') {
+        try { window.pauseYouTubePlayer(); } catch (_) {}
+      }
+      if (window._karaokePlaybackTimer) {
+        clearInterval(window._karaokePlaybackTimer);
+        window._karaokePlaybackTimer = null;
+      }
+      if (window.KaraokeSyncEngine && typeof window.KaraokeSyncEngine.stop === 'function') {
+        try { window.KaraokeSyncEngine.stop(); } catch (_) {}
+      }
+      const audioEl = document.getElementById('mastereng-audio');
+      if (audioEl) { try { audioEl.pause(); } catch (_) {} }
 
       const viewMusic = document.getElementById('view-music');
       const searchSub = document.getElementById('music-search-subview');
       const playerSub = document.getElementById('music-player-subview');
-      if (searchSub) {
-        searchSub.classList.add('hidden');
-        searchSub.style.setProperty('display', 'none', 'important');
-      }
       if (playerSub) {
-        playerSub.classList.remove('hidden');
-        playerSub.style.setProperty('display', 'block', 'important');
+        playerSub.classList.add('hidden');
+        playerSub.style.setProperty('display', 'none', 'important');
       }
       if (holoStage) {
         holoStage.classList.add('hidden');
@@ -964,15 +973,20 @@
         origMetaWrapper.style.display = 'flex';
       }
       if (viewMusic) {
-        viewMusic.classList.remove('hidden');
+        viewMusic.classList.remove('hidden', 'offline-locked');
         viewMusic.style.setProperty('display', 'block', 'important');
+        viewMusic.style.setProperty('visibility', 'visible', 'important');
+        viewMusic.style.setProperty('opacity', '1', 'important');
+        viewMusic.style.setProperty('pointer-events', 'auto', 'important');
       }
       if (searchSub) {
-        searchSub.classList.remove('hidden');
+        searchSub.classList.remove('hidden', 'offline-locked');
         searchSub.style.setProperty('display', 'block', 'important');
         searchSub.style.setProperty('visibility', 'visible', 'important');
         searchSub.style.setProperty('opacity', '1', 'important');
+        searchSub.style.setProperty('pointer-events', 'auto', 'important');
       }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     window.openMusicPlayerStage = function() {

@@ -10592,9 +10592,12 @@ window.logout = function() {
     };
 
     window.returnToMusicSearch = function(stopMedia = true) {
+      window._userInitiatedMusicPlayback = false;
       if (stopMedia && typeof window.stopAllMedia === 'function') {
-        window.stopAllMedia();
+        try { window.stopAllMedia(); } catch (_) {}
       }
+      if (typeof window.pauseYouTubePlayer === 'function') { try { window.pauseYouTubePlayer(); } catch (_) {} }
+      if (window._karaokePlaybackTimer) { clearInterval(window._karaokePlaybackTimer); window._karaokePlaybackTimer = null; }
       const searchSub = document.getElementById('music-search-subview');
       const playerSub = document.getElementById('music-player-subview');
       const origVideoWrapper = document.getElementById('musicOriginalVideoWrapper');
@@ -10602,11 +10605,11 @@ window.logout = function() {
       const holoStage = document.getElementById('musicHolographicStage');
 
       if (playerSub) {
-        playerSub.style.display = 'none';
+        playerSub.style.setProperty('display', 'none', 'important');
         playerSub.classList.add('hidden');
       }
       if (holoStage) {
-        holoStage.style.display = 'none';
+        holoStage.style.setProperty('display', 'none', 'important');
         holoStage.classList.add('hidden');
       }
       if (origVideoWrapper) {
@@ -10616,8 +10619,8 @@ window.logout = function() {
         origMetaWrapper.style.display = 'flex';
       }
       if (searchSub) {
-        searchSub.style.display = 'block';
-        searchSub.classList.remove('hidden');
+        searchSub.style.setProperty('display', 'block', 'important');
+        searchSub.classList.remove('hidden', 'offline-locked');
       }
       if (typeof window.clearMusicSearchInput === 'function') {
         window.clearMusicSearchInput();
@@ -12738,13 +12741,17 @@ window.stopAllMedia = function(exceptElement = null) {
   });
 };
 
-// --- RETORNO SEGURO AL BUSCADOR MUSICAL SIN PANTALLA NEGRA ---
+// --- RETORNO SEGURO AL BUSCADOR MUSICAL SIN PANTALLA NEGRA NI BUCLES ---
 window.returnToMusicSearch = function(e) {
   if (e && typeof e.preventDefault === 'function') e.preventDefault();
+  window._userInitiatedMusicPlayback = false;
   
-  // 1. Apagar video, 3D y audio de tajo
+  // 1. Apagar video, 3D, audio y temporizadores de tajo
   if (typeof window.pauseYouTubePlayer === 'function') { try { window.pauseYouTubePlayer(); } catch (_) {} }
   if (typeof window.pauseWorld3D === 'function') { try { window.pauseWorld3D(); } catch (_) {} }
+  if (typeof window.stopAllMedia === 'function') { try { window.stopAllMedia(); } catch (_) {} }
+  if (typeof window.stopAllAudioAndTimers === 'function') { try { window.stopAllAudioAndTimers(); } catch (_) {} }
+  if (window._karaokePlaybackTimer) { clearInterval(window._karaokePlaybackTimer); window._karaokePlaybackTimer = null; }
   const audioEl = document.getElementById('mastereng-audio');
   if (audioEl) { try { audioEl.pause(); } catch (_) {} }
   if (window.KaraokeSyncEngine && typeof window.KaraokeSyncEngine.stop === 'function') {
@@ -13120,10 +13127,11 @@ window.switchMasterView = function(targetMode) {
       }
       
       // 2. Interceptar el retorno al buscador
-      const btnText = (e.target && (e.target.innerText || e.target.textContent) || '').trim().toLowerCase();
-      if (btnText.includes('volver al buscador')) {
+      const isBackToSearch = (e.target && e.target.closest && e.target.closest('#backToMusicSearchBtn')) || btnText.includes('volver al buscador');
+      if (isBackToSearch) {
         e.preventDefault();
         e.stopPropagation();
+        if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
         window.returnToMusicSearch(e);
         return;
       }
@@ -14164,8 +14172,8 @@ window.deduplicateWorld3DBars = function() {
   if (candidateBars.length >= 1) {
     const activeBar = candidateBars[0];
     activeBar.id = 'unified-world3d-cam-bar';
-    // FIX: top: 70px para que quede exactamente debajo del header de 56px
-    activeBar.style.cssText = 'position: absolute !important; top: 70px !important; left: 16px !important; z-index: 80 !important; display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: 8px !important; background: rgba(15, 23, 42, 0.85) !important; backdrop-filter: blur(10px) !important; padding: 6px 10px !important; border-radius: 14px !important; border: 1px solid rgba(148, 163, 184, 0.3) !important; pointer-events: auto !important;';
+    // FIX: top: 96px para que quede cómodamente debajo del header superior (56px-75px) y del pill "Modo Online"
+    activeBar.style.cssText = 'position: absolute !important; top: 96px !important; left: 16px !important; z-index: 80 !important; display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: 8px !important; background: rgba(15, 23, 42, 0.85) !important; backdrop-filter: blur(10px) !important; padding: 6px 10px !important; border-radius: 14px !important; border: 1px solid rgba(148, 163, 184, 0.3) !important; pointer-events: auto !important;';
   }
 };
 
@@ -14212,8 +14220,9 @@ window._musicStageGuardInterval = setInterval(function() {
     const isSearchHidden = ms.classList.contains('hidden') || window.getComputedStyle(ms).display === 'none';
     const isPlayerHidden = mp.classList.contains('hidden') || window.getComputedStyle(mp).display === 'none';
 
+    // SOLO si el usuario inició expresamente la reproducción de música:
     // Si el buscador se ocultó (porque se seleccionó una canción) pero el reproductor sigue oculto:
-    if (isMusicViewActive && isSearchHidden && isPlayerHidden) {
+    if (window._userInitiatedMusicPlayback === true && isMusicViewActive && isSearchHidden && isPlayerHidden) {
       if (typeof window.openMusicPlayerStage === 'function') {
         window.openMusicPlayerStage();
       } else {

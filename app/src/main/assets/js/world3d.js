@@ -2237,7 +2237,7 @@ ensureOrbitControls();
       if (candidateBars.length >= 1) {
         const activeBar = candidateBars[0];
         activeBar.id = 'unified-world3d-cam-bar';
-        activeBar.style.cssText = 'position: absolute !important; top: 14px !important; left: 16px !important; z-index: 80 !important; display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: 8px !important; background: rgba(15, 23, 42, 0.82) !important; backdrop-filter: blur(10px) !important; padding: 6px 10px !important; border-radius: 14px !important; border: 1px solid rgba(148, 163, 184, 0.25) !important; pointer-events: auto !important;';
+        activeBar.style.cssText = 'position: absolute !important; top: 96px !important; left: 16px !important; z-index: 80 !important; display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: 8px !important; background: rgba(15, 23, 42, 0.85) !important; backdrop-filter: blur(10px) !important; padding: 6px 10px !important; border-radius: 14px !important; border: 1px solid rgba(148, 163, 184, 0.3) !important; pointer-events: auto !important;';
       }
     };
 
