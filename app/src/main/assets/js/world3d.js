@@ -2775,6 +2775,8 @@ ensureOrbitControls();
     const matVelvet = M.burgundyCloth || new PhysicalMat({ color: 0x9f1239, roughness: 0.65, metalness: 0.08 });
     const matEmerald = new PhysicalMat({ color: 0x10b981, roughness: 0.28, metalness: 0.1, clearcoat: 0.6 });
     const matSky = new PhysicalMat({ color: 0x0ea5e9, roughness: 0.25, metalness: 0.2, clearcoat: 0.6 });
+    const matBrass = M.metalBrass || matGold;
+    const matStone = M.stoneGray || matDark;
 
     // --- MUNDO DATING (ROMANTIC DATE & BISTRO 3D) ---
     if (id === 'dating_table_for_two' || enLower.includes('table for two') || id === 'rest_dining_table') {
@@ -4543,78 +4545,577 @@ ensureOrbitControls();
       const board = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.04, 0.30), matWood);
       board.position.set(0.26, 0.88, 0);
       group.add(range, burnerGlow, pan, panHandle, board);
+    } else if (/dating_pick_up_line|dating_first_impression|dating_give_compliment|dating_into_you|dating_see_again|dating_love_first_sight/i.test(id)) {
+      // Carta romántica doblada en sobre de pergamino vintage con sello de lacre burdeos y pluma estilográfica de latón
+      const envelope = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.015, 0.20), matWhite);
+      envelope.position.y = 0.01;
+      const flap = new THREE.Mesh(new THREE.ConeGeometry(0.10, 0.02, 3), matWhite);
+      flap.rotation.x = Math.PI / 2;
+      flap.position.set(0, 0.016, -0.04);
+      const waxSeal = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.01, 16), matRed);
+      waxSeal.position.set(0, 0.022, 0.01);
+      const penBody = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.006, 0.24, 10), matGold);
+      penBody.rotation.z = Math.PI / 2.8;
+      penBody.rotation.y = 0.35;
+      penBody.position.set(0.14, 0.018, 0.06);
+      group.add(envelope, flap, waxSeal, penBody);
+    } else if (/dating_break_the_ice/i.test(id)) {
+      // Hielera de cristal tallado con cubos de hielo traslúcidos y cuello de botella de espumoso
+      const bucket = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.11, 0.22, 18), matSilver);
+      bucket.position.y = 0.11;
+      const iceTop = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.04, 16), M.glassClear);
+      iceTop.position.y = 0.20;
+      const bottleNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.035, 0.20, 14), matEmerald);
+      bottleNeck.position.set(0.02, 0.28, -0.01);
+      const bottleCap = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.04, 12), matGold);
+      bottleCap.position.set(0.02, 0.38, -0.01);
+      group.add(bucket, iceTop, bottleNeck, bottleCap);
+    } else if (/dating_split_the_bill|dating_treat_someone|dating_check_please|dating_tip_the_waiter/i.test(id)) {
+      // Carpeta porta-cuenta de cuero italiano con recibo impreso, pluma dorada y monedas de propina en bandeja
+      const billFolder = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.025, 0.32), matWalnut);
+      billFolder.position.y = 0.015;
+      const billSlip = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.030, 0.24), matWhite);
+      billSlip.position.set(-0.02, 0.022, 0);
+      const tipDish = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.06, 0.018, 18), matSilver);
+      tipDish.position.set(0.16, 0.012, 0.06);
+      const goldCoin1 = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.012, 14), matGold);
+      goldCoin1.position.set(0.16, 0.026, 0.06);
+      const goldCoin2 = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.010, 14), matGold);
+      goldCoin2.position.set(0.18, 0.032, 0.04);
+      group.add(billFolder, billSlip, tipDish, goldCoin1, goldCoin2);
+    } else if (/dating_make_reservation/i.test(id)) {
+      // Libro de reservaciones de gala abierto con cubierta de piel y cinta marcapáginas
+      const ledgerStand = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.04, 0.28), matWalnut);
+      ledgerStand.position.y = 0.02;
+      ledgerStand.rotation.x = 0.25;
+      const ledgerPages = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.05, 0.24), matWhite);
+      ledgerPages.position.set(0, 0.045, 0);
+      ledgerPages.rotation.x = 0.25;
+      const ribbon = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.055, 0.26), matRed);
+      ribbon.position.set(0, 0.046, 0);
+      ribbon.rotation.x = 0.25;
+      group.add(ledgerStand, ledgerPages, ribbon);
+    } else if (/dating_candlelit_dinner/i.test(id)) {
+      // Candelabro triple de plata con tres velas largas y llamas cálidas
+      const cBase = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.12, 0.03, 18), matSilver);
+      cBase.position.y = 0.015;
+      const cStem = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.022, 0.24, 12), matSilver);
+      cStem.position.y = 0.14;
+      const cArm = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.016, 0.016), matSilver);
+      cArm.position.y = 0.22;
+      group.add(cBase, cStem, cArm);
+      [-0.12, 0, 0.12].forEach(vx => {
+        const wax = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.016, 0.14, 12), matWhite);
+        wax.position.set(vx, 0.29, 0);
+        const wick = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.003, 0.02, 6), matDark);
+        wick.position.set(vx, 0.37, 0);
+        const flameMat = new THREE.MeshStandardMaterial({ color: 0xffedd5, emissive: 0xff9900, emissiveIntensity: 2.8 });
+        const flame = new THREE.Mesh(new THREE.ConeGeometry(0.014, 0.04, 10), flameMat);
+        flame.position.set(vx, 0.39, 0);
+        group.add(wax, wick, flame);
+      });
+    } else if (/dating_dress_up/i.test(id)) {
+      // Moño de esmoquin de seda negra con mancuernillas de oro y reloj en charola de nogal
+      const tray = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.02, 24), matWalnut);
+      tray.position.y = 0.01;
+      const bowKnot = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.035, 0.03), matDark);
+      bowKnot.position.set(-0.04, 0.03, 0);
+      const bowWing1 = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.09, 3), matDark);
+      bowWing1.rotation.z = Math.PI / 2;
+      bowWing1.position.set(-0.09, 0.03, 0);
+      const bowWing2 = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.09, 3), matDark);
+      bowWing2.rotation.z = -Math.PI / 2;
+      bowWing2.position.set(0.01, 0.03, 0);
+      const cufflink1 = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.015, 12), matGold);
+      cufflink1.position.set(0.09, 0.025, 0.04);
+      const cufflink2 = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.015, 12), matGold);
+      cufflink2.position.set(0.09, 0.025, -0.04);
+      group.add(tray, bowKnot, bowWing1, bowWing2, cufflink1, cufflink2);
+    } else if (/dating_great_chemistry|dating_soulmates|dating_holding_hands|dating_fall_in_love/i.test(id)) {
+      // Escultura de nudo de amor infinito en oro rosado entrelazado sobre mármol
+      const marbleBase = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, 0.03, 20), matWhite);
+      marbleBase.position.y = 0.015;
+      const ring1 = new THREE.Mesh(new THREE.TorusGeometry(0.10, 0.022, 14, 32), matRosePink);
+      ring1.position.set(-0.04, 0.13, 0);
+      ring1.rotation.y = 0.45;
+      ring1.rotation.x = 0.35;
+      const ring2 = new THREE.Mesh(new THREE.TorusGeometry(0.10, 0.022, 14, 32), matGold);
+      ring2.position.set(0.04, 0.13, 0);
+      ring2.rotation.y = -0.45;
+      ring2.rotation.x = -0.35;
+      group.add(marbleBase, ring1, ring2);
+    } else if (/dating_fiance/i.test(id)) {
+      // Estuche de anillo de compromiso abierto de terciopelo azul con solitario de diamante brillante
+      const boxLower = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.06, 0.12), matVelvet);
+      boxLower.position.y = 0.03;
+      const boxUpper = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.05, 0.12), matVelvet);
+      boxUpper.position.set(0, 0.09, -0.05);
+      boxUpper.rotation.x = -1.2;
+      const ringBand = new THREE.Mesh(new THREE.TorusGeometry(0.032, 0.006, 12, 24), matGold);
+      ringBand.rotation.x = Math.PI / 2;
+      ringBand.position.set(0, 0.065, 0);
+      const diamond = new THREE.Mesh(new THREE.OctahedronGeometry(0.016, 0), matWhite);
+      diamond.position.set(0, 0.095, 0);
+      group.add(boxLower, boxUpper, ringBand, diamond);
+    } else if (/dating_blind_date/i.test(id)) {
+      // Máscara veneciana de gala dorada sobre base de ébano
+      const maskStand = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.22, 10), matDark);
+      maskStand.position.y = 0.11;
+      const maskBase = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, 0.02, 16), matDark);
+      maskBase.position.y = 0.01;
+      const maskFace = new THREE.Mesh(new THREE.TorusGeometry(0.09, 0.03, 10, 24, Math.PI), matGold);
+      maskFace.rotation.z = Math.PI;
+      maskFace.position.set(0, 0.22, 0);
+      group.add(maskStand, maskBase, maskFace);
+    } else if (/dating_ask_someone_out/i.test(id)) {
+      // Taza de café capuchino con espuma y diseño de corazón en platillo de porcelana
+      const saucer = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.09, 0.018, 20), matWhite);
+      saucer.position.y = 0.009;
+      const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.055, 0.09, 18), matWhite);
+      cup.position.y = 0.055;
+      const coffee = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.068, 0.01, 16), M.coffeeLiquid);
+      coffee.position.y = 0.095;
+      const heartDeco = new THREE.Mesh(new THREE.SphereGeometry(0.022, 12, 12), matRosePink);
+      heartDeco.scale.set(1.2, 0.3, 1.2);
+      heartDeco.position.set(0, 0.10, 0);
+      group.add(saucer, cup, coffee, heartDeco);
+    } else if (/dating_butterflies/i.test(id)) {
+      // Campana de cristal victoriana con mariposa dorada iluminada
+      const bellBase = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.14, 0.025, 20), matWalnut);
+      bellBase.position.y = 0.012;
+      const glassDome = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.10, 0.26, 18, 1, true), M.glassClear);
+      glassDome.position.y = 0.14;
+      const glassTop = new THREE.Mesh(new THREE.SphereGeometry(0.10, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.5), M.glassClear);
+      glassTop.position.y = 0.27;
+      const butterflyWing1 = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.07, 3), matGold);
+      butterflyWing1.rotation.z = Math.PI / 3;
+      butterflyWing1.position.set(-0.025, 0.16, 0);
+      const butterflyWing2 = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.07, 3), matGold);
+      butterflyWing2.rotation.z = -Math.PI / 3;
+      butterflyWing2.position.set(0.025, 0.16, 0);
+      group.add(bellBase, glassDome, glassTop, butterflyWing1, butterflyWing2);
+    } else if (/dating_make_toast/i.test(id)) {
+      // Dos copas de champaña brindando con burbujas doradas
+      [-0.06, 0.06].forEach((cx, cIdx) => {
+        const fluteBase = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.008, 14), M.glassClear);
+        fluteBase.position.set(cx, 0.004, 0);
+        const fluteStem = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.12, 10), M.glassClear);
+        fluteStem.position.set(cx, 0.064, 0);
+        const fluteBowl = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.018, 0.14, 14), M.glassClear);
+        fluteBowl.position.set(cx, 0.19, 0);
+        fluteBowl.rotation.z = cIdx === 0 ? -0.15 : 0.15;
+        const champagne = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.014, 0.09, 12), matGold);
+        champagne.position.set(cx, 0.18, 0);
+        champagne.rotation.z = cIdx === 0 ? -0.15 : 0.15;
+        group.add(fluteBase, fluteStem, fluteBowl, champagne);
+      });
+    } else if (/dating_romantic_ambiance/i.test(id)) {
+      // Farol de latón vintage con cristal y vela cálida interior
+      const lanternBase = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.04, 0.18), matBrass);
+      lanternBase.position.y = 0.02;
+      const glassCylinder = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.24, 16), M.glassClear);
+      glassCylinder.position.y = 0.16;
+      const lanternTop = new THREE.Mesh(new THREE.ConeGeometry(0.10, 0.10, 4), matBrass);
+      lanternTop.position.y = 0.33;
+      const innerFlame = new THREE.Mesh(new THREE.ConeGeometry(0.022, 0.06, 8), M.emissiveScreen);
+      innerFlame.position.y = 0.15;
+      group.add(lanternBase, glassCylinder, lanternTop, innerFlame);
+    } else if (/dating_appetizer_concept|rest_starters_concept/i.test(id)) {
+      // Tabla rústica de pizarra con jamón serrano, quesos finos y uvas
+      const board = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.02, 0.22), matDark);
+      board.position.y = 0.01;
+      const cheese = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.04, 3), matGold);
+      cheese.position.set(-0.08, 0.035, 0);
+      const meatRosette = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.015, 8, 16), matRed);
+      meatRosette.rotation.x = Math.PI / 2;
+      meatRosette.position.set(0.06, 0.03, 0.02);
+      const grape1 = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 8), matRosePink);
+      grape1.position.set(0.02, 0.03, -0.05);
+      group.add(board, cheese, meatRosette, grape1);
+    } else if (/dating_main_course_concept|rest_entree_concept/i.test(id)) {
+      // Campana cloche plateada de servicio de alta cocina con pomo esférico
+      const platter = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.02, 24), matSilver);
+      platter.position.y = 0.01;
+      const cloche = new THREE.Mesh(new THREE.SphereGeometry(0.18, 20, 14, 0, Math.PI * 2, 0, Math.PI * 0.5), matSilver);
+      cloche.position.y = 0.02;
+      const clocheHandle = new THREE.Mesh(new THREE.SphereGeometry(0.024, 10, 10), matGold);
+      clocheHandle.position.y = 0.21;
+      group.add(platter, cloche, clocheHandle);
+    } else if (/dating_sommelier_concept/i.test(id)) {
+      // Tastevin de plata de sumiller francés con corcho de cosecha y cortacápsulas
+      const tastevin = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.05, 0.03, 18), matSilver);
+      tastevin.position.set(-0.04, 0.015, 0);
+      const cork = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.06, 12), matWood);
+      cork.rotation.z = Math.PI / 2;
+      cork.position.set(0.08, 0.018, 0.02);
+      group.add(tastevin, cork);
+    } else if (/garden_photosynthesis/i.test(id)) {
+      // Terrario de vidrio botánico con brote verde y lupa de latón enfocando luz solar
+      const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.09, 0.08, 16), M.terracottaPot);
+      pot.position.y = 0.04;
+      const sprout = new THREE.Mesh(new THREE.DodecahedronGeometry(0.07, 0), M.leafGreen3);
+      sprout.position.y = 0.12;
+      const loupe = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.008, 10, 20), matGold);
+      loupe.rotation.x = Math.PI / 3;
+      loupe.position.set(0.06, 0.16, 0.05);
+      group.add(pot, sprout, loupe);
+    } else if (/garden_mow_lawn/i.test(id)) {
+      // Bidón de gasolina de acero rojo para podadora con boquilla amarilla
+      const can = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.28, 0.16), matRed);
+      can.position.y = 0.14;
+      const handle = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.012, 8, 16, Math.PI), matDark);
+      handle.position.set(0, 0.29, 0);
+      const spout = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.02, 0.12, 10), matGold);
+      spout.rotation.z = Math.PI / 4;
+      spout.position.set(0.12, 0.28, 0);
+      group.add(can, handle, spout);
+    } else if (/garden_pull_weeds/i.test(id)) {
+      // Cubeta de jardinero con hierba fresca y herramienta escardadora de acero
+      const bucket = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.11, 0.24, 18), matSilver);
+      bucket.position.y = 0.12;
+      const weeds = new THREE.Mesh(new THREE.DodecahedronGeometry(0.14, 1), M.leafGreen2);
+      weeds.position.y = 0.24;
+      const toolHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.26, 8), matWood);
+      toolHandle.rotation.z = 0.45;
+      toolHandle.position.set(0.10, 0.26, 0.05);
+      group.add(bucket, weeds, toolHandle);
+    } else if (/garden_plant_seeds/i.test(id)) {
+      // Charola de semillero de madera con mini macetas de barro y brotes verdes
+      const flat = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.05, 0.28), matWood);
+      flat.position.y = 0.025;
+      group.add(flat);
+      [-0.12, 0, 0.12].forEach(tx => {
+        const miniPot = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.035, 0.07, 12), M.terracottaPot);
+        miniPot.position.set(tx, 0.085, 0);
+        const sproutling = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.06, 6), M.leafGreen4);
+        sproutling.position.set(tx, 0.14, 0);
+        group.add(miniPot, sproutling);
+      });
+    } else if (/garden_bloom_blossom/i.test(id)) {
+      // Cesta colgante de flores con flores rosadas y follaje denso
+      const basket = new THREE.Mesh(new THREE.SphereGeometry(0.18, 14, 10, 0, Math.PI * 2, Math.PI * 0.5, Math.PI * 0.5), matWood);
+      basket.rotation.x = Math.PI;
+      basket.position.y = 0.18;
+      const foliage = new THREE.Mesh(new THREE.DodecahedronGeometry(0.20, 1), M.leafGreen3);
+      foliage.position.y = 0.26;
+      const flower1 = new THREE.Mesh(new THREE.SphereGeometry(0.055, 10, 10), matRosePink);
+      flower1.position.set(-0.06, 0.32, 0.04);
+      const flower2 = new THREE.Mesh(new THREE.SphereGeometry(0.055, 10, 10), matRosePink);
+      flower2.position.set(0.07, 0.33, -0.03);
+      group.add(basket, foliage, flower1, flower2);
+    } else if (/garden_damp_soil/i.test(id)) {
+      // Costal de tierra orgánica enriquecida enrollado arriba con pala pequeña
+      const bag = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.22, 0.28), matWood);
+      bag.position.y = 0.11;
+      const soilTop = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.04, 0.24), M.soilDark);
+      soilTop.position.y = 0.22;
+      const miniSpade = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.14, 0.015), matSilver);
+      miniSpade.rotation.z = 0.4;
+      miniSpade.position.set(0.08, 0.26, 0);
+      group.add(bag, soilTop, miniSpade);
+    } else if (/garden_breeze/i.test(id)) {
+      // Escultura de viento giratoria de cobre con aspas cinéticas en varilla alta
+      const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.014, 0.85, 10), matDark);
+      rod.position.y = 0.425;
+      const pinwheel = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.018, 8, 16), matBrass);
+      pinwheel.position.set(0, 0.80, 0);
+      const vane = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.04, 0.01), matBrass);
+      vane.position.set(0, 0.80, 0);
+      group.add(rod, pinwheel, vane);
+    } else if (/garden_sunlight/i.test(id)) {
+      // Reloj de sol clásico de bronce sobre pedestal de piedra tallada
+      const baluster = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.13, 0.48, 16), matStone);
+      baluster.position.y = 0.24;
+      const dialPlate = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.025, 20), matBrass);
+      dialPlate.position.y = 0.49;
+      const gnomon = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.12, 3), matBrass);
+      gnomon.rotation.x = Math.PI / 4;
+      gnomon.position.set(0, 0.54, -0.02);
+      group.add(baluster, dialPlate, gnomon);
+    } else if (/garden_squirrel/i.test(id)) {
+      // Figura de ardilla de cedro sentada sobre tronco de árbol con bellota
+      const stump = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, 0.18, 16), matWood);
+      stump.position.y = 0.09;
+      const body = new THREE.Mesh(new THREE.SphereGeometry(0.08, 12, 10), matWalnut);
+      body.position.set(0, 0.24, 0);
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.055, 12, 10), matWalnut);
+      head.position.set(0, 0.32, 0.03);
+      const tail = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.035, 10, 16, Math.PI * 1.2), matWalnut);
+      tail.rotation.y = Math.PI / 2;
+      tail.position.set(0, 0.28, -0.06);
+      const acorn = new THREE.Mesh(new THREE.SphereGeometry(0.025, 8, 8), matDark);
+      acorn.position.set(0, 0.25, 0.09);
+      group.add(stump, body, head, tail, acorn);
+    } else if (/garden_butterfly/i.test(id)) {
+      // Mariposa monarca posada en estaca floral con alas detalladas naranja y negro
+      const stake = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.65, 8), matDark);
+      stake.position.y = 0.325;
+      const bud = new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 12), matRosePink);
+      bud.position.set(0, 0.64, 0);
+      const wingMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.4 });
+      const wingL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.005, 0.06), wingMat);
+      wingL.position.set(-0.04, 0.67, 0);
+      wingL.rotation.z = 0.25;
+      const wingR = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.005, 0.06), wingMat);
+      wingR.position.set(0.04, 0.67, 0);
+      wingR.rotation.z = -0.25;
+      group.add(stake, bud, wingL, wingR);
+    } else if (/garden_harvest/i.test(id)) {
+      // Huacal rústico de pino lleno de zanahorias, tomates y verduras cosechadas
+      const crate = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.18, 0.32), matWood);
+      crate.position.y = 0.09;
+      group.add(crate);
+      [-0.10, 0, 0.10].forEach((vx, idx) => {
+        const carrot = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.16, 8), matGold);
+        carrot.rotation.z = Math.PI;
+        carrot.position.set(vx, 0.16, (idx % 2 === 0 ? 0.05 : -0.05));
+        const tomato = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 10), matRed);
+        tomato.position.set(vx + 0.05, 0.17, 0);
+        group.add(carrot, tomato);
+      });
+    } else if (/garden_perennial/i.test(id)) {
+      // Jardinera de piedra con matas de lavanda perenne y flores púrpuras
+      const trough = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.18, 0.24), matStone);
+      trough.position.y = 0.09;
+      const lavBush = new THREE.Mesh(new THREE.DodecahedronGeometry(0.18, 1), M.leafGreen2);
+      lavBush.position.y = 0.22;
+      const spike1 = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.12, 6), M.flowerLavender);
+      spike1.position.set(-0.08, 0.36, 0);
+      const spike2 = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.12, 6), M.flowerLavender);
+      spike2.position.set(0.08, 0.37, 0.02);
+      group.add(trough, lavBush, spike1, spike2);
+    } else if (/space_event_horizon/i.test(id)) {
+      // Agujero negro con disco de acreción arremolinado y esferas gravitacionales
+      const core = new THREE.Mesh(new THREE.SphereGeometry(0.18, 24, 20), matDark);
+      const diskGeo = new THREE.RingGeometry(0.24, 0.65, 36);
+      const diskMat = new THREE.MeshStandardMaterial({ color: 0xf97316, emissive: 0xe11d48, side: THREE.DoubleSide });
+      const disk = new THREE.Mesh(diskGeo, diskMat);
+      disk.rotation.x = Math.PI / 2.4;
+      group.add(core, disk);
+    } else if (/space_ancient_starlight/i.test(id)) {
+      // Arreglo hexagonal de espejos dorados estilo James Webb Space Telescope
+      const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.024, 0.45, 12), matSilver);
+      mast.position.y = 0.225;
+      const arrayPlate = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.02, 6), matGold);
+      arrayPlate.position.set(0, 0.44, 0);
+      arrayPlate.rotation.x = 0.35;
+      group.add(mast, arrayPlate);
+    } else if (/space_countdown_concept|space_orbital_translation|space_docking_concept/i.test(id)) {
+      // Consola de control de vuelo espacial / Módulo de acoplamiento orbital con pantallas emisivas
+      const consoleBase = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.32, 0.24), matDark);
+      consoleBase.position.y = 0.16;
+      const screen1 = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.14, 0.02), M.emissiveScreen);
+      screen1.position.set(-0.09, 0.22, 0.12);
+      const screen2 = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.14, 0.02), matSky);
+      screen2.position.set(0.09, 0.22, 0.12);
+      group.add(consoleBase, screen1, screen2);
+    } else if (/space_zero_gravity/i.test(id)) {
+      // Bolsa de hidratación espacial con gota de agua suspendida en ingravidez
+      const pouch = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.22, 0.04), matSilver);
+      pouch.position.y = 0.11;
+      const waterOrb = new THREE.Mesh(new THREE.SphereGeometry(0.065, 16, 16), matSky);
+      waterOrb.position.set(0, 0.28, 0);
+      group.add(pouch, waterOrb);
+    } else if (/space_light_year|space_constellation_concept/i.test(id)) {
+      // Esfera armilar astronómica de latón con anillos de coordenadas celestes
+      const stand = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.12, 0.04, 16), matDark);
+      stand.position.y = 0.02;
+      const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.022, 0.24, 12), matBrass);
+      pillar.position.y = 0.15;
+      const celestialSphere = new THREE.Mesh(new THREE.SphereGeometry(0.14, 16, 12), matSky);
+      celestialSphere.position.set(0, 0.36, 0);
+      const armillaRing = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.014, 8, 24), matBrass);
+      armillaRing.rotation.x = Math.PI / 4;
+      armillaRing.position.set(0, 0.36, 0);
+      group.add(stand, pillar, celestialSphere, armillaRing);
+    } else if (/space_interstellar_medium/i.test(id)) {
+      // Disco de oro de las sondas Voyager con diagrama fonográfico sobre soporte espacial
+      const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.02, 0.35, 10), matSilver);
+      mast.position.y = 0.175;
+      const goldenRecord = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.015, 32), matGold);
+      goldenRecord.rotation.x = Math.PI / 2;
+      goldenRecord.position.set(0, 0.32, 0);
+      group.add(mast, goldenRecord);
+    } else if (/space_spacewalk_eva/i.test(id)) {
+      // Mochila propulsora MMU de astronauta con toberas de nitrógeno y brazos de mando
+      const pack = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.38, 0.16), matWhite);
+      pack.position.y = 0.20;
+      const armL = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.22), matSilver);
+      armL.position.set(-0.16, 0.20, 0.08);
+      const armR = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.22), matSilver);
+      armR.position.set(0.16, 0.20, 0.08);
+      group.add(pack, armL, armR);
+    } else if (/hotel_check_in_concept|hotel_check_out_concept|hotel_booking_number/i.test(id)) {
+      // Terminal de registro de hotel con pantalla táctil y soporte de latón
+      const stand = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, 0.24, 12), matBrass);
+      stand.position.y = 0.12;
+      const tablet = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.20, 0.02), matDark);
+      tablet.position.set(0, 0.24, 0);
+      tablet.rotation.x = 0.35;
+      const screen = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.17, 0.025), M.emissiveScreen);
+      screen.position.set(0, 0.24, 0);
+      screen.rotation.x = 0.35;
+      group.add(stand, tablet, screen);
+    } else if (/hotel_executive_suite/i.test(id)) {
+      // Canasta de bienvenida de cortesía con botella de vino, uvas y agua mineral
+      const basket = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.10, 0.24), matWood);
+      basket.position.y = 0.05;
+      const wineBottle = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.22, 14), matEmerald);
+      wineBottle.position.set(-0.07, 0.15, 0);
+      const fruit = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), matRosePink);
+      fruit.position.set(0.06, 0.12, 0.03);
+      group.add(basket, wineBottle, fruit);
+    } else if (/hotel_vacancy_concept|hotel_fully_booked/i.test(id)) {
+      // Postes separadores de fila con cuerda de terciopelo rojo y terminales doradas
+      [-0.18, 0.18].forEach(px => {
+        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.52, 12), matBrass);
+        post.position.set(px, 0.26, 0);
+        const base = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.09, 0.03, 16), matBrass);
+        base.position.set(px, 0.015, 0);
+        group.add(post, base);
+      });
+      const rope = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.36, 10), matVelvet);
+      rope.rotation.z = Math.PI / 2;
+      rope.position.set(0, 0.44, 0);
+      group.add(rope);
+    } else if (/hotel_photo_id/i.test(id)) {
+      // Billetera de viaje de piel con credencial y pasaporte oficial
+      const wallet = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.025, 0.16), matDark);
+      wallet.position.y = 0.012;
+      const card = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.03, 0.09), matSky);
+      card.position.set(-0.02, 0.018, 0);
+      group.add(wallet, card);
+    } else if (/hotel_luggage_storage_concept/i.test(id)) {
+      // Dos baúles de viaje apilados con esquineros de latón y correas de piel
+      const trunk1 = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.22, 0.34), matWalnut);
+      trunk1.position.y = 0.11;
+      const trunk2 = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.18, 0.28), matDark);
+      trunk2.position.set(0, 0.31, 0);
+      group.add(trunk1, trunk2);
+    } else if (/rest_todays_specials|rest_book_a_table/i.test(id)) {
+      // Pizarrón de caballete de madera con menú de especialidades del día
+      const boardA = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.52, 0.03), matDark);
+      boardA.position.set(0, 0.32, 0.06);
+      boardA.rotation.x = -0.22;
+      const boardFrame = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.56, 0.02), matWood);
+      boardFrame.position.set(0, 0.32, 0.05);
+      boardFrame.rotation.x = -0.22;
+      const legSupport = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.60, 8), matWood);
+      legSupport.position.set(0, 0.30, -0.12);
+      legSupport.rotation.x = 0.25;
+      group.add(boardA, boardFrame, legSupport);
+    } else if (/rest_takeout_order|rest_doggy_bag_leftovers/i.test(id)) {
+      // Bolsa gourmet de papel kraft para llevar con asas y ticket engrapado
+      const bag = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.32, 0.18), matWood);
+      bag.position.y = 0.16;
+      const handle = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.01, 8, 16, Math.PI), matDark);
+      handle.position.set(0, 0.32, 0);
+      group.add(bag, handle);
     } else {
-      // Diorama / Objeto 3D contextual detallado según la categoría o palabra en inglés (CERO esferas flotantes)
+      // OBJETO CONTEXTUAL REALISTA LIMPIO (CERO pedestales cónicos genéricos ni octaedros repetitivos)
       const isMoney = /cash|bill|change|tip|treat|split|price|deposit|rent|mortgage|refund/i.test(id + ' ' + enLower);
-      const isBookOrDoc = /menu|list|book|passport|id|code|card|check|order|special|recipe|nutrition|date/i.test(id + ' ' + enLower);
+      const isBookOrDoc = /menu|list|book|passport|id|code|card|check|order|special|recipe|nutrition|date|chores|alarm/i.test(id + ' ' + enLower);
       const isFoodOrDrink = /food|bread|fruit|organic|ripe|spoiled|appetizer|course|entree|side|dessert|savory|sweet|spicy|bland|breakfast|bag|leftover|vegetarian|gluten|seasoning|wine|toast|sommelier/i.test(id + ' ' + enLower);
       const isNature = /flower|seed|weed|soil|lawn|tree|shade|sun|dew|breeze|squirrel|butterfly|harvest|prune|perennial|fertilizer|photosynthesis/i.test(id + ' ' + enLower);
 
-      // Pedestal arquitectónico elegante a nivel de piso o mesa
-      const plinth = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.32, 0.10, 24), matWalnut);
-      plinth.position.y = 0.05;
-      const goldRing = new THREE.Mesh(new THREE.TorusGeometry(0.29, 0.018, 10, 24), matGold);
-      goldRing.rotation.x = Math.PI / 2;
-      goldRing.position.y = 0.10;
-      group.add(plinth, goldRing);
-
       if (isMoney) {
-        // Billetes verdes con fajilla dorada y pila de monedas de oro
-        const bills = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.08, 0.16), matEmerald);
-        bills.position.set(-0.04, 0.14, 0);
-        const band = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.085, 0.165), matGold);
-        band.position.set(-0.04, 0.14, 0);
-        const coinStack1 = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.12, 16), matGold);
-        coinStack1.position.set(0.14, 0.16, 0.04);
-        const coinStack2 = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.08, 16), matSilver);
-        coinStack2.position.set(0.12, 0.14, -0.08);
-        group.add(bills, band, coinStack1, coinStack2);
+        // Cartera de piel abierta con fajilla de billetes y clip de oro
+        const wallet = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.03, 0.18), matDark);
+        wallet.position.y = 0.015;
+        const notes = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.02, 0.12), matEmerald);
+        notes.position.set(0, 0.03, 0);
+        const clip = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.025, 0.13), matGold);
+        clip.position.set(0, 0.032, 0);
+        group.add(wallet, notes, clip);
       } else if (isFoodOrDrink) {
-        // Plato gourmet de porcelana con cúpula/alimento estilizado y copa al lado
-        const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.18, 0.025, 22), matWhite);
-        plate.position.set(-0.04, 0.115, 0);
-        const dish = new THREE.Mesh(new THREE.SphereGeometry(0.11, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.55), matRed);
-        dish.position.set(-0.04, 0.125, 0);
-        const garnish = new THREE.Mesh(new THREE.DodecahedronGeometry(0.045, 0), matEmerald);
-        garnish.position.set(0.02, 0.18, 0.03);
-        const goblet = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.035, 0.16, 14), M.glassClear);
-        goblet.position.set(0.14, 0.18, -0.04);
-        group.add(plate, dish, garnish, goblet);
+        // Plato de cerámica con croissant horneado dorado y copa pequeña
+        const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.15, 0.02, 20), matWhite);
+        plate.position.y = 0.01;
+        const pastry = new THREE.Mesh(new THREE.TorusGeometry(0.065, 0.03, 10, 16, Math.PI * 1.2), matWood);
+        pastry.rotation.x = Math.PI / 2;
+        pastry.position.set(-0.02, 0.035, 0);
+        group.add(plate, pastry);
       } else if (isNature) {
-        // Maceta jardinera con tierra orgánica, tallo verde y flor colorida
-        const planter = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.14, 0.22, 18), M.terracottaPot);
-        planter.position.y = 0.21;
-        const bush = new THREE.Mesh(new THREE.DodecahedronGeometry(0.16, 1), M.leafGreen3);
-        bush.position.y = 0.38;
-        const blossom = new THREE.Mesh(new THREE.SphereGeometry(0.065, 12, 12), matRosePink);
-        blossom.position.set(0, 0.50, 0);
-        group.add(planter, bush, blossom);
+        // Maceta de terracota natural con brote de follaje verde
+        const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.10, 0.16, 16), M.terracottaPot);
+        pot.position.y = 0.08;
+        const bush = new THREE.Mesh(new THREE.DodecahedronGeometry(0.12, 1), M.leafGreen3);
+        bush.position.y = 0.20;
+        group.add(pot, bush);
       } else if (isBookOrDoc) {
-        // Atril de lectura con carpeta abierta, hoja impresa y bolígrafo dorado
-        const standNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, 0.26, 12), matGold);
-        standNeck.position.y = 0.23;
-        const folder = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.03, 0.28), matSky);
-        folder.position.set(0, 0.36, 0);
-        folder.rotation.x = 0.32;
-        const paper = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.035, 0.22), matWhite);
-        paper.position.set(0, 0.37, 0);
-        paper.rotation.x = 0.32;
-        group.add(standNeck, folder, paper);
+        // Libro encuadernado en cuero con lomo cosido y cinta marcapáginas
+        const bookCover = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.045, 0.34), matWalnut);
+        bookCover.position.y = 0.0225;
+        const pages = new THREE.Mesh(new THREE.BoxGeometry(0.23, 0.038, 0.31), matWhite);
+        pages.position.set(0.01, 0.0225, 0);
+        const bookmark = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.048, 0.36), matRed);
+        bookmark.position.set(0, 0.0225, 0.02);
+        group.add(bookCover, pages, bookmark);
       } else {
-        // Trofeo / Escultura interactiva de cristal y latón sobre pedestal
-        const column = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.11, 0.24, 16), matSilver);
-        column.position.y = 0.22;
-        const crystalCrown = new THREE.Mesh(new THREE.OctahedronGeometry(0.14, 0), matGold);
-        crystalCrown.position.y = 0.44;
-        group.add(column, crystalCrown);
+        // Lámpara de mesa de latón con pantalla cónica cálida y luz sutil
+        const lampFoot = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.10, 0.03, 16), matBrass);
+        lampFoot.position.y = 0.015;
+        const lampStem = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.018, 0.22, 12), matBrass);
+        lampStem.position.y = 0.14;
+        const shade = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.14, 16, 1, true), matWhite);
+        shade.position.y = 0.28;
+        group.add(lampFoot, lampStem, shade);
       }
     }
 
     const px = itemSpec.pos ? itemSpec.pos[0] : 0;
     const rawPy = itemSpec.pos ? itemSpec.pos[1] : 0;
-    // Evitar que conceptos/frases queden flotando en el aire a y=1.8 en escenarios terrestres
     const isConceptOrPhrase = itemSpec.type === 'concept' || itemSpec.type === 'phrase';
-    const py = (isConceptOrPhrase && scenarioKey !== 'space') ? 0 : rawPy;
+
+    // Cálculo de elevación física realista según contexto y escenario
+    let py = rawPy;
+    if (scenarioKey === 'space') {
+      py = rawPy;
+    } else if (scenarioKey === 'dating') {
+      if (Math.hypot(px, pz) < 1.35) {
+        py = 0.98;
+      } else if (Math.hypot(px - 3.45, pz + 2.4) < 1.1) {
+        py = 1.05;
+      } else if (pz < -4.8) {
+        py = 1.0;
+      } else {
+        py = 0;
+      }
+    } else if (scenarioKey === 'restaurant') {
+      if (Math.hypot(px, pz - 0.8) < 1.4) {
+        py = 0.98;
+      } else if (pz < -3.5) {
+        py = 0.95;
+      } else {
+        py = 0;
+      }
+    } else if (scenarioKey === 'hotel') {
+      if (pz < -2.6 && Math.abs(px) < 2.5) {
+        py = 1.12;
+      } else {
+        py = 0;
+      }
+    } else if (scenarioKey === 'garden') {
+      if (/wind_chime|lantern|birdhouse/i.test(id)) {
+        py = Math.max(1.8, rawPy);
+      } else {
+        py = 0;
+      }
+    } else if (scenarioKey === 'house') {
+      if (isConceptOrPhrase) {
+        if (px > 2.0 && pz < -2.0) {
+          py = 0.95;
+        } else if (px < -2.0 && pz < -3.0) {
+          py = 0.45;
+        } else {
+          py = 0;
+        }
+      } else {
+        py = rawPy;
+      }
+    } else {
+      py = isConceptOrPhrase ? 0 : rawPy;
+    }
     const pz = itemSpec.pos ? itemSpec.pos[2] : 0;
     group.position.set(px, py, pz);
 

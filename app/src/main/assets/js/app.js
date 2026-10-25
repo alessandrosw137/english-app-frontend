@@ -8478,6 +8478,24 @@ window.logout = function() {
       }
     };
 
+    function initGoogleIdentityServices() {
+      try {
+        if (typeof window !== 'undefined' && window.google && window.google.accounts && window.google.accounts.id) {
+          window.google.accounts.id.initialize({
+            client_id: window.GOOGLE_CLIENT_ID || '1088426090715-mockdevclientid.apps.googleusercontent.com',
+            callback: (typeof window.handleGoogleCredentialResponse === 'function')
+              ? window.handleGoogleCredentialResponse
+              : () => {},
+            auto_select: false,
+            cancel_on_tap_outside: true
+          });
+        }
+      } catch (err) {
+        console.warn('[GIS] Warning initializing Google Identity Services:', err);
+      }
+    }
+    window.initGoogleIdentityServices = initGoogleIdentityServices;
+
     document.addEventListener('DOMContentLoaded', () => {
       if (typeof window.stopAllAudioAndTimers === 'function') {
         window.stopAllAudioAndTimers();
@@ -8486,7 +8504,15 @@ window.logout = function() {
       setupDraggableWidget('draggableRouletteWidget', 'saved_roulette_pos');
       updateCoverFlowVisuals();
       setupCoverFlowGestures();
-      initGoogleIdentityServices();
+      try {
+        if (typeof initGoogleIdentityServices === 'function') {
+          initGoogleIdentityServices();
+        } else if (typeof window.initGoogleIdentityServices === 'function') {
+          window.initGoogleIdentityServices();
+        }
+      } catch (e) {
+        console.warn('[GIS] Safe launch error caught:', e);
+      }
 
       renderMusicTracksList();
       renderStorySelector();
