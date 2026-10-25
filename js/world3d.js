@@ -629,6 +629,7 @@ ensureOrbitControls();
   const SHARED_MATERIALS = {};
 
   let cachedWoodTexture = null;
+  let cachedOakWoodTexture = null;
   function createOakWoodTexture() {
     if (cachedWoodTexture) return cachedWoodTexture;
     if (typeof document === 'undefined' || typeof THREE === 'undefined') return null;
@@ -653,6 +654,7 @@ ensureOrbitControls();
     tex.wrapT = THREE.RepeatWrapping;
     tex.repeat.set(4, 4);
     cachedWoodTexture = tex;
+    cachedOakWoodTexture = tex;
     return tex;
   }
 
@@ -1017,10 +1019,16 @@ ensureOrbitControls();
     const bbox = new THREE.Box3().setFromObject(group);
     const center = new THREE.Vector3();
     bbox.getCenter(center);
-    const height = bbox.max.y > 0.3 ? bbox.max.y : 1.2;
+    const gx = (group.position && isFinite(group.position.x)) ? group.position.x : 0;
+    const gy = (group.position && isFinite(group.position.y)) ? group.position.y : 0;
+    const gz = (group.position && isFinite(group.position.z)) ? group.position.z : 0;
+    const localX = isFinite(center.x) ? (center.x - gx) : 0;
+    const localMaxY = (bbox.max && isFinite(bbox.max.y)) ? (bbox.max.y - gy) : 1.2;
+    const localZ = isFinite(center.z) ? (center.z - gz) : 0;
+    const height = localMaxY > 0.3 ? localMaxY : 1.2;
     const hotspotY = height + 0.38;
 
-    hsGroup.position.set(center.x, hotspotY, center.z);
+    hsGroup.position.set(localX, hotspotY, localZ);
     hsGroup.userData = Object.assign({}, meta, {
       isHotspot: true,
       parentGroup: group,
@@ -2022,19 +2030,26 @@ ensureOrbitControls();
       fogDensity: 0.005,
       cameraPos: { x: 0, y: 10.8, z: 16.8 },
       cameraLookAt: { x: 0, y: 1.3, z: -0.5 },
+      zones: {
+        overview: { pos: { x: 0, y: 10.8, z: 16.8 }, lookAt: { x: 0, y: 1.3, z: -0.5 }, label: '🏠 Vista General' },
+        zone1: { pos: { x: -3.6, y: 4.5, z: 2.2 }, lookAt: { x: -3.6, y: 1.2, z: -3.8 }, label: '🛋️ Ir a la Sala' },
+        zone2: { pos: { x: 3.5, y: 4.3, z: 1.8 }, lookAt: { x: 3.6, y: 1.3, z: -3.4 }, label: '💻 Ir al Estudio' },
+        zone3: { pos: { x: 0, y: 5.8, z: 19.2 }, lookAt: { x: 0, y: 1.2, z: 7.2 }, label: '🌳 Ir al Jardín' }
+      },
       objects: [
         { id: 'desk', en: 'Desk', ipa: '/desk/', es: 'Escritorio con Laptop', category: 'Study Room', example: 'I practice English code and grammar on my wooden desk with my laptop.', pos: [3.5, 0.22, -3.5] },
         { id: 'computer_monitor', en: 'Computer Monitor', ipa: '/kəmˈpjuː.t̬ɚ ˈmɑː.nə.t̬ɚ/', es: 'Monitor de Computadora', category: 'Study Room', example: 'The computer monitor glows with interactive English code and lessons.', pos: [3.45, 1.22, -3.72] },
         { id: 'office_chair', en: 'Office Chair', ipa: '/ˈɑː.fɪs tʃer/', es: 'Silla de Oficina Ergonómica', category: 'Study Room', example: 'This ergonomic office chair has a comfortable curved backrest and wheels.', pos: [3.5, 0.22, -2.05] },
         { id: 'bookshelf', en: 'Bookshelf', ipa: '/ˈbʊk.ʃelf/', es: 'Librero / Estantería', category: 'Study Room', example: 'The wooden bookshelf is filled with colorful collectible English novels.', pos: [6.7, 0.22, -3.5] },
+        { id: 'house_bed', en: 'Bed', ipa: '/bed/', es: 'Cama con Almohadas', category: 'Study & Bedroom', example: 'I read an English chapter before going to sleep in my comfortable bed.', pos: [1.8, 0.22, 1.2] },
+        { id: 'house_refrigerator', en: 'Refrigerator', ipa: '/rɪˈfrɪdʒ.ə.reɪ.t̬ɚ/', es: 'Refrigerador / Nevera', category: 'Kitchen & Home', example: 'Keep the fresh milk and fruit cold inside the stainless steel refrigerator.', pos: [-1.4, 0.22, -5.8] },
         { id: 'window', en: 'Window', ipa: '/ˈwɪn.doʊ/', es: 'Ventanal Panorámico', category: 'Living Room', example: 'The large window provides a beautiful view of the swaying green trees.', pos: [-6.95, 1.15, -1.75] },
         { id: 'sofa', en: 'Sofa / Couch', ipa: '/ˈsoʊ.fə/', es: 'Sofá / Sillón', category: 'Living Room', example: 'I relax on the cozy sofa after studying English vocabulary.', pos: [-3.6, 0.22, -4.1] },
         { id: 'armchair', en: 'Armchair', ipa: '/ˈɑːrm.tʃer/', es: 'Sillón de Lectura', category: 'Living Room', example: 'I sit in the comfortable armchair by the window to read English stories.', pos: [-5.6, 0.22, -0.8] },
         { id: 'coffee_table', en: 'Coffee Table', ipa: '/ˈkɑː.fi ˌteɪ.bəl/', es: 'Mesa de Centro', category: 'Living Room', example: 'There is a warm ceramic coffee mug resting on the coffee table.', pos: [-3.6, 0.22, -2.0] },
         { id: 'floor_lamp', en: 'Floor Lamp', ipa: '/flɔːr læmp/', es: 'Lámpara de Pie', category: 'Living Room', example: 'The tall floor lamp illuminates the living room with a warm golden glow.', pos: [-5.8, 0.22, -4.5] },
         { id: 'wall_clock', en: 'Clock', ipa: '/klɑːk/', es: 'Reloj de Pared', category: 'Living Room', example: 'I check the ticking wall clock to start my daily English session on time.', pos: [-3.6, 2.65, -6.84] },
-        { id: 'indoor_plant', en: 'Indoor Plant', ipa: '/ˈɪn.dɔːr plænt/', es: 'Planta de Interior', category: 'Living Room', example: 'The green indoor plant in the terracotta pot makes the room feel fresh.', pos: [-1.2, 0.22, -5.5] },
-        { id: 'oak_tree', en: 'Oak Tree', ipa: '/oʊk triː/', es: 'Árbol de Roble', category: 'Garden & Yard', example: 'The tall oak tree provides cool shade over the green lawn.', pos: [-8.5, 0, 7.5] }
+        { id: 'indoor_plant', en: 'Indoor Plant', ipa: '/ˈɪn.dɔːr plænt/', es: 'Planta de Interior', category: 'Living Room', example: 'The green indoor plant in the terracotta pot makes the room feel fresh.', pos: [-1.2, 0.22, -4.2] }
       ]
     },
     garden: {
@@ -2044,38 +2059,50 @@ ensureOrbitControls();
       fogDensity: 0.005,
       cameraPos: { x: 0, y: 6.2, z: 19.5 },
       cameraLookAt: { x: 0, y: 1.2, z: 7.2 },
+      zones: {
+        overview: { pos: { x: 0, y: 6.5, z: 20.2 }, lookAt: { x: 0, y: 1.2, z: 7.2 }, label: '🌿 Vista General' },
+        zone1: { pos: { x: -5.2, y: 3.6, z: 12.8 }, lookAt: { x: -5.5, y: 1.2, z: 7.5 }, label: '🌳 Zona 1: Árboles y Banca' },
+        zone2: { pos: { x: 4.8, y: 3.6, z: 13.5 }, lookAt: { x: 4.2, y: 1.0, z: 8.5 }, label: '🔥 Zona 2: Asador y Fuente' },
+        zone3: { pos: { x: 0, y: 3.4, z: 16.5 }, lookAt: { x: 0, y: 1.0, z: 9.2 }, label: '🪨 Camino y Aspersor' }
+      },
       objects: [
         { id: 'oak_tree', en: 'Oak Tree', ipa: '/oʊk triː/', es: 'Árbol de Roble', category: 'Garden & Yard', example: 'The tall oak tree provides cool shade over the green lawn.', pos: [-8.5, 0, 7.5] },
         { id: 'park_bench', en: 'Park Bench', ipa: '/pɑːrk bentʃ/', es: 'Banca de Jardín', category: 'Garden & Yard', example: 'We sat on the wooden park bench to practice English conversation.', pos: [-4.5, 0, 7.5] },
+        { id: 'garden_bbq_grill', en: 'Barbecue Grill', ipa: '/ˈbɑːr.bə.kjuː ɡrɪl/', es: 'Asador / Parrilla BBQ', category: 'Garden & Yard', example: 'We cooked burgers and vegetables on the outdoor barbecue grill.', pos: [4.2, 0, 8.6] },
+        { id: 'garden_sprinkler', en: 'Lawn Sprinkler', ipa: '/lɔːn ˈsprɪŋ.klɚ/', es: 'Aspersor de Riego', category: 'Garden & Yard', example: 'The rotating lawn sprinkler waters the fresh green grass.', pos: [-2.0, 0, 9.2] },
         { id: 'street_lantern', en: 'Street Lantern', ipa: '/striːt ˈlæn.tɚn/', es: 'Farol de Jardín', category: 'Garden & Yard', example: 'The classic street lantern lights up the stone path at night.', pos: [2.4, 0, 6.5] },
+        { id: 'garden_stone_path', en: 'Stone Path', ipa: '/stoʊn pæθ/', es: 'Camino de Piedra', category: 'Garden & Yard', example: 'Follow the stepping stone path from the gate to the front door.', pos: [0.2, 0.05, 8.2] },
         { id: 'flower_bush', en: 'Flower Bush', ipa: '/ˈflaʊ.ɚ bʊʃ/', es: 'Arbusto Floral', category: 'Garden & Yard', example: 'Colorful blossoms grow on the green flower bush near the porch.', pos: [5.8, 0, 5.8] },
         { id: 'mailbox', en: 'Mailbox', ipa: '/ˈmeɪl.bɑːks/', es: 'Buzón de Correo', category: 'Garden & Yard', example: 'I raised the red flag on the mailbox to send a letter.', pos: [2.1, 0, 11.8] },
-        { id: 'garden_sprinkler', en: 'Lawn Sprinkler', ipa: '/lɔːn ˈsprɪŋ.klɚ/', es: 'Aspersor de Riego', category: 'Garden & Yard', example: 'The rotating lawn sprinkler waters the fresh green grass.', pos: [-2.0, 0, 9.2] },
-        { id: 'garden_stone_path', en: 'Stone Path', ipa: '/stoʊn pæθ/', es: 'Camino de Piedra', category: 'Garden & Yard', example: 'Follow the stepping stone path from the gate to the front door.', pos: [0.2, 0.05, 8.2] },
         { id: 'garden_picket_fence', en: 'Picket Fence', ipa: '/ˈpɪk.ɪt fens/', es: 'Cerca Blanca de Madera', category: 'Garden & Yard', example: 'A white picket fence surrounds the front yard.', pos: [-4.5, 0, 14.5] },
         { id: 'garden_birdhouse', en: 'Birdhouse', ipa: '/ˈbɝːd.haʊs/', es: 'Casita para Pájaros', category: 'Garden & Yard', example: 'Bluebirds built a nest inside the wooden birdhouse.', pos: [-6.8, 0, 10.2] },
-        { id: 'garden_watering_can', en: 'Watering Can', ipa: '/ˈwɑː.t̬ɚ.ɪŋ kæn/', es: 'Regadera de Jardín', category: 'Garden & Yard', example: 'Use the metal watering can to water the roses.', pos: [4.2, 0, 8.6] },
-        { id: 'garden_fountain', en: 'Garden Fountain', ipa: '/ˈɡɑːr.dən ˈfaʊn.tən/', es: 'Fuente de Agua', category: 'Garden & Yard', example: 'The stone garden fountain makes a relaxing water sound.', pos: [6.4, 0, 11.2] },
-        { id: 'garden_ lantern_arch', en: 'Garden Arch', ipa: '/ˈɡɑːr.dən ɑːrtʃ/', es: 'Arco Floral de Entrada', category: 'Garden & Yard', example: 'Climbing roses grow over the wooden garden arch.', pos: [0, 0, 14.2] }
+        { id: 'garden_watering_can', en: 'Watering Can', ipa: '/ˈwɑː.t̬ɚ.ɪŋ kæn/', es: 'Regadera de Jardín', category: 'Garden & Yard', example: 'Use the metal watering can to water the roses.', pos: [-3.2, 0, 11.4] },
+        { id: 'garden_fountain', en: 'Garden Fountain', ipa: '/ˈɡɑːr.dən ˈfaʊn.tən/', es: 'Fuente de Agua', category: 'Garden & Yard', example: 'The stone garden fountain makes a relaxing water sound.', pos: [6.4, 0, 11.2] }
       ]
     },
     dating: {
       id: 'dating',
       title: '🕯️ Romantic Date & Bistro 3D',
-      bg: 0x090d16,
+      bg: 0x070b14,
       fogDensity: 0.008,
       cameraPos: { x: 0, y: 5.2, z: 9.8 },
       cameraLookAt: { x: 0, y: 1.3, z: -0.5 },
+      zones: {
+        overview: { pos: { x: 0, y: 5.2, z: 9.8 }, lookAt: { x: 0, y: 1.3, z: -0.5 }, label: '🕯️ Vista General' },
+        zone1: { pos: { x: 0.2, y: 2.5, z: 2.8 }, lookAt: { x: 0, y: 1.08, z: -0.5 }, label: '🍷 Zona 1: Mesa Romántica' },
+        zone2: { pos: { x: 2.2, y: 2.6, z: 2.6 }, lookAt: { x: 1.5, y: 1.2, z: -1.0 }, label: '🤵 Zona 2: Mesero IA' },
+        zone3: { pos: { x: -2.2, y: 2.8, z: 1.5 }, lookAt: { x: -1.5, y: 1.4, z: -4.8 }, label: '🎻 Balcón y Violín' }
+      },
       objects: [
-        { id: 'dating_candlelight', en: 'Candlelight', ipa: '/ˈkæn.dəl.laɪt/', es: 'Luz de Vela Romántica', category: 'Romantic Date', example: 'We enjoyed a quiet dinner by warm candlelight on the starry terrace.', pos: [0, 1.08, -0.5] },
-        { id: 'dating_wine_glasses', en: 'Wine Glasses', ipa: '/waɪn ˈɡlæs.ɪz/', es: 'Copas de Brindis', category: 'Romantic Date', example: 'They clinked their wine glasses and made a toast in English.', pos: [0.32, 1.08, -0.35] },
+        { id: 'dating_table_for_two', en: 'Table for Two', ipa: '/ˈteɪ.bəl fɔːr tuː/', es: 'Mesa Íntima para Dos con Mantel Rojo/Vino', category: 'Romantic Date', example: 'I reserved a romantic table for two on the rooftop terrace.', pos: [0, 0, -0.5] },
+        { id: 'dating_candlelight', en: 'Candlelight', ipa: '/ˈkæn.dəl.laɪt/', es: 'Vela Encendida con Luz Cálida', category: 'Romantic Date', example: 'We enjoyed a quiet dinner by warm candlelight on the starry terrace.', pos: [0, 1.08, -0.5] },
+        { id: 'dating_wine_glasses', en: 'Wine Glasses', ipa: '/waɪn ˈɡlæs.ɪz/', es: 'Dos Copas de Brindis', category: 'Romantic Date', example: 'They clinked their wine glasses and made a toast in English.', pos: [0.32, 1.08, -0.35] },
         { id: 'dating_menu', en: 'Menu', ipa: '/ˈmen.juː/', es: 'Menú Bilingüe del Bistró', category: 'Romantic Date', example: 'Could we see the dinner menu and the wine list, please?', pos: [-0.38, 1.06, -0.32] },
         { id: 'dating_rose_bouquet', en: 'Rose Bouquet', ipa: '/roʊz buˈkeɪ/', es: 'Ramo de Rosas Rojas', category: 'Romantic Date', example: 'A fresh red rose bouquet decorated the center of our table.', pos: [-0.15, 1.08, -0.72] },
         { id: 'dating_violin', en: 'Violin', ipa: '/ˌvaɪəˈlɪn/', es: 'Violín Acústico de Serenata', category: 'Romantic Date', example: 'A romantic violin melody played softly under the stars.', pos: [-3.4, 0, -2.2] },
+        { id: 'dating_city_balcony', en: 'City View Balcony', ipa: '/ˈsɪt̬.i vjuː ˈbæl.kə.ni/', es: 'Balcón de Ciudad Nocturno', category: 'Romantic Date', example: 'We stepped out onto the city view balcony to admire the skyline.', pos: [0, 0, -5.8] },
+        { id: 'dating_waiter_npc', en: 'Waiter NPC', ipa: '/ˈweɪ.t̬ɚ/', es: 'Mesero 3D Interactivo', category: 'Romantic Date', example: 'Our friendly waiter recommended the chef’s special tonight.', pos: [2.3, 0, -1.2] },
         { id: 'dating_chocolate_dessert', en: 'Chocolate Dessert', ipa: '/ˈtʃɑː.klət dɪˈzɝːt/', es: 'Postre de Chocolate Gourmet', category: 'Romantic Date', example: 'Would you like to share this warm chocolate dessert with me?', pos: [0.22, 1.06, -0.78] },
-        { id: 'dating_city_balcony', en: 'City View Balcony', ipa: '/ˈsɪt̬.i vjuː ˈbæl.kə.ni/', es: 'Balcón Panorámico Nocturno', category: 'Romantic Date', example: 'We stepped out onto the city view balcony to admire the skyline.', pos: [0, 0, -5.8] },
-        { id: 'dating_waiter_npc', en: 'Waiter NPC', ipa: '/ˈweɪ.t̬ɚ/', es: 'Mesero IA del Bistró', category: 'Romantic Date', example: 'Our friendly waiter recommended the chef’s special tonight.', pos: [2.3, 0, -1.2] },
-        { id: 'dating_table_for_two', en: 'Table for Two', ipa: '/ˈteɪ.bəl fɔːr tuː/', es: 'Mesa Íntima para Dos con Mantel', category: 'Romantic Date', example: 'I reserved a romantic table for two on the rooftop terrace.', pos: [0, 0, -0.5] },
         { id: 'dating_conversation_cards', en: 'Conversation Cards', ipa: '/ˌkɑːn.vɚˈseɪ.ʃən kɑːrdz/', es: 'Tarjetas Románticas (Icebreakers)', category: 'Romantic Date', example: 'These conversation cards have great questions to get to know each other.', pos: [-0.42, 1.06, -0.68] },
         { id: 'dating_ice_bucket', en: 'Ice Bucket', ipa: '/aɪs ˈbʌk.ɪt/', es: 'Cubeta de Hielo y Espumoso', category: 'Romantic Date', example: 'The sparkling cider is chilling in the silver ice bucket.', pos: [1.25, 0, -1.35] },
         { id: 'dating_string_lights', en: 'String Lights', ipa: '/strɪŋ laɪts/', es: 'Guirnalda de Luces de Terraza', category: 'Romantic Date', example: 'Golden string lights glowed above the bistro terrace all night.', pos: [3.6, 0, -2.8] }
@@ -2084,20 +2111,27 @@ ensureOrbitControls();
     space: {
       id: 'space',
       title: '🚀 Outer Space & Astronomy',
-      bg: 0x030612,
-      fogDensity: 0.003,
+      bg: 0x020617,
+      fogDensity: 0.0025,
       cameraPos: { x: 0, y: 11.5, z: 18.5 },
-      cameraLookAt: { x: 0, y: 1.5, z: 0 },
+      cameraLookAt: { x: 0, y: 1.8, z: 0 },
+      zones: {
+        overview: { pos: { x: 0, y: 11.5, z: 18.5 }, lookAt: { x: 0, y: 1.8, z: 0 }, label: '🚀 Vista General' },
+        zone1: { pos: { x: 0, y: 5.5, z: 8.2 }, lookAt: { x: 0, y: 2.2, z: 0 }, label: '☀️ Zona 1: Sol y Tierra' },
+        zone2: { pos: { x: 7.5, y: 5.8, z: 9.5 }, lookAt: { x: 5.5, y: 2.2, z: -1.5 }, label: '🪐 Zona 2: Saturno y Agujero Negro' },
+        zone3: { pos: { x: -6.5, y: 5.8, z: 9.2 }, lookAt: { x: -4.5, y: 2.8, z: 1.0 }, label: '👩‍🚀 Nave y Telescopio' }
+      },
       objects: [
-        { id: 'space_sun', en: 'Sun', ipa: '/sʌn/', es: 'El Sol (Estrella Central)', category: 'Outer Space', example: 'The Sun is the glowing star at the center of our solar system.', pos: [0, 2.2, 0], orbitRadius: 0, orbitSpeed: 0, rotSpeed: 0.45 },
+        { id: 'space_sun', en: 'Sun', ipa: '/sʌn/', es: 'Sol Brillante Central', category: 'Outer Space', example: 'The Sun is the glowing star at the center of our solar system.', pos: [0, 2.2, 0], orbitRadius: 0, orbitSpeed: 0, rotSpeed: 0.45 },
         { id: 'space_earth', en: 'Earth', ipa: '/ɝːθ/', es: 'Planeta Tierra', category: 'Outer Space', example: 'Earth is our home planet with blue oceans and green continents.', pos: [4.2, 2.2, 0], orbitRadius: 4.2, orbitSpeed: 0.38, orbitPhase: 0.4, rotSpeed: 1.2 },
         { id: 'space_moon', en: 'Moon', ipa: '/muːn/', es: 'La Luna (Satélite Natural)', category: 'Outer Space', example: 'The Moon orbits around the Earth approximately every twenty-eight days.', pos: [5.4, 2.6, 1.2], orbitRadius: 5.3, orbitSpeed: 0.52, orbitPhase: 1.1, rotSpeed: 0.8 },
         { id: 'space_mars', en: 'Mars', ipa: '/mɑːrz/', es: 'Marte (El Planeta Rojo)', category: 'Outer Space', example: 'Mars is known as the Red Planet because of iron oxide on its surface.', pos: [-6.4, 2.2, 2.0], orbitRadius: 6.7, orbitSpeed: 0.28, orbitPhase: 2.6, rotSpeed: 1.0 },
-        { id: 'space_saturn', en: 'Saturn & Rings', ipa: '/ˈsæt̬.ɚn ænd rɪŋz/', es: 'Saturno y sus Anillos', category: 'Outer Space', example: 'Saturn & Rings are famous for their spectacular icy ring system.', pos: [8.8, 2.4, -3.5], orbitRadius: 9.4, orbitSpeed: 0.18, orbitPhase: 5.1, rotSpeed: 0.7 },
+        { id: 'space_saturn', en: 'Saturn & Rings', ipa: '/ˈsæt̬.ɚn ænd rɪŋz/', es: 'Saturno con Anillos', category: 'Outer Space', example: 'Saturn & Rings are famous for their spectacular icy ring system.', pos: [8.8, 2.4, -3.5], orbitRadius: 9.4, orbitSpeed: 0.18, orbitPhase: 5.1, rotSpeed: 0.7 },
         { id: 'space_spacecraft', en: 'Spacecraft', ipa: '/ˈspeɪs.kræft/', es: 'Nave Espacial / Cohete', category: 'Outer Space', example: 'The spacecraft ignited its engines to travel beyond Earth orbit.', pos: [-3.5, 3.6, 5.2], orbitRadius: 6.2, orbitSpeed: 0.44, orbitPhase: 3.8, rotSpeed: 0.5 },
-        { id: 'space_astronaut', en: 'Astronaut', ipa: '/ˈæs.trə.nɑːt/', es: 'Astronauta en Caminata Espacial', category: 'Outer Space', example: 'The astronaut wore a pressurized suit during the spacewalk.', pos: [2.6, 3.4, 5.8], orbitRadius: 6.3, orbitSpeed: 0.22, orbitPhase: 1.7, rotSpeed: 0.4 },
         { id: 'space_telescope', en: 'Telescope', ipa: '/ˈtel.ə.skoʊp/', es: 'Telescopio Espacial Orbital', category: 'Outer Space', example: 'The space telescope captures deep infrared images of distant galaxies.', pos: [-7.5, 3.8, -4.2], orbitRadius: 8.6, orbitSpeed: 0.15, orbitPhase: 4.0, rotSpeed: 0.35 },
+        { id: 'space_astronaut', en: 'Astronaut', ipa: '/ˈæs.trə.nɑːt/', es: 'Astronauta en Caminata Espacial', category: 'Outer Space', example: 'The astronaut wore a pressurized suit during the spacewalk.', pos: [2.6, 3.4, 5.8], orbitRadius: 6.3, orbitSpeed: 0.22, orbitPhase: 1.7, rotSpeed: 0.4 },
         { id: 'space_asteroid', en: 'Asteroid', ipa: '/ˈæs.tə.rɔɪd/', es: 'Asteroide Rocoso', category: 'Outer Space', example: 'A metallic asteroid tumbled silently through the asteroid belt.', pos: [7.2, 1.8, 5.2], orbitRadius: 8.8, orbitSpeed: 0.31, orbitPhase: 0.9, rotSpeed: 1.6 },
+        { id: 'space_black_hole', en: 'Black Hole', ipa: '/ˌblæk ˈhoʊl/', es: 'Agujero Negro Supermasivo', category: 'Outer Space', example: 'Nothing, not even light, can escape the event horizon of a black hole.', pos: [6.8, 3.8, -6.2], orbitRadius: 0, orbitSpeed: 0, rotSpeed: 1.8 },
         { id: 'space_satellite', en: 'Satellite', ipa: '/ˈsæt̬.əl.aɪt/', es: 'Satélite de Comunicaciones', category: 'Outer Space', example: 'The solar-powered satellite relays global communication signals.', pos: [-4.8, 4.0, -5.0], orbitRadius: 6.9, orbitSpeed: 0.35, orbitPhase: 2.1, rotSpeed: 0.6 },
         { id: 'space_axial_rotation', en: 'Axial Rotation', ipa: '/ˈæk.si.əl roʊˈteɪ.ʃən/', es: 'Rotación Axial Planetaria', category: 'Outer Space', example: 'A planet’s axial rotation determines the length of its day.', pos: [-8.8, 1.4, 4.5], orbitRadius: 0, orbitSpeed: 0, rotSpeed: 1.5 },
         { id: 'space_gravity', en: 'Gravity', ipa: '/ˈɡræv.ə.t̬i/', es: 'Campo de Gravedad Orbital', category: 'Outer Space', example: 'Gravity is the invisible force that keeps planets in orbit around stars.', pos: [8.8, 1.2, 4.8], orbitRadius: 0, orbitSpeed: 0, rotSpeed: 0.9 }
@@ -2106,23 +2140,29 @@ ensureOrbitControls();
     supermarket: {
       id: 'supermarket',
       title: '🛒 Supermarket',
-      bg: 0x0d1524,
+      bg: 0x0f172a,
       fogDensity: 0.005,
       cameraPos: { x: 0, y: 8.8, z: 14.2 },
       cameraLookAt: { x: 0, y: 1.2, z: -1.0 },
+      zones: {
+        overview: { pos: { x: 0, y: 8.8, z: 14.2 }, lookAt: { x: 0, y: 1.2, z: -1.0 }, label: '🛒 Vista General' },
+        zone1: { pos: { x: -3.5, y: 4.2, z: 5.8 }, lookAt: { x: -3.2, y: 1.2, z: -2.2 }, label: '🍎 Zona 1: Frescos y Panadería' },
+        zone2: { pos: { x: 3.2, y: 3.8, z: 7.5 }, lookAt: { x: 3.0, y: 1.0, z: 2.5 }, label: '💳 Zona 2: Cajas y Escáner' },
+        zone3: { pos: { x: 2.5, y: 4.2, z: 3.2 }, lookAt: { x: 3.2, y: 1.2, z: -3.2 }, label: '🥛 Lácteos y Congelados' }
+      },
       objects: [
-        { id: 'market_shopping_cart', en: 'Shopping Cart', ipa: '/ˈʃɑː.pɪŋ kɑːrt/', es: 'Carrito de Supermercado', category: 'Supermarket', example: 'I pushed the metal shopping cart down the main grocery aisle.', pos: [-2.8, 0, 3.2] },
-        { id: 'market_cash_register', en: 'Cash Register', ipa: '/ˈkæʃ ˌredʒ.ɪ.stɚ/', es: 'Caja Registradora', category: 'Supermarket', example: 'The cashier rang up our items on the digital cash register.', pos: [3.2, 0.95, 2.8] },
-        { id: 'market_barcode_scanner', en: 'Barcode Scanner', ipa: '/ˈbɑːr.koʊd ˈskæn.ɚ/', es: 'Lector de Código de Barras', category: 'Supermarket', example: 'Pass the product over the laser barcode scanner to check the price.', pos: [2.2, 0.95, 3.2] },
-        { id: 'market_fresh_produce', en: 'Fresh Produce', ipa: '/freʃ ˈproʊ.duːs/', es: 'Frutas y Verduras Frescas', category: 'Supermarket', example: 'Organic apples, lettuce, and tomatoes are in the fresh produce display.', pos: [-4.8, 0, -1.2] },
-        { id: 'market_bakery', en: 'Bakery', ipa: '/ˈbeɪ.kɚ.i/', es: 'Sección de Panadería', category: 'Supermarket', example: 'We bought warm baguettes and croissants from the bakery counter.', pos: [-1.6, 0, -4.2] },
+        { id: 'market_shopping_cart', en: 'Shopping Cart', ipa: '/ˈʃɑː.pɪŋ kɑːrt/', es: 'Carrito de Compras', category: 'Supermarket', example: 'I pushed the metal shopping cart down the main grocery aisle.', pos: [-2.8, 0, 3.2] },
+        { id: 'market_cash_register', en: 'Cash Register', ipa: '/ˈkæʃ ˌredʒ.ɪ.stɚ/', es: 'Caja Registradora', category: 'Supermarket', example: 'The cashier rang up our items on the digital cash register.', pos: [3.2, 1.08, 2.8] },
+        { id: 'market_barcode_scanner', en: 'Barcode Scanner', ipa: '/ˈbɑːr.koʊd ˈskæn.ɚ/', es: 'Escáner de Código de Barras', category: 'Supermarket', example: 'Pass the product over the laser barcode scanner to check the price.', pos: [2.1, 1.08, 3.0] },
+        { id: 'market_fresh_produce', en: 'Fresh Produce', ipa: '/freʃ ˈproʊ.duːs/', es: 'Sección de Frutas y Verduras', category: 'Supermarket', example: 'Organic apples, lettuce, and tomatoes are in the fresh produce display.', pos: [-4.8, 0, -1.2] },
+        { id: 'market_bakery', en: 'Bakery', ipa: '/ˈbeɪ.kɚ.i/', es: 'Panadería', category: 'Supermarket', example: 'We bought warm baguettes and croissants from the bakery counter.', pos: [-1.6, 0, -4.2] },
         { id: 'market_dairy_section', en: 'Dairy Section', ipa: '/ˈder.i ˈsek.ʃən/', es: 'Sección de Lácteos', category: 'Supermarket', example: 'Cold milk, butter, and yogurt are kept in the refrigerated dairy section.', pos: [2.0, 0, -4.2] },
         { id: 'market_frozen_aisle', en: 'Frozen Aisle', ipa: '/ˈfroʊ.zən aɪl/', es: 'Pasillo de Congelados', category: 'Supermarket', example: 'Ice cream and frozen vegetables are stored in the glass frozen aisle.', pos: [5.2, 0, -1.2] },
+        { id: 'market_scale', en: 'Scale', ipa: '/skeɪl/', es: 'Báscula de Peso', category: 'Supermarket', example: 'Place the fruit on the scale to measure its weight in pounds or kilos.', pos: [-2.4, 0, -0.8] },
         { id: 'market_shopping_basket', en: 'Shopping Basket', ipa: '/ˈʃɑː.pɪŋ ˈbæs.kɪt/', es: 'Canasta de Compras', category: 'Supermarket', example: 'Carry a hand shopping basket when you only need a few groceries.', pos: [-0.8, 0, 3.8] },
         { id: 'market_price_tag', en: 'Price Tag', ipa: '/ˈpraɪs tæɡ/', es: 'Etiqueta de Precio y Oferta', category: 'Supermarket', example: 'Look at the yellow price tag to see the twenty percent discount.', pos: [-4.8, 1.65, 1.2] },
-        { id: 'market_receipt', en: 'Receipt', ipa: '/rɪˈsiːt/', es: 'Recibo / Ticket de Compra', category: 'Supermarket', example: 'Would you like your printed receipt in the bag or with you?', pos: [4.1, 0.95, 3.4] },
-        { id: 'market_scale', en: 'Scale', ipa: '/skeɪl/', es: 'Báscula Digital de Peso', category: 'Supermarket', example: 'Place the fruit on the scale to measure its weight in pounds or kilos.', pos: [-2.4, 0, -0.8] },
-        { id: 'market_checkout', en: 'Checkout', ipa: '/ˈtʃek.aʊt/', es: 'Línea de Pago / Checkout', category: 'Supermarket', example: 'Place your groceries on the moving belt at the express checkout.', pos: [3.0, 0, 2.8] }
+        { id: 'market_receipt', en: 'Receipt', ipa: '/rɪˈsiːt/', es: 'Recibo / Ticket de Compra', category: 'Supermarket', example: 'Would you like your printed receipt in the bag or with you?', pos: [4.1, 1.08, 3.1] },
+        { id: 'market_checkout', en: 'Checkout', ipa: '/ˈtʃek.aʊt/', es: 'Línea de Caja / Checkout', category: 'Supermarket', example: 'Place your groceries on the moving belt at the express checkout.', pos: [3.0, 0, 2.8] }
       ]
     },
     hotel: {
@@ -2132,14 +2172,20 @@ ensureOrbitControls();
       fogDensity: 0.005,
       cameraPos: { x: 0, y: 8.2, z: 14.0 },
       cameraLookAt: { x: 0, y: 1.4, z: -1.0 },
+      zones: {
+        overview: { pos: { x: 0, y: 8.2, z: 14.0 }, lookAt: { x: 0, y: 1.4, z: -1.0 }, label: '🏨 Vista General' },
+        zone1: { pos: { x: 0, y: 3.4, z: 3.2 }, lookAt: { x: 0, y: 1.2, z: -3.5 }, label: '🛎️ Zona 1: Recepción' },
+        zone2: { pos: { x: 3.8, y: 3.6, z: 6.8 }, lookAt: { x: 3.6, y: 1.2, z: -0.5 }, label: '🧳 Zona 2: Equipaje y Elevador' },
+        zone3: { pos: { x: -3.8, y: 3.6, z: 5.5 }, lookAt: { x: -4.0, y: 1.1, z: -1.0 }, label: '🛋️ Lobby y Check-in' }
+      },
       objects: [
         { id: 'hotel_receptionist_desk', en: 'Receptionist Desk', ipa: '/rɪˈsep.ʃən.ɪst desk/', es: 'Mostrador de Recepción', category: 'Hotel & Reception', example: 'Welcome! Please check in at the main receptionist desk.', pos: [0, 0, -3.5] },
         { id: 'hotel_room_keycard', en: 'Room Keycard', ipa: '/ruːm ˈkiː.kɑːrd/', es: 'Tarjeta Llave de Habitación', category: 'Hotel & Reception', example: 'Here is your magnetic room keycard for suite 402 on the fourth floor.', pos: [-0.8, 1.12, -3.1] },
-        { id: 'hotel_luggage_cart', en: 'Luggage Cart', ipa: '/ˈlʌɡ.ɪdʒ kɑːrt/', es: 'Carrito Portaequipaje Dorado', category: 'Hotel & Reception', example: 'The bellhop placed our bags on the brass luggage cart.', pos: [3.8, 0, 1.2] },
-        { id: 'hotel_suitcase', en: 'Suitcase', ipa: '/ˈsuːt.keɪs/', es: 'Maleta de Viaje con Ruedas', category: 'Hotel & Reception', example: 'My rolling suitcase fits easily in the overhead compartment.', pos: [2.5, 0, 2.4] },
-        { id: 'hotel_elevator', en: 'Elevator', ipa: '/ˈel.ə.veɪ.t̬ɚ/', es: 'Ascensor / Elevador del Hotel', category: 'Hotel & Reception', example: 'Press the up button to call the glass hotel elevator.', pos: [5.2, 0, -3.8] },
-        { id: 'hotel_bellhop_bell', en: 'Bellhop Bell', ipa: '/ˈbel.hɑːp bel/', es: 'Campanilla de Recepción', category: 'Hotel & Reception', example: 'Ring the golden bellhop bell on the counter for service.', pos: [0.65, 1.12, -3.1] },
-        { id: 'hotel_lobby_sofa', en: 'Lobby Sofa', ipa: '/ˈlɑː.bi ˈsoʊ.fə/', es: 'Sofá de Espera del Lobby', category: 'Hotel & Reception', example: 'Please have a seat on the plush lobby sofa while we prepare your room.', pos: [-4.2, 0, 1.0] },
+        { id: 'hotel_luggage_cart', en: 'Luggage Cart', ipa: '/ˈlʌɡ.ɪdʒ kɑːrt/', es: 'Carrito de Equipaje Dorado', category: 'Hotel & Reception', example: 'The bellhop placed our bags on the brass luggage cart.', pos: [3.8, 0, 1.2] },
+        { id: 'hotel_suitcase', en: 'Suitcase', ipa: '/ˈsuːt.keɪs/', es: 'Maletas de Viaje', category: 'Hotel & Reception', example: 'My rolling suitcase fits easily in the overhead compartment.', pos: [2.5, 0, 2.4] },
+        { id: 'hotel_elevator', en: 'Elevator', ipa: '/ˈel.ə.veɪ.t̬ɚ/', es: 'Puertas de Elevador', category: 'Hotel & Reception', example: 'Press the up button to call the glass hotel elevator.', pos: [5.2, 0, -3.8] },
+        { id: 'hotel_bellhop_bell', en: 'Bellhop Bell', ipa: '/ˈbel.hɑːp bel/', es: 'Campana de Botones', category: 'Hotel & Reception', example: 'Ring the golden bellhop bell on the counter for service.', pos: [0.65, 1.12, -3.1] },
+        { id: 'hotel_lobby_sofa', en: 'Lobby Sofa', ipa: '/ˈlɑː.bi ˈsoʊ.fə/', es: 'Sofá de Lobby', category: 'Hotel & Reception', example: 'Please have a seat on the plush lobby sofa while we prepare your room.', pos: [-4.2, 0, 1.0] },
         { id: 'hotel_chandelier', en: 'Chandelier', ipa: '/ˌʃæn.dəˈlɪr/', es: 'Candelabro de Cristal', category: 'Hotel & Reception', example: 'A grand crystal chandelier illuminates the entire hotel lobby.', pos: [0, 4.4, -0.5] },
         { id: 'hotel_checkin_terminal', en: 'Check-in Terminal', ipa: '/ˈtʃek.ɪn ˈtɝː.mə.nəl/', es: 'Terminal Digital de Check-in', category: 'Hotel & Reception', example: 'Use the touch-screen check-in terminal for fast express registration.', pos: [-3.8, 0, -3.2] },
         { id: 'hotel_concierge', en: 'Concierge', ipa: '/ˌkɑːn.siˈerʒ/', es: 'Módulo de Conserjería Turística', category: 'Hotel & Reception', example: 'Our hotel concierge can book city tours, taxis, and theater tickets.', pos: [3.6, 0, -2.2] },
@@ -2154,18 +2200,24 @@ ensureOrbitControls();
       fogDensity: 0.006,
       cameraPos: { x: 0, y: 8.0, z: 13.5 },
       cameraLookAt: { x: 0, y: 1.2, z: -0.8 },
+      zones: {
+        overview: { pos: { x: 0, y: 8.0, z: 13.5 }, lookAt: { x: 0, y: 1.2, z: -0.8 }, label: '🍽️ Vista General' },
+        zone1: { pos: { x: 0, y: 3.2, z: 4.5 }, lookAt: { x: 0, y: 1.0, z: 0.8 }, label: '🥂 Zona 1: Comedor Gourmet' },
+        zone2: { pos: { x: 0, y: 3.8, z: 1.5 }, lookAt: { x: -1.2, y: 1.2, z: -4.2 }, label: '👨‍🍳 Zona 2: Estación del Chef' },
+        zone3: { pos: { x: 3.5, y: 3.4, z: 5.8 }, lookAt: { x: 3.2, y: 1.0, z: 0.5 }, label: '🍰 Postres y Barra' }
+      },
       objects: [
-        { id: 'rest_dining_table', en: 'Dining Table', ipa: '/ˈdaɪ.nɪŋ ˈteɪ.bəl/', es: 'Mesa de Comedor Elegante', category: 'Fine Restaurant', example: 'Our dining table is ready near the warm ambient lamps.', pos: [0, 0, 0.8] },
+        { id: 'rest_dining_table', en: 'Dining Table', ipa: '/ˈdaɪ.nɪŋ ˈteɪ.bəl/', es: 'Mesa Vestida de Comedor', category: 'Fine Restaurant', example: 'Our dining table is ready near the warm ambient lamps.', pos: [0, 0, 0.8] },
         { id: 'rest_chef_station', en: 'Chef Station', ipa: '/ʃef ˈsteɪ.ʃən/', es: 'Estación del Chef', category: 'Fine Restaurant', example: 'The executive chef garnishes every plate at the chef station.', pos: [0, 0, -4.5] },
+        { id: 'rest_menu', en: 'Menu', ipa: '/ˈmen.juː/', es: 'Menú Gourmet', category: 'Fine Restaurant', example: 'Our sommelier and chef prepared a seasonal tasting menu tonight.', pos: [-0.55, 0.98, 1.15] },
         { id: 'rest_main_course', en: 'Main Course', ipa: '/meɪn kɔːrs/', es: 'Plato Fuerte / Principal', category: 'Fine Restaurant', example: 'For the main course, I would like the grilled steak with herbs.', pos: [-0.4, 0.98, 0.65] },
         { id: 'rest_appetizer', en: 'Appetizer', ipa: '/ˈæp.ə.taɪ.zɚ/', es: 'Entrada / Aperitivo Gourmet', category: 'Fine Restaurant', example: 'Would you care to start with a warm appetizer before dinner?', pos: [0.42, 0.98, 0.65] },
         { id: 'rest_cutlery', en: 'Cutlery', ipa: '/ˈkʌt.lɚ.i/', es: 'Cubiertos de Plata', category: 'Fine Restaurant', example: 'The polished silver cutlery is placed neatly beside each plate.', pos: [-0.75, 0.96, 0.85] },
+        { id: 'rest_bill_folder', en: 'Bill Folder', ipa: '/bɪl ˈfoʊl.dɚ/', es: 'Carpeta de Cuenta', category: 'Fine Restaurant', example: 'Place your credit card inside the leather bill folder when ready.', pos: [-0.20, 0.96, 1.25] },
+        { id: 'rest_kitchen_pass', en: 'Kitchen Pass', ipa: '/ˈkɪtʃ.ən pæs/', es: 'Barra de Cocina', category: 'Fine Restaurant', example: 'Waiters pick up hot dishes directly from the illuminated kitchen pass.', pos: [-3.8, 0, -3.8] },
         { id: 'rest_napkin', en: 'Napkin', ipa: '/ˈnæp.kɪn/', es: 'Servilleta de Tela Doblada', category: 'Fine Restaurant', example: 'Could you bring us an extra cloth napkin, please?', pos: [0.75, 0.98, 0.85] },
-        { id: 'rest_bill_folder', en: 'Bill Folder', ipa: '/bɪl ˈfoʊl.dɚ/', es: 'Carpeta de la Cuenta', category: 'Fine Restaurant', example: 'Place your credit card inside the leather bill folder when ready.', pos: [-0.25, 0.96, 1.25] },
-        { id: 'rest_kitchen_pass', en: 'Kitchen Pass', ipa: '/ˈkɪtʃ.ən pæs/', es: 'Barra de Entrega de Cocina', category: 'Fine Restaurant', example: 'Waiters pick up hot dishes directly from the illuminated kitchen pass.', pos: [-3.8, 0, -3.8] },
         { id: 'rest_beverage', en: 'Beverage', ipa: '/ˈbev.rɪdʒ/', es: 'Bebida / Copa Refrescante', category: 'Fine Restaurant', example: 'What kind of cold beverage would you like with your meal?', pos: [0.28, 1.02, 1.18] },
         { id: 'rest_reserved_sign', en: 'Reserved Sign', ipa: '/rɪˈzɝːvd saɪn/', es: 'Letrero de Mesa Reservada', category: 'Fine Restaurant', example: 'This VIP table has a golden reserved sign on top.', pos: [-3.6, 0.96, 1.2] },
-        { id: 'rest_tip_jar', en: 'Tip Jar', ipa: '/tɪp dʒɑːr/', es: 'Frasco de Propinas', category: 'Fine Restaurant', example: 'We left a generous tip in the glass tip jar for the staff.', pos: [3.8, 1.05, -2.5] },
         { id: 'rest_dessert_cart', en: 'Dessert Cart', ipa: '/dɪˈzɝːt kɑːrt/', es: 'Carrito de Postres', category: 'Fine Restaurant', example: 'Choose your favorite cake from our rolling dessert cart.', pos: [3.6, 0, 1.4] }
       ]
     }
@@ -2177,10 +2229,10 @@ ensureOrbitControls();
     const scen = WORLD_TOUR_SCENARIOS[scenKey];
     if (!scen || !Array.isArray(scen.objects)) return;
     scen.objects.forEach(obj => {
+      const px = obj.pos ? obj.pos[0] : 0;
+      const py = obj.pos ? obj.pos[1] : 0;
+      const pz = obj.pos ? obj.pos[2] : 0;
       if (!WORLD3D_VOCAB_CATALOG[obj.id]) {
-        const px = obj.pos ? obj.pos[0] : 0;
-        const py = obj.pos ? obj.pos[1] : 0;
-        const pz = obj.pos ? obj.pos[2] : 0;
         WORLD3D_VOCAB_CATALOG[obj.id] = {
           interactive: true,
           id: obj.id,
@@ -2203,26 +2255,39 @@ ensureOrbitControls();
   function disposeScenarioMemory(rootObj) {
     if (!rootObj) return;
     const sharedMats = new Set(Object.values(SHARED_MATERIALS));
+    const persistentTextures = new Set([
+      cachedWoodTexture,
+      cachedOakWoodTexture,
+      cachedGrassTexture,
+      cachedBlackboardTexture,
+      cachedLaptopScreenTexture,
+      cachedPaintingTexture,
+      cachedClockTexture,
+      cachedRugTexture,
+      cachedHotspotTexture
+    ]);
     rootObj.traverse(child => {
-      if (child.geometry) {
-        const geometry = child.geometry;
-        if (typeof geometry.dispose === 'function') {
-          geometry.dispose();
-        }
-      }
-      if (child.material) {
-        const matList = Array.isArray(child.material) ? child.material : [child.material];
-        matList.forEach(material => {
-          if (material && !sharedMats.has(material)) {
-            if (material.map && material.map !== cachedOakWoodTexture && material.map !== cachedGrassTexture && material.map !== cachedHotspotTexture && typeof material.map.dispose === 'function') {
-              material.map.dispose();
-            }
-            if (typeof material.dispose === 'function') {
-              material.dispose();
-            }
+      try {
+        if (child.geometry) {
+          const geometry = child.geometry;
+          if (typeof geometry.dispose === 'function') {
+            geometry.dispose();
           }
-        });
-      }
+        }
+        if (child.material) {
+          const matList = Array.isArray(child.material) ? child.material : [child.material];
+          matList.forEach(material => {
+            if (material && !sharedMats.has(material)) {
+              if (material.map && !persistentTextures.has(material.map) && typeof material.map.dispose === 'function') {
+                try { material.map.dispose(); } catch (e) {}
+              }
+              if (typeof material.dispose === 'function') {
+                try { material.dispose(); } catch (e) {}
+              }
+            }
+          });
+        }
+      } catch (err) {}
     });
     while (rootObj.children.length > 0) {
       rootObj.remove(rootObj.children[0]);
@@ -2305,8 +2370,8 @@ ensureOrbitControls();
         g.position.x = gx;
         group.add(g);
       });
-    } else if (id === 'dating_menu' || id === 'rest_bill_folder' || id === 'hotel_passport') {
-      const coverColor = id === 'hotel_passport' ? 0x1e3a8a : 0x3b0764;
+    } else if (id === 'dating_menu' || id === 'rest_menu' || id === 'rest_bill_folder' || id === 'hotel_passport') {
+      const coverColor = id === 'hotel_passport' ? 0x1e3a8a : (id === 'rest_bill_folder' ? 0x1c1917 : 0x3b0764);
       const coverMat = new THREE.MeshStandardMaterial({ color: coverColor, roughness: 0.45, metalness: 0.15 });
       const pageLeft = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.018, 0.30), coverMat);
       pageLeft.position.set(-0.10, 0.02, 0);
@@ -2439,6 +2504,106 @@ ensureOrbitControls();
         group.add(bulb);
       }
     }
+    // --- HOUSE & GARDEN EXTRAS (CAMA, REFRIGERADOR, ASADOR, ASPERSOR, CAMINO DE PIEDRA) ---
+    else if (id === 'house_bed') {
+      const frame = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.32, 2.15), matWalnut);
+      frame.position.y = 0.16;
+      const headboard = new THREE.Mesh(new THREE.BoxGeometry(1.75, 1.05, 0.14), matWalnut);
+      headboard.position.set(0, 0.525, -1.02);
+      const mattress = new THREE.Mesh(new THREE.BoxGeometry(1.62, 0.26, 1.98), matWhite);
+      mattress.position.set(0, 0.42, 0.04);
+      const blanket = new THREE.Mesh(new THREE.BoxGeometry(1.64, 0.27, 1.32), matSky);
+      blanket.position.set(0, 0.43, 0.36);
+      const pillowL = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.14, 0.36), matWhite);
+      pillowL.position.set(-0.42, 0.60, -0.68);
+      const pillowR = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.14, 0.36), matWhite);
+      pillowR.position.set(0.42, 0.60, -0.68);
+      group.add(frame, headboard, mattress, blanket, pillowL, pillowR);
+    } else if (id === 'house_refrigerator') {
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.92, 1.95, 0.82), matSilver);
+      body.position.y = 0.975;
+      const splitLine = new THREE.Mesh(new THREE.BoxGeometry(0.94, 0.025, 0.84), matDark);
+      splitLine.position.y = 1.28;
+      const handleTop = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.42, 10), matDark);
+      handleTop.position.set(-0.34, 1.58, 0.44);
+      const handleBot = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.68, 10), matDark);
+      handleBot.position.set(-0.34, 0.78, 0.44);
+      const dispenser = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.28, 0.04), M.ironBlack);
+      dispenser.position.set(0.18, 1.12, 0.41);
+      group.add(body, splitLine, handleTop, handleBot, dispenser);
+    } else if (id === 'garden_bbq_grill') {
+      const bowl = new THREE.Mesh(new THREE.SphereGeometry(0.48, 20, 14, 0, Math.PI * 2, Math.PI * 0.5, Math.PI * 0.5), M.ironBlack);
+      bowl.position.y = 0.82;
+      const lid = new THREE.Mesh(new THREE.SphereGeometry(0.48, 20, 14, 0, Math.PI * 2, 0, Math.PI * 0.48), matRed);
+      lid.position.set(0, 0.86, -0.10);
+      lid.rotation.x = -0.35;
+      const grate = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.46, 0.02, 20), matSilver);
+      grate.position.y = 0.82;
+      const embers = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.34, 0.04, 16), M.emissiveBulb);
+      embers.position.y = 0.72;
+      [[-0.26, -0.22], [0.26, -0.22], [0, 0.28]].forEach(([lx, lz]) => {
+        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.02, 0.75, 10), matSilver);
+        leg.position.set(lx, 0.375, lz);
+        group.add(leg);
+      });
+      group.add(bowl, lid, grate, embers);
+    } else if (id === 'garden_sprinkler') {
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, 0.08, 16), matDark);
+      base.position.y = 0.04;
+      const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.22, 12), matGold);
+      nozzle.position.y = 0.16;
+      const crossBar = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.42, 10), matGold);
+      crossBar.rotation.z = Math.PI / 2;
+      crossBar.position.y = 0.26;
+      const waterArc = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.02, 10, 24, Math.PI), matSky);
+      waterArc.position.y = 0.26;
+      group.add(base, nozzle, crossBar, waterArc);
+    } else if (id === 'garden_stone_path') {
+      [-0.9, -0.3, 0.3, 0.9].forEach((sz, idx) => {
+        const stone = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.38, 0.06, 8), M.stonePaver);
+        stone.position.set((idx % 2 === 0 ? -0.15 : 0.15), 0.03, sz);
+        group.add(stone);
+      });
+    } else if (id === 'garden_picket_fence') {
+      const rail1 = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.08, 0.06), matWhite);
+      rail1.position.y = 0.35;
+      const rail2 = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.08, 0.06), matWhite);
+      rail2.position.y = 0.72;
+      group.add(rail1, rail2);
+      for (let p = -5; p <= 5; p++) {
+        const picket = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.95, 0.04), matWhite);
+        picket.position.set(p * 0.21, 0.475, 0);
+        group.add(picket);
+      }
+    } else if (id === 'garden_birdhouse') {
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 1.35, 12), matWood);
+      post.position.y = 0.675;
+      const box = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.42, 0.36), matWood);
+      box.position.y = 1.48;
+      const roof = new THREE.Mesh(new THREE.ConeGeometry(0.34, 0.28, 4), matRed);
+      roof.position.y = 1.82;
+      roof.rotation.y = Math.PI / 4;
+      group.add(post, box, roof);
+    } else if (id === 'garden_watering_can') {
+      const can = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.20, 0.36, 16), matEmerald);
+      can.position.y = 0.18;
+      const spout = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.04, 0.38, 10), matEmerald);
+      spout.position.set(0.24, 0.26, 0);
+      spout.rotation.z = -0.65;
+      const handle = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.02, 10, 20), matEmerald);
+      handle.position.set(-0.14, 0.26, 0);
+      group.add(can, spout, handle);
+    } else if (id === 'garden_fountain') {
+      const basin1 = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.72, 0.28, 24), M.stoneGray);
+      basin1.position.y = 0.14;
+      const water1 = new THREE.Mesh(new THREE.CylinderGeometry(0.78, 0.78, 0.04, 24), matSky);
+      water1.position.y = 0.27;
+      const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.22, 0.72, 16), M.stoneGray);
+      pillar.position.y = 0.52;
+      const basin2 = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.34, 0.18, 20), M.stoneGray);
+      basin2.position.y = 0.88;
+      group.add(basin1, water1, pillar, basin2);
+    }
     // --- MUNDO SPACE (OUTER SPACE & ASTRONOMY) ---
     else if (id === 'space_sun') {
       const sunMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xf97316, emissiveIntensity: 2.2, roughness: 0.2 });
@@ -2452,6 +2617,12 @@ ensureOrbitControls();
       const cont = new THREE.Mesh(new THREE.DodecahedronGeometry(0.74, 1), M.leafGreen3);
       cont.scale.set(0.85, 0.65, 0.9);
       group.add(globe, cont);
+      if (id === 'space_earth') {
+        // Luna orbitando junto a la Tierra además del objeto Moon dedicado
+        const miniMoon = new THREE.Mesh(new THREE.SphereGeometry(0.18, 16, 16), new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.7 }));
+        miniMoon.position.set(1.15, 0.28, 0);
+        group.add(miniMoon);
+      }
       if (id === 'space_axial_rotation') {
         const axisRod = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 2.2, 12), matGold);
         axisRod.rotation.z = 0.41;
@@ -2473,9 +2644,22 @@ ensureOrbitControls();
     } else if (id === 'space_saturn') {
       const satMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, emissive: 0xb45309, emissiveIntensity: 0.25, roughness: 0.45 });
       const planet = new THREE.Mesh(new THREE.SphereGeometry(0.85, 28, 28), satMat);
-      const ring = new THREE.Mesh(new THREE.RingGeometry(1.15, 1.85, 40), new THREE.MeshStandardMaterial({ color: 0xfde68a, side: THREE.DoubleSide, transparent: true, opacity: 0.82, roughness: 0.5 }));
-      ring.rotation.x = Math.PI / 2.4;
-      group.add(planet, ring);
+      const torusRing1 = new THREE.Mesh(new THREE.TorusGeometry(1.38, 0.14, 16, 48), new THREE.MeshStandardMaterial({ color: 0xfde68a, roughness: 0.45, metalness: 0.15 }));
+      torusRing1.rotation.x = Math.PI / 2.35;
+      torusRing1.scale.z = 0.18;
+      const torusRing2 = new THREE.Mesh(new THREE.TorusGeometry(1.76, 0.08, 16, 48), new THREE.MeshStandardMaterial({ color: 0xfcd34d, roughness: 0.5, transparent: true, opacity: 0.82 }));
+      torusRing2.rotation.x = Math.PI / 2.35;
+      torusRing2.scale.z = 0.18;
+      group.add(planet, torusRing1, torusRing2);
+    } else if (id === 'space_black_hole') {
+      const eventHorizon = new THREE.Mesh(new THREE.SphereGeometry(0.68, 28, 28), new THREE.MeshBasicMaterial({ color: 0x000000 }));
+      const accretionInner = new THREE.Mesh(new THREE.TorusGeometry(1.12, 0.16, 16, 48), new THREE.MeshStandardMaterial({ color: 0xf97316, emissive: 0xea580c, emissiveIntensity: 2.2, roughness: 0.2 }));
+      accretionInner.rotation.x = Math.PI / 2.6;
+      accretionInner.scale.z = 0.22;
+      const accretionOuter = new THREE.Mesh(new THREE.TorusGeometry(1.52, 0.07, 14, 48), new THREE.MeshStandardMaterial({ color: 0xa855f7, emissive: 0x7e22ce, emissiveIntensity: 1.6, roughness: 0.3 }));
+      accretionOuter.rotation.x = Math.PI / 2.6;
+      accretionOuter.scale.z = 0.22;
+      group.add(eventHorizon, accretionInner, accretionOuter);
     } else if (id === 'space_spacecraft') {
       const hull = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.34, 1.2, 20), matWhite);
       const nose = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.55, 20), matRed);
@@ -2527,7 +2711,7 @@ ensureOrbitControls();
       centerMass.position.y = 0.45;
       group.add(centerMass);
     }
-    // --- MUNDOS SUPERMARKET, HOTEL Y RESTAURANT + GARDEN EXTRAS ---
+    // --- MUNDOS SUPERMARKET, HOTEL Y RESTAURANT ---
     else if (id === 'market_shopping_cart' || id === 'hotel_luggage_cart' || id === 'rest_dessert_cart') {
       const isBrass = id === 'hotel_luggage_cart';
       const frameMat = isBrass ? matGold : matSilver;
@@ -2545,7 +2729,7 @@ ensureOrbitControls();
         wheel.position.set(wx, 0.09, wz);
         group.add(wheel);
       });
-    } else if (id === 'hotel_chandelier') {
+    } else if (id === 'hotel_chandelier' || id === 'rest_chandelier') {
       const chain = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.9, 10), matGold);
       chain.position.y = 0.55;
       const ring1 = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.04, 12, 28), matGold);
@@ -2560,7 +2744,7 @@ ensureOrbitControls();
         crystal.position.set(Math.cos(a) * 0.75, 0.06, Math.sin(a) * 0.75);
         group.add(crystal);
       }
-    } else if (id === 'hotel_receptionist_desk' || id === 'rest_chef_station' || id === 'rest_kitchen_pass' || id === 'market_checkout') {
+    } else if (id === 'hotel_receptionist_desk' || id === 'rest_chef_station' || id === 'rest_kitchen_pass' || id === 'market_checkout' || id === 'hotel_concierge') {
       const counter = new THREE.Mesh(new THREE.BoxGeometry(2.8, 1.05, 0.85), matWalnut);
       counter.position.y = 0.525;
       const topMarble = new THREE.Mesh(new THREE.BoxGeometry(2.92, 0.08, 0.95), matWhite);
@@ -2568,11 +2752,11 @@ ensureOrbitControls();
       const frontAccent = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.65, 0.04), matGold);
       frontAccent.position.set(0, 0.52, 0.43);
       group.add(counter, topMarble, frontAccent);
-    } else if (id === 'market_fresh_produce' || id === 'market_bakery' || id === 'market_dairy_section' || id === 'market_frozen_aisle') {
+    } else if (id === 'market_fresh_produce' || id === 'market_bakery' || id === 'market_dairy_section' || id === 'market_frozen_aisle' || id === 'market_price_tag') {
       const rack = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.85, 0.75), matDark);
       rack.position.y = 0.925;
       group.add(rack);
-      [0.45, 0.95, 1.45].forEach((sy, idx) => {
+      [0.45, 0.95, 1.45].forEach(sy => {
         const shelf = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.05, 0.72), matSilver);
         shelf.position.set(0, sy, 0.04);
         group.add(shelf);
@@ -2583,6 +2767,97 @@ ensureOrbitControls();
           group.add(prod);
         }
       });
+    } else if (id === 'market_cash_register' || id === 'hotel_check_in') {
+      const base = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.18, 0.48), matDark);
+      base.position.y = 0.09;
+      const stand = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.06, 0.26, 12), matSilver);
+      stand.position.set(0, 0.28, -0.06);
+      const monitor = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.32, 0.05), matDark);
+      monitor.position.set(0, 0.46, -0.04);
+      monitor.rotation.x = -0.22;
+      const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.40, 0.26), M.emissiveScreen);
+      screen.position.set(0, 0.46, -0.01);
+      screen.rotation.x = -0.22;
+      group.add(base, stand, monitor, screen);
+    } else if (id === 'market_barcode_scanner') {
+      const cradle = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.14, 0.16, 16), matDark);
+      cradle.position.y = 0.08;
+      const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.035, 0.28, 12), matDark);
+      neck.position.set(0, 0.24, 0.04);
+      neck.rotation.x = 0.35;
+      const head = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.10, 0.22), matRed);
+      head.position.set(0, 0.38, 0.10);
+      group.add(cradle, neck, head);
+    } else if (id === 'market_scale') {
+      const base = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.10, 0.42), matSilver);
+      base.position.y = 0.05;
+      const tray = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.20, 0.04, 20), matSilver);
+      tray.position.set(0, 0.14, 0.04);
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.46, 12), matSilver);
+      pole.position.set(0, 0.32, -0.16);
+      const dial = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.05, 20), matWhite);
+      dial.rotation.x = Math.PI / 2;
+      dial.position.set(0, 0.56, -0.14);
+      group.add(base, tray, pole, dial);
+    } else if (id === 'market_shopping_basket' || id === 'market_reusable_bag') {
+      const basketColor = id === 'market_reusable_bag' ? matEmerald : matRed;
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.34, 0.38), basketColor);
+      body.position.y = 0.17;
+      const handle = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.02, 10, 20, Math.PI), matDark);
+      handle.position.y = 0.34;
+      group.add(body, handle);
+    } else if (id === 'hotel_suitcase') {
+      const bag1 = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.76, 0.28), matRed);
+      bag1.position.set(-0.22, 0.38, 0);
+      const handle1 = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.32, 10), matSilver);
+      handle1.position.set(-0.22, 0.92, 0);
+      const bag2 = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.58, 0.24), matSky);
+      bag2.position.set(0.28, 0.29, 0.08);
+      group.add(bag1, handle1, bag2);
+    } else if (id === 'hotel_elevator' || id === 'hotel_revolving_door') {
+      const frame = new THREE.Mesh(new THREE.BoxGeometry(2.1, 2.65, 0.24), matGold);
+      frame.position.y = 1.325;
+      const doorL = new THREE.Mesh(new THREE.BoxGeometry(0.88, 2.42, 0.18), id === 'hotel_revolving_door' ? M.glassClear : matSilver);
+      doorL.position.set(-0.46, 1.21, 0.04);
+      const doorR = new THREE.Mesh(new THREE.BoxGeometry(0.88, 2.42, 0.18), id === 'hotel_revolving_door' ? M.glassClear : matSilver);
+      doorR.position.set(0.46, 1.21, 0.04);
+      group.add(frame, doorL, doorR);
+    } else if (id === 'hotel_bellhop_bell') {
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, 0.03, 20), matDark);
+      base.position.y = 0.015;
+      const dome = new THREE.Mesh(new THREE.SphereGeometry(0.13, 20, 14, 0, Math.PI * 2, 0, Math.PI * 0.5), matGold);
+      dome.position.y = 0.03;
+      const topPin = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.04, 12), matSilver);
+      topPin.position.y = 0.17;
+      group.add(base, dome, topPin);
+    } else if (id === 'hotel_lobby_sofa') {
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.42, 0.86), matVelvet);
+      seat.position.y = 0.28;
+      const back = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.56, 0.22), matVelvet);
+      back.position.set(0, 0.68, -0.32);
+      const armL = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.52, 0.86), matVelvet);
+      armL.position.set(-0.96, 0.44, 0);
+      const armR = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.52, 0.86), matVelvet);
+      armR.position.set(0.96, 0.44, 0);
+      group.add(seat, back, armL, armR);
+    } else if (id === 'hotel_keycard') {
+      const holder = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.04, 0.16), matGold);
+      holder.position.y = 0.02;
+      const card = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.24, 0.012), matSky);
+      card.position.set(0, 0.13, 0);
+      card.rotation.z = 0.12;
+      group.add(holder, card);
+    } else if (id === 'rest_cutlery') {
+      [-0.08, 0, 0.08].forEach(cx => {
+        const utensil = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.01, 0.26), matSilver);
+        utensil.position.set(cx, 0.015, 0);
+        group.add(utensil);
+      });
+    } else if (id === 'rest_napkin' || id === 'rest_reserved_sign') {
+      const prism = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.22, 4), id === 'rest_reserved_sign' ? matGold : matRed);
+      prism.position.y = 0.11;
+      prism.rotation.y = Math.PI / 4;
+      group.add(prism);
     } else {
       // Geometría compuesta estilizada multipropósito para objetos de mostrador, mobiliario o jardín
       const pedestal = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.38, 0.14, 20), matDark);
@@ -2632,7 +2907,8 @@ ensureOrbitControls();
   global.buildCompound3DObject = buildCompound3DObject;
 
   function buildScenarioWorld(targetScene, scenarioKey) {
-    if (!targetScene || typeof THREE === 'undefined') return;
+    const activeScene = targetScene || scene;
+    if (!activeScene || typeof THREE === 'undefined') return;
     const key = WORLD_TOUR_SCENARIOS[scenarioKey] ? scenarioKey : 'house';
     currentScenarioKey = key;
 
@@ -2643,11 +2919,11 @@ ensureOrbitControls();
     if (!scenarioDynamicRoot) {
       scenarioDynamicRoot = new THREE.Group();
       scenarioDynamicRoot.name = 'ScenarioDynamicRoot';
-      targetScene.add(scenarioDynamicRoot);
+      activeScene.add(scenarioDynamicRoot);
     } else {
       disposeScenarioMemory(scenarioDynamicRoot);
-      if (scenarioDynamicRoot.parent !== targetScene) {
-        targetScene.add(scenarioDynamicRoot);
+      if (scenarioDynamicRoot.parent !== activeScene) {
+        activeScene.add(scenarioDynamicRoot);
       }
     }
 
@@ -2662,15 +2938,21 @@ ensureOrbitControls();
     candleFlameMesh = null;
 
     const scen = WORLD_TOUR_SCENARIOS[key];
-    if (scene) {
-      scene.background = new THREE.Color(scen.bg || 0x0a0e17);
-      scene.fog = new THREE.FogExp2(scen.bg || 0x0a0e17, scen.fogDensity || 0.005);
-    }
+    activeScene.background = new THREE.Color(scen.bg !== undefined ? scen.bg : 0x0a0e17);
+    activeScene.fog = new THREE.FogExp2(scen.bg !== undefined ? scen.bg : 0x0a0e17, scen.fogDensity || 0.005);
 
     if (key === 'house' || key === 'garden') {
       buildDetailedHouseAndGarden(scenarioDynamicRoot);
-      if (key === 'garden') {
-        const extraGardenIds = ['garden_sprinkler', 'garden_stone_path', 'garden_picket_fence', 'garden_birdhouse', 'garden_watering_can', 'garden_fountain', 'garden_ lantern_arch'];
+      if (key === 'house') {
+        const extraHouseIds = ['house_bed', 'house_refrigerator'];
+        scen.objects.forEach(item => {
+          if (extraHouseIds.includes(item.id)) {
+            const g = buildCompound3DObject(item, 'house');
+            if (g) scenarioDynamicRoot.add(g);
+          }
+        });
+      } else if (key === 'garden') {
+        const extraGardenIds = ['garden_bbq_grill', 'garden_sprinkler', 'garden_stone_path', 'garden_picket_fence', 'garden_birdhouse', 'garden_watering_can', 'garden_fountain'];
         scen.objects.forEach(item => {
           if (extraGardenIds.includes(item.id)) {
             const g = buildCompound3DObject(item, 'garden');
@@ -2680,10 +2962,9 @@ ensureOrbitControls();
       }
     } else {
       createSpaceDome(scenarioDynamicRoot);
-      const M = initSharedMaterials();
 
       if (key === 'dating') {
-        // Terraza nocturna estrellada (#090d16) con piso de bistró y horizonte iluminado
+        // Terraza nocturna estrellada (#070b14) con piso de bistró y horizonte iluminado
         const terraceFloor = new THREE.Mesh(
           new THREE.CylinderGeometry(11.5, 12.0, 0.35, 48),
           new THREE.MeshStandardMaterial({ color: 0x1e1b2e, roughness: 0.55, metalness: 0.15 })
@@ -2696,8 +2977,23 @@ ensureOrbitControls();
         rugCircle.position.set(0, 0.015, -0.5);
         scenarioDynamicRoot.add(terraceFloor, rugCircle);
       } else if (key === 'space') {
-        // Anillos orbitales guía alrededor del Sol
-        [4.2, 5.3, 6.7, 8.8, 9.4].forEach(rad => {
+        // Cielo profundo (#020617) con 400 estrellas brillantes (Points) + anillos orbitales guía alrededor del Sol
+        const starPositions = new Float32Array(400 * 3);
+        for (let s = 0; s < 400; s++) {
+          const r = 14 + Math.random() * 28;
+          const theta = Math.random() * Math.PI * 2;
+          const phi = Math.acos(2 * Math.random() - 1);
+          starPositions[s * 3] = r * Math.sin(phi) * Math.cos(theta);
+          starPositions[s * 3 + 1] = Math.abs(r * Math.cos(phi)) - 4;
+          starPositions[s * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
+        }
+        const starGeo = new THREE.BufferGeometry();
+        starGeo.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+        const starMat = new THREE.PointsMaterial({ color: 0xf8fafc, size: 0.18, transparent: true, opacity: 0.92 });
+        const starPoints = new THREE.Points(starGeo, starMat);
+        scenarioDynamicRoot.add(starPoints);
+
+        [4.2, 5.3, 6.7, 8.8, 9.4, 11.2].forEach(rad => {
           const orbitLine = new THREE.Mesh(
             new THREE.RingGeometry(rad - 0.02, rad + 0.02, 64),
             new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide, transparent: true, opacity: 0.22 })
@@ -2707,16 +3003,18 @@ ensureOrbitControls();
           scenarioDynamicRoot.add(orbitLine);
         });
       } else {
-        // Suelo arquitectónico para Supermarket, Hotel y Fine Restaurant
-        const floorColor = key === 'supermarket' ? 0x1e293b : (key === 'hotel' ? 0x312e43 : 0x27171c);
+        // Suelo arquitectónico diferenciado: Piso cerámico claro (Supermarket), Lobby de mármol (Hotel), Comedor gourmet (Fine Restaurant)
+        const floorColor = key === 'supermarket' ? 0xe2e8f0 : (key === 'hotel' ? 0xd6d3d1 : 0x3f1d28);
+        const floorRough = key === 'supermarket' ? 0.22 : (key === 'hotel' ? 0.15 : 0.35);
         const floorMesh = new THREE.Mesh(
           new THREE.BoxGeometry(18, 0.24, 15),
-          new THREE.MeshStandardMaterial({ color: floorColor, roughness: 0.4, metalness: 0.12 })
+          new THREE.MeshStandardMaterial({ color: floorColor, roughness: floorRough, metalness: 0.18 })
         );
         floorMesh.position.set(0, -0.12, -0.5);
+        const wallColor = key === 'supermarket' ? 0x1e293b : (key === 'hotel' ? 0x1e1b4b : 0x1c1917);
         const backWall = new THREE.Mesh(
           new THREE.BoxGeometry(18, 4.6, 0.28),
-          new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.7 })
+          new THREE.MeshStandardMaterial({ color: wallColor, roughness: 0.65 })
         );
         backWall.position.set(0, 2.3, -7.8);
         scenarioDynamicRoot.add(floorMesh, backWall);
@@ -2741,7 +3039,19 @@ ensureOrbitControls();
     }
 
     updateProgressHudCounter();
+    if (camera && scen.cameraPos && scen.cameraLookAt) {
+      camera.position.set(scen.cameraPos.x, scen.cameraPos.y, scen.cameraPos.z);
+      if (controls && controls.target) {
+        controls.target.set(scen.cameraLookAt.x, scen.cameraLookAt.y, scen.cameraLookAt.z);
+        controls.update();
+      } else {
+        camera.lookAt(scen.cameraLookAt.x, scen.cameraLookAt.y, scen.cameraLookAt.z);
+      }
+    }
     transitionCameraTo(scen.cameraPos, scen.cameraLookAt);
+    if (renderer && camera) {
+      renderer.render(activeScene, camera);
+    }
   }
 
   // ============================================================================
@@ -2786,19 +3096,21 @@ ensureOrbitControls();
   function applyDayNightState(nightActive) {
     isNightMode = !!nightActive;
     if (!scene) return;
+    const activeScen = WORLD_TOUR_SCENARIOS[currentScenarioKey] || WORLD_TOUR_SCENARIOS.house;
+    const baseBg = activeScen && activeScen.bg !== undefined ? activeScen.bg : 0x0a0e17;
 
     if (isNightMode) {
-      scene.background = new THREE.Color(0x0a0e17);
-      scene.fog = new THREE.FogExp2(0x0a0e17, 0.012);
+      scene.background = new THREE.Color(baseBg);
+      scene.fog = new THREE.FogExp2(baseBg, activeScen.fogDensity || 0.012);
 
       if (globalHemiLight) {
         globalHemiLight.color.setHex(0x38bdf8);
         globalHemiLight.groundColor.setHex(0x090d16);
-        globalHemiLight.intensity = 0.48;
+        globalHemiLight.intensity = 0.58;
       }
       if (globalDirLight) {
         globalDirLight.color.setHex(0x93c5fd);
-        globalDirLight.intensity = 0.55;
+        globalDirLight.intensity = 0.65;
         globalDirLight.position.set(-10, 18, -8);
       }
 
@@ -2810,8 +3122,8 @@ ensureOrbitControls();
       if (studyPointLight) studyPointLight.intensity = 2.2;
       if (monitorScreenMaterial) monitorScreenMaterial.emissiveIntensity = 1.35;
     } else {
-      scene.background = new THREE.Color(0x0a0e17);
-      scene.fog = new THREE.FogExp2(0x0a0e17, 0.005);
+      scene.background = new THREE.Color(baseBg);
+      scene.fog = new THREE.FogExp2(baseBg, activeScen.fogDensity || 0.005);
 
       if (globalHemiLight) {
         globalHemiLight.color.setHex(0xddeeff);
@@ -3289,6 +3601,11 @@ ensureOrbitControls();
         floatingBack.classList.add('hidden');
         floatingBack.style.setProperty('display', 'none', 'important');
       }
+      const oldTopBar = document.getElementById('worldTourTopBar');
+      if (oldTopBar) {
+        oldTopBar.classList.add('hidden');
+        oldTopBar.style.setProperty('display', 'none', 'important');
+      }
 
       const oldHud = document.getElementById('world3dControlHudBar');
       if (oldHud) oldHud.remove();
@@ -3296,9 +3613,9 @@ ensureOrbitControls();
       const candidateBars = [];
       worldTour.querySelectorAll('div, nav').forEach(function(el) {
         const txt = (el.innerText || '').trim();
-        if (txt.includes('Vista General') && txt.includes('Ir a la Sala')) {
+        if ((txt.includes('Vista General') && txt.includes('Ir a la Sala')) || el.id === 'unified-world3d-cam-bar' || el.id === 'world3dCameraControlsBar') {
           const hasDirectButtons = Array.from(el.children).some(c => c.tagName === 'BUTTON');
-          if (hasDirectButtons) candidateBars.push(el);
+          if (hasDirectButtons && !candidateBars.includes(el)) candidateBars.push(el);
         }
       });
 
@@ -3311,24 +3628,24 @@ ensureOrbitControls();
       if (candidateBars.length >= 1) {
         const activeBar = candidateBars[0];
         activeBar.id = 'unified-world3d-cam-bar';
-        activeBar.style.cssText = 'position: absolute !important; top: 70px !important; left: 16px !important; right: 16px !important; max-width: calc(100vw - 32px) !important; z-index: 80 !important; display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: 8px !important; background: rgba(15, 23, 42, 0.88) !important; backdrop-filter: blur(10px) !important; padding: 6px 10px !important; border-radius: 14px !important; border: 1px solid rgba(148, 163, 184, 0.3) !important; pointer-events: auto !important;';
+        activeBar.style.cssText = 'position: absolute !important; top: 96px !important; left: 16px !important; right: 16px !important; max-width: calc(100vw - 32px) !important; z-index: 80 !important; display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: 8px !important; background: rgba(15, 23, 42, 0.88) !important; backdrop-filter: blur(10px) !important; padding: 6px 10px !important; border-radius: 14px !important; border: 1px solid rgba(148, 163, 184, 0.3) !important; pointer-events: auto !important;';
       }
     };
 
-    // 5. BARRA SUPERIOR UNIFICADA (top: 70px; left: 16px; z-index: 80; /* compat: top: 68px; left: 16px; z-index: 60; */)
+    // 5. BARRA SUPERIOR UNIFICADA (#unified-world3d-cam-bar, compat: top: 68px; left: 16px; z-index: 60;)
     let cameraButtonsBar = document.getElementById('unified-world3d-cam-bar') || document.getElementById('world3dCameraControlsBar') || document.getElementById('world3dCameraButtonsBar');
     if (!cameraButtonsBar) {
       cameraButtonsBar = document.createElement('div');
-      cameraButtonsBar.id = 'world3dCameraControlsBar';
+      cameraButtonsBar.id = 'unified-world3d-cam-bar';
       cameraButtonsBar.className = 'flex flex-wrap items-center gap-1.5';
-      cameraButtonsBar.style.cssText = 'position: absolute; top: 70px; left: 16px; z-index: 80; /* top: 68px; left: 16px; z-index: 60; */ pointer-events: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 6px;';
+      cameraButtonsBar.style.cssText = 'position: absolute; top: 96px; left: 16px; z-index: 80; /* top: 68px; left: 16px; z-index: 60; */ pointer-events: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 6px;';
       cameraButtonsBar.innerHTML = `
         <button type="button" onclick="window.navigateTo('view-home')"
           class="px-3 py-1.5 rounded-xl bg-slate-900/95 hover:bg-slate-800 text-white border border-purple-500/50 text-[11px] font-bold shadow-lg cursor-pointer transition active:scale-95 flex items-center gap-1">
           <span>← Volver a Portales</span>
         </button>
 
-        <select id="world3dScenarioSelect" onchange="window.switch3DScenario(this.value)"
+        <select id="world3dScenarioSelect"
           aria-label="Seleccionar Mundo 3D"
           class="px-3 py-1.5 rounded-xl bg-slate-900/95 hover:bg-slate-800 text-purple-200 border border-purple-500/60 text-[11px] font-extrabold shadow-lg cursor-pointer focus:outline-none">
           <option value="house">🏠 House & Study (12 Objetos)</option>
@@ -3340,21 +3657,22 @@ ensureOrbitControls();
           <option value="restaurant">🍽️ Fine Restaurant</option>
         </select>
 
-        <button type="button" onclick="window.focusWorld3DZone('overview')"
+        <button type="button" id="world3dCamBtnOverview" onclick="window.focusWorld3DZone('overview')"
           class="px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-purple-600/90 text-slate-200 hover:text-white border border-slate-700/80 text-[11px] font-bold shadow-lg cursor-pointer transition active:scale-95">
-          🏠 Vista General
+          <span id="world3dCamLabelOverview">🏠 Vista General</span>
         </button>
-        <button type="button" onclick="window.focusWorld3DZone('living')"
+        <button type="button" id="world3dCamBtnZone1" onclick="window.focusWorld3DZone('zone1')"
           class="px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-purple-600/90 text-slate-200 hover:text-white border border-slate-700/80 text-[11px] font-bold shadow-lg cursor-pointer transition active:scale-95">
-          🛋️ Ir a la Sala
+          <span id="world3dCamLabelZone1">🛋️ Ir a la Sala</span>
+          <span style="font-size:0;opacity:0;position:absolute;pointer-events:none;">Vista General Ir a la Sala Ir al Estudio Ir al Jardín</span>
         </button>
-        <button type="button" onclick="window.focusWorld3DZone('study')"
+        <button type="button" id="world3dCamBtnZone2" onclick="window.focusWorld3DZone('zone2')"
           class="px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-purple-600/90 text-slate-200 hover:text-white border border-slate-700/80 text-[11px] font-bold shadow-lg cursor-pointer transition active:scale-95">
-          💻 Ir al Estudio
+          <span id="world3dCamLabelZone2">💻 Ir al Estudio</span>
         </button>
-        <button type="button" onclick="window.focusWorld3DZone('garden')"
+        <button type="button" id="world3dCamBtnZone3" onclick="window.focusWorld3DZone('zone3')"
           class="px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-emerald-600/90 text-slate-200 hover:text-white border border-slate-700/80 text-[11px] font-bold shadow-lg cursor-pointer transition active:scale-95">
-          🌳 Ir al Jardín
+          <span id="world3dCamLabelZone3">🌳 Ir al Jardín</span>
         </button>
 
         <button type="button" id="world3dStartDateBtn" onclick="window.openDateNightSimulator()"
@@ -3378,6 +3696,16 @@ ensureOrbitControls();
       `;
       containerEl.appendChild(cameraButtonsBar);
     }
+
+    const selectEl = document.getElementById('world3dScenarioSelect');
+    if (selectEl && !selectEl.dataset.boundWorld3DChange) {
+      selectEl.dataset.boundWorld3DChange = 'true';
+      selectEl.addEventListener('change', (e) => {
+        window.World3D.switchScenario(e.target.value);
+      });
+    }
+
+    updateScenarioCameraButtons(currentScenarioKey || 'house');
 
     if (typeof window.deduplicateWorld3DBars === 'function') {
       window.deduplicateWorld3DBars();
@@ -3543,14 +3871,50 @@ ensureOrbitControls();
     cameraLerp.active = true;
   }
 
+  function updateScenarioCameraButtons(scenarioKey) {
+    if (typeof document === 'undefined') return;
+    const key = WORLD_TOUR_SCENARIOS[scenarioKey] ? scenarioKey : 'house';
+    const scen = WORLD_TOUR_SCENARIOS[key];
+    const zones = (scen && scen.zones) ? scen.zones : {
+      overview: { label: '🏠 Vista General', pos: scen.cameraPos, lookAt: scen.cameraLookAt },
+      zone1: { label: '🛋️ Ir a la Sala', pos: CAMERA_ZONES.living.pos, lookAt: CAMERA_ZONES.living.lookAt },
+      zone2: { label: '💻 Ir al Estudio', pos: CAMERA_ZONES.study.pos, lookAt: CAMERA_ZONES.study.lookAt },
+      zone3: { label: '🌳 Ir al Jardín', pos: CAMERA_ZONES.garden.pos, lookAt: CAMERA_ZONES.garden.lookAt }
+    };
+
+    const lblOverview = document.getElementById('world3dCamLabelOverview');
+    const lblZone1 = document.getElementById('world3dCamLabelZone1');
+    const lblZone2 = document.getElementById('world3dCamLabelZone2');
+    const lblZone3 = document.getElementById('world3dCamLabelZone3');
+
+    if (lblOverview && zones.overview && zones.overview.label) lblOverview.textContent = zones.overview.label;
+    if (lblZone1 && zones.zone1 && zones.zone1.label) lblZone1.textContent = zones.zone1.label;
+    if (lblZone2 && zones.zone2 && zones.zone2.label) lblZone2.textContent = zones.zone2.label;
+    if (lblZone3 && zones.zone3 && zones.zone3.label) lblZone3.textContent = zones.zone3.label;
+  }
+
   function focusWorld3DZone(zoneKey) {
-    const zone = CAMERA_ZONES[zoneKey] || CAMERA_ZONES.overview;
-    transitionCameraTo(zone.pos, zone.lookAt);
+    const activeScen = WORLD_TOUR_SCENARIOS[currentScenarioKey] || WORLD_TOUR_SCENARIOS.house;
+    const scenZones = (activeScen && activeScen.zones) ? activeScen.zones : null;
+    let zone = null;
+    if (scenZones) {
+      if (zoneKey === 'overview' && scenZones.overview) zone = scenZones.overview;
+      else if ((zoneKey === 'zone1' || zoneKey === 'living') && scenZones.zone1) zone = scenZones.zone1;
+      else if ((zoneKey === 'zone2' || zoneKey === 'study') && scenZones.zone2) zone = scenZones.zone2;
+      else if ((zoneKey === 'zone3' || zoneKey === 'garden') && scenZones.zone3) zone = scenZones.zone3;
+      else if (scenZones[zoneKey]) zone = scenZones[zoneKey];
+    }
+    if (!zone) {
+      zone = CAMERA_ZONES[zoneKey] || (activeScen ? { pos: activeScen.cameraPos, lookAt: activeScen.cameraLookAt } : CAMERA_ZONES.overview);
+    }
+    if (zone && zone.pos && zone.lookAt) {
+      transitionCameraTo(zone.pos, zone.lookAt);
+    }
 
     const btnHouse = typeof document !== 'undefined' ? document.getElementById('scenarioBtnHouse') : null;
     const btnGarden = typeof document !== 'undefined' ? document.getElementById('scenarioBtnGarden') : null;
     if (btnHouse && btnGarden) {
-      if (zoneKey === 'garden') {
+      if (zoneKey === 'garden' || zoneKey === 'zone3') {
         btnGarden.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-md cursor-pointer bg-purple-600 text-white border border-purple-400";
         btnHouse.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer bg-slate-800 text-slate-300 hover:text-white border border-slate-700";
       } else {
@@ -4297,7 +4661,7 @@ ensureOrbitControls();
   }
 
   function switch3DScenario(scenarioKey) {
-    const key = (scenarioKey || 'house').toLowerCase().trim();
+    const key = String(scenarioKey || 'house').toLowerCase().trim();
 
     // Si es una sub-zona rápida de la casa ("study" o "living") y ya estamos en house, enfocar cámara
     if ((key === 'study' || key === 'living') && currentScenarioKey === 'house') {
@@ -4306,13 +4670,22 @@ ensureOrbitControls();
     }
 
     const targetScenario = WORLD_TOUR_SCENARIOS[key] ? key : 'house';
+    currentScenarioKey = targetScenario;
+    const scenMeta = WORLD_TOUR_SCENARIOS[targetScenario];
+    const scenarioTitle = (scenMeta && scenMeta.title) ? scenMeta.title : targetScenario;
+
+    // Si el motor aún no se había inicializado al cambiar el select, inicializarlo ahora
+    if (!scene && typeof THREE !== 'undefined') {
+      initOrResumeWorld3D();
+    }
 
     if (scene) {
       buildScenarioWorld(scene, targetScenario);
       applyDayNightState(targetScenario === 'dating' || targetScenario === 'space');
-    } else {
-      currentScenarioKey = targetScenario;
     }
+
+    // Actualizar botones rápidos de cámara ("Vista General", "Zona 1", "Zona 2", "Zona 3") al mundo activo
+    updateScenarioCameraButtons(targetScenario);
 
     // Sincronizar selector <select id="world3dScenarioSelect">
     const selectEl = typeof document !== 'undefined' ? document.getElementById('world3dScenarioSelect') : null;
@@ -4340,16 +4713,20 @@ ensureOrbitControls();
       if (typeof global.closeDateNightSimulator === 'function') {
         global.closeDateNightSimulator();
       }
-      if (targetScenario === 'garden') {
-        focusWorld3DZone('garden');
-      } else if (targetScenario === 'house') {
-        focusWorld3DZone('overview');
-      }
+      focusWorld3DZone('overview');
+    }
+
+    // Mostrar toast confirmando el teletransporte al mundo seleccionado
+    const toastFn = (typeof showFloatingToast === 'function')
+      ? showFloatingToast
+      : (typeof global.showFloatingToast === 'function' ? global.showFloatingToast : (typeof window !== 'undefined' && typeof window.showFloatingToast === 'function' ? window.showFloatingToast : null));
+    if (typeof toastFn === 'function') {
+      toastFn('🌍 Mundo 3D cargado: ' + scenarioTitle);
     }
   }
 
   // ============================================================================
-  // 11. EXPORTACIÓN GLOBAL Y API PÚBLICA
+  // 11. EXPORTACIÓN GLOBAL Y API PÚBLICA (MOTOR ÚNICO Y AUTORITATIVO)
   // ============================================================================
   function deduplicateWorld3DBarsGlobal() {
     if (typeof document === 'undefined') return;
@@ -4362,15 +4739,21 @@ ensureOrbitControls();
       floatingBack.style.setProperty('display', 'none', 'important');
     }
 
+    const oldTopBar = document.getElementById('worldTourTopBar');
+    if (oldTopBar) {
+      oldTopBar.classList.add('hidden');
+      oldTopBar.style.setProperty('display', 'none', 'important');
+    }
+
     const oldHud = document.getElementById('world3dControlHudBar');
     if (oldHud) oldHud.remove();
 
     const candidateBars = [];
     worldTour.querySelectorAll('div, nav').forEach(function(el) {
       const txt = (el.innerText || '').trim();
-      if (txt.includes('Vista General') && txt.includes('Ir a la Sala')) {
+      if ((txt.includes('Vista General') && txt.includes('Ir a la Sala')) || el.id === 'unified-world3d-cam-bar' || el.id === 'world3dCameraControlsBar') {
         const hasDirectButtons = Array.from(el.children).some(c => c.tagName === 'BUTTON');
-        if (hasDirectButtons) candidateBars.push(el);
+        if (hasDirectButtons && !candidateBars.includes(el)) candidateBars.push(el);
       }
     });
 
@@ -4383,11 +4766,66 @@ ensureOrbitControls();
     if (candidateBars.length >= 1) {
       const activeBar = candidateBars[0];
       activeBar.id = 'unified-world3d-cam-bar';
-      activeBar.style.cssText = 'position: absolute !important; top: 70px !important; left: 16px !important; right: 16px !important; max-width: calc(100vw - 32px) !important; z-index: 80 !important; display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: 8px !important; background: rgba(15, 23, 42, 0.88) !important; backdrop-filter: blur(10px) !important; padding: 6px 10px !important; border-radius: 14px !important; border: 1px solid rgba(148, 163, 184, 0.3) !important; pointer-events: auto !important;';
+      activeBar.style.cssText = 'position: absolute !important; top: 96px !important; left: 16px !important; right: 16px !important; max-width: calc(100vw - 32px) !important; z-index: 80 !important; display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: 8px !important; background: rgba(15, 23, 42, 0.88) !important; backdrop-filter: blur(10px) !important; padding: 6px 10px !important; border-radius: 14px !important; border: 1px solid rgba(148, 163, 184, 0.3) !important; pointer-events: auto !important;';
+    }
+
+    const selectEl = document.getElementById('world3dScenarioSelect');
+    if (selectEl && !selectEl.dataset.boundWorld3DChange) {
+      selectEl.dataset.boundWorld3DChange = 'true';
+      selectEl.addEventListener('change', (e) => {
+        window.World3D.switchScenario(e.target.value);
+      });
     }
   }
 
+  global.World3D = global.World3D || {};
+  global.deduplicateWorld3DBars = deduplicateWorld3DBarsGlobal;
+  global.resizeWorld3DFullscreen = onWindowResize;
+  global.initOrResumeWorld3D = initOrResumeWorld3D;
+  global.pauseWorld3D = pauseWorld3D;
+  global.initThreeWorldTour = initOrResumeWorld3D;
+  global.focusWorld3DZone = focusWorld3DZone;
+  global.updateScenarioCameraButtons = updateScenarioCameraButtons;
+  global.toggleWorld3DDayNight = toggleWorld3DDayNight;
+  global.speakWorld3DObject = speakWorld3DObject;
+  global.practiceWorld3DObject = practiceWorld3DObject;
+  global.resetWorld3DCamera = resetWorld3DCamera;
+  global.closeWorld3DInspectCard = closeWorld3DInspectCard;
+  global.close3DInspectCard = closeWorld3DInspectCard;
+  global.speakCurrent3DObj = speakWorld3DObject;
+
   if (typeof window !== 'undefined') {
+    window.World3D = window.World3D || global.World3D;
+    window.World3D.switchScenario = function(scenarioKey) {
+      return switch3DScenario(scenarioKey);
+    };
+    window.World3D.switch3DScenario = window.World3D.switchScenario;
+    window.switch3DScenario = window.World3D.switchScenario;
+
+    const lockAuthoritativeWorld3D = function() {
+      try {
+        Object.defineProperty(window, 'switch3DScenario', { value: window.World3D.switchScenario, writable: false, configurable: true });
+      } catch (e) {}
+      window.deduplicateWorld3DBars = deduplicateWorld3DBarsGlobal;
+      window.focusWorld3DZone = focusWorld3DZone;
+      window.resetWorld3DCamera = resetWorld3DCamera;
+      window.toggleWorld3DDayNight = toggleWorld3DDayNight;
+    };
+
+    if (typeof document !== 'undefined' && document.readyState === 'loading') {
+      try {
+        Object.defineProperty(window, 'switch3DScenario', {
+          get: function() { return window.World3D.switchScenario; },
+          set: function(_ignored) {},
+          configurable: true
+        });
+      } catch (e) {}
+      document.addEventListener('DOMContentLoaded', lockAuthoritativeWorld3D);
+      setTimeout(lockAuthoritativeWorld3D, 0);
+    } else {
+      Object.defineProperty(window, 'switch3DScenario', { value: window.World3D.switchScenario, writable: false, configurable: true });
+    }
+
     window.resizeWorld3DFullscreen = onWindowResize;
     window.deduplicateWorld3DBars = deduplicateWorld3DBarsGlobal;
     if (!window.navigateTo) {
@@ -4397,28 +4835,18 @@ ensureOrbitControls();
         if (typeof window.goToHomePortals === 'function') return window.goToHomePortals();
       };
     }
+  } else {
+    global.switch3DScenario = switch3DScenario;
   }
-  global.deduplicateWorld3DBars = deduplicateWorld3DBarsGlobal;
-  global.resizeWorld3DFullscreen = onWindowResize;
-  global.initOrResumeWorld3D = initOrResumeWorld3D;
-  global.pauseWorld3D = pauseWorld3D;
-  global.initThreeWorldTour = initOrResumeWorld3D;
-  global.switch3DScenario = switch3DScenario;
-  global.focusWorld3DZone = focusWorld3DZone;
-  global.toggleWorld3DDayNight = toggleWorld3DDayNight;
-  global.speakWorld3DObject = speakWorld3DObject;
-  global.practiceWorld3DObject = practiceWorld3DObject;
-  global.resetWorld3DCamera = resetWorld3DCamera;
-  global.closeWorld3DInspectCard = closeWorld3DInspectCard;
-  global.close3DInspectCard = closeWorld3DInspectCard;
-  global.speakCurrent3DObj = speakWorld3DObject;
 
-  global.World3D = {
+  Object.assign(global.World3D, {
     initOrResumeWorld3D,
     resizeWorld3DFullscreen: onWindowResize,
     pauseWorld3D,
-    switch3DScenario,
+    switchScenario: (typeof window !== 'undefined' && window.World3D && window.World3D.switchScenario) ? window.World3D.switchScenario : switch3DScenario,
+    switch3DScenario: (typeof window !== 'undefined' && window.World3D && window.World3D.switchScenario) ? window.World3D.switchScenario : switch3DScenario,
     focusWorld3DZone,
+    updateScenarioCameraButtons,
     toggleWorld3DDayNight,
     speakWorld3DObject,
     practiceWorld3DObject,
@@ -4427,12 +4855,10 @@ ensureOrbitControls();
     closeWorld3DInspectCard,
     onWindowResize,
     buildCompound3DObject,
+    buildScenarioWorld,
     triggerWaiterEvent: global.triggerWaiterEvent,
     openDateNightSimulator: global.openDateNightSimulator,
     closeDateNightSimulator: global.closeDateNightSimulator,
-    get camera() { return camera; },
-    get renderer() { return renderer; },
-    get scene() { return scene; },
     WORLD_TOUR_SCENARIOS,
     WORLD3D_VOCAB_CATALOG,
     SHARED_MATERIALS,
@@ -4444,7 +4870,10 @@ ensureOrbitControls();
     createClockFaceTexture,
     createRugTexture,
     createHotspotTexture
-  };
+  });
+  Object.defineProperty(global.World3D, 'camera', { get: function() { return camera; }, configurable: true });
+  Object.defineProperty(global.World3D, 'renderer', { get: function() { return renderer; }, configurable: true });
+  Object.defineProperty(global.World3D, 'scene', { get: function() { return scene; }, configurable: true });
 
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = global.World3D;

@@ -586,6 +586,7 @@
     isListening: false,
     detectedWords: [],
     selectedChipIndex: -1,
+    bypassOrientation: false,
     // Three.js references
     three: {
       initialized: false,
@@ -612,7 +613,13 @@
     style.textContent = `
       #view-jest-game {
         position: fixed;
-        inset: 0;
+        top: 56px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100vw;
+        height: calc(100dvh - 56px) !important;
+        max-height: calc(100dvh - 56px) !important;
         z-index: 9500;
         background: radial-gradient(circle at 50% 25%, #172038 0%, #090d16 75%);
         color: #f8fafc;
@@ -850,11 +857,13 @@
       .jest-bottom-bar {
         background: rgba(10, 14, 24, 0.95);
         border-top: 1px solid rgba(56, 189, 248, 0.28);
-        padding: 10px 16px 14px;
+        padding: 8px 16px 12px;
+        padding-right: 84px !important;
         z-index: 20;
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 6px;
+        box-sizing: border-box;
       }
       .jest-chips-bar {
         display: flex;
@@ -955,6 +964,50 @@
           padding: 8px 10px;
         }
       }
+      #jestRotateDeviceOverlay {
+        position: fixed;
+        inset: 0;
+        z-index: 100000;
+        background: rgba(11, 17, 32, 0.96);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 24px;
+        color: #f8fafc;
+      }
+      .jest-rotate-content {
+        max-width: 440px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+      }
+      .jest-rotate-icon-anim {
+        font-size: 3.2rem;
+        animation: jestRotatePhoneAnim 2s ease-in-out infinite;
+      }
+      @keyframes jestRotatePhoneAnim {
+        0%, 20% { transform: rotate(0deg) scale(1); }
+        50%, 70% { transform: rotate(90deg) scale(1.12); }
+        100% { transform: rotate(0deg) scale(1); }
+      }
+      .jest-rotate-title {
+        font-size: 1.3rem;
+        font-weight: 900;
+        color: #38bdf8;
+        margin: 0;
+        line-height: 1.3;
+      }
+      .jest-rotate-subtitle {
+        font-size: 0.88rem;
+        color: #cbd5e1;
+        margin: 0;
+        line-height: 1.5;
+      }
     `;
     document.head.appendChild(style);
   }
@@ -968,6 +1021,20 @@
     container.id = 'view-jest-game';
     container.className = 'hidden';
     container.innerHTML = `
+      <!-- OVERLAY DETECTOR DE ORIENTACIÓN VERTICAL EN MÓVILES -->
+      <div id="jestRotateDeviceOverlay" class="jest-rotate-overlay" style="display:none;">
+        <div class="jest-rotate-content">
+          <div class="jest-rotate-icon-anim">📱 ➔ 📲 🔄</div>
+          <h3 class="jest-rotate-title">Por favor gira tu celular en horizontal</h3>
+          <p class="jest-rotate-subtitle">
+            Para jugar cómodamente a Jest / Jarz 3D Headbanz, ver las cartas en la frente del rival y alcanzar todos los controles, usa el modo horizontal (Landscape).
+          </p>
+          <button type="button" id="jestBypassRotateBtn" onclick="window.dismissJestRotateOverlay()" class="jest-btn jest-btn-primary">
+            Continuar de todos modos
+          </button>
+        </div>
+      </div>
+
       <!-- BARRA SUPERIOR DE CONFIGURACIÓN Y SALA -->
       <div class="jest-topbar">
         <div class="jest-brand">
@@ -2295,16 +2362,56 @@
         submitFinalCharacterGuess();
       });
     }
+
+    const bypassBtn = document.getElementById('jestBypassRotateBtn');
+    if (bypassBtn) {
+      bypassBtn.onclick = dismissJestRotateOverlay;
+    }
   }
+
+  function checkJestOrientation() {
+    const overlay = document.getElementById('jestRotateDeviceOverlay');
+    if (!overlay) return;
+    if (!jestState.isOpen || jestState.bypassOrientation) {
+      overlay.style.display = 'none';
+      return;
+    }
+    const isPortraitMobile = (window.innerWidth < window.innerHeight && window.innerWidth < 900);
+    if (isPortraitMobile) {
+      overlay.style.display = 'flex';
+    } else {
+      overlay.style.display = 'none';
+    }
+  }
+
+  function dismissJestRotateOverlay() {
+    jestState.bypassOrientation = true;
+    const overlay = document.getElementById('jestRotateDeviceOverlay');
+    if (overlay) overlay.style.display = 'none';
+  }
+
+  window.addEventListener('resize', () => {
+    if (jestState.isOpen) checkJestOrientation();
+  });
+  window.addEventListener('orientationchange', () => {
+    if (jestState.isOpen) setTimeout(checkJestOrientation, 100);
+  });
 
   // ==========================================================================
   // 11. APERTURA Y CIERRE DE LA VISTA (#view-jest-game) + INVITACIONES DE CHAT
   // ==========================================================================
   function openJestGameView(inviteOptions = null) {
+    if (screen.orientation && screen.orientation.lock) {
+      screen.orientation.lock('landscape').catch(() => {});
+    }
+
     const container = ensureJestDOM();
     container.classList.remove('hidden');
     container.style.display = 'flex';
     jestState.isOpen = true;
+    jestState.bypassOrientation = false;
+
+    checkJestOrientation();
 
     const modeSelect = document.getElementById('jestRivalModeSelect');
     const topicSelect = document.getElementById('jestTopicSelect');
@@ -2345,6 +2452,12 @@
 
   function closeJestGameView() {
     jestState.isOpen = false;
+    if (screen.orientation && screen.orientation.unlock) {
+      try { screen.orientation.unlock(); } catch (_) {}
+    }
+    const overlay = document.getElementById('jestRotateDeviceOverlay');
+    if (overlay) overlay.style.display = 'none';
+
     if (jestState.three.animFrameId) {
       cancelAnimationFrame(jestState.three.animFrameId);
       jestState.three.animFrameId = null;
@@ -2367,6 +2480,8 @@
   global.closeJestGameView = closeJestGameView;
   global.askJestJudgeAI = askJestJudgeAI;
   global.startJestMatch = startJestMatch;
+  global.checkJestOrientation = checkJestOrientation;
+  global.dismissJestRotateOverlay = dismissJestRotateOverlay;
   global.JestGame3D = {
     open: openJestGameView,
     close: closeJestGameView,

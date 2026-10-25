@@ -1,18 +1,18 @@
 /**
- * MasterENG - Social Chat & Relationship Gamification Hub (WhatsApp Web / Mobile Style)
- * Rol: Lead Realtime Social & Gamification Architect
+ * MasterENG - Social Chat & Realtime Relationship Gamification Hub (WhatsApp Web / Mobile Style)
+ * Rol: Lead Realtime Social & Database Architect
  *
  * Características:
- * - Interfaz Split-View estilo WhatsApp (.wa-chat-layout, .wa-sidebar, .wa-chat-window)
- * - Buscador y botones: ➕ Agregar Amigo (sincronizado con localStorage y /api/users) + 👥 Crear Grupo
- * - Pestañas de filtrado: Todos, ❤️ Pareja, ⚡ Amigos, 🏠 Familia, 👥 Grupos
- * - Insignias de Rango Personal (🥉 Bronce, 🥇 Oro, 💎 Diamante), Rol de Relación y Racha activa (🔥 X días)
- * - 5 Temas Visuales por Chat (.theme-love, .theme-nature, .theme-work, .theme-space, .theme-classic)
- * - Evolución automática de Rango de Pareja / Amistad / Familia en localStorage ('mastereng_social_bonds')
- * - Panel desplegable de Misiones Semanales en Pareja / Vínculo (+1 día de racha 🔥 y +15 EXP)
- * - Acciones en Chat: 🎤 Dictado / Nota de Voz en Inglés, 🌐 Traducir mensaje recibido,
- *   🃏 Invitar a Jest (Jarz) y 🕯️ Invitar a Cita 3D (guardando 'mastereng_active_date_partner')
- * - Motor de Respuesta Inteligente en Inglés adaptado al Rol de Relación
+ * - CERO bots falsos por defecto: Purga automática de bots de prueba (Sophia Valentine, Liam Carter,
+ *   Emma Rodriguez, Noah Sterling, English Legends Club) y estado vacío limpio para personas reales.
+ * - Sistema de ID Único de Jugador (MENG-XXXX) con window.ensureUserUniqueGameId() sincronizado
+ *   en sesión, localStorage ('mastereng_registered_users') y backend (/api/users/register-code y /api/users).
+ * - Buscador de Amigos en vivo estilo videojuego (por ID Único MENG-XXXX, Nombre de usuario o Correo)
+ *   consultando GET /api/users, /api/admin/users y localStorage.
+ * - Elección de Rol de Relación en Conjunto con descripción de cada vínculo y Solicitud de Vínculo
+ *   interactiva en el chat con botón "Aceptar Rol en Conjunto".
+ * - Modal de "Guía de Rangos y Rachas" en la cabecera detallando niveles, días de racha (🔥) y
+ *   citas 3D / partidas de Jest requeridas para ascender.
  */
 
 (function (global) {
@@ -26,51 +26,121 @@
     MY_FRIEND_CODE: 'mastereng_my_friend_code'
   };
 
+  // Lista negra estricta de bots de prueba que jamás deben aparecer
+  const BANNED_BOT_IDS = new Set([
+    'contact_sophia',
+    'contact_liam',
+    'contact_emma',
+    'contact_noah',
+    'group_legends'
+  ]);
+
+  const BANNED_BOT_NAMES = [
+    'sophia valentine',
+    'liam carter',
+    'emma rodriguez',
+    'noah sterling',
+    'english legends club'
+  ];
+
+  function isBannedFakeBot(contactOrUser) {
+    if (!contactOrUser || typeof contactOrUser !== 'object') return true;
+    const id = String(contactOrUser.id || '').trim().toLowerCase();
+    const name = String(contactOrUser.name || contactOrUser.username || '').trim().toLowerCase();
+    const email = String(contactOrUser.email || '').trim().toLowerCase();
+    if (BANNED_BOT_IDS.has(id)) return true;
+    for (const botName of BANNED_BOT_NAMES) {
+      if (name.includes(botName)) return true;
+    }
+    if (
+      email === 'sophia@mastereng.academy' ||
+      email === 'liam@mastereng.academy' ||
+      email === 'emma@mastereng.academy' ||
+      email === 'noah@mastereng.academy'
+    ) {
+      return true;
+    }
+    return false;
+  }
+
   // ============================================================================
-  // 1. CATÁLOGO DE ROLES, TEMAS Y RANGOS EVOLUTIVOS
+  // 1. CATÁLOGO DE ROLES CON DESCRIPCIÓN OFICIAL, TEMAS Y GUÍA DE RANGOS
   // ============================================================================
   const RELATIONSHIP_ROLES = {
     partner: {
       id: 'partner',
+      title: 'Pareja (Couple)',
       label: '❤️ Pareja',
       shortLabel: '❤️ Pareja',
       tabKey: 'partner',
-      defaultTheme: 'love'
+      defaultTheme: 'love',
+      description: 'Vínculo romántico para practicar citas en el Bistro 3D y misiones semanales en pareja.',
+      ranks: [
+        { level: 1, name: '💌 Crush', minDays: 0, req: 'Inicio del vínculo romántico', desc: 'Primeros mensajes e interés mutuo practicando inglés.' },
+        { level: 2, name: '🌹 Salientes', minDays: 3, req: '3+ días de racha 🔥', desc: 'Citas casuales en el Bistro 3D y conversaciones diarias.' },
+        { level: 3, name: '👩‍❤️‍👨 Novios', minDays: 10, req: '10+ días de racha 🔥 + Citas 3D', desc: 'Relación formal en MasterENG con bonificación de EXP en citas.' },
+        { level: 4, name: '💍 Prometidos', minDays: 25, req: '25+ días de racha 🔥 + Misiones semanales', desc: 'Compromiso bilingüe de alto nivel y rachas inquebrantables.' },
+        { level: 5, name: '👑 Esposos', minDays: 50, req: '50+ días de racha 🔥 + Citas y Jest', desc: 'Matrimonio oficial dentro de la comunidad con insignia real.' },
+        { level: 6, name: '✨ Almas Gemelas', minDays: 100, req: '100+ días de racha 🔥', desc: 'Nivel legendario máximo de conexión y dominio conjunto del inglés.' }
+      ]
     },
     friends: {
       id: 'friends',
+      title: 'Compañeros / Amigos (Besties)',
       label: '⚡ Mejor Amigo / Compañero',
       shortLabel: '⚡ Amigos',
       tabKey: 'friends',
-      defaultTheme: 'space'
+      defaultTheme: 'space',
+      description: 'Duelos competitivos en Jest 3D, slang callejero y rachas de estudio diario.',
+      ranks: [
+        { level: 1, name: '👋 Conocidos', minDays: 0, req: 'Inicio de amistad', desc: 'Primeros saludos y práctica casual en el chat.' },
+        { level: 2, name: '🤝 Compas (Buddies)', minDays: 3, req: '3+ días de racha 🔥', desc: 'Compañeros frecuentes de práctica y vocabulario.' },
+        { level: 3, name: '⚡ Mejores Amigos (Besties)', minDays: 10, req: '10+ días de racha 🔥 + Duelos Jest 3D', desc: 'Rivales y aliados inseparables en partidas 1vs1 de Jest.' },
+        { level: 4, name: '🔥 Inseparables (Partners in Crime)', minDays: 25, req: '25+ días de racha 🔥 + Misiones', desc: 'Dúo legendario de fluidez y competencia en inglés.' }
+      ]
     },
     family: {
       id: 'family',
+      title: 'Familia (Family)',
       label: '🏠 Familia',
       shortLabel: '🏠 Familia',
       tabKey: 'family',
-      defaultTheme: 'nature'
+      defaultTheme: 'nature',
+      description: 'Práctica de vocabulario cotidiano, hogar, supermercado y apoyo mutuo.',
+      ranks: [
+        { level: 1, name: '🏠 Roomies', minDays: 0, req: 'Inicio del vínculo familiar', desc: 'Convivencia diaria practicando expresiones cotidianas del hogar.' },
+        { level: 2, name: '🧬 Primos', minDays: 3, req: '3+ días de racha 🔥', desc: 'Apoyo constante en módulos de supervivencia y viajes.' },
+        { level: 3, name: '🛡️ Hermanos (Siblings)', minDays: 10, req: '10+ días de racha 🔥 + Juegos', desc: 'Confianza total y estudio colaborativo todas las semanas.' },
+        { level: 4, name: '👑 Dinastía Familiar', minDays: 25, req: '25+ días de racha 🔥', desc: 'Familia bilingüe de élite con racha histórica.' }
+      ]
     },
     colleague: {
       id: 'colleague',
+      title: 'Colegas (Coworkers)',
       label: '💼 Colega',
       shortLabel: '💼 Colega',
       tabKey: 'friends',
-      defaultTheme: 'work'
-    },
-    acquaintance: {
-      id: 'acquaintance',
-      label: '👋 Conocido',
-      shortLabel: '👋 Conocido',
-      tabKey: 'friends',
-      defaultTheme: 'classic'
+      defaultTheme: 'work',
+      description: 'Inglés profesional, entrevistas, hotel y negocios.',
+      ranks: [
+        { level: 1, name: '💼 Colegas (Coworkers)', minDays: 0, req: 'Inicio profesional', desc: 'Networking y práctica de vocabulario de oficina y tecnología.' },
+        { level: 2, name: '🚀 Aliados de Proyecto', minDays: 7, req: '7+ días de racha 🔥', desc: 'Colaboración activa en inglés de negocios y entrevistas.' },
+        { level: 3, name: '🏆 Socios Ejecutivos', minDays: 20, req: '20+ días de racha 🔥 + Misiones', desc: 'Dominio corporativo y preparación certificada TOEFL.' }
+      ]
     },
     group: {
       id: 'group',
+      title: 'Grupo de Estudio',
       label: '👥 Grupo de Estudio',
       shortLabel: '👥 Grupo',
       tabKey: 'groups',
-      defaultTheme: 'space'
+      defaultTheme: 'space',
+      description: 'Sala grupal para practicar conversación en equipo y lanzar retos.',
+      ranks: [
+        { level: 1, name: '👥 Grupo de Estudio', minDays: 0, req: 'Creación del grupo', desc: 'Equipo de práctica colaborativa.' },
+        { level: 2, name: '🔥 Comunidad Activa', minDays: 5, req: '5+ días de racha 🔥', desc: 'Grupo constante con participación diaria.' },
+        { level: 3, name: '👑 Escuadrón Bilingüe Élite', minDays: 15, req: '15+ días de racha 🔥', desc: 'Comunidad de alto rendimiento en inglés.' }
+      ]
     }
   };
 
@@ -112,210 +182,14 @@
     }
   };
 
-  const PERSONAL_RANKS = {
-    bronze: { id: 'bronze', label: '🥉 Bronce', cefr: 'A1-A2' },
-    gold: { id: 'gold', label: '🥇 Oro', cefr: 'B1-B2' },
-    diamond: { id: 'diamond', label: '💎 Diamante', cefr: 'C1-C2' }
-  };
-
-  // Contactos iniciales predeterminados para experiencia inmediata
-  const DEFAULT_CONTACTS = [
-    {
-      id: 'contact_sophia',
-      name: 'Sophia Valentine',
-      username: 'sophia_val',
-      email: 'sophia@mastereng.academy',
-      friendCode: 'MENG-7742',
-      avatar: '💖',
-      personalRank: '💎 Diamante',
-      cefr: 'C1 Advanced',
-      statusText: 'Online • Ready for our 3D Date 🕯️',
-      isOnline: true,
-      isGroup: false
-    },
-    {
-      id: 'contact_liam',
-      name: 'Liam Carter',
-      username: 'liam_bro',
-      email: 'liam@mastereng.academy',
-      friendCode: 'MENG-3319',
-      avatar: '⚡',
-      personalRank: '🥇 Oro',
-      cefr: 'B2 Upper-Int',
-      statusText: 'Online • Down for a 1v1 Jest match 🃏',
-      isOnline: true,
-      isGroup: false
-    },
-    {
-      id: 'contact_emma',
-      name: 'Emma Rodriguez',
-      username: 'emma_fam',
-      email: 'emma@mastereng.academy',
-      friendCode: 'MENG-9012',
-      avatar: '🏡',
-      personalRank: '💎 Diamante',
-      cefr: 'C2 Mastery',
-      statusText: 'Online • Practicing TOEFL idioms 📚',
-      isOnline: true,
-      isGroup: false
-    },
-    {
-      id: 'contact_noah',
-      name: 'Noah Sterling',
-      username: 'noah_exec',
-      email: 'noah@mastereng.academy',
-      friendCode: 'MENG-5120',
-      avatar: '💼',
-      personalRank: '🥉 Bronce',
-      cefr: 'A2 Elementary',
-      statusText: 'In a meeting • Reviewing English deck',
-      isOnline: true,
-      isGroup: false
-    },
-    {
-      id: 'group_legends',
-      name: 'English Legends Club 🏆',
-      username: 'group_legends',
-      email: '',
-      friendCode: 'GRP-1001',
-      avatar: '👥',
-      personalRank: '💎 Diamante',
-      cefr: 'Multi-Level',
-      statusText: 'Sophia, Liam, Emma, Tú • 4 miembros activos',
-      isOnline: true,
-      isGroup: true,
-      members: ['Sophia Valentine', 'Liam Carter', 'Emma Rodriguez', 'Tú']
-    }
-  ];
-
-  const DEFAULT_BONDS = {
-    contact_sophia: {
-      role: 'partner',
-      theme: 'love',
-      streakDays: 14,
-      lastInteractionDate: getTodayIso(),
-      coupleExp: 340,
-      weeklyDatesCount: 2,
-      weeklyGamesCount: 1,
-      messagesToday: 4
-    },
-    contact_liam: {
-      role: 'friends',
-      theme: 'space',
-      streakDays: 11,
-      lastInteractionDate: getTodayIso(),
-      coupleExp: 210,
-      weeklyDatesCount: 1,
-      weeklyGamesCount: 1,
-      messagesToday: 3
-    },
-    contact_emma: {
-      role: 'family',
-      theme: 'nature',
-      streakDays: 18,
-      lastInteractionDate: getTodayIso(),
-      coupleExp: 420,
-      weeklyDatesCount: 1,
-      weeklyGamesCount: 2,
-      messagesToday: 5
-    },
-    contact_noah: {
-      role: 'colleague',
-      theme: 'work',
-      streakDays: 4,
-      lastInteractionDate: getTodayIso(),
-      coupleExp: 85,
-      weeklyDatesCount: 0,
-      weeklyGamesCount: 0,
-      messagesToday: 1
-    },
-    group_legends: {
-      role: 'group',
-      theme: 'classic',
-      streakDays: 9,
-      lastInteractionDate: getTodayIso(),
-      coupleExp: 190,
-      weeklyDatesCount: 1,
-      weeklyGamesCount: 2,
-      messagesToday: 2
-    }
-  };
-
-  const DEFAULT_MESSAGES = {
-    contact_sophia: [
-      {
-        id: 'm_sophia_1',
-        sender: 'them',
-        senderName: 'Sophia Valentine',
-        text: "Hey sweetheart! ❤️ We have a 14-day English streak together! Are you taking me to the 3D Restaurant tonight?",
-        translation: "¡Hola cariño! ❤️ ¡Llevamos una racha de 14 días practicando inglés juntos! ¿Me llevarás al Restaurante 3D esta noche?",
-        timestamp: '19:40',
-        type: 'text'
-      },
-      {
-        id: 'm_sophia_2',
-        sender: 'me',
-        senderName: 'Tú',
-        text: "Of course! Let's send one more message to complete today's chat mission and head to our 3D date!",
-        translation: "¡Por supuesto! ¡Enviemos un mensaje más para completar la misión de chat de hoy y vayamos a nuestra cita 3D!",
-        timestamp: '19:42',
-        type: 'text'
-      }
-    ],
-    contact_liam: [
-      {
-        id: 'm_liam_1',
-        sender: 'them',
-        senderName: 'Liam Carter',
-        text: "Yo bestie! ⚡ No cap, my vocabulary is leveling up fast. Ready for a 1v1 Jest (Jarz) duel?",
-        translation: "¡Qué onda mejor amigo! ⚡ Sin mentir, mi vocabulario está subiendo de nivel rápido. ¿Listo para un duelo 1vs1 de Jest (Jarz)?",
-        timestamp: '18:15',
-        type: 'text'
-      }
-    ],
-    contact_emma: [
-      {
-        id: 'm_emma_1',
-        sender: 'them',
-        senderName: 'Emma Rodriguez',
-        text: "Hey fam! 🏡 So proud of our 18-day family streak. Let's keep practicing our English idioms!",
-        translation: "¡Hola familia! 🏡 Qué orgullo nuestra racha familiar de 18 días. ¡Sigamos practicando nuestros modismos en inglés!",
-        timestamp: '17:05',
-        type: 'text'
-      }
-    ],
-    contact_noah: [
-      {
-        id: 'm_noah_1',
-        sender: 'them',
-        senderName: 'Noah Sterling',
-        text: "Good evening colleague! 💼 Let's practice a few business English expressions before tomorrow's presentation.",
-        translation: "¡Buenas noches colega! 💼 Practiquemos algunas expresiones de inglés de negocios antes de la presentación de mañana.",
-        timestamp: '16:20',
-        type: 'text'
-      }
-    ],
-    group_legends: [
-      {
-        id: 'm_grp_1',
-        sender: 'them',
-        senderName: 'Sophia Valentine',
-        text: "Welcome to the English Legends Club! 🏆 Drop a message in English or challenge someone to Jest!",
-        translation: "¡Bienvenidos al Club de Leyendas del Inglés! 🏆 ¡Dejen un mensaje en inglés o reten a alguien a Jest!",
-        timestamp: '15:00',
-        type: 'text'
-      }
-    ]
-  };
-
   // ============================================================================
-  // 2. ESTADO INTERNO DEL MÓDULO SOCIAL
+  // 2. ESTADO INTERNO DEL MÓDULO SOCIAL (VACÍO POR DEFECTO, SIN BOTS)
   // ============================================================================
   let state = {
     contacts: [],
     bonds: {},
     messages: {},
-    activeContactId: 'contact_sophia',
+    activeContactId: null,
     activeTab: 'all',
     searchQuery: '',
     showMissionsDrawer: false,
@@ -323,14 +197,15 @@
     translatedMsgIds: {},
     isRecordingVoice: false,
     mobileShowChatPane: false,
-    typingByContact: {}
+    typingByContact: {},
+    cachedDiscoveredUsers: []
   };
 
   function getTodayIso() {
     try {
       return new Date().toISOString().slice(0, 10);
     } catch (e) {
-      return '2026-10-24';
+      return '2026-10-25';
     }
   }
 
@@ -343,21 +218,183 @@
     }
   }
 
+  function hashCode(str) {
+    let h = 0;
+    const s = String(str || '');
+    for (let i = 0; i < s.length; i++) {
+      h = ((h << 5) - h) + s.charCodeAt(i);
+      h |= 0;
+    }
+    return Math.abs(h);
+  }
+
+  function deriveDeterministicCode(seedStr) {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let h = hashCode(seedStr || ('user_' + Date.now()));
+    let suffix = '';
+    for (let i = 0; i < 4; i++) {
+      suffix += chars[h % chars.length];
+      h = Math.floor(h / chars.length) + (i * 17);
+    }
+    return 'MENG-' + suffix;
+  }
+
   // ============================================================================
-  // 3. EVOLUCIÓN AUTOMÁTICA DE RANGO SEGÚN ROL Y DÍAS DE RACHA
+  // 3. ID ÚNICO DE JUGADOR (MENG-XXXX) SINCRONIZADO EN BASE DE DATOS
+  // ============================================================================
+  function getCurrentSessionUser() {
+    const sessionKeys = ['mastereng_user', 'english_app_user_session'];
+    for (const k of sessionKeys) {
+      try {
+        const raw = localStorage.getItem(k);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === 'object') return parsed;
+        }
+      } catch (e) {}
+    }
+    if (typeof global.getStoredUser === 'function') {
+      try {
+        const u = global.getStoredUser();
+        if (u && typeof u === 'object') return u;
+      } catch (e) {}
+    }
+    return null;
+  }
+
+  function saveCurrentSessionUser(userObj) {
+    if (!userObj || typeof userObj !== 'object') return;
+    try {
+      localStorage.setItem('mastereng_user', JSON.stringify(userObj));
+      localStorage.setItem('english_app_user_session', JSON.stringify(userObj));
+    } catch (e) {}
+  }
+
+  function ensureUserUniqueGameId() {
+    let user = getCurrentSessionUser();
+    let existingCode = '';
+
+    if (user && (user.gameId || user.friendCode)) {
+      const candidate = String(user.gameId || user.friendCode).trim().toUpperCase();
+      if (/^MENG-[A-Z0-9]{4}$/.test(candidate)) {
+        existingCode = candidate;
+      }
+    }
+
+    if (!existingCode) {
+      try {
+        const savedCode = String(localStorage.getItem(STORAGE_KEYS.MY_FRIEND_CODE) || '').trim().toUpperCase();
+        if (/^MENG-[A-Z0-9]{4}$/.test(savedCode)) {
+          existingCode = savedCode;
+        }
+      } catch (e) {}
+    }
+
+    if (!existingCode) {
+      const seed = user && (user.email || user.username || user.id)
+        ? `${user.email || ''}_${user.username || ''}_${user.id || ''}`
+        : `guest_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      existingCode = deriveDeterministicCode(seed);
+    }
+
+    try {
+      localStorage.setItem(STORAGE_KEYS.MY_FRIEND_CODE, existingCode);
+    } catch (e) {}
+
+    if (user) {
+      user.gameId = existingCode;
+      user.friendCode = existingCode;
+      saveCurrentSessionUser(user);
+    }
+
+    // Sincronizar en mastereng_registered_users y english_app_registered_users
+    ['mastereng_registered_users', 'english_app_registered_users'].forEach(listKey => {
+      try {
+        const raw = localStorage.getItem(listKey);
+        const list = raw ? JSON.parse(raw) : [];
+        if (Array.isArray(list)) {
+          let found = false;
+          list.forEach(item => {
+            if (!item || typeof item !== 'object') return;
+            if (
+              user &&
+              ((user.email && item.email && String(item.email).toLowerCase() === String(user.email).toLowerCase()) ||
+               (user.username && item.username && String(item.username).toLowerCase() === String(user.username).toLowerCase()))
+            ) {
+              item.gameId = existingCode;
+              item.friendCode = existingCode;
+              found = true;
+            }
+          });
+          if (!found && user && (user.username || user.email)) {
+            list.push({
+              id: user.id || Date.now(),
+              username: user.username || user.email.split('@')[0],
+              email: user.email || `${String(user.username).toLowerCase().replace(/\s+/g, '')}@mastereng.com`,
+              rank: user.rank || 'Bronce',
+              exp: Number(user.exp) || 0,
+              gameId: existingCode,
+              friendCode: existingCode
+            });
+          }
+          localStorage.setItem(listKey, JSON.stringify(list));
+        }
+      } catch (e) {}
+    });
+
+    // Sincronizar en segundo plano con el backend (/api/users/register-code y /api/users)
+    if (typeof fetch === 'function' && user && (user.username || user.email)) {
+      const syncPayload = {
+        userId: user.id || null,
+        username: user.username || '',
+        email: user.email || '',
+        gameId: existingCode,
+        friendCode: existingCode,
+        rank: user.rank || 'Bronce',
+        exp: Number(user.exp) || 0
+      };
+      try {
+        fetch('/api/users/register-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(syncPayload)
+        }).catch(() => {});
+        fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(syncPayload)
+        }).catch(() => {});
+      } catch (e) {}
+    }
+
+    return existingCode;
+  }
+
+  function copyMyUniqueId() {
+    const code = ensureUserUniqueGameId();
+    try {
+      if (navigator && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        navigator.clipboard.writeText(code);
+      }
+    } catch (e) {}
+    showSocialToast(`📋 Tu ID Único (${code}) ha sido copiado al portapapeles`);
+    return code;
+  }
+
+  // ============================================================================
+  // 4. EVOLUCIÓN AUTOMÁTICA DE RANGO SEGÚN ROL Y DÍAS DE RACHA
   // ============================================================================
   function calculateBondRank(bond) {
-    if (!bond) return '👋 Conocido';
+    if (!bond) return '👋 Conocidos';
     const role = bond.role || 'friends';
     const days = Number(bond.streakDays) || 0;
-    const missionsActive = (Number(bond.weeklyDatesCount) || 0) + (Number(bond.weeklyGamesCount) || 0) + (Number(bond.messagesToday) || 0) >= 0;
 
     if (role === 'partner') {
-      if (days >= 100) return '✨ Almas Gemelas / Soulmates';
-      if (days >= 50 && missionsActive) return '👑 Esposos / Married';
-      if (days >= 25 && missionsActive) return '💍 Prometidos / Fiancés';
-      if (days >= 10 && missionsActive) return '👩❤️👨 Novios / Boyfriends';
-      if (days >= 3) return '🌹 Salientes / Dating';
+      if (days >= 100) return '✨ Almas Gemelas';
+      if (days >= 50) return '👑 Esposos';
+      if (days >= 25) return '💍 Prometidos';
+      if (days >= 10) return '👩‍❤️‍👨 Novios';
+      if (days >= 3) return '🌹 Salientes';
       return '💌 Crush';
     }
 
@@ -387,39 +424,80 @@
       return '👥 Grupo de Estudio';
     }
 
-    // acquaintance
-    if (days >= 7) return '🤝 Compas (Buddies)';
     return '👋 Conocidos';
   }
 
   // ============================================================================
-  // 4. PERSISTENCIA EN LOCALSTORAGE Y SINCRONIZACIÓN DE USUARIOS
+  // 5. PERSISTENCIA EN LOCALSTORAGE Y PURGA AUTOMÁTICA DE BOTS FALSOS
   // ============================================================================
+  function purgeFakeBotsFromState() {
+    if (!Array.isArray(state.contacts)) {
+      state.contacts = [];
+    }
+
+    const removedIds = [];
+    state.contacts = state.contacts.filter(c => {
+      if (isBannedFakeBot(c)) {
+        if (c && c.id) removedIds.push(c.id);
+        return false;
+      }
+      return true;
+    });
+
+    // Purgar cualquier llave de bot en bonds y messages
+    const allBanIds = Array.from(BANNED_BOT_IDS).concat(removedIds);
+    allBanIds.forEach(botId => {
+      if (state.bonds && state.bonds[botId]) delete state.bonds[botId];
+      if (state.messages && state.messages[botId]) delete state.messages[botId];
+    });
+  }
+
   function loadSocialState() {
+    ensureUserUniqueGameId();
+
     try {
       const rawContacts = localStorage.getItem(STORAGE_KEYS.CONTACTS);
-      state.contacts = rawContacts ? JSON.parse(rawContacts) : JSON.parse(JSON.stringify(DEFAULT_CONTACTS));
-      if (!Array.isArray(state.contacts) || state.contacts.length === 0) {
-        state.contacts = JSON.parse(JSON.stringify(DEFAULT_CONTACTS));
-      }
+      state.contacts = rawContacts ? JSON.parse(rawContacts) : [];
+      if (!Array.isArray(state.contacts)) state.contacts = [];
     } catch (e) {
-      state.contacts = JSON.parse(JSON.stringify(DEFAULT_CONTACTS));
+      state.contacts = [];
     }
 
     try {
       const rawBonds = localStorage.getItem(STORAGE_KEYS.BONDS);
-      const parsedBonds = rawBonds ? JSON.parse(rawBonds) : {};
-      state.bonds = Object.assign({}, JSON.parse(JSON.stringify(DEFAULT_BONDS)), parsedBonds);
+      state.bonds = rawBonds ? JSON.parse(rawBonds) : {};
+      if (!state.bonds || typeof state.bonds !== 'object') state.bonds = {};
     } catch (e) {
-      state.bonds = JSON.parse(JSON.stringify(DEFAULT_BONDS));
+      state.bonds = {};
     }
 
-    // Garantizar que cada contacto tenga estructura completa en mastereng_social_bonds
+    try {
+      const rawMsgs = localStorage.getItem(STORAGE_KEYS.MESSAGES);
+      state.messages = rawMsgs ? JSON.parse(rawMsgs) : {};
+      if (!state.messages || typeof state.messages !== 'object') state.messages = {};
+    } catch (e) {
+      state.messages = {};
+    }
+
+    // Purga estricta de los bots falsos (Sophia Valentine, Liam Carter, Emma Rodriguez, Noah Sterling, English Legends Club)
+    purgeFakeBotsFromState();
+
+    // Garantizar integridad de bonds para los amigos reales agregados por el usuario
     state.contacts.forEach(c => {
+      if (!c.friendCode && !c.gameId) {
+        c.friendCode = deriveDeterministicCode(c.email || c.username || c.name);
+        c.gameId = c.friendCode;
+      } else {
+        c.friendCode = c.friendCode || c.gameId;
+        c.gameId = c.gameId || c.friendCode;
+      }
+
       if (!state.bonds[c.id]) {
         const defRole = c.isGroup ? 'group' : 'friends';
         state.bonds[c.id] = {
           role: defRole,
+          roleConfirmed: true,
+          pendingRole: null,
           theme: RELATIONSHIP_ROLES[defRole] ? RELATIONSHIP_ROLES[defRole].defaultTheme : 'classic',
           streakDays: 1,
           lastInteractionDate: getTodayIso(),
@@ -431,6 +509,7 @@
       } else {
         const b = state.bonds[c.id];
         if (!b.role) b.role = c.isGroup ? 'group' : 'friends';
+        if (typeof b.roleConfirmed !== 'boolean') b.roleConfirmed = true;
         if (!b.theme) b.theme = (RELATIONSHIP_ROLES[b.role] && RELATIONSHIP_ROLES[b.role].defaultTheme) || 'classic';
         if (typeof b.streakDays !== 'number') b.streakDays = Number(b.streakDays) || 1;
         if (!b.lastInteractionDate) b.lastInteractionDate = getTodayIso();
@@ -441,12 +520,10 @@
       }
     });
 
-    try {
-      const rawMsgs = localStorage.getItem(STORAGE_KEYS.MESSAGES);
-      const parsedMsgs = rawMsgs ? JSON.parse(rawMsgs) : {};
-      state.messages = Object.assign({}, JSON.parse(JSON.stringify(DEFAULT_MESSAGES)), parsedMsgs);
-    } catch (e) {
-      state.messages = JSON.parse(JSON.stringify(DEFAULT_MESSAGES));
+    if (state.contacts.length === 0) {
+      state.activeContactId = null;
+    } else if (!state.activeContactId || !state.contacts.some(c => c.id === state.activeContactId)) {
+      state.activeContactId = state.contacts[0].id;
     }
 
     saveSocialState();
@@ -462,50 +539,70 @@
     }
   }
 
-  function getMyFriendCode() {
-    try {
-      let code = localStorage.getItem(STORAGE_KEYS.MY_FRIEND_CODE);
-      if (!code) {
-        code = 'MENG-' + Math.floor(1000 + Math.random() * 9000);
-        localStorage.setItem(STORAGE_KEYS.MY_FRIEND_CODE, code);
-      }
-      return code;
-    } catch (e) {
-      return 'MENG-2026';
-    }
-  }
-
-  // Sincronización con usuarios locales registrados y /api/users
+  // ============================================================================
+  // 6. DESCUBRIMIENTO DE USUARIOS REALES (GET /api/users, /api/admin/users y LocalStorage)
+  // ============================================================================
   async function discoverRegisteredUsers() {
     const discovered = [];
     const seen = new Set();
+    const myUser = getCurrentSessionUser();
+    const myEmail = myUser && myUser.email ? String(myUser.email).toLowerCase().trim() : '';
+    const myUsername = myUser && myUser.username ? String(myUser.username).toLowerCase().trim() : '';
+    const myCode = ensureUserUniqueGameId();
 
     function addCandidate(u) {
       if (!u || typeof u !== 'object') return;
-      const username = (u.username || u.name || u.displayName || '').trim();
-      const email = (u.email || '').trim();
-      const code = (u.friendCode || u.code || '').trim();
+      if (isBannedFakeBot(u)) return;
+
+      const username = String(u.username || u.name || u.displayName || '').trim();
+      const email = String(u.email || '').trim();
       if (!username && !email) return;
-      const key = (username || email).toLowerCase();
-      if (seen.has(key)) return;
-      seen.add(key);
+
+      // Omitir al propio usuario actual
+      if (myEmail && email.toLowerCase() === myEmail) return;
+      if (myUsername && username.toLowerCase() === myUsername) return;
+
+      const rawCode = String(u.gameId || u.friendCode || u.code || '').trim().toUpperCase();
+      const friendCode = /^MENG-[A-Z0-9]{4}$/.test(rawCode)
+        ? rawCode
+        : deriveDeterministicCode(email || username);
+
+      if (friendCode === myCode) return;
+
+      const dedupKey = (email || username).toLowerCase();
+      if (seen.has(dedupKey)) return;
+      seen.add(dedupKey);
 
       const exp = Number(u.exp || u.xp || 0);
-      let personalRank = '🥉 Bronce';
-      if (exp >= 1500) personalRank = '💎 Diamante';
-      else if (exp >= 500) personalRank = '🥇 Oro';
+      let personalRank = u.personalRank || u.rank || '🥉 Bronce';
+      if (!personalRank.includes('🥉') && !personalRank.includes('🥈') && !personalRank.includes('🥇') && !personalRank.includes('💎')) {
+        if (exp >= 1000 || String(personalRank).toLowerCase().includes('diamante')) personalRank = '💎 Diamante';
+        else if (exp >= 500 || String(personalRank).toLowerCase().includes('oro')) personalRank = '🥇 Oro';
+        else if (exp >= 200 || String(personalRank).toLowerCase().includes('plata')) personalRank = '🥈 Plata';
+        else personalRank = '🥉 Bronce';
+      }
 
       discovered.push({
+        id: u.id || ('user_' + hashCode(dedupKey)),
         username: username || email.split('@')[0],
-        email: email || `${username.toLowerCase().replace(/\s+/g, '')}@mastereng.academy`,
-        friendCode: code || ('MENG-' + Math.abs(hashCode(key)).toString().slice(0, 4).padEnd(4, '7')),
+        email: email || `${username.toLowerCase().replace(/\s+/g, '')}@mastereng.com`,
+        friendCode,
+        gameId: friendCode,
         personalRank,
+        exp,
         avatar: u.avatar || '🧑‍🎓'
       });
     }
 
-    // 1. Revisar llaves de usuarios en localStorage
-    const localKeys = ['mastereng_users', 'registered_users', 'english_app_users', 'users_db', 'mastereng_registered_users'];
+    // 1. Revisar usuarios registrados en localStorage
+    const localKeys = [
+      'mastereng_registered_users',
+      'english_app_registered_users',
+      'mastereng_users',
+      'registered_users',
+      'english_app_users',
+      'users_db'
+    ];
     localKeys.forEach(k => {
       try {
         const raw = localStorage.getItem(k);
@@ -516,144 +613,103 @@
       } catch (e) {}
     });
 
-    // 2. Consultar /api/users si está disponible
-    try {
-      const apiBase = (global.BackendSync && global.BackendSync.apiBaseUrl)
-        ? global.BackendSync.apiBaseUrl
-        : '/api';
-      const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
-      const timer = controller ? setTimeout(() => controller.abort(), 2500) : null;
-      const res = await fetch(`${apiBase.replace(/\/$/, '')}/users`, controller ? { signal: controller.signal } : {});
-      if (timer) clearTimeout(timer);
-      if (res && res.ok) {
-        const data = await res.json();
-        const arr = Array.isArray(data) ? data : (Array.isArray(data.users) ? data.users : []);
-        arr.forEach(addCandidate);
-      }
-    } catch (e) {
-      // Fallback silencioso a usuarios locales + sugeridos de la academia
+    // 2. Revisar lista global en memoria si existe (ej. allAdminUsersList)
+    if (Array.isArray(global.allAdminUsersList)) {
+      global.allAdminUsersList.forEach(addCandidate);
     }
 
-    // 3. Usuarios sugeridos adicionales de la comunidad MasterENG
-    const communityDirectory = [
-      { username: 'Olivia Bennett', email: 'olivia@mastereng.academy', friendCode: 'MENG-8821', personalRank: '💎 Diamante', avatar: '🌸' },
-      { username: 'Ethan Huntley', email: 'ethan@mastereng.academy', friendCode: 'MENG-4410', personalRank: '🥇 Oro', avatar: '🎸' },
-      { username: 'Chloe Takahashi', email: 'chloe@mastereng.academy', friendCode: 'MENG-6193', personalRank: '💎 Diamante', avatar: '🚀' },
-      { username: 'Mateo Silva', email: 'mateo@mastereng.academy', friendCode: 'MENG-2094', personalRank: '🥉 Bronce', avatar: '⚽' }
-    ];
-    communityDirectory.forEach(addCandidate);
+    // 3. Consultar endpoints reales del backend: GET /api/users y GET /api/admin/users
+    if (typeof fetch === 'function') {
+      const apiBase = (global.BackendSync && global.BackendSync.apiBaseUrl)
+        ? global.BackendSync.apiBaseUrl.replace(/\/$/, '')
+        : '/api';
+      const endpoints = [`${apiBase}/users`, `${apiBase}/admin/users`];
 
+      for (const ep of endpoints) {
+        try {
+          const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+          const timer = controller ? setTimeout(() => controller.abort(), 2200) : null;
+          const res = await fetch(ep, controller ? { signal: controller.signal } : {});
+          if (timer) clearTimeout(timer);
+          if (res && res.ok) {
+            const data = await res.json();
+            const arr = Array.isArray(data)
+              ? data
+              : (Array.isArray(data.users) ? data.users : (Array.isArray(data.data) ? data.data : []));
+            arr.forEach(addCandidate);
+          }
+        } catch (e) {}
+      }
+    }
+
+    state.cachedDiscoveredUsers = discovered;
     return discovered;
   }
 
-  function hashCode(str) {
-    let h = 0;
-    for (let i = 0; i < str.length; i++) {
-      h = ((h << 5) - h) + str.charCodeAt(i);
-      h |= 0;
-    }
-    return h;
-  }
-
   // ============================================================================
-  // 5. MOTOR DE RESPUESTA INTELIGENTE EN INGLÉS ADAPTADO AL ROL
+  // 7. MOTOR DE RESPUESTA CONTEXTUAL EN INGLÉS PARA PRÁCTICA CON CONTACTOS REALES
   // ============================================================================
   const SMART_REPLIES_BY_ROLE = {
     partner: [
       {
-        en: "Aw, I love chatting in English with you, my love! ❤️ Every message brings us closer to Soulmates rank. Shall we go to the 3D Restaurant for a romantic date?",
-        es: "¡Ay, me encanta chatear en inglés contigo, mi amor! ❤️ Cada mensaje nos acerca más al rango Almas Gemelas. ¿Vamos al Restaurante 3D a una cita romántica?"
+        en: "I love practicing English with you! ❤️ Shall we visit the 3D Bistro for a date and complete our couple mission?",
+        es: "¡Me encanta practicar inglés contigo! ❤️ ¿Vamos al Bistro 3D a una cita y completamos nuestra misión en pareja?"
       },
       {
-        en: "You're doing amazing with your English, sweetheart! 🌹 Keep messaging me so our 🔥 streak never dies!",
-        es: "¡Lo estás haciendo increíble con tu inglés, cariño! 🌹 ¡Sigue escribiéndome para que nuestra racha 🔥 nunca se apague!"
-      },
-      {
-        en: "Missing you, honey! 💌 Let's play a quick 1v1 match of Jest (Jarz) or grab a candlelit table in the 3D World!",
-        es: "¡Te extraño, cielo! 💌 ¡Juguemos una partida rápida 1vs1 de Jest (Jarz) o tomemos una mesa con velas en el Mundo 3D!"
-      },
-      {
-        en: "Your English grammar is looking so sharp today, darling! ✨ Tell me more about your favorite dream trip together.",
-        es: "¡Tu gramática en inglés se ve impecable hoy, amor! ✨ Cuéntame más sobre nuestro viaje soñado juntos."
+        en: "You're doing amazing with your English! 🌹 Let's keep our daily streak 🔥 alive!",
+        es: "¡Lo estás haciendo increíble con tu inglés! 🌹 ¡Mantengamos viva nuestra racha diaria 🔥!"
       }
     ],
     friends: [
       {
-        en: "Yo bestie! ⚡ That English sentence was fire, no cap! Let's keep our streak alive and crush a Jest 1v1 duel!",
-        es: "¡Qué onda mejor amigo! ⚡ ¡Esa oración en inglés estuvo brutal, sin mentir! ¡Mantengamos viva nuestra racha y rompámosla en un duelo 1vs1 de Jest!"
+        en: "Awesome sentence, bestie! ⚡ Ready for a 1v1 Jest 3D duel to test our vocabulary?",
+        es: "¡Excelente oración, mejor amigo! ⚡ ¿Listo para un duelo 1vs1 en Jest 3D para probar nuestro vocabulario?"
       },
       {
-        en: "Bro, high key proud of our streak! 🔥 Hit the '🃏 Invitar a Jest' button whenever you're ready to get schooled!",
-        es: "¡Hermano, súper orgulloso de nuestra racha! 🔥 ¡Presiona el botón '🃏 Invitar a Jest' cuando estés listo para el reto!"
-      },
-      {
-        en: "Awesome point, buddy! 🤝 Practicing daily in this chat is the fastest way to reach Diamond rank!",
-        es: "¡Excelente punto, compa! 🤝 ¡Practicar a diario en este chat es la forma más rápida de llegar a rango Diamante!"
+        en: "High key proud of our daily study streak! 🔥 Let's keep leveling up together!",
+        es: "¡Súper orgulloso de nuestra racha de estudio diario! 🔥 ¡Sigamos subiendo de nivel juntos!"
       }
     ],
     family: [
       {
-        en: "So proud of you, fam! 🏡 Our family English streak is unstoppable. Are you coming over to the 3D lounge later?",
-        es: "¡Qué orgullo de ti, familia! 🏡 Nuestra racha familiar de inglés es imparable. ¿Vienes a la sala 3D más tarde?"
-      },
-      {
-        en: "That's the spirit, sibling! 🛡️ Let's finish today's 5-message mission together so our family bond levels up!",
-        es: "¡Ese es el espíritu, hermano! 🛡️ ¡Terminemos juntos la misión de 5 mensajes de hoy para subir nuestro vínculo familiar!"
+        en: "Great job practicing everyday English! 🏠 Let's review household and supermarket vocabulary together.",
+        es: "¡Gran trabajo practicando inglés cotidiano! 🏠 Repasemos juntos vocabulario del hogar y supermercado."
       }
     ],
     colleague: [
       {
-        en: "Great point, colleague! 💼 Your professional English communication is improving remarkably. Let's touch base on the next module.",
-        es: "¡Excelente punto, colega! 💼 Tu comunicación profesional en inglés está mejorando notablemente. Revisemos el siguiente módulo."
-      },
-      {
-        en: "Well articulated! 🚀 Consistent daily practice is key for executive fluency and TOEFL certification.",
-        es: "¡Muy bien articulado! 🚀 La práctica diaria constante es clave para la fluidez ejecutiva y la certificación TOEFL."
-      }
-    ],
-    acquaintance: [
-      {
-        en: "Nice chatting with you! 👋 Keep sending messages in English so we can level up our friendship bond!",
-        es: "¡Qué gusto charlar contigo! 👋 ¡Sigue enviando mensajes en inglés para que subamos nuestro vínculo de amistad!"
+        en: "Well articulated, colleague! 💼 Consistent practice is key for business interviews and professional fluency.",
+        es: "¡Muy bien articulado, colega! 💼 La práctica constante es clave para entrevistas de negocios y fluidez profesional."
       }
     ],
     group: [
       {
-        en: "Awesome energy in the club today! 🏆 Keep the English conversation flowing or launch a group Jest challenge!",
-        es: "¡Increíble energía en el club hoy! 🏆 ¡Mantengan viva la conversación en inglés o lancen un reto grupal de Jest!"
+        en: "Great team energy! 👥 Let's keep the English conversation going!",
+        es: "¡Gran energía de equipo! 👥 ¡Mantengamos activa la conversación en inglés!"
       }
     ]
   };
 
-  function generateContextualSmartReply(userText, role, contactName) {
+  function generateContextualSmartReply(userText, role) {
     const clean = (userText || '').toLowerCase();
-    if (clean.includes('date') || clean.includes('cita') || clean.includes('restaurant') || clean.includes('dinner')) {
-      if (role === 'partner') {
-        return {
-          en: "Yes, my love! 🕯️❤️ I'm ready for our romantic 3D date! Click '🕯️ Invitar a Cita 3D' and let's go right now!",
-          es: "¡Sí, mi amor! 🕯️❤️ ¡Estoy lista para nuestra cita romántica 3D! ¡Haz clic en '🕯️ Invitar a Cita 3D' y vamos ahora mismo!"
-        };
-      }
+    if (clean.includes('date') || clean.includes('cita') || clean.includes('bistro') || clean.includes('restaurant')) {
       return {
-        en: "Sounds great! 🕯️ Let's head over to the 3D Restaurant hangout! Tap '🕯️ Invitar a Cita 3D'!",
-        es: "¡Suena genial! 🕯️ ¡Vamos al punto de encuentro en el Restaurante 3D! ¡Toca '🕯️ Invitar a Cita 3D'!"
+        en: "Sounds wonderful! 🕯️ Tap '🕯️ Invitar a Cita 3D' and let's practice at the 3D Bistro!",
+        es: "¡Suena maravilloso! 🕯️ ¡Toca '🕯️ Invitar a Cita 3D' y practiquemos en el Bistro 3D!"
       };
     }
-
-    if (clean.includes('jest') || clean.includes('jarz') || clean.includes('game') || clean.includes('duel') || clean.includes('play')) {
+    if (clean.includes('jest') || clean.includes('jarz') || clean.includes('game') || clean.includes('duel')) {
       return {
-        en: "Challenge accepted! 🃏🔥 Send the Jest (Jarz) 1v1 invite card and let's see who guesses the English words faster!",
-        es: "¡Reto aceptado! 🃏🔥 ¡Envía la tarjeta de invitación 1vs1 de Jest (Jarz) y veamos quién adivina las palabras en inglés más rápido!"
+        en: "Challenge accepted! 🃏 Send the Jest 3D invite and let's play 1v1!",
+        es: "¡Reto aceptado! 🃏 ¡Envía la invitación de Jest 3D y juguemos 1vs1!"
       };
     }
-
     const pool = SMART_REPLIES_BY_ROLE[role] || SMART_REPLIES_BY_ROLE.friends;
-    const idx = Math.floor(Math.random() * pool.length);
-    return pool[idx];
+    return pool[Math.floor(Math.random() * pool.length)];
   }
 
   // ============================================================================
-  // 6. MONTAJE DEL CONTENEDOR #view-community Y NAVEGACIÓN
+  // 8. MONTAJE DEL CONTENEDOR #view-community Y NAVEGACIÓN
   // ============================================================================
   function ensureCommunityViewContainer() {
     let viewEl = document.getElementById('view-community');
@@ -674,8 +730,7 @@
     loadSocialState();
     const viewEl = ensureCommunityViewContainer();
 
-    // Ocultar otras vistas principales si están visibles
-    ['view-auth', 'view-home', 'view-path', 'view-stories', 'view-music', 'view-worldtour', 'view-jest'].forEach(id => {
+    ['view-auth', 'view-home', 'view-path', 'view-stories', 'view-music', 'view-worldtour', 'view-jest', 'view-jest-game'].forEach(id => {
       const el = document.getElementById(id);
       if (el) {
         el.classList.add('hidden');
@@ -705,11 +760,15 @@
   }
 
   // ============================================================================
-  // 7. RENDERIZADO PRINCIPAL SPLIT-VIEW (WHATSAPP WEB / MOBILE)
+  // 9. RENDERIZADO PRINCIPAL SPLIT-VIEW (CON ESTADO VACÍO PARA CERO BOTS)
   // ============================================================================
   function getActiveContact() {
+    if (!Array.isArray(state.contacts) || state.contacts.length === 0) {
+      state.activeContactId = null;
+      return null;
+    }
     let c = state.contacts.find(x => x.id === state.activeContactId);
-    if (!c && state.contacts.length > 0) {
+    if (!c) {
       c = state.contacts[0];
       state.activeContactId = c.id;
     }
@@ -719,18 +778,17 @@
   function getFilteredContacts() {
     const q = (state.searchQuery || '').toLowerCase().trim();
     return state.contacts.filter(c => {
+      if (isBannedFakeBot(c)) return false;
       const bond = state.bonds[c.id] || {};
       const role = bond.role || (c.isGroup ? 'group' : 'friends');
 
-      // Filtrado por pestaña
       if (state.activeTab === 'partner' && role !== 'partner') return false;
-      if (state.activeTab === 'friends' && !['friends', 'colleague', 'acquaintance'].includes(role)) return false;
+      if (state.activeTab === 'friends' && !['friends', 'colleague'].includes(role)) return false;
       if (state.activeTab === 'family' && role !== 'family') return false;
       if (state.activeTab === 'groups' && !c.isGroup && role !== 'group') return false;
 
-      // Filtrado por texto
       if (q) {
-        const hay = `${c.name} ${c.username || ''} ${c.email || ''} ${c.friendCode || ''} ${calculateBondRank(bond)}`.toLowerCase();
+        const hay = `${c.name} ${c.username || ''} ${c.email || ''} ${c.friendCode || ''} ${c.gameId || ''} ${calculateBondRank(bond)}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
@@ -738,23 +796,33 @@
   }
 
   function renderCommunityHub() {
+    if (typeof document === 'undefined') return;
     const viewEl = ensureCommunityViewContainer();
     const activeContact = getActiveContact();
-    const activeBond = activeContact ? (state.bonds[activeContact.id] || DEFAULT_BONDS.contact_sophia) : DEFAULT_BONDS.contact_sophia;
-    const activeThemeObj = CHAT_THEMES[activeBond.theme] || CHAT_THEMES.classic;
-    const bondRankLabel = calculateBondRank(activeBond);
+    const activeBond = activeContact ? (state.bonds[activeContact.id] || {
+      role: 'friends',
+      roleConfirmed: true,
+      theme: 'classic',
+      streakDays: 1,
+      coupleExp: 20,
+      weeklyDatesCount: 0,
+      weeklyGamesCount: 0,
+      messagesToday: 0
+    }) : null;
+    const activeThemeObj = activeBond ? (CHAT_THEMES[activeBond.theme] || CHAT_THEMES.classic) : CHAT_THEMES.classic;
+    const bondRankLabel = activeBond ? calculateBondRank(activeBond) : '';
     const filteredContacts = getFilteredContacts();
-    const myCode = getMyFriendCode();
+    const myCode = ensureUserUniqueGameId();
 
-    const m1Progress = Math.min(5, Number(activeBond.messagesToday) || 0);
-    const m2Progress = Math.min(3, Number(activeBond.weeklyDatesCount) || 0);
-    const m3Progress = Math.min(2, Number(activeBond.weeklyGamesCount) || 0);
+    const m1Progress = activeBond ? Math.min(5, Number(activeBond.messagesToday) || 0) : 0;
+    const m2Progress = activeBond ? Math.min(3, Number(activeBond.weeklyDatesCount) || 0) : 0;
+    const m3Progress = activeBond ? Math.min(2, Number(activeBond.weeklyGamesCount) || 0) : 0;
 
     viewEl.innerHTML = `
       <div class="wa-chat-wrapper">
-        <!-- Barra Superior de Navegación Social -->
+        <!-- Barra Superior de Navegación Social con ID Único y Guía de Rangos -->
         <div class="wa-top-SystemBar">
-          <div class="flex items-center gap-2.5">
+          <div class="flex items-center gap-2.5 flex-wrap">
             <button type="button" onclick="window.SocialChat.returnToHub()"
               class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-extrabold flex items-center gap-1.5 cursor-pointer transition">
               <span>← Volver a Portales</span>
@@ -763,14 +831,28 @@
               <span class="text-lg">💬</span>
               <div>
                 <h2 class="text-sm font-black text-white leading-tight">MasterENG Social & Couples Hub</h2>
-                <p class="text-[11px] text-emerald-400 font-semibold">Tu Código de Amigo: <span class="font-mono bg-slate-800 px-1.5 py-0.5 rounded text-cyan-300">${escapeHtml(myCode)}</span></p>
+                <div class="flex items-center gap-1.5 flex-wrap mt-0.5">
+                  <span class="text-[11px] text-emerald-400 font-semibold">
+                    Tu ID Único de Jugador:
+                    <span id="waHeaderMyUniqueId" class="font-mono bg-slate-800 px-1.5 py-0.5 rounded text-cyan-300 border border-cyan-500/30">${escapeHtml(myCode)}</span>
+                  </span>
+                  <button type="button" onclick="window.SocialChat.copyMyUniqueId()"
+                    class="px-2 py-0.5 rounded-md bg-cyan-500/20 hover:bg-cyan-500/35 border border-cyan-400/40 text-cyan-200 text-[10px] font-bold cursor-pointer transition">
+                    📋 Copiar mi ID
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-          <div class="flex items-center gap-2">
+
+          <div class="flex items-center gap-2 flex-wrap">
+            <button type="button" onclick="window.SocialChat.openRanksGuideModal()"
+              class="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/35 border border-amber-400/40 text-amber-300 text-xs font-extrabold shadow-lg flex items-center gap-1 cursor-pointer transition">
+              <span>📖 Guía de Rangos y Rachas</span>
+            </button>
             <button type="button" onclick="window.SocialChat.openAddFriendModal()"
               class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold shadow-lg flex items-center gap-1 cursor-pointer transition">
-              <span>➕ Agregar Amigo</span>
+              <span>🔍 Buscar / Agregar Amigo</span>
             </button>
             <button type="button" onclick="window.SocialChat.openCreateGroupModal()"
               class="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-extrabold shadow-lg flex items-center gap-1 cursor-pointer transition">
@@ -783,10 +865,9 @@
         <div class="wa-chat-layout ${state.mobileShowChatPane ? 'wa-mobile-chat-active' : ''}">
           
           <!-- ============================================================
-               PANEL IZQUIERDO (SIDEBAR DE CONTACTOS, RACHAS Y GRUPOS)
+               PANEL IZQUIERDO (SIDEBAR DE CONTACTOS REALES)
                ============================================================ -->
           <aside class="wa-sidebar">
-            <!-- Buscador + Acciones Rápidas -->
             <div class="wa-sidebar-header">
               <div class="wa-search-box">
                 <span class="text-slate-400 text-xs">🔍</span>
@@ -794,18 +875,19 @@
                   id="waSidebarSearchInput"
                   type="text"
                   value="${escapeHtml(state.searchQuery)}"
-                  placeholder="Buscar amigo, pareja, rango o código..."
+                  placeholder="Filtrar tus chats por nombre o ID MENG-XXXX..."
                   oninput="window.SocialChat.handleSearch(this.value)"
                 />
               </div>
               <div class="flex items-center gap-1.5 mt-2">
                 <button type="button" onclick="window.SocialChat.openAddFriendModal()"
                   class="flex-1 py-1.5 px-2.5 rounded-lg bg-emerald-600/25 hover:bg-emerald-600/40 border border-emerald-500/40 text-emerald-300 text-[11px] font-bold cursor-pointer transition">
-                  ➕ Agregar Amigo
+                  🔍 Buscar / Agregar Amigo
                 </button>
-                <button type="button" onclick="window.SocialChat.openCreateGroupModal()"
-                  class="flex-1 py-1.5 px-2.5 rounded-lg bg-purple-600/25 hover:bg-purple-600/40 border border-purple-500/40 text-purple-300 text-[11px] font-bold cursor-pointer transition">
-                  👥 Crear Grupo
+                <button type="button" onclick="window.SocialChat.openRanksGuideModal()"
+                  class="py-1.5 px-2.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/35 border border-amber-500/40 text-amber-300 text-[11px] font-bold cursor-pointer transition"
+                  title="Ver Guía de Rangos y Rachas">
+                  📖 Guía
                 </button>
               </div>
             </div>
@@ -819,213 +901,264 @@
               ${renderTabButton('groups', '👥 Grupos')}
             </div>
 
-            <!-- Lista de Chats -->
+            <!-- Lista de Chats o Estado Vacío Sin Bots -->
             <div class="wa-contacts-list" id="waContactsList">
               ${filteredContacts.length === 0 ? `
-                <div class="p-6 text-center text-slate-400 text-xs">
-                  <p class="text-2xl mb-2">💬</p>
-                  <p class="font-bold text-slate-300">No hay conversaciones en esta pestaña</p>
-                  <p class="mt-1">Usa el botón <b>➕ Agregar Amigo</b> o cambia el Rol de Relación en cualquier chat.</p>
+                <div class="p-6 text-center text-slate-300 text-xs space-y-3">
+                  <div class="text-3xl">🧑‍🤝‍🧑</div>
+                  <p class="font-bold text-slate-200 leading-relaxed">
+                    Aún no tienes conversaciones activas. Usa el botón 'Buscar / Agregar Amigo' o comparte tu ID Único para empezar a chatear con personas reales.
+                  </p>
+                  <div class="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 text-[11px]">
+                    <div class="text-slate-400">Tu ID Único para compartir:</div>
+                    <div class="font-mono font-black text-cyan-300 text-sm mt-0.5">${escapeHtml(myCode)}</div>
+                  </div>
+                  <button type="button" onclick="window.SocialChat.openAddFriendModal()"
+                    class="w-full py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black shadow-md cursor-pointer transition">
+                    🔍 Buscar / Agregar Amigo
+                  </button>
                 </div>
               ` : filteredContacts.map(c => renderSidebarContactItem(c)).join('')}
             </div>
           </aside>
 
           <!-- ============================================================
-               PANEL DERECHO (VENTANA DE CHAT ACTIVA + TEMA + MISIONES)
+               PANEL DERECHO (VENTANA DE CHAT ACTIVA O ESTADO VACÍO)
                ============================================================ -->
           <section class="wa-chat-window ${activeThemeObj.cssClass}" id="waActiveChatWindow">
-            <!-- Header del Chat Activo -->
-            <header class="wa-chat-header">
-              <div class="flex items-center gap-2.5 min-w-0">
-                <button type="button" class="wa-mobile-back-btn" onclick="window.SocialChat.backToSidebarMobile()" title="Volver a lista de chats">
-                  ←
-                </button>
-                <div class="wa-avatar-circle">
-                  <span>${activeContact ? activeContact.avatar : '💬'}</span>
-                  <span class="wa-online-dot"></span>
-                </div>
-                <div class="min-w-0">
-                  <div class="flex items-center gap-1.5 flex-wrap">
-                    <h3 class="text-sm font-black text-white truncate">${escapeHtml(activeContact ? activeContact.name : 'Chat')}</h3>
-                    <span class="wa-rank-pill" title="Insignia de Rango Personal">
-                      ${escapeHtml(activeContact ? activeContact.personalRank : '💎 Diamante')}
-                    </span>
-                    <span class="wa-streak-pill" title="Racha activa de días seguidos practicando inglés">
-                      🔥 ${Number(activeBond.streakDays) || 0} días
-                    </span>
-                  </div>
-                  <div class="flex items-center gap-2 flex-wrap mt-0.5">
-                    <span class="wa-bond-rank-badge" id="waHeaderBondRankBadge">
-                      ${escapeHtml(bondRankLabel)}
-                    </span>
-                    <span class="text-[11px] text-slate-300/90 truncate">
-                      ${state.typingByContact[activeContact.id]
-                        ? '✍️ typing in English...'
-                        : escapeHtml(activeContact ? activeContact.statusText : '')}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Controles de Cabecera: Selector de Rol de Relación, Selector de Tema Visual y Botón de Misiones -->
-              <div class="wa-header-controls">
-                <!-- Selector de Rol de Relación -->
-                <label class="wa-select-wrapper" title="Cambiar Rol de Relación">
-                  <span class="wa-select-label">Vínculo:</span>
-                  <select id="waRoleSelector" onchange="window.SocialChat.changeRelationshipRole('${activeContact.id}', this.value)">
-                    <option value="partner" ${activeBond.role === 'partner' ? 'selected' : ''}>❤️ Pareja</option>
-                    <option value="friends" ${activeBond.role === 'friends' ? 'selected' : ''}>⚡ Mejor Amigo / Compañero</option>
-                    <option value="family" ${activeBond.role === 'family' ? 'selected' : ''}>🏠 Familia</option>
-                    <option value="colleague" ${activeBond.role === 'colleague' ? 'selected' : ''}>💼 Colega</option>
-                    <option value="acquaintance" ${activeBond.role === 'acquaintance' ? 'selected' : ''}>👋 Conocido</option>
-                    ${activeContact && activeContact.isGroup ? `<option value="group" ${activeBond.role === 'group' ? 'selected' : ''}>👥 Grupo</option>` : ''}
-                  </select>
-                </label>
-
-                <!-- Selector de Tema Visual del Chat (Change Chat Theme) -->
-                <label class="wa-select-wrapper" title="Cambiar Tema Visual del Chat (Change Chat Theme)">
-                  <span class="wa-select-label">Tema:</span>
-                  <select id="waThemeSelector" onchange="window.SocialChat.changeChatTheme('${activeContact.id}', this.value)">
-                    <option value="love" ${activeBond.theme === 'love' ? 'selected' : ''}>❤️ Amor (Love & Romance)</option>
-                    <option value="nature" ${activeBond.theme === 'nature' ? 'selected' : ''}>🌿 Naturaleza (Nature & Forest)</option>
-                    <option value="work" ${activeBond.theme === 'work' ? 'selected' : ''}>💼 Trabajo (Executive & Work)</option>
-                    <option value="space" ${activeBond.theme === 'space' ? 'selected' : ''}>🌌 Espacio (Cosmic Neon)</option>
-                    <option value="classic" ${activeBond.theme === 'classic' ? 'selected' : ''}>🌙 Clásico (WhatsApp Dark)</option>
-                  </select>
-                </label>
-
-                <!-- Botón Desplegable de Misiones Semanales en Pareja / Vínculo -->
-                <button type="button" onclick="window.SocialChat.toggleMissionsDrawer()"
-                  class="wa-missions-toggle-btn ${state.showMissionsDrawer ? 'active' : ''}">
-                  <span>🎯 Misiones (${ (m1Progress >= 5 ? 1 : 0) + (m2Progress >= 3 ? 1 : 0) + (m3Progress >= 2 ? 1 : 0) }/3)</span>
-                  <span class="tutorial-hand-pointer">👆</span>
-                </button>
-              </div>
-            </header>
-
-            <!-- Panel Desplegable de "Misiones de Vínculo / Pareja" dentro del Chat -->
-            <div id="waMissionsDrawer" class="wa-missions-drawer ${state.showMissionsDrawer ? 'open' : ''}">
-              <div class="wa-missions-header">
-                <div>
-                  <h4 class="text-xs font-black uppercase tracking-wider text-white flex items-center gap-1.5">
-                    <span>🔥 Misiones Semanales de Vínculo & Pareja</span>
-                    <span class="px-2 py-0.5 rounded-full bg-white/15 text-[10px] font-extrabold">${escapeHtml(bondRankLabel)}</span>
-                  </h4>
-                  <p class="text-[11px] text-slate-200/90 mt-0.5">
-                    Completa misiones con <b>${escapeHtml(activeContact.name)}</b> para subir su racha 🔥 y evolucionar de rango automáticamente.
+            ${!activeContact ? `
+              <div class="flex-1 flex flex-col items-center justify-center p-8 text-center">
+                <div class="max-w-md p-6 rounded-2xl bg-slate-900/85 border border-slate-800 shadow-2xl space-y-4">
+                  <div class="text-4xl">💬✨</div>
+                  <h3 class="text-base font-black text-white">Chat Social en Tiempo Real (Solo Personas Reales)</h3>
+                  <p class="text-xs text-slate-300 leading-relaxed">
+                    Aún no tienes conversaciones activas. Usa el botón 'Buscar / Agregar Amigo' o comparte tu ID Único para empezar a chatear con personas reales.
                   </p>
-                </div>
-                <div class="flex items-center gap-2">
-                  <span class="text-xs font-extrabold text-amber-300">✨ ${Number(activeBond.coupleExp) || 0} EXP de Vínculo</span>
-                  <button type="button" onclick="window.SocialChat.toggleMissionsDrawer()" class="text-slate-300 hover:text-white text-sm font-bold px-2 py-0.5 rounded bg-black/20 cursor-pointer">✕</button>
+                  <div class="p-3 rounded-xl bg-slate-950 border border-cyan-500/30 flex items-center justify-between gap-2">
+                    <div class="text-left">
+                      <div class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Tu ID Único de Jugador</div>
+                      <div class="text-sm font-mono font-black text-cyan-300">${escapeHtml(myCode)}</div>
+                    </div>
+                    <button type="button" onclick="window.SocialChat.copyMyUniqueId()"
+                      class="px-3 py-1.5 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/35 border border-cyan-400/40 text-cyan-200 text-xs font-bold cursor-pointer transition">
+                      📋 Copiar mi ID
+                    </button>
+                  </div>
+                  <div class="flex items-center justify-center gap-2.5 flex-wrap pt-1">
+                    <button type="button" onclick="window.SocialChat.openAddFriendModal()"
+                      class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black shadow-lg cursor-pointer transition">
+                      🔍 Buscar / Agregar Amigo
+                    </button>
+                    <button type="button" onclick="window.SocialChat.openRanksGuideModal()"
+                      class="px-4 py-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/35 border border-amber-400/40 text-amber-300 text-xs font-black cursor-pointer transition">
+                      📖 Guía de Rangos y Rachas
+                    </button>
+                  </div>
                 </div>
               </div>
-
-              <!-- Escalera de Evolución del Rol actual -->
-              <div class="wa-evolution-track">
-                ${renderRoleEvolutionSteps(activeBond)}
-              </div>
-
-              <!-- Las 3 Misiones Interactivas -->
-              <div class="wa-missions-grid">
-                <!-- Misión 1 -->
-                <div class="wa-mission-card ${m1Progress >= 5 ? 'completed' : ''}">
-                  <div class="flex items-center justify-between gap-2">
-                    <span class="text-xs font-extrabold text-white">💬 Chatear en inglés hoy (5 mensajes)</span>
-                    <span class="wa-mission-badge">${m1Progress}/5</span>
+            ` : `
+              <!-- Header del Chat Activo -->
+              <header class="wa-chat-header">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <button type="button" class="wa-mobile-back-btn" onclick="window.SocialChat.backToSidebarMobile()" title="Volver a lista de chats">
+                    ←
+                  </button>
+                  <div class="wa-avatar-circle">
+                    <span>${activeContact.avatar || '🧑‍🎓'}</span>
+                    <span class="wa-online-dot"></span>
                   </div>
-                  <p class="text-[11px] text-slate-300 mt-1">Recompensa: <b>+1 día de racha 🔥</b> y <b>+15 EXP de vínculo</b></p>
-                  <div class="wa-progress-bar mt-2">
-                    <div class="wa-progress-fill" style="width: ${(m1Progress / 5) * 100}%"></div>
+                  <div class="min-w-0">
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                      <h3 class="text-sm font-black text-white truncate">${escapeHtml(activeContact.name)}</h3>
+                      <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-cyan-300 border border-slate-700" title="ID Único del Amigo">
+                        ${escapeHtml(activeContact.friendCode || activeContact.gameId || '')}
+                      </span>
+                      <span class="wa-rank-pill" title="Insignia de Rango de Inglés">
+                        ${escapeHtml(activeContact.personalRank || '🥉 Bronce')}
+                      </span>
+                      <span class="wa-streak-pill" title="Racha activa de días seguidos practicando inglés">
+                        🔥 ${Number(activeBond.streakDays) || 0} días
+                      </span>
+                    </div>
+                    <div class="flex items-center gap-2 flex-wrap mt-0.5">
+                      <span class="wa-bond-rank-badge" id="waHeaderBondRankBadge">
+                        ${escapeHtml(bondRankLabel)}
+                        ${activeBond.roleConfirmed === false ? ' (⏳ Pendiente de confirmación)' : ''}
+                      </span>
+                      <span class="text-[11px] text-slate-300/90 truncate">
+                        ${state.typingByContact[activeContact.id]
+                          ? '✍️ typing in English...'
+                          : escapeHtml((RELATIONSHIP_ROLES[activeBond.role] && RELATIONSHIP_ROLES[activeBond.role].description) || activeContact.statusText || '')}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                <!-- Misión 2 -->
-                <div class="wa-mission-card ${m2Progress >= 3 ? 'completed' : ''}">
-                  <div class="flex items-center justify-between gap-2">
-                    <span class="text-xs font-extrabold text-white">🕯️ Ir a 3 Citas en el Restaurante 3D esta semana (Progreso: ${m2Progress}/3)</span>
-                  </div>
-                  <div class="wa-progress-bar mt-1.5 mb-2">
-                    <div class="wa-progress-fill" style="width: ${(m2Progress / 3) * 100}%"></div>
-                  </div>
-                  <button type="button" onclick="window.SocialChat.goTo3DDateNow('${activeContact.id}')"
-                    class="w-full py-1.5 px-3 rounded-xl bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-400 hover:to-pink-500 text-white text-[11px] font-black shadow-md cursor-pointer transition">
-                    🕯️ Ir a Cita 3D Ahora
+                <!-- Controles de Cabecera: Selector de Rol en Conjunto, Tema, Guía y Misiones -->
+                <div class="wa-header-controls">
+                  <label class="wa-select-wrapper" title="Proponer o cambiar Rol de Relación en Conjunto">
+                    <span class="wa-select-label">Vínculo:</span>
+                    <select id="waRoleSelector" onchange="window.SocialChat.openRoleProposalModal('${activeContact.id}', this.value)">
+                      <option value="partner" ${activeBond.role === 'partner' ? 'selected' : ''}>❤️ Pareja (Couple)</option>
+                      <option value="friends" ${activeBond.role === 'friends' ? 'selected' : ''}>⚡ Mejor Amigo / Compañero</option>
+                      <option value="family" ${activeBond.role === 'family' ? 'selected' : ''}>🏠 Familia (Family)</option>
+                      <option value="colleague" ${activeBond.role === 'colleague' ? 'selected' : ''}>💼 Colega (Coworkers)</option>
+                      ${activeContact.isGroup ? `<option value="group" ${activeBond.role === 'group' ? 'selected' : ''}>👥 Grupo</option>` : ''}
+                    </select>
+                  </label>
+
+                  <label class="wa-select-wrapper" title="Cambiar Tema Visual del Chat">
+                    <span class="wa-select-label">Tema:</span>
+                    <select id="waThemeSelector" onchange="window.SocialChat.changeChatTheme('${activeContact.id}', this.value)">
+                      <option value="love" ${activeBond.theme === 'love' ? 'selected' : ''}>❤️ Amor (Love & Romance)</option>
+                      <option value="nature" ${activeBond.theme === 'nature' ? 'selected' : ''}>🌿 Naturaleza (Nature & Forest)</option>
+                      <option value="work" ${activeBond.theme === 'work' ? 'selected' : ''}>💼 Trabajo (Executive & Work)</option>
+                      <option value="space" ${activeBond.theme === 'space' ? 'selected' : ''}>🌌 Espacio (Cosmic Neon)</option>
+                      <option value="classic" ${activeBond.theme === 'classic' ? 'selected' : ''}>🌙 Clásico (WhatsApp Dark)</option>
+                    </select>
+                  </label>
+
+                  <button type="button" onclick="window.SocialChat.openRanksGuideModal()"
+                    class="wa-missions-toggle-btn" title="Abrir Guía de Rangos y Rachas">
+                    <span>📖 Guía de Rangos</span>
+                  </button>
+
+                  <button type="button" onclick="window.SocialChat.toggleMissionsDrawer()"
+                    class="wa-missions-toggle-btn ${state.showMissionsDrawer ? 'active' : ''}">
+                    <span>🎯 Misiones (${(m1Progress >= 5 ? 1 : 0) + (m2Progress >= 3 ? 1 : 0) + (m3Progress >= 2 ? 1 : 0)}/3)</span>
                   </button>
                 </div>
+              </header>
 
-                <!-- Misión 3 -->
-                <div class="wa-mission-card ${m3Progress >= 2 ? 'completed' : ''}">
-                  <div class="flex items-center justify-between gap-2">
-                    <span class="text-xs font-extrabold text-white">🃏 Jugar 2 partidas de Jest/Jarz (Headbanz) juntos (Progreso: ${m3Progress}/2)</span>
+              <!-- Panel Desplegable de "Misiones de Vínculo / Pareja" -->
+              <div id="waMissionsDrawer" class="wa-missions-drawer ${state.showMissionsDrawer ? 'open' : ''}">
+                <div class="wa-missions-header">
+                  <div>
+                    <h4 class="text-xs font-black uppercase tracking-wider text-white flex items-center gap-1.5">
+                      <span>🔥 Misiones Semanales de Vínculo & Racha</span>
+                      <span class="px-2 py-0.5 rounded-full bg-white/15 text-[10px] font-extrabold">${escapeHtml(bondRankLabel)}</span>
+                    </h4>
+                    <p class="text-[11px] text-slate-200/90 mt-0.5">
+                      ${escapeHtml((RELATIONSHIP_ROLES[activeBond.role] && RELATIONSHIP_ROLES[activeBond.role].description) || '')}
+                    </p>
                   </div>
-                  <div class="wa-progress-bar mt-1.5 mb-2">
-                    <div class="wa-progress-fill" style="width: ${(m3Progress / 2) * 100}%"></div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-extrabold text-amber-300">✨ ${Number(activeBond.coupleExp) || 0} EXP de Vínculo</span>
+                    <button type="button" onclick="window.SocialChat.toggleMissionsDrawer()" class="text-slate-300 hover:text-white text-sm font-bold px-2 py-0.5 rounded bg-black/20 cursor-pointer">✕</button>
                   </div>
-                  <button type="button" onclick="window.SocialChat.sendJestInvite('${activeContact.id}', true)"
-                    class="w-full py-1.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 text-[11px] font-black shadow-md cursor-pointer transition">
-                    🃏 Invitar a Duelo Jest
-                  </button>
+                </div>
+
+                <div class="wa-evolution-track">
+                  ${renderRoleEvolutionSteps(activeBond)}
+                </div>
+
+                <div class="wa-missions-grid">
+                  <div class="wa-mission-card ${m1Progress >= 5 ? 'completed' : ''}">
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="text-xs font-extrabold text-white">💬 Chatear en inglés hoy (5 mensajes)</span>
+                      <span class="wa-mission-badge">${m1Progress}/5</span>
+                    </div>
+                    <p class="text-[11px] text-slate-300 mt-1">Recompensa: <b>+1 día de racha 🔥</b> y <b>+15 EXP</b></p>
+                    <div class="wa-progress-bar mt-2">
+                      <div class="wa-progress-fill" style="width: ${(m1Progress / 5) * 100}%"></div>
+                    </div>
+                  </div>
+
+                  <div class="wa-mission-card ${m2Progress >= 3 ? 'completed' : ''}">
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="text-xs font-extrabold text-white">🕯️ Ir a 3 Citas en el Bistro 3D (${m2Progress}/3)</span>
+                    </div>
+                    <div class="wa-progress-bar mt-1.5 mb-2">
+                      <div class="wa-progress-fill" style="width: ${(m2Progress / 3) * 100}%"></div>
+                    </div>
+                    <button type="button" onclick="window.SocialChat.goTo3DDateNow('${activeContact.id}')"
+                      class="w-full py-1.5 px-3 rounded-xl bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-400 hover:to-pink-500 text-white text-[11px] font-black shadow-md cursor-pointer transition">
+                      🕯️ Ir a Cita 3D Ahora
+                    </button>
+                  </div>
+
+                  <div class="wa-mission-card ${m3Progress >= 2 ? 'completed' : ''}">
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="text-xs font-extrabold text-white">🃏 Jugar 2 partidas de Jest 3D (${m3Progress}/2)</span>
+                    </div>
+                    <div class="wa-progress-bar mt-1.5 mb-2">
+                      <div class="wa-progress-fill" style="width: ${(m3Progress / 2) * 100}%"></div>
+                    </div>
+                    <button type="button" onclick="window.SocialChat.sendJestInvite('${activeContact.id}', true)"
+                      class="w-full py-1.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 text-[11px] font-black shadow-md cursor-pointer transition">
+                      🃏 Invitar a Duelo Jest 3D
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <!-- Área de Mensajes del Chat -->
-            <div class="wa-messages-container" id="waMessagesContainer">
-              <div class="wa-encryption-banner">
-                🔒 English Immersion Chat • Rango actual con <b>${escapeHtml(activeContact.name)}</b>: <b>${escapeHtml(bondRankLabel)}</b> (🔥 ${Number(activeBond.streakDays) || 0} días seguidos)
+              <!-- Área de Mensajes del Chat -->
+              <div class="wa-messages-container" id="waMessagesContainer">
+                <div class="wa-encryption-banner">
+                  🔒 Chat con <b>${escapeHtml(activeContact.name)}</b> (${escapeHtml(activeContact.friendCode || '')}) • Vínculo: <b>${escapeHtml((RELATIONSHIP_ROLES[activeBond.role] && RELATIONSHIP_ROLES[activeBond.role].label) || '⚡ Amigos')}</b> • Rango: <b>${escapeHtml(bondRankLabel)}</b> (🔥 ${Number(activeBond.streakDays) || 0} días)
+                </div>
+                ${renderMessagesForContact(activeContact.id)}
               </div>
-              ${renderMessagesForContact(activeContact.id)}
-            </div>
 
-            <!-- Barra Rápida de Acciones Especiales: Dictado, Traducción, Invitar a Jest, Invitar a Cita 3D -->
-            <div class="wa-quick-actions-strip">
-              <button type="button" onclick="window.SocialChat.toggleVoiceDictation()"
-                id="waVoiceDictateBtn"
-                class="wa-action-chip ${state.isRecordingVoice ? 'recording' : ''}">
-                <span>🎤 Nota de Voz / Dictado en Inglés</span>
-              </button>
+              <!-- Barra Rápida de Acciones -->
+              <div class="wa-quick-actions-strip">
+                <button type="button" onclick="window.SocialChat.toggleVoiceDictation()"
+                  id="waVoiceDictateBtn"
+                  class="wa-action-chip ${state.isRecordingVoice ? 'recording' : ''}">
+                  <span>🎤 Nota de Voz / Dictado</span>
+                </button>
 
-              <button type="button" onclick="window.SocialChat.toggleTranslateReceived()"
-                class="wa-action-chip ${state.showTranslationsGlobal ? 'active' : ''}">
-                <span>🌐 Traducir mensaje recibido</span>
-              </button>
+                <button type="button" onclick="window.SocialChat.toggleTranslateReceived()"
+                  class="wa-action-chip ${state.showTranslationsGlobal ? 'active' : ''}">
+                  <span>🌐 Traducir mensajes</span>
+                </button>
 
-              <button type="button" onclick="window.SocialChat.sendJestInvite('${activeContact.id}', false)"
-                class="wa-action-chip chip-jest">
-                <span>🃏 Invitar a Jest (Jarz)</span>
-              </button>
+                <button type="button" onclick="window.SocialChat.openRoleProposalModal('${activeContact.id}', '${activeBond.role}')"
+                  class="wa-action-chip">
+                  <span>🤝 Elegir Rol en Conjunto</span>
+                </button>
 
-              <button type="button" onclick="window.SocialChat.send3DDateInvite('${activeContact.id}')"
-                class="wa-action-chip chip-date3d">
-                <span>🕯️ Invitar a Cita 3D</span>
-              </button>
-            </div>
+                <button type="button" onclick="window.SocialChat.sendJestInvite('${activeContact.id}', false)"
+                  class="wa-action-chip chip-jest">
+                  <span>🃏 Invitar a Jest 3D</span>
+                </button>
 
-            <!-- Barra Inferior de Entrada de Mensaje -->
-            <div class="wa-input-bar">
-              <button type="button" onclick="window.SocialChat.toggleVoiceDictation()"
-                class="wa-icon-btn ${state.isRecordingVoice ? 'recording' : ''}"
-                title="Dictar mensaje o grabar nota de voz en inglés">
-                🎤
-              </button>
-              <input
-                id="socialChatMessageInput"
-                type="text"
-                placeholder="Write a message in English to ${escapeHtml(activeContact.name)}..."
-                onkeydown="if(event.key==='Enter'){ event.preventDefault(); window.SocialChat.sendMessageFromInput(); }"
-              />
-              <button type="button" onclick="window.SocialChat.sendMessageFromInput()"
-                class="wa-send-btn">
-                <span>Enviar ➤</span>
-              </button>
-            </div>
+                <button type="button" onclick="window.SocialChat.send3DDateInvite('${activeContact.id}')"
+                  class="wa-action-chip chip-date3d">
+                  <span>🕯️ Invitar a Cita 3D</span>
+                </button>
+              </div>
+
+              <!-- Barra Inferior de Entrada de Mensaje -->
+              <div class="wa-input-bar">
+                <button type="button" onclick="window.SocialChat.toggleVoiceDictation()"
+                  class="wa-icon-btn ${state.isRecordingVoice ? 'recording' : ''}"
+                  title="Dictar mensaje en inglés">
+                  🎤
+                </button>
+                <input
+                  id="socialChatMessageInput"
+                  type="text"
+                  placeholder="Write a message in English to ${escapeHtml(activeContact.name)}..."
+                  onkeydown="if(event.key==='Enter'){ event.preventDefault(); window.SocialChat.sendMessageFromInput(); }"
+                />
+                <button type="button" onclick="window.SocialChat.sendMessageFromInput()"
+                  class="wa-send-btn">
+                  <span>Enviar ➤</span>
+                </button>
+              </div>
+            `}
           </section>
         </div>
 
-        <!-- Modal para ➕ Agregar Amigo -->
+        <!-- Modal para 🔍 Buscar / Agregar Amigo (Por ID Único MENG-XXXX o Nombre) -->
         <div id="waAddFriendModal" class="wa-modal-backdrop hidden"></div>
+
+        <!-- Modal para 🤝 Propuesta de Rol de Relación en Conjunto -->
+        <div id="waRoleProposalModal" class="wa-modal-backdrop hidden"></div>
+
+        <!-- Modal para 📖 Guía de Rangos y Rachas -->
+        <div id="waRanksGuideModal" class="wa-modal-backdrop hidden"></div>
 
         <!-- Modal para 👥 Crear Grupo -->
         <div id="waCreateGroupModal" class="wa-modal-backdrop hidden"></div>
@@ -1051,14 +1184,14 @@
     const roleMeta = RELATIONSHIP_ROLES[bond.role] || RELATIONSHIP_ROLES.friends;
     const msgs = state.messages[contact.id] || [];
     const lastMsg = msgs.length > 0 ? msgs[msgs.length - 1] : null;
-    const lastText = lastMsg ? lastMsg.text : 'Tap to start practicing English!';
-    const lastTime = lastMsg ? lastMsg.timestamp : ' Ahora';
+    const lastText = lastMsg ? lastMsg.text : '¡Inicia la conversación en inglés!';
+    const lastTime = lastMsg ? lastMsg.timestamp : 'Ahora';
 
     return `
       <div class="wa-contact-item ${isSelected ? 'active' : ''}"
            onclick="window.SocialChat.selectContact('${contact.id}')">
         <div class="wa-avatar-circle">
-          <span>${contact.avatar || '💬'}</span>
+          <span>${contact.avatar || '🧑‍🎓'}</span>
           ${contact.isOnline ? '<span class="wa-online-dot"></span>' : ''}
         </div>
         <div class="wa-contact-info">
@@ -1070,7 +1203,7 @@
             <span class="wa-mini-badge rank">${escapeHtml(contact.personalRank || '🥉 Bronce')}</span>
             <span class="wa-mini-badge role">${escapeHtml(roleMeta.shortLabel)}</span>
             <span class="wa-mini-badge bond">${escapeHtml(bondRank)}</span>
-            <span class="wa-mini-badge streak">🔥 ${Number(bond.streakDays) || 0} días</span>
+            <span class="wa-mini-badge streak">🔥 ${Number(bond.streakDays) || 0}d</span>
           </div>
           <p class="wa-contact-preview truncate">${escapeHtml(lastText)}</p>
         </div>
@@ -1079,41 +1212,17 @@
   }
 
   function renderRoleEvolutionSteps(bond) {
-    const role = bond.role || 'friends';
-    const days = Number(bond.streakDays) || 0;
-    let steps = [];
-
-    if (role === 'partner') {
-      steps = [
-        { label: '💌 Crush', min: 0 },
-        { label: '🌹 Salientes / Dating', min: 3 },
-        { label: '👩❤️👨 Novios / Boyfriends', min: 10 },
-        { label: '💍 Prometidos / Fiancés', min: 25 },
-        { label: '👑 Esposos / Married', min: 50 },
-        { label: '✨ Almas Gemelas / Soulmates', min: 100 }
-      ];
-    } else if (role === 'family') {
-      steps = [
-        { label: '🏠 Roomies', min: 0 },
-        { label: '🧬 Primos', min: 3 },
-        { label: '🛡️ Hermanos (Siblings)', min: 10 },
-        { label: '👑 Dinastía Familiar', min: 25 }
-      ];
-    } else {
-      steps = [
-        { label: '👋 Conocidos', min: 0 },
-        { label: '🤝 Compas (Buddies)', min: 3 },
-        { label: '⚡ Mejores Amigos (Besties)', min: 10 },
-        { label: '🔥 Inseparables (Partners in Crime)', min: 25 }
-      ];
-    }
+    const role = (bond && bond.role) || 'friends';
+    const days = Number(bond && bond.streakDays) || 0;
+    const roleObj = RELATIONSHIP_ROLES[role] || RELATIONSHIP_ROLES.friends;
+    const steps = roleObj.ranks || [];
 
     return steps.map(s => {
-      const unlocked = days >= s.min;
+      const unlocked = days >= s.minDays;
       return `
-        <div class="wa-evo-step ${unlocked ? 'unlocked' : ''}">
-          <span>${s.label}</span>
-          <span class="text-[9px] opacity-75">(${s.min}+ d)</span>
+        <div class="wa-evo-step ${unlocked ? 'unlocked' : ''}" title="${escapeHtml(s.desc)}">
+          <span>${escapeHtml(s.name)}</span>
+          <span class="text-[9px] opacity-75">(${s.minDays}d 🔥)</span>
         </div>
       `;
     }).join('<span class="text-slate-400 text-xs">➔</span>');
@@ -1122,11 +1231,52 @@
   function renderMessagesForContact(contactId) {
     const list = state.messages[contactId] || [];
     const contact = state.contacts.find(c => c.id === contactId);
-    const friendName = contact ? contact.name : 'Friend';
+    const friendName = contact ? contact.name : 'Amigo';
+
+    if (list.length === 0) {
+      return `
+        <div class="p-6 text-center text-slate-300 text-xs">
+          Envía tu primer mensaje en inglés o propón un Rol de Relación en Conjunto con <b>${escapeHtml(friendName)}</b>.
+        </div>
+      `;
+    }
 
     return list.map(m => {
       const isMe = m.sender === 'me';
       const showTrans = state.showTranslationsGlobal || !!state.translatedMsgIds[m.id];
+
+      // Tarjeta interactiva de Solicitud de Vínculo en Conjunto
+      if (m.type === 'role_proposal') {
+        const roleObj = RELATIONSHIP_ROLES[m.proposedRole] || RELATIONSHIP_ROLES.friends;
+        const isConfirmed = !!m.accepted;
+        return `
+          <div class="wa-bubble-row ${isMe ? 'sent' : 'received'}">
+            <div class="wa-invite-card" style="border: 1.5px solid rgba(244, 114, 182, 0.55); background: linear-gradient(135deg, rgba(15,23,42,0.95), rgba(49,16,47,0.88)); border-radius: 14px; padding: 12px 14px; max-width: 380px;">
+              <div class="flex items-center gap-2 mb-1.5">
+                <span class="text-2xl">🤝</span>
+                <div>
+                  <div class="text-[11px] font-black uppercase tracking-wider text-pink-300">Solicitud de Vínculo en Conjunto</div>
+                  <div class="text-sm font-extrabold text-white">${escapeHtml(roleObj.title)}</div>
+                </div>
+              </div>
+              <p class="text-xs text-slate-100 font-semibold mb-1.5">${escapeHtml(m.text)}</p>
+              <p class="text-[11px] text-slate-300 italic mb-2.5">"${escapeHtml(roleObj.description)}"</p>
+              ${isConfirmed ? `
+                <div class="px-3 py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-xs font-extrabold text-center">
+                  ✅ Rol Confirmado en Conjunto: ${escapeHtml(roleObj.label)}
+                </div>
+              ` : `
+                <button type="button"
+                  onclick="window.SocialChat.acceptJointRoleProposal('${escapeHtml(contactId)}', '${escapeHtml(m.id)}', '${escapeHtml(m.proposedRole)}')"
+                  class="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white text-xs font-black shadow-md cursor-pointer transition">
+                  ✅ Aceptar Rol en Conjunto
+                </button>
+              `}
+              <span class="wa-bubble-time block text-right mt-1 text-[10px] text-slate-400">${escapeHtml(m.timestamp || '')}</span>
+            </div>
+          </div>
+        `;
+      }
 
       if (m.type === 'jest_invite') {
         return `
@@ -1135,15 +1285,15 @@
               <div class="flex items-center gap-2 mb-1.5">
                 <span class="text-2xl">🃏</span>
                 <div>
-                  <div class="text-xs font-black uppercase tracking-wider text-amber-300">Reto Oficial • Jest / Jarz (Headbanz)</div>
-                  <div class="text-sm font-extrabold text-white">Duelo de Adivinanza en Inglés 1vs1</div>
+                  <div class="text-xs font-black uppercase tracking-wider text-amber-300">Reto Oficial • Jest / Jarz 3D</div>
+                  <div class="text-sm font-extrabold text-white">Duelo de Adivinanza en Mesa 3D (1vs1)</div>
                 </div>
               </div>
               <p class="text-xs text-slate-200 mb-2.5">${escapeHtml(m.text)}</p>
               <button type="button"
                 onclick="window.SocialChat.acceptJestDuel('${escapeHtml(contactId)}', '${escapeHtml(friendName)}')"
                 class="wa-invite-cta-btn jest-cta">
-                ⚔️ Aceptar Duelo 1vs1
+                ⚔️ Aceptar Duelo 1vs1 en Jest 3D
               </button>
               <span class="wa-bubble-time">${escapeHtml(m.timestamp || '')}</span>
             </div>
@@ -1158,8 +1308,8 @@
               <div class="flex items-center gap-2 mb-1.5">
                 <span class="text-2xl">🕯️</span>
                 <div>
-                  <div class="text-xs font-black uppercase tracking-wider text-rose-300">Invitación Especial • Mundo de Citas 3D</div>
-                  <div class="text-sm font-extrabold text-white">Cena Interactiva en el Restaurante 3D</div>
+                  <div class="text-xs font-black uppercase tracking-wider text-rose-300">Invitación Especial • Bistro 3D</div>
+                  <div class="text-sm font-extrabold text-white">Cita Interactiva en el Restaurante 3D</div>
                 </div>
               </div>
               <p class="text-xs text-slate-200 mb-2.5">${escapeHtml(m.text)}</p>
@@ -1188,7 +1338,7 @@
               </div>
             ` : ''}
             <div class="wa-bubble-footer">
-              <button type="button" onclick="window.SocialChat.speakMessage('${escapeJsStr(m.text)}')" class="wa-mini-icon-btn" title="Escuchar pronunciación en inglés">🔊</button>
+              <button type="button" onclick="window.SocialChat.speakMessage('${escapeJsStr(m.text)}')" class="wa-mini-icon-btn" title="Escuchar pronunciación">🔊</button>
               ${m.translation ? `<button type="button" onclick="window.SocialChat.toggleSingleTranslation('${m.id}')" class="wa-mini-icon-btn" title="Traducir mensaje">🌐</button>` : ''}
               <span class="wa-bubble-time">${escapeHtml(m.timestamp || '')} ${isMe ? '✓✓' : ''}</span>
             </div>
@@ -1199,7 +1349,486 @@
   }
 
   // ============================================================================
-  // 8. ACCIONES INTERACTIVAS: ROLES, TEMAS, MENSAJES, VOZ, JEST Y CITAS 3D
+  // 10. ELECCIÓN DE ROL DE RELACIÓN EN CONJUNTO + SOLICITUD EN EL CHAT
+  // ============================================================================
+  function openRoleProposalModal(contactId, preselectedRole = 'friends') {
+    const contact = state.contacts.find(c => c.id === contactId) || getActiveContact();
+    if (!contact) return;
+
+    const modal = document.getElementById('waRoleProposalModal');
+    if (!modal) {
+      sendJointRoleProposal(contact.id, preselectedRole);
+      return;
+    }
+
+    modal.classList.remove('hidden');
+    const currentBond = state.bonds[contact.id] || {};
+    const selectedRole = RELATIONSHIP_ROLES[preselectedRole] ? preselectedRole : (currentBond.role || 'friends');
+
+    const selectableRoles = ['partner', 'friends', 'family', 'colleague'];
+
+    modal.innerHTML = `
+      <div class="wa-modal-card" style="max-width: 520px;">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-base font-black text-white flex items-center gap-2">
+            <span>🤝 Elegir Rol de Relación en Conjunto</span>
+          </h3>
+          <button type="button" onclick="window.SocialChat.closeModals()" class="text-slate-400 hover:text-white text-lg font-bold cursor-pointer">✕</button>
+        </div>
+        <p class="text-xs text-slate-300 mb-3">
+          Selecciona el vínculo que deseas establecer con <b>${escapeHtml(contact.name)}</b>. Se enviará una <b>Propuesta de Vínculo</b> al chat para confirmarlo en conjunto:
+        </p>
+
+        <div class="space-y-2 mb-4" id="waRoleCardsContainer">
+          ${selectableRoles.map(rKey => {
+            const r = RELATIONSHIP_ROLES[rKey];
+            const isChosen = rKey === selectedRole;
+            return `
+              <label class="block p-3 rounded-xl border cursor-pointer transition ${isChosen ? 'bg-slate-800/95 border-cyan-400' : 'bg-slate-950/90 border-slate-800 hover:border-slate-700'}">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <input type="radio" name="waJointRoleChoice" value="${r.id}" ${isChosen ? 'checked' : ''} />
+                    <span class="text-xs font-black text-white">${escapeHtml(r.title)}</span>
+                  </div>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-cyan-300 font-bold">${escapeHtml(r.shortLabel)}</span>
+                </div>
+                <p class="text-[11px] text-slate-300 mt-1 pl-5">${escapeHtml(r.description)}</p>
+              </label>
+            `;
+          }).join('')}
+        </div>
+
+        <div class="flex items-center justify-end gap-2">
+          <button type="button" onclick="window.SocialChat.closeModals()"
+            class="px-3 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold cursor-pointer">
+            Cancelar
+          </button>
+          <button type="button" onclick="window.SocialChat.confirmSendRoleProposal('${escapeHtml(contact.id)}')"
+            class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white text-xs font-black shadow-lg cursor-pointer transition">
+            📨 Enviar Solicitud de Vínculo al Chat
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  function confirmSendRoleProposal(contactId) {
+    const checked = document.querySelector('input[name="waJointRoleChoice"]:checked');
+    const chosenRole = checked ? checked.value : 'friends';
+    closeModals();
+    sendJointRoleProposal(contactId, chosenRole);
+  }
+
+  function sendJointRoleProposal(contactId, newRole) {
+    const contact = state.contacts.find(c => c.id === contactId) || getActiveContact();
+    if (!contact) return;
+
+    const roleObj = RELATIONSHIP_ROLES[newRole] || RELATIONSHIP_ROLES.friends;
+    if (!state.bonds[contact.id]) {
+      state.bonds[contact.id] = {
+        role: newRole,
+        roleConfirmed: false,
+        pendingRole: newRole,
+        theme: roleObj.defaultTheme,
+        streakDays: 1,
+        lastInteractionDate: getTodayIso(),
+        coupleExp: 20,
+        weeklyDatesCount: 0,
+        weeklyGamesCount: 0,
+        messagesToday: 0
+      };
+    } else {
+      state.bonds[contact.id].pendingRole = newRole;
+      state.bonds[contact.id].roleConfirmed = false;
+    }
+
+    if (!Array.isArray(state.messages[contact.id])) {
+      state.messages[contact.id] = [];
+    }
+
+    const proposalMsgId = 'role_prop_' + Date.now();
+    const proposalText = `Propuesta de Vínculo: ¿Aceptas establecer nuestro rol como ${roleObj.label.replace(/^[^\s]+\s/, '')}?`;
+
+    state.messages[contact.id].push({
+      id: proposalMsgId,
+      sender: 'me',
+      senderName: 'Tú',
+      text: proposalText,
+      proposedRole: newRole,
+      accepted: false,
+      timestamp: getCurrentTimeStr(),
+      type: 'role_proposal'
+    });
+
+    saveSocialState();
+    renderCommunityHub();
+    scrollToBottomMessages();
+    showSocialToast(`📨 Solicitud enviada: ${proposalText}`);
+  }
+
+  function acceptJointRoleProposal(contactId, messageId, proposedRole) {
+    const roleObj = RELATIONSHIP_ROLES[proposedRole] || RELATIONSHIP_ROLES.friends;
+    if (!state.bonds[contactId]) {
+      state.bonds[contactId] = {
+        role: proposedRole,
+        roleConfirmed: true,
+        pendingRole: null,
+        theme: roleObj.defaultTheme,
+        streakDays: 1,
+        lastInteractionDate: getTodayIso(),
+        coupleExp: 30,
+        weeklyDatesCount: 0,
+        weeklyGamesCount: 0,
+        messagesToday: 1
+      };
+    } else {
+      state.bonds[contactId].role = proposedRole;
+      state.bonds[contactId].roleConfirmed = true;
+      state.bonds[contactId].pendingRole = null;
+      state.bonds[contactId].theme = roleObj.defaultTheme || state.bonds[contactId].theme;
+      state.bonds[contactId].coupleExp = (Number(state.bonds[contactId].coupleExp) || 0) + 15;
+    }
+
+    const msgs = state.messages[contactId] || [];
+    msgs.forEach(m => {
+      if (m.id === messageId || m.type === 'role_proposal') {
+        m.accepted = true;
+      }
+    });
+
+    const contact = state.contacts.find(c => c.id === contactId);
+    msgs.push({
+      id: 'role_ack_' + Date.now(),
+      sender: 'them',
+      senderName: contact ? contact.name : 'Amigo',
+      text: `✅ Joint Role Confirmed! We are now officially "${roleObj.title}" (${calculateBondRank(state.bonds[contactId])})!`,
+      translation: `✅ ¡Rol en Conjunto Confirmado! ¡Ahora somos oficialmente "${roleObj.title}" (${calculateBondRank(state.bonds[contactId])})!`,
+      timestamp: getCurrentTimeStr(),
+      type: 'text'
+    });
+
+    saveSocialState();
+    renderCommunityHub();
+    scrollToBottomMessages();
+    showSocialToast(`✅ Rol confirmado en conjunto: ${roleObj.title}`);
+  }
+
+  function changeRelationshipRole(contactId, newRole) {
+    openRoleProposalModal(contactId, newRole);
+  }
+
+  // ============================================================================
+  // 11. MODAL DE GUÍA DE RANGOS Y RACHAS
+  // ============================================================================
+  function openRanksGuideModal() {
+    const modal = document.getElementById('waRanksGuideModal');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+
+    const guideRoles = ['partner', 'friends', 'family', 'colleague'];
+
+    modal.innerHTML = `
+      <div class="wa-modal-card" style="max-width: 640px; max-height: 85vh; overflow-y: auto;">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-base font-black text-white flex items-center gap-2">
+            <span>📖 Guía Oficial de Rangos, Vínculos y Rachas (🔥)</span>
+          </h3>
+          <button type="button" onclick="window.SocialChat.closeModals()" class="text-slate-400 hover:text-white text-lg font-bold cursor-pointer">✕</button>
+        </div>
+
+        <div class="p-3 rounded-xl bg-slate-900/95 border border-amber-500/30 text-xs text-slate-200 mb-4 space-y-1.5">
+          <div class="font-black text-amber-300">⚡ ¿Cómo suben los días de racha (🔥) y los rangos con tus amigos reales?</div>
+          <p>• <b>💬 Misión Diaria de Chat:</b> Envía 5 mensajes en inglés en el día para ganar <b>+1 día de racha 🔥</b> y <b>+15 EXP</b>.</p>
+          <p>• <b>🕯️ Citas en el Bistro 3D:</b> Completa 3 citas interactivas en la semana para sumar racha extra y desbloquear rangos románticos o sociales.</p>
+          <p>• <b>🃏 Duelos en Jest / Jarz 3D:</b> Juega 2 partidas 1vs1 en la mesa 3D con tu amigo para ganar <b>+40 EXP</b> y puntos de afinidad.</p>
+        </div>
+
+        <div class="space-y-4">
+          ${guideRoles.map(rKey => {
+            const role = RELATIONSHIP_ROLES[rKey];
+            return `
+              <div class="p-3.5 rounded-xl bg-slate-950/90 border border-slate-800">
+                <div class="flex items-center justify-between flex-wrap gap-1 mb-1">
+                  <h4 class="text-sm font-black text-cyan-300">${escapeHtml(role.title)}</h4>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-bold">${escapeHtml(role.label)}</span>
+                </div>
+                <p class="text-xs text-slate-300 italic mb-2.5">"${escapeHtml(role.description)}"</p>
+                <div class="space-y-1.5">
+                  ${role.ranks.map(rk => `
+                    <div class="flex items-start justify-between gap-2 p-2 rounded-lg bg-slate-900/80 border border-slate-800/80 text-xs">
+                      <div>
+                        <div class="font-extrabold text-white">${escapeHtml(rk.name)}</div>
+                        <div class="text-[11px] text-slate-400">${escapeHtml(rk.desc)}</div>
+                      </div>
+                      <span class="shrink-0 px-2 py-0.5 rounded bg-amber-500/15 border border-amber-400/30 text-amber-300 text-[10px] font-bold">
+                        ${escapeHtml(rk.req)}
+                      </span>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+
+        <div class="mt-4 flex justify-end">
+          <button type="button" onclick="window.SocialChat.closeModals()"
+            class="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-black cursor-pointer">
+            ¡Entendido!
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  // ============================================================================
+  // 12. BUSCADOR DE AMIGOS ESTILO VIDEOJUEGO (POR ID ÚNICO MENG-XXXX O NOMBRE)
+  // ============================================================================
+  async function openAddFriendModal() {
+    const modal = document.getElementById('waAddFriendModal');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+
+    const myCode = ensureUserUniqueGameId();
+    const registeredUsers = await discoverRegisteredUsers();
+
+    modal.innerHTML = `
+      <div class="wa-modal-card" style="max-width: 560px;">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-base font-black text-white flex items-center gap-2">
+            <span>🔍 Buscar / Agregar Amigo (ID Único o Nombre)</span>
+          </h3>
+          <button type="button" onclick="window.SocialChat.closeModals()" class="text-slate-400 hover:text-white text-lg font-bold cursor-pointer">✕</button>
+        </div>
+
+        <div class="p-2.5 rounded-xl bg-slate-900/90 border border-cyan-500/30 flex items-center justify-between gap-2 mb-3">
+          <div class="text-xs text-slate-300">
+            Tu ID Único de Jugador: <span class="font-mono font-black text-cyan-300">${escapeHtml(myCode)}</span>
+          </div>
+          <button type="button" onclick="window.SocialChat.copyMyUniqueId()"
+            class="px-2.5 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/35 border border-cyan-400/40 text-cyan-200 text-[11px] font-bold cursor-pointer">
+            📋 Copiar mi ID
+          </button>
+        </div>
+
+        <div class="space-y-2.5">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-300 mb-1">
+              Buscar jugador en vivo por ID Único (<code class="text-cyan-300">MENG-XXXX</code>), Nombre de usuario o Correo:
+            </label>
+            <input
+              id="waNewFriendIdentifier"
+              type="text"
+              placeholder="Ej: MENG-7492, Sofia Morales, carlos@mastereng.com..."
+              oninput="window.SocialChat.filterFriendSearchResults(this.value)"
+              class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white"
+            />
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-400 mb-1">Proponer Rol de Relación:</label>
+              <select id="waNewFriendRole" onchange="window.SocialChat.updateRolePreviewDesc(this.value)"
+                class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white">
+                <option value="partner">❤️ Pareja (Couple)</option>
+                <option value="friends" selected>⚡ Mejor Amigo / Compañero (Besties)</option>
+                <option value="family">🏠 Familia (Family)</option>
+                <option value="colleague">💼 Colega (Coworkers)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-400 mb-1">Tema Visual del Chat:</label>
+              <select id="waNewFriendTheme" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white">
+                <option value="love">❤️ Amor (Love & Romance)</option>
+                <option value="space" selected>🌌 Espacio (Cosmic Neon)</option>
+                <option value="nature">🌿 Naturaleza (Nature & Forest)</option>
+                <option value="work">💼 Trabajo (Executive & Work)</option>
+                <option value="classic">🌙 Clásico (WhatsApp Dark)</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="waRolePreviewDescBox" class="p-2 rounded-lg bg-slate-900/80 border border-slate-800 text-[11px] text-amber-300 italic">
+            ${escapeHtml(RELATIONSHIP_ROLES.friends.description)}
+          </div>
+
+          <button type="button" onclick="window.SocialChat.confirmAddFriend()"
+            class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black shadow-lg cursor-pointer transition">
+            ➕ Agregar por ID / Nombre y Enviar Solicitud de Vínculo
+          </button>
+        </div>
+
+        <div class="mt-4 pt-3 border-t border-slate-800">
+          <div class="text-[11px] font-bold text-slate-400 mb-2">
+            Jugadores reales encontrados en la base de datos:
+          </div>
+          <div id="waDiscoveredUsersContainer" class="max-h-48 overflow-y-auto space-y-2">
+            ${renderDiscoveredUserCards(registeredUsers, '')}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function updateRolePreviewDesc(roleKey) {
+    const box = document.getElementById('waRolePreviewDescBox');
+    const roleObj = RELATIONSHIP_ROLES[roleKey] || RELATIONSHIP_ROLES.friends;
+    if (box) {
+      box.textContent = roleObj.description;
+    }
+  }
+
+  function renderDiscoveredUserCards(usersList, queryText) {
+    const q = String(queryText || '').toLowerCase().trim();
+    const filtered = (usersList || []).filter(u => {
+      if (!q) return true;
+      const hay = `${u.username || ''} ${u.email || ''} ${u.friendCode || ''} ${u.gameId || ''} ${u.personalRank || ''}`.toLowerCase();
+      return hay.includes(q);
+    });
+
+    if (filtered.length === 0) {
+      return `
+        <div class="p-3 rounded-xl bg-slate-900/70 border border-slate-800 text-center text-xs text-slate-400">
+          No se encontraron coincidencias exactas en la lista local. Escribe el ID Único (<b>MENG-XXXX</b>) o el nombre arriba y pulsa <b>"Agregar por ID / Nombre"</b> para conectar directamente.
+        </div>
+      `;
+    }
+
+    return filtered.map(u => `
+      <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-900/95 border border-slate-800 hover:border-cyan-500/40 transition">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <span class="text-lg">${u.avatar || '🧑‍🎓'}</span>
+          <div class="min-w-0">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="text-xs font-extrabold text-white truncate">${escapeHtml(u.username)}</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 font-bold">${escapeHtml(u.personalRank || '🥉 Bronce')}</span>
+              <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan-500/15 border border-cyan-400/30 text-cyan-300 font-bold">${escapeHtml(u.friendCode)}</span>
+            </div>
+            <div class="text-[10px] text-slate-400 truncate">${escapeHtml(u.email)}</div>
+          </div>
+        </div>
+        <button type="button"
+          onclick="window.SocialChat.addRealUserAndChat('${escapeJsStr(u.username)}', '${escapeJsStr(u.email)}', '${escapeJsStr(u.friendCode)}', '${escapeJsStr(u.personalRank)}')"
+          class="shrink-0 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-black shadow cursor-pointer transition">
+          Agregar y Chatear
+        </button>
+      </div>
+    `).join('');
+  }
+
+  function filterFriendSearchResults(queryText) {
+    const container = document.getElementById('waDiscoveredUsersContainer');
+    if (!container) return;
+    container.innerHTML = renderDiscoveredUserCards(state.cachedDiscoveredUsers, queryText);
+  }
+
+  function addRealUserAndChat(username, email, friendCode, personalRank) {
+    const roleSel = document.getElementById('waNewFriendRole');
+    const themeSel = document.getElementById('waNewFriendTheme');
+    const chosenRole = roleSel ? roleSel.value : 'friends';
+    const roleObj = RELATIONSHIP_ROLES[chosenRole] || RELATIONSHIP_ROLES.friends;
+    const chosenTheme = themeSel ? themeSel.value : roleObj.defaultTheme;
+
+    const cleanName = String(username || '').trim();
+    const cleanCode = String(friendCode || '').trim().toUpperCase() || deriveDeterministicCode(cleanName);
+
+    // Verificar si ya existe este contacto real
+    let existing = state.contacts.find(c =>
+      (c.friendCode && c.friendCode.toUpperCase() === cleanCode) ||
+      (c.name && c.name.toLowerCase() === cleanName.toLowerCase())
+    );
+
+    if (!existing) {
+      const newId = 'contact_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5);
+      existing = {
+        id: newId,
+        name: cleanName,
+        username: cleanName.toLowerCase().replace(/\s+/g, '_'),
+        email: email || `${cleanName.toLowerCase().replace(/\s+/g, '')}@mastereng.com`,
+        friendCode: cleanCode,
+        gameId: cleanCode,
+        avatar: chosenRole === 'partner' ? '💖' : '🧑‍🎓',
+        personalRank: personalRank || '🥉 Bronce',
+        cefr: 'B1-B2',
+        statusText: `ID: ${cleanCode} • Jugador Real en MasterENG`,
+        isOnline: true,
+        isGroup: false
+      };
+      state.contacts.unshift(existing);
+    }
+
+    state.bonds[existing.id] = {
+      role: chosenRole,
+      roleConfirmed: false,
+      pendingRole: chosenRole,
+      theme: chosenTheme,
+      streakDays: 1,
+      lastInteractionDate: getTodayIso(),
+      coupleExp: 25,
+      weeklyDatesCount: 0,
+      weeklyGamesCount: 0,
+      messagesToday: 1
+    };
+
+    if (!Array.isArray(state.messages[existing.id])) {
+      state.messages[existing.id] = [];
+    }
+
+    // Enviar automáticamente la Solicitud de Vínculo en Conjunto al iniciar el chat
+    state.messages[existing.id].push({
+      id: 'role_prop_init_' + Date.now(),
+      sender: 'me',
+      senderName: 'Tú',
+      text: `Propuesta de Vínculo: ¿Aceptas establecer nuestro rol como ${roleObj.label.replace(/^[^\s]+\s/, '')}?`,
+      proposedRole: chosenRole,
+      accepted: false,
+      timestamp: getCurrentTimeStr(),
+      type: 'role_proposal'
+    });
+
+    state.activeContactId = existing.id;
+    state.mobileShowChatPane = true;
+    saveSocialState();
+    closeModals();
+    renderCommunityHub();
+    scrollToBottomMessages();
+    showSocialToast(`✅ Conectado con ${cleanName} (${cleanCode}). Solicitud de vínculo enviada.`);
+  }
+
+  async function confirmAddFriend() {
+    const inp = document.getElementById('waNewFriendIdentifier');
+    const raw = (inp ? inp.value : '').trim();
+    if (!raw) {
+      showSocialToast('⚠️ Escribe un ID Único (MENG-XXXX), nombre de usuario o correo.');
+      return;
+    }
+
+    const discovered = state.cachedDiscoveredUsers.length > 0
+      ? state.cachedDiscoveredUsers
+      : await discoverRegisteredUsers();
+
+    const match = discovered.find(u =>
+      String(u.friendCode || '').toLowerCase() === raw.toLowerCase() ||
+      String(u.username || '').toLowerCase() === raw.toLowerCase() ||
+      String(u.email || '').toLowerCase() === raw.toLowerCase()
+    );
+
+    if (match) {
+      addRealUserAndChat(match.username, match.email, match.friendCode, match.personalRank);
+      return;
+    }
+
+    // Si el usuario ingresó un código MENG-XXXX o nombre de un amigo externo
+    const isCode = /^MENG-[A-Z0-9]{4}$/i.test(raw);
+    const displayName = isCode ? `Jugador ${raw.toUpperCase()}` : raw.split('@')[0];
+    const code = isCode ? raw.toUpperCase() : deriveDeterministicCode(raw);
+    const email = raw.includes('@') ? raw : `${displayName.toLowerCase().replace(/\s+/g, '')}@mastereng.com`;
+
+    addRealUserAndChat(displayName, email, code, '🥇 Oro');
+  }
+
+  // ============================================================================
+  // 13. ACCIONES DE MENSAJERÍA, VOZ, JEST 3D, CITAS 3D Y GRUPOS
   // ============================================================================
   function selectContact(contactId) {
     state.activeContactId = contactId;
@@ -1223,20 +1852,10 @@
     const listEl = document.getElementById('waContactsList');
     if (listEl) {
       const filtered = getFilteredContacts();
-      listEl.innerHTML = filtered.map(c => renderSidebarContactItem(c)).join('');
+      listEl.innerHTML = filtered.length === 0
+        ? `<div class="p-6 text-center text-slate-400 text-xs">No se encontraron chats con "${escapeHtml(state.searchQuery)}".</div>`
+        : filtered.map(c => renderSidebarContactItem(c)).join('');
     }
-  }
-
-  function changeRelationshipRole(contactId, newRole) {
-    if (!state.bonds[contactId]) return;
-    state.bonds[contactId].role = newRole;
-    if (RELATIONSHIP_ROLES[newRole] && RELATIONSHIP_ROLES[newRole].defaultTheme) {
-      state.bonds[contactId].theme = RELATIONSHIP_ROLES[newRole].defaultTheme;
-    }
-    saveSocialState();
-    const newRank = calculateBondRank(state.bonds[contactId]);
-    showSocialToast(`Vínculo actualizado: ${RELATIONSHIP_ROLES[newRole].label} (${newRank})`);
-    renderCommunityHub();
   }
 
   function changeChatTheme(contactId, newTheme) {
@@ -1249,7 +1868,7 @@
       Object.values(CHAT_THEMES).forEach(t => chatWin.classList.remove(t.cssClass));
       chatWin.classList.add(CHAT_THEMES[newTheme].cssClass);
     }
-    showSocialToast(`Tema aplicado: ${CHAT_THEMES[newTheme].label}`);
+    showSocialToast(`🎨 Tema aplicado: ${CHAT_THEMES[newTheme].label}`);
   }
 
   function toggleMissionsDrawer() {
@@ -1266,7 +1885,6 @@
     bond.lastInteractionDate = getTodayIso();
     bond.coupleExp = (Number(bond.coupleExp) || 0) + 5;
 
-    // Misión 1: 💬 Chatear en inglés hoy (5 mensajes) -> Sube +1 día de racha 🔥 y +15 EXP de vínculo
     if (prevCount < 5 && bond.messagesToday >= 5) {
       bond.streakDays = (Number(bond.streakDays) || 0) + 1;
       bond.coupleExp += 15;
@@ -1311,18 +1929,18 @@
     renderCommunityHub();
     scrollToBottomMessages();
 
-    // Respuesta automática inteligente en inglés adaptada al rol
     const targetId = contact.id;
     const bond = state.bonds[targetId] || {};
     const role = bond.role || 'friends';
 
     setTimeout(() => {
       state.typingByContact[targetId] = false;
-      const reply = generateContextualSmartReply(text, role, contact.name);
+      const reply = generateContextualSmartReply(text, role);
+      if (!Array.isArray(state.messages[targetId])) state.messages[targetId] = [];
       state.messages[targetId].push({
         id: 'msg_reply_' + Date.now(),
         sender: 'them',
-        senderName: contact.isGroup ? 'Sophia Valentine' : contact.name,
+        senderName: contact.name,
         text: reply.en,
         translation: reply.es,
         timestamp: getCurrentTimeStr(),
@@ -1331,19 +1949,18 @@
       saveSocialState();
       renderCommunityHub();
       scrollToBottomMessages();
-    }, 950);
+    }, 900);
   }
 
   function translateCommonEnglishToSpanish(text) {
     const lower = text.toLowerCase();
-    if (lower.includes('hello') || lower.includes('hi ')) return '¡Hola! Practiquemos nuestro inglés hoy.';
+    if (lower.includes('hello') || lower.includes('hi')) return '¡Hola! Practiquemos nuestro inglés hoy.';
     if (lower.includes('love')) return '¡Me encanta practicar inglés contigo!';
-    if (lower.includes('date')) return '¿Vamos a nuestra cita en el Restaurante 3D?';
-    if (lower.includes('game') || lower.includes('jest')) return '¡Juguemos una partida de Jest 1vs1!';
-    return `Mensaje en inglés: "${text}"`;
+    if (lower.includes('date')) return '¿Vamos a nuestra cita en el Bistro 3D?';
+    if (lower.includes('game') || lower.includes('jest')) return '¡Juguemos una partida de Jest 3D 1vs1!';
+    return `Traducción: "${text}"`;
   }
 
-  // Botón 🌐 Traducir mensaje recibido
   function toggleTranslateReceived() {
     state.showTranslationsGlobal = !state.showTranslationsGlobal;
     renderCommunityHub();
@@ -1357,7 +1974,6 @@
     renderCommunityHub();
   }
 
-  // Botón 🎤 Nota de Voz / Dictado en Inglés
   function toggleVoiceDictation() {
     const SpeechRec = global.SpeechRecognition || global.webkitSpeechRecognition;
     if (SpeechRec) {
@@ -1388,7 +2004,7 @@
         };
         rec.onerror = function () {
           state.isRecordingVoice = false;
-          sendMessageFromInput("Hey! I'm practicing my English pronunciation with a voice note! 🎤", true);
+          renderCommunityHub();
         };
         rec.onend = function () {
           if (state.isRecordingVoice) {
@@ -1402,9 +2018,7 @@
         state.isRecordingVoice = false;
       }
     }
-
-    // Fallback instantáneo si el navegador no soporta micrófono directo
-    sendMessageFromInput("Hey! Listen to my English voice note: Let's keep our daily streak strong! 🎤🔥", true);
+    sendMessageFromInput("Hey! Let's practice our English pronunciation together! 🎤", true);
   }
 
   function speakMessage(text) {
@@ -1418,7 +2032,6 @@
     } catch (e) {}
   }
 
-  // Botón 🃏 Invitar a Jest (Jarz)
   function sendJestInvite(contactId, autoLaunch = false) {
     const contact = state.contacts.find(c => c.id === contactId) || getActiveContact();
     if (!contact) return;
@@ -1431,21 +2044,12 @@
       id: 'jest_inv_' + Date.now(),
       sender: 'me',
       senderName: 'Tú',
-      text: `¡Te desafío a una partida 1vs1 de Jest / Jarz (Headbanz) en inglés, ${contact.name}! ¿Podrás adivinar la carta en tu frente antes de que se acabe el tiempo?`,
+      text: `¡Te desafío a una partida 1vs1 de Jest / Jarz 3D en inglés, ${contact.name}! ¿Podrás adivinar la carta en tu frente?`,
       timestamp: getCurrentTimeStr(),
       type: 'jest_invite'
     });
 
-    const bond = state.bonds[contact.id];
-    if (bond) {
-      bond.weeklyGamesCount = (Number(bond.weeklyGamesCount) || 0) + 1;
-      bond.coupleExp = (Number(bond.coupleExp) || 0) + 20;
-      if (bond.weeklyGamesCount === 2) {
-        bond.streakDays = (Number(bond.streakDays) || 0) + 1;
-        showSocialToast('🃏 ¡Misión semanal de 2 partidas de Jest completada! +1 día de racha 🔥');
-      }
-    }
-
+    registerRelationshipGamePlayed(contact.id, 'jest');
     saveSocialState();
     renderCommunityHub();
     scrollToBottomMessages();
@@ -1455,25 +2059,45 @@
     }
   }
 
-  function acceptJestDuel(friendId, friendName) {
+  function registerRelationshipGamePlayed(friendId, gameType = 'jest') {
+    if (!friendId || !state.bonds[friendId]) return;
     const bond = state.bonds[friendId];
-    if (bond) {
-      bond.weeklyGamesCount = Math.max(1, Number(bond.weeklyGamesCount) || 0);
-      saveSocialState();
+    if (gameType === 'jest') {
+      bond.weeklyGamesCount = (Number(bond.weeklyGamesCount) || 0) + 1;
+      bond.coupleExp = (Number(bond.coupleExp) || 0) + 20;
+      if (bond.weeklyGamesCount === 2) {
+        bond.streakDays = (Number(bond.streakDays) || 0) + 1;
+        showSocialToast('🃏 ¡Misión de 2 partidas de Jest 3D completada! +1 día de racha 🔥');
+      }
+    } else if (gameType === 'date3d') {
+      bond.weeklyDatesCount = (Number(bond.weeklyDatesCount) || 0) + 1;
+      bond.coupleExp = (Number(bond.coupleExp) || 0) + 25;
+      if (bond.weeklyDatesCount === 3) {
+        bond.streakDays = (Number(bond.streakDays) || 0) + 1;
+      }
     }
+    saveSocialState();
+  }
+
+  function acceptJestDuel(friendId, friendName) {
+    const contact = state.contacts.find(c => c.id === friendId);
+    const roomCode = (contact && contact.friendCode) ? `JEST-${contact.friendCode}` : 'JEST-101';
 
     if (typeof global.openJestGameView === 'function') {
-      global.openJestGameView({ friendId, friendName });
+      global.openJestGameView({
+        friendId,
+        friendName: friendName || (contact ? contact.name : 'Amigo'),
+        roomCode,
+        topic: ( state.bonds[friendId] && state.bonds[friendId].role === 'partner' )
+          ? 'Romantic & Couple Items'
+          : 'Animals & Creatures'
+      });
       return;
     }
 
-    if (typeof global.navigateTo === 'function') {
-      try { global.navigateTo('view-jest'); } catch (e) {}
-    }
-    showSocialToast(`🃏 Iniciando Duelo 1vs1 de Jest (Jarz) contra ${friendName}...`);
+    showSocialToast(`🃏 Iniciando Duelo 1vs1 de Jest 3D con ${friendName}...`);
   }
 
-  // Botón 🕯️ Invitar a Cita 3D
   function send3DDateInvite(contactId) {
     const contact = state.contacts.find(c => c.id === contactId) || getActiveContact();
     if (!contact) return;
@@ -1486,7 +2110,7 @@
       id: 'date3d_inv_' + Date.now(),
       sender: 'me',
       senderName: 'Tú',
-      text: `🕯️ He reservado una mesa especial para los dos en el Restaurante 3D de MasterENG, ${contact.name}. ¡Vamos a nuestra Cita 3D en inglés!`,
+      text: `🕯️ He reservado una mesa para los dos en el Bistro 3D de MasterENG, ${contact.name}. ¡Vamos a nuestra Cita 3D en inglés!`,
       timestamp: getCurrentTimeStr(),
       type: 'date3d_invite'
     });
@@ -1501,16 +2125,13 @@
     const contact = state.contacts.find(c => c.id === contactId) || getActiveContact();
     if (!contact) return;
 
+    registerRelationshipGamePlayed(contact.id, 'date3d');
     const bond = state.bonds[contact.id] || {};
-    bond.weeklyDatesCount = (Number(bond.weeklyDatesCount) || 0) + 1;
-    bond.coupleExp = (Number(bond.coupleExp) || 0) + 25;
-    if (bond.weeklyDatesCount === 3) {
-      bond.streakDays = (Number(bond.streakDays) || 0) + 1;
-    }
 
     const partnerPayload = {
       id: contact.id,
       name: contact.name,
+      friendCode: contact.friendCode || contact.gameId,
       avatar: contact.avatar,
       personalRank: contact.personalRank,
       role: bond.role || 'partner',
@@ -1546,158 +2167,12 @@
     }
   }
 
-  // ============================================================================
-  // 9. MODALES PARA ➕ AGREGAR AMIGO Y 👥 CREAR GRUPO
-  // ============================================================================
-  async function openAddFriendModal() {
-    const modal = document.getElementById('waAddFriendModal');
-    if (!modal) return;
-    modal.classList.remove('hidden');
-
-    const registeredUsers = await discoverRegisteredUsers();
-
-    modal.innerHTML = `
-      <div class="wa-modal-card">
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="text-base font-black text-white flex items-center gap-2">
-            <span>➕ Agregar Amigo o Pareja</span>
-          </h3>
-          <button type="button" onclick="window.SocialChat.closeModals()" class="text-slate-400 hover:text-white text-lg font-bold cursor-pointer">✕</button>
-        </div>
-        <p class="text-xs text-slate-300 mb-3">
-          Busca por <b>nombre de usuario</b>, <b>correo electrónico</b> o <b>código de amigo</b> (ej. <code class="text-cyan-300">MENG-8821</code>) y elige su vínculo contigo:
-        </p>
-
-        <div class="space-y-2.5">
-          <input id="waNewFriendIdentifier" type="text" placeholder="Nombre de usuario, correo o código MENG-XXXX..."
-            class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white" />
-
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <label class="block text-[11px] font-bold text-slate-400 mb-1">Rol de Relación:</label>
-              <select id="waNewFriendRole" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white">
-                <option value="partner">❤️ Pareja</option>
-                <option value="friends" selected>⚡ Mejor Amigo / Compañero</option>
-                <option value="family">🏠 Familia</option>
-                <option value="colleague">💼 Colega</option>
-                <option value="acquaintance">👋 Conocido</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-[11px] font-bold text-slate-400 mb-1">Tema Visual del Chat:</label>
-              <select id="waNewFriendTheme" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white">
-                <option value="love">❤️ Amor (Love & Romance)</option>
-                <option value="space" selected>🌌 Espacio (Cosmic Neon)</option>
-                <option value="nature">🌿 Naturaleza (Nature & Forest)</option>
-                <option value="work">💼 Trabajo (Executive & Work)</option>
-                <option value="classic">🌙 Clásico (WhatsApp Dark)</option>
-              </select>
-            </div>
-          </div>
-
-          <button type="button" onclick="window.SocialChat.confirmAddFriend()"
-            class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black shadow-lg cursor-pointer transition">
-            ➕ Vincular Contacto Ahora
-          </button>
-        </div>
-
-        <div class="mt-4 pt-3 border-t border-slate-800">
-          <div class="text-[11px] font-bold text-slate-400 mb-2">Usuarios registrados disponibles para conectar:</div>
-          <div class="max-h-40 overflow-y-auto space-y-1.5">
-            ${registeredUsers.map(u => `
-              <div class="flex items-center justify-between p-2 rounded-xl bg-slate-900/90 border border-slate-800">
-                <div class="flex items-center gap-2 min-w-0">
-                  <span class="text-base">${u.avatar || '🧑‍🎓'}</span>
-                  <div class="min-w-0">
-                    <div class="text-xs font-bold text-white truncate">${escapeHtml(u.username)} <span class="text-[10px] text-amber-300">${escapeHtml(u.personalRank)}</span></div>
-                    <div class="text-[10px] text-slate-400 truncate">${escapeHtml(u.email)} • <span class="font-mono text-cyan-300">${escapeHtml(u.friendCode)}</span></div>
-                  </div>
-                </div>
-                <button type="button"
-                  onclick="document.getElementById('waNewFriendIdentifier').value='${escapeJsStr(u.username)}'; window.SocialChat.confirmAddFriend();"
-                  class="px-2.5 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/40 text-cyan-300 text-[11px] font-bold cursor-pointer">
-                  + Agregar
-                </button>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  async function confirmAddFriend() {
-    const inp = document.getElementById('waNewFriendIdentifier');
-    const roleSel = document.getElementById('waNewFriendRole');
-    const themeSel = document.getElementById('waNewFriendTheme');
-    const raw = (inp ? inp.value : '').trim();
-    if (!raw) {
-      showSocialToast('⚠️ Escribe un nombre de usuario, correo o código de amigo.');
-      return;
-    }
-
-    const role = roleSel ? roleSel.value : 'friends';
-    const theme = themeSel ? themeSel.value : (RELATIONSHIP_ROLES[role] ? RELATIONSHIP_ROLES[role].defaultTheme : 'classic');
-
-    const discovered = await discoverRegisteredUsers();
-    const match = discovered.find(u =>
-      u.username.toLowerCase() === raw.toLowerCase() ||
-      u.email.toLowerCase() === raw.toLowerCase() ||
-      u.friendCode.toLowerCase() === raw.toLowerCase()
-    );
-
-    const newId = 'contact_' + Date.now();
-    const displayName = match ? match.username : raw.split('@')[0];
-    const newContact = {
-      id: newId,
-      name: displayName,
-      username: displayName.toLowerCase().replace(/\s+/g, '_'),
-      email: match ? match.email : (raw.includes('@') ? raw : `${displayName.toLowerCase().replace(/\s+/g, '')}@mastereng.academy`),
-      friendCode: match ? match.friendCode : ('MENG-' + Math.floor(1000 + Math.random() * 9000)),
-      avatar: role === 'partner' ? '💖' : (match ? match.avatar : '🌟'),
-      personalRank: match ? match.personalRank : '🥇 Oro',
-      cefr: 'B2 Upper-Int',
-      statusText: 'Online • Connected on MasterENG',
-      isOnline: true,
-      isGroup: false
-    };
-
-    state.contacts.unshift(newContact);
-    state.bonds[newId] = {
-      role,
-      theme,
-      streakDays: 1,
-      lastInteractionDate: getTodayIso(),
-      coupleExp: 25,
-      weeklyDatesCount: 0,
-      weeklyGamesCount: 0,
-      messagesToday: 1
-    };
-    state.messages[newId] = [
-      {
-        id: 'm_welcome_' + Date.now(),
-        sender: 'them',
-        senderName: displayName,
-        text: `Hey! So happy we connected on MasterENG! Let's build our daily English streak 🔥 and play Jest or visit the 3D World!`,
-        translation: `¡Hola! ¡Qué alegría conectar en MasterENG! ¡Construyamos nuestra racha diaria de inglés 🔥 y juguemos Jest o visitemos el Mundo 3D!`,
-        timestamp: getCurrentTimeStr(),
-        type: 'text'
-      }
-    ];
-
-    state.activeContactId = newId;
-    saveSocialState();
-    closeModals();
-    renderCommunityHub();
-    showSocialToast(`✅ ${displayName} agregado como ${RELATIONSHIP_ROLES[role].label}`);
-  }
-
   function openCreateGroupModal() {
     const modal = document.getElementById('waCreateGroupModal');
     if (!modal) return;
     modal.classList.remove('hidden');
 
-    const indivContacts = state.contacts.filter(c => !c.isGroup);
+    const indivContacts = state.contacts.filter(c => !c.isGroup && !isBannedFakeBot(c));
 
     modal.innerHTML = `
       <div class="wa-modal-card">
@@ -1711,12 +2186,14 @@
           <input id="waNewGroupName" type="text" placeholder="Nombre del grupo (ej. TOEFL Speaking Squad 🔥)..."
             class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white" />
 
-          <div class="text-[11px] font-bold text-slate-400">Selecciona miembros del grupo:</div>
+          <div class="text-[11px] font-bold text-slate-400">Selecciona amigos reales para el grupo:</div>
           <div class="max-h-36 overflow-y-auto space-y-1.5 p-2 rounded-xl bg-slate-950 border border-slate-800">
-            ${indivContacts.map(c => `
+            ${indivContacts.length === 0 ? `
+              <div class="text-xs text-slate-400 p-2">Agrega amigos reales primero con su ID Único (MENG-XXXX) para incluirlos en grupos.</div>
+            ` : indivContacts.map(c => `
               <label class="flex items-center gap-2 text-xs text-slate-200 cursor-pointer">
                 <input type="checkbox" class="wa-group-member-check" value="${escapeHtml(c.name)}" checked />
-                <span>${c.avatar} ${escapeHtml(c.name)} (${escapeHtml(c.personalRank)})</span>
+                <span>${c.avatar} ${escapeHtml(c.name)} (${escapeHtml(c.friendCode || '')})</span>
               </label>
             `).join('')}
           </div>
@@ -1738,12 +2215,14 @@
     members.push('Tú');
 
     const newId = 'group_' + Date.now();
+    const grpCode = 'MENG-' + Math.floor(1000 + Math.random() * 9000);
     const newGrp = {
       id: newId,
       name,
       username: name.toLowerCase().replace(/\s+/g, '_'),
       email: '',
-      friendCode: 'GRP-' + Math.floor(1000 + Math.random() * 9000),
+      friendCode: grpCode,
+      gameId: grpCode,
       avatar: '👥',
       personalRank: '💎 Diamante',
       cefr: 'Multi-Level',
@@ -1756,6 +2235,7 @@
     state.contacts.unshift(newGrp);
     state.bonds[newId] = {
       role: 'group',
+      roleConfirmed: true,
       theme: 'space',
       streakDays: 1,
       lastInteractionDate: getTodayIso(),
@@ -1767,10 +2247,10 @@
     state.messages[newId] = [
       {
         id: 'm_grp_init_' + Date.now(),
-        sender: 'them',
-        senderName: members[0] || 'Sophia Valentine',
-        text: `Welcome everyone to "${name}"! Let's practice English together and challenge each other in Jest! 🏆`,
-        translation: `¡Bienvenidos todos a "${name}"! ¡Practiquemos inglés juntos y retémonos en Jest! 🏆`,
+        sender: 'me',
+        senderName: 'Tú',
+        text: `Welcome everyone to "${name}"! Let's practice English together! 🏆`,
+        translation: `¡Bienvenidos todos a "${name}"! ¡Practiquemos inglés juntos! 🏆`,
         timestamp: getCurrentTimeStr(),
         type: 'text'
       }
@@ -1784,7 +2264,7 @@
   }
 
   function closeModals() {
-    ['waAddFriendModal', 'waCreateGroupModal'].forEach(id => {
+    ['waAddFriendModal', 'waCreateGroupModal', 'waRoleProposalModal', 'waRanksGuideModal'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.classList.add('hidden');
     });
@@ -1806,6 +2286,7 @@
   }
 
   function scrollToBottomMessages() {
+    if (typeof document === 'undefined') return;
     setTimeout(() => {
       const container = document.getElementById('waMessagesContainer');
       if (container) {
@@ -1818,6 +2299,7 @@
     if (typeof global.showToast === 'function') {
       try { global.showToast(message); return; } catch (e) {}
     }
+    if (typeof document === 'undefined') return;
     let toast = document.getElementById('waSocialFloatingToast');
     if (!toast) {
       toast = document.createElement('div');
@@ -1853,13 +2335,15 @@
   }
 
   // ============================================================================
-  // 10. AUTO-INICIALIZACIÓN Y EXPORTACIÓN GLOBAL
+  // 14. AUTO-INICIALIZACIÓN Y EXPORTACIÓN GLOBAL
   // ============================================================================
   function initSocialChat() {
     loadSocialState();
-    const existingView = document.getElementById('view-community');
-    if (existingView && !existingView.classList.contains('hidden')) {
-      renderCommunityHub();
+    if (typeof document !== 'undefined') {
+      const existingView = document.getElementById('view-community');
+      if (existingView && !existingView.classList.contains('hidden')) {
+        renderCommunityHub();
+      }
     }
   }
 
@@ -1875,12 +2359,19 @@
     initSocialChat,
     openCommunityHubView,
     renderCommunityHub,
+    ensureUserUniqueGameId,
+    copyMyUniqueId,
     selectContact,
     backToSidebarMobile,
     selectTab,
     handleSearch,
+    openRoleProposalModal,
+    confirmSendRoleProposal,
+    sendJointRoleProposal,
+    acceptJointRoleProposal,
     changeRelationshipRole,
     changeChatTheme,
+    openRanksGuideModal,
     toggleMissionsDrawer,
     sendMessageFromInput,
     toggleTranslateReceived,
@@ -1892,16 +2383,25 @@
     send3DDateInvite,
     goTo3DDateNow,
     openAddFriendModal,
+    filterFriendSearchResults,
+    updateRolePreviewDesc,
+    addRealUserAndChat,
     confirmAddFriend,
     openCreateGroupModal,
     confirmCreateGroup,
     closeModals,
     returnToHub,
     calculateBondRank,
-    getSocialBonds: () => state.bonds
+    registerRelationshipGamePlayed,
+    discoverRegisteredUsers,
+    getSocialBonds: () => state.bonds,
+    getSocialContacts: () => state.contacts,
+    RELATIONSHIP_ROLES
   };
 
   global.SocialChat = SocialChatAPI;
+  global.ensureUserUniqueGameId = ensureUserUniqueGameId;
+  global.registerRelationshipGamePlayed = registerRelationshipGamePlayed;
   global.openCommunityHubView = openCommunityHubView;
   global.initSocialChat = initSocialChat;
   global.renderCommunityHub = renderCommunityHub;

@@ -836,8 +836,10 @@ window._realWorld3DEngine = (typeof window !== 'undefined' && window.World3D && 
           realUsers = storedReg.map((ru, idx) => {
             const exp = typeof ru.exp === 'number' ? ru.exp : 0;
             const rank = ru.rank || (typeof calculateRankInfo === 'function' ? calculateRankInfo(exp).rank : 'Bronce');
+            const ruGameId = ru.gameId || (window.generateOrGetGameId ? window.generateOrGetGameId(ru) : ('MENG-' + String(idx + 1).padStart(4, '0')));
             return {
               id: ru.id || (idx + 1),
+              gameId: ruGameId,
               username: ru.username || (ru.name || 'Estudiante'),
               email: ru.email || (ru.username ? ru.username + '@mastereng.com' : 'estudiante@mastereng.com'),
               role: ru.role || 'user',
@@ -855,6 +857,7 @@ window._realWorld3DEngine = (typeof window !== 'undefined' && window.World3D && 
         realUsers = [
           {
             id: 1,
+            gameId: 'MENG-0001',
             username: 'Wilberth Alessandro (Admin)',
             email: 'admin@antigravity.com',
             role: 'admin',
@@ -865,6 +868,18 @@ window._realWorld3DEngine = (typeof window !== 'undefined' && window.World3D && 
           },
           {
             id: 2,
+            gameId: 'MENG-8822',
+            username: 'Estudiante Demo',
+            email: 'estudiante@mastereng.com',
+            role: 'user',
+            rank: 'Plata',
+            exp: 420,
+            streak_days: 5,
+            created_at: new Date(Date.now() - 7 * 86400000).toISOString()
+          },
+          {
+            id: 3,
+            gameId: 'MENG-3391',
             username: 'Sofia Morales',
             email: 'sofia.morales@mastereng.com',
             role: 'user',
@@ -874,7 +889,8 @@ window._realWorld3DEngine = (typeof window !== 'undefined' && window.World3D && 
             created_at: new Date(Date.now() - 15 * 86400000).toISOString()
           },
           {
-            id: 3,
+            id: 4,
+            gameId: 'MENG-5124',
             username: 'Carlos Mendoza',
             email: 'carlos.mendoza@mastereng.com',
             role: 'user',
@@ -884,7 +900,8 @@ window._realWorld3DEngine = (typeof window !== 'undefined' && window.World3D && 
             created_at: new Date(Date.now() - 8 * 86400000).toISOString()
           },
           {
-            id: 4,
+            id: 5,
+            gameId: 'MENG-7619',
             username: 'Valentina Torres',
             email: 'valentina.t@mastereng.com',
             role: 'user',
@@ -1219,7 +1236,12 @@ window.isCurrentUserAdmin = function() {
 
         return `
           <tr class="hover:bg-slate-900/60 transition group">
-            <td class="py-2.5 px-3 font-mono text-slate-400 text-[11px]">#${userId}</td>
+            <td class="py-2.5 px-3 font-mono text-slate-400 text-[11px]">
+              <div class="flex flex-col">
+                <span class="text-slate-400">#${userId}</span>
+                <span class="text-[10px] text-sky-400 font-bold select-all tracking-wider" title="Game ID único">${user.gameId || ('MENG-' + String(userId).padStart(4, '0'))}</span>
+              </div>
+            </td>
             <td class="py-2.5 px-3 font-semibold text-white">
               <div class="flex items-center gap-1.5">
                 <span class="w-6 h-6 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] text-slate-200">
@@ -1271,9 +1293,10 @@ window.isCurrentUserAdmin = function() {
 
       const filtered = window.allAdminUsersList.filter(user => {
         const idMatch = String(user.id).includes(q);
+        const gameIdMatch = (user.gameId || '').toLowerCase().includes(q);
         const nameMatch = (user.username || '').toLowerCase().includes(q);
         const emailMatch = (user.email || '').toLowerCase().includes(q);
-        return idMatch || nameMatch || emailMatch;
+        return idMatch || gameIdMatch || nameMatch || emailMatch;
       });
 
       renderAdminUsersTable(filtered);
@@ -2035,21 +2058,55 @@ window.logout = function() {
       window.currentPortalIndex = window.currentPortal;
       currentCoverFlowIndex = window.currentPortal;
 
+      const curr = window.currentPortal;
+      const prevIdx = ((curr - 1) % total + total) % total;
+      const nextIdx = ((curr + 1) % total + total) % total;
+
       cards.forEach((c, idx) => {
-        const isActive = (idx === window.currentPortal);
-        c.style.display = isActive ? 'flex' : 'none';
-        c.style.setProperty('display', isActive ? 'flex' : 'none', 'important');
-        c.classList.toggle('active', isActive);
-        c.classList.toggle('active-center', isActive);
-        if (isActive) {
+        if (idx === curr) {
           c.classList.remove('hidden', 'side-left', 'side-right', 'hidden-back');
+          c.classList.add('active', 'active-center');
+          c.style.display = 'flex';
+          c.style.setProperty('display', 'flex', 'important');
           c.style.opacity = '1';
+          c.style.setProperty('opacity', '1', 'important');
           c.style.pointerEvents = 'auto';
           c.style.setProperty('pointer-events', 'auto', 'important');
+          c.style.zIndex = '30';
+          c.style.setProperty('z-index', '30', 'important');
+        } else if (idx === prevIdx) {
+          c.classList.remove('hidden', 'active', 'active-center', 'side-right', 'hidden-back');
+          c.classList.add('side-left');
+          c.style.display = 'flex';
+          c.style.setProperty('display', 'flex', 'important');
+          c.style.opacity = '0.55';
+          c.style.setProperty('opacity', '0.55', 'important');
+          c.style.pointerEvents = 'auto';
+          c.style.setProperty('pointer-events', 'auto', 'important');
+          c.style.zIndex = '20';
+          c.style.setProperty('z-index', '20', 'important');
+        } else if (idx === nextIdx) {
+          c.classList.remove('hidden', 'active', 'active-center', 'side-left', 'hidden-back');
+          c.classList.add('side-right');
+          c.style.display = 'flex';
+          c.style.setProperty('display', 'flex', 'important');
+          c.style.opacity = '0.55';
+          c.style.setProperty('opacity', '0.55', 'important');
+          c.style.pointerEvents = 'auto';
+          c.style.setProperty('pointer-events', 'auto', 'important');
+          c.style.zIndex = '20';
+          c.style.setProperty('z-index', '20', 'important');
         } else {
+          c.classList.remove('active', 'active-center', 'side-left', 'side-right');
+          c.classList.add('hidden', 'hidden-back');
+          c.style.display = 'none';
+          c.style.setProperty('display', 'none', 'important');
           c.style.opacity = '0';
+          c.style.setProperty('opacity', '0', 'important');
           c.style.pointerEvents = 'none';
           c.style.setProperty('pointer-events', 'none', 'important');
+          c.style.zIndex = '10';
+          c.style.setProperty('z-index', '10', 'important');
         }
       });
       dots.forEach((d, idx) => {
@@ -2314,9 +2371,151 @@ window.logout = function() {
     window.setupCoverFlowGestures = setupCoverFlowGestures;
 
     // ========================================================
-    // WIDGETS FLOTANTES ARRASTRABLES (ANCLADOS EN ESQUINA INFERIOR DERECHA)
+    // WIDGETS FLOTANTES ARRASTRABLES (100% DRAGGABLE EN PC Y MÓVIL)
     // ========================================================
+    window.makeRobotAssistantDraggable = function(target) {
+      if (!target) {
+        ['draggableRobotWidget', 'ai-tutor-btn', 'floating-word-robot-btn'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) window.makeRobotAssistantDraggable(el);
+        });
+        return;
+      }
+      const el = typeof target === 'string' ? document.getElementById(target) : target;
+      if (!el || el.__robotDraggableSetup) return;
+      el.__robotDraggableSetup = true;
+
+      el.style.position = 'fixed';
+      el.style.zIndex = '9999';
+
+      let customPos = null;
+      try {
+        const raw = localStorage.getItem('mastereng_robot_custom_pos');
+        if (raw) customPos = JSON.parse(raw);
+      } catch (_) {}
+
+      if (customPos && typeof customPos.left === 'number' && typeof customPos.top === 'number') {
+        const w = el.offsetWidth || 56;
+        const h = el.offsetHeight || 56;
+        const clampLeft = Math.min(Math.max(8, customPos.left), Math.max(8, window.innerWidth - w - 8));
+        const clampTop = Math.min(Math.max(50, customPos.top), Math.max(50, window.innerHeight - h - 8));
+        el.style.left = `${clampLeft}px`;
+        el.style.top = `${clampTop}px`;
+        el.style.right = 'auto';
+        el.style.bottom = 'auto';
+      } else {
+        el.style.bottom = '78px';
+        el.style.right = '18px';
+        el.style.left = 'auto';
+        el.style.top = 'auto';
+      }
+
+      let isDragging = false;
+      let hasMoved = false;
+      let startX = 0, startY = 0;
+      let startLeft = 0, startTop = 0;
+
+      function onPointerDown(clientX, clientY) {
+        isDragging = true;
+        hasMoved = false;
+        startX = clientX;
+        startY = clientY;
+        const rect = el.getBoundingClientRect();
+        startLeft = rect.left;
+        startTop = rect.top;
+      }
+
+      function onPointerMove(e, clientX, clientY) {
+        if (!isDragging) return;
+        const dx = clientX - startX;
+        const dy = clientY - startY;
+        const dist = Math.hypot(dx, dy);
+
+        if (dist >= 6) {
+          hasMoved = true;
+          if (e && e.cancelable && typeof e.preventDefault === 'function') {
+            e.preventDefault();
+          }
+          const w = el.offsetWidth || 56;
+          const h = el.offsetHeight || 56;
+          const maxLeft = Math.max(8, window.innerWidth - w - 8);
+          const maxTop = Math.max(50, window.innerHeight - h - 8);
+          const newLeft = Math.min(Math.max(8, startLeft + dx), maxLeft);
+          const newTop = Math.min(Math.max(50, startTop + dy), maxTop);
+
+          el.style.left = `${newLeft}px`;
+          el.style.top = `${newTop}px`;
+          el.style.right = 'auto';
+          el.style.bottom = 'auto';
+        }
+      }
+
+      function onPointerUp() {
+        if (!isDragging) return;
+        isDragging = false;
+        if (hasMoved) {
+          el.setAttribute('data-dragged', 'true');
+          setTimeout(() => el.removeAttribute('data-dragged'), 120);
+          try {
+            const rect = el.getBoundingClientRect();
+            localStorage.setItem('mastereng_robot_custom_pos', JSON.stringify({
+              left: Math.round(rect.left),
+              top: Math.round(rect.top)
+            }));
+          } catch (_) {}
+        } else {
+          // Clic corto (< 6px) -> abre el asistente
+          if (el.id === 'floating-word-robot-btn') {
+            if (typeof window.toggleWordHelperModal === 'function') window.toggleWordHelperModal();
+          } else if (el.id === 'draggableRobotWidget' || el.id === 'ai-tutor-btn') {
+            if (typeof window.handleRobotWidgetClick === 'function') {
+              window.handleRobotWidgetClick();
+            } else if (typeof window.toggleModal === 'function') {
+              window.toggleModal('ai-tutor-modal');
+            }
+          }
+        }
+      }
+
+      el.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
+        onPointerDown(e.clientX, e.clientY);
+        const onMouseMove = (ev) => onPointerMove(ev, ev.clientX, ev.clientY);
+        const onMouseUp = () => {
+          onPointerUp();
+          window.removeEventListener('mousemove', onMouseMove);
+          window.removeEventListener('mouseup', onMouseUp);
+        };
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+      });
+
+      el.addEventListener('touchstart', (e) => {
+        if (e.touches && e.touches.length > 0) {
+          onPointerDown(e.touches[0].clientX, e.touches[0].clientY);
+        }
+      }, { passive: true });
+
+      const onTouchMove = (e) => {
+        if (isDragging && e.touches && e.touches.length > 0) {
+          onPointerMove(e, e.touches[0].clientX, e.touches[0].clientY);
+        }
+      };
+
+      const onTouchEnd = () => {
+        if (isDragging) onPointerUp();
+      };
+
+      window.addEventListener('touchmove', onTouchMove, { passive: false });
+      window.addEventListener('touchend', onTouchEnd, { passive: true });
+      window.addEventListener('touchcancel', onTouchEnd, { passive: true });
+    };
+
     function setupDraggableWidget(widgetId, storageKey) {
+      if (widgetId === 'draggableRobotWidget' || widgetId === 'ai-tutor-btn') {
+        window.makeRobotAssistantDraggable(widgetId);
+        return;
+      }
       const widget = document.getElementById(widgetId);
       if (!widget) return;
 
@@ -2422,9 +2621,72 @@ window.logout = function() {
     }
 
     // ========================================================
-    // AUTENTICACIÓN
+    // AUTENTICACIÓN & GESTIÓN DE ID ÚNICO DE USUARIO (MENG-XXXX)
     // ========================================================
     const AUTH_STORAGE_KEY = 'english_app_user_session';
+
+    window.generateOrGetGameId = function(user) {
+      if (user && user.gameId && String(user.gameId).startsWith('MENG-')) {
+        return user.gameId;
+      }
+      const uName = (user && user.username) ? String(user.username).toLowerCase() : '';
+      const uRole = (user && user.role) ? String(user.role).toLowerCase() : '';
+      if (uName === 'admin' || uRole === 'admin') return 'MENG-0001';
+
+      const email = (user && user.email) ? String(user.email).toLowerCase() : '';
+      if (email) {
+        try {
+          const regList = JSON.parse(localStorage.getItem('mastereng_registered_users') || localStorage.getItem('english_app_registered_users') || '[]');
+          const found = regList.find(u => u.email && String(u.email).toLowerCase() === email);
+          if (found && found.gameId) return found.gameId;
+        } catch (_) {}
+      }
+
+      const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+      let code = '';
+      for (let i = 0; i < 4; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return `MENG-${code}`;
+    };
+
+    window.ensureUserGameId = function(user) {
+      if (!user || user.role === 'guest' || user.username === 'Invitado') return user;
+      if (!user.gameId) {
+        user.gameId = window.generateOrGetGameId(user);
+      }
+      try {
+        const raw = localStorage.getItem('mastereng_user');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && !parsed.gameId) {
+            parsed.gameId = user.gameId;
+            localStorage.setItem('mastereng_user', JSON.stringify(parsed));
+          }
+        }
+      } catch (_) {}
+      try {
+        let regList = JSON.parse(localStorage.getItem('mastereng_registered_users') || localStorage.getItem('english_app_registered_users') || '[]');
+        let item = regList.find(u => (u.email && user.email && String(u.email).toLowerCase() === String(user.email).toLowerCase()) || (u.username && user.username && u.username === user.username));
+        if (item) {
+          item.gameId = user.gameId;
+        } else {
+          regList.push({
+            id: user.id || Date.now(),
+            gameId: user.gameId,
+            username: user.username,
+            email: user.email || (user.username + '@mastereng.com'),
+            role: user.role || 'user',
+            exp: user.exp || 100,
+            rank: user.rank || 'Bronce',
+            created_at: new Date().toISOString()
+          });
+        }
+        localStorage.setItem('mastereng_registered_users', JSON.stringify(regList));
+        localStorage.setItem('english_app_registered_users', JSON.stringify(regList));
+      } catch (_) {}
+      return user;
+    };
 
     function getStoredUser() {
       try {
@@ -2432,11 +2694,21 @@ window.logout = function() {
         if (!raw) return null;
         try {
           const parsed = JSON.parse(raw);
-          if (parsed && typeof parsed === 'object') return parsed;
-          return { username: String(parsed), email: String(parsed), role: localStorage.getItem('user_role') || (String(parsed).toLowerCase().includes('admin') ? 'admin' : 'user') };
+          if (parsed && typeof parsed === 'object') {
+            if (parsed.role !== 'guest' && parsed.username !== 'Invitado' && !parsed.gameId && typeof window.generateOrGetGameId === 'function') {
+              parsed.gameId = window.generateOrGetGameId(parsed);
+              try { localStorage.setItem('mastereng_user', JSON.stringify(parsed)); } catch (_) {}
+            }
+            return parsed;
+          }
+          const userObj = { username: String(parsed), email: String(parsed), role: localStorage.getItem('user_role') || (String(parsed).toLowerCase().includes('admin') ? 'admin' : 'user') };
+          userObj.gameId = window.generateOrGetGameId ? window.generateOrGetGameId(userObj) : 'MENG-1001';
+          return userObj;
         } catch (_) {
           const role = localStorage.getItem('user_role') || (String(raw).toLowerCase().includes('admin') || 'user');
-          return { username: raw, email: raw, role: role };
+          const userObj = { username: raw, email: raw, role: role };
+          userObj.gameId = window.generateOrGetGameId ? window.generateOrGetGameId(userObj) : 'MENG-1001';
+          return userObj;
         }
       } catch (e) {
         return null;
@@ -2445,6 +2717,14 @@ window.logout = function() {
 
     function saveStoredAuthUser(user) {
       try {
+        if (user && user.role !== 'guest' && user.username !== 'Invitado') {
+          if (!user.gameId && typeof window.generateOrGetGameId === 'function') {
+            user.gameId = window.generateOrGetGameId(user);
+          }
+          if (typeof window.ensureUserGameId === 'function') {
+            window.ensureUserGameId(user);
+          }
+        }
         localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
         localStorage.setItem('mastereng_user', JSON.stringify(user));
       } catch (e) { }
@@ -2575,10 +2855,12 @@ window.logout = function() {
         const userObj = {
           username: name,
           email: email,
+          gameId: window.generateOrGetGameId ? window.generateOrGetGameId({ username: name, email }) : ('MENG-' + Math.random().toString(36).substring(2,6).toUpperCase()),
           role: 'user',
           exp: 100,
           rank: 'Bronce'
         };
+        if (typeof window.ensureUserGameId === 'function') window.ensureUserGameId(userObj);
         localStorage.setItem('mastereng_user', JSON.stringify(userObj));
         localStorage.setItem('mastereng_user_name', name);
         localStorage.setItem('mastereng_user_email', email);
@@ -2607,6 +2889,7 @@ window.logout = function() {
       if (isMasterAdmin) {
         const adminUser = {
           id: 'admin_master_001',
+          gameId: 'MENG-0001',
           username: 'admin',
           email: 'admin@antigravity.com',
           role: 'admin',
@@ -2614,6 +2897,7 @@ window.logout = function() {
           rank: 'Diamante',
           token: 'MasterENG-Admin-OfflineMasterToken-2026'
         };
+        if (typeof window.ensureUserGameId === 'function') window.ensureUserGameId(adminUser);
         try { localStorage.setItem('user_role', 'admin'); } catch (_) {}
         saveStoredAuthUser(adminUser);
         localStorage.setItem('mastereng_user', JSON.stringify(adminUser));
@@ -2652,10 +2936,12 @@ window.logout = function() {
         const userObj = {
           username: resolvedName,
           email: email,
+          gameId: data.gameId || (window.generateOrGetGameId ? window.generateOrGetGameId({ username: resolvedName, email }) : ('MENG-' + Math.random().toString(36).substring(2,6).toUpperCase())),
           role: data.role || (data.user && data.user.role) || 'user',
           exp: data.exp || (data.stats && data.stats.exp) || 100,
           rank: data.rank || (data.stats && data.stats.rank) || 'Bronce'
         };
+        if (typeof window.ensureUserGameId === 'function') window.ensureUserGameId(userObj);
         localStorage.setItem('mastereng_user', JSON.stringify(userObj));
         localStorage.setItem('mastereng_user_email', email);
         if (data.name || resolvedName) localStorage.setItem('mastereng_user_name', resolvedName);
@@ -2793,12 +3079,14 @@ window.logout = function() {
         const userObj = {
           username: googleUser.name,
           email: googleUser.email,
+          gameId: window.generateOrGetGameId ? window.generateOrGetGameId({ username: googleUser.name, email: googleUser.email }) : ('MENG-' + Math.random().toString(36).substring(2,6).toUpperCase()),
           picture: googleUser.picture,
           role: 'user',
           provider: 'google',
           exp: 100,
           rank: 'Bronce'
         };
+        if (typeof window.ensureUserGameId === 'function') window.ensureUserGameId(userObj);
         localStorage.setItem('mastereng_user', JSON.stringify(userObj));
         localStorage.setItem('mastereng_user_email', googleUser.email);
         localStorage.setItem('mastereng_user_name', googleUser.name);
@@ -3064,11 +3352,13 @@ window.logout = function() {
         return;
       }
 
-      // Registro exitoso: Guardar en caché de usuarios registrados locales
+      // Registro exitoso: Guardar en caché de usuarios registrados locales con gameId único
       try {
-        const localUsers = JSON.parse(localStorage.getItem('english_app_registered_users') || '[]');
+        const uGameId = window.generateOrGetGameId ? window.generateOrGetGameId({ username, email }) : ('MENG-' + Math.random().toString(36).substring(2,6).toUpperCase());
+        const localUsers = JSON.parse(localStorage.getItem('mastereng_registered_users') || localStorage.getItem('english_app_registered_users') || '[]');
         if (!localUsers.some(u => u.username === username || u.email === email)) {
-          localUsers.push({ username, email, role: 'student', exp: 0, rank: 'Bronce' });
+          localUsers.push({ id: Date.now(), gameId: uGameId, username, email, role: 'student', exp: 0, rank: 'Bronce', created_at: new Date().toISOString() });
+          localStorage.setItem('mastereng_registered_users', JSON.stringify(localUsers));
           localStorage.setItem('english_app_registered_users', JSON.stringify(localUsers));
         }
       } catch (err) {}
@@ -3296,6 +3586,10 @@ window.logout = function() {
                 ` : ''}
               </div>
               <p class="text-xs text-slate-400 truncate">${user.email || (user.username + '@mastereng.com')}</p>
+              <div class="flex items-center gap-1.5 mt-1">
+                <span class="text-[10px] text-slate-400 font-medium">ID de Jugador:</span>
+                <span class="px-2 py-0.5 rounded-md bg-sky-500/15 border border-sky-400/30 text-sky-300 font-mono text-[11px] font-bold select-all tracking-wider" title="Tu ID único de jugador">${user.gameId || (window.generateOrGetGameId ? window.generateOrGetGameId(user) : 'MENG-XXXX')}</span>
+              </div>
             </div>
           </div>
 
@@ -5572,12 +5866,18 @@ window.logout = function() {
     }
 
     // ========================================================
-    // GESTIÓN Y CONSTRUCCIÓN DE ESCENARIOS (HOUSE & GARDEN)
+    // GESTIÓN Y CONSTRUCCIÓN DE ESCENARIOS (DELEGADO A WORLD3D)
     // ========================================================
 
     function switch3DScenario(scenarioKey) {
+      if (window.World3D && typeof window.World3D.switchScenario === 'function') {
+        return window.World3D.switchScenario(scenarioKey);
+      }
       if (window.World3D && typeof window.World3D.switch3DScenario === 'function') {
         return window.World3D.switch3DScenario(scenarioKey);
+      }
+      if (typeof window.switchScenario === 'function' && window.switchScenario !== switch3DScenario) {
+        return window.switchScenario(scenarioKey);
       }
       if (!WORLD_TOUR_SCENARIOS[scenarioKey]) return;
       currentScenarioKey = scenarioKey;
@@ -5597,7 +5897,6 @@ window.logout = function() {
 
       close3DInspectCard();
       buildCurrentScenario();
-      showFloatingToast(`Cargando escenario: ${WORLD_TOUR_SCENARIOS[scenarioKey].title}`, '🪐');
     }
 
     function buildCurrentScenario() {
@@ -7544,7 +7843,7 @@ window.logout = function() {
     }
 
     // Aliases para compatibilidad
-    window.switch3DScenario = switch3DScenario;
+    // window.switch3DScenario = switch3DScenario; // Preservar window.switch3DScenario de js/world3d.js
     window.inspect3DObject = inspect3DObject;
     window.highlightObject = highlightObject;
     window.close3DInspectCard = close3DInspectCard;
@@ -7986,19 +8285,22 @@ window.logout = function() {
       const googleUser = {
         username: finalName,
         email: finalEmail,
+        gameId: window.generateOrGetGameId ? window.generateOrGetGameId({ username: finalName, email: finalEmail }) : ('MENG-' + Math.random().toString(36).substring(2,6).toUpperCase()),
         picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(finalName)}&background=0284c7&color=fff&bold=true`,
         role: 'user',
         provider: 'google',
         exp: realExp,
         rank: rankInfo.rank
       };
+      if (typeof window.ensureUserGameId === 'function') window.ensureUserGameId(googleUser);
 
       try {
         saveStoredAuthUser(googleUser);
         localStorage.setItem('user_role', 'user');
-        const regList = JSON.parse(localStorage.getItem('english_app_registered_users') || '[]');
+        const regList = JSON.parse(localStorage.getItem('mastereng_registered_users') || localStorage.getItem('english_app_registered_users') || '[]');
         if (!regList.some(u => u.email === finalEmail)) {
           regList.push(googleUser);
+          localStorage.setItem('mastereng_registered_users', JSON.stringify(regList));
           localStorage.setItem('english_app_registered_users', JSON.stringify(regList));
         }
       } catch (e) {}
@@ -8101,7 +8403,7 @@ window.logout = function() {
     window.initOrResumeWorld3D = function() { if (typeof window.open3DPortalView === 'function') window.open3DPortalView(); };
   window.buildRealisticHouse = buildRealisticHouse;
   window.buildRealisticBackyard = buildRealisticBackyard;
-  window.switch3DScenario = switch3DScenario;
+  // window.switch3DScenario = switch3DScenario; // Preservar window.switch3DScenario de js/world3d.js
   window.speakText = speakText;
   window.handleLoginSubmit = handleAuthLoginSubmit;
   window.handleAuthLoginSubmit = function(e) {
@@ -12886,8 +13188,12 @@ window.initWordHelperRobot = function() {
     robotBtn.id = 'floating-word-robot-btn';
     robotBtn.innerHTML = '🤖<span style="position:absolute; top:-4px; right:-4px; width:12px; height:12px; background:#10b981; border-radius:50%; border:2px solid #0b1120;"></span>';
     robotBtn.title = 'Preguntar significado de una palabra';
-    robotBtn.style.cssText = 'position:fixed; bottom:24px; right:90px; width:56px; height:56px; border-radius:16px; background:#0f172a; border:2px solid #38bdf8; color:#fff; font-size:1.7rem; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:9990; box-shadow:0 8px 25px rgba(56,189,248,0.35);';
+    robotBtn.style.cssText = 'position:fixed; bottom:78px; right:18px; width:56px; height:56px; border-radius:16px; background:#0f172a; border:2px solid #38bdf8; color:#fff; font-size:1.7rem; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:9990; box-shadow:0 8px 25px rgba(56,189,248,0.35); touch-action:none;';
     document.body.appendChild(robotBtn);
+  }
+
+  if (typeof window.makeRobotAssistantDraggable === 'function') {
+    window.makeRobotAssistantDraggable(robotBtn);
   }
 
   // Mostrar si está logueado

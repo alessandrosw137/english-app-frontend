@@ -2699,4 +2699,314 @@ body:not(.view-worldtour-active) #world3dFloatingBackBtn {
   }
 }
 
+/* ==========================================================================
+   ESTILOS VISUALES PARA PORTALES DE PIEDRA ARCANOS Y ENERGÍA
+   ========================================================================== */
+
+@keyframes vortexSpin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes vortexSpinReverse {
+  0% {
+    transform: rotate(360deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes energyPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.65;
+    filter: drop-shadow(0 0 16px var(--portal-glow, rgba(56, 189, 248, 0.45)));
+  }
+  50% {
+    transform: scale(1.06);
+    opacity: 0.95;
+    filter: drop-shadow(0 0 28px var(--portal-glow, rgba(56, 189, 248, 0.85)));
+  }
+}
+
+@keyframes ascendingParticles {
+  0% {
+    transform: translateY(100%) scale(0.6);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.75;
+  }
+  75% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(-90%) scale(1.15);
+    opacity: 0;
+  }
+}
+
+/* Marco arquitectónico con textura de piedra oscura biselada y runas luminosas */
+.arcane-portal-card,
+.coverflow-portal-card {
+  position: relative;
+  background: 
+    radial-gradient(ellipse 90% 60% at 50% 20%, rgba(30, 41, 59, 0.85), rgba(15, 23, 42, 0.96)),
+    linear-gradient(160deg, #1e293b 0%, #0f172a 45%, #020617 100%);
+  border: 2px solid rgba(148, 163, 184, 0.28);
+  border-radius: 24px;
+  box-shadow: 
+    0 24px 60px -12px rgba(0, 0, 0, 0.85),
+    inset 0 1px 1px rgba(255, 255, 255, 0.15),
+    inset 0 -2px 6px rgba(0, 0, 0, 0.7),
+    0 0 32px -4px var(--portal-glow, rgba(56, 189, 248, 0.35));
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* Bordes con runas luminosas sutiles */
+.arcane-portal-card::before,
+.coverflow-portal-card::before {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border-radius: 22px;
+  border: 1px dashed var(--portal-glow, rgba(56, 189, 248, 0.35));
+  pointer-events: none;
+  opacity: 0.6;
+  mix-blend-mode: screen;
+  transition: opacity 0.3s ease;
+  z-index: 2;
+}
+
+.arcane-portal-card:hover::before,
+.coverflow-portal-card:hover::before {
+  opacity: 0.95;
+  border-style: solid;
+  box-shadow: inset 0 0 18px var(--portal-glow, rgba(56, 189, 248, 0.3));
+}
+
+/* Partículas energéticas ascendentes */
+.arcane-portal-card::after,
+.coverflow-portal-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: 
+    radial-gradient(circle 2px at 20% 80%, var(--portal-glow, rgba(56, 189, 248, 0.8)), transparent),
+    radial-gradient(circle 1.5px at 75% 90%, var(--portal-glow, rgba(56, 189, 248, 0.7)), transparent),
+    radial-gradient(circle 2px at 45% 65%, var(--portal-glow, rgba(56, 189, 248, 0.6)), transparent),
+    radial-gradient(circle 2.5px at 80% 50%, var(--portal-glow, rgba(56, 189, 248, 0.85)), transparent);
+  animation: ascendingParticles 5s linear infinite;
+  pointer-events: none;
+  opacity: 0.55;
+  z-index: 1;
+}
+
+/* Núcleo con vórtice de energía animado */
+.portal-vortex,
+.arcane-vortex,
+.portal-card-vortex {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: energyPulse 4s ease-in-out infinite;
+}
+
+.portal-vortex::before,
+.arcane-vortex::before {
+  content: "";
+  position: absolute;
+  inset: -12px;
+  border-radius: 50%;
+  border: 2px dashed var(--portal-glow, rgba(56, 189, 248, 0.55));
+  animation: vortexSpin 14s linear infinite;
+}
+
+.portal-vortex::after,
+.arcane-vortex::after {
+  content: "";
+  position: absolute;
+  inset: -22px;
+  border-radius: 50%;
+  border: 1px dotted var(--portal-glow, rgba(56, 189, 248, 0.35));
+  animation: vortexSpinReverse 22s linear infinite;
+}
+
+/* Tipografía limpia, geométrica y sin emojis ni relleno */
+.arcane-portal-card h3,
+.coverflow-portal-card h3 {
+  font-family: inherit;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+.arcane-portal-card p,
+.coverflow-portal-card p {
+  color: #94a3b8;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  letter-spacing: 0.01em;
+}
+
+/* ==========================================================================
+   PERSPECTIVA 3D EN ESCRITORIO Y TABLETS (#coverFlowTrack)
+   ========================================================================== */
+
+@media (min-width: 768px) {
+  #coverFlowViewport,
+  .coverflow-viewport {
+    perspective: 1200px !important;
+    overflow: visible !important;
+  }
+
+  #coverFlowTrack,
+  .coverflow-track {
+    transform-style: preserve-3d !important;
+    position: relative !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 480px !important;
+  }
+
+  #coverFlowTrack .coverflow-portal-card,
+  #coverFlowTrack .portal-card {
+    transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.25, 1), opacity 0.45s ease, filter 0.45s ease !important;
+  }
+
+  #coverFlowTrack .coverflow-portal-card.active-center,
+  #coverFlowTrack .portal-card.active-center {
+    display: flex !important;
+    position: relative !important;
+    transform: translateX(0) scale(1) rotateY(0deg) !important;
+    opacity: 1 !important;
+    z-index: 30 !important;
+    pointer-events: auto !important;
+    filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.75)) !important;
+  }
+
+  #coverFlowTrack .coverflow-portal-card.side-left,
+  #coverFlowTrack .portal-card.side-left {
+    display: flex !important;
+    position: absolute !important;
+    left: 50% !important;
+    top: 50% !important;
+    margin-left: -160px !important;
+    margin-top: -240px !important;
+    transform: translateX(-62%) scale(0.78) rotateY(28deg) !important;
+    opacity: 0.55 !important;
+    z-index: 20 !important;
+    pointer-events: auto !important;
+    filter: brightness(0.75) blur(0.3px) !important;
+    cursor: pointer !important;
+  }
+
+  #coverFlowTrack .coverflow-portal-card.side-right,
+  #coverFlowTrack .portal-card.side-right {
+    display: flex !important;
+    position: absolute !important;
+    left: 50% !important;
+    top: 50% !important;
+    margin-left: -160px !important;
+    margin-top: -240px !important;
+    transform: translateX(62%) scale(0.78) rotateY(-28deg) !important;
+    opacity: 0.55 !important;
+    z-index: 20 !important;
+    pointer-events: auto !important;
+    filter: brightness(0.75) blur(0.3px) !important;
+    cursor: pointer !important;
+  }
+
+  #coverFlowTrack .coverflow-portal-card.side-left:hover,
+  #coverFlowTrack .coverflow-portal-card.side-right:hover,
+  #coverFlowTrack .portal-card.side-left:hover,
+  #coverFlowTrack .portal-card.side-right:hover {
+    opacity: 0.85 !important;
+    filter: brightness(0.95) !important;
+  }
+
+  #coverFlowTrack .coverflow-portal-card.hidden-back,
+  #coverFlowTrack .portal-card.hidden-back {
+    display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+}
+
+/* ==========================================================================
+   JEST GAME - ADAPTACIÓN HORIZONTAL Y OVERLAY DE ORIENTACIÓN MÓVIL
+   ========================================================================== */
+
+#view-jest-game {
+  top: 56px !important;
+  height: calc(100dvh - 56px) !important;
+  max-height: calc(100dvh - 56px) !important;
+}
+
+#view-jest-game .jest-bottom-bar {
+  padding-right: 84px !important;
+}
+
+#jestRotateDeviceOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(3, 7, 18, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.jest-rotate-content {
+  max-width: 420px;
+  background: rgba(15, 23, 42, 0.94);
+  border: 1.5px solid rgba(56, 189, 248, 0.4);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85);
+  border-radius: 20px;
+  padding: 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.jest-rotate-icon-anim {
+  font-size: 2.4rem;
+  animation: jestRotatePhoneAnim 2.2s ease-in-out infinite;
+}
+
+@keyframes jestRotatePhoneAnim {
+  0%, 20% { transform: rotate(0deg); }
+  50%, 75% { transform: rotate(90deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.jest-rotate-title {
+  color: #f8fafc;
+  font-size: 1.15rem;
+  font-weight: 800;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.jest-rotate-subtitle {
+  color: #94a3b8;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  margin: 0;
+}
+
+
 

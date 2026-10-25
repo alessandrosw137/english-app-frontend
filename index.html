@@ -51,8 +51,138 @@ body.user-guest #tutorRouletteDock,body.user-guest #draggableRobotWidget,body.us
 #view-auth button,.login-card button,#authLoginSubmitBtn,#authTabBtnLogin,#authTabBtnRegister{position:relative !important;z-index:10001 !important;pointer-events:auto !important;cursor:pointer !important;}
 #portalStarsCanvas,.star-bg,.particle-overlay,.canvas-background{pointer-events:none !important;z-index:0 !important;}
 #view-worldtour canvas{pointer-events:auto !important;}
-.coverflow-portal-card,.portal-card{position:relative !important;top:auto !important;left:auto !important;margin:0 auto !important;transform:none !important;}
-.coverflow-portal-card:not(.active-center){display:none !important;}
+
+/* ========================================================
+   ANIMACIONES Y LAYOUT 3D DE PORTALES ARCANOS Y VÓRTICES
+   ======================================================== */
+@keyframes arcaneVortexSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+@keyframes arcaneVortexReverse {
+  0% { transform: rotate(360deg); }
+  100% { transform: rotate(0deg); }
+}
+@keyframes arcaneVortexPulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px var(--portal-glow, rgba(56, 189, 248, 0.4))); }
+  50% { transform: scale(1.08); filter: drop-shadow(0 0 24px var(--portal-glow, rgba(56, 189, 248, 0.75))); }
+}
+@keyframes arcaneRuneGlow {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.95; }
+}
+.arcane-vortex-spin {
+  transform-origin: 170px 95px;
+  animation: arcaneVortexSpin 16s linear infinite;
+}
+.arcane-vortex-spin-fast {
+  transform-origin: 170px 95px;
+  animation: arcaneVortexSpin 8s linear infinite;
+}
+.arcane-vortex-reverse {
+  transform-origin: 170px 95px;
+  animation: arcaneVortexReverse 22s linear infinite;
+}
+.arcane-vortex-pulse {
+  transform-origin: 170px 95px;
+  animation: arcaneVortexPulse 3.5s ease-in-out infinite;
+}
+.arcane-rune-glow {
+  animation: arcaneRuneGlow 3s ease-in-out infinite;
+}
+
+#coverFlowViewport {
+  perspective: 1200px !important;
+  overflow: visible !important;
+  min-height: 490px !important;
+  width: 100% !important;
+  max-width: 960px !important;
+  position: relative !important;
+}
+#coverFlowTrack {
+  transform-style: preserve-3d !important;
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 490px !important;
+  width: 100% !important;
+}
+.coverflow-portal-card, .portal-card {
+  width: 320px !important;
+  max-width: 88vw !important;
+  min-height: 460px !important;
+  border-radius: 24px !important;
+  box-sizing: border-box !important;
+  transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.25, 1), opacity 0.45s ease, filter 0.45s ease !important;
+}
+.coverflow-portal-card.active-center, .portal-card.active-center {
+  display: flex !important;
+  position: relative !important;
+  transform: translateX(0) scale(1) rotateY(0deg) !important;
+  opacity: 1 !important;
+  z-index: 30 !important;
+  pointer-events: auto !important;
+  filter: drop-shadow(0 20px 45px rgba(0, 0, 0, 0.85)) !important;
+}
+.coverflow-portal-card.side-left, .portal-card.side-left {
+  display: flex !important;
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+  margin-left: -160px !important;
+  margin-top: -230px !important;
+  transform: translateX(-66%) scale(0.8) rotateY(26deg) !important;
+  opacity: 0.55 !important;
+  z-index: 20 !important;
+  pointer-events: auto !important;
+  filter: brightness(0.72) blur(0.3px) !important;
+  cursor: pointer !important;
+}
+.coverflow-portal-card.side-right, .portal-card.side-right {
+  display: flex !important;
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+  margin-left: -160px !important;
+  margin-top: -230px !important;
+  transform: translateX(66%) scale(0.8) rotateY(-26deg) !important;
+  opacity: 0.55 !important;
+  z-index: 20 !important;
+  pointer-events: auto !important;
+  filter: brightness(0.72) blur(0.3px) !important;
+  cursor: pointer !important;
+}
+.coverflow-portal-card.side-left:hover, .coverflow-portal-card.side-right:hover,
+.portal-card.side-left:hover, .portal-card.side-right:hover {
+  opacity: 0.85 !important;
+  filter: brightness(0.95) !important;
+}
+.coverflow-portal-card.hidden-back, .portal-card.hidden-back,
+.coverflow-portal-card.hidden, .portal-card.hidden {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  z-index: 10 !important;
+}
+@media (max-width: 640px) {
+  .coverflow-portal-card, .portal-card {
+    width: 290px !important;
+    min-height: 450px !important;
+  }
+  .coverflow-portal-card.side-left, .portal-card.side-left {
+    margin-left: -145px !important;
+    margin-top: -225px !important;
+    transform: translateX(-48%) scale(0.74) rotateY(18deg) !important;
+    opacity: 0.45 !important;
+  }
+  .coverflow-portal-card.side-right, .portal-card.side-right {
+    margin-left: -145px !important;
+    margin-top: -225px !important;
+    transform: translateX(48%) scale(0.74) rotateY(-18deg) !important;
+    opacity: 0.45 !important;
+  }
+}
 @media (orientation: landscape) {
 body.view-worldtour-active header { display: none !important; }
 #worldTourContainer, #threeCanvas, #threeCanvasContainer { width: 100vw !important; height: 100vh !important; position: fixed !important; inset: 0 !important; }
@@ -264,16 +394,33 @@ Entrar a mi Cuenta
 </div>
 <div id="view-home" class="hub-container flex-1 flex flex-col items-center justify-center p-3 relative overflow-hidden hidden" style="display: none;">
 <canvas id="portalStarsCanvas" class="absolute inset-0 pointer-events-none w-full h-full z-0 opacity-60"></canvas>
-<div class="relative z-10 w-full max-w-xl text-center mb-3">
-<h2 class="text-xl sm:text-2xl font-black bg-gradient-to-r from-amber-300 via-sky-300 to-purple-400 bg-clip-text text-transparent">
-TEMAS DE APRENDIZAJE
-</h2>
+<!-- Resplandor cósmico ambiental -->
+<div class="absolute -top-32 left-1/2 -translate-x-1/2 w-[650px] h-[340px] bg-gradient-to-b from-indigo-500/15 via-purple-600/10 to-transparent rounded-full blur-3xl pointer-events-none"></div>
+<div class="absolute top-1/2 -left-40 -translate-y-1/2 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+<div class="absolute top-1/2 -right-40 -translate-y-1/2 w-80 h-80 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+<div class="relative z-10 w-full max-w-xl text-center mb-2">
+  <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900/80 border border-slate-700/60 mb-2 shadow-inner">
+    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+    <span class="text-[10px] font-bold tracking-widest text-slate-300 uppercase">SISTEMA DE MÓDULOS ACTIVOS</span>
+  </div>
+  <h2 class="text-xl sm:text-2xl font-black bg-gradient-to-r from-amber-300 via-sky-300 to-purple-400 bg-clip-text text-transparent">
+    TEMAS DE APRENDIZAJE
+  </h2>
+  <div class="flex items-center justify-center gap-2 mt-1">
+    <span class="h-[1px] w-12 bg-gradient-to-r from-transparent to-amber-400/50"></span>
+    <span class="text-[10px] font-bold tracking-[0.2em] text-slate-400 uppercase">PORTALES ARCANOS</span>
+    <span class="h-[1px] w-12 bg-gradient-to-l from-transparent to-purple-400/50"></span>
+  </div>
 </div>
+
 <div id="coverFlowViewport" class="coverflow-viewport hub-carousel carousel-viewport w-full max-w-xl flex items-center justify-center my-1 z-10">
-<button type="button" onclick="window.prevPortal()" class="carousel-nav-btn prev carousel-btn carousel-prev nav-arrow absolute left-0 z-40 w-12 h-12 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-white flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition cursor-pointer" style="cursor: pointer !important; pointer-events: auto !important; z-index: 1000 !important;" data-action="prev" title="Portal Anterior">
+<button type="button" onclick="window.prevPortal()" class="carousel-nav-btn prev carousel-btn carousel-prev nav-arrow absolute left-0 sm:-left-3 z-40 w-12 h-12 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-white flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition cursor-pointer" style="cursor: pointer !important; pointer-events: auto !important; z-index: 1000 !important;" data-action="prev" title="Portal Anterior">
 <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"> <path d="M15 19l-7-7 7-7" /> </svg>
 </button>
 <div id="coverFlowTrack" class="coverflow-track carousel-track">
+
+<!-- ================= PORTAL 0: ÁMBAR SOLAR (RUTA DE APRENDIZAJE) ================= -->
 <div id="coverCard-0" onclick="handleCoverCardClick(0)" class="coverflow-portal-card portal-card portal-card-0 active-center" style="--portal-glow: rgba(245, 158, 11, 0.45);">
 <div class="w-full h-full flex flex-col justify-between relative overflow-hidden group">
 <div class="absolute -top-12 -right-12 w-36 h-36 bg-amber-500/20 rounded-full blur-2xl pointer-events-none"></div>
@@ -291,14 +438,123 @@ Ruta de Aprendizaje
 Módulos de vocabulario y gramática en inglés.
 </p>
 </div>
-<div class="my-3 relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden border border-amber-500/50 shadow-lg shadow-amber-950/60 shrink-0">
-<img src="images/portal_learning_path.jpg" alt="Portal Learning Path" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onerror="this.onerror=null; this.src=window.FALLBACK_PORTAL_LEARNING || 'images/portal_learning_path.svg';">
-<div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none"></div>
-<span class="absolute bottom-2 right-2.5 text-xs font-black text-amber-300 bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-amber-400/40">🌌 10 Módulos</span>
+<div class="my-2.5 relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden border border-amber-500/50 shadow-xl bg-slate-950 flex items-center justify-center shrink-0">
+  <svg class="w-full h-full object-cover" viewBox="0 0 340 180" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="stoneBody-0" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#334155" />
+        <stop offset="50%" stop-color="#1e293b" />
+        <stop offset="100%" stop-color="#0f172a" />
+      </linearGradient>
+      <linearGradient id="stoneHigh-0" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#64748b" />
+        <stop offset="100%" stop-color="#1e293b" />
+      </linearGradient>
+      <radialGradient id="vortexGlow-0" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#fef08a" stop-opacity="0.95" />
+        <stop offset="30%" stop-color="#f59e0b" stop-opacity="0.65" />
+        <stop offset="70%" stop-color="#b45309" stop-opacity="0.25" />
+        <stop offset="100%" stop-color="#020617" stop-opacity="0" />
+      </radialGradient>
+      <filter id="glow-0" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur stdDeviation="3" result="blur" />
+        <feMerge>
+          <feMergeNode in="blur" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+    </defs>
+    <!-- Fondo Cósmico -->
+    <rect width="340" height="180" fill="#020617" />
+    <circle cx="25" cy="30" r="1" fill="#fff" opacity="0.4" />
+    <circle cx="315" cy="40" r="1.2" fill="#fff" opacity="0.5" />
+    <circle cx="18" cy="140" r="0.8" fill="#fff" opacity="0.3" />
+    <circle cx="322" cy="130" r="1" fill="#fff" opacity="0.4" />
+    <!-- Hueco del Portal Arcano -->
+    <path d="M 86,180 L 86,68 C 86,22 254,22 254,68 L 254,180 Z" fill="#030712" />
+    <circle cx="170" cy="95" r="75" fill="url(#vortexGlow-0)" />
+    <!-- Vórtice Solar Ámbar (Giro Horario) -->
+    <g class="arcane-vortex-spin">
+      <circle cx="170" cy="95" r="62" fill="none" stroke="#f59e0b" stroke-width="1.8" stroke-dasharray="16 8 4 8" opacity="0.8" />
+      <circle cx="170" cy="95" r="54" fill="none" stroke="#fbbf24" stroke-width="1" stroke-dasharray="8 6" opacity="0.65" />
+      <line x1="170" y1="33" x2="170" y2="43" stroke="#fef08a" stroke-width="2" stroke-linecap="round" />
+      <line x1="170" y1="147" x2="170" y2="157" stroke="#fef08a" stroke-width="2" stroke-linecap="round" />
+      <line x1="108" y1="95" x2="118" y2="95" stroke="#fef08a" stroke-width="2" stroke-linecap="round" />
+      <line x1="222" y1="95" x2="232" y2="95" stroke="#fef08a" stroke-width="2" stroke-linecap="round" />
+      <circle cx="126" cy="51" r="3" fill="#f59e0b" />
+      <circle cx="214" cy="51" r="3" fill="#f59e0b" />
+      <circle cx="126" cy="139" r="3" fill="#f59e0b" />
+      <circle cx="214" cy="139" r="3" fill="#f59e0b" />
+    </g>
+    <!-- Engranaje Celestial Ámbar (Giro Antihorario) -->
+    <g class="arcane-vortex-reverse">
+      <circle cx="170" cy="95" r="42" fill="none" stroke="#fbbf24" stroke-width="2" stroke-dasharray="12 6 3 6" opacity="0.9" />
+      <circle cx="170" cy="95" r="30" fill="none" stroke="#f59e0b" stroke-width="1.2" stroke-dasharray="6 4" opacity="0.7" />
+      <polygon points="170,57 173,63 167,63" fill="#fef08a" />
+      <polygon points="170,133 173,127 167,127" fill="#fef08a" />
+      <polygon points="132,95 138,98 138,92" fill="#fef08a" />
+      <polygon points="208,95 202,98 202,92" fill="#fef08a" />
+    </g>
+    <!-- Núcleo Solar Pulsante -->
+    <g class="arcane-vortex-pulse">
+      <circle cx="170" cy="95" r="22" fill="url(#vortexGlow-0)" />
+      <circle cx="170" cy="95" r="14" fill="#fbbf24" opacity="0.9" filter="url(#glow-0)" />
+      <circle cx="170" cy="95" r="6" fill="#fff" />
+    </g>
+    <!-- Marco de Piedra Tallada: Plintos -->
+    <rect x="36" y="156" width="54" height="24" rx="2" fill="url(#stoneHigh-0)" stroke="#0f172a" stroke-width="1.5" />
+    <rect x="32" y="168" width="62" height="12" rx="2" fill="url(#stoneBody-0)" stroke="#0f172a" stroke-width="1.5" />
+    <rect x="250" y="156" width="54" height="24" rx="2" fill="url(#stoneHigh-0)" stroke="#0f172a" stroke-width="1.5" />
+    <rect x="246" y="168" width="62" height="12" rx="2" fill="url(#stoneBody-0)" stroke="#0f172a" stroke-width="1.5" />
+    <!-- Pilar Izquierdo con Runas -->
+    <rect x="42" y="58" width="44" height="100" fill="url(#stoneBody-0)" stroke="#0f172a" stroke-width="1.5" />
+    <line x1="42" y1="88" x2="86" y2="88" stroke="#0f172a" stroke-width="2" />
+    <line x1="43" y1="89" x2="85" y2="89" stroke="#64748b" stroke-width="1" />
+    <line x1="42" y1="122" x2="86" y2="122" stroke="#0f172a" stroke-width="2" />
+    <line x1="43" y1="123" x2="85" y2="123" stroke="#64748b" stroke-width="1" />
+    <g class="arcane-rune-glow" stroke="#fbbf24" stroke-width="1.5" fill="none" opacity="0.85">
+      <path d="M 64,68 L 60,74 L 68,74 Z M 64,74 L 64,80" />
+      <path d="M 60,98 L 68,104 M 68,98 L 60,104 M 64,95 L 64,107" />
+      <path d="M 61,132 L 67,132 L 64,144 L 61,144" />
+    </g>
+    <!-- Pilar Derecho con Runas -->
+    <rect x="254" y="58" width="44" height="100" fill="url(#stoneBody-0)" stroke="#0f172a" stroke-width="1.5" />
+    <line x1="254" y1="88" x2="298" y2="88" stroke="#0f172a" stroke-width="2" />
+    <line x1="255" y1="89" x2="297" y2="89" stroke="#64748b" stroke-width="1" />
+    <line x1="254" y1="122" x2="298" y2="122" stroke="#0f172a" stroke-width="2" />
+    <line x1="255" y1="123" x2="297" y2="123" stroke="#64748b" stroke-width="1" />
+    <g class="arcane-rune-glow" stroke="#fbbf24" stroke-width="1.5" fill="none" opacity="0.85">
+      <path d="M 276,68 L 272,74 L 280,74 Z M 276,74 L 276,80" />
+      <path d="M 272,98 L 280,104 M 280,98 L 272,104 M 276,95 L 276,107" />
+      <path d="M 273,132 L 279,132 L 276,144 L 273,144" />
+    </g>
+    <!-- Bóveda del Arco -->
+    <path d="M 42,65 C 42,14 298,14 298,65 L 254,65 C 254,30 86,30 86,65 Z" fill="url(#stoneBody-0)" stroke="#0f172a" stroke-width="2" />
+    <path d="M 42,65 C 42,14 298,14 298,65" fill="none" stroke="#64748b" stroke-width="1.5" />
+    <path d="M 86,65 C 86,30 254,30 254,65" fill="none" stroke="#fbbf24" stroke-width="1.5" opacity="0.75" />
+    <!-- Dovelas (Juntas Radiales) -->
+    <line x1="84" y1="46" x2="68" y2="33" stroke="#0f172a" stroke-width="2" />
+    <line x1="122" y1="34" x2="114" y2="16" stroke="#0f172a" stroke-width="2" />
+    <line x1="218" y1="34" x2="226" y2="16" stroke="#0f172a" stroke-width="2" />
+    <line x1="256" y1="46" x2="272" y2="33" stroke="#0f172a" stroke-width="2" />
+    <!-- Piedra Clave (Keystone) Solar -->
+    <polygon points="152,8 188,8 194,38 146,38" fill="url(#stoneHigh-0)" stroke="#0f172a" stroke-width="2" />
+    <polygon points="154,10 186,10 191,36 149,36" fill="none" stroke="#64748b" stroke-width="1" />
+    <polygon points="170,15 173,21 179,21 174,25 176,31 170,27 164,31 166,25 161,21 167,21" fill="#fbbf24" stroke="#d97706" stroke-width="0.8" />
+  </svg>
+  <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none"></div>
+  <div class="absolute bottom-2 right-2.5 z-10">
+    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-950/90 border border-amber-400/50 text-[10px] font-bold text-amber-300 shadow-md">
+      <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+      10 NIVELES
+    </span>
+  </div>
 </div>
 <button type="button" onclick="event.stopPropagation(); window.openPortalModules('path'); window.openLearningPath();" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-amber-500/30 cursor-pointer" data-action="enter-portal" data-portal="path">ENTRAR AL PORTAL</button>
 </div>
 </div>
+
+<!-- ================= PORTAL 1: PÚRPURA DIMENSIONAL (ENTORNO 3D) ================= -->
 <div id="coverCard-1" onclick="handleCoverCardClick(1)" class="coverflow-portal-card portal-card portal-card-1 side-right" style="--portal-glow: rgba(168, 85, 247, 0.45);">
 <div class="w-full h-full flex flex-col justify-between relative overflow-hidden group">
 <div class="absolute -top-12 -right-12 w-36 h-36 bg-purple-500/20 rounded-full blur-2xl pointer-events-none"></div>
@@ -307,7 +563,7 @@ Módulos de vocabulario y gramática en inglés.
 <span class="px-2.5 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/40 text-[10px] font-bold text-purple-300 uppercase tracking-widest">
 PORTAL 02 &bull; INMERSIVO 3D
 </span>
-<span class="text-xs font-bold text-purple-400">15 Objetos Interactivos</span>
+<span class="text-xs font-bold text-purple-400">15 Objetos 3D</span>
 </div>
 <h3 class="text-lg font-black text-purple-300 group-hover:text-purple-200 transition">
 Entorno 3D
@@ -316,21 +572,130 @@ Entorno 3D
 Explora y aprende palabras interactuando en 3D.
 </p>
 </div>
-<div class="my-3 relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden border border-purple-500/50 shadow-lg shadow-purple-950/60 shrink-0">
-<img src="images/portal_worldtour.jpg" alt="Portal World Tour 3D" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onerror="this.onerror=null; this.src=window.FALLBACK_PORTAL_WORLDTOUR || 'images/portal_worldtour.svg';">
-<div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none"></div>
-<span class="absolute bottom-2 right-2.5 text-xs font-black text-purple-300 bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-purple-400/40">🪐 Casa & Jardín 3D</span>
+<div class="my-2.5 relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden border border-purple-500/50 shadow-xl bg-slate-950 flex items-center justify-center shrink-0">
+  <svg class="w-full h-full object-cover" viewBox="0 0 340 180" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="stoneBody-1" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#334155" />
+        <stop offset="50%" stop-color="#1e293b" />
+        <stop offset="100%" stop-color="#0f172a" />
+      </linearGradient>
+      <linearGradient id="stoneHigh-1" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#64748b" />
+        <stop offset="100%" stop-color="#1e293b" />
+      </linearGradient>
+      <radialGradient id="vortexGlow-1" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#f3e8ff" stop-opacity="0.95" />
+        <stop offset="30%" stop-color="#c084fc" stop-opacity="0.7" />
+        <stop offset="70%" stop-color="#7e22ce" stop-opacity="0.3" />
+        <stop offset="100%" stop-color="#020617" stop-opacity="0" />
+      </radialGradient>
+      <filter id="glow-1" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur stdDeviation="3" result="blur" />
+        <feMerge>
+          <feMergeNode in="blur" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+    </defs>
+    <!-- Fondo Cósmico -->
+    <rect width="340" height="180" fill="#020617" />
+    <circle cx="20" cy="35" r="1.1" fill="#fff" opacity="0.4" />
+    <circle cx="318" cy="28" r="1.3" fill="#fff" opacity="0.5" />
+    <circle cx="22" cy="142" r="0.9" fill="#fff" opacity="0.3" />
+    <circle cx="320" cy="135" r="1" fill="#fff" opacity="0.4" />
+    <!-- Hueco del Portal Arcano -->
+    <path d="M 86,180 L 86,68 C 86,22 254,22 254,68 L 254,180 Z" fill="#030712" />
+    <circle cx="170" cy="95" r="75" fill="url(#vortexGlow-1)" />
+    <!-- Vórtice Dimensional Púrpura (Órbitas 3D Inclinadas) -->
+    <g class="arcane-vortex-spin">
+      <ellipse cx="170" cy="95" rx="64" ry="26" transform="rotate(28 170 95)" fill="none" stroke="#a855f7" stroke-width="1.8" stroke-dasharray="14 8 4 8" opacity="0.8" />
+      <ellipse cx="170" cy="95" rx="64" ry="26" transform="rotate(-28 170 95)" fill="none" stroke="#c084fc" stroke-width="1.2" stroke-dasharray="10 6" opacity="0.7" />
+      <circle cx="120" cy="70" r="3" fill="#e9d5ff" />
+      <circle cx="220" cy="120" r="3" fill="#e9d5ff" />
+      <circle cx="120" cy="120" r="2.5" fill="#a855f7" />
+      <circle cx="220" cy="70" r="2.5" fill="#a855f7" />
+    </g>
+    <!-- Teseracto / Hipercubo Wireframe Dimensional -->
+    <g class="arcane-vortex-reverse">
+      <polygon points="170,68 194,82 194,108 170,122 146,108 146,82" fill="none" stroke="#c084fc" stroke-width="1.8" opacity="0.85" />
+      <polygon points="170,78 184,86 184,104 170,112 156,104 156,86" fill="none" stroke="#a855f7" stroke-width="1.2" opacity="0.65" />
+      <line x1="170" y1="68" x2="170" y2="78" stroke="#e9d5ff" stroke-width="1.2" />
+      <line x1="194" y1="82" x2="184" y2="86" stroke="#e9d5ff" stroke-width="1.2" />
+      <line x1="194" y1="108" x2="184" y2="104" stroke="#e9d5ff" stroke-width="1.2" />
+      <line x1="170" y1="122" x2="170" y2="112" stroke="#e9d5ff" stroke-width="1.2" />
+      <line x1="146" y1="108" x2="156" y2="104" stroke="#e9d5ff" stroke-width="1.2" />
+      <line x1="146" y1="82" x2="156" y2="86" stroke="#e9d5ff" stroke-width="1.2" />
+    </g>
+    <!-- Singularidad Dimensional Pulsante -->
+    <g class="arcane-vortex-pulse">
+      <circle cx="170" cy="95" r="22" fill="url(#vortexGlow-1)" />
+      <circle cx="170" cy="95" r="13" fill="#c084fc" opacity="0.9" filter="url(#glow-1)" />
+      <circle cx="170" cy="95" r="5" fill="#fff" />
+    </g>
+    <!-- Marco de Piedra Tallada: Plintos -->
+    <rect x="36" y="156" width="54" height="24" rx="2" fill="url(#stoneHigh-1)" stroke="#0f172a" stroke-width="1.5" />
+    <rect x="32" y="168" width="62" height="12" rx="2" fill="url(#stoneBody-1)" stroke="#0f172a" stroke-width="1.5" />
+    <rect x="250" y="156" width="54" height="24" rx="2" fill="url(#stoneHigh-1)" stroke="#0f172a" stroke-width="1.5" />
+    <rect x="246" y="168" width="62" height="12" rx="2" fill="url(#stoneBody-1)" stroke="#0f172a" stroke-width="1.5" />
+    <!-- Pilares con Runas Dimensionales -->
+    <rect x="42" y="58" width="44" height="100" fill="url(#stoneBody-1)" stroke="#0f172a" stroke-width="1.5" />
+    <line x1="42" y1="88" x2="86" y2="88" stroke="#0f172a" stroke-width="2" />
+    <line x1="43" y1="89" x2="85" y2="89" stroke="#64748b" stroke-width="1" />
+    <line x1="42" y1="122" x2="86" y2="122" stroke="#0f172a" stroke-width="2" />
+    <line x1="43" y1="123" x2="85" y2="123" stroke="#64748b" stroke-width="1" />
+    <g class="arcane-rune-glow" stroke="#c084fc" stroke-width="1.5" fill="none" opacity="0.85">
+      <polygon points="64,68 70,75 64,82 58,75" />
+      <line x1="58" y1="98" x2="70" y2="106" />
+      <line x1="70" y1="98" x2="58" y2="106" />
+      <path d="M 60,132 L 68,132 L 60,144 L 68,144" />
+    </g>
+    <rect x="254" y="58" width="44" height="100" fill="url(#stoneBody-1)" stroke="#0f172a" stroke-width="1.5" />
+    <line x1="254" y1="88" x2="298" y2="88" stroke="#0f172a" stroke-width="2" />
+    <line x1="255" y1="89" x2="297" y2="89" stroke="#64748b" stroke-width="1" />
+    <line x1="254" y1="122" x2="298" y2="122" stroke="#0f172a" stroke-width="2" />
+    <line x1="255" y1="123" x2="297" y2="123" stroke="#64748b" stroke-width="1" />
+    <g class="arcane-rune-glow" stroke="#c084fc" stroke-width="1.5" fill="none" opacity="0.85">
+      <polygon points="276,68 282,75 276,82 270,75" />
+      <line x1="270" y1="98" x2="282" y2="106" />
+      <line x1="282" y1="98" x2="270" y2="106" />
+      <path d="M 272,132 L 280,132 L 272,144 L 280,144" />
+    </g>
+    <!-- Bóveda del Arco -->
+    <path d="M 42,65 C 42,14 298,14 298,65 L 254,65 C 254,30 86,30 86,65 Z" fill="url(#stoneBody-1)" stroke="#0f172a" stroke-width="2" />
+    <path d="M 42,65 C 42,14 298,14 298,65" fill="none" stroke="#64748b" stroke-width="1.5" />
+    <path d="M 86,65 C 86,30 254,30 254,65" fill="none" stroke="#c084fc" stroke-width="1.5" opacity="0.75" />
+    <!-- Dovelas (Juntas) -->
+    <line x1="84" y1="46" x2="68" y2="33" stroke="#0f172a" stroke-width="2" />
+    <line x1="122" y1="34" x2="114" y2="16" stroke="#0f172a" stroke-width="2" />
+    <line x1="218" y1="34" x2="226" y2="16" stroke="#0f172a" stroke-width="2" />
+    <line x1="256" y1="46" x2="272" y2="33" stroke="#0f172a" stroke-width="2" />
+    <!-- Piedra Clave con Glifo de Hipercubo -->
+    <polygon points="152,8 188,8 194,38 146,38" fill="url(#stoneHigh-1)" stroke="#0f172a" stroke-width="2" />
+    <polygon points="154,10 186,10 191,36 149,36" fill="none" stroke="#64748b" stroke-width="1" />
+    <polygon points="170,14 182,23 170,32 158,23" fill="none" stroke="#c084fc" stroke-width="1.8" />
+    <polygon points="170,18 177,23 170,28 163,23" fill="#a855f7" opacity="0.6" />
+  </svg>
+  <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none"></div>
+  <div class="absolute bottom-2 right-2.5 z-10">
+    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-950/90 border border-purple-400/50 text-[10px] font-bold text-purple-300 shadow-md">
+      <span class="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse"></span>
+      EXPLORACIÓN LIBRE
+    </span>
+  </div>
 </div>
 <button type="button" onclick="event.stopPropagation(); window.openPortalModules('worldtour'); openPortalWithLoader('worldtour'); if (typeof window.initOrResumeWorld3D === 'function') window.initOrResumeWorld3D();" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-purple-500 to-fuchsia-500 hover:from-purple-400 hover:to-fuchsia-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-purple-500/30 cursor-pointer" data-action="enter-portal" data-portal="worldtour">ENTRAR AL PORTAL</button>
 </div>
 </div>
+
+<!-- ================= PORTAL 2: CIAN ACÚSTICO (ESTUDIO MUSICAL) ================= -->
 <div id="coverCard-2" onclick="handleCoverCardClick(2)" class="coverflow-portal-card portal-card portal-card-2 hidden-back" style="--portal-glow: rgba(6, 182, 212, 0.45);">
 <div class="w-full h-full flex flex-col justify-between relative overflow-hidden group">
 <div class="absolute -top-12 -right-12 w-36 h-36 bg-cyan-500/20 rounded-full blur-2xl pointer-events-none"></div>
 <div>
 <div class="flex items-center justify-between mb-1.5">
 <span class="px-2.5 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-500/40 text-[10px] font-bold text-cyan-300 uppercase tracking-widest">
-PORTAL 03 &bull; MÚSICA & KARAOKE
+PORTAL 03 &bull; MÚSICA & RITMO
 </span>
 <span class="text-xs font-bold text-cyan-400">+30 EXP / reto</span>
 </div>
@@ -341,46 +706,272 @@ Estudio Musical
 Aprende vocabulario cantando tus canciones favoritas.
 </p>
 </div>
-<div class="my-3 relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden border border-cyan-500/50 shadow-lg shadow-cyan-950/60 bg-slate-950 shrink-0">
-<img src="images/portal_music.svg" alt="Portal Music Session" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onerror="this.onerror=null; this.src=window.FALLBACK_PORTAL_MUSIC || 'images/portal_music.svg';">
-<div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none"></div>
-<span class="absolute bottom-2 right-2.5 text-xs font-black text-cyan-300 bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-cyan-400/40">⚡ Karaoke Live</span>
+<div class="my-2.5 relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden border border-cyan-500/50 shadow-xl bg-slate-950 flex items-center justify-center shrink-0">
+  <svg class="w-full h-full object-cover" viewBox="0 0 340 180" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="stoneBody-2" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#334155" />
+        <stop offset="50%" stop-color="#1e293b" />
+        <stop offset="100%" stop-color="#0f172a" />
+      </linearGradient>
+      <linearGradient id="stoneHigh-2" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#64748b" />
+        <stop offset="100%" stop-color="#1e293b" />
+      </linearGradient>
+      <radialGradient id="vortexGlow-2" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#cffafe" stop-opacity="0.95" />
+        <stop offset="30%" stop-color="#22d3ee" stop-opacity="0.65" />
+        <stop offset="70%" stop-color="#0891b2" stop-opacity="0.3" />
+        <stop offset="100%" stop-color="#020617" stop-opacity="0" />
+      </radialGradient>
+      <filter id="glow-2" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur stdDeviation="3" result="blur" />
+        <feMerge>
+          <feMergeNode in="blur" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+    </defs>
+    <!-- Fondo Cósmico -->
+    <rect width="340" height="180" fill="#020617" />
+    <circle cx="28" cy="28" r="1.2" fill="#fff" opacity="0.4" />
+    <circle cx="312" cy="38" r="1" fill="#fff" opacity="0.5" />
+    <circle cx="24" cy="138" r="0.8" fill="#fff" opacity="0.3" />
+    <circle cx="316" cy="142" r="1.1" fill="#fff" opacity="0.4" />
+    <!-- Hueco del Portal Arcano -->
+    <path d="M 86,180 L 86,68 C 86,22 254,22 254,68 L 254,180 Z" fill="#030712" />
+    <circle cx="170" cy="95" r="75" fill="url(#vortexGlow-2)" />
+    <!-- Vórtice de Frecuencia Acústica (Ondas Sonoras Concéntricas) -->
+    <g class="arcane-vortex-spin">
+      <circle cx="170" cy="95" r="62" fill="none" stroke="#06b6d4" stroke-width="1.8" stroke-dasharray="16 8 4 8" opacity="0.85" />
+      <circle cx="170" cy="95" r="50" fill="none" stroke="#22d3ee" stroke-width="1.2" stroke-dasharray="8 6" opacity="0.7" />
+      <circle cx="170" cy="95" r="38" fill="none" stroke="#67e8f9" stroke-width="1" stroke-dasharray="4 4" opacity="0.6" />
+      <!-- Barras Radiales de Ecualizador Místico -->
+      <line x1="170" y1="33" x2="170" y2="45" stroke="#a5f3fc" stroke-width="2" />
+      <line x1="170" y1="145" x2="170" y2="157" stroke="#a5f3fc" stroke-width="2" />
+      <line x1="108" y1="95" x2="120" y2="95" stroke="#a5f3fc" stroke-width="2" />
+      <line x1="220" y1="95" x2="232" y2="95" stroke="#a5f3fc" stroke-width="2" />
+      <line x1="126" y1="51" x2="135" y2="60" stroke="#22d3ee" stroke-width="2" />
+      <line x1="214" y1="51" x2="205" y2="60" stroke="#22d3ee" stroke-width="2" />
+      <line x1="126" y1="139" x2="135" y2="130" stroke="#22d3ee" stroke-width="2" />
+      <line x1="214" y1="139" x2="205" y2="130" stroke="#22d3ee" stroke-width="2" />
+    </g>
+    <!-- Disco Armónico Inverso -->
+    <g class="arcane-vortex-reverse">
+      <circle cx="170" cy="95" r="28" fill="none" stroke="#22d3ee" stroke-width="1.8" stroke-dasharray="10 5" opacity="0.8" />
+      <path d="M 152,95 Q 161,80 170,95 T 188,95" fill="none" stroke="#a5f3fc" stroke-width="1.8" stroke-linecap="round" />
+      <path d="M 170,77 Q 185,86 170,95 T 170,113" fill="none" stroke="#a5f3fc" stroke-width="1.8" stroke-linecap="round" />
+    </g>
+    <!-- Núcleo de Resonancia Pulsante -->
+    <g class="arcane-vortex-pulse">
+      <circle cx="170" cy="95" r="20" fill="url(#vortexGlow-2)" />
+      <circle cx="170" cy="95" r="12" fill="#22d3ee" opacity="0.9" filter="url(#glow-2)" />
+      <circle cx="170" cy="95" r="5" fill="#fff" />
+    </g>
+    <!-- Marco de Piedra Tallada: Plintos -->
+    <rect x="36" y="156" width="54" height="24" rx="2" fill="url(#stoneHigh-2)" stroke="#0f172a" stroke-width="1.5" />
+    <rect x="32" y="168" width="62" height="12" rx="2" fill="url(#stoneBody-2)" stroke="#0f172a" stroke-width="1.5" />
+    <rect x="250" y="156" width="54" height="24" rx="2" fill="url(#stoneHigh-2)" stroke="#0f172a" stroke-width="1.5" />
+    <rect x="246" y="168" width="62" height="12" rx="2" fill="url(#stoneBody-2)" stroke="#0f172a" stroke-width="1.5" />
+    <!-- Pilares con Runas de Ondas de Sonido -->
+    <rect x="42" y="58" width="44" height="100" fill="url(#stoneBody-2)" stroke="#0f172a" stroke-width="1.5" />
+    <line x1="42" y1="88" x2="86" y2="88" stroke="#0f172a" stroke-width="2" />
+    <line x1="43" y1="89" x2="85" y2="89" stroke="#64748b" stroke-width="1" />
+    <line x1="42" y1="122" x2="86" y2="122" stroke="#0f172a" stroke-width="2" />
+    <line x1="43" y1="123" x2="85" y2="123" stroke="#64748b" stroke-width="1" />
+    <g class="arcane-rune-glow" stroke="#22d3ee" stroke-width="1.5" fill="none" opacity="0.85">
+      <path d="M 58,74 C 62,68 66,80 70,74" />
+      <line x1="64" y1="96" x2="64" y2="108" />
+      <circle cx="64" cy="96" r="2" fill="#22d3ee" />
+      <circle cx="64" cy="108" r="2" fill="#22d3ee" />
+      <path d="M 58,138 C 64,130 64,146 70,138" />
+    </g>
+    <rect x="254" y="58" width="44" height="100" fill="url(#stoneBody-2)" stroke="#0f172a" stroke-width="1.5" />
+    <line x1="254" y1="88" x2="298" y2="88" stroke="#0f172a" stroke-width="2" />
+    <line x1="255" y1="89" x2="297" y2="89" stroke="#64748b" stroke-width="1" />
+    <line x1="254" y1="122" x2="298" y2="122" stroke="#0f172a" stroke-width="2" />
+    <line x1="255" y1="123" x2="297" y2="123" stroke="#64748b" stroke-width="1" />
+    <g class="arcane-rune-glow" stroke="#22d3ee" stroke-width="1.5" fill="none" opacity="0.85">
+      <path d="M 270,74 C 274,68 278,80 282,74" />
+      <line x1="276" y1="96" x2="276" y2="108" />
+      <circle cx="276" cy="96" r="2" fill="#22d3ee" />
+      <circle cx="276" cy="108" r="2" fill="#22d3ee" />
+      <path d="M 270,138 C 276,130 276,146 282,138" />
+    </g>
+    <!-- Bóveda del Arco -->
+    <path d="M 42,65 C 42,14 298,14 298,65 L 254,65 C 254,30 86,30 86,65 Z" fill="url(#stoneBody-2)" stroke="#0f172a" stroke-width="2" />
+    <path d="M 42,65 C 42,14 298,14 298,65" fill="none" stroke="#64748b" stroke-width="1.5" />
+    <path d="M 86,65 C 86,30 254,30 254,65" fill="none" stroke="#22d3ee" stroke-width="1.5" opacity="0.75" />
+    <!-- Dovelas (Juntas) -->
+    <line x1="84" y1="46" x2="68" y2="33" stroke="#0f172a" stroke-width="2" />
+    <line x1="122" y1="34" x2="114" y2="16" stroke="#0f172a" stroke-width="2" />
+    <line x1="218" y1="34" x2="226" y2="16" stroke="#0f172a" stroke-width="2" />
+    <line x1="256" y1="46" x2="272" y2="33" stroke="#0f172a" stroke-width="2" />
+    <!-- Piedra Clave Acústica -->
+    <polygon points="152,8 188,8 194,38 146,38" fill="url(#stoneHigh-2)" stroke="#0f172a" stroke-width="2" />
+    <polygon points="154,10 186,10 191,36 149,36" fill="none" stroke="#64748b" stroke-width="1" />
+    <path d="M 160,23 C 163,16 167,30 170,23 C 173,16 177,30 180,23" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" />
+  </svg>
+  <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none"></div>
+  <div class="absolute bottom-2 right-2.5 z-10">
+    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-950/90 border border-cyan-400/50 text-[10px] font-bold text-cyan-300 shadow-md">
+      <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+      KARAOKE & RITMO
+    </span>
+  </div>
 </div>
 <button type="button" onclick="event.stopPropagation(); window.openPortalModules('music');" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-cyan-500/30 cursor-pointer" data-action="enter-portal" data-portal="music">ENTRAR AL PORTAL</button>
 </div>
 </div>
-<div id="coverCard-3" onclick="handleCoverCardClick(3)" class="coverflow-portal-card portal-card portal-card-3 side-left requires-network" style="--portal-glow: rgba(56, 189, 248, 0.45);">
+
+<!-- ================= PORTAL 3: AZUL ELÉCTRICO (TUTOR IA) ================= -->
+<div id="coverCard-3" onclick="handleCoverCardClick(3)" class="coverflow-portal-card portal-card portal-card-3 side-left requires-network" style="--portal-glow: rgba(59, 130, 246, 0.45);">
 <div class="w-full h-full flex flex-col justify-between relative overflow-hidden group">
-<div class="absolute -top-12 -right-12 w-36 h-36 bg-sky-500/20 rounded-full blur-2xl pointer-events-none"></div>
+<div class="absolute -top-12 -right-12 w-36 h-36 bg-blue-500/20 rounded-full blur-2xl pointer-events-none"></div>
 <div>
 <div class="flex items-center justify-between mb-1.5">
-<span class="px-2.5 py-0.5 rounded-full bg-sky-500/20 border border-sky-500/40 text-[10px] font-bold text-sky-300 uppercase tracking-widest">
+<span class="px-2.5 py-0.5 rounded-full bg-blue-500/20 border border-blue-500/40 text-[10px] font-bold text-blue-300 uppercase tracking-widest">
 PORTAL 04 &bull; INTELIGENCIA ARTIFICIAL
 </span>
-<span class="text-xs font-bold text-sky-400">+50 EXP / chat</span>
+<span class="text-xs font-bold text-blue-400">+50 EXP / chat</span>
 </div>
-<h3 class="text-lg font-black text-sky-300 group-hover:text-sky-200 transition">
+<h3 class="text-lg font-black text-blue-300 group-hover:text-blue-200 transition">
 Tutor IA Automático
 </h3>
 <p class="text-[11px] text-slate-300 mt-1 leading-snug">
 Practica tu inglés conversando por texto o voz.
 </p>
 </div>
-<div class="my-3 relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden border border-sky-500/50 shadow-lg shadow-sky-950/60 shrink-0">
-<img src="images/ai_tutor_mascot.jpg" alt="Portal Tutor IA" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onerror="this.onerror=null; this.src='images/ai_tutor_mascot.svg';">
-<div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none"></div>
-<span class="absolute bottom-2 right-2.5 text-xs font-black text-sky-300 bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-sky-400/40">🤖 Chat & Voz</span>
+<div class="my-2.5 relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden border border-blue-500/50 shadow-xl bg-slate-950 flex items-center justify-center shrink-0">
+  <svg class="w-full h-full object-cover" viewBox="0 0 340 180" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="stoneBody-3" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#334155" />
+        <stop offset="50%" stop-color="#1e293b" />
+        <stop offset="100%" stop-color="#0f172a" />
+      </linearGradient>
+      <linearGradient id="stoneHigh-3" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#64748b" />
+        <stop offset="100%" stop-color="#1e293b" />
+      </linearGradient>
+      <radialGradient id="vortexGlow-3" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#dbeafe" stop-opacity="0.95" />
+        <stop offset="30%" stop-color="#60a5fa" stop-opacity="0.7" />
+        <stop offset="70%" stop-color="#1d4ed8" stop-opacity="0.3" />
+        <stop offset="100%" stop-color="#020617" stop-opacity="0" />
+      </radialGradient>
+      <filter id="glow-3" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur stdDeviation="3" result="blur" />
+        <feMerge>
+          <feMergeNode in="blur" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+    </defs>
+    <!-- Fondo Cósmico -->
+    <rect width="340" height="180" fill="#020617" />
+    <circle cx="24" cy="32" r="1.1" fill="#fff" opacity="0.4" />
+    <circle cx="316" cy="34" r="1.2" fill="#fff" opacity="0.5" />
+    <circle cx="16" cy="144" r="0.9" fill="#fff" opacity="0.3" />
+    <circle cx="324" cy="132" r="1" fill="#fff" opacity="0.4" />
+    <!-- Hueco del Portal Arcano -->
+    <path d="M 86,180 L 86,68 C 86,22 254,22 254,68 L 254,180 Z" fill="#030712" />
+    <circle cx="170" cy="95" r="75" fill="url(#vortexGlow-3)" />
+    <!-- Vórtice Sincrotrón Neural Azul Eléctrico (Giro Rápido) -->
+    <g class="arcane-vortex-spin-fast">
+      <circle cx="170" cy="95" r="62" fill="none" stroke="#3b82f6" stroke-width="1.8" stroke-dasharray="14 8 4 8" opacity="0.85" />
+      <circle cx="170" cy="95" r="52" fill="none" stroke="#60a5fa" stroke-width="1.2" stroke-dasharray="8 6" opacity="0.7" />
+      <!-- Nodos de Datos en Órbita -->
+      <circle cx="170" cy="33" r="3.5" fill="#93c5fd" />
+      <circle cx="170" cy="157" r="3.5" fill="#93c5fd" />
+      <circle cx="108" cy="95" r="3.5" fill="#93c5fd" />
+      <circle cx="232" cy="95" r="3.5" fill="#93c5fd" />
+      <circle cx="126" cy="51" r="2.5" fill="#60a5fa" />
+      <circle cx="214" cy="139" r="2.5" fill="#60a5fa" />
+    </g>
+    <!-- Apertura Cibernética Hexagonal Inversa -->
+    <g class="arcane-vortex-reverse">
+      <polygon points="170,64 197,79 197,111 170,126 143,111 143,79" fill="none" stroke="#60a5fa" stroke-width="1.8" opacity="0.85" />
+      <line x1="170" y1="64" x2="170" y2="78" stroke="#93c5fd" stroke-width="1.5" />
+      <line x1="170" y1="126" x2="170" y2="112" stroke="#93c5fd" stroke-width="1.5" />
+      <line x1="143" y1="79" x2="155" y2="86" stroke="#93c5fd" stroke-width="1.5" />
+      <line x1="197" y1="79" x2="185" y2="86" stroke="#93c5fd" stroke-width="1.5" />
+      <line x1="143" y1="111" x2="155" y2="104" stroke="#93c5fd" stroke-width="1.5" />
+      <line x1="197" y1="111" x2="185" y2="104" stroke="#93c5fd" stroke-width="1.5" />
+    </g>
+    <!-- Núcleo Neural Pulsante -->
+    <g class="arcane-vortex-pulse">
+      <circle cx="170" cy="95" r="22" fill="url(#vortexGlow-3)" />
+      <circle cx="170" cy="95" r="13" fill="#60a5fa" opacity="0.9" filter="url(#glow-3)" />
+      <circle cx="170" cy="95" r="5" fill="#fff" />
+    </g>
+    <!-- Marco de Piedra Tallada: Plintos -->
+    <rect x="36" y="156" width="54" height="24" rx="2" fill="url(#stoneHigh-3)" stroke="#0f172a" stroke-width="1.5" />
+    <rect x="32" y="168" width="62" height="12" rx="2" fill="url(#stoneBody-3)" stroke="#0f172a" stroke-width="1.5" />
+    <rect x="250" y="156" width="54" height="24" rx="2" fill="url(#stoneHigh-3)" stroke="#0f172a" stroke-width="1.5" />
+    <rect x="246" y="168" width="62" height="12" rx="2" fill="url(#stoneBody-3)" stroke="#0f172a" stroke-width="1.5" />
+    <!-- Pilares con Circuitos Neuronales Grabados -->
+    <rect x="42" y="58" width="44" height="100" fill="url(#stoneBody-3)" stroke="#0f172a" stroke-width="1.5" />
+    <line x1="42" y1="88" x2="86" y2="88" stroke="#0f172a" stroke-width="2" />
+    <line x1="43" y1="89" x2="85" y2="89" stroke="#64748b" stroke-width="1" />
+    <line x1="42" y1="122" x2="86" y2="122" stroke="#0f172a" stroke-width="2" />
+    <line x1="43" y1="123" x2="85" y2="123" stroke="#64748b" stroke-width="1" />
+    <g class="arcane-rune-glow" stroke="#60a5fa" stroke-width="1.5" fill="none" opacity="0.85">
+      <path d="M 58,74 L 64,74 L 70,80" />
+      <circle cx="58" cy="74" r="1.8" fill="#60a5fa" />
+      <path d="M 70,100 L 64,100 L 58,106" />
+      <circle cx="70" cy="100" r="1.8" fill="#60a5fa" />
+      <path d="M 64,130 L 64,142 M 58,136 L 70,136" />
+    </g>
+    <rect x="254" y="58" width="44" height="100" fill="url(#stoneBody-3)" stroke="#0f172a" stroke-width="1.5" />
+    <line x1="254" y1="88" x2="298" y2="88" stroke="#0f172a" stroke-width="2" />
+    <line x1="255" y1="89" x2="297" y2="89" stroke="#64748b" stroke-width="1" />
+    <line x1="254" y1="122" x2="298" y2="122" stroke="#0f172a" stroke-width="2" />
+    <line x1="255" y1="123" x2="297" y2="123" stroke="#64748b" stroke-width="1" />
+    <g class="arcane-rune-glow" stroke="#60a5fa" stroke-width="1.5" fill="none" opacity="0.85">
+      <path d="M 282,74 L 276,74 L 270,80" />
+      <circle cx="282" cy="74" r="1.8" fill="#60a5fa" />
+      <path d="M 270,100 L 276,100 L 282,106" />
+      <circle cx="270" cy="100" r="1.8" fill="#60a5fa" />
+      <path d="M 276,130 L 276,142 M 270,136 L 282,136" />
+    </g>
+    <!-- Bóveda del Arco -->
+    <path d="M 42,65 C 42,14 298,14 298,65 L 254,65 C 254,30 86,30 86,65 Z" fill="url(#stoneBody-3)" stroke="#0f172a" stroke-width="2" />
+    <path d="M 42,65 C 42,14 298,14 298,65" fill="none" stroke="#64748b" stroke-width="1.5" />
+    <path d="M 86,65 C 86,30 254,30 254,65" fill="none" stroke="#60a5fa" stroke-width="1.5" opacity="0.75" />
+    <!-- Dovelas (Juntas) -->
+    <line x1="84" y1="46" x2="68" y2="33" stroke="#0f172a" stroke-width="2" />
+    <line x1="122" y1="34" x2="114" y2="16" stroke="#0f172a" stroke-width="2" />
+    <line x1="218" y1="34" x2="226" y2="16" stroke="#0f172a" stroke-width="2" />
+    <line x1="256" y1="46" x2="272" y2="33" stroke="#0f172a" stroke-width="2" />
+    <!-- Piedra Clave Neural -->
+    <polygon points="152,8 188,8 194,38 146,38" fill="url(#stoneHigh-3)" stroke="#0f172a" stroke-width="2" />
+    <polygon points="154,10 186,10 191,36 149,36" fill="none" stroke="#64748b" stroke-width="1" />
+    <circle cx="170" cy="23" r="6" fill="none" stroke="#60a5fa" stroke-width="1.8" />
+    <circle cx="170" cy="23" r="2.5" fill="#60a5fa" />
+    <line x1="156" y1="23" x2="164" y2="23" stroke="#60a5fa" stroke-width="1.5" />
+    <line x1="176" y1="23" x2="184" y2="23" stroke="#60a5fa" stroke-width="1.5" />
+  </svg>
+  <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none"></div>
+  <div class="absolute bottom-2 right-2.5 z-10">
+    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-950/90 border border-blue-400/50 text-[10px] font-bold text-blue-300 shadow-md">
+      <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span>
+      VOZ & TEXTO NEURAL
+    </span>
+  </div>
 </div>
-<button type="button" onclick="event.stopPropagation(); window.openPortalModules('ai-tutor');" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 hover:from-sky-400 hover:to-indigo-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-sky-500/30 cursor-pointer" data-action="enter-portal" data-portal="ai-tutor">ENTRAR AL PORTAL</button>
+<button type="button" onclick="event.stopPropagation(); window.openPortalModules('ai-tutor');" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-400 hover:to-indigo-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-blue-500/30 cursor-pointer" data-action="enter-portal" data-portal="ai-tutor">ENTRAR AL PORTAL</button>
 </div>
 </div>
+
+<!-- ================= PORTAL 4: ESMERALDA RÚNICO (CUENTOS Y LECTURAS) ================= -->
 <div id="coverCard-4" onclick="handleCoverCardClick(4)" class="coverflow-portal-card portal-card portal-card-4 hidden-back" style="--portal-glow: rgba(16, 185, 129, 0.45);">
 <div class="w-full h-full flex flex-col justify-between relative overflow-hidden group">
 <div class="absolute -top-12 -right-12 w-36 h-36 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none"></div>
 <div>
 <div class="flex items-center justify-between mb-1.5">
 <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-[10px] font-bold text-emerald-300 uppercase tracking-widest">
-PORTAL 05 &bull; CUENTOS
+PORTAL 05 &bull; CUENTOS & LECTURAS
 </span>
 <span class="text-xs font-bold text-emerald-400">+50 EXP / cuento</span>
 </div>
@@ -391,66 +982,387 @@ Cuentos y Lecturas
 Lecturas clásicas ilustradas con audio y práctica de voz.
 </p>
 </div>
-<div class="my-3 relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden border border-emerald-500/50 shadow-lg shadow-emerald-950/60 shrink-0">
-<img src="images/portal_stories.jpg" alt="Portal Cuentos" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onerror="this.onerror=null; this.src=window.FALLBACK_PORTAL_STORIES || 'images/portal_stories.svg';">
-<div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none"></div>
-<span class="absolute bottom-2 right-2.5 text-xs font-black text-emerald-300 bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-emerald-400/40">📚 6 Cuentos</span>
+<div class="my-2.5 relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden border border-emerald-500/50 shadow-xl bg-slate-950 flex items-center justify-center shrink-0">
+  <svg class="w-full h-full object-cover" viewBox="0 0 340 180" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="stoneBody-4" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#334155" />
+        <stop offset="50%" stop-color="#1e293b" />
+        <stop offset="100%" stop-color="#0f172a" />
+      </linearGradient>
+      <linearGradient id="stoneHigh-4" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#64748b" />
+        <stop offset="100%" stop-color="#1e293b" />
+      </linearGradient>
+      <radialGradient id="vortexGlow-4" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#d1fae5" stop-opacity="0.95" />
+        <stop offset="30%" stop-color="#34d399" stop-opacity="0.7" />
+        <stop offset="70%" stop-color="#059669" stop-opacity="0.3" />
+        <stop offset="100%" stop-color="#020617" stop-opacity="0" />
+      </radialGradient>
+      <filter id="glow-4" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur stdDeviation="3" result="blur" />
+        <feMerge>
+          <feMergeNode in="blur" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+    </defs>
+    <!-- Fondo Cósmico -->
+    <rect width="340" height="180" fill="#020617" />
+    <circle cx="26" cy="36" r="1.1" fill="#fff" opacity="0.4" />
+    <circle cx="314" cy="30" r="1.3" fill="#fff" opacity="0.5" />
+    <circle cx="18" cy="142" r="0.8" fill="#fff" opacity="0.3" />
+    <circle cx="322" cy="136" r="1.1" fill="#fff" opacity="0.4" />
+    <!-- Hueco del Portal Arcano -->
+    <path d="M 86,180 L 86,68 C 86,22 254,22 254,68 L 254,180 Z" fill="#030712" />
+    <circle cx="170" cy="95" r="75" fill="url(#vortexGlow-4)" />
+    <!-- Vórtice de Runas Druídicas Esmeralda -->
+    <g class="arcane-vortex-spin">
+      <circle cx="170" cy="95" r="62" fill="none" stroke="#10b981" stroke-width="1.8" stroke-dasharray="16 8 4 8" opacity="0.85" />
+      <circle cx="170" cy="95" r="52" fill="none" stroke="#34d399" stroke-width="1.2" stroke-dasharray="8 6" opacity="0.7" />
+      <!-- Runas y Hojas Místicas en Órbita -->
+      <path d="M 170,33 Q 174,40 170,47 Q 166,40 170,33 Z" fill="#6ee7b7" />
+      <path d="M 170,143 Q 174,150 170,157 Q 166,150 170,143 Z" fill="#6ee7b7" />
+      <path d="M 108,95 Q 115,99 122,95 Q 115,91 108,95 Z" fill="#6ee7b7" />
+      <path d="M 218,95 Q 225,99 232,95 Q 225,91 218,95 Z" fill="#6ee7b7" />
+    </g>
+    <!-- Espiral de Sabiduría Mítica Inversa -->
+    <g class="arcane-vortex-reverse">
+      <circle cx="170" cy="95" r="36" fill="none" stroke="#34d399" stroke-width="1.8" stroke-dasharray="10 6" opacity="0.8" />
+      <path d="M 170,95 Q 182,82 170,72 Q 155,82 170,95" fill="none" stroke="#a7f3d0" stroke-width="1.5" />
+      <path d="M 170,95 Q 158,108 170,118 Q 185,108 170,95" fill="none" stroke="#a7f3d0" stroke-width="1.5" />
+    </g>
+    <!-- Núcleo de Sabiduría Esmeralda Pulsante -->
+    <g class="arcane-vortex-pulse">
+      <circle cx="170" cy="95" r="22" fill="url(#vortexGlow-4)" />
+      <circle cx="170" cy="95" r="13" fill="#34d399" opacity="0.9" filter="url(#glow-4)" />
+      <circle cx="170" cy="95" r="5" fill="#fff" />
+    </g>
+    <!-- Marco de Piedra Tallada: Plintos -->
+    <rect x="36" y="156" width="54" height="24" rx="2" fill="url(#stoneHigh-4)" stroke="#0f172a" stroke-width="1.5" />
+    <rect x="32" y="168" width="62" height="12" rx="2" fill="url(#stoneBody-4)" stroke="#0f172a" stroke-width="1.5" />
+    <rect x="250" y="156" width="54" height="24" rx="2" fill="url(#stoneHigh-4)" stroke="#0f172a" stroke-width="1.5" />
+    <rect x="246" y="168" width="62" height="12" rx="2" fill="url(#stoneBody-4)" stroke="#0f172a" stroke-width="1.5" />
+    <!-- Pilares con Runas Élficas Grabadas -->
+    <rect x="42" y="58" width="44" height="100" fill="url(#stoneBody-4)" stroke="#0f172a" stroke-width="1.5" />
+    <line x1="42" y1="88" x2="86" y2="88" stroke="#0f172a" stroke-width="2" />
+    <line x1="43" y1="89" x2="85" y2="89" stroke="#64748b" stroke-width="1" />
+    <line x1="42" y1="122" x2="86" y2="122" stroke="#0f172a" stroke-width="2" />
+    <line x1="43" y1="123" x2="85" y2="123" stroke="#64748b" stroke-width="1" />
+    <g class="arcane-rune-glow" stroke="#34d399" stroke-width="1.5" fill="none" opacity="0.85">
+      <path d="M 64,66 C 60,74 68,74 64,82" />
+      <path d="M 60,98 L 68,106 M 68,98 L 60,106" />
+      <path d="M 64,128 L 64,142 M 60,135 L 68,135" />
+    </g>
+    <rect x="254" y="58" width="44" height="100" fill="url(#stoneBody-4)" stroke="#0f172a" stroke-width="1.5" />
+    <line x1="254" y1="88" x2="298" y2="88" stroke="#0f172a" stroke-width="2" />
+    <line x1="255" y1="89" x2="297" y2="89" stroke="#64748b" stroke-width="1" />
+    <line x1="254" y1="122" x2="298" y2="122" stroke="#0f172a" stroke-width="2" />
+    <line x1="255" y1="123" x2="297" y2="123" stroke="#64748b" stroke-width="1" />
+    <g class="arcane-rune-glow" stroke="#34d399" stroke-width="1.5" fill="none" opacity="0.85">
+      <path d="M 276,66 C 272,74 280,74 276,82" />
+      <path d="M 272,98 L 280,106 M 280,98 L 272,106" />
+      <path d="M 276,128 L 276,142 M 272,135 L 280,135" />
+    </g>
+    <!-- Bóveda del Arco -->
+    <path d="M 42,65 C 42,14 298,14 298,65 L 254,65 C 254,30 86,30 86,65 Z" fill="url(#stoneBody-4)" stroke="#0f172a" stroke-width="2" />
+    <path d="M 42,65 C 42,14 298,14 298,65" fill="none" stroke="#64748b" stroke-width="1.5" />
+    <path d="M 86,65 C 86,30 254,30 254,65" fill="none" stroke="#34d399" stroke-width="1.5" opacity="0.75" />
+    <!-- Dovelas (Juntas) -->
+    <line x1="84" y1="46" x2="68" y2="33" stroke="#0f172a" stroke-width="2" />
+    <line x1="122" y1="34" x2="114" y2="16" stroke="#0f172a" stroke-width="2" />
+    <line x1="218" y1="34" x2="226" y2="16" stroke="#0f172a" stroke-width="2" />
+    <line x1="256" y1="46" x2="272" y2="33" stroke="#0f172a" stroke-width="2" />
+    <!-- Piedra Clave con Grimoire Rúnico -->
+    <polygon points="152,8 188,8 194,38 146,38" fill="url(#stoneHigh-4)" stroke="#0f172a" stroke-width="2" />
+    <polygon points="154,10 186,10 191,36 149,36" fill="none" stroke="#64748b" stroke-width="1" />
+    <path d="M 170,14 C 176,20 182,27 170,33 C 158,27 164,20 170,14 Z" fill="#34d399" opacity="0.75" stroke="#10b981" stroke-width="1.2" />
+  </svg>
+  <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none"></div>
+  <div class="absolute bottom-2 right-2.5 z-10">
+    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-950/90 border border-emerald-400/50 text-[10px] font-bold text-emerald-300 shadow-md">
+      <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+      BIBLIOTECA CLÁSICA
+    </span>
+  </div>
 </div>
 <button type="button" onclick="event.stopPropagation(); window.openPortalModules('stories');" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-500/30 cursor-pointer" data-action="enter-portal" data-portal="stories">ENTRAR AL PORTAL</button>
 </div>
 </div>
-<div id="coverCard-5" onclick="handleCoverCardClick(5)" class="coverflow-portal-card portal-card portal-card-5 hidden-back" style="--portal-glow: rgba(236, 72, 153, 0.45);">
+
+<!-- ================= PORTAL 5: CARMESÍ DE FUEGO (JEST 3D / JARZ HEADBANZ) ================= -->
+<div id="coverCard-5" onclick="handleCoverCardClick(5)" class="coverflow-portal-card portal-card portal-card-5 hidden-back" style="--portal-glow: rgba(239, 68, 68, 0.45);">
 <div class="w-full h-full flex flex-col justify-between relative overflow-hidden group">
-<div class="absolute -top-12 -right-12 w-36 h-36 bg-pink-500/20 rounded-full blur-2xl pointer-events-none"></div>
+<div class="absolute -top-12 -right-12 w-36 h-36 bg-red-500/20 rounded-full blur-2xl pointer-events-none"></div>
 <div>
 <div class="flex items-center justify-between mb-1.5">
-<span class="px-2.5 py-0.5 rounded-full bg-pink-500/20 border border-pink-500/40 text-[10px] font-bold text-pink-300 uppercase tracking-widest">
-PORTAL 06 &bull; JUEGO 1VS1 3D
+<span class="px-2.5 py-0.5 rounded-full bg-red-500/20 border border-red-500/40 text-[10px] font-bold text-red-300 uppercase tracking-widest">
+PORTAL 06 &bull; JUEGO 1 VS 1 3D
 </span>
-<span class="text-xs font-bold text-pink-400">🃏 Headbanz IA</span>
+<span class="text-xs font-bold text-red-400">Headbanz IA</span>
 </div>
-<h3 class="text-lg font-black text-pink-300 group-hover:text-pink-200 transition">
+<h3 class="text-lg font-black text-red-300 group-hover:text-red-200 transition">
 Jest / Jarz (Headbanz IA)
 </h3>
 <p class="text-[11px] text-slate-300 mt-1 leading-snug">
 Adivina tu carta en la frente en una mesa 3D con Juez IA y voz editable
 </p>
 </div>
-<div class="my-3 relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden border border-pink-500/50 shadow-lg shadow-pink-950/60 shrink-0">
-<img src="images/app_hero_logo.jpg" alt="Portal Jest 1vs1" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onerror="this.onerror=null; this.src='images/app_hero_logo.svg';">
-<div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none"></div>
-<span class="absolute bottom-2 right-2.5 text-xs font-black text-pink-300 bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-pink-400/40">🃏 Mesa 3D & IA</span>
+<div class="my-2.5 relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden border border-red-500/50 shadow-xl bg-slate-950 flex items-center justify-center shrink-0">
+  <svg class="w-full h-full object-cover" viewBox="0 0 340 180" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="stoneBody-5" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#334155" />
+        <stop offset="50%" stop-color="#1e293b" />
+        <stop offset="100%" stop-color="#0f172a" />
+      </linearGradient>
+      <linearGradient id="stoneHigh-5" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#64748b" />
+        <stop offset="100%" stop-color="#1e293b" />
+      </linearGradient>
+      <radialGradient id="vortexGlow-5" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#fee2e2" stop-opacity="0.95" />
+        <stop offset="30%" stop-color="#ef4444" stop-opacity="0.75" />
+        <stop offset="70%" stop-color="#991b1b" stop-opacity="0.3" />
+        <stop offset="100%" stop-color="#020617" stop-opacity="0" />
+      </radialGradient>
+      <filter id="glow-5" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur stdDeviation="3" result="blur" />
+        <feMerge>
+          <feMergeNode in="blur" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+    </defs>
+    <!-- Fondo Cósmico -->
+    <rect width="340" height="180" fill="#020617" />
+    <circle cx="20" cy="30" r="1.1" fill="#fff" opacity="0.4" />
+    <circle cx="318" cy="36" r="1.2" fill="#fff" opacity="0.5" />
+    <circle cx="22" cy="140" r="0.8" fill="#fff" opacity="0.3" />
+    <circle cx="320" cy="134" r="1.1" fill="#fff" opacity="0.4" />
+    <!-- Hueco del Portal Arcano -->
+    <path d="M 86,180 L 86,68 C 86,22 254,22 254,68 L 254,180 Z" fill="#030712" />
+    <circle cx="170" cy="95" r="75" fill="url(#vortexGlow-5)" />
+    <!-- Vórtice Infernal Carmesí de Fuego -->
+    <g class="arcane-vortex-spin">
+      <circle cx="170" cy="95" r="62" fill="none" stroke="#ef4444" stroke-width="1.8" stroke-dasharray="16 8 4 8" opacity="0.85" />
+      <circle cx="170" cy="95" r="50" fill="none" stroke="#f87171" stroke-width="1.2" stroke-dasharray="8 6" opacity="0.7" />
+      <!-- Llamas y Chispas en Órbita -->
+      <polygon points="170,30 174,40 166,40" fill="#f97316" />
+      <polygon points="170,160 174,150 166,150" fill="#f97316" />
+      <polygon points="105,95 115,99 115,91" fill="#f97316" />
+      <polygon points="235,95 225,99 225,91" fill="#f97316" />
+      <circle cx="126" cy="51" r="2.5" fill="#fca5a5" />
+      <circle cx="214" cy="139" r="2.5" fill="#fca5a5" />
+    </g>
+    <!-- Espadas y Escudo de Duelo Inversos -->
+    <g class="arcane-vortex-reverse">
+      <circle cx="170" cy="95" r="38" fill="none" stroke="#f87171" stroke-width="1.8" stroke-dasharray="10 5" opacity="0.85" />
+      <line x1="150" y1="75" x2="190" y2="115" stroke="#fecaca" stroke-width="2" stroke-linecap="round" />
+      <line x1="190" y1="75" x2="150" y2="115" stroke="#fecaca" stroke-width="2" stroke-linecap="round" />
+      <polygon points="170,82 178,92 170,108 162,92" fill="#ef4444" opacity="0.7" stroke="#f87171" stroke-width="1" />
+    </g>
+    <!-- Corazón Volcánico Pulsante -->
+    <g class="arcane-vortex-pulse">
+      <circle cx="170" cy="95" r="22" fill="url(#vortexGlow-5)" />
+      <circle cx="170" cy="95" r="13" fill="#f87171" opacity="0.9" filter="url(#glow-5)" />
+      <circle cx="170" cy="95" r="5" fill="#fff" />
+    </g>
+    <!-- Marco de Piedra Tallada: Plintos -->
+    <rect x="36" y="156" width="54" height="24" rx="2" fill="url(#stoneHigh-5)" stroke="#0f172a" stroke-width="1.5" />
+    <rect x="32" y="168" width="62" height="12" rx="2" fill="url(#stoneBody-5)" stroke="#0f172a" stroke-width="1.5" />
+    <rect x="250" y="156" width="54" height="24" rx="2" fill="url(#stoneHigh-5)" stroke="#0f172a" stroke-width="1.5" />
+    <rect x="246" y="168" width="62" height="12" rx="2" fill="url(#stoneBody-5)" stroke="#0f172a" stroke-width="1.5" />
+    <!-- Pilares con Fisuras de Magma -->
+    <rect x="42" y="58" width="44" height="100" fill="url(#stoneBody-5)" stroke="#0f172a" stroke-width="1.5" />
+    <line x1="42" y1="88" x2="86" y2="88" stroke="#0f172a" stroke-width="2" />
+    <line x1="43" y1="89" x2="85" y2="89" stroke="#64748b" stroke-width="1" />
+    <line x1="42" y1="122" x2="86" y2="122" stroke="#0f172a" stroke-width="2" />
+    <line x1="43" y1="123" x2="85" y2="123" stroke="#64748b" stroke-width="1" />
+    <g class="arcane-rune-glow" stroke="#f87171" stroke-width="1.5" fill="none" opacity="0.85">
+      <path d="M 64,68 L 60,78 L 68,78 Z" />
+      <line x1="60" y1="96" x2="68" y2="106" />
+      <line x1="68" y1="96" x2="60" y2="106" />
+      <path d="M 64,126 L 68,136 L 60,136 Z" />
+    </g>
+    <rect x="254" y="58" width="44" height="100" fill="url(#stoneBody-5)" stroke="#0f172a" stroke-width="1.5" />
+    <line x1="254" y1="88" x2="298" y2="88" stroke="#0f172a" stroke-width="2" />
+    <line x1="255" y1="89" x2="297" y2="89" stroke="#64748b" stroke-width="1" />
+    <line x1="254" y1="122" x2="298" y2="122" stroke="#0f172a" stroke-width="2" />
+    <line x1="255" y1="123" x2="297" y2="123" stroke="#64748b" stroke-width="1" />
+    <g class="arcane-rune-glow" stroke="#f87171" stroke-width="1.5" fill="none" opacity="0.85">
+      <path d="M 276,68 L 272,78 L 280,78 Z" />
+      <line x1="272" y1="96" x2="280" y2="106" />
+      <line x1="280" y1="96" x2="272" y2="106" />
+      <path d="M 276,126 L 280,136 L 272,136 Z" />
+    </g>
+    <!-- Bóveda del Arco -->
+    <path d="M 42,65 C 42,14 298,14 298,65 L 254,65 C 254,30 86,30 86,65 Z" fill="url(#stoneBody-5)" stroke="#0f172a" stroke-width="2" />
+    <path d="M 42,65 C 42,14 298,14 298,65" fill="none" stroke="#64748b" stroke-width="1.5" />
+    <path d="M 86,65 C 86,30 254,30 254,65" fill="none" stroke="#f87171" stroke-width="1.5" opacity="0.75" />
+    <!-- Dovelas (Juntas) -->
+    <line x1="84" y1="46" x2="68" y2="33" stroke="#0f172a" stroke-width="2" />
+    <line x1="122" y1="34" x2="114" y2="16" stroke="#0f172a" stroke-width="2" />
+    <line x1="218" y1="34" x2="226" y2="16" stroke="#0f172a" stroke-width="2" />
+    <line x1="256" y1="46" x2="272" y2="33" stroke="#0f172a" stroke-width="2" />
+    <!-- Piedra Clave con Cresta Llameante -->
+    <polygon points="152,8 188,8 194,38 146,38" fill="url(#stoneHigh-5)" stroke="#0f172a" stroke-width="2" />
+    <polygon points="154,10 186,10 191,36 149,36" fill="none" stroke="#64748b" stroke-width="1" />
+    <path d="M 170,12 C 174,18 181,22 177,31 C 174,27 172,25 170,28 C 168,25 166,27 163,31 C 159,22 166,18 170,12 Z" fill="#f87171" stroke="#ef4444" stroke-width="1.2" />
+  </svg>
+  <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none"></div>
+  <div class="absolute bottom-2 right-2.5 z-10">
+    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-950/90 border border-red-400/50 text-[10px] font-bold text-red-300 shadow-md">
+      <span class="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse"></span>
+      MESA 3D & JUEZ IA
+    </span>
+  </div>
 </div>
-<button type="button" onclick="event.stopPropagation(); window.navigateTo('jest');" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-400 hover:to-rose-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-pink-500/30 cursor-pointer" data-action="enter-portal" data-portal="jest">ENTRAR AL PORTAL</button>
+<button type="button" onclick="event.stopPropagation(); window.navigateTo('jest');" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-red-500 to-amber-500 hover:from-red-400 hover:to-amber-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-red-500/30 cursor-pointer" data-action="enter-portal" data-portal="jest">ENTRAR AL PORTAL</button>
 </div>
 </div>
-<div id="coverCard-6" onclick="handleCoverCardClick(6)" class="coverflow-portal-card portal-card portal-card-6 hidden-back" style="--portal-glow: rgba(16, 185, 129, 0.45);">
+
+<!-- ================= PORTAL 6: CRISTAL CELESTE (CHAT & RACHAS) ================= -->
+<div id="coverCard-6" onclick="handleCoverCardClick(6)" class="coverflow-portal-card portal-card portal-card-6 hidden-back" style="--portal-glow: rgba(56, 189, 248, 0.45);">
 <div class="w-full h-full flex flex-col justify-between relative overflow-hidden group">
-<div class="absolute -top-12 -right-12 w-36 h-36 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none"></div>
+<div class="absolute -top-12 -right-12 w-36 h-36 bg-sky-500/20 rounded-full blur-2xl pointer-events-none"></div>
 <div>
 <div class="flex items-center justify-between mb-1.5">
-<span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-[10px] font-bold text-emerald-300 uppercase tracking-widest">
+<span class="px-2.5 py-0.5 rounded-full bg-sky-500/20 border border-sky-500/40 text-[10px] font-bold text-sky-300 uppercase tracking-widest">
 PORTAL 07 &bull; SOCIAL & PAREJAS
 </span>
-<span class="text-xs font-bold text-emerald-400">💬 WhatsApp Style</span>
+<span class="text-xs font-bold text-sky-400">Sala Multijugador</span>
 </div>
-<h3 class="text-lg font-black text-emerald-300 group-hover:text-emerald-200 transition">
+<h3 class="text-lg font-black text-sky-300 group-hover:text-sky-200 transition">
 Chat, Amigos & Rachas
 </h3>
 <p class="text-[11px] text-slate-300 mt-1 leading-snug">
-Chatea estilo WhatsApp, sube de rango con tu pareja o amigos e invítalos a citas 3D y duelos
+Chatea estilo moderno, sube de rango con tu pareja o amigos e invítalos a citas 3D y duelos
 </p>
 </div>
-<div class="my-3 relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden border border-emerald-500/50 shadow-lg shadow-emerald-950/60 shrink-0">
-<img src="images/app_hero_logo.jpg" alt="Portal Social Chat" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onerror="this.onerror=null; this.src='images/app_hero_logo.svg';">
-<div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none"></div>
-<span class="absolute bottom-2 right-2.5 text-xs font-black text-emerald-300 bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-emerald-400/40">💬 Rachas & Citas 3D</span>
+<div class="my-2.5 relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden border border-sky-500/50 shadow-xl bg-slate-950 flex items-center justify-center shrink-0">
+  <svg class="w-full h-full object-cover" viewBox="0 0 340 180" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="stoneBody-6" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#334155" />
+        <stop offset="50%" stop-color="#1e293b" />
+        <stop offset="100%" stop-color="#0f172a" />
+      </linearGradient>
+      <linearGradient id="stoneHigh-6" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#64748b" />
+        <stop offset="100%" stop-color="#1e293b" />
+      </linearGradient>
+      <radialGradient id="vortexGlow-6" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#f0f9ff" stop-opacity="0.95" />
+        <stop offset="30%" stop-color="#38bdf8" stop-opacity="0.7" />
+        <stop offset="70%" stop-color="#0284c7" stop-opacity="0.3" />
+        <stop offset="100%" stop-color="#020617" stop-opacity="0" />
+      </radialGradient>
+      <filter id="glow-6" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur stdDeviation="3" result="blur" />
+        <feMerge>
+          <feMergeNode in="blur" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+    </defs>
+    <!-- Fondo Cósmico -->
+    <rect width="340" height="180" fill="#020617" />
+    <circle cx="28" cy="34" r="1.1" fill="#fff" opacity="0.4" />
+    <circle cx="314" cy="32" r="1.3" fill="#fff" opacity="0.5" />
+    <circle cx="16" cy="138" r="0.9" fill="#fff" opacity="0.3" />
+    <circle cx="322" cy="140" r="1" fill="#fff" opacity="0.4" />
+    <!-- Hueco del Portal Arcano -->
+    <path d="M 86,180 L 86,68 C 86,22 254,22 254,68 L 254,180 Z" fill="#030712" />
+    <circle cx="170" cy="95" r="75" fill="url(#vortexGlow-6)" />
+    <!-- Vórtice Cristal Celeste (Constelación y Aurora Boreal) -->
+    <g class="arcane-vortex-spin">
+      <circle cx="170" cy="95" r="62" fill="none" stroke="#38bdf8" stroke-width="1.8" stroke-dasharray="16 8 4 8" opacity="0.85" />
+      <circle cx="170" cy="95" r="50" fill="none" stroke="#7dd3fc" stroke-width="1.2" stroke-dasharray="8 6" opacity="0.7" />
+      <!-- Estrellas y Nodos de Amistad en Órbita -->
+      <polygon points="170,30 173,38 181,38 175,43 177,51 170,46 163,51 165,43 159,38 167,38" fill="#bae6fd" />
+      <polygon points="170,140 173,148 181,148 175,153 177,161 170,156 163,161 165,153 159,148 167,148" fill="#bae6fd" />
+      <circle cx="108" cy="95" r="3" fill="#e0f2fe" />
+      <circle cx="232" cy="95" r="3" fill="#e0f2fe" />
+      <circle cx="126" cy="51" r="2.5" fill="#38bdf8" />
+      <circle cx="214" cy="139" r="2.5" fill="#38bdf8" />
+    </g>
+    <!-- Matriz de Cristal Octaédrico Inversa -->
+    <g class="arcane-vortex-reverse">
+      <polygon points="170,68 196,95 170,122 144,95" fill="none" stroke="#7dd3fc" stroke-width="1.8" opacity="0.85" />
+      <polygon points="170,78 186,95 170,112 154,95" fill="none" stroke="#38bdf8" stroke-width="1.2" opacity="0.65" />
+      <line x1="170" y1="68" x2="170" y2="122" stroke="#bae6fd" stroke-width="1" />
+      <line x1="144" y1="95" x2="196" y2="95" stroke="#bae6fd" stroke-width="1" />
+    </g>
+    <!-- Núcleo de Cristal Astral Pulsante -->
+    <g class="arcane-vortex-pulse">
+      <circle cx="170" cy="95" r="22" fill="url(#vortexGlow-6)" />
+      <circle cx="170" cy="95" r="13" fill="#38bdf8" opacity="0.9" filter="url(#glow-6)" />
+      <circle cx="170" cy="95" r="5" fill="#fff" />
+    </g>
+    <!-- Marco de Piedra Tallada: Plintos -->
+    <rect x="36" y="156" width="54" height="24" rx="2" fill="url(#stoneHigh-6)" stroke="#0f172a" stroke-width="1.5" />
+    <rect x="32" y="168" width="62" height="12" rx="2" fill="url(#stoneBody-6)" stroke="#0f172a" stroke-width="1.5" />
+    <rect x="250" y="156" width="54" height="24" rx="2" fill="url(#stoneHigh-6)" stroke="#0f172a" stroke-width="1.5" />
+    <rect x="246" y="168" width="62" height="12" rx="2" fill="url(#stoneBody-6)" stroke="#0f172a" stroke-width="1.5" />
+    <!-- Pilares con Constelaciones Grabadas -->
+    <rect x="42" y="58" width="44" height="100" fill="url(#stoneBody-6)" stroke="#0f172a" stroke-width="1.5" />
+    <line x1="42" y1="88" x2="86" y2="88" stroke="#0f172a" stroke-width="2" />
+    <line x1="43" y1="89" x2="85" y2="89" stroke="#64748b" stroke-width="1" />
+    <line x1="42" y1="122" x2="86" y2="122" stroke="#0f172a" stroke-width="2" />
+    <line x1="43" y1="123" x2="85" y2="123" stroke="#64748b" stroke-width="1" />
+    <g class="arcane-rune-glow" stroke="#38bdf8" stroke-width="1.5" fill="none" opacity="0.85">
+      <circle cx="64" cy="74" r="2.5" fill="#38bdf8" />
+      <line x1="64" y1="74" x2="70" y2="82" />
+      <circle cx="70" cy="82" r="2" fill="#38bdf8" />
+      <circle cx="60" cy="100" r="2" fill="#38bdf8" />
+      <line x1="60" y1="100" x2="68" y2="105" />
+      <circle cx="68" cy="105" r="2.5" fill="#38bdf8" />
+      <path d="M 64,128 L 68,136 L 60,136 Z" />
+    </g>
+    <rect x="254" y="58" width="44" height="100" fill="url(#stoneBody-6)" stroke="#0f172a" stroke-width="1.5" />
+    <line x1="254" y1="88" x2="298" y2="88" stroke="#0f172a" stroke-width="2" />
+    <line x1="255" y1="89" x2="297" y2="89" stroke="#64748b" stroke-width="1" />
+    <line x1="254" y1="122" x2="298" y2="122" stroke="#0f172a" stroke-width="2" />
+    <line x1="255" y1="123" x2="297" y2="123" stroke="#64748b" stroke-width="1" />
+    <g class="arcane-rune-glow" stroke="#38bdf8" stroke-width="1.5" fill="none" opacity="0.85">
+      <circle cx="276" cy="74" r="2.5" fill="#38bdf8" />
+      <line x1="276" y1="74" x2="270" y2="82" />
+      <circle cx="270" cy="82" r="2" fill="#38bdf8" />
+      <circle cx="280" cy="100" r="2" fill="#38bdf8" />
+      <line x1="280" y1="100" x2="272" y2="105" />
+      <circle cx="272" cy="105" r="2.5" fill="#38bdf8" />
+      <path d="M 276,128 L 272,136 L 280,136 Z" />
+    </g>
+    <!-- Bóveda del Arco -->
+    <path d="M 42,65 C 42,14 298,14 298,65 L 254,65 C 254,30 86,30 86,65 Z" fill="url(#stoneBody-6)" stroke="#0f172a" stroke-width="2" />
+    <path d="M 42,65 C 42,14 298,14 298,65" fill="none" stroke="#64748b" stroke-width="1.5" />
+    <path d="M 86,65 C 86,30 254,30 254,65" fill="none" stroke="#38bdf8" stroke-width="1.5" opacity="0.75" />
+    <!-- Dovelas (Juntas) -->
+    <line x1="84" y1="46" x2="68" y2="33" stroke="#0f172a" stroke-width="2" />
+    <line x1="122" y1="34" x2="114" y2="16" stroke="#0f172a" stroke-width="2" />
+    <line x1="218" y1="34" x2="226" y2="16" stroke="#0f172a" stroke-width="2" />
+    <line x1="256" y1="46" x2="272" y2="33" stroke="#0f172a" stroke-width="2" />
+    <!-- Piedra Clave con Estrella de Constelación -->
+    <polygon points="152,8 188,8 194,38 146,38" fill="url(#stoneHigh-6)" stroke="#0f172a" stroke-width="2" />
+    <polygon points="154,10 186,10 191,36 149,36" fill="none" stroke="#64748b" stroke-width="1" />
+    <polygon points="170,13 174,21 182,24 174,27 170,35 166,27 158,24 166,21" fill="#38bdf8" opacity="0.85" stroke="#0284c7" stroke-width="1" />
+  </svg>
+  <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none"></div>
+  <div class="absolute bottom-2 right-2.5 z-10">
+    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-950/90 border border-sky-400/50 text-[10px] font-bold text-sky-300 shadow-md">
+      <span class="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse"></span>
+      SALA MULTIJUGADOR
+    </span>
+  </div>
 </div>
-<button type="button" onclick="event.stopPropagation(); window.navigateTo('social');" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-500/30 cursor-pointer" data-action="enter-portal" data-portal="social">ENTRAR AL PORTAL</button>
+<button type="button" onclick="event.stopPropagation(); window.navigateTo('social');" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 hover:from-sky-400 hover:to-indigo-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-sky-500/30 cursor-pointer" data-action="enter-portal" data-portal="social">ENTRAR AL PORTAL</button>
 </div>
 </div>
+
 </div>
-<button type="button" onclick="window.nextPortal()" class="carousel-nav-btn next carousel-btn carousel-next nav-arrow absolute right-0 z-40 w-12 h-12 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-white flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition cursor-pointer" style="cursor: pointer !important; pointer-events: auto !important; z-index: 1000 !important;" data-action="next" title="Portal Siguiente">
+<button type="button" onclick="window.nextPortal()" class="carousel-nav-btn next carousel-btn carousel-next nav-arrow absolute right-0 sm:-right-3 z-40 w-12 h-12 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-white flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition cursor-pointer" style="cursor: pointer !important; pointer-events: auto !important; z-index: 1000 !important;" data-action="next" title="Portal Siguiente">
 <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"> <path d="M9 5l7 7-7 7" /> </svg>
 </button>
 </div>
@@ -1470,8 +2382,32 @@ window.currentPortal = window.currentPortalIdx;
 if (typeof window.showPortal === 'function') {
 window.showPortal(window.currentPortalIdx);
 } else {
+var curr = window.currentPortalIdx;
+var prevIdx = ((curr - 1) % cards.length + cards.length) % cards.length;
+var nextIdx = ((curr + 1) % cards.length + cards.length) % cards.length;
 cards.forEach(function(c, i) {
-c.style.setProperty('display', (i === window.currentPortalIdx) ? 'flex' : 'none', 'important');
+c.classList.remove('active', 'active-center', 'side-left', 'side-right', 'hidden-back', 'hidden');
+if (i === curr) {
+c.classList.add('active', 'active-center');
+c.style.setProperty('display', 'flex', 'important');
+c.style.setProperty('opacity', '1', 'important');
+c.style.setProperty('pointer-events', 'auto', 'important');
+} else if (i === prevIdx) {
+c.classList.add('side-left');
+c.style.setProperty('display', 'flex', 'important');
+c.style.setProperty('opacity', '0.55', 'important');
+c.style.setProperty('pointer-events', 'auto', 'important');
+} else if (i === nextIdx) {
+c.classList.add('side-right');
+c.style.setProperty('display', 'flex', 'important');
+c.style.setProperty('opacity', '0.55', 'important');
+c.style.setProperty('pointer-events', 'auto', 'important');
+} else {
+c.classList.add('hidden-back', 'hidden');
+c.style.setProperty('display', 'none', 'important');
+c.style.setProperty('opacity', '0', 'important');
+c.style.setProperty('pointer-events', 'none', 'important');
+}
 });
 dots.forEach(function(d, i) {
 d.classList.toggle('active', i === window.currentPortalIdx);
