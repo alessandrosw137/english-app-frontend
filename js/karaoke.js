@@ -20,24 +20,30 @@
   window._isUserScrollingLyrics = false;
   let _userScrollLyricsTimer = null;
 
+  function updateLyricsOffsetUI() {
+    if (typeof document !== 'undefined') {
+      const badge = document.getElementById('lyricsOffsetBadge');
+      if (badge) {
+        const sign = (typeof window.lyricsOffset === 'number' && window.lyricsOffset > 0) ? '+' : '';
+        const val = typeof window.lyricsOffset === 'number' ? window.lyricsOffset.toFixed(1) : '-0.6';
+        badge.textContent = `Sync: ${sign}${val}s`;
+      }
+    }
+  }
+  window.updateLyricsOffsetUI = updateLyricsOffsetUI;
+
   window.adjustLyricsOffset = function(delta) {
     let curr = (typeof window.lyricsOffset === 'number' && !isNaN(window.lyricsOffset)) ? window.lyricsOffset : -0.6;
     let next = Math.round((curr + delta) * 10) / 10;
-    // Rango amplio de ajuste manual (-5s a +5s)
-    next = Math.max(-5.0, Math.min(5.0, next));
+    // Rango amplio de ajuste manual (-15s a +15s para intros de video)
+    next = Math.max(-15.0, Math.min(15.0, next));
     window.lyricsOffset = next;
     try {
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem('mastereng_lyrics_offset', String(next));
       }
     } catch (_) {}
-    if (typeof document !== 'undefined') {
-      const badge = document.getElementById('lyricsOffsetBadge');
-      if (badge) {
-        const sign = window.lyricsOffset > 0 ? '+' : '';
-        badge.textContent = `Sync: ${sign}${window.lyricsOffset.toFixed(1)}s`;
-      }
-    }
+    updateLyricsOffsetUI();
     if (typeof window.handleKaraokeTimeUpdate === 'function') {
       window.handleKaraokeTimeUpdate();
     }
@@ -473,6 +479,35 @@
       }
     }
 
+    // ========================================================
+    // RELOJ MAESTRO DE ALTA FRECUENCIA (YOUTUBE BRIDGE + POSTMESSAGE)
+    // ========================================================
+    const ytMasterState = {
+      playerState: -1,
+      currentTime: 0,
+      duration: 0,
+      lastReportedTime: 0,
+      lastReportedTimestamp: (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(),
+      isPlaying: false
+    };
+    window.ytMasterState = ytMasterState;
+
+    function pingYouTubeIframeListening() {
+      const ifr = document.getElementById('musicYouTubeIframe');
+      if (ifr && ifr.contentWindow) {
+        try {
+          ifr.contentWindow.postMessage(JSON.stringify({ event: 'listening', id: 1 }), '*');
+        } catch (_) {}
+      }
+      const holoIfr = document.getElementById('musicHoloYoutubeIframe');
+      if (holoIfr && holoIfr.contentWindow) {
+        try {
+          holoIfr.contentWindow.postMessage(JSON.stringify({ event: 'listening', id: 1 }), '*');
+        } catch (_) {}
+      }
+    }
+    window.pingYouTubeIframeListening = pingYouTubeIframeListening;
+
     function onYouTubePlayerStateChange(event) {
       handlePlayerStateChange(event.data);
     }
@@ -483,19 +518,25 @@
       const isPaused = state === 2 || (window.YT && window.YT.PlayerState && state === YT.PlayerState.PAUSED);
       const isEnded = state === 0 || (window.YT && window.YT.PlayerState && state === YT.PlayerState.ENDED);
 
+      ytMasterState.playerState = state;
+      ytMasterState.isPlaying = isPlaying;
+
       if (isPlaying) {
-        // Cero doble audio: si el video de YouTube está activo, mantener #mastereng-audio en pausa y muteado
+        ytMasterState.lastReportedTimestamp = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+        // Cero doble audio: si el video de YouTube está activo, mantener #mastereng-audio en pausa, en 0 y muteado
         const audioEl = document.getElementById('mastereng-audio') || document.getElementById('karaokeAudioSync') || document.getElementById('karaokeAudioTracker');
         if (audioEl) {
           try {
             audioEl.pause();
+            audioEl.currentTime = 0;
             audioEl.muted = true;
           } catch (_) {}
         }
-        // Reproduciendo: iniciar seguimiento sincronizado estrofa por estrofa
+        // Reproduciendo: iniciar seguimiento sincronizado de alta frecuencia a 60Hz
         startMusicKaraokeSync();
       } else if (isPaused || isEnded) {
-        // Pausado o finalizado: detener de inmediato y sincronizar pausa en todos los reproductores
+        // Pausado o finalizado: congelar reloj y sincronizar pausa en todos los reproductores
+        ytMasterState.isPlaying = false;
         if (typeof syncPauseAllMusicPlayers === 'function') {
           syncPauseAllMusicPlayers();
         } else if (typeof window.syncPauseAllMusicPlayers === 'function') {
@@ -506,15 +547,72 @@
       }
     }
 
-    // Escuchar también mensajes postMessage desde el iframe por redundancia
-    window.addEventListener('message', (event) => {
-      try {
-        const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-        if (data && data.event === 'onStateChange') {
-          handlePlayerStateChange(data.info);
-        }
-      } catch (_) {}
-    });
+    // Escuchar mensajes postMessage bidireccionales del iframe ('infoDelivery' y 'onStateChange')
+    if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+      window.addEventListener('message', (event) => {
+        try {
+          const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+          if (!data) return;
+
+          if (data.event === 'infoDelivery' && data.info) {
+            const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+            if (typeof data.info.currentTime === 'number') {
+              ytMasterState.lastReportedTime = data.info.currentTime;
+              ytMasterState.currentTime = data.info.currentTime;
+              ytMasterState.lastReportedTimestamp = now;
+            }
+            if (typeof data.info.duration === 'number' && data.info.duration > 0) {
+              ytMasterState.duration = data.info.duration;
+              window._currentTrackTotalDuration = data.info.duration;
+            }
+            if (typeof data.info.playerState === 'number') {
+              handlePlayerStateChange(data.info.playerState);
+            }
+          } else if (data.event === 'onStateChange') {
+            const st = typeof data.info === 'number' ? data.info : (data.info && data.info.playerState);
+            if (typeof st === 'number') {
+              handlePlayerStateChange(st);
+            }
+          }
+        } catch (_) {}
+      });
+    }
+
+    // Función del reloj maestro de alta precisión (interpolación 60Hz y congelación inmediata en pausa)
+    function getMasterPlaybackTime() {
+      // 1. Audio nativo si estuviera activo
+      const audioEl = document.getElementById('mastereng-audio');
+      if (audioEl && !audioEl.paused && !audioEl.muted && audioEl.currentTime > 0) {
+        return audioEl.currentTime;
+      }
+
+      // 2. Si YouTube está reproduciendo (playerState === 1), interpolar a 60Hz usando performance.now()
+      if (ytMasterState.isPlaying && ytMasterState.playerState === 1) {
+        const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+        const elapsed = (now - ytMasterState.lastReportedTimestamp) / 1000;
+        return ytMasterState.lastReportedTime + Math.min(Math.max(0, elapsed), 2.5);
+      }
+
+      // 3. Si YouTube está pausado (playerState === 2), congelar inmediatamente
+      if (ytMasterState.playerState === 2) {
+        return ytMasterState.lastReportedTime;
+      }
+
+      // 4. Si la instancia YT.Player tiene getCurrentTime disponible
+      const ytPlayer = (typeof ytMusicPlayer !== 'undefined' && ytMusicPlayer) || window.ytMusicPlayer || window._holoYtPlayer;
+      if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
+        try {
+          const t = ytPlayer.getCurrentTime();
+          if (typeof t === 'number' && !isNaN(t) && t >= 0) {
+            ytMasterState.lastReportedTime = t;
+            return t;
+          }
+        } catch (_) {}
+      }
+
+      return ytMasterState.lastReportedTime || 0;
+    }
+    window.getMasterPlaybackTime = getMasterPlaybackTime;
 
     // ========================================================
     // BUSCADOR INTELIGENTE CON DEBOUNCE 300MS Y API REAL
@@ -1252,7 +1350,22 @@
         if (badge) badge.textContent = `Estrofa 1 de ${lyrics.length}`;
       }
 
-      const introBanner = '';
+      let introBanner = '';
+      if (window._autoIntroOffset && window._autoIntroOffset >= 2) {
+        const introSec = window._autoIntroOffset;
+        introBanner = `
+          <div id="videoIntroAdjustBanner" class="mb-3 p-2.5 rounded-xl bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-amber-500/20 border border-amber-500/40 flex items-center justify-between gap-2 shadow-lg backdrop-blur-sm animate-fade-in">
+            <div class="flex items-center gap-2 text-amber-300 text-xs font-semibold">
+              <span class="text-base">🎬</span>
+              <span>Intro detectada en el video (+${introSec}s vs letra de estudio)</span>
+            </div>
+            <button type="button" onclick="event.stopPropagation(); window.applyAutoIntroOffset(${introSec})"
+              class="px-3 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-bold text-xs transition shadow-md flex items-center gap-1.5 whitespace-nowrap cursor-pointer" title="Calibrar desfase de la intro del video musical">
+              <span>⚡</span> <span>Ajustar Intro de Video (+${introSec}s)</span>
+            </button>
+          </div>
+        `;
+      }
 
       container.innerHTML = introBanner + lyrics.map((stanza, lIdx) => {
         const lineTime = typeof stanza.time === 'number' ? stanza.time : 0;
@@ -1295,15 +1408,21 @@
           <div id="karaokeStanza-${lIdx}"
             class="lyric-line stanza-card lyric-stanza-card music-stanza-row ${isCurrent ? 'active lyric-active scale-[1.02] border-cyan-400 bg-cyan-950/80 text-white' : 'lyric-inactive'}" data-sidx="${lIdx}"
             data-start="${lineTime}"
-            onclick="window.seekToStanza ? window.seekToStanza(${lineTime}) : seekYouTubePlayer(${lineTime}, ${lIdx})">
+            onclick="window.seekToStanza ? window.seekToStanza(${lineTime}, ${lIdx}) : seekYouTubePlayer(${lineTime}, ${lIdx})">
             <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-slate-700/40">
               <span class="text-[10px] font-extrabold text-cyan-400 uppercase tracking-widest bg-cyan-500/15 px-2.5 py-0.5 rounded-full border border-cyan-500/25">
                 ESTROFA ${lIdx + 1} &bull; ${lineTime}S
               </span>
-              <button type="button" onclick="event.stopPropagation(); speakText('${safeFullText}')"
-                class="p-1 px-2.5 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-cyan-300 text-xs transition cursor-pointer flex items-center gap-1 border border-slate-700/60 shadow-sm active:scale-95" title="Pronunciación de la estrofa">
-                <span>🔊</span> <span class="text-[10px] font-bold">Pronunciar</span>
-              </button>
+              <div class="flex items-center gap-1.5">
+                <button type="button" onclick="event.stopPropagation(); window.syncStanzaHere(${lineTime}, ${lIdx}, event)"
+                  class="p-1 px-2 rounded-lg bg-cyan-950/80 hover:bg-cyan-800/90 text-cyan-300 hover:text-cyan-100 text-xs transition cursor-pointer flex items-center gap-1 border border-cyan-500/40 shadow-sm active:scale-95 hover:border-cyan-400" title="Sincronizar esta estrofa con el audio actual">
+                  <span>🎯</span> <span class="text-[10px] font-bold">Sincronizar Aquí</span>
+                </button>
+                <button type="button" onclick="event.stopPropagation(); speakText('${safeFullText}')"
+                  class="p-1 px-2.5 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-cyan-300 text-xs transition cursor-pointer flex items-center gap-1 border border-slate-700/60 shadow-sm active:scale-95" title="Pronunciación de la estrofa">
+                  <span>🔊</span> <span class="text-[10px] font-bold">Pronunciar</span>
+                </button>
+              </div>
             </div>
             <div class="lyric-words-flow block space-y-1">
               ${renderedVerses}
@@ -1320,6 +1439,57 @@
         altContainer.innerHTML = container.innerHTML;
       }
     }
+
+    // Calibración de 1 clic para intro de video detectada
+    window.applyAutoIntroOffset = function(introSec) {
+      const offsetVal = -Math.abs(parseFloat(introSec) || 0);
+      window.lyricsOffset = Math.round(offsetVal * 10) / 10;
+      try {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('mastereng_lyrics_offset', String(window.lyricsOffset));
+        }
+      } catch (_) {}
+      updateLyricsOffsetUI();
+      const banner = document.getElementById('videoIntroAdjustBanner');
+      if (banner) {
+        banner.innerHTML = `
+          <div class="flex items-center gap-2 text-emerald-300 text-xs font-semibold">
+            <span class="text-base">✅</span>
+            <span>Intro de video calibrada (${window.lyricsOffset.toFixed(1)}s aplicado al karaoke)</span>
+          </div>
+        `;
+        setTimeout(() => { if (banner) banner.style.display = 'none'; }, 3500);
+      }
+      if (typeof showFloatingToast === 'function') {
+        showFloatingToast(`Intro calibrada: ${window.lyricsOffset.toFixed(1)}s`, '⚡');
+      }
+      if (typeof handleKaraokeTimeUpdate === 'function') {
+        handleKaraokeTimeUpdate();
+      }
+    };
+
+    // Sincronización Interactiva de 1 Clic en Cualquier Estrofa ("Tap to Sync")
+    window.syncStanzaHere = function(stanzaTime, stanzaIdx, event) {
+      if (event) {
+        if (typeof event.stopPropagation === 'function') event.stopPropagation();
+        if (typeof event.preventDefault === 'function') event.preventDefault();
+      }
+      const playerTime = getMasterPlaybackTime();
+      // calibratedTime = playerTime + lyricsOffset -> lyricsOffset = stanzaTime - playerTime
+      const targetOffset = Math.round((stanzaTime - playerTime) * 10) / 10;
+      window.lyricsOffset = targetOffset;
+      try {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('mastereng_lyrics_offset', String(targetOffset));
+        }
+      } catch (_) {}
+      updateLyricsOffsetUI();
+      highlightKaraokeStanza(stanzaIdx, true);
+      if (typeof showFloatingToast === 'function') {
+        const sign = targetOffset > 0 ? '+' : '';
+        showFloatingToast(`Sincronizado aquí: ${sign}${targetOffset.toFixed(1)}s`, '🎯');
+      }
+    };
 
     function renderMusicLyrics(lyrics) {
       return renderLyricsFromList(lyrics);
@@ -1566,7 +1736,7 @@
     }
 
     // ========================================================
-    // SINCRONIZACIÓN EN VIVO (INTERVALO 250MS CON DISPATCH 'timeupdate')
+    // SINCRONIZACIÓN EN VIVO (RELOJ MAESTRO DE ALTA PRECISIÓN A 60HZ)
     // ========================================================
     function syncKaraokeToTime() {
       if (!isKaraokeSyncRunning) return;
@@ -1580,26 +1750,19 @@
       if (!lyrics || lyrics.length === 0) return;
 
       const ytPlayer = ytMusicPlayer || window._holoYtPlayer;
-      let currentTime = null;
-      if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
-        try {
-          const t = ytPlayer.getCurrentTime();
-          if (typeof t === 'number' && !isNaN(t) && t >= 0) {
-            currentTime = ytPlayer.getCurrentTime() + window.lyricsOffset;
-          }
-        } catch (_) {}
-      }
-
-      if (currentTime === null) return;
+      const rawMasterTime = getMasterPlaybackTime();
+      let currentTime = rawMasterTime + (typeof window.lyricsOffset === 'number' ? window.lyricsOffset : -0.6);
 
       // Escala proporcional por duracion SOLO para canciones sin sincronizar con tiempo aproximado
-      if (ytPlayer && typeof ytPlayer.getDuration === 'function') {
+      const duracionRealPlayer = (ytPlayer && typeof ytPlayer.getDuration === 'function')
+        ? ytPlayer.getDuration()
+        : (ytMasterState.duration || 0);
+      if (duracionRealPlayer > 30) {
         try {
           const hasApprox = activeLyricsList && activeLyricsList.length > 0 && activeLyricsList.some(s => s.isApproximatedSync);
           if (hasApprox) {
-            const duracionRealPlayer = ytPlayer.getDuration();
             const duracionTotalLetra = window._currentTrackTotalDuration || (activeLyricsList[activeLyricsList.length - 1].time + 10);
-            if (duracionRealPlayer > 30 && duracionTotalLetra > 30 && Math.abs(duracionRealPlayer - duracionTotalLetra) > 5) {
+            if (duracionTotalLetra > 30 && Math.abs(duracionRealPlayer - duracionTotalLetra) > 5) {
               const factorEscala = duracionRealPlayer / duracionTotalLetra;
               if (Math.abs(factorEscala - 1) < 0.25) {
                 if (!window._karaokeScaledMap) window._karaokeScaledMap = {};
@@ -1632,11 +1795,12 @@
     // PAUSA SIMULTÁNEA UNIFICADA Y CONTROL ANTI-DOBLE AUDIO
     // ========================================================
     function syncPauseAllMusicPlayers() {
-      // 1. Pausa simultáneamente #mastereng-audio y lo silencia (cero audio residual)
+      // 1. Pausa simultáneamente #mastereng-audio, resetea a 0 y lo silencia (cero audio residual)
       const audioEl = document.getElementById('mastereng-audio');
       if (audioEl) {
         try {
           audioEl.pause();
+          audioEl.currentTime = 0;
           audioEl.muted = true;
         } catch (_) {}
       }
@@ -1644,12 +1808,14 @@
       if (syncAudio) {
         try {
           syncAudio.pause();
+          syncAudio.currentTime = 0;
           syncAudio.muted = true;
         } catch (_) {}
       }
       if (window._holoAudioNativePlayer) {
         try {
           window._holoAudioNativePlayer.pause();
+          window._holoAudioNativePlayer.currentTime = 0;
           window._holoAudioNativePlayer.muted = true;
         } catch (_) {}
       }
@@ -1682,7 +1848,9 @@
         try { window.ytPlayer.pauseVideo(); } catch (_) {}
       }
 
-      // 4. Detener de inmediato el seguimiento y avance de la letra
+      // 4. Congelar reloj maestro y detener de inmediato el seguimiento y avance de la letra
+      ytMasterState.isPlaying = false;
+      ytMasterState.playerState = 2;
       stopMusicKaraokeSync();
     }
     window.syncPauseAllMusicPlayers = syncPauseAllMusicPlayers;
@@ -1719,10 +1887,18 @@
       const targetSec = parseFloat(seconds);
       if (isNaN(targetSec)) return;
 
-      // 1. Salto temporal en el reproductor de YouTube (player.seekTo(seconds, true))
+      // Compensar offset de intro o calibración para el reproductor de video
+      const seekTime = (typeof window.lyricsOffset === 'number' && !isNaN(window.lyricsOffset) && Math.abs(window.lyricsOffset) > 0.1)
+        ? Math.max(0, targetSec - window.lyricsOffset)
+        : targetSec;
+
+      ytMasterState.lastReportedTime = seekTime;
+      ytMasterState.lastReportedTimestamp = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+
+      // 1. Salto temporal en el reproductor de YouTube (player.seekTo(seekTime, true))
       const ytTargetPlayer = (typeof ytMusicPlayer !== 'undefined' && ytMusicPlayer) || window.ytMusicPlayer || window._holoYtPlayer || window.ytPlayer;
       if (ytTargetPlayer && typeof ytTargetPlayer.seekTo === 'function') {
-        try { ytTargetPlayer.seekTo(targetSec, true); } catch (_) {}
+        try { ytTargetPlayer.seekTo(seekTime, true); } catch (_) {}
       }
       const iframe = document.getElementById('musicYouTubeIframe');
       if (iframe && iframe.contentWindow) {
@@ -1730,7 +1906,7 @@
           iframe.contentWindow.postMessage(JSON.stringify({
             event: 'command',
             func: 'seekTo',
-            args: [targetSec, true]
+            args: [seekTime, true]
           }), '*');
         } catch (_) {}
       }
@@ -1740,7 +1916,7 @@
           holoIframe.contentWindow.postMessage(JSON.stringify({
             event: 'command',
             func: 'seekTo',
-            args: [targetSec, true]
+            args: [seekTime, true]
           }), '*');
         } catch (_) {}
       }
@@ -1749,7 +1925,7 @@
       const audioEl = document.getElementById('mastereng-audio');
       if (audioEl) {
         try {
-          audioEl.currentTime = targetSec;
+          audioEl.currentTime = 0;
           audioEl.pause();
           audioEl.muted = true;
         } catch (_) {}
@@ -1757,7 +1933,7 @@
       const syncAudio = document.getElementById('karaokeAudioSync') || document.getElementById('karaokeAudioTracker');
       if (syncAudio) {
         try {
-          syncAudio.currentTime = targetSec;
+          syncAudio.currentTime = seekTime;
           syncAudio.pause();
           syncAudio.muted = true;
         } catch (_) {}
@@ -1810,20 +1986,29 @@
 
       const isAcousticRequested = /\b(acoustic|acustico|acústica|unplugged)\b/i.test(rawTitle);
       const isLiveRequested = /\b(live|en vivo|in concert|directo)\b/i.test(rawTitle);
+      const isRemixRequested = /\b(remix|mix|edit|version)\b/i.test(rawTitle);
+      const isInstrumentalRequested = /\b(instrumental|karaoke|backing track)\b/i.test(rawTitle);
 
-      // Determinar duración objetivo (prioridad: ytDurationSec > totalDurationSec > ytMusicPlayer.getDuration)
-      let targetDuration = ytDurationSec || totalDurationSec;
+      // Determinar duración objetivo (prioridad: ytDurationSec > ytMasterState.duration > totalDurationSec > ytMusicPlayer.getDuration)
+      let targetDuration = ytDurationSec;
+      if (!targetDuration && ytMasterState && typeof ytMasterState.duration === 'number' && ytMasterState.duration > 0) {
+        targetDuration = ytMasterState.duration;
+      }
       if (!targetDuration && ytMusicPlayer && typeof ytMusicPlayer.getDuration === 'function') {
         try {
           const d = ytMusicPlayer.getDuration();
           if (typeof d === 'number' && d > 0) targetDuration = d;
         } catch (_) {}
       }
-      targetDuration = targetDuration || 220;
+      targetDuration = targetDuration || totalDurationSec || 220;
 
-      const isAcousticOrLive = (item) => {
-        const text = `${item.trackName || ''} ${item.albumName || ''}`;
-        return /\b(acoustic|acustico|acústica|unplugged|live|en vivo|in concert)\b/i.test(text);
+      const isUnwantedVersion = (item) => {
+        const text = `${item.trackName || ''} ${item.albumName || ''} ${item.artistName || ''}`;
+        if (!isAcousticRequested && /\b(acoustic|acustico|acústica|unplugged)\b/i.test(text)) return true;
+        if (!isLiveRequested && /\b(live|en vivo|in concert|directo)\b/i.test(text)) return true;
+        if (!isRemixRequested && /\b(remix|club mix|extended mix|dub)\b/i.test(text)) return true;
+        if (!isInstrumentalRequested && /\b(instrumental|karaoke|backing track|tribute)\b/i.test(text)) return true;
+        return false;
       };
 
       // 1. Intento primario: LRCLIB API /get directa
@@ -1838,18 +2023,27 @@
           const data = await res.json();
           const candidateDuration = data.duration || targetDuration;
           const diff = Math.abs(candidateDuration - targetDuration);
-          const discard = isAcousticOrLive(data) && !isAcousticRequested && !isLiveRequested;
+          const discard = isUnwantedVersion(data);
 
           if (!discard && diff <= 45) {
+            let autoIntroOffset = 0;
+            if (targetDuration > 30 && candidateDuration > 30) {
+              const dIntro = targetDuration - candidateDuration;
+              if (dIntro >= 3 && dIntro <= 45) {
+                autoIntroOffset = Math.round(dIntro * 10) / 10;
+              }
+            }
+            window._autoIntroOffset = autoIntroOffset;
+
             if (data.syncedLyrics) {
               const parseFn = window.parseLrcToSyncedLyrics || parseLrcFallback;
               const parsed = parseFn(data.syncedLyrics);
-              if (parsed && parsed.length > 0) return { lyrics: parsed, isLrc: true };
+              if (parsed && parsed.length > 0) return { lyrics: parsed, isLrc: true, duration: candidateDuration, videoDuration: targetDuration, autoIntroOffset: autoIntroOffset };
             }
             if (data.plainLyrics) {
               const parseRawFn = window.parseRawLyricsIntoStanzas || parseRawFallback;
               const fallback = parseRawFn(data.plainLyrics, targetDuration, true);
-              if (fallback && fallback.length > 0) return { lyrics: fallback, isLrc: false, isApproximated: true };
+              if (fallback && fallback.length > 0) return { lyrics: fallback, isLrc: false, isApproximated: true, duration: candidateDuration, videoDuration: targetDuration, autoIntroOffset: autoIntroOffset };
             }
           }
         }
@@ -1857,7 +2051,7 @@
         console.warn('[LRCLIB] Intento /get falló:', err);
       }
 
-      // 2. Intento secundario: LRCLIB API /search con filtrado de versiones y duración más cercana
+      // 2. Intento secundario: LRCLIB API /search con descarte de versiones indeseadas y duración más cercana
       try {
         const searchUrl = `https://lrclib.net/api/search?q=${encodeURIComponent(cleanArtist + ' ' + cleanTitle)}`;
         const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
@@ -1868,34 +2062,42 @@
         if (res && res.ok) {
           const list = await res.json();
           if (Array.isArray(list) && list.length > 0) {
-            // Descartar versiones Acoustic/Live si el título no las pide
-            let candidates = list;
-            if (!isAcousticRequested && !isLiveRequested) {
-              const cleanCandidates = list.filter(item => !isAcousticOrLive(item));
-              if (cleanCandidates.length > 0) {
-                candidates = cleanCandidates;
-              }
+            // Descartar versiones Acoustic/Live/Remix/Instrumental si el título no las pide
+            let candidates = list.filter(item => !isUnwantedVersion(item));
+            if (candidates.length === 0) {
+              candidates = list;
             }
 
-            // Priorizar syncedLyrics y seleccionar el registro cuya duración sea la más cercana a targetDuration
-            const syncedCandidates = candidates.filter(i => i.syncedLyrics);
+            // Priorizar canciones con syncedLyrics válidos
+            const syncedCandidates = candidates.filter(i => i.syncedLyrics && typeof i.syncedLyrics === 'string');
             const pool = syncedCandidates.length > 0 ? syncedCandidates : candidates;
 
+            // Seleccionar el registro cuya duración sea la más cercana al video de YouTube
             const bestMatch = pool.reduce((prev, curr) => {
               const prevDiff = Math.abs((prev.duration || 0) - targetDuration);
               const currDiff = Math.abs((curr.duration || 0) - targetDuration);
               return currDiff < prevDiff ? curr : prev;
             }, pool[0]);
 
+            const lrcDuration = bestMatch.duration || 0;
+            let autoIntroOffset = 0;
+            if (targetDuration > 30 && lrcDuration > 30) {
+              const dIntro = targetDuration - lrcDuration;
+              if (dIntro >= 3 && dIntro <= 45) {
+                autoIntroOffset = Math.round(dIntro * 10) / 10;
+              }
+            }
+            window._autoIntroOffset = autoIntroOffset;
+
             if (bestMatch && bestMatch.syncedLyrics) {
               const parseFn = window.parseLrcToSyncedLyrics || parseLrcFallback;
               const parsed = parseFn(bestMatch.syncedLyrics);
-              if (parsed && parsed.length > 0) return { lyrics: parsed, isLrc: true };
+              if (parsed && parsed.length > 0) return { lyrics: parsed, isLrc: true, duration: lrcDuration, videoDuration: targetDuration, autoIntroOffset: autoIntroOffset };
             }
             if (bestMatch && bestMatch.plainLyrics) {
               const parseRawFn = window.parseRawLyricsIntoStanzas || parseRawFallback;
               const fallback = parseRawFn(bestMatch.plainLyrics, targetDuration, true);
-              if (fallback && fallback.length > 0) return { lyrics: fallback, isLrc: false, isApproximated: true };
+              if (fallback && fallback.length > 0) return { lyrics: fallback, isLrc: false, isApproximated: true, duration: lrcDuration, videoDuration: targetDuration, autoIntroOffset: autoIntroOffset };
             }
           }
         }
@@ -1980,19 +2182,30 @@
       }
     }
 
+    let masterRafId = null;
+
     function startMusicKaraokeSync() {
       if (musicKaraokeInterval) {
         clearInterval(musicKaraokeInterval);
         musicKaraokeInterval = null;
       }
+      if (masterRafId) {
+        cancelAnimationFrame(masterRafId);
+        masterRafId = null;
+      }
+
       isKaraokeSyncRunning = true;
+      ytMasterState.isPlaying = true;
+      ytMasterState.playerState = 1;
+      ytMasterState.lastReportedTimestamp = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
 
       const icon = document.getElementById('karaokeSyncToggleIcon');
       const text = document.getElementById('karaokeSyncToggleText');
       if (icon) icon.textContent = '⏸️';
       if (text) text.textContent = 'Pausar Karaoke';
 
-      // Sincronización inmediata
+      // Sincronización inmediata y ping al iframe
+      pingYouTubeIframeListening();
       syncKaraokeToTime();
 
       // Si KaraokeSyncEngine ya está activo con su propio bucle rAF, evitar bucles conflictivos
@@ -2000,15 +2213,33 @@
         return;
       }
 
-      // Intervalo de alta frecuencia de 250ms con polling ultra-rápido a 100ms
+      // Ping periódico cada 100ms para asegurar flujo continuo de infoDelivery desde YouTube
       musicKaraokeInterval = setInterval(() => {
         if (!isKaraokeSyncRunning) return;
-        syncKaraokeToTime();
+        pingYouTubeIframeListening();
       }, 100);
+
+      // Bucle a 60Hz con requestAnimationFrame para interpolación ultra-suave de milisegundos
+      function masterClockLoop() {
+        if (!isKaraokeSyncRunning) {
+          masterRafId = null;
+          return;
+        }
+        syncKaraokeToTime();
+        masterRafId = requestAnimationFrame(masterClockLoop);
+      }
+      masterRafId = requestAnimationFrame(masterClockLoop);
     }
 
     function stopMusicKaraokeSync() {
       isKaraokeSyncRunning = false;
+      ytMasterState.isPlaying = false;
+      if (ytMasterState.playerState === 1) ytMasterState.playerState = 2;
+
+      if (masterRafId) {
+        cancelAnimationFrame(masterRafId);
+        masterRafId = null;
+      }
       if (musicKaraokeInterval) {
         clearInterval(musicKaraokeInterval);
         musicKaraokeInterval = null;
@@ -2165,9 +2396,15 @@
   window.completeMusicChallenge = completeMusicChallenge;
   window.onYouTubePlayerReady = onYouTubePlayerReady;
   window.handleKaraokeTimeUpdate = handleKaraokeTimeUpdate;
-window.updateKaraokeSync = handleKaraokeTimeUpdate;
+  window.updateKaraokeSync = handleKaraokeTimeUpdate;
   window.lyricsOffset = window.lyricsOffset !== undefined ? window.lyricsOffset : -0.6;
   window.adjustLyricsOffset = window.adjustLyricsOffset;
+  window.syncStanzaHere = window.syncStanzaHere;
+  window.applyAutoIntroOffset = window.applyAutoIntroOffset;
+  window.updateLyricsOffsetUI = window.updateLyricsOffsetUI;
+  window.getMasterPlaybackTime = getMasterPlaybackTime;
+  window.pingYouTubeIframeListening = pingYouTubeIframeListening;
+  window.ytMasterState = ytMasterState;
 })();
 
 // Función unificada de parada en window (Pausa Instantánea 0ms y Cero Audio Residual)

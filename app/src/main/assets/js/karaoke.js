@@ -548,33 +548,35 @@
     }
 
     // Escuchar mensajes postMessage bidireccionales del iframe ('infoDelivery' y 'onStateChange')
-    window.addEventListener('message', (event) => {
-      try {
-        const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-        if (!data) return;
+    if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+      window.addEventListener('message', (event) => {
+        try {
+          const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+          if (!data) return;
 
-        if (data.event === 'infoDelivery' && data.info) {
-          const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-          if (typeof data.info.currentTime === 'number') {
-            ytMasterState.lastReportedTime = data.info.currentTime;
-            ytMasterState.currentTime = data.info.currentTime;
-            ytMasterState.lastReportedTimestamp = now;
+          if (data.event === 'infoDelivery' && data.info) {
+            const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+            if (typeof data.info.currentTime === 'number') {
+              ytMasterState.lastReportedTime = data.info.currentTime;
+              ytMasterState.currentTime = data.info.currentTime;
+              ytMasterState.lastReportedTimestamp = now;
+            }
+            if (typeof data.info.duration === 'number' && data.info.duration > 0) {
+              ytMasterState.duration = data.info.duration;
+              window._currentTrackTotalDuration = data.info.duration;
+            }
+            if (typeof data.info.playerState === 'number') {
+              handlePlayerStateChange(data.info.playerState);
+            }
+          } else if (data.event === 'onStateChange') {
+            const st = typeof data.info === 'number' ? data.info : (data.info && data.info.playerState);
+            if (typeof st === 'number') {
+              handlePlayerStateChange(st);
+            }
           }
-          if (typeof data.info.duration === 'number' && data.info.duration > 0) {
-            ytMasterState.duration = data.info.duration;
-            window._currentTrackTotalDuration = data.info.duration;
-          }
-          if (typeof data.info.playerState === 'number') {
-            handlePlayerStateChange(data.info.playerState);
-          }
-        } else if (data.event === 'onStateChange') {
-          const st = typeof data.info === 'number' ? data.info : (data.info && data.info.playerState);
-          if (typeof st === 'number') {
-            handlePlayerStateChange(st);
-          }
-        }
-      } catch (_) {}
-    });
+        } catch (_) {}
+      });
+    }
 
     // Función del reloj maestro de alta precisión (interpolación 60Hz y congelación inmediata en pausa)
     function getMasterPlaybackTime() {

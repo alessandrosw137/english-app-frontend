@@ -39,6 +39,7 @@
   let currentScenarioKey = 'house';
   let scenarioDynamicRoot = null;
   let spaceOrbitalEntries = [];
+  let animatedConceptNodes = [];
 
   // Posiciones clave del Mesero IA (NUNCA en x: ±1.25, z: 0 donde están las sillas)
   const WAITER_STATION_POS = { x: 2.8, y: 0, z: -2.4 };
@@ -2063,188 +2064,468 @@ ensureOrbitControls();
         zone3: { pos: { x: 0, y: 5.8, z: 19.2 }, lookAt: { x: 0, y: 1.2, z: 7.2 }, label: '🌳 Ir al Jardín' }
       },
       objects: [
-        { id: 'desk', en: 'Desk', ipa: '/desk/', es: 'Escritorio con Laptop', category: 'Study Room', example: 'I practice English code and grammar on my wooden desk with my laptop.', pos: [3.5, 0.22, -3.5] },
-        { id: 'computer_monitor', en: 'Computer Monitor', ipa: '/kəmˈpjuː.t̬ɚ ˈmɑː.nə.t̬ɚ/', es: 'Monitor de Computadora', category: 'Study Room', example: 'The computer monitor glows with interactive English code and lessons.', pos: [3.45, 1.22, -3.72] },
-        { id: 'office_chair', en: 'Office Chair', ipa: '/ˈɑː.fɪs tʃer/', es: 'Silla de Oficina Ergonómica', category: 'Study Room', example: 'This ergonomic office chair has a comfortable curved backrest and wheels.', pos: [3.5, 0.22, -2.05] },
-        { id: 'bookshelf', en: 'Bookshelf', ipa: '/ˈbʊk.ʃelf/', es: 'Librero / Estantería', category: 'Study Room', example: 'The wooden bookshelf is filled with colorful collectible English novels.', pos: [6.7, 0.22, -3.5] },
-        { id: 'house_bed', en: 'Bed', ipa: '/bed/', es: 'Cama con Almohadas', category: 'Study & Bedroom', example: 'I read an English chapter before going to sleep in my comfortable bed.', pos: [1.8, 0.22, 1.2] },
-        { id: 'house_refrigerator', en: 'Refrigerator', ipa: '/rɪˈfrɪdʒ.ə.reɪ.t̬ɚ/', es: 'Refrigerador / Nevera', category: 'Kitchen & Home', example: 'Keep the fresh milk and fruit cold inside the stainless steel refrigerator.', pos: [-1.4, 0.22, -5.8] },
-        { id: 'window', en: 'Window', ipa: '/ˈwɪn.doʊ/', es: 'Ventanal Panorámico', category: 'Living Room', example: 'The large window provides a beautiful view of the swaying green trees.', pos: [-6.95, 1.15, -1.75] },
-        { id: 'sofa', en: 'Sofa / Couch', ipa: '/ˈsoʊ.fə/', es: 'Sofá / Sillón', category: 'Living Room', example: 'I relax on the cozy sofa after studying English vocabulary.', pos: [-3.6, 0.22, -4.1] },
-        { id: 'armchair', en: 'Armchair', ipa: '/ˈɑːrm.tʃer/', es: 'Sillón de Lectura', category: 'Living Room', example: 'I sit in the comfortable armchair by the window to read English stories.', pos: [-5.6, 0.22, -0.8] },
-        { id: 'coffee_table', en: 'Coffee Table', ipa: '/ˈkɑː.fi ˌteɪ.bəl/', es: 'Mesa de Centro', category: 'Living Room', example: 'There is a warm ceramic coffee mug resting on the coffee table.', pos: [-3.6, 0.22, -2.0] },
-        { id: 'floor_lamp', en: 'Floor Lamp', ipa: '/flɔːr læmp/', es: 'Lámpara de Pie', category: 'Living Room', example: 'The tall floor lamp illuminates the living room with a warm golden glow.', pos: [-5.8, 0.22, -4.5] },
-        { id: 'wall_clock', en: 'Clock', ipa: '/klɑːk/', es: 'Reloj de Pared', category: 'Living Room', example: 'I check the ticking wall clock to start my daily English session on time.', pos: [-3.6, 2.65, -6.84] },
-        { id: 'indoor_plant', en: 'Indoor Plant', ipa: '/ˈɪn.dɔːr plænt/', es: 'Planta de Interior', category: 'Living Room', example: 'The green indoor plant in the terracotta pot makes the room feel fresh.', pos: [-1.2, 0.22, -4.2] }
+        {"id":"desk","en":"Desk","ipa":"/desk/","es":"Escritorio con Laptop","category":"Study Room","type":"object","example":"I practice English code and grammar on my wooden desk with my laptop.","pos":[3.5,0.22,-3.5]},
+        {"id":"computer_monitor","en":"Computer Monitor","ipa":"/kəmˈpjuː.t̬ɚ ˈmɑː.nə.t̬ɚ/","es":"Monitor de Computadora","category":"Study Room","type":"object","example":"The computer monitor glows with interactive English code and lessons.","pos":[3.45,1.22,-3.72]},
+        {"id":"office_chair","en":"Office Chair","ipa":"/ˈɑː.fɪs tʃer/","es":"Silla de Oficina Ergonómica","category":"Study Room","type":"object","example":"This ergonomic office chair has a comfortable curved backrest and wheels.","pos":[3.5,0.22,-2.05]},
+        {"id":"bookshelf","en":"Bookshelf","ipa":"/ˈbʊk.ʃelf/","es":"Librero / Estantería","category":"Study Room","type":"object","example":"The wooden bookshelf is filled with colorful collectible English novels.","pos":[6.7,0.22,-3.5]},
+        {"id":"house_bed","en":"Double Bed","ipa":"/ˈdʌb.əl bed/","es":"Cama Doble con Almohadas","category":"Bedroom","type":"object","example":"I read an English chapter before going to sleep in my comfortable double bed.","pos":[1.8,0.22,1.2]},
+        {"id":"house_refrigerator","en":"Refrigerator","ipa":"/rɪˈfrɪdʒ.ə.reɪ.t̬ɚ/","es":"Refrigerador / Nevera","category":"Kitchen","type":"object","example":"Keep the fresh milk and fruit cold inside the stainless steel refrigerator.","pos":[-1.4,0.22,-5.8]},
+        {"id":"window","en":"Panoramic Window","ipa":"/ˌpæn.əˈræm.ɪk ˈwɪn.doʊ/","es":"Ventanal Panorámico","category":"Living Room","type":"object","example":"The large window provides a beautiful view of the swaying green trees.","pos":[-6.95,1.15,-1.75]},
+        {"id":"sofa","en":"Sofa / Couch","ipa":"/ˈsoʊ.fə/","es":"Sofá / Sillón","category":"Living Room","type":"object","example":"I relax on the cozy sofa after studying English vocabulary.","pos":[-3.6,0.22,-4.1]},
+        {"id":"armchair","en":"Reading Armchair","ipa":"/ˈriː.dɪŋ ˈɑːrm.tʃer/","es":"Sillón de Lectura","category":"Living Room","type":"object","example":"I sit in the comfortable armchair by the window to read English stories.","pos":[-5.6,0.22,-0.8]},
+        {"id":"coffee_table","en":"Coffee Table","ipa":"/ˈkɑː.fi ˌteɪ.bəl/","es":"Mesa de Centro","category":"Living Room","type":"object","example":"There is a warm ceramic coffee mug resting on the coffee table.","pos":[-3.6,0.22,-2]},
+        {"id":"floor_lamp","en":"Floor Lamp","ipa":"/flɔːr læmp/","es":"Lámpara de Pie","category":"Living Room","type":"object","example":"The tall floor lamp illuminates the living room with a warm golden glow.","pos":[-5.8,0.22,-4.5]},
+        {"id":"wall_clock","en":"Wall Clock","ipa":"/wɑːl klɑːk/","es":"Reloj de Pared","category":"Living Room","type":"object","example":"I check the ticking wall clock to start my daily English session on time.","pos":[-3.6,2.65,-6.84]},
+        {"id":"indoor_plant","en":"Indoor Plant","ipa":"/ˈɪn.dɔːr plænt/","es":"Planta de Interior","category":"Living Room","type":"object","example":"The green indoor plant in the terracotta pot makes the room feel fresh.","pos":[-1.2,0.22,-4.2]},
+        {"id":"house_coffee_maker","en":"Coffee Maker","ipa":"/ˈkɑː.fi ˌmeɪ.kɚ/","es":"Cafetera Eléctrica","category":"Kitchen","type":"object","example":"I brewed a fresh pot of espresso with the digital coffee maker.","pos":[-0.6,0.95,-5.5]},
+        {"id":"house_microwave","en":"Microwave Oven","ipa":"/ˈmaɪ.kroʊ.weɪv ˈʌv.ən/","es":"Horno Microondas","category":"Kitchen","type":"object","example":"Heat up your breakfast in the stainless steel microwave oven.","pos":[-2.2,0.95,-5.5]},
+        {"id":"house_toaster","en":"Bread Toaster","ipa":"/bred ˈtoʊ.stɚ/","es":"Tostadora de Pan","category":"Kitchen","type":"object","example":"Two golden slices of toast popped out of the kitchen toaster.","pos":[-0.2,0.95,-5.5]},
+        {"id":"house_blender","en":"Blender","ipa":"/ˈblen.dɚ/","es":"Licuadora de Cocina","category":"Kitchen","type":"object","example":"She made a fresh berry smoothie in the electric glass blender.","pos":[-2.6,0.95,-5.2]},
+        {"id":"house_dishwasher","en":"Dishwasher","ipa":"/ˈdɪʃˌwɑː.ʃɚ/","es":"Lavavajillas Automático","category":"Kitchen","type":"object","example":"Load the dirty plates and mugs directly into the dishwasher.","pos":[-1.4,0.22,-4.2]},
+        {"id":"house_kitchen_counter","en":"Kitchen Counter","ipa":"/ˈkɪtʃ.ən ˈkaʊn.tɚ/","es":"Mostrador de Cocina","category":"Kitchen","type":"object","example":"Granite kitchen counters offer plenty of space for preparing food.","pos":[-1.4,0.22,-5.2]},
+        {"id":"house_dining_table","en":"Dining Table","ipa":"/ˈdaɪ.nɪŋ ˈteɪ.bəl/","es":"Mesa del Comedor","category":"Dining Room","type":"object","example":"The family gathers around the wooden dining table every evening.","pos":[1.2,0.22,-1.5]},
+        {"id":"house_dining_chair","en":"Dining Chair","ipa":"/ˈdaɪ.nɪŋ tʃer/","es":"Silla del Comedor","category":"Dining Room","type":"object","example":"Pull up a comfortable dining chair and practice speaking English.","pos":[1.2,0.22,-0.6]},
+        {"id":"house_ceiling_fan","en":"Ceiling Fan","ipa":"/ˈsiː.lɪŋ fæn/","es":"Ventilador de Techo","category":"Living Room","type":"object","example":"The ceiling fan circulates cool air throughout the entire apartment.","pos":[-3.5,3.4,-3.5]},
+        {"id":"house_oled_tv","en":"OLED Smart TV","ipa":"/ˌoʊ.el.iːˈdiː smɑːrt ˌtiːˈviː/","es":"Televisor OLED Inteligente","category":"Living Room","type":"object","example":"We watch English movies with subtitles on the wall-mounted OLED TV.","pos":[-6.8,1.6,-4.5]},
+        {"id":"house_soundbar","en":"Soundbar","ipa":"/ˈsaʊnd.bɑːr/","es":"Barra de Sonido Envolvente","category":"Living Room","type":"object","example":"The soundbar delivers crisp audio for our English listening practice.","pos":[-6.8,1,-4.5]},
+        {"id":"house_wardrobe","en":"Wardrobe Closet","ipa":"/ˈwɔːr.droʊb ˈklɑː.zɪt/","es":"Ropero / Clóset","category":"Bedroom","type":"object","example":"Hang your coats, shirts, and suits neatly inside the wooden wardrobe.","pos":[5.2,0.22,1.2]},
+        {"id":"house_full_mirror","en":"Full-length Mirror","ipa":"/fʊl leŋθ ˈmɪr.ɚ/","es":"Espejo de Cuerpo Entero","category":"Bedroom","type":"object","example":"She checked her elegant outfit in the tall full-length mirror.","pos":[6.6,0.22,0.5]},
+        {"id":"house_nightstand","en":"Bedside Nightstand","ipa":"/ˈbed.saɪd ˈnaɪt.stænd/","es":"Mesa de Noche","category":"Bedroom","type":"object","example":"I keep my notebook and phone charger on the bedside nightstand.","pos":[3.2,0.22,1.2]},
+        {"id":"house_bedside_lamp","en":"Bedside Lamp","ipa":"/ˈbed.saɪd læmp/","es":"Lámpara de Noche","category":"Bedroom","type":"object","example":"Turn off the bedside lamp before turning in for the night.","pos":[3.2,0.72,1.2]},
+        {"id":"house_washing_machine","en":"Washing Machine","ipa":"/ˈwɑː.ʃɪŋ məˌʃiːn/","es":"Lavadora Automática","category":"Laundry","type":"object","example":"Put the laundry detergent inside the high-efficiency washing machine.","pos":[-6.2,0.22,1.2]},
+        {"id":"house_clothes_dryer","en":"Clothes Dryer","ipa":"/kloʊðz ˈdraɪ.ɚ/","es":"Secadora de Ropa","category":"Laundry","type":"object","example":"The clothes dryer tumbled warm towels until they were completely dry.","pos":[-5,0.22,1.2]},
+        {"id":"house_curtains","en":"Velvet Curtains","ipa":"/ˈvel.vɪt ˈkɝː.tənz/","es":"Cortinas de Terciopelo","category":"Living Room","type":"object","example":"Close the velvet curtains to block out direct sunlight and keep cool.","pos":[-6.9,2,-1.75]},
+        {"id":"house_area_rug","en":"Area Rug","ipa":"/ˈer.i.ə rʌɡ/","es":"Tapete de Sala Tejido","category":"Living Room","type":"object","example":"A plush geometric area rug anchors the furniture in the living room.","pos":[-3.6,0.23,-3]},
+        {"id":"house_household_chores","en":"Household chores","ipa":"/ˈhaʊs.hoʊld tʃɔːrz/","es":"Tareas del Hogar","category":"Home Concept","type":"concept","example":"Sharing household chores keeps the living space clean and harmonious.","pos":[-2,1.8,-2.8]},
+        {"id":"house_tidy_up","en":"Tidy up the room","ipa":"/ˈtaɪ.di ʌp ðə ruːm/","es":"Ordenar la Habitación","category":"Home Concept","type":"phrase","example":"Let’s spend ten minutes to tidy up the living room before guests arrive.","pos":[-4.2,1.8,-1.5]},
+        {"id":"house_make_the_bed","en":"Make the bed","ipa":"/meɪk ðə bed/","es":"Tender la Cama","category":"Home Concept","type":"phrase","example":"Making the bed every morning builds discipline and starts the day right.","pos":[2.2,1.6,2]},
+        {"id":"house_do_the_laundry","en":"Do the laundry","ipa":"/duː ðə ˈlɔːn.dri/","es":"Lavar la Ropa","category":"Home Concept","type":"phrase","example":"I usually do the laundry on Sunday mornings while listening to podcasts.","pos":[-5.6,1.8,1.8]},
+        {"id":"house_wash_the_dishes","en":"Wash the dishes","ipa":"/wɑːʃ ðə ˈdɪʃ.ɪz/","es":"Lavar los Platos","category":"Home Concept","type":"phrase","example":"Wash the dishes right after dinner so they don’t pile up in the sink.","pos":[-1.8,1.8,-4.8]},
+        {"id":"house_vacuum_the_rug","en":"Vacuum the rug","ipa":"/ˈvæk.juːm ðə rʌɡ/","es":"Aspirar la Alfombra","category":"Home Concept","type":"phrase","example":"Use the vacuum cleaner once a week to remove dust from the rug.","pos":[-3.2,1.6,-2.5]},
+        {"id":"house_preheat_oven","en":"Pre-heat the oven","ipa":"/priːˈhiːt ðə ˈʌv.ən/","es":"Precalentar el Horno","category":"Home Concept","type":"phrase","example":"Pre-heat the oven to three hundred and fifty degrees before baking.","pos":[-0.8,1.8,-6]},
+        {"id":"house_take_a_nap","en":"Take a power nap","ipa":"/teɪk ə ˈpaʊ.ɚ næp/","es":"Tomar una Siesta","category":"Home Concept","type":"phrase","example":"A twenty-minute power nap recharges your mental focus for studying.","pos":[1.2,1.6,1.8]},
+        {"id":"house_set_alarm","en":"Set the alarm","ipa":"/set ðə əˈlɑːrm/","es":"Poner la Alarma","category":"Home Concept","type":"phrase","example":"Set the alarm for six-thirty AM so you have time for your lesson.","pos":[3.8,1.6,1.5]},
+        {"id":"house_air_conditioning","en":"Air conditioning","ipa":"/ˈer kənˌdɪʃ.ən.ɪŋ/","es":"Aire Acondicionado","category":"Home Concept","type":"concept","example":"Turn on the air conditioning when the summer temperature peaks.","pos":[-5,2.2,-5.2]},
+        {"id":"house_drafty","en":"Drafty corridor","ipa":"/ˈdræf.ti ˈkɔːr.ə.dɔːr/","es":"Corriente de Aire Frío","category":"Home Concept","type":"concept","example":"Seal the old window frame because the room feels drafty in winter.","pos":[-6.4,2,-0.2]},
+        {"id":"house_cozy","en":"Cozy atmosphere","ipa":"/ˈkoʊ.zi ˈæt.məs.fɪr/","es":"Ambiente Acogedor","category":"Home Concept","type":"concept","example":"The warm fireplace and soft blankets create an incredibly cozy space.","pos":[-4.6,1.8,-3.2]},
+        {"id":"house_cluttered","en":"Cluttered desk","ipa":"/ˈklʌt.ɚd desk/","es":"Escritorio Desordenado","category":"Home Concept","type":"concept","example":"A cluttered workspace distracts your attention while studying English.","pos":[4.4,1.8,-2.5]},
+        {"id":"house_spotless","en":"Spotless kitchen","ipa":"/ˈspɑːt.ləs ˈkɪtʃ.ən/","es":"Cocina Impecable","category":"Home Concept","type":"concept","example":"After deep cleaning, every kitchen surface was completely spotless.","pos":[-1.2,1.8,-3.8]},
+        {"id":"house_power_outlet","en":"Power outlet","ipa":"/ˈpaʊ.ɚ ˌaʊt.let/","es":"Tomacorriente Eléctrico","category":"Home Concept","type":"object","example":"Plug the laptop charger into the wall power outlet near the desk.","pos":[5.2,0.6,-3.8]},
+        {"id":"house_wifi_router","en":"Wi-Fi router","ipa":"/ˈwaɪ.faɪ ˈruː.t̬ɚ/","es":"Enrutador Wi-Fi","category":"Home Concept","type":"object","example":"The high-speed Wi-Fi router provides smooth streaming across the home.","pos":[4.8,1.1,-3.6]},
+        {"id":"house_light_switch","en":"Light switch","ipa":"/ˈlaɪt ˌswɪtʃ/","es":"Interruptor de Luz","category":"Home Concept","type":"object","example":"Flick the light switch by the entryway to turn on the overhead lights.","pos":[0.3,1.4,3.2]},
+        {"id":"house_doorknob","en":"Brass doorknob","ipa":"/bræs ˈdɔːr.nɑːb/","es":"Pomo de la Puerta","category":"Home Concept","type":"object","example":"Turn the polished brass doorknob to open the study room door.","pos":[-0.2,1.2,3.2]},
+        {"id":"house_mortgage_rent","en":"Mortgage / Monthly Rent","ipa":"/ˈmɔːr.ɡɪdʒ / rent/","es":"Hipoteca o Renta Mensual","category":"Home Concept","type":"concept","example":"Paying your rent or mortgage on time maintains a good credit score.","pos":[2.5,1.8,-0.5]},
+        {"id":"house_roommate","en":"Friendly Roommate","ipa":"/ˈruːm.meɪt/","es":"Compañero de Habitación","category":"Home Concept","type":"concept","example":"Having a bilingual roommate gives you daily opportunities to practice.","pos":[4.2,1.8,0.8]}
       ]
     },
     garden: {
       id: 'garden',
       title: '🌿 Backyard & Garden',
-      bg: 0x0a0e17,
-      fogDensity: 0.005,
+      bg: 0x091410,
+      fogDensity: 0.006,
       cameraPos: { x: 0, y: 6.2, z: 19.5 },
       cameraLookAt: { x: 0, y: 1.2, z: 7.2 },
       zones: {
         overview: { pos: { x: 0, y: 6.5, z: 20.2 }, lookAt: { x: 0, y: 1.2, z: 7.2 }, label: '🌿 Vista General' },
         zone1: { pos: { x: -5.2, y: 3.6, z: 12.8 }, lookAt: { x: -5.5, y: 1.2, z: 7.5 }, label: '🌳 Zona 1: Árboles y Banca' },
-        zone2: { pos: { x: 4.8, y: 3.6, z: 13.5 }, lookAt: { x: 4.2, y: 1.0, z: 8.5 }, label: '🔥 Zona 2: Asador y Fuente' },
-        zone3: { pos: { x: 0, y: 3.4, z: 16.5 }, lookAt: { x: 0, y: 1.0, z: 9.2 }, label: '🪨 Camino y Aspersor' }
+        zone2: { pos: { x: 4.8, y: 3.6, z: 13.5 }, lookAt: { x: 4.2, y: 1, z: 8.5 }, label: '🔥 Zona 2: Asador y Fuente' },
+        zone3: { pos: { x: 0, y: 3.4, z: 16.5 }, lookAt: { x: 0, y: 1, z: 9.2 }, label: '🪨 Camino y Aspersor' }
       },
       objects: [
-        { id: 'oak_tree', en: 'Oak Tree', ipa: '/oʊk triː/', es: 'Árbol de Roble', category: 'Garden & Yard', example: 'The tall oak tree provides cool shade over the green lawn.', pos: [-8.5, 0, 7.5] },
-        { id: 'park_bench', en: 'Park Bench', ipa: '/pɑːrk bentʃ/', es: 'Banca de Jardín', category: 'Garden & Yard', example: 'We sat on the wooden park bench to practice English conversation.', pos: [-4.5, 0, 7.5] },
-        { id: 'garden_bbq_grill', en: 'Barbecue Grill', ipa: '/ˈbɑːr.bə.kjuː ɡrɪl/', es: 'Asador / Parrilla BBQ', category: 'Garden & Yard', example: 'We cooked burgers and vegetables on the outdoor barbecue grill.', pos: [4.2, 0, 8.6] },
-        { id: 'garden_sprinkler', en: 'Lawn Sprinkler', ipa: '/lɔːn ˈsprɪŋ.klɚ/', es: 'Aspersor de Riego', category: 'Garden & Yard', example: 'The rotating lawn sprinkler waters the fresh green grass.', pos: [-2.0, 0, 9.2] },
-        { id: 'street_lantern', en: 'Street Lantern', ipa: '/striːt ˈlæn.tɚn/', es: 'Farol de Jardín', category: 'Garden & Yard', example: 'The classic street lantern lights up the stone path at night.', pos: [2.4, 0, 6.5] },
-        { id: 'garden_stone_path', en: 'Stone Path', ipa: '/stoʊn pæθ/', es: 'Camino de Piedra', category: 'Garden & Yard', example: 'Follow the stepping stone path from the gate to the front door.', pos: [0.2, 0.05, 8.2] },
-        { id: 'flower_bush', en: 'Flower Bush', ipa: '/ˈflaʊ.ɚ bʊʃ/', es: 'Arbusto Floral', category: 'Garden & Yard', example: 'Colorful blossoms grow on the green flower bush near the porch.', pos: [5.8, 0, 5.8] },
-        { id: 'mailbox', en: 'Mailbox', ipa: '/ˈmeɪl.bɑːks/', es: 'Buzón de Correo', category: 'Garden & Yard', example: 'I raised the red flag on the mailbox to send a letter.', pos: [2.1, 0, 11.8] },
-        { id: 'garden_picket_fence', en: 'Picket Fence', ipa: '/ˈpɪk.ɪt fens/', es: 'Cerca Blanca de Madera', category: 'Garden & Yard', example: 'A white picket fence surrounds the front yard.', pos: [-4.5, 0, 14.5] },
-        { id: 'garden_birdhouse', en: 'Birdhouse', ipa: '/ˈbɝːd.haʊs/', es: 'Casita para Pájaros', category: 'Garden & Yard', example: 'Bluebirds built a nest inside the wooden birdhouse.', pos: [-6.8, 0, 10.2] },
-        { id: 'garden_watering_can', en: 'Watering Can', ipa: '/ˈwɑː.t̬ɚ.ɪŋ kæn/', es: 'Regadera de Jardín', category: 'Garden & Yard', example: 'Use the metal watering can to water the roses.', pos: [-3.2, 0, 11.4] },
-        { id: 'garden_fountain', en: 'Garden Fountain', ipa: '/ˈɡɑːr.dən ˈfaʊn.tən/', es: 'Fuente de Agua', category: 'Garden & Yard', example: 'The stone garden fountain makes a relaxing water sound.', pos: [6.4, 0, 11.2] }
+        {"id":"oak_tree","en":"Oak Tree","ipa":"/oʊk triː/","es":"Árbol de Roble","category":"Garden & Yard","type":"object","example":"The tall oak tree provides cool shade over the green lawn.","pos":[-8.5,0,7.5]},
+        {"id":"park_bench","en":"Park Bench","ipa":"/pɑːrk bentʃ/","es":"Banca de Jardín","category":"Garden & Yard","type":"object","example":"We sat on the wooden park bench to practice English conversation.","pos":[-4.5,0,7.5]},
+        {"id":"garden_bbq_grill","en":"Barbecue Grill","ipa":"/ˈbɑːr.bə.kjuː ɡrɪl/","es":"Asador / Parrilla BBQ","category":"Garden & Yard","type":"object","example":"We cooked burgers and vegetables on the outdoor barbecue grill.","pos":[4.2,0,8.6]},
+        {"id":"garden_sprinkler","en":"Lawn Sprinkler","ipa":"/lɔːn ˈsprɪŋ.klɚ/","es":"Aspersor de Riego","category":"Garden & Yard","type":"object","example":"The rotating lawn sprinkler waters the fresh green grass.","pos":[-2,0,9.2]},
+        {"id":"street_lantern","en":"Street Lantern","ipa":"/striːt ˈlæn.tɚn/","es":"Farol de Jardín","category":"Garden & Yard","type":"object","example":"The classic street lantern lights up the stone path at night.","pos":[2.4,0,6.5]},
+        {"id":"garden_stone_path","en":"Stone Path","ipa":"/stoʊn pæθ/","es":"Camino de Piedra","category":"Garden & Yard","type":"object","example":"Follow the stepping stone path from the gate to the front door.","pos":[0.2,0.05,8.2]},
+        {"id":"flower_bush","en":"Flower Bush","ipa":"/ˈflaʊ.ɚ bʊʃ/","es":"Arbusto Floral","category":"Garden & Yard","type":"object","example":"Colorful blossoms grow on the green flower bush near the porch.","pos":[5.8,0,5.8]},
+        {"id":"mailbox","en":"Mailbox","ipa":"/ˈmeɪl.bɑːks/","es":"Buzón de Correo","category":"Garden & Yard","type":"object","example":"I raised the red flag on the mailbox to send a letter.","pos":[2.1,0,11.8]},
+        {"id":"garden_picket_fence","en":"Picket Fence","ipa":"/ˈpɪk.ɪt fens/","es":"Cerca Blanca de Madera","category":"Garden & Yard","type":"object","example":"A white picket fence surrounds the front yard.","pos":[-4.5,0,14.5]},
+        {"id":"garden_birdhouse","en":"Birdhouse","ipa":"/ˈbɝːd.haʊs/","es":"Casita para Pájaros","category":"Garden & Yard","type":"object","example":"Bluebirds built a nest inside the wooden birdhouse.","pos":[-6.8,0,10.2]},
+        {"id":"garden_watering_can","en":"Watering Can","ipa":"/ˈwɑː.t̬ɚ.ɪŋ kæn/","es":"Regadera de Jardín","category":"Garden & Yard","type":"object","example":"Use the metal watering can to water the roses.","pos":[-3.2,0,11.4]},
+        {"id":"garden_fountain","en":"Garden Fountain","ipa":"/ˈɡɑːr.dən ˈfaʊn.tən/","es":"Fuente de Agua","category":"Garden & Yard","type":"object","example":"The stone garden fountain makes a relaxing water sound.","pos":[6.4,0,11.2]},
+        {"id":"garden_lawn_mower","en":"Lawn Mower","ipa":"/ˈlɔːn ˌmoʊ.ɚ/","es":"Cortadora de Césped","category":"Garden & Yard","type":"object","example":"Mow the front lawn with the electric green lawn mower.","pos":[-1.2,0,13.2]},
+        {"id":"garden_wheelbarrow","en":"Wheelbarrow","ipa":"/ˈwiːlˌber.oʊ/","es":"Carretilla de Jardinería","category":"Garden & Yard","type":"object","example":"Load the rich potting soil into the steel wheelbarrow.","pos":[3.2,0,13.6]},
+        {"id":"garden_patio_umbrella","en":"Patio Umbrella","ipa":"/ˈpæt̬.i.oʊ ʌmˈbrel.ə/","es":"Sombrilla de Terraza","category":"Garden & Yard","type":"object","example":"Open the large patio umbrella to stay cool during sunny afternoons.","pos":[4.6,0,6.2]},
+        {"id":"garden_terracotta_pot","en":"Terracotta Pot","ipa":"/ˌter.əˈkɑː.t̬ə pɑːt/","es":"Maceta de Barro","category":"Garden & Yard","type":"object","example":"Plant purple lavender inside the handmade terracotta pot.","pos":[1.2,0,6.8]},
+        {"id":"garden_hose","en":"Garden Hose","ipa":"/ˈɡɑːr.dən hoʊz/","es":"Manguera de Riego","category":"Garden & Yard","type":"object","example":"Uncoil the flexible garden hose to wash the flagstone patio.","pos":[-5.2,0,11.6]},
+        {"id":"garden_shovel","en":"Garden Shovel","ipa":"/ˈʃʌv.əl/","es":"Pala de Jardinería","category":"Garden & Yard","type":"object","example":"Dig a small hole for the new rose bush with the steel shovel.","pos":[-7.2,0,8.8]},
+        {"id":"garden_rake","en":"Leaf Rake","ipa":"/liːf reɪk/","es":"Rastrillo de Hojas","category":"Garden & Yard","type":"object","example":"Rake the fallen autumn leaves into a tidy compost pile.","pos":[-7.8,0,9.6]},
+        {"id":"garden_hedge_trimmer","en":"Hedge Trimmer","ipa":"/ˈhedʒ ˌtrɪm.ɚ/","es":"Cortasetos de Jardín","category":"Garden & Yard","type":"object","example":"Trim the perimeter bushes evenly using the electric hedge trimmer.","pos":[7.2,0,7.8]},
+        {"id":"garden_birdbath","en":"Stone Birdbath","ipa":"/stoʊn ˈbɝːd.bæθ/","es":"Bebedero de Aves de Piedra","category":"Garden & Yard","type":"object","example":"Cardinals splash playfully inside the carved stone birdbath.","pos":[-3.6,0,6]},
+        {"id":"garden_hammock","en":"Garden Hammock","ipa":"/ˈɡɑːr.dən ˈhæm.ək/","es":"Hamaca entre Árboles","category":"Garden & Yard","type":"object","example":"She read a novel while swaying gently in the cotton garden hammock.","pos":[-7.5,0,12.5]},
+        {"id":"garden_greenhouse","en":"Mini Greenhouse","ipa":"/ˈmɪn.i ˈɡriːn.haʊs/","es":"Invernadero de Cristal","category":"Garden & Yard","type":"object","example":"Heirloom tomatoes thrive in the humid warmth of the mini greenhouse.","pos":[7.5,0,13.8]},
+        {"id":"garden_compost_bin","en":"Compost Bin","ipa":"/ˈkɑːm.poʊst bɪn/","es":"Contenedor de Composta","category":"Garden & Yard","type":"object","example":"Throw vegetable scraps into the compost bin to enrich your soil.","pos":[6.8,0,15.2]},
+        {"id":"garden_stepping_stones","en":"Stepping Stones","ipa":"/ˈstep.ɪŋ stoʊnz/","es":"Huellas de Piedra","category":"Garden & Yard","type":"object","example":"Walk along the round stepping stones to keep your shoes dry.","pos":[-1.5,0.04,10.5]},
+        {"id":"garden_patio_heater","en":"Patio Heater","ipa":"/ˈpæt̬.i.oʊ ˈhiː.t̬ɚ/","es":"Calefactor de Exterior","category":"Garden & Yard","type":"object","example":"The propane patio heater radiates cozy warmth on chilly evenings.","pos":[5.2,0,9.8]},
+        {"id":"garden_fire_pit","en":"Stone Fire Pit","ipa":"/stoʊn ˈfaɪr ˌpɪt/","es":"Brasero de Piedra Exterior","category":"Garden & Yard","type":"object","example":"We roasted marshmallows over the glowing embers of the stone fire pit.","pos":[3.2,0,10.4]},
+        {"id":"garden_storage_shed","en":"Storage Shed","ipa":"/ˈstɔːr.ɪdʒ ʃed/","es":"Cobertizo de Jardín","category":"Garden & Yard","type":"object","example":"Store the lawnmower, fertilizer, and rakes safely inside the shed.","pos":[-7.8,0,15.2]},
+        {"id":"garden_wind_chime","en":"Bamboo Wind Chime","ipa":"/bæmˈbuː ˈwɪnd ˌtʃaɪm/","es":"Campana de Viento de Bambú","category":"Garden & Yard","type":"object","example":"The bamboo wind chime produces gentle melodies when the breeze blows.","pos":[-4.2,2.2,7.5]},
+        {"id":"garden_sunbed","en":"Patio Sunbed","ipa":"/ˈpæt̬.i.oʊ ˈsʌn.bed/","es":"Camastro de Bronceado","category":"Garden & Yard","type":"object","example":"Relax on the cushioned sunbed while enjoying the afternoon sunshine.","pos":[5.8,0,7.2]},
+        {"id":"garden_pergola","en":"Cedar Pergola","ipa":"/ˈsiː.dɚ ˈpɝː.ɡə.lə/","es":"Pérgola de Cedro","category":"Garden & Yard","type":"object","example":"Flowering wisteria vines climb up the wooden beams of the pergola.","pos":[4,0,7.5]},
+        {"id":"garden_beehive_box","en":"Beehive Box","ipa":"/ˈbiː.haɪv bɑːks/","es":"Colmena de Abejas Melíferas","category":"Garden & Yard","type":"object","example":"Honeybees enter the wooden beehive box with pollen from the garden.","pos":[7.8,0,9.2]},
+        {"id":"garden_photosynthesis","en":"Photosynthesis process","ipa":"/ˌfoʊ.t̬oʊˈsɪn.θə.sɪs/","es":"Proceso de Fotosíntesis","category":"Nature Concept","type":"concept","example":"Green leaves absorb sunlight to produce oxygen through photosynthesis.","pos":[-6.5,1.8,6.8]},
+        {"id":"garden_mow_lawn","en":"Mow the front lawn","ipa":"/moʊ ðə frʌnt lɔːn/","es":"Podar el Césped","category":"Nature Concept","type":"phrase","example":"I like to mow the front lawn early before the midday heat sets in.","pos":[-1.8,1.6,12.2]},
+        {"id":"garden_pull_weeds","en":"Pull out garden weeds","ipa":"/pʊl aʊt ˈɡɑːr.dən wiːdz/","es":"Arrancar las Malas Hierbas","category":"Nature Concept","type":"phrase","example":"Pull out garden weeds by the roots so they do not choke the flowers.","pos":[1.5,1.5,9.8]},
+        {"id":"garden_plant_seeds","en":"Plant flower seeds","ipa":"/plænt ˈflaʊ.ɚ siːdz/","es":"Sembrar Semillas","category":"Nature Concept","type":"phrase","example":"Plant sunflower seeds two inches deep in rich organic soil.","pos":[4.5,1.6,11.8]},
+        {"id":"garden_bloom_blossom","en":"Bloom into full blossom","ipa":"/bluːm ˈɪn.tuː fʊl ˈblɑːs.əm/","es":"Florecer en Todo su Esplendor","category":"Nature Concept","type":"phrase","example":"Cherry trees bloom into spectacular pink blossom every single spring.","pos":[6.2,1.8,6.5]},
+        {"id":"garden_damp_soil","en":"Rich damp soil","ipa":"/rɪtʃ dæmp sɔɪl/","es":"Tierra Fértil y Húmeda","category":"Nature Concept","type":"concept","example":"Earthworms tunnel through the rich damp soil beneath the flower beds.","pos":[-2.5,1.4,7.8]},
+        {"id":"garden_soaked","en":"Soaked after the storm","ipa":"/soʊkt ˈæf.tɚ ðə stɔːrm/","es":"Empapado tras la Tormenta","category":"Nature Concept","type":"concept","example":"The grass was completely soaked after three hours of heavy rain.","pos":[0.5,1.5,12.5]},
+        {"id":"garden_muggy_heat","en":"Muggy summer afternoon","ipa":"/ˈmʌɡ.i ˈsʌm.ɚ ˌæf.tɚˈnuːn/","es":"Calor Húmedo y Bochorno","category":"Nature Concept","type":"concept","example":"The air felt very muggy before the cooling thunderstorm rolled in.","pos":[2.8,1.8,8.2]},
+        {"id":"garden_breeze","en":"Refreshing breeze","ipa":"/rɪˈfreʃ.ɪŋ briːz/","es":"Brisa Fresca y Reconfortante","category":"Nature Concept","type":"concept","example":"A refreshing breeze stirred the tall branches on the oak tree.","pos":[-5.2,2.2,8.8]},
+        {"id":"garden_shade","en":"Rest in the shade","ipa":"/rest ɪn ðə ʃeɪd/","es":"Descansar a la Sombra","category":"Nature Concept","type":"phrase","example":"Find a cool spot to rest in the shade during peak sun hours.","pos":[-7,1.8,8.2]},
+        {"id":"garden_sunlight","en":"Direct sunlight exposure","ipa":"/dəˈrekt ˈsʌn.laɪt ɪkˈspoʊ.ʒɚ/","es":"Exposición a Plena Luz Solar","category":"Nature Concept","type":"concept","example":"These vibrant roses require at least six hours of direct sunlight.","pos":[5.2,1.8,8.8]},
+        {"id":"garden_squirrel","en":"Playful squirrel","ipa":"/ˈpleɪ.fəl ˈskwɝː.əl/","es":"Ardilla Juguetona","category":"Nature Concept","type":"concept","example":"A gray squirrel dashed up the tree trunk carrying an acorn.","pos":[-6.2,1.6,9.8]},
+        {"id":"garden_butterfly","en":"Monarch butterfly","ipa":"/ˈmɑː.nɚk ˈbʌt̬.ɚ.flaɪ/","es":"Mariposa Monarca","category":"Nature Concept","type":"concept","example":"A bright monarch butterfly fluttered gently between the blossoms.","pos":[4.8,1.8,7.8]},
+        {"id":"garden_fertilizer","en":"Organic plant fertilizer","ipa":"/ɔːrˈɡæn.ɪk plænt ˈfɝː.t̬əl.aɪ.zɚ/","es":"Fertilizante Orgánico para Plantas","category":"Nature Concept","type":"concept","example":"Apply organic fertilizer every four weeks to promote healthy growth.","pos":[6,1.5,14.2]},
+        {"id":"garden_prune_bushes","en":"Prune the rose bushes","ipa":"/pruːn ðə roʊz ˈbʊʃ.ɪz/","es":"Podar los Rosales","category":"Nature Concept","type":"phrase","example":"Prune the rose bushes carefully in early spring to encourage buds.","pos":[5.2,1.6,6.2]},
+        {"id":"garden_outdoor_lighting","en":"Warm outdoor lighting","ipa":"/wɔːrm ˈaʊtˌdɔːr ˈlaɪ.t̬ɪŋ/","es":"Iluminación Cálida de Exteriores","category":"Nature Concept","type":"concept","example":"Warm outdoor lighting transforms the stone patio at dusk.","pos":[1.8,2,7.2]},
+        {"id":"garden_harvest","en":"Harvest fresh vegetables","ipa":"/ˈhɑːr.vəst freʃ ˈvedʒ.tə.bəlz/","es":"Cosechar Verduras Frescas","category":"Nature Concept","type":"phrase","example":"We harvest crisp lettuce, cucumbers, and tomatoes for our salads.","pos":[7,1.6,12.5]},
+        {"id":"garden_dew","en":"Glistening morning dew","ipa":"/ˈɡlɪs.ən.ɪŋ ˈmɔːr.nɪŋ duː/","es":"Rocío Matutino Brillante","category":"Nature Concept","type":"concept","example":"Tiny droplets of morning dew sparkled on every blade of grass.","pos":[-0.5,1.4,9.5]},
+        {"id":"garden_perennial","en":"Perennial flowering plant","ipa":"/pəˈren.i.əl ˈflaʊ.ɚ.ɪŋ plænt/","es":"Planta Perenne Floral","category":"Nature Concept","type":"concept","example":"Perennial plants return year after year without needing replanting.","pos":[3.8,1.6,6.8]},
+        {"id":"garden_biodiversity","en":"Backyard biodiversity","ipa":"/ˌbækˈjɑːrd ˌbaɪ.oʊ.daɪˈvɝː.sə.t̬i/","es":"Biodiversidad del Jardín","category":"Nature Concept","type":"concept","example":"Planting native species encourages bird and pollinator biodiversity.","pos":[-3.8,1.8,13.5]}
       ]
     },
     dating: {
       id: 'dating',
       title: '🕯️ Romantic Date & Bistro 3D',
       bg: 0x070b14,
-      fogDensity: 0.008,
+      fogDensity: 0.004,
       cameraPos: { x: 0, y: 4.8, z: 8.6 },
-      cameraLookAt: { x: 0, y: 1.25, z: -0.3 },
+      cameraLookAt: { x: 0, y: 1.05, z: 0 },
       zones: {
         overview: { pos: { x: 0, y: 4.8, z: 8.6 }, lookAt: { x: 0, y: 1.25, z: -0.3 }, label: '🕯️ Vista General' },
-        zone1: { pos: { x: 0.0, y: 2.35, z: 2.75 }, lookAt: { x: 0, y: 1.15, z: 0 }, label: '🍷 Zona 1: Mesa Romántica' },
+        zone1: { pos: { x: 0, y: 2.35, z: 2.75 }, lookAt: { x: 0, y: 1.15, z: 0 }, label: '🍷 Zona 1: Mesa Romántica' },
         zone2: { pos: { x: 2.2, y: 2.5, z: 1.8 }, lookAt: { x: 1.2, y: 1.25, z: -1.8 }, label: '🤵 Zona 2: Mesero IA' },
         zone3: { pos: { x: -2.2, y: 2.8, z: 1.5 }, lookAt: { x: -1.2, y: 1.6, z: -5.2 }, label: '🎻 Balcón y Violín' }
       },
       objects: [
-        { id: 'dating_table_for_two', en: 'Table for Two', ipa: '/ˈteɪ.bəl fɔːr tuː/', es: 'Mesa Íntima para Dos con Mantel Borgoña', category: 'Romantic Date', example: 'I reserved a romantic table for two on the rooftop terrace.', pos: [0, 0, 0] },
-        { id: 'dating_candlelight', en: 'Candlelight', ipa: '/ˈkæn.dəl.laɪt/', es: 'Vela Encendida con Luz Cálida', category: 'Romantic Date', example: 'We enjoyed a quiet dinner by warm candlelight on the starry terrace.', pos: [0, 0.99, 0] },
-        { id: 'dating_wine_glasses', en: 'Wine Glasses', ipa: '/waɪn ˈɡlæs.ɪz/', es: 'Dos Copas de Cristal PBR', category: 'Romantic Date', example: 'They clinked their wine glasses and made a toast in English.', pos: [0.26, 0.99, 0.26] },
-        { id: 'dating_menu', en: 'Menu', ipa: '/ˈmen.juː/', es: 'Menú Bilingüe del Bistró', category: 'Romantic Date', example: 'Could we see the dinner menu and the wine list, please?', pos: [-0.34, 0.99, 0.28] },
-        { id: 'dating_rose_bouquet', en: 'Rose Bouquet', ipa: '/roʊz buˈkeɪ/', es: 'Ramo de Rosas Rojas', category: 'Romantic Date', example: 'A fresh red rose bouquet decorated the center of our table.', pos: [0, 0.99, -0.32] },
-        { id: 'dating_violin', en: 'Violin', ipa: '/ˌvaɪəˈlɪn/', es: 'Violín Acústico de Serenata', category: 'Romantic Date', example: 'A romantic violin melody played softly under the stars.', pos: [-3.4, 0, -2.2] },
-        { id: 'dating_city_balcony', en: 'City View Balcony', ipa: '/ˈsɪt̬.i vjuː ˈbæl.kə.ni/', es: 'Balcón con Skyline Nocturno Iluminado', category: 'Romantic Date', example: 'We stepped out onto the city view balcony to admire the skyline.', pos: [0, 0, -5.2] },
-        { id: 'dating_waiter_npc', en: 'Waiter NPC', ipa: '/ˈweɪ.t̬ɚ/', es: 'Mesero 3D Interactivo', category: 'Romantic Date', example: 'Our friendly waiter recommended the chef’s special tonight.', pos: [2.8, 0, -2.4] },
-        { id: 'dating_chocolate_dessert', en: 'Chocolate Dessert', ipa: '/ˈtʃɑː.klət dɪˈzɝːt/', es: 'Postre de Chocolate Gourmet', category: 'Romantic Date', example: 'Would you like to share this warm chocolate dessert with me?', pos: [0.24, 0.99, -0.26] },
-        { id: 'dating_conversation_cards', en: 'Conversation Cards', ipa: '/ˌkɑːn.vɚˈseɪ.ʃən kɑːrdz/', es: 'Tarjetas Románticas (Icebreakers)', category: 'Romantic Date', example: 'These conversation cards have great questions to get to know each other.', pos: [-0.32, 0.99, -0.26] },
-        { id: 'dating_ice_bucket', en: 'Ice Bucket', ipa: '/aɪs ˈbʌk.ɪt/', es: 'Cubeta de Hielo y Espumoso', category: 'Romantic Date', example: 'The sparkling cider is chilling in the silver ice bucket.', pos: [-2.15, 0, -1.25] },
-        { id: 'dating_string_lights', en: 'String Lights', ipa: '/strɪŋ laɪts/', es: 'Guirnalda de Luces de Terraza', category: 'Romantic Date', example: 'Golden string lights glowed above the bistro terrace all night.', pos: [3.6, 0, -2.8] }
+        {"id":"dating_table_for_two","en":"Table for Two","ipa":"/ˈteɪ.bəl fɔːr tuː/","es":"Mesa Íntima para Dos con Mantel Borgoña","category":"Romantic Date","type":"object","example":"I reserved a romantic table for two on the rooftop terrace.","pos":[0,0,0]},
+        {"id":"dating_candlelight","en":"Candlelight","ipa":"/ˈkæn.dəl.laɪt/","es":"Vela Encendida con Luz Cálida","category":"Romantic Date","type":"object","example":"We enjoyed a quiet dinner by warm candlelight on the starry terrace.","pos":[0,0.99,0]},
+        {"id":"dating_wine_glasses","en":"Wine Glasses","ipa":"/waɪn ˈɡlæs.ɪz/","es":"Dos Copas de Cristal PBR","category":"Romantic Date","type":"object","example":"They clinked their wine glasses and made a toast in English.","pos":[0.26,0.99,0.26]},
+        {"id":"dating_menu","en":"Menu","ipa":"/ˈmen.juː/","es":"Menú Bilingüe del Bistró","category":"Romantic Date","type":"object","example":"Could we see the dinner menu and the wine list, please?","pos":[-0.34,0.99,0.28]},
+        {"id":"dating_rose_bouquet","en":"Rose Bouquet","ipa":"/roʊz buˈkeɪ/","es":"Ramo de Rosas Rojas","category":"Romantic Date","type":"object","example":"A fresh red rose bouquet decorated the center of our table.","pos":[0,0.99,-0.32]},
+        {"id":"dating_violin","en":"Violin","ipa":"/ˌvaɪəˈlɪn/","es":"Violín Acústico de Serenata","category":"Romantic Date","type":"object","example":"A romantic violin melody played softly under the stars.","pos":[-3.4,0,-2.2]},
+        {"id":"dating_city_balcony","en":"City View Balcony","ipa":"/ˈsɪt̬.i vjuː ˈbæl.kə.ni/","es":"Balcón con Skyline Nocturno Iluminado","category":"Romantic Date","type":"object","example":"We stepped out onto the city view balcony to admire the skyline.","pos":[0,0,-5.2]},
+        {"id":"dating_waiter_npc","en":"Waiter NPC","ipa":"/ˈweɪ.t̬ɚ/","es":"Mesero 3D Interactivo","category":"Romantic Date","type":"object","example":"Our friendly waiter recommended the chef’s special tonight.","pos":[2.8,0,-2.4]},
+        {"id":"dating_chocolate_dessert","en":"Chocolate Dessert","ipa":"/ˈtʃɑː.klət dɪˈzɝːt/","es":"Postre de Chocolate Gourmet","category":"Romantic Date","type":"object","example":"Would you like to share this warm chocolate dessert with me?","pos":[0.24,0.99,-0.26]},
+        {"id":"dating_conversation_cards","en":"Conversation Cards","ipa":"/ˌkɑːn.vɚˈseɪ.ʃən kɑːrdz/","es":"Tarjetas Románticas (Icebreakers)","category":"Romantic Date","type":"object","example":"These conversation cards have great questions to get to know each other.","pos":[-0.32,0.99,-0.26]},
+        {"id":"dating_ice_bucket","en":"Ice Bucket","ipa":"/aɪs ˈbʌk.ɪt/","es":"Cubeta de Hielo y Espumoso","category":"Romantic Date","type":"object","example":"The sparkling cider is chilling in the silver ice bucket.","pos":[-2.15,0,-1.25]},
+        {"id":"dating_string_lights","en":"String Lights","ipa":"/strɪŋ laɪts/","es":"Guirnalda de Luces de Terraza","category":"Romantic Date","type":"object","example":"Golden string lights glowed above the bistro terrace all night.","pos":[3.6,0,-2.8]},
+        {"id":"dating_chandelier","en":"Crystal Chandelier","ipa":"/ˈkrɪs.təl ˌʃæn.dəˈlɪr/","es":"Candelabro de Cristal","category":"Bistro Decor","type":"object","example":"The antique crystal chandelier cast romantic refractions across the floor.","pos":[0,3.8,-0.5]},
+        {"id":"dating_cloth_napkin","en":"Linen Cloth Napkin","ipa":"/ˈlɪn.ɪn klɑːθ ˈnæp.kɪn/","es":"Servilleta de Lino Fino","category":"Romantic Date","type":"object","example":"Unfold your linen cloth napkin and place it gently on your lap.","pos":[0.45,0.99,0.12]},
+        {"id":"dating_silver_cutlery","en":"Polished Silver Cutlery","ipa":"/ˈpɑː.lɪʃt ˈsɪl.vɚ ˈkʌt.lɚ.i/","es":"Cubiertos de Plata Pulida","category":"Romantic Date","type":"object","example":"The polished silver cutlery gleamed under the flickering candlelight.","pos":[-0.45,0.99,0.12]},
+        {"id":"dating_champagne_flute","en":"Champagne Flute","ipa":"/ʃæmˈpeɪn fluːt/","es":"Copa Flauta de Champaña","category":"Romantic Date","type":"object","example":"Tiny bubbles rose in the tall crystal champagne flute.","pos":[0.18,0.99,-0.18]},
+        {"id":"dating_reserved_sign","en":"Brass Reserved Sign","ipa":"/bræs rɪˈzɝːvd saɪn/","es":"Letrero Dorado de Reservado","category":"Romantic Date","type":"object","example":"A gleaming brass reserved sign held our table under the city stars.","pos":[-0.18,0.99,0.22]},
+        {"id":"dating_cocktail_shaker","en":"Cocktail Shaker","ipa":"/ˈkɑːk.teɪl ˌʃeɪ.kɚ/","es":"Coctelera de Acero","category":"Bistro Decor","type":"object","example":"The bartender mixed passionfruit martinis in the stainless cocktail shaker.","pos":[3.4,0.95,-2.2]},
+        {"id":"dating_dessert_spoon","en":"Silver Dessert Spoon","ipa":"/ˈsɪl.vɚ dɪˈzɝːt spuːn/","es":"Cuchara de Postre","category":"Romantic Date","type":"object","example":"Use the silver dessert spoon to taste the molten chocolate lava cake.","pos":[0.38,0.99,-0.22]},
+        {"id":"dating_bread_basket","en":"Warm Bread Basket","ipa":"/wɔːrm bred ˈbæs.kɪt/","es":"Cesta de Pan Caliente","category":"Romantic Date","type":"object","example":"The waiter brought a warm bread basket with rosemary and olive butter.","pos":[-0.18,0.99,-0.16]},
+        {"id":"dating_olive_oil_cruet","en":"Olive Oil Cruet","ipa":"/ˈɑː.lɪv ɔɪl ˈkruː.ɪt/","es":"Aceitera Gourmet de Cristal","category":"Romantic Date","type":"object","example":"Drizzle extra-virgin olive oil from the glass cruet onto the focaccia.","pos":[0.18,0.99,0.16]},
+        {"id":"dating_coat_rack","en":"Bistro Coat Rack","ipa":"/ˈbiː.stroʊ koʊt ræk/","es":"Perchero de Abrigos del Bistró","category":"Bistro Decor","type":"object","example":"The host hung our trench coats on the mahogany bistro coat rack.","pos":[4.2,0,-0.5]},
+        {"id":"dating_acoustic_guitar","en":"Spanish Acoustic Guitar","ipa":"/ˈspæn.ɪʃ əˈkuː.stɪk ɡɪˈtɑːr/","es":"Guitarra Acústica Española","category":"Bistro Decor","type":"object","example":"A guitarist played soft flamenco melodies on the acoustic guitar nearby.","pos":[-3.8,0,-3.2]},
+        {"id":"dating_velvet_drapes","en":"Velvet Terrace Drapes","ipa":"/ˈvel.vɪt ˈter.əs dreɪps/","es":"Cortinajes de Terciopelo","category":"Bistro Decor","type":"object","example":"Crimson velvet terrace drapes framed the magnificent skyline vista.","pos":[-4.2,1.8,-4.8]},
+        {"id":"dating_maitre_podium","en":"Maître D' Podium","ipa":"/ˌmeɪ.trə ˈdiː ˈpoʊ.di.əm/","es":"Podio de Bienvenida del Bistró","category":"Bistro Decor","type":"object","example":"The maître d’ welcomed us at the entrance podium with our reservation.","pos":[3.45,0,-2.4]},
+        {"id":"dating_pick_up_line","en":"Cheesy pick-up line","ipa":"/ˈtʃiː.zi ˈpɪk.ʌp laɪn/","es":"Frase Graciosa para Coquetear","category":"Dating Phrase","type":"phrase","example":"He told a cheesy pick-up line that made her laugh and broke the tension.","pos":[-1.8,1.8,0.8]},
+        {"id":"dating_break_the_ice","en":"Break the ice with a smile","ipa":"/breɪk ðə aɪs/","es":"Romper el Hielo","category":"Dating Phrase","type":"phrase","example":"Asking about someone’s favorite travel destination is great to break the ice.","pos":[-1.2,1.8,1.4]},
+        {"id":"dating_first_impression","en":"Unforgettable first impression","ipa":"/ˌfɝːst ɪmˈpreʃ.ən/","es":"Primera Impresión Inolvidable","category":"Dating Concept","type":"concept","example":"Her confident smile and warm greeting left an unforgettable first impression.","pos":[1.2,1.8,1.4]},
+        {"id":"dating_give_compliment","en":"Give a sincere compliment","ipa":"/ɡɪv ə sɪnˈsɪr ˈkɑːm.plə.mənt/","es":"Hacer un Cumplido Sincero","category":"Dating Phrase","type":"phrase","example":"Give a sincere compliment: You look absolutely stunning in that evening dress.","pos":[1.8,1.8,0.8]},
+        {"id":"dating_split_the_bill","en":"Split the bill equally","ipa":"/splɪt ðə bɪl ˈiː.kwə.li/","es":"Dividir la Cuenta en Partes Iguales","category":"Dating Phrase","type":"phrase","example":"Shall we split the bill equally, or would you prefer I take care of it?","pos":[0.6,1.8,-1.8]},
+        {"id":"dating_treat_someone","en":"It is on me! / Treat someone","ipa":"/ɪts ɑːn miː/","es":"Invitar la Cuenta / Yo Invito","category":"Dating Phrase","type":"phrase","example":"Please put your wallet away—tonight dinner is on me!","pos":[-0.6,1.8,-1.8]},
+        {"id":"dating_make_reservation","en":"Make an advance reservation","ipa":"/meɪk ən ədˈvæns ˌrez.ɚˈveɪ.ʃən/","es":"Reservar con Anticipación","category":"Dating Phrase","type":"phrase","example":"Make an advance reservation two weeks ahead for prime rooftop seating.","pos":[2.2,1.8,-1.2]},
+        {"id":"dating_candlelit_dinner","en":"Intimate candlelit dinner","ipa":"/ˈɪn.t̬ə.mət ˈkæn.dəl.lɪt ˈdɪn.ɚ/","es":"Cena Íntima a la Luz de las Velas","category":"Dating Concept","type":"concept","example":"An intimate candlelit dinner allows for deep, distraction-free conversation.","pos":[-0.2,1.8,0.5]},
+        {"id":"dating_dress_up","en":"Dress up for date night","ipa":"/dres ʌp fɔːr deɪt naɪt/","es":"Vestirse de Gala para la Cita","category":"Dating Phrase","type":"phrase","example":"It feels special to dress up in elegant evening wear for a romantic date night.","pos":[-2.2,1.8,-0.6]},
+        {"id":"dating_great_chemistry","en":"Electric chemistry","ipa":"/iˈlek.trɪk ˈkem.ə.stri/","es":"Química Especial y Conexión","category":"Dating Concept","type":"concept","example":"From their very first words, they shared an unmistakable electric chemistry.","pos":[0,1.8,1.8]},
+        {"id":"dating_blind_date","en":"Exciting blind date","ipa":"/ɪkˈsaɪ.t̬ɪŋ ˌblaɪnd ˈdeɪt/","es":"Cita a Ciegas Emocionante","category":"Dating Concept","type":"concept","example":"Her best friend set them up on an exciting blind date at Starlight Bistro.","pos":[-2.5,1.8,1.2]},
+        {"id":"dating_ask_someone_out","en":"Ask someone out on a date","ipa":"/æsk ˈsʌm.wʌn aʊt/","es":"Invitar a Salir a Alguien","category":"Dating Phrase","type":"phrase","example":"He gathered his courage to ask her out for coffee after the English seminar.","pos":[2.5,1.8,1.2]},
+        {"id":"dating_into_you","en":"I am so into you!","ipa":"/aɪ æm soʊ ˈɪn.tuː juː/","es":"¡Me Gustas Demasiado!","category":"Dating Phrase","type":"phrase","example":"I have to admit—I am so into you and love how passionate you are.","pos":[0.8,1.8,0.4]},
+        {"id":"dating_make_toast","en":"Raise our glasses for a toast","ipa":"/reɪz ˈaʊ.ɚ ˈɡlæs.ɪz/","es":"Levantar las Copas para Brindar","category":"Dating Phrase","type":"phrase","example":"Let’s raise our glasses for a toast to new adventures and learning English!","pos":[0.4,1.8,-0.8]},
+        {"id":"dating_romantic_ambiance","en":"Warm romantic ambiance","ipa":"/roʊˈmæn.tɪk ˈæm.bi.əns/","es":"Atmósfera Romántica Cálida","category":"Dating Concept","type":"concept","example":"Soft jazz music, candlelight, and glowing city towers create romantic ambiance.","pos":[-1.5,2.2,-3.5]},
+        {"id":"dating_appetizer_concept","en":"Share a delicious appetizer","ipa":"/ʃer ə dɪˈlɪʃ.əs ˈæp.ə.taɪ.zɚ/","es":"Compartir una Entrada Gourmet","category":"Dating Phrase","type":"phrase","example":"Shall we share a delicious appetizer of bruschetta and artisanal cheeses?","pos":[-0.8,1.8,0.2]},
+        {"id":"dating_main_course_concept","en":"Savory main course","ipa":"/ˈseɪ.vɚ.i meɪn kɔːrs/","es":"Plato Principal Suculento","category":"Dating Concept","type":"concept","example":"For our main course, we chose pan-seared sea bass and grilled filet mignon.","pos":[0.8,1.8,-0.2]},
+        {"id":"dating_sommelier_concept","en":"Knowledgeable sommelier","ipa":"/ˌsɑːm.əlˈjeɪ/","es":"Sumiller Experto en Vinos","category":"Dating Concept","type":"concept","example":"The sommelier recommended a velvety Pinot Noir that paired impeccably.","pos":[2.2,1.8,-2.8]},
+        {"id":"dating_tip_the_waiter","en":"Leave a generous tip","ipa":"/liːv ə ˈdʒen.ɚ.əs tɪp/","es":"Dejar una Propina Generosa","category":"Dating Phrase","type":"phrase","example":"The service was outstanding, so we made sure to leave a generous tip.","pos":[1.8,1.8,-1.8]},
+        {"id":"dating_check_please","en":"Could we have the check, please?","ipa":"/kʊd wiː hæv ðə tʃek pliːz/","es":"¿Nos Trae la Cuenta, por Favor?","category":"Dating Phrase","type":"phrase","example":"Excuse me, waiter—whenever you are ready, could we have the check, please?","pos":[1.2,1.8,-2.2]},
+        {"id":"dating_soulmates","en":"True soulmates","ipa":"/truː ˈsoʊl.meɪts/","es":"Almas Gemelas Verdaderas","category":"Dating Concept","type":"concept","example":"They finish each other’s sentences as though they were true soulmates.","pos":[-0.6,2,1.6]},
+        {"id":"dating_fiance","en":"Loving fiancé / fiancée","ipa":"/fiˌɑːnˈseɪ/","es":"Prometido / Prometida","category":"Dating Concept","type":"concept","example":"He proposed under the starry sky, and now she is his radiant fiancée.","pos":[0.6,2,1.6]},
+        {"id":"dating_butterflies","en":"Butterflies in my stomach","ipa":"/ˈbʌt̬.ɚ.flaɪz ɪn maɪ ˈstʌm.ək/","es":"Mariposas en el Estómago","category":"Dating Phrase","type":"phrase","example":"Even after months together, I still get butterflies in my stomach seeing you.","pos":[-1.2,1.8,0.4]},
+        {"id":"dating_fall_in_love","en":"Fall head over heels in love","ipa":"/fɑːl hed ˈoʊ.vɚ hiːlz ɪn lʌv/","es":"Enamorarse Perdidamente","category":"Dating Phrase","type":"phrase","example":"It did not take long for both of them to fall head over heels in love.","pos":[1.5,2.2,0]},
+        {"id":"dating_see_again","en":"I would love to see you again!","ipa":"/aɪ wʊd lʌv tuː siː juː əˈɡen/","es":"¡Me Encantaría Volverte a Ver!","category":"Dating Phrase","type":"phrase","example":"Tonight was magical—I would love to see you again this coming weekend.","pos":[-1.5,2.2,0]},
+        {"id":"dating_love_first_sight","en":"Love at first sight","ipa":"/lʌv æt fɝːst saɪt/","es":"Amor a Primera Vista","category":"Dating Concept","type":"concept","example":"Some people doubt love at first sight until they experience it themselves.","pos":[0,2.4,1.2]},
+        {"id":"dating_holding_hands","en":"Holding hands across the table","ipa":"/ˈhoʊl.dɪŋ hændz/","es":"Tomarse de las Manos en la Mesa","category":"Dating Phrase","type":"phrase","example":"They sat holding hands across the table as the violin melody ended.","pos":[0,1.8,-0.1]}
       ]
     },
     space: {
       id: 'space',
       title: '🚀 Outer Space & Astronomy',
       bg: 0x020617,
-      fogDensity: 0.0025,
+      fogDensity: 0.001,
       cameraPos: { x: 0, y: 11.5, z: 18.5 },
-      cameraLookAt: { x: 0, y: 1.8, z: 0 },
+      cameraLookAt: { x: 0, y: 2.2, z: 0 },
       zones: {
         overview: { pos: { x: 0, y: 11.5, z: 18.5 }, lookAt: { x: 0, y: 1.8, z: 0 }, label: '🚀 Vista General' },
         zone1: { pos: { x: 0, y: 5.5, z: 8.2 }, lookAt: { x: 0, y: 2.2, z: 0 }, label: '☀️ Zona 1: Sol y Tierra' },
         zone2: { pos: { x: 7.5, y: 5.8, z: 9.5 }, lookAt: { x: 5.5, y: 2.2, z: -1.5 }, label: '🪐 Zona 2: Saturno y Agujero Negro' },
-        zone3: { pos: { x: -6.5, y: 5.8, z: 9.2 }, lookAt: { x: -4.5, y: 2.8, z: 1.0 }, label: '👩‍🚀 Nave y Telescopio' }
+        zone3: { pos: { x: -6.5, y: 5.8, z: 9.2 }, lookAt: { x: -4.5, y: 2.8, z: 1 }, label: '👩‍🚀 Nave y Telescopio' }
       },
       objects: [
-        { id: 'space_sun', en: 'Sun', ipa: '/sʌn/', es: 'Sol Brillante Central', category: 'Outer Space', example: 'The Sun is the glowing star at the center of our solar system.', pos: [0, 2.2, 0], orbitRadius: 0, orbitSpeed: 0, rotSpeed: 0.45 },
-        { id: 'space_earth', en: 'Earth', ipa: '/ɝːθ/', es: 'Planeta Tierra', category: 'Outer Space', example: 'Earth is our home planet with blue oceans and green continents.', pos: [4.2, 2.2, 0], orbitRadius: 4.2, orbitSpeed: 0.38, orbitPhase: 0.4, rotSpeed: 1.2 },
-        { id: 'space_moon', en: 'Moon', ipa: '/muːn/', es: 'La Luna (Satélite Natural)', category: 'Outer Space', example: 'The Moon orbits around the Earth approximately every twenty-eight days.', pos: [5.4, 2.6, 1.2], orbitRadius: 5.3, orbitSpeed: 0.52, orbitPhase: 1.1, rotSpeed: 0.8 },
-        { id: 'space_mars', en: 'Mars', ipa: '/mɑːrz/', es: 'Marte (El Planeta Rojo)', category: 'Outer Space', example: 'Mars is known as the Red Planet because of iron oxide on its surface.', pos: [-6.4, 2.2, 2.0], orbitRadius: 6.7, orbitSpeed: 0.28, orbitPhase: 2.6, rotSpeed: 1.0 },
-        { id: 'space_saturn', en: 'Saturn & Rings', ipa: '/ˈsæt̬.ɚn ænd rɪŋz/', es: 'Saturno con Anillos', category: 'Outer Space', example: 'Saturn & Rings are famous for their spectacular icy ring system.', pos: [8.8, 2.4, -3.5], orbitRadius: 9.4, orbitSpeed: 0.18, orbitPhase: 5.1, rotSpeed: 0.7 },
-        { id: 'space_spacecraft', en: 'Spacecraft', ipa: '/ˈspeɪs.kræft/', es: 'Nave Espacial / Cohete', category: 'Outer Space', example: 'The spacecraft ignited its engines to travel beyond Earth orbit.', pos: [-3.5, 3.6, 5.2], orbitRadius: 6.2, orbitSpeed: 0.44, orbitPhase: 3.8, rotSpeed: 0.5 },
-        { id: 'space_telescope', en: 'Telescope', ipa: '/ˈtel.ə.skoʊp/', es: 'Telescopio Espacial Orbital', category: 'Outer Space', example: 'The space telescope captures deep infrared images of distant galaxies.', pos: [-7.5, 3.8, -4.2], orbitRadius: 8.6, orbitSpeed: 0.15, orbitPhase: 4.0, rotSpeed: 0.35 },
-        { id: 'space_astronaut', en: 'Astronaut', ipa: '/ˈæs.trə.nɑːt/', es: 'Astronauta en Caminata Espacial', category: 'Outer Space', example: 'The astronaut wore a pressurized suit during the spacewalk.', pos: [2.6, 3.4, 5.8], orbitRadius: 6.3, orbitSpeed: 0.22, orbitPhase: 1.7, rotSpeed: 0.4 },
-        { id: 'space_asteroid', en: 'Asteroid', ipa: '/ˈæs.tə.rɔɪd/', es: 'Asteroide Rocoso', category: 'Outer Space', example: 'A metallic asteroid tumbled silently through the asteroid belt.', pos: [7.2, 1.8, 5.2], orbitRadius: 8.8, orbitSpeed: 0.31, orbitPhase: 0.9, rotSpeed: 1.6 },
-        { id: 'space_black_hole', en: 'Black Hole', ipa: '/ˌblæk ˈhoʊl/', es: 'Agujero Negro Supermasivo', category: 'Outer Space', example: 'Nothing, not even light, can escape the event horizon of a black hole.', pos: [6.8, 3.8, -6.2], orbitRadius: 0, orbitSpeed: 0, rotSpeed: 1.8 },
-        { id: 'space_satellite', en: 'Satellite', ipa: '/ˈsæt̬.əl.aɪt/', es: 'Satélite de Comunicaciones', category: 'Outer Space', example: 'The solar-powered satellite relays global communication signals.', pos: [-4.8, 4.0, -5.0], orbitRadius: 6.9, orbitSpeed: 0.35, orbitPhase: 2.1, rotSpeed: 0.6 },
-        { id: 'space_axial_rotation', en: 'Axial Rotation', ipa: '/ˈæk.si.əl roʊˈteɪ.ʃən/', es: 'Rotación Axial Planetaria', category: 'Outer Space', example: 'A planet’s axial rotation determines the length of its day.', pos: [-8.8, 1.4, 4.5], orbitRadius: 0, orbitSpeed: 0, rotSpeed: 1.5 },
-        { id: 'space_gravity', en: 'Gravity', ipa: '/ˈɡræv.ə.t̬i/', es: 'Campo de Gravedad Orbital', category: 'Outer Space', example: 'Gravity is the invisible force that keeps planets in orbit around stars.', pos: [8.8, 1.2, 4.8], orbitRadius: 0, orbitSpeed: 0, rotSpeed: 0.9 }
+        {"id":"space_sun","en":"Sun","ipa":"/sʌn/","es":"Sol Brillante Central","category":"Outer Space","type":"object","example":"The Sun is the glowing star at the center of our solar system.","pos":[0,2.2,0],"orbitRadius":0,"orbitSpeed":0,"rotSpeed":0.45},
+        {"id":"space_earth","en":"Earth","ipa":"/ɝːθ/","es":"Planeta Tierra","category":"Outer Space","type":"object","example":"Earth is our home planet with blue oceans and green continents.","pos":[4.2,2.2,0],"orbitRadius":4.2,"orbitSpeed":0.38,"orbitPhase":0.4,"rotSpeed":1.2},
+        {"id":"space_moon","en":"Moon","ipa":"/muːn/","es":"La Luna (Satélite Natural)","category":"Outer Space","type":"object","example":"The Moon orbits around the Earth approximately every twenty-eight days.","pos":[5.4,2.6,1.2],"orbitRadius":5.3,"orbitSpeed":0.52,"orbitPhase":1.1,"rotSpeed":0.8},
+        {"id":"space_mars","en":"Mars","ipa":"/mɑːrz/","es":"Marte (El Planeta Rojo)","category":"Outer Space","type":"object","example":"Mars is known as the Red Planet because of iron oxide on its surface.","pos":[-6.4,2.2,2],"orbitRadius":6.7,"orbitSpeed":0.28,"orbitPhase":2.6,"rotSpeed":1},
+        {"id":"space_saturn","en":"Saturn & Rings","ipa":"/ˈsæt̬.ɚn ænd rɪŋz/","es":"Saturno con Anillos","category":"Outer Space","type":"object","example":"Saturn & Rings are famous for their spectacular icy ring system.","pos":[8.8,2.4,-3.5],"orbitRadius":9.4,"orbitSpeed":0.18,"orbitPhase":5.1,"rotSpeed":0.7},
+        {"id":"space_spacecraft","en":"Spacecraft","ipa":"/ˈspeɪs.kræft/","es":"Nave Espacial / Cohete","category":"Outer Space","type":"object","example":"The spacecraft ignited its engines to travel beyond Earth orbit.","pos":[-3.5,3.6,5.2],"orbitRadius":6.2,"orbitSpeed":0.44,"orbitPhase":3.8,"rotSpeed":0.5},
+        {"id":"space_telescope","en":"Telescope","ipa":"/ˈtel.ə.skoʊp/","es":"Telescopio Espacial Orbital","category":"Outer Space","type":"object","example":"The space telescope captures deep infrared images of distant galaxies.","pos":[-7.5,3.8,-4.2],"orbitRadius":8.6,"orbitSpeed":0.15,"orbitPhase":4,"rotSpeed":0.35},
+        {"id":"space_astronaut","en":"Astronaut","ipa":"/ˈæs.trə.nɑːt/","es":"Astronauta en Caminata Espacial","category":"Outer Space","type":"object","example":"The astronaut wore a pressurized suit during the spacewalk.","pos":[2.6,3.4,5.8],"orbitRadius":6.3,"orbitSpeed":0.22,"orbitPhase":1.7,"rotSpeed":0.4},
+        {"id":"space_asteroid","en":"Asteroid","ipa":"/ˈæs.tə.rɔɪd/","es":"Asteroide Rocoso","category":"Outer Space","type":"object","example":"A metallic asteroid tumbled silently through the asteroid belt.","pos":[7.2,1.8,5.2],"orbitRadius":8.8,"orbitSpeed":0.31,"orbitPhase":0.9,"rotSpeed":1.6},
+        {"id":"space_black_hole","en":"Black Hole","ipa":"/ˌblæk ˈhoʊl/","es":"Agujero Negro Supermasivo","category":"Outer Space","type":"object","example":"Nothing, not even light, can escape the event horizon of a black hole.","pos":[6.8,3.8,-6.2],"orbitRadius":0,"orbitSpeed":0,"rotSpeed":1.8},
+        {"id":"space_satellite","en":"Satellite","ipa":"/ˈsæt̬.əl.aɪt/","es":"Satélite de Comunicaciones","category":"Outer Space","type":"object","example":"The solar-powered satellite relays global communication signals.","pos":[-4.8,4,-5],"orbitRadius":6.9,"orbitSpeed":0.35,"orbitPhase":2.1,"rotSpeed":0.6},
+        {"id":"space_axial_rotation","en":"Axial Rotation","ipa":"/ˈæk.si.əl roʊˈteɪ.ʃən/","es":"Rotación Axial Planetaria","category":"Outer Space","type":"concept","example":"A planet’s axial rotation determines the length of its day.","pos":[-8.8,1.4,4.5],"orbitRadius":0,"orbitSpeed":0,"rotSpeed":1.5},
+        {"id":"space_gravity","en":"Gravity","ipa":"/ˈɡræv.ə.t̬i/","es":"Campo de Gravedad Orbital","category":"Outer Space","type":"concept","example":"Gravity is the invisible force that keeps planets in orbit around stars.","pos":[8.8,1.2,4.8],"orbitRadius":0,"orbitSpeed":0,"rotSpeed":0.9},
+        {"id":"space_mercury","en":"Mercury","ipa":"/ˈmɝː.kjʊ.ri/","es":"Planeta Mercurio","category":"Outer Space","type":"object","example":"Mercury is the smallest planet and closest to the scorching Sun.","pos":[2.2,2.2,0.8],"orbitRadius":2.4,"orbitSpeed":0.65,"orbitPhase":0.2,"rotSpeed":0.6},
+        {"id":"space_venus","en":"Venus","ipa":"/ˈviː.nəs/","es":"Planeta Venus","category":"Outer Space","type":"object","example":"Venus has a dense, greenhouse atmosphere shrouded in golden clouds.","pos":[-3.2,2.2,-1.2],"orbitRadius":3.4,"orbitSpeed":0.48,"orbitPhase":1.8,"rotSpeed":-0.4},
+        {"id":"space_jupiter","en":"Jupiter & Great Red Spot","ipa":"/ˈdʒuː.pə.t̬ɚ/","es":"Júpiter y Gran Mancha Roja","category":"Outer Space","type":"object","example":"Jupiter is the massive gas giant with a raging Great Red Spot storm.","pos":[10.5,2.5,2.5],"orbitRadius":11.2,"orbitSpeed":0.14,"orbitPhase":3.4,"rotSpeed":2.1},
+        {"id":"space_uranus","en":"Uranus","ipa":"/ˈjʊr.ə.nəs/","es":"Planeta Urano","category":"Outer Space","type":"object","example":"Uranus is an ice giant that rotates on its side with a pale cyan hue.","pos":[-11,2.8,-4.5],"orbitRadius":12.5,"orbitSpeed":0.1,"orbitPhase":4.8,"rotSpeed":1.1},
+        {"id":"space_neptune","en":"Neptune","ipa":"/ˈnep.tuːn/","es":"Planeta Neptuno","category":"Outer Space","type":"object","example":"Neptune is a dark blue world with the fastest supersonic winds in our solar system.","pos":[12.8,2.6,-6],"orbitRadius":14.2,"orbitSpeed":0.08,"orbitPhase":0.8,"rotSpeed":1.2},
+        {"id":"space_neutron_star","en":"Pulsing Neutron Star","ipa":"/ˈnuː.trɑːn stɑːr/","es":"Estrella de Neutrones Pulsante","category":"Outer Space","type":"object","example":"A super-dense neutron star spins hundreds of times per second.","pos":[-9.5,4.5,7.5],"orbitRadius":0,"orbitSpeed":0,"rotSpeed":4.5},
+        {"id":"space_supernova","en":"Supernova Explosion","ipa":"/ˌsuː.pɚˈnoʊ.və/","es":"Explosión de Supernova","category":"Outer Space","type":"object","example":"A dying massive star ends its life in a brilliant supernova explosion.","pos":[11.5,5.2,8.5],"orbitRadius":0,"orbitSpeed":0,"rotSpeed":0.3},
+        {"id":"space_launch_rocket","en":"Heavy Launch Rocket","ipa":"/ˈhevi lɑːntʃ ˈrɑː.kɪt/","es":"Cohete de Lanzamiento Pesado","category":"Outer Space","type":"object","example":"The multi-stage heavy launch rocket generates millions of pounds of thrust.","pos":[-1.8,4.2,8.5],"orbitRadius":8.5,"orbitSpeed":0.25,"orbitPhase":5.2,"rotSpeed":0.5},
+        {"id":"space_space_station","en":"International Space Station","ipa":"/ˌspeɪs ˈsteɪ.ʃən/","es":"Estación Espacial Internacional (ISS)","category":"Outer Space","type":"object","example":"Astronauts conduct microgravity science aboard the International Space Station.","pos":[5.2,4,3.8],"orbitRadius":6.8,"orbitSpeed":0.42,"orbitPhase":2.8,"rotSpeed":0.4},
+        {"id":"space_lunar_rover","en":"Lunar Exploration Rover","ipa":"/ˈluː.nɚ ˈroʊ.vɚ/","es":"Vehículo Explorador Lunar","category":"Outer Space","type":"object","example":"The four-wheeled lunar rover drove across dusty craters on the Moon.","pos":[5.6,2.9,1.5],"orbitRadius":5.5,"orbitSpeed":0.52,"orbitPhase":1.2,"rotSpeed":0.2},
+        {"id":"space_spacesuit","en":"Extravehicular Spacesuit","ipa":"/ˈspeɪs.suːt/","es":"Traje Espacial con Soporte Vital","category":"Outer Space","type":"object","example":"An astronaut’s spacesuit shields against extreme vacuum and temperatures.","pos":[2.9,3.6,6],"orbitRadius":6.4,"orbitSpeed":0.22,"orbitPhase":1.8,"rotSpeed":0.4},
+        {"id":"space_asteroid_belt","en":"Asteroid Belt Region","ipa":"/ˈæs.tə.rɔɪd belt/","es":"Región del Cinturón de Asteroides","category":"Outer Space","type":"object","example":"Millions of rocky fragments orbit between the orbits of Mars and Jupiter.","pos":[-7.8,2,5.5],"orbitRadius":8.8,"orbitSpeed":0.2,"orbitPhase":4.1,"rotSpeed":0.8},
+        {"id":"space_halley_comet","en":"Halley's Icy Comet","ipa":"/ˈhæl.iz ˈkɑː.mɪt/","es":"Cometa con Cola de Hielo y Gas","category":"Outer Space","type":"object","example":"The glowing tail of the comet points directly away from the solar wind.","pos":[-6.8,5.2,-8.5],"orbitRadius":11.5,"orbitSpeed":0.16,"orbitPhase":1.5,"rotSpeed":0.6},
+        {"id":"space_meteorite","en":"Metallic Meteorite","ipa":"/ˈmiː.t̬i.ə.raɪt/","es":"Meteorito de Hierro y Níquel","category":"Outer Space","type":"object","example":"A metallic iron meteorite burned brightly as it entered the atmosphere.","pos":[8.5,3.2,4],"orbitRadius":9.2,"orbitSpeed":0.28,"orbitPhase":0.6,"rotSpeed":1.4},
+        {"id":"space_orion_nebula","en":"Luminous Nebula Cloud","ipa":"/ˈluː.mə.nəs ˈneb.jə.lə/","es":"Nebulosa Estelar Luminosa","category":"Outer Space","type":"object","example":"Newborn stars ignite inside the dense hydrogen gas of the nebula.","pos":[-12.5,6,0],"orbitRadius":0,"orbitSpeed":0,"rotSpeed":0.1},
+        {"id":"space_milky_way","en":"Spiral Milky Way Galaxy","ipa":"/ˈspaɪ.rəl ˈmɪl.ki weɪ/","es":"Brazos Espirales de la Vía Láctea","category":"Outer Space","type":"object","example":"Our solar system resides on the Orion Arm of the barred spiral Milky Way.","pos":[0,8.5,-12],"orbitRadius":0,"orbitSpeed":0,"rotSpeed":0.05},
+        {"id":"space_solar_array","en":"Photovoltaic Solar Array","ipa":"/ˌfoʊ.t̬oʊ.vɑːlˈteɪ.ɪk əˈreɪ/","es":"Arreglo de Paneles Solares","category":"Outer Space","type":"object","example":"Photovoltaic solar arrays convert raw sunlight into electrical energy.","pos":[4.8,4.2,3.6],"orbitRadius":6.8,"orbitSpeed":0.42,"orbitPhase":2.8,"rotSpeed":0.4},
+        {"id":"space_launchpad_tower","en":"Launchpad Service Tower","ipa":"/ˈlɑːntʃ.pæd ˈtaʊ.ɚ/","es":"Torre de Lanzamiento Espacial","category":"Outer Space","type":"object","example":"Umbilical arms disconnect from the spacecraft as launch engines ignite.","pos":[-3.8,0.5,10.5],"orbitRadius":0,"orbitSpeed":0,"rotSpeed":0},
+        {"id":"space_deep_probe","en":"Deep Space Robotic Probe","ipa":"/diːp speɪs proʊb/","es":"Sonda Robótica de Espacio Profundo","category":"Outer Space","type":"object","example":"The robotic probe transmits telemetry data across billions of miles.","pos":[11.2,3.8,-10.5],"orbitRadius":15.5,"orbitSpeed":0.06,"orbitPhase":3.1,"rotSpeed":0.3},
+        {"id":"space_orbital_translation","en":"Orbital translation speed","ipa":"/ˈɔːr.bɪ.təl trænzˈleɪ.ʃən/","es":"Velocidad de Traslación Orbital","category":"Astrophysics","type":"concept","example":"Earth travels around the Sun at an orbital translation speed of thirty km/s.","pos":[3.8,3.2,0]},
+        {"id":"space_zero_gravity","en":"Zero gravity (Weightlessness)","ipa":"/ˈzɪr.oʊ ˈɡræv.ə.t̬i/","es":"Gravedad Cero / Ingrávidez","category":"Astrophysics","type":"concept","example":"Water drops float as perfect spheres in the zero gravity environment.","pos":[1.8,3.8,5]},
+        {"id":"space_event_horizon","en":"Black hole event horizon","ipa":"/ɪˈvent həˈraɪ.zən/","es":"Horizonte de Sucesos del Agujero Negro","category":"Astrophysics","type":"concept","example":"Once matter crosses the event horizon, escape becomes mathematically impossible.","pos":[6.2,4.5,-5.8]},
+        {"id":"space_light_year","en":"Interstellar light-year distance","ipa":"/ˈlaɪtˌjɪr ˈdɪs.təns/","es":"Distancia en Años Luz","category":"Astrophysics","type":"concept","example":"Proxima Centauri is located over four light-years away from our planet.","pos":[-5.2,4.8,6.2]},
+        {"id":"space_solar_eclipse","en":"Total solar eclipse","ipa":"/ˈtoʊ.təl ˈsoʊ.lɚ ɪˈklɪps/","es":"Eclipse Solar Total","category":"Astrophysics","type":"concept","example":"Day turns to twilight during the breathtaking totality of a solar eclipse.","pos":[2,3.2,0.5]},
+        {"id":"space_lunar_phase","en":"Waxing crescent lunar phase","ipa":"/ˈluː.nɚ feɪz/","es":"Fases de la Luna","category":"Astrophysics","type":"concept","example":"The changing illumination angle produces the cycle of lunar phases.","pos":[4.8,3.5,1.8]},
+        {"id":"space_atmosphere_concept","en":"Protective planetary atmosphere","ipa":"/ˈplæn.ə.ter.i ˈæt.məs.fɪr/","es":"Atmósfera Protectora del Planeta","category":"Astrophysics","type":"concept","example":"The ozone layer within the atmosphere shields surface life from ultraviolet rays.","pos":[4.6,2.8,-0.6]},
+        {"id":"space_cosmic_radiation","en":"Shielding from cosmic radiation","ipa":"/ˈkɑːz.mɪk ˌreɪ.diˈeɪ.ʃən/","es":"Protección contra Radiación Cósmica","category":"Astrophysics","type":"concept","example":"Deep-space habitats require heavy water shielding against cosmic radiation.","pos":[-2.5,4.5,4.2]},
+        {"id":"space_spacewalk_eva","en":"Extravehicular spacewalk (EVA)","ipa":"/ˈspeɪs.wɑːk/","es":"Caminata Espacial (EVA)","category":"Astrophysics","type":"phrase","example":"During an eight-hour spacewalk, the crew replaced the main battery modules.","pos":[3.2,4.2,6.2]},
+        {"id":"space_countdown_concept","en":"Final launch countdown","ipa":"/ˈfaɪ.nəl lɑːntʃ ˈkaʊnt.daʊn/","es":"Cuenta Regresiva Final de Lanzamiento","category":"Astrophysics","type":"phrase","example":"Ten, nine, eight... Main engine start... Zero, and we have liftoff!","pos":[-2.2,3.2,9.2]},
+        {"id":"space_docking_concept","en":"Autonomous docking procedure","ipa":"/ɔːˈtɑː.nə.məs ˈdɑːk.ɪŋ/","es":"Maniobra de Acoplamiento Automático","category":"Astrophysics","type":"concept","example":"Thrusters fired gently to align the hatch for the autonomous docking procedure.","pos":[4.5,4.8,4.2]},
+        {"id":"space_reentry_concept","en":"Blazing atmospheric re-entry","ipa":"/ˌæt.məsˈfer.ɪk riːˈen.tri/","es":"Reentrada a la Atmósfera","category":"Astrophysics","type":"concept","example":"The ceramic thermal heat shield glows white-hot during atmospheric re-entry.","pos":[3.5,1.8,-1.2]},
+        {"id":"space_exoplanet_concept","en":"Habitable zone exoplanet","ipa":"/ˈhæb.ə.t̬ə.bəl ˈek.soʊˌplæn.ɪt/","es":"Exoplaneta en Zona Habitable","category":"Astrophysics","type":"concept","example":"Astronomers scan for liquid water vapor in the atmosphere of the exoplanet.","pos":[-8.2,3.8,-2.5]},
+        {"id":"space_constellation_concept","en":"Zodiac constellation","ipa":"/ˈzoʊ.di.æk ˌkɑːn.stəˈleɪ.ʃən/","es":"Constelación Zodiacal","category":"Astrophysics","type":"concept","example":"Ancient sailors navigated open seas guided by the stars of Orion and Ursa Major.","pos":[-4.2,6.2,-6.8]},
+        {"id":"space_gravitational_pull","en":"Gravitational attraction force","ipa":"/ˌɡræv.əˈteɪ.ʃən.əl pʊl/","es":"Fuerza de Atracción Gravitacional","category":"Astrophysics","type":"concept","example":"The immense gravitational pull of the Sun keeps eight planets locked in orbit.","pos":[0,4,0]},
+        {"id":"space_vacuum_concept","en":"Absolute vacuum of outer space","ipa":"/ˈvæk.juːm əv speɪs/","es":"Vacío Absoluto del Espacio Exterior","category":"Astrophysics","type":"concept","example":"Sound waves cannot propagate through the silence of the vacuum of space.","pos":[6.5,3,1.5]},
+        {"id":"space_redshift_concept","en":"Cosmological redshift","ipa":"/ˈkɑːz.mə.lɑː.dʒɪkəl ˈred.ʃɪft/","es":"Corrimiento al Rojo Cosmológico","category":"Astrophysics","type":"concept","example":"The expansion of the universe stretches light wavelengths toward cosmological redshift.","pos":[-10.5,4.2,3.5]},
+        {"id":"space_dark_matter","en":"Mysterious dark matter halo","ipa":"/dɑːrk ˈmæt̬.ɚ ˈheɪ.loʊ/","es":"Halo Invisible de Materia Oscura","category":"Astrophysics","type":"concept","example":"Dark matter does not interact with light but holds galaxies together gravitationally.","pos":[9.5,5.5,-4.5]},
+        {"id":"space_ancient_starlight","en":"Ancient starlight from distant epochs","ipa":"/ˈeɪn.ʃənt ˈstɑːr.laɪt/","es":"Luz Estelar de Épocas Remotas","category":"Astrophysics","type":"concept","example":"Looking at distant galaxies means viewing ancient starlight that traveled billions of years.","pos":[-7.5,5.5,-5.2]},
+        {"id":"space_escape_velocity","en":"Planetary escape velocity","ipa":"/ɪˈskeɪp vəˈlɑː.sə.t̬i/","es":"Velocidad de Escape Planetaria","category":"Astrophysics","type":"concept","example":"A spacecraft must exceed eleven kilometers per second to escape Earth’s gravity.","pos":[2.5,4.2,2.2]},
+        {"id":"space_interstellar_medium","en":"Thin interstellar medium","ipa":"/ˌɪn.t̬ɚˈstel.ɚ ˈmiː.di.əm/","es":"Medio Interestelar Difuso","category":"Astrophysics","type":"concept","example":"The Voyager probes crossed the heliopause and entered the interstellar medium.","pos":[-12,2.8,-8]}
       ]
     },
     supermarket: {
       id: 'supermarket',
       title: '🛒 Supermarket',
-      bg: 0x0f172a,
+      bg: 0x0b1120,
       fogDensity: 0.005,
       cameraPos: { x: 0, y: 8.8, z: 14.2 },
-      cameraLookAt: { x: 0, y: 1.2, z: -1.0 },
+      cameraLookAt: { x: 0, y: 1.2, z: 0 },
       zones: {
-        overview: { pos: { x: 0, y: 8.8, z: 14.2 }, lookAt: { x: 0, y: 1.2, z: -1.0 }, label: '🛒 Vista General' },
+        overview: { pos: { x: 0, y: 8.8, z: 14.2 }, lookAt: { x: 0, y: 1.2, z: -1 }, label: '🛒 Vista General' },
         zone1: { pos: { x: -3.5, y: 4.2, z: 5.8 }, lookAt: { x: -3.2, y: 1.2, z: -2.2 }, label: '🍎 Zona 1: Frescos y Panadería' },
-        zone2: { pos: { x: 3.2, y: 3.8, z: 7.5 }, lookAt: { x: 3.0, y: 1.0, z: 2.5 }, label: '💳 Zona 2: Cajas y Escáner' },
+        zone2: { pos: { x: 3.2, y: 3.8, z: 7.5 }, lookAt: { x: 3, y: 1, z: 2.5 }, label: '💳 Zona 2: Cajas y Escáner' },
         zone3: { pos: { x: 2.5, y: 4.2, z: 3.2 }, lookAt: { x: 3.2, y: 1.2, z: -3.2 }, label: '🥛 Lácteos y Congelados' }
       },
       objects: [
-        { id: 'market_shopping_cart', en: 'Shopping Cart', ipa: '/ˈʃɑː.pɪŋ kɑːrt/', es: 'Carrito de Compras', category: 'Supermarket', example: 'I pushed the metal shopping cart down the main grocery aisle.', pos: [-2.8, 0, 3.2] },
-        { id: 'market_cash_register', en: 'Cash Register', ipa: '/ˈkæʃ ˌredʒ.ɪ.stɚ/', es: 'Caja Registradora', category: 'Supermarket', example: 'The cashier rang up our items on the digital cash register.', pos: [3.2, 1.08, 2.8] },
-        { id: 'market_barcode_scanner', en: 'Barcode Scanner', ipa: '/ˈbɑːr.koʊd ˈskæn.ɚ/', es: 'Escáner de Código de Barras', category: 'Supermarket', example: 'Pass the product over the laser barcode scanner to check the price.', pos: [2.1, 1.08, 3.0] },
-        { id: 'market_fresh_produce', en: 'Fresh Produce', ipa: '/freʃ ˈproʊ.duːs/', es: 'Sección de Frutas y Verduras', category: 'Supermarket', example: 'Organic apples, lettuce, and tomatoes are in the fresh produce display.', pos: [-4.8, 0, -1.2] },
-        { id: 'market_bakery', en: 'Bakery', ipa: '/ˈbeɪ.kɚ.i/', es: 'Panadería', category: 'Supermarket', example: 'We bought warm baguettes and croissants from the bakery counter.', pos: [-1.6, 0, -4.2] },
-        { id: 'market_dairy_section', en: 'Dairy Section', ipa: '/ˈder.i ˈsek.ʃən/', es: 'Sección de Lácteos', category: 'Supermarket', example: 'Cold milk, butter, and yogurt are kept in the refrigerated dairy section.', pos: [2.0, 0, -4.2] },
-        { id: 'market_frozen_aisle', en: 'Frozen Aisle', ipa: '/ˈfroʊ.zən aɪl/', es: 'Pasillo de Congelados', category: 'Supermarket', example: 'Ice cream and frozen vegetables are stored in the glass frozen aisle.', pos: [5.2, 0, -1.2] },
-        { id: 'market_scale', en: 'Scale', ipa: '/skeɪl/', es: 'Báscula de Peso', category: 'Supermarket', example: 'Place the fruit on the scale to measure its weight in pounds or kilos.', pos: [-2.4, 0, -0.8] },
-        { id: 'market_shopping_basket', en: 'Shopping Basket', ipa: '/ˈʃɑː.pɪŋ ˈbæs.kɪt/', es: 'Canasta de Compras', category: 'Supermarket', example: 'Carry a hand shopping basket when you only need a few groceries.', pos: [-0.8, 0, 3.8] },
-        { id: 'market_price_tag', en: 'Price Tag', ipa: '/ˈpraɪs tæɡ/', es: 'Etiqueta de Precio y Oferta', category: 'Supermarket', example: 'Look at the yellow price tag to see the twenty percent discount.', pos: [-4.8, 1.65, 1.2] },
-        { id: 'market_receipt', en: 'Receipt', ipa: '/rɪˈsiːt/', es: 'Recibo / Ticket de Compra', category: 'Supermarket', example: 'Would you like your printed receipt in the bag or with you?', pos: [4.1, 1.08, 3.1] },
-        { id: 'market_checkout', en: 'Checkout', ipa: '/ˈtʃek.aʊt/', es: 'Línea de Caja / Checkout', category: 'Supermarket', example: 'Place your groceries on the moving belt at the express checkout.', pos: [3.0, 0, 2.8] }
+        {"id":"market_shopping_cart","en":"Shopping Cart","ipa":"/ˈʃɑː.pɪŋ kɑːrt/","es":"Carrito de Compras","category":"Supermarket","type":"object","example":"I pushed the metal shopping cart down the main grocery aisle.","pos":[-2.8,0,3.2]},
+        {"id":"market_cash_register","en":"Cash Register","ipa":"/ˈkæʃ ˌredʒ.ɪ.stɚ/","es":"Caja Registradora","category":"Supermarket","type":"object","example":"The cashier rang up our items on the digital cash register.","pos":[3.2,1.08,2.8]},
+        {"id":"market_barcode_scanner","en":"Barcode Scanner","ipa":"/ˈbɑːr.koʊd ˈskæn.ɚ/","es":"Escáner de Código de Barras","category":"Supermarket","type":"object","example":"Pass the product over the laser barcode scanner to check the price.","pos":[2.1,1.08,3]},
+        {"id":"market_fresh_produce","en":"Fresh Produce Section","ipa":"/freʃ ˈproʊ.duːs ˈsek.ʃən/","es":"Sección de Frutas y Verduras Frescas","category":"Supermarket","type":"object","example":"Organic apples, lettuce, and tomatoes are in the fresh produce display.","pos":[-4.8,0,-1.2]},
+        {"id":"market_bakery","en":"Bakery Counter","ipa":"/ˈbeɪ.kɚ.i ˈkaʊn.tɚ/","es":"Mostrador de Panadería","category":"Supermarket","type":"object","example":"We bought warm baguettes and croissants from the bakery counter.","pos":[-1.6,0,-4.2]},
+        {"id":"market_dairy_section","en":"Dairy Section","ipa":"/ˈder.i ˈsek.ʃən/","es":"Sección de Lácteos","category":"Supermarket","type":"object","example":"Cold milk, butter, and yogurt are kept in the refrigerated dairy section.","pos":[2,0,-4.2]},
+        {"id":"market_frozen_aisle","en":"Frozen Foods Aisle","ipa":"/ˈfroʊ.zən aɪl/","es":"Pasillo de Congelados","category":"Supermarket","type":"object","example":"Ice cream and frozen vegetables are stored in the glass frozen aisle.","pos":[5.2,0,-1.2]},
+        {"id":"market_scale","en":"Produce Scale","ipa":"/ˈproʊ.duːs skeɪl/","es":"Báscula Digital de Peso","category":"Supermarket","type":"object","example":"Place the fruit on the scale to measure its weight in pounds or kilos.","pos":[-2.4,0,-0.8]},
+        {"id":"market_shopping_basket","en":"Hand Shopping Basket","ipa":"/ˈʃɑː.pɪŋ ˈbæs.kɪt/","es":"Canasta de Mano","category":"Supermarket","type":"object","example":"Carry a hand shopping basket when you only need a few groceries.","pos":[-0.8,0,3.8]},
+        {"id":"market_price_tag","en":"Yellow Price Tag","ipa":"/ˈpraɪs tæɡ/","es":"Etiqueta de Precio en Oferta","category":"Supermarket","type":"object","example":"Look at the yellow price tag to see the twenty percent discount.","pos":[-4.8,1.65,1.2]},
+        {"id":"market_receipt","en":"Printed Receipt","ipa":"/rɪˈsiːt/","es":"Recibo / Ticket de Compra","category":"Supermarket","type":"object","example":"Would you like your printed receipt in the bag or with you?","pos":[4.1,1.08,3.1]},
+        {"id":"market_checkout","en":"Checkout Belt Lane","ipa":"/ˈtʃek.aʊt leɪn/","es":"Línea de Caja / Checkout","category":"Supermarket","type":"object","example":"Place your groceries on the moving belt at the express checkout.","pos":[3,0,2.8]},
+        {"id":"market_conveyor_belt","en":"Motorized Conveyor Belt","ipa":"/kənˈveɪ.ɚ belt/","es":"Cinta Transportadora de Caja","category":"Supermarket","type":"object","example":"The motorized conveyor belt glided the groceries toward the cashier.","pos":[2.5,0.95,2.2]},
+        {"id":"market_deli_counter","en":"Gourmet Deli Counter","ipa":"/ˈdel.i ˈkaʊn.tɚ/","es":"Mostrador de Fiambrería y Quesos","category":"Supermarket","type":"object","example":"Ask the butcher to slice half a pound of smoked turkey at the deli counter.","pos":[-5.2,0,-4.2]},
+        {"id":"market_beverage_aisle","en":"Beverage & Juice Aisle","ipa":"/ˈbev.rɪdʒ aɪl/","es":"Pasillo de Bebidas y Jugos","category":"Supermarket","type":"object","example":"Sparkling waters and cold pressed juices line the beverage aisle.","pos":[4.8,0,-3.8]},
+        {"id":"market_canned_goods","en":"Canned Goods Shelf","ipa":"/kænd ɡʊdz ʃelf/","es":"Estantería de Alimentos Enlatados","category":"Supermarket","type":"object","example":"Stock up on canned tomatoes, tuna, and black beans for your pantry.","pos":[-0.5,0,-2.5]},
+        {"id":"market_cereal_aisle","en":"Breakfast Cereal Aisle","ipa":"/ˈsɪr.i.əl aɪl/","es":"Pasillo de Cereales y Granola","category":"Supermarket","type":"object","example":"Whole grain oats and crunchy granolas fill the cereal aisle.","pos":[1.8,0,-2.2]},
+        {"id":"market_reusable_bag","en":"Eco Reusable Grocery Bag","ipa":"/riːˈjuː.zə.bəl ˈɡroʊ.sɚ.i bæɡ/","es":"Bolsa Ecológica Reutilizable","category":"Supermarket","type":"object","example":"Bring your own canvas reusable bag to reduce plastic waste.","pos":[3.8,0.8,2.5]},
+        {"id":"market_card_terminal","en":"Contactless POS Terminal","ipa":"/ˌpiː.oʊˈes ˈtɝː.mə.nəl/","es":"Terminal de Tarjeta sin Contacto","category":"Supermarket","type":"object","example":"Tap your smartphone or contactless debit card against the POS terminal.","pos":[3.4,1.15,2.4]},
+        {"id":"market_cooler_display","en":"Refrigerated Glass Cooler","ipa":"/rɪˈfrɪdʒ.ə.reɪ.t̬ɪd ˈkuː.lɚ/","es":"Vitrina Enfriadora con Puertas de Vidrio","category":"Supermarket","type":"object","example":"Open the misted glass door of the cooler to select your almond milk.","pos":[5.4,0,1.5]},
+        {"id":"market_produce_crate","en":"Rustic Produce Crate","ipa":"/ˈrʌs.tɪk ˈproʊ.duːs kreɪt/","es":"Huacal de Frutas Frescas","category":"Supermarket","type":"object","example":"Crisp Fuji apples are arranged neatly in the wooden produce crate.","pos":[-3.8,0.4,-0.8]},
+        {"id":"market_trolley_bay","en":"Supermarket Trolley Bay","ipa":"/ˈtrɑː.li beɪ/","es":"Bahía de Carritos de Compra","category":"Supermarket","type":"object","example":"Return your empty shopping cart to the designated trolley bay.","pos":[-4.5,0,4.5]},
+        {"id":"market_aisle_sign","en":"Hanging Aisle Sign","ipa":"/ˈhæŋ.ɪŋ aɪl saɪn/","es":"Señalética Colgante de Pasillo","category":"Supermarket","type":"object","example":"The blue hanging aisle sign indicates pasta, sauces, and condiments.","pos":[0,3.2,-1.5]},
+        {"id":"market_scanner_gun","en":"Handheld Barcode Gun","ipa":"/ˈhænd.held ˈbɑːr.koʊd ɡʌn/","es":"Pistola Escáner Inalámbrica","category":"Supermarket","type":"object","example":"The inventory clerk scanned the barcodes using the handheld scanner gun.","pos":[2.4,1.12,3.2]},
+        {"id":"market_bread_rack","en":"Artisanal Bread Rack","ipa":"/ɑːrˌtɪz.ən.əl bred ræk/","es":"Estantería de Pan Artesanal","category":"Supermarket","type":"object","example":"Fresh sourdough loaves sit cooling on the artisanal wooden bread rack.","pos":[-1.2,0.5,-4.8]},
+        {"id":"market_dairy_fridge","en":"Glass Dairy Refrigerator","ipa":"/ˈder.i rɪˈfrɪdʒ.ə.reɪ.t̬ɚ/","es":"Refrigerador de Leche y Quesos","category":"Supermarket","type":"object","example":"Organic Greek yogurts are kept ice-cold in the dairy refrigerator.","pos":[2.5,0,-4.8]},
+        {"id":"market_bulk_dispenser","en":"Bulk Food Dispenser","ipa":"/bʌlk fuːd dɪˈspen.sɚ/","es":"Dispensador de Alimentos a Granel","category":"Supermarket","type":"object","example":"Pull the lever on the bulk dispenser to fill your bag with raw almonds.","pos":[-3.4,0.8,-3.2]},
+        {"id":"market_plastic_divider","en":"Cashier Customer Divider","ipa":"/kæˈʃɪr dɪˈvaɪ.dɚ/","es":"Separador de Compras en Caja","category":"Supermarket","type":"object","example":"Place the plastic divider between your items and the next customer.","pos":[2.6,1,2]},
+        {"id":"market_shelf_tag","en":"Electronic Shelf Tag","ipa":"/ɪˌlekˈtrɑː.nɪk ʃelf tæɡ/","es":"Etiqueta Digital de Precio","category":"Supermarket","type":"object","example":"The electronic shelf tag updates promotional prices in real time.","pos":[-4.2,1.2,-1.8]},
+        {"id":"market_meat_counter","en":"Fresh Butcher Counter","ipa":"/ˈbʊtʃ.ɚ ˈkaʊn.tɚ/","es":"Mostrador de Carnicería","category":"Supermarket","type":"object","example":"Ask the butcher for prime cut sirloin steaks at the fresh meat counter.","pos":[-3.8,0,-4.5]},
+        {"id":"market_seafood_ice","en":"Seafood Display on Ice","ipa":"/ˈsiː.fuːd dɪˈspleɪ ɑːn aɪs/","es":"Pescadería sobre Hielo Picado","category":"Supermarket","type":"object","example":"Wild salmon fillets rest over crushed ice on the seafood display.","pos":[0.8,0,-4.8]},
+        {"id":"market_cleaning_aisle","en":"Cleaning Supplies Shelf","ipa":"/ˈkliː.nɪŋ səˈplaɪz ʃelf/","es":"Estante de Productos de Limpieza","category":"Supermarket","type":"object","example":"Biodegradable detergents and paper towels are in the cleaning aisle.","pos":[4.2,0,0.2]},
+        {"id":"market_groceries_concept","en":"Weekly grocery haul","ipa":"/ˈwiːk.li ˈɡroʊ.sɚ.i hɑːl/","es":"Compras Semanales de Abarrotes","category":"Shopping Concept","type":"concept","example":"We bought fresh fruits, vegetables, and pantry staples in our weekly grocery haul.","pos":[-2,1.8,2.8]},
+        {"id":"market_out_of_stock","en":"Temporarily out of stock","ipa":"/ˈtem.pə.rer.əl.i aʊt əv stɑːk/","es":"Agotado Temporalmente","category":"Shopping Concept","type":"phrase","example":"I wanted to buy almond milk, but it was temporarily out of stock.","pos":[4.2,1.8,-4.2]},
+        {"id":"market_on_sale","en":"Fifty percent off / On sale","ipa":"/ɑːn seɪl/","es":"En Oferta / Descuento","category":"Shopping Concept","type":"phrase","example":"Check the endcaps—premium olive oil is currently fifty percent on sale.","pos":[-3.5,1.8,0.5]},
+        {"id":"market_bogo_deal","en":"Buy one get one free (BOGO)","ipa":"/baɪ wʌn ɡet wʌn friː/","es":"Promoción 2x1 (BOGO)","category":"Shopping Concept","type":"phrase","example":"These organic snack bars are on a buy one get one free promotion today.","pos":[1.2,1.8,-1.8]},
+        {"id":"market_expiration_date","en":"Check the expiration date","ipa":"/ˈtʃek ðə ˌek.spəˈreɪ.ʃən deɪt/","es":"Verificar la Fecha de Vencimiento","category":"Shopping Concept","type":"phrase","example":"Always check the expiration date on dairy products before buying them.","pos":[2.8,1.8,-4]},
+        {"id":"market_nutrition_facts","en":"Read the nutrition facts panel","ipa":"/nuːˈtrɪʃ.ən fækts ˈpæn.əl/","es":"Revisar la Tabla Nutricional","category":"Shopping Concept","type":"phrase","example":"Read the nutrition facts panel to check for added sugar and fiber grams.","pos":[-0.2,1.8,-2.8]},
+        {"id":"market_organic_produce","en":"Certified organic vegetables","ipa":"/ˈsɝː.t̬ə.faɪd ɔːrˈɡæn.ɪk/","es":"Verduras Orgánicas Certificadas","category":"Shopping Concept","type":"concept","example":"Certified organic vegetables are grown without synthetic chemical pesticides.","pos":[-4.2,1.8,-1.5]},
+        {"id":"market_ripe_produce","en":"Perfect balance of ripe fruit","ipa":"/ˈpɝː.fekt ˈbæl.əns əv raɪp fruːt/","es":"Fruta Madura en su Punto","category":"Shopping Concept","type":"concept","example":"Select avocados that yield to gentle pressure—they are perfectly ripe.","pos":[-3.2,1.8,-0.5]},
+        {"id":"market_spoiled_food","en":"Spoiled or moldy food","ipa":"/spɔɪld ɔːr ˈmoʊl.di fuːd/","es":"Alimento Estropeado o Vencido","category":"Shopping Concept","type":"concept","example":"Notify supermarket staff if you ever see spoiled or broken packages.","pos":[-5.2,1.8,-0.8]},
+        {"id":"market_freshly_baked","en":"Warm freshly baked bread","ipa":"/ˈfreʃ.li beɪkt bred/","es":"Pan Recién Horneado","category":"Shopping Concept","type":"phrase","example":"The irresistible aroma of warm freshly baked baguettes filled the front entrance.","pos":[-1.4,1.8,-3.8]},
+        {"id":"market_aisle_number","en":"Down aisle number four","ipa":"/daʊn aɪl ˈnʌm.bɚ fɔːr/","es":"Por el Pasillo Número Cuatro","category":"Shopping Concept","type":"phrase","example":"You will find pasta and marinara sauces halfway down aisle number four.","pos":[0.8,2.2,-1.2]},
+        {"id":"market_pay_in_cash","en":"Pay in cash at checkout","ipa":"/peɪ ɪn kæʃ æt ˈtʃek.aʊt/","es":"Pagar en Efectivo en Caja","category":"Shopping Concept","type":"phrase","example":"Would you prefer to pay in cash or with your contactless debit card?","pos":[2.4,1.8,3.2]},
+        {"id":"market_pay_by_card","en":"Insert or swipe your card","ipa":"/ɪnˈsɝːt ɔːr swaɪp jʊr kɑːrd/","es":"Pagar con Tarjeta Bancaria","category":"Shopping Concept","type":"phrase","example":"Insert your chip card or tap the screen to complete the transaction.","pos":[3.2,1.8,2.2]},
+        {"id":"market_contactless_pay","en":"Tap for contactless payment","ipa":"/tæp fɔːr ˈkɑːn.tæk.ləs ˈpeɪ.mənt/","es":"Pago con Tarjeta sin Contacto","category":"Shopping Concept","type":"phrase","example":"Tap your digital wallet on the glowing terminal for quick contactless payment.","pos":[3.6,1.8,2.8]},
+        {"id":"market_keep_change","en":"Keep the change as a tip","ipa":"/kiːp ðə tʃeɪndʒ/","es":"Quédese con el Cambio","category":"Shopping Concept","type":"phrase","example":"Thank you for your cheerful service! You can keep the change.","pos":[4.2,1.8,3.2]},
+        {"id":"market_request_refund","en":"Request a store refund","ipa":"/rɪˈkwest ə stɔːr ˈriː.fʌnd/","es":"Solicitar un Reembolso en Tienda","category":"Shopping Concept","type":"phrase","example":"Bring your receipt to customer service to request a store refund.","pos":[4.8,1.8,2]},
+        {"id":"market_shopping_list","en":"Follow your shopping list","ipa":"/ˈfɑː.loʊ jʊr ˈʃɑː.pɪŋ lɪst/","es":"Seguir la Lista de Compras","category":"Shopping Concept","type":"phrase","example":"Stick to your handwritten shopping list to prevent unnecessary impulse buying.","pos":[-1.2,1.8,3]},
+        {"id":"market_impulse_buying","en":"Avoid cashier impulse buys","ipa":"/əˈvɔɪd ˈɪm.pʌls baɪz/","es":"Evitar Compras por Impulso","category":"Shopping Concept","type":"concept","example":"Candy bars and magazines placed by checkout lanes encourage impulse buys.","pos":[1.8,1.8,2.5]},
+        {"id":"market_buy_in_bulk","en":"Buy staples in bulk to save","ipa":"/baɪ ɪn bʌlk tuː seɪv/","es":"Comprar a Granel para Ahorrar","category":"Shopping Concept","type":"phrase","example":"Buying brown rice, oats, and nuts in bulk saves packaging and money.","pos":[-2.8,1.8,-2.8]},
+        {"id":"market_price_check","en":"Can I get a price check on this?","ipa":"/praɪs tʃek ɑːn ðɪs/","es":"¿Me Puede Verificar el Precio?","category":"Shopping Concept","type":"phrase","example":"Excuse me, the shelf tag was missing—can I get a quick price check on this?","pos":[-4.2,1.8,1.8]}
       ]
     },
     hotel: {
       id: 'hotel',
       title: '🏨 Hotel & Reception',
-      bg: 0x0c1220,
+      bg: 0x0f172a,
       fogDensity: 0.005,
-      cameraPos: { x: 0, y: 8.2, z: 14.0 },
-      cameraLookAt: { x: 0, y: 1.4, z: -1.0 },
+      cameraPos: { x: 0, y: 8.2, z: 14 },
+      cameraLookAt: { x: 0, y: 1.2, z: -0.5 },
       zones: {
-        overview: { pos: { x: 0, y: 8.2, z: 14.0 }, lookAt: { x: 0, y: 1.4, z: -1.0 }, label: '🏨 Vista General' },
+        overview: { pos: { x: 0, y: 8.2, z: 14 }, lookAt: { x: 0, y: 1.4, z: -1 }, label: '🏨 Vista General' },
         zone1: { pos: { x: 0, y: 3.4, z: 3.2 }, lookAt: { x: 0, y: 1.2, z: -3.5 }, label: '🛎️ Zona 1: Recepción' },
         zone2: { pos: { x: 3.8, y: 3.6, z: 6.8 }, lookAt: { x: 3.6, y: 1.2, z: -0.5 }, label: '🧳 Zona 2: Equipaje y Elevador' },
-        zone3: { pos: { x: -3.8, y: 3.6, z: 5.5 }, lookAt: { x: -4.0, y: 1.1, z: -1.0 }, label: '🛋️ Lobby y Check-in' }
+        zone3: { pos: { x: -3.8, y: 3.6, z: 5.5 }, lookAt: { x: -4, y: 1.1, z: -1 }, label: '🛋️ Lobby y Check-in' }
       },
       objects: [
-        { id: 'hotel_receptionist_desk', en: 'Receptionist Desk', ipa: '/rɪˈsep.ʃən.ɪst desk/', es: 'Mostrador de Recepción', category: 'Hotel & Reception', example: 'Welcome! Please check in at the main receptionist desk.', pos: [0, 0, -3.5] },
-        { id: 'hotel_room_keycard', en: 'Room Keycard', ipa: '/ruːm ˈkiː.kɑːrd/', es: 'Tarjeta Llave de Habitación', category: 'Hotel & Reception', example: 'Here is your magnetic room keycard for suite 402 on the fourth floor.', pos: [-0.8, 1.12, -3.1] },
-        { id: 'hotel_luggage_cart', en: 'Luggage Cart', ipa: '/ˈlʌɡ.ɪdʒ kɑːrt/', es: 'Carrito de Equipaje Dorado', category: 'Hotel & Reception', example: 'The bellhop placed our bags on the brass luggage cart.', pos: [3.8, 0, 1.2] },
-        { id: 'hotel_suitcase', en: 'Suitcase', ipa: '/ˈsuːt.keɪs/', es: 'Maletas de Viaje', category: 'Hotel & Reception', example: 'My rolling suitcase fits easily in the overhead compartment.', pos: [2.5, 0, 2.4] },
-        { id: 'hotel_elevator', en: 'Elevator', ipa: '/ˈel.ə.veɪ.t̬ɚ/', es: 'Puertas de Elevador', category: 'Hotel & Reception', example: 'Press the up button to call the glass hotel elevator.', pos: [5.2, 0, -3.8] },
-        { id: 'hotel_bellhop_bell', en: 'Bellhop Bell', ipa: '/ˈbel.hɑːp bel/', es: 'Campana de Botones', category: 'Hotel & Reception', example: 'Ring the golden bellhop bell on the counter for service.', pos: [0.65, 1.12, -3.1] },
-        { id: 'hotel_lobby_sofa', en: 'Lobby Sofa', ipa: '/ˈlɑː.bi ˈsoʊ.fə/', es: 'Sofá de Lobby', category: 'Hotel & Reception', example: 'Please have a seat on the plush lobby sofa while we prepare your room.', pos: [-4.2, 0, 1.0] },
-        { id: 'hotel_chandelier', en: 'Chandelier', ipa: '/ˌʃæn.dəˈlɪr/', es: 'Candelabro de Cristal', category: 'Hotel & Reception', example: 'A grand crystal chandelier illuminates the entire hotel lobby.', pos: [0, 4.4, -0.5] },
-        { id: 'hotel_checkin_terminal', en: 'Check-in Terminal', ipa: '/ˈtʃek.ɪn ˈtɝː.mə.nəl/', es: 'Terminal Digital de Check-in', category: 'Hotel & Reception', example: 'Use the touch-screen check-in terminal for fast express registration.', pos: [-3.8, 0, -3.2] },
-        { id: 'hotel_concierge', en: 'Concierge', ipa: '/ˌkɑːn.siˈerʒ/', es: 'Módulo de Conserjería Turística', category: 'Hotel & Reception', example: 'Our hotel concierge can book city tours, taxis, and theater tickets.', pos: [3.6, 0, -2.2] },
-        { id: 'hotel_safe_box', en: 'Safe Box', ipa: '/seɪf bɑːks/', es: 'Caja Fuerte de Seguridad', category: 'Hotel & Reception', example: 'Enter a four-digit PIN code to lock the electronic safe box.', pos: [-5.2, 0, -1.5] },
-        { id: 'hotel_passport', en: 'Passport', ipa: '/ˈpæs.pɔːrt/', es: 'Pasaporte Internacional', category: 'Hotel & Reception', example: 'May I see your passport and booking confirmation, please?', pos: [0.05, 1.12, -3.05] }
+        {"id":"hotel_receptionist_desk","en":"Receptionist Desk","ipa":"/rɪˈsep.ʃən.ɪst desk/","es":"Mostrador de Recepción","category":"Hotel & Reception","type":"object","example":"Welcome! Please check in at the main receptionist desk.","pos":[0,0,-3.5]},
+        {"id":"hotel_room_keycard","en":"Magnetic Room Keycard","ipa":"/ruːm ˈkiː.kɑːrd/","es":"Tarjeta Llave de Habitación","category":"Hotel & Reception","type":"object","example":"Here is your magnetic room keycard for suite 402 on the fourth floor.","pos":[-0.8,1.12,-3.1]},
+        {"id":"hotel_luggage_cart","en":"Brass Luggage Cart","ipa":"/ˈlʌɡ.ɪdʒ kɑːrt/","es":"Carrito de Equipaje Dorado","category":"Hotel & Reception","type":"object","example":"The bellhop placed our bags on the brass luggage cart.","pos":[3.8,0,1.2]},
+        {"id":"hotel_suitcase","en":"Rolling Suitcase","ipa":"/ˈsuːt.keɪs/","es":"Maletas de Viaje con Ruedas","category":"Hotel & Reception","type":"object","example":"My rolling suitcase fits easily in the overhead compartment.","pos":[2.5,0,2.4]},
+        {"id":"hotel_elevator","en":"Glass Elevator","ipa":"/ˈel.ə.veɪ.t̬ɚ/","es":"Elevador Panorámico","category":"Hotel & Reception","type":"object","example":"Press the up button to call the glass hotel elevator.","pos":[5.2,0,-3.8]},
+        {"id":"hotel_bellhop_bell","en":"Golden Bellhop Bell","ipa":"/ˈbel.hɑːp bel/","es":"Campana Dorada de Servicio","category":"Hotel & Reception","type":"object","example":"Ring the golden bellhop bell on the counter for service.","pos":[0.65,1.12,-3.1]},
+        {"id":"hotel_lobby_sofa","en":"Plush Lobby Sofa","ipa":"/ˈlɑː.bi ˈsoʊ.fə/","es":"Sofá Acolchado del Lobby","category":"Hotel & Reception","type":"object","example":"Please have a seat on the plush lobby sofa while we prepare your room.","pos":[-4.2,0,1]},
+        {"id":"hotel_chandelier","en":"Crystal Chandelier","ipa":"/ˌʃæn.dəˈlɪr/","es":"Candelabro Imperial de Cristal","category":"Hotel & Reception","type":"object","example":"A grand crystal chandelier illuminates the entire hotel lobby.","pos":[0,4.4,-0.5]},
+        {"id":"hotel_checkin_terminal","en":"Express Check-in Terminal","ipa":"/ˈtʃek.ɪn ˈtɝː.mə.nəl/","es":"Terminal Digital de Check-in","category":"Hotel & Reception","type":"object","example":"Use the touch-screen check-in terminal for fast express registration.","pos":[-3.8,0,-3.2]},
+        {"id":"hotel_concierge","en":"Concierge Desk","ipa":"/ˌkɑːn.siˈerʒ/","es":"Módulo de Conserjería Turística","category":"Hotel & Reception","type":"object","example":"Our hotel concierge can book city tours, taxis, and theater tickets.","pos":[3.6,0,-2.2]},
+        {"id":"hotel_safe_box","en":"In-Room Safe Box","ipa":"/seɪf bɑːks/","es":"Caja Fuerte Electrónica","category":"Hotel & Reception","type":"object","example":"Enter a four-digit PIN code to lock the electronic safe box.","pos":[-5.2,0,-1.5]},
+        {"id":"hotel_passport","en":"Passport & Credentials","ipa":"/ˈpæs.pɔːrt/","es":"Pasaporte Internacional","category":"Hotel & Reception","type":"object","example":"May I see your passport and booking confirmation, please?","pos":[0.05,1.12,-3.05]},
+        {"id":"hotel_minibar","en":"Stocked Minibar Fridge","ipa":"/ˈmɪn.i.bɑːr frɪdʒ/","es":"Minibar de Habitación","category":"Hotel Amenities","type":"object","example":"Chilled sparkling water and artisan chocolates are stocked in the minibar.","pos":[-5,0,-3.8]},
+        {"id":"hotel_king_bed","en":"King-size Luxury Bed","ipa":"/kɪŋ saɪz bed/","es":"Cama King Size de Lujo","category":"Hotel Room","type":"object","example":"The executive suite features a king-size luxury bed with Egyptian cotton sheets.","pos":[-4.8,0,3.5]},
+        {"id":"hotel_room_service_tray","en":"Silver Room Service Tray","ipa":"/ruːm ˈsɝː.vɪs treɪ/","es":"Bandeja de Servicio a la Habitación","category":"Hotel Amenities","type":"object","example":"Fresh orange juice and croissants arrived on a polished silver room service tray.","pos":[-1.2,1.1,-3.1]},
+        {"id":"hotel_do_not_disturb","en":"Do Not Disturb Door Sign","ipa":"/duː nɑːt dɪˈstɝːb/","es":"Letrero de No Molestar","category":"Hotel Amenities","type":"object","example":"Hang the Do Not Disturb door sign outside when taking an afternoon nap.","pos":[-3.2,1.2,-3.8]},
+        {"id":"hotel_bathrobe","en":"Plush Cotton Bathrobe","ipa":"/plʌʃ ˈbæθ.roʊb/","es":"Bata de Baño Afelpada","category":"Hotel Amenities","type":"object","example":"Slip into the plush cotton bathrobe after relaxing in the heated jacuzzi.","pos":[-4,1.1,3.2]},
+        {"id":"hotel_towel_rack","en":"Heated Towel Rack","ipa":"/ˈhiː.t̬ɪd ˈtaʊ.əl ræk/","es":"Toallero Eléctrico Climatizado","category":"Hotel Amenities","type":"object","example":"Fluffy white towels were warm and dry thanks to the heated towel rack.","pos":[-5.8,1.2,3]},
+        {"id":"hotel_thermostat","en":"Digital Room Thermostat","ipa":"/ˈdɪdʒ.ə.t̬əl ˈθɝː.mə.stæt/","es":"Termostato Digital de Habitación","category":"Hotel Amenities","type":"object","example":"Adjust the room temperature to sixty-eight degrees using the thermostat.","pos":[1.8,1.4,-3.8]},
+        {"id":"hotel_emergency_exit","en":"Illuminated Emergency Exit","ipa":"/ɪˈmɝː.dʒən.si ˈek.sɪt/","es":"Salida de Emergencia Iluminada","category":"Hotel Safety","type":"object","example":"Locate the green illuminated emergency exit stairwell nearest your room.","pos":[6.4,0,-2.5]},
+        {"id":"hotel_valet_podium","en":"Valet Parking Podium","ipa":"/vælˈeɪ ˈpɑːr.kɪŋ ˈpoʊ.di.əm/","es":"Podio de Valet Parking","category":"Hotel Services","type":"object","example":"Hand your car keys to the attendant at the valet parking podium.","pos":[4.5,0,3.8]},
+        {"id":"hotel_pillow_menu","en":"Memory Foam Pillow Menu","ipa":"/ˈpɪl.oʊ ˈmen.juː/","es":"Menú de Almohadas Personalizadas","category":"Hotel Amenities","type":"object","example":"Select feather down or ergonomic memory foam from the luxury pillow menu.","pos":[-4.2,0.8,3.8]},
+        {"id":"hotel_slippers","en":"Velvet Hotel Slippers","ipa":"/hoʊˈtel ˈslɪp.ɚz/","es":"Pantuflas Suaves de Hotel","category":"Hotel Amenities","type":"object","example":"Complimentary velvet hotel slippers are provided beside the wardrobe.","pos":[-4.2,0.1,2.8]},
+        {"id":"hotel_key_drop","en":"Express Key Drop Box","ipa":"/kiː drɑːp bɑːks/","es":"Buzón de Devolución de Llaves Express","category":"Hotel Services","type":"object","example":"Drop your card into the express key drop box for frictionless checkout.","pos":[-1.4,0.9,-3.2]},
+        {"id":"hotel_coffee_station","en":"Nespresso Coffee Station","ipa":"/ˈkɑː.fi ˈsteɪ.ʃən/","es":"Estación de Café en Habitación","category":"Hotel Amenities","type":"object","example":"Brew complimentary morning espresso at the in-room coffee station.","pos":[-5.2,0.9,-2.5]},
+        {"id":"hotel_ironing_board","en":"Steam Iron & Board","ipa":"/ˈaɪrn ænd bɔːrd/","es":"Plancha de Vapor y Tabla","category":"Hotel Amenities","type":"object","example":"Press business shirts neatly with the steam iron and collapsible board.","pos":[-5.5,0,0.5]},
+        {"id":"hotel_suit_hangers","en":"Polished Wooden Hangers","ipa":"/ˈwʊd.ən ˈhæŋ.ɚz/","es":"Ganchos de Madera para Trajes","category":"Hotel Amenities","type":"object","example":"Hang dresses and tailored jackets on the polished wooden hangers.","pos":[-4.8,1.4,-1.2]},
+        {"id":"hotel_swimming_pool","en":"Infinity Swimming Pool","ipa":"/ɪnˈfɪn.ə.t̬i ˈswɪm.ɪŋ puːl/","es":"Piscina Infinita Climatizada","category":"Hotel Amenities","type":"object","example":"Enjoy panoramic city views from the rooftop heated infinity swimming pool.","pos":[5.8,0,4.5]},
+        {"id":"hotel_fitness_treadmill","en":"Gym Treadmill Station","ipa":"/ˈtred.mɪl ˈsteɪ.ʃən/","es":"Caminadora del Gimnasio","category":"Hotel Amenities","type":"object","example":"The twenty-four hour fitness center is equipped with high-tech treadmills.","pos":[6.2,0,1.5]},
+        {"id":"hotel_shuttle_van","en":"Airport Shuttle Bus","ipa":"/ˈer.pɔːrt ˈʃʌt̬.əl bʌs/","es":"Transporte al Aeropuerto","category":"Hotel Services","type":"object","example":"Reserve a seat on the complimentary hotel airport shuttle bus.","pos":[5.8,0,6.2]},
+        {"id":"hotel_revolving_door","en":"Brass Revolving Door","ipa":"/rɪˈvɑːl.vɪŋ dɔːr/","es":"Puerta Giratoria de Cristal y Latón","category":"Hotel & Reception","type":"object","example":"Guests enter the grand lobby through the polished brass revolving door.","pos":[0,0,6.8]},
+        {"id":"hotel_smoke_detector","en":"Ceiling Smoke Detector","ipa":"/smoʊk dɪˈtek.tɚ/","es":"Detector de Humo en Techo","category":"Hotel Safety","type":"object","example":"High-sensitivity optical smoke detectors ensure guest safety across all suites.","pos":[0,4.2,-2.5]},
+        {"id":"hotel_check_in_concept","en":"Check in at the front desk","ipa":"/tʃek ɪn æt ðə frʌnt desk/","es":"Registrarse en Recepción","category":"Hospitality Concept","type":"phrase","example":"Check-in time begins at three PM; our room keys are already prepared.","pos":[-0.5,1.8,-2.2]},
+        {"id":"hotel_check_out_concept","en":"Check out before noon","ipa":"/tʃek aʊt bɪˈfɔːr nuːn/","es":"Entregar la Habitación al Mediodía","category":"Hospitality Concept","type":"phrase","example":"Standard hotel policy asks guests to check out before twelve noon.","pos":[0.8,1.8,-2.2]},
+        {"id":"hotel_booking_number","en":"Booking confirmation code","ipa":"/ˈbʊk.ɪŋ ˌkɑːn.fɚˈmeɪ.ʃən/","es":"Código de Confirmación de Reserva","category":"Hospitality Concept","type":"concept","example":"Please present your seven-digit booking confirmation code upon arrival.","pos":[-1.8,1.8,-3.2]},
+        {"id":"hotel_single_double_concept","en":"Single vs. Double occupancy","ipa":"/ˈsɪŋ.ɡəl / ˈdʌb.əl ˌɑː.kjə.pən.si/","es":"Habitación Sencilla o Doble","category":"Hospitality Concept","type":"concept","example":"We booked a double occupancy room with two queen beds for our trip.","pos":[-3.2,1.8,1.8]},
+        {"id":"hotel_executive_suite","en":"Penthouse Executive Suite","ipa":"/ɪɡˈzek.jə.t̬ɪv swiːt/","es":"Suite Ejecutiva de Lujo","category":"Hospitality Concept","type":"concept","example":"The penthouse executive suite includes a private balcony and concierge service.","pos":[-4.2,1.8,-2]},
+        {"id":"hotel_complimentary_breakfast","en":"Complimentary buffet breakfast","ipa":"/ˌkɑːm.pləˈmen.t̬ɚ.i ˈbrek.fəst/","es":"Desayuno Buffet de Cortesía","category":"Hospitality Concept","type":"concept","example":"A complimentary buffet breakfast is served daily from seven until ten AM.","pos":[2,1.8,-1.5]},
+        {"id":"hotel_wake_up_call","en":"Schedule a morning wake-up call","ipa":"/ˈweɪk.ʌp kɑːl/","es":"Pedir Llamada de Despertador","category":"Hospitality Concept","type":"phrase","example":"I asked the front desk operator for a sharp six-thirty AM wake-up call.","pos":[-2.2,1.8,-1.8]},
+        {"id":"hotel_late_checkout_concept","en":"Request late check-out","ipa":"/rɪˈkwest leɪt tʃek aʊt/","es":"Solicitar Salida Tardía","category":"Hospitality Concept","type":"phrase","example":"As a loyalty club member, you can request late check-out until two PM.","pos":[0.2,1.8,-1.8]},
+        {"id":"hotel_vacancy_concept","en":"Rooms available / Vacancy","ipa":"/ˈveɪ.kən.si/","es":"Habitaciones Libres / Disponibles","category":"Hospitality Concept","type":"concept","example":"The neon vacancy sign confirmed the boutique hotel had empty suites.","pos":[1.2,2,4.2]},
+        {"id":"hotel_fully_booked","en":"No vacancy / Fully booked","ipa":"/noʊ ˈveɪ.kən.si / ˈfʊl.i bʊkt/","es":"Totalmente Agotado / Lleno","category":"Hospitality Concept","type":"concept","example":"During holiday festival weekends, downtown hotels are often fully booked.","pos":[2.4,2,4.2]},
+        {"id":"hotel_amenities_concept","en":"World-class hotel amenities","ipa":"/ˈwɝːld klæs əˈmen.ə.t̬iz/","es":"Amenidades de Clase Mundial","category":"Hospitality Concept","type":"concept","example":"Spa access, rooftop pools, and valet service are part of the luxury amenities.","pos":[3.8,1.8,-1.2]},
+        {"id":"hotel_housekeeping_concept","en":"Daily housekeeping service","ipa":"/ˈhaʊsˌkiː.pɪŋ ˈsɝː.vɪs/","es":"Servicio Diario de Limpieza","category":"Hospitality Concept","type":"concept","example":"Housekeeping replaced the towels and restocked fresh mineral water.","pos":[-3.5,1.8,2.5]},
+        {"id":"hotel_porter_bellhop","en":"Attentive bellhop assistance","ipa":"/ˈbel.hɑːp əˈsɪs.təns/","es":"Asistencia Atenta del Botones","category":"Hospitality Concept","type":"concept","example":"The courteous bellhop transported our heavy luggage directly to room 305.","pos":[2.8,1.8,1.2]},
+        {"id":"hotel_front_desk_247","en":"24/7 Front desk support","ipa":"/frʌnt desk səˈpɔːrt/","es":"Recepción 24 Horas al Día","category":"Hospitality Concept","type":"concept","example":"Whatever you need, our professional front desk is open twenty-four seven.","pos":[0,2,-2.8]},
+        {"id":"hotel_security_deposit_concept","en":"Refundable security deposit","ipa":"/rɪˈfʌn.də.bəl səˈkjʊr.ə.t̬i dɪˈpɑː.zɪt/","es":"Depósito de Garantía Reembolsable","category":"Hospitality Concept","type":"concept","example":"The hotel places a temporary pre-authorization hold for incidentals.","pos":[-1.2,1.8,-2.5]},
+        {"id":"hotel_photo_id","en":"Government-issued photo ID","ipa":"/ˈfoʊ.t̬oʊ aɪˈdiː/","es":"Identificación Oficial con Foto","category":"Hospitality Concept","type":"concept","example":"Guests must present a government-issued photo ID or passport to register.","pos":[-0.2,1.8,-2.5]},
+        {"id":"hotel_luggage_storage_concept","en":"Secure luggage storage room","ipa":"/ˈlʌɡ.ɪdʒ ˈstɔːr.ɪdʒ ruːm/","es":"Custodia Segura de Equipaje","category":"Hospitality Concept","type":"concept","example":"Leave your backpacks in the secure luggage storage room while exploring the city.","pos":[3.2,1.8,0.5]},
+        {"id":"hotel_warm_hospitality","en":"Exceptional warm hospitality","ipa":"/ɪkˈsep.ʃən.əl ˌhɑː.spɪˈtæl.ə.t̬i/","es":"Hospitalidad Cálida y Excepcional","category":"Hospitality Concept","type":"concept","example":"The staff treated every traveler with warmth, respect, and attentive hospitality.","pos":[-2.5,1.8,0.5]},
+        {"id":"hotel_all_inclusive_concept","en":"All-inclusive resort package","ipa":"/ˌɑːl ɪnˈkluː.sɪv rɪˈzɔːrt/","es":"Plan Vacacional Todo Incluido","category":"Hospitality Concept","type":"concept","example":"Meals, drinks, and watersports are bundled in our all-inclusive package.","pos":[4.5,1.8,2.5]},
+        {"id":"hotel_ocean_view_concept","en":"Private ocean view balcony","ipa":"/ˈoʊ.ʃən vjuː ˈbæl.kə.ni/","es":"Balcón Privado con Vista al Mar","category":"Hospitality Concept","type":"concept","example":"Sip morning coffee on your private ocean view balcony as the sun rises.","pos":[1.8,2.2,5.5]}
       ]
     },
     restaurant: {
       id: 'restaurant',
       title: '🍽️ Fine Restaurant',
-      bg: 0x100c18,
-      fogDensity: 0.006,
-      cameraPos: { x: 0, y: 8.0, z: 13.5 },
-      cameraLookAt: { x: 0, y: 1.2, z: -0.8 },
+      bg: 0x140c14,
+      fogDensity: 0.005,
+      cameraPos: { x: 0, y: 8, z: 13.5 },
+      cameraLookAt: { x: 0, y: 1.1, z: 0.5 },
       zones: {
-        overview: { pos: { x: 0, y: 8.0, z: 13.5 }, lookAt: { x: 0, y: 1.2, z: -0.8 }, label: '🍽️ Vista General' },
-        zone1: { pos: { x: 0, y: 3.2, z: 4.5 }, lookAt: { x: 0, y: 1.0, z: 0.8 }, label: '🥂 Zona 1: Comedor Gourmet' },
+        overview: { pos: { x: 0, y: 8, z: 13.5 }, lookAt: { x: 0, y: 1.2, z: -0.8 }, label: '🍽️ Vista General' },
+        zone1: { pos: { x: 0, y: 3.2, z: 4.5 }, lookAt: { x: 0, y: 1, z: 0.8 }, label: '🥂 Zona 1: Comedor Gourmet' },
         zone2: { pos: { x: 0, y: 3.8, z: 1.5 }, lookAt: { x: -1.2, y: 1.2, z: -4.2 }, label: '👨‍🍳 Zona 2: Estación del Chef' },
-        zone3: { pos: { x: 3.5, y: 3.4, z: 5.8 }, lookAt: { x: 3.2, y: 1.0, z: 0.5 }, label: '🍰 Postres y Barra' }
+        zone3: { pos: { x: 3.5, y: 3.4, z: 5.8 }, lookAt: { x: 3.2, y: 1, z: 0.5 }, label: '🍰 Postres y Barra' }
       },
       objects: [
-        { id: 'rest_dining_table', en: 'Dining Table', ipa: '/ˈdaɪ.nɪŋ ˈteɪ.bəl/', es: 'Mesa Vestida de Comedor', category: 'Fine Restaurant', example: 'Our dining table is ready near the warm ambient lamps.', pos: [0, 0, 0.8] },
-        { id: 'rest_chef_station', en: 'Chef Station', ipa: '/ʃef ˈsteɪ.ʃən/', es: 'Estación del Chef', category: 'Fine Restaurant', example: 'The executive chef garnishes every plate at the chef station.', pos: [0, 0, -4.5] },
-        { id: 'rest_menu', en: 'Menu', ipa: '/ˈmen.juː/', es: 'Menú Gourmet', category: 'Fine Restaurant', example: 'Our sommelier and chef prepared a seasonal tasting menu tonight.', pos: [-0.55, 0.98, 1.15] },
-        { id: 'rest_main_course', en: 'Main Course', ipa: '/meɪn kɔːrs/', es: 'Plato Fuerte / Principal', category: 'Fine Restaurant', example: 'For the main course, I would like the grilled steak with herbs.', pos: [-0.4, 0.98, 0.65] },
-        { id: 'rest_appetizer', en: 'Appetizer', ipa: '/ˈæp.ə.taɪ.zɚ/', es: 'Entrada / Aperitivo Gourmet', category: 'Fine Restaurant', example: 'Would you care to start with a warm appetizer before dinner?', pos: [0.42, 0.98, 0.65] },
-        { id: 'rest_cutlery', en: 'Cutlery', ipa: '/ˈkʌt.lɚ.i/', es: 'Cubiertos de Plata', category: 'Fine Restaurant', example: 'The polished silver cutlery is placed neatly beside each plate.', pos: [-0.75, 0.96, 0.85] },
-        { id: 'rest_bill_folder', en: 'Bill Folder', ipa: '/bɪl ˈfoʊl.dɚ/', es: 'Carpeta de Cuenta', category: 'Fine Restaurant', example: 'Place your credit card inside the leather bill folder when ready.', pos: [-0.20, 0.96, 1.25] },
-        { id: 'rest_kitchen_pass', en: 'Kitchen Pass', ipa: '/ˈkɪtʃ.ən pæs/', es: 'Barra de Cocina', category: 'Fine Restaurant', example: 'Waiters pick up hot dishes directly from the illuminated kitchen pass.', pos: [-3.8, 0, -3.8] },
-        { id: 'rest_napkin', en: 'Napkin', ipa: '/ˈnæp.kɪn/', es: 'Servilleta de Tela Doblada', category: 'Fine Restaurant', example: 'Could you bring us an extra cloth napkin, please?', pos: [0.75, 0.98, 0.85] },
-        { id: 'rest_beverage', en: 'Beverage', ipa: '/ˈbev.rɪdʒ/', es: 'Bebida / Copa Refrescante', category: 'Fine Restaurant', example: 'What kind of cold beverage would you like with your meal?', pos: [0.28, 1.02, 1.18] },
-        { id: 'rest_reserved_sign', en: 'Reserved Sign', ipa: '/rɪˈzɝːvd saɪn/', es: 'Letrero de Mesa Reservada', category: 'Fine Restaurant', example: 'This VIP table has a golden reserved sign on top.', pos: [-3.6, 0.96, 1.2] },
-        { id: 'rest_dessert_cart', en: 'Dessert Cart', ipa: '/dɪˈzɝːt kɑːrt/', es: 'Carrito de Postres', category: 'Fine Restaurant', example: 'Choose your favorite cake from our rolling dessert cart.', pos: [3.6, 0, 1.4] }
+        {"id":"rest_dining_table","en":"Dining Table","ipa":"/ˈdaɪ.nɪŋ ˈteɪ.bəl/","es":"Mesa Vestida de Comedor","category":"Fine Restaurant","type":"object","example":"Our dining table is ready near the warm ambient lamps.","pos":[0,0,0.8]},
+        {"id":"rest_chef_station","en":"Chef Station","ipa":"/ʃef ˈsteɪ.ʃən/","es":"Estación del Chef","category":"Fine Restaurant","type":"object","example":"The executive chef garnishes every plate at the chef station.","pos":[0,0,-4.5]},
+        {"id":"rest_menu","en":"Menu","ipa":"/ˈmen.juː/","es":"Menú Gourmet","category":"Fine Restaurant","type":"object","example":"Our sommelier and chef prepared a seasonal tasting menu tonight.","pos":[-0.55,0.98,1.15]},
+        {"id":"rest_main_course","en":"Main Course","ipa":"/meɪn kɔːrs/","es":"Plato Fuerte / Principal","category":"Fine Restaurant","type":"object","example":"For the main course, I would like the grilled steak with herbs.","pos":[-0.4,0.98,0.65]},
+        {"id":"rest_appetizer","en":"Appetizer","ipa":"/ˈæp.ə.taɪ.zɚ/","es":"Entrada / Aperitivo Gourmet","category":"Fine Restaurant","type":"object","example":"Would you care to start with a warm appetizer before dinner?","pos":[0.42,0.98,0.65]},
+        {"id":"rest_cutlery","en":"Cutlery","ipa":"/ˈkʌt.lɚ.i/","es":"Cubiertos de Plata","category":"Fine Restaurant","type":"object","example":"The polished silver cutlery is placed neatly beside each plate.","pos":[-0.75,0.96,0.85]},
+        {"id":"rest_bill_folder","en":"Bill Folder","ipa":"/bɪl ˈfoʊl.dɚ/","es":"Carpeta de Cuenta","category":"Fine Restaurant","type":"object","example":"Place your credit card inside the leather bill folder when ready.","pos":[-0.2,0.96,1.25]},
+        {"id":"rest_kitchen_pass","en":"Kitchen Pass","ipa":"/ˈkɪtʃ.ən pæs/","es":"Barra de Cocina","category":"Fine Restaurant","type":"object","example":"Waiters pick up hot dishes directly from the illuminated kitchen pass.","pos":[-3.8,0,-3.8]},
+        {"id":"rest_napkin","en":"Napkin","ipa":"/ˈnæp.kɪn/","es":"Servilleta de Tela Doblada","category":"Fine Restaurant","type":"object","example":"Could you bring us an extra cloth napkin, please?","pos":[0.75,0.98,0.85]},
+        {"id":"rest_beverage","en":"Beverage","ipa":"/ˈbev.rɪdʒ/","es":"Bebida / Copa Refrescante","category":"Fine Restaurant","type":"object","example":"What kind of cold beverage would you like with your meal?","pos":[0.28,1.02,1.18]},
+        {"id":"rest_reserved_sign","en":"Reserved Sign","ipa":"/rɪˈzɝːvd saɪn/","es":"Letrero de Mesa Reservada","category":"Fine Restaurant","type":"object","example":"This VIP table has a golden reserved sign on top.","pos":[-3.6,0.96,1.2]},
+        {"id":"rest_dessert_cart","en":"Dessert Cart","ipa":"/dɪˈzɝːt kɑːrt/","es":"Carrito de Postres","category":"Fine Restaurant","type":"object","example":"Choose your favorite cake from our rolling dessert cart.","pos":[3.6,0,1.4]},
+        {"id":"rest_padded_booth","en":"Padded Leather Booth","ipa":"/ˈpæd.ɪd ˈleð.ɚ buːð/","es":"Cabina Privada de Cuero Acolchado","category":"Fine Restaurant","type":"object","example":"Our party enjoyed dinner inside the cozy padded leather booth.","pos":[-4.2,0,1]},
+        {"id":"rest_high_chair","en":"Toddler High Chair","ipa":"/ˈtɑːd.lɚ ˈhɑɪ ˌtʃer/","es":"Silla Alta para Niños Pequeños","category":"Restaurant Furniture","type":"object","example":"The server provided a clean wooden high chair for the toddler.","pos":[-2.2,0,1.8]},
+        {"id":"rest_executive_chef","en":"Executive Head Chef","ipa":"/ɪɡˈzek.jə.t̬ɪv hed ʃef/","es":"Chef Ejecutivo del Restaurante","category":"Kitchen Team","type":"object","example":"The executive head chef personally inspected every culinary dish.","pos":[0,0,-3.8]},
+        {"id":"rest_gas_stove","en":"Commercial Gas Stove","ipa":"/kəˈmɝː.ʃəl ɡæs stoʊv/","es":"Estufa Industrial a Gas","category":"Kitchen Equipment","type":"object","example":"Blue gas flames roared beneath heavy copper pans on the commercial stove.","pos":[-1.8,0,-4.8]},
+        {"id":"rest_frying_pan","en":"Copper Sauté Frying Pan","ipa":"/ˈkɑː.pɚ soʊˈteɪ ˈfraɪ.ɪŋ pæn/","es":"Sartén de Cobre para Saltear","category":"Kitchen Equipment","type":"object","example":"The sous-chef seared sea scallops in a glowing copper sauté pan.","pos":[-1.8,0.95,-4.8]},
+        {"id":"rest_cutting_board","en":"Hardwood Cutting Board","ipa":"/ˈhɑːrd.wʊd ˈkʌt.ɪŋ bɔːrd/","es":"Tabla de Picar de Madera Noble","category":"Kitchen Equipment","type":"object","example":"Chopped rosemary and thyme rested on the thick hardwood cutting board.","pos":[1.8,0.95,-4.8]},
+        {"id":"rest_wine_list_leather","en":"Sommelier Wine List","ipa":"/ˌsɑːm.əlˈjeɪ waɪn lɪst/","es":"Carta de Vinos Encuadernada en Cuero","category":"Fine Restaurant","type":"object","example":"Browse the vintage Bordeaux selections in the leather sommelier wine list.","pos":[-0.65,0.98,0.95]},
+        {"id":"rest_water_pitcher","en":"Chilled Water Pitcher","ipa":"/tʃɪld ˈwɑː.t̬ɚ ˈpɪtʃ.ɚ/","es":"Jarra de Agua Fría","category":"Fine Restaurant","type":"object","example":"The busser refilled our glasses from the chilled glass water pitcher.","pos":[0.65,0.98,1.1]},
+        {"id":"rest_salt_pepper","en":"Ceramic Salt & Pepper Shakers","ipa":"/sɑːlt ænd ˈpep.ɚ ˈʃeɪ.kɚz/","es":"Salero y Pimentero de Cerámica","category":"Fine Restaurant","type":"object","example":"Pass the sea salt and freshly cracked black pepper shakers, please.","pos":[0,0.98,0.95]},
+        {"id":"rest_toothpick_holder","en":"Bamboo Toothpick Dispenser","ipa":"/ˈtuːθ.pɪk dɪˈspen.sɚ/","es":"Dispensador de Palillos de Bambú","category":"Fine Restaurant","type":"object","example":"Take a sealed bamboo toothpick from the wooden table dispenser.","pos":[-0.15,0.98,0.75]},
+        {"id":"rest_pos_terminal","en":"Handheld POS Terminal","ipa":"/ˈhænd.held ˌpiː.oʊˈes ˈtɝː.mə.nəl/","es":"Terminal Portátil de Cobro con Tarjeta","category":"Fine Restaurant","type":"object","example":"The server brought the handheld wireless POS terminal right to our table.","pos":[0.15,0.98,0.75]},
+        {"id":"rest_service_tray","en":"Heavy Oval Service Tray","ipa":"/ˈoʊ.vəl ˈsɝː.vɪs treɪ/","es":"Bandeja Ovalada de Mesero","category":"Fine Restaurant","type":"object","example":"The waiter balanced four hot dinner entrées on the large oval service tray.","pos":[-2.8,0.95,-3.8]},
+        {"id":"rest_chef_uniform","en":"White Chef Jacket & Apron","ipa":"/waɪt ʃef ˈdʒæk.ɪt ænd ˈeɪ.prən/","es":"Filipina y Mandil Blanco de Chef","category":"Kitchen Team","type":"object","example":"Every line cook wears a spotless double-breasted white chef jacket.","pos":[0.8,0.95,-4]},
+        {"id":"rest_steak_knife","en":"Serrated Steak Knife","ipa":"/səˈreɪ.t̬ɪd steɪk naɪf/","es":"Cuchillo Sierra para Carnes","category":"Fine Restaurant","type":"object","example":"Cut through the prime ribeye steak with the razor-sharp serrated knife.","pos":[-0.6,0.98,0.75]},
+        {"id":"rest_soup_tureen","en":"Porcelain Soup Tureen","ipa":"/ˈpɔːr.səl.ɪn suːp tʊˈriːn/","es":"Sopera de Porcelana","category":"Fine Restaurant","type":"object","example":"Creamy lobster bisque was ladled out of the lidded porcelain soup tureen.","pos":[2.2,0.95,-4.5]},
+        {"id":"rest_bread_plate","en":"Butter & Sourdough Plate","ipa":"/ˈbʌt̬.ɚ ænd bred pleɪt/","es":"Platillo de Mantequilla y Pan","category":"Fine Restaurant","type":"object","example":"Spread cultured French butter over the warm sourdough slice.","pos":[-0.65,0.98,0.65]},
+        {"id":"rest_sauce_boat","en":"Silver Gravy Sauce Boat","ipa":"/ˈsɪl.vɚ ˈɡreɪ.vi sɑːs boʊt/","es":"Salsera de Plata para Gravy","category":"Fine Restaurant","type":"object","example":"Pour rich peppercorn reduction from the silver sauce boat over your steak.","pos":[0.65,0.98,0.65]},
+        {"id":"rest_espresso_demitasse","en":"Porcelain Espresso Demitasse","ipa":"/esˈpres.oʊ ˈdem.i.tæs/","es":"Taza Pequeña de Café Expreso","category":"Fine Restaurant","type":"object","example":"Finish your multi-course tasting meal with a double espresso demitasse.","pos":[0.45,0.98,1.25]},
+        {"id":"rest_condiment_caddy","en":"Table Condiment Caddy","ipa":"/ˈkɑːn.də.mənt ˈkæd.i/","es":"Organizador de Condimentos de Mesa","category":"Fine Restaurant","type":"object","example":"Balsamic vinegar, Dijon mustard, and hot chili oil sit in the wire caddy.","pos":[-0.45,0.98,1.25]},
+        {"id":"rest_coat_check_tag","en":"Brass Coat Check Tag","ipa":"/bræs koʊt tʃek tæɡ/","es":"Ficha de Bronce de Guardarropa","category":"Fine Restaurant","type":"object","example":"Hand your numbered brass coat check tag to the attendant after dining.","pos":[3.2,0.95,2.5]},
+        {"id":"rest_book_a_table","en":"Book a table for four","ipa":"/bʊk ə ˈteɪ.bəl fɔːr fɔːr/","es":"Reservar Mesa para Cuatro","category":"Dining Phrase","type":"phrase","example":"I would like to book a table for four on Saturday evening at eight PM.","pos":[-1.2,1.8,1.8]},
+        {"id":"rest_waitlist_concept","en":"Fifteen-minute waitlist","ipa":"/ˌfɪfˈtiːn ˈmɪn.ɪt ˈweɪt.lɪst/","es":"Lista de Espera de Quince Minutos","category":"Dining Concept","type":"concept","example":"There is currently a fifteen-minute waitlist for outdoor dining booths.","pos":[-2.5,1.8,2.2]},
+        {"id":"rest_todays_specials","en":"Today's chef specials","ipa":"/təˈdeɪz ʃef ˈspeʃ.əlz/","es":"Especialidades Culinarias del Día","category":"Dining Phrase","type":"phrase","example":"Our server passionately walked us through today’s chef specials on the board.","pos":[-0.5,1.8,-3.2]},
+        {"id":"rest_starters_concept","en":"Cold & warm appetizers","ipa":"/koʊld ænd wɔːrm ˈæp.ə.taɪ.zɚz/","es":"Entradas Frías y Calientes","category":"Dining Concept","type":"concept","example":"Let us order three different appetizers to share across the entire table.","pos":[0.8,1.8,1.8]},
+        {"id":"rest_entree_concept","en":"Signature entrée course","ipa":"/ˈsɪɡ.nə.tʃɚ ˈɑːn.treɪ kɔːrs/","es":"Plato Fuerte Insignia","category":"Dining Concept","type":"concept","example":"The duck confit with caramelized shallots is the restaurant’s signature entrée.","pos":[-0.8,1.8,0.2]},
+        {"id":"rest_side_dish_concept","en":"Complementary side dish","ipa":"/ˌkɑːm.pləˈmen.t̬ɚ.i saɪd dɪʃ/","es":"Guarnición o Acompañamiento","category":"Dining Concept","type":"concept","example":"Would you prefer garlic mashed potatoes or roasted asparagus as your side dish?","pos":[0.8,1.8,0.2]},
+        {"id":"rest_dessert_concept","en":"Decadent dessert selection","ipa":"/ˈdek.ə.dənt dɪˈzɝːt/","es":"Selección Decadente de Postres","category":"Dining Concept","type":"concept","example":"Save room for our decadent dessert selection—the tiramisu is legendary.","pos":[3.2,1.8,0.8]},
+        {"id":"rest_meat_temperatures","en":"Rare, medium-rare, or well-done?","ipa":"/rer /ˈmiː.di.əm rer/ ˌwel ˈdʌn/","es":"¿Término Medio o Bien Cocido?","category":"Dining Phrase","type":"phrase","example":"How would you like your steak prepared tonight: rare, medium-rare, or well-done?","pos":[-1.2,1.8,-0.2]},
+        {"id":"rest_seasoning_concept","en":"Exquisite herbal seasoning","ipa":"/ɪkˈskwɪz.ɪt ˈhɝː.bəl ˈsiː.zən.ɪŋ/","es":"Sazón y Especias Aromáticas","category":"Dining Concept","type":"concept","example":"The chef balanced the herbal seasoning with coarse sea salt and cracked pepper.","pos":[0.5,1.8,-4.2]},
+        {"id":"rest_savory_profile","en":"Rich savory flavor profile","ipa":"/rɪtʃ ˈseɪ.vɚ.i ˈfleɪ.vɚ/","es":"Perfil de Sabor Salado y Sabroso (Umami)","category":"Dining Concept","type":"concept","example":"Truffle butter infuses the risotto with a deep, rich savory flavor profile.","pos":[-1.5,1.8,-2.5]},
+        {"id":"rest_sweet_notes","en":"Delicate sweet undertones","ipa":"/ˈdel.ə.kət swiːt ˈʌn.dɚˌtoʊnz/","es":"Notas Dulces Sutiles","category":"Dining Concept","type":"concept","example":"The port wine reduction adds delicate sweet undertones to the roasted duck.","pos":[1.5,1.8,-2.5]},
+        {"id":"rest_spicy_kick","en":"Subtle spicy kick","ipa":"/ˈsʌt̬.əl ˈspaɪ.si kɪk/","es":"Toque Picante Agradable","category":"Dining Concept","type":"concept","example":"Fresh jalapeño aioli gives the crispy calamari a subtle spicy kick.","pos":[2.2,1.8,-0.5]},
+        {"id":"rest_bland_food","en":"Lacks seasoning / Bland","ipa":"/læks ˈsiː.zən.ɪŋ / blænd/","es":"Falto de Sazón / Desabrido","category":"Dining Concept","type":"concept","example":"Without proper salt and fresh herbs, the broth tasted disappointingly bland.","pos":[-2.2,1.8,-0.5]},
+        {"id":"rest_mouth_watering","en":"Mouth-watering presentation","ipa":"/ˈmɑʊθˌwɔ·t̬ər·ɪŋ/","es":"Presentación que Hace Agua la Boca","category":"Dining Phrase","type":"phrase","example":"The steaming rack of lamb arrived with a mouth-watering roasted aroma.","pos":[0,2,1.5]},
+        {"id":"rest_food_allergy_alert","en":"Severe food allergy alert","ipa":"/səˈvɪr fuːd ˈæl.ɚ.dʒi əˈlɝːt/","es":"Aviso de Alergia Alimentaria Severa","category":"Dining Phrase","type":"phrase","example":"Please alert the kitchen that our guest has a severe shellfish food allergy.","pos":[-3,1.8,-1.8]},
+        {"id":"rest_gluten_free_option","en":"Certified gluten-free options","ipa":"/ˈsɝː.t̬ə.faɪd ˈɡluː.tən friː/","es":"Opciones Libres de Gluten (Celíacos)","category":"Dining Concept","type":"concept","example":"Our bistro pasta dishes can be prepared with certified gluten-free penne.","pos":[-3,1.8,0]},
+        {"id":"rest_vegetarian_choice","en":"Wholesome vegetarian choice","ipa":"/ˈhoʊl.səm ˌvedʒ.əˈter.i.ən tʃɔɪs/","es":"Opción Vegetariana y Saludable","category":"Dining Concept","type":"concept","example":"The wild mushroom tart is a popular, wholesome vegetarian choice.","pos":[3,1.8,0]},
+        {"id":"rest_takeout_order","en":"Order takeout / To-go meals","ipa":"/ˈteɪk.aʊt / tuː ɡoʊ/","es":"Comida para Llevar","category":"Dining Phrase","type":"phrase","example":"You can order takeout online and pick up fresh sushi in twenty minutes.","pos":[2.5,1.8,2.8]},
+        {"id":"rest_doggy_bag_leftovers","en":"Doggy bag for delicious leftovers","ipa":"/ˈdɑː.ɡi bæɡ fɔːr ˈleftˌoʊ.vɚz/","es":"Caja para Llevar las Sobras a Casa","category":"Dining Phrase","type":"phrase","example":"Could we please have a doggy bag to take home these delicious leftovers?","pos":[1.2,1.8,2.2]},
+        {"id":"rest_tip_gratuity","en":"Add an eighteen percent tip","ipa":"/æd ən ˈeɪ.tiːn pɚˈsent tɪp/","es":"Agregar 18% de Propina","category":"Dining Phrase","type":"phrase","example":"For parties of six or more, an eighteen percent gratuity is included on the bill.","pos":[-1.8,1.8,2.8]},
+        {"id":"rest_compliments_to_chef","en":"My compliments to the chef!","ipa":"/maɪ ˈkɑːm.plə.mənts tuː ðə ʃef/","es":"¡Mis Felicitaciones al Chef!","category":"Dining Phrase","type":"phrase","example":"That steak was cooked to perfection—please pass my compliments to the chef!","pos":[0,2,-2.5]}
       ]
     }
   };
@@ -3000,6 +3281,170 @@ ensureOrbitControls();
   }
   global.buildCompound3DObject = buildCompound3DObject;
 
+  // Textura en canvas para la etiqueta flotante de Nodos Conceptuales (THREE.Sprite)
+  function createConceptNodeTexture(labelEn, typeLabel, isPhrase) {
+    if (typeof document === 'undefined' || typeof THREE === 'undefined') return null;
+    const canvas = document.createElement('canvas');
+    if (!canvas || typeof canvas.getContext !== 'function') return null;
+    canvas.width = 384;
+    canvas.height = 112;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+
+    const w = 384, h = 112, r = 24;
+    const bgGrad = ctx.createLinearGradient(0, 0, w, h);
+    if (isPhrase) {
+      bgGrad.addColorStop(0, 'rgba(14, 116, 144, 0.94)');
+      bgGrad.addColorStop(1, 'rgba(15, 23, 42, 0.96)');
+    } else {
+      bgGrad.addColorStop(0, 'rgba(109, 40, 217, 0.94)');
+      bgGrad.addColorStop(1, 'rgba(15, 23, 42, 0.96)');
+    }
+
+    ctx.fillStyle = bgGrad;
+    ctx.strokeStyle = isPhrase ? 'rgba(56, 189, 248, 0.9)' : 'rgba(192, 132, 252, 0.9)';
+    ctx.lineWidth = 4;
+
+    if (typeof ctx.beginPath === 'function') ctx.beginPath();
+    if (typeof ctx.roundRect === 'function') {
+      ctx.roundRect(4, 4, w - 8, h - 8, r);
+    } else if (typeof ctx.rect === 'function') {
+      ctx.rect(4, 4, w - 8, h - 8);
+    } else if (typeof ctx.fillRect === 'function') {
+      ctx.fillRect(4, 4, w - 8, h - 8);
+    }
+    if (typeof ctx.fill === 'function') ctx.fill();
+    if (typeof ctx.stroke === 'function') ctx.stroke();
+
+    ctx.font = 'bold 22px system-ui, -apple-system, sans-serif';
+    ctx.fillStyle = isPhrase ? '#7dd3fc' : '#e9d5ff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    if (typeof ctx.fillText === 'function') {
+      ctx.fillText(typeLabel.toUpperCase(), w / 2, 14);
+    }
+
+    ctx.font = '900 32px system-ui, -apple-system, sans-serif';
+    ctx.fillStyle = '#ffffff';
+    let text = labelEn || '';
+    if (text.length > 24) text = text.slice(0, 22) + '…';
+    if (typeof ctx.fillText === 'function') {
+      ctx.fillText(text, w / 2, 52);
+    }
+
+    const tex = new THREE.CanvasTexture(canvas);
+    return tex;
+  }
+
+  // Constructor de Nodos Conceptuales Holográficos Discretos (type: 'concept' | 'phrase')
+  function buildHolographicConceptNode(itemSpec, scenarioKey) {
+    if (typeof THREE === 'undefined' || !itemSpec) return null;
+    const isPhrase = itemSpec.type === 'phrase';
+    const group = new THREE.Group();
+    group.name = itemSpec.en || itemSpec.id;
+
+    const PhysicalMat = THREE.MeshPhysicalMaterial || THREE.MeshStandardMaterial;
+    const baseColor = isPhrase ? 0x0284c7 : 0x7e22ce;
+    const glowColor = isPhrase ? 0x38bdf8 : 0xc084fc;
+
+    // 1. Esfera cristalina pulsante con clearcoat
+    const sphereGeo = new THREE.SphereGeometry(0.24, 24, 24);
+    const sphereMat = new PhysicalMat({
+      color: baseColor,
+      emissive: glowColor,
+      emissiveIntensity: 0.55,
+      roughness: 0.15,
+      metalness: 0.2,
+      clearcoat: 0.85,
+      transparent: true,
+      opacity: 0.85
+    });
+    const sphereMesh = new THREE.Mesh(sphereGeo, sphereMat);
+    sphereMesh.position.y = 0.5;
+    group.add(sphereMesh);
+
+    // 2. Anillo holográfico orbitante
+    const ringGeo = new THREE.TorusGeometry(0.42, 0.024, 16, 36);
+    const ringMat = new THREE.MeshStandardMaterial({
+      color: glowColor,
+      emissive: glowColor,
+      emissiveIntensity: 0.8,
+      roughness: 0.2,
+      metalness: 0.8
+    });
+    const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+    ringMesh.position.y = 0.5;
+    ringMesh.rotation.x = Math.PI / 3;
+    group.add(ringMesh);
+
+    // 3. Haz cilíndrico de anclaje visual hacia el suelo
+    const basePillar = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.04, 0.12, 0.5, 16),
+      new PhysicalMat({ color: glowColor, transparent: true, opacity: 0.45, roughness: 0.3 })
+    );
+    basePillar.position.y = 0.25;
+    group.add(basePillar);
+
+    // 4. Etiqueta flotante con THREE.Sprite
+    const labelTex = createConceptNodeTexture(itemSpec.en, isPhrase ? '💬 Frase' : '💡 Concepto', isPhrase);
+    if (labelTex) {
+      const spriteMat = new THREE.SpriteMaterial({
+        map: labelTex,
+        transparent: true,
+        depthTest: false
+      });
+      const sprite = new THREE.Sprite(spriteMat);
+      sprite.position.set(0, 1.15, 0);
+      sprite.scale.set(1.4, 0.41, 1);
+      group.add(sprite);
+    }
+
+    const px = itemSpec.pos ? itemSpec.pos[0] : 0;
+    const py = itemSpec.pos ? itemSpec.pos[1] : 0;
+    const pz = itemSpec.pos ? itemSpec.pos[2] : 0;
+    group.position.set(px, py, pz);
+
+    const userData = {
+      interactive: true,
+      isConceptNode: true,
+      id: itemSpec.id,
+      en: itemSpec.en,
+      ipa: itemSpec.ipa,
+      es: itemSpec.es,
+      category: itemSpec.category || scenarioKey,
+      example: itemSpec.example,
+      type: itemSpec.type || 'concept',
+      wordEn: itemSpec.en,
+      phonetic: itemSpec.ipa,
+      wordEs: itemSpec.es,
+      focusPos: { x: px + (px >= 0 ? -1.8 : 1.8), y: Math.max(2.0, py + 1.8), z: pz + 2.4 },
+      lookAtPos: { x: px, y: py + 0.5, z: pz }
+    };
+
+    WORLD3D_VOCAB_CATALOG[itemSpec.id] = userData;
+    group.userData = Object.assign({}, userData);
+    group.traverse(child => {
+      if (child.isMesh || child.isSprite) {
+        child.userData = Object.assign({}, userData, { parentGroup: group });
+      }
+    });
+
+    interactiveObjects.push(group);
+    createSpatialHotspotForObject(group, itemSpec.id);
+
+    animatedConceptNodes.push({
+      group,
+      ring: ringMesh,
+      sphere: sphereMesh,
+      baseY: py,
+      phase: Math.random() * Math.PI * 2
+    });
+
+    return group;
+  }
+  global.buildHolographicConceptNode = buildHolographicConceptNode;
+
+
   // ============================================================================
   // AVATARES SENTADOS EN LAS SILLAS + BURBUJAS DE CHAT ESTILO ROBLOX
   // ============================================================================
@@ -3341,6 +3786,7 @@ ensureOrbitControls();
     animatedSteamRings = [];
     animatedWindowLeaves = [];
     spaceOrbitalEntries = [];
+    animatedConceptNodes = [];
     waiterGroup = null;
     waiterNpcGroup = null;
     waiterLeftLeg = null;
@@ -3359,23 +3805,18 @@ ensureOrbitControls();
 
     if (key === 'house' || key === 'garden') {
       buildDetailedHouseAndGarden(scenarioDynamicRoot);
-      if (key === 'house') {
-        const extraHouseIds = ['house_bed', 'house_refrigerator'];
-        scen.objects.forEach(item => {
-          if (extraHouseIds.includes(item.id)) {
-            const g = buildCompound3DObject(item, 'house');
-            if (g) scenarioDynamicRoot.add(g);
+      const existingIds = new Set(interactiveObjects.map(o => o.userData && o.userData.id).filter(Boolean));
+      scen.objects.forEach(item => {
+        if (!existingIds.has(item.id)) {
+          let node = null;
+          if (item.type === 'concept' || item.type === 'phrase') {
+            node = buildHolographicConceptNode(item, key);
+          } else {
+            node = buildCompound3DObject(item, key);
           }
-        });
-      } else if (key === 'garden') {
-        const extraGardenIds = ['garden_bbq_grill', 'garden_sprinkler', 'garden_stone_path', 'garden_picket_fence', 'garden_birdhouse', 'garden_watering_can', 'garden_fountain'];
-        scen.objects.forEach(item => {
-          if (extraGardenIds.includes(item.id)) {
-            const g = buildCompound3DObject(item, 'garden');
-            if (g) scenarioDynamicRoot.add(g);
-          }
-        });
-      }
+          if (node) scenarioDynamicRoot.add(node);
+        }
+      });
     } else {
       createSpaceDome(scenarioDynamicRoot);
 
@@ -3445,10 +3886,15 @@ ensureOrbitControls();
       }
 
       scen.objects.forEach(item => {
-        const objGroup = buildCompound3DObject(item, key);
+        let objGroup = null;
+        if (item.type === 'concept' || item.type === 'phrase') {
+          objGroup = buildHolographicConceptNode(item, key);
+        } else {
+          objGroup = buildCompound3DObject(item, key);
+        }
         if (objGroup) {
           scenarioDynamicRoot.add(objGroup);
-          if (key === 'space') {
+          if (key === 'space' && item.type === 'object') {
             spaceOrbitalEntries.push({
               group: objGroup,
               orbitRadius: item.orbitRadius || 0,
@@ -4462,14 +4908,24 @@ ensureOrbitControls();
         <select id="world3dScenarioSelect"
           aria-label="Seleccionar Mundo 3D"
           class="px-3 py-1.5 rounded-xl bg-slate-900/95 hover:bg-slate-800 text-purple-200 border border-purple-500/60 text-[11px] font-extrabold shadow-lg cursor-pointer focus:outline-none">
-          <option value="house">🏠 House & Study (12 Objetos)</option>
-          <option value="garden">🌿 Backyard & Garden (12 Objetos)</option>
-          <option value="dating">🕯️ Romantic Date & Bistro 3D</option>
-          <option value="space">🚀 Outer Space & Astronomy</option>
-          <option value="supermarket">🛒 Supermarket</option>
-          <option value="hotel">🏨 Hotel & Reception</option>
-          <option value="restaurant">🍽️ Fine Restaurant</option>
+          <option value="house">🏠 House & Study (50+ Vocab)</option>
+          <option value="garden">🌿 Backyard & Garden (50+ Vocab)</option>
+          <option value="dating">🕯️ Romantic Date & Bistro (50+ Vocab)</option>
+          <option value="space">🚀 Outer Space & Astronomy (50+ Vocab)</option>
+          <option value="supermarket">🛒 Supermarket (50+ Vocab)</option>
+          <option value="hotel">🏨 Hotel & Reception (50+ Vocab)</option>
+          <option value="restaurant">🍽️ Fine Restaurant (50+ Vocab)</option>
         </select>
+
+        <button type="button" id="world3dCatalogBtn" onclick="window.openWorld3DCatalogModal()"
+          class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-700 to-indigo-600 hover:from-purple-600 hover:to-indigo-500 text-white border border-purple-400/50 text-[11px] font-extrabold shadow-lg shadow-purple-900/40 cursor-pointer transition active:scale-95 flex items-center gap-1">
+          <span>📚 Catálogo (50+)</span>
+        </button>
+
+        <button type="button" id="world3dPdfBtn" onclick="window.downloadCurrent3DWorldPdf()"
+          class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-slate-950 font-black border border-yellow-300/80 text-[11px] shadow-lg shadow-amber-600/30 cursor-pointer transition active:scale-95 flex items-center gap-1">
+          <span>📥 Descargar PDF</span>
+        </button>
 
         <button type="button" id="world3dCamBtnOverview" onclick="window.focusWorld3DZone('overview')"
           class="px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-purple-600/90 text-slate-200 hover:text-white border border-slate-700/80 text-[11px] font-bold shadow-lg cursor-pointer transition active:scale-95">
@@ -5372,6 +5828,18 @@ ensureOrbitControls();
         }
       }
 
+            // Animación de Nodos Conceptuales Holográficos (rotación del anillo y oscilación vertical flotante)
+      if (animatedConceptNodes.length > 0) {
+        const timeSec = (now || performance.now()) * 0.0025;
+        animatedConceptNodes.forEach(item => {
+          if (item.ring) {
+            item.ring.rotation.z += delta * 0.85;
+          }
+          if (item.sphere) {
+            item.sphere.position.y = 0.5 + Math.sin(timeSec * 2.2 + item.phase) * 0.06;
+          }
+        });
+      }
       // Animación orbital y rotación axial continua en el escenario "space"
       if (currentScenarioKey === 'space' && spaceOrbitalEntries.length > 0) {
         spaceOrbitalEntries.forEach(entry => {
@@ -5684,6 +6152,379 @@ ensureOrbitControls();
   global.World3D = global.World3D || {};
   global.deduplicateWorld3DBars = deduplicateWorld3DBarsGlobal;
   global.resizeWorld3DFullscreen = onWindowResize;
+
+  // ============================================================================
+  // GENERADOR DE PDF EXCLUSIVO POR MUNDO (50+ TÉRMINOS)
+  // ============================================================================
+  function downloadCurrent3DWorldPdf(scenarioKey) {
+    const key = scenarioKey || currentScenarioKey || 'house';
+    const scen = WORLD_TOUR_SCENARIOS[key] || WORLD_TOUR_SCENARIOS.house;
+    if (!scen) return false;
+
+    const items = Array.isArray(scen.objects) ? scen.objects : [];
+    const discoveredCount = items.filter(o => discoveredObjectIds.has(o.id)).length;
+    const dateStr = new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+
+    // 1. Detección de jsPDF con autoTable
+    const jsPDFConstructor = (typeof global !== 'undefined' && global.jspdf && global.jspdf.jsPDF) ||
+                             (typeof window !== 'undefined' && window.jspdf && window.jspdf.jsPDF) ||
+                             (typeof window !== 'undefined' && window.jsPDF);
+
+    if (jsPDFConstructor) {
+      try {
+        const doc = new jsPDFConstructor({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+
+        // Encabezado Azul Noche (#0f172a)
+        doc.setFillColor(15, 23, 42);
+        doc.rect(0, 0, pageWidth, 90, 'F');
+
+        // Borde superior dorado (#f59e0b)
+        doc.setFillColor(245, 158, 11);
+        doc.rect(0, 0, pageWidth, 4, 'F');
+
+        // Título principal
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(18);
+        doc.text(`MasterENG 3D World — ${scen.title}`, 32, 38);
+
+        // Metadatos
+        doc.setTextColor(203, 213, 225);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9.5);
+        doc.text(`Mundo: ${scen.id.toUpperCase()}  •  Total Vocabulario: ${items.length} Términos  •  Descubiertos: ${discoveredCount}/${items.length}  •  Fecha: ${dateStr}`, 32, 56);
+
+        // Subtítulo dorado
+        doc.setTextColor(251, 191, 36);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.text('GUÍA DIDÁCTICA OFICIAL • PRONUNCIACIÓN IPA & FRASES DE USO REAL • MASTERENG ACADEMY', 32, 74);
+
+        // Tabla de vocabulario
+        const headers = [['#', 'Término en Inglés', 'Pronunciación (IPA)', 'Traducción Español', 'Tipo / Categoría', 'Ejemplo de Uso Real']];
+        const rows = items.map((item, idx) => {
+          const typeBadge = item.type === 'phrase' ? '💬 Frase' : (item.type === 'concept' ? '💡 Concepto' : '📦 Objeto 3D');
+          return [
+            String(idx + 1),
+            item.en || '',
+            item.ipa || '',
+            item.es || '',
+            `${typeBadge}\n${item.category || ''}`,
+            item.example || ''
+          ];
+        });
+
+        if (typeof doc.autoTable === 'function') {
+          doc.autoTable({
+            head: headers,
+            body: rows,
+            startY: 104,
+            margin: { left: 24, right: 24, bottom: 40 },
+            theme: 'grid',
+            headStyles: {
+              fillColor: [15, 23, 42],
+              textColor: [245, 158, 11],
+              fontSize: 8.5,
+              fontStyle: 'bold',
+              cellPadding: 6
+            },
+            bodyStyles: {
+              fontSize: 8,
+              textColor: [30, 41, 59],
+              cellPadding: 5,
+              valign: 'middle'
+            },
+            alternateRowStyles: {
+              fillColor: [248, 250, 252]
+            },
+            columnStyles: {
+              0: { cellWidth: 22, halign: 'center' },
+              1: { cellWidth: 95, fontStyle: 'bold' },
+              2: { cellWidth: 80, textColor: [100, 116, 139] },
+              3: { cellWidth: 95, fontStyle: 'bold', textColor: [15, 23, 42] },
+              4: { cellWidth: 85, fontSize: 7.5 },
+              5: { cellWidth: 'auto', fontStyle: 'italic', textColor: [51, 65, 85] }
+            },
+            didDrawPage: function (data) {
+              doc.setFillColor(15, 23, 42);
+              doc.rect(0, pageHeight - 24, pageWidth, 24, 'F');
+              doc.setTextColor(203, 213, 225);
+              doc.setFontSize(7.5);
+              doc.setFont('helvetica', 'normal');
+              doc.text(`MasterENG 3D World — ${scen.title} (Guía de Vocabulario Completo)`, 32, pageHeight - 9);
+              doc.text(`Página ${data.pageNumber}`, pageWidth - 60, pageHeight - 9);
+            }
+          });
+        }
+
+        const filename = `MasterENG_Vocabulario_3D_${scen.id}.pdf`;
+        doc.save(filename);
+        if (typeof global.showFloatingToast === 'function') {
+          global.showFloatingToast(`📥 PDF descargado: ${filename}`, '📄');
+        }
+        return true;
+      } catch (err) {
+        console.warn('Error generando PDF con jsPDF, intentando fallback imprimible:', err);
+      }
+    }
+
+    // 2. Fallback Imprimible HTML
+    if (typeof window !== 'undefined' && typeof window.open === 'function') {
+      try {
+        const printWindow = window.open('', '_blank', 'width=960,height=800');
+        if (printWindow) {
+          let rowsHtml = items.map((item, idx) => `
+            <tr style="border-bottom: 1px solid #e2e8f0; background: ${idx % 2 === 0 ? '#ffffff' : '#f8fafc'};">
+              <td style="padding: 8px 10px; font-weight: bold; text-align: center; color: #64748b;">${idx + 1}</td>
+              <td style="padding: 8px 10px; font-weight: bold; color: #0f172a;">${item.en}</td>
+              <td style="padding: 8px 10px; color: #475569; font-family: monospace;">${item.ipa}</td>
+              <td style="padding: 8px 10px; font-weight: 600; color: #1e293b;">${item.es}</td>
+              <td style="padding: 8px 10px; font-size: 11px; color: #64748b;">
+                <span style="display:inline-block; padding: 2px 6px; border-radius: 4px; background: #e0e7ff; color: #3730a3; font-weight: bold;">
+                  ${item.type === 'phrase' ? '💬 Frase' : (item.type === 'concept' ? '💡 Concepto' : '📦 Objeto 3D')}
+                </span><br>${item.category || ''}
+              </td>
+              <td style="padding: 8px 10px; font-style: italic; color: #334155;">${item.example || ''}</td>
+            </tr>
+          `).join('');
+
+          printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="utf-8">
+              <title>MasterENG 3D World — ${scen.title}</title>
+              <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 24px; color: #0f172a; }
+                .header { background: #0f172a; color: white; padding: 24px; border-radius: 12px; margin-bottom: 20px; border-top: 5px solid #f59e0b; }
+                .title { font-size: 22px; font-weight: bold; margin: 0 0 6px 0; }
+                .meta { font-size: 12px; color: #94a3b8; }
+                table { width: 100%; border-collapse: collapse; font-size: 12px; }
+                th { background: #0f172a; color: #f59e0b; text-align: left; padding: 10px; font-weight: bold; }
+                @media print {
+                  body { padding: 0; }
+                  .no-print { display: none; }
+                }
+              </style>
+            </head>
+            <body>
+              <div class="no-print" style="margin-bottom: 12px; text-align: right;">
+                <button onclick="window.print()" style="background: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer;">🖨️ Imprimir / Guardar como PDF</button>
+              </div>
+              <div class="header">
+                <div class="title">MasterENG 3D World — ${scen.title}</div>
+                <div class="meta">Total: ${items.length} Términos • Descubiertos: ${discoveredCount}/${items.length} • Generado el ${dateStr}</div>
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width: 30px; text-align: center;">#</th>
+                    <th style="width: 140px;">Término Inglés</th>
+                    <th style="width: 130px;">Pronunciación IPA</th>
+                    <th style="width: 140px;">Traducción Español</th>
+                    <th style="width: 130px;">Tipo / Categoría</th>
+                    <th>Ejemplo de Uso Real</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${rowsHtml}
+                </tbody>
+              </table>
+            </body>
+            </html>
+          `);
+          printWindow.document.close();
+          if (typeof global.showFloatingToast === 'function') {
+            global.showFloatingToast('📄 Catálogo preparado para impresión', '📥');
+          }
+          return true;
+        }
+      } catch (e) {
+        console.error('Fallback print error:', e);
+      }
+    }
+    return false;
+  }
+  global.downloadCurrent3DWorldPdf = downloadCurrent3DWorldPdf;
+
+  // ============================================================================
+  // MODAL DE CATÁLOGO COMPLETO DE VOCABULARIO (50+ TÉRMINOS)
+  // ============================================================================
+  function openWorld3DCatalogModal() {
+    if (typeof document === 'undefined') return;
+    const key = currentScenarioKey || 'house';
+    const scen = WORLD_TOUR_SCENARIOS[key] || WORLD_TOUR_SCENARIOS.house;
+    if (!scen) return;
+
+    let modal = document.getElementById('world3dCatalogModal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'world3dCatalogModal';
+      modal.className = 'fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md';
+      document.body.appendChild(modal);
+    }
+
+    const items = Array.isArray(scen.objects) ? scen.objects : [];
+    const discoveredCount = items.filter(o => discoveredObjectIds.has(o.id)).length;
+
+    modal.innerHTML = `
+      <div class="bg-slate-900 border border-purple-500/50 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+        <div class="p-4 sm:p-5 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 border-b border-purple-500/30 flex items-center justify-between gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xl">📚</span>
+              <h3 class="text-lg font-black text-white">${scen.title}</h3>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                ${items.length} Términos
+              </span>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">Descubiertos: <span class="text-emerald-400 font-bold">${discoveredCount}</span> de ${items.length} • Explora, escucha o enfoca cualquier objeto en la escena 3D</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="window.downloadCurrent3DWorldPdf()"
+              class="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-md transition active:scale-95 flex items-center gap-1 cursor-pointer">
+              <span>📥 Descargar PDF</span>
+            </button>
+            <button type="button" onclick="window.closeWorld3DCatalogModal()"
+              class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold flex items-center justify-center transition cursor-pointer">
+              ✕
+            </button>
+          </div>
+        </div>
+
+        <div class="p-3 sm:p-4 bg-slate-950/60 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
+          <div class="relative flex-1 min-w-[200px]">
+            <input type="text" id="world3dCatalogSearchInput" placeholder="Buscar por palabra, español o categoría..."
+              class="w-full px-3 py-2 pl-8 rounded-xl bg-slate-800/90 text-xs text-white placeholder-slate-400 border border-slate-700 focus:border-purple-500 focus:outline-none" />
+            <span class="absolute left-2.5 top-2.5 text-xs text-slate-400">🔍</span>
+          </div>
+          <div class="flex items-center gap-1.5" id="world3dCatalogFilterChips">
+            <button type="button" data-filter="all" class="catalog-filter-btn px-2.5 py-1 rounded-lg text-[11px] font-bold bg-purple-600 text-white border border-purple-400 transition cursor-pointer">Todos (${items.length})</button>
+            <button type="button" data-filter="object" class="catalog-filter-btn px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 transition cursor-pointer">Objetos 3D</button>
+            <button type="button" data-filter="concept" class="catalog-filter-btn px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 transition cursor-pointer">Conceptos</button>
+            <button type="button" data-filter="phrase" class="catalog-filter-btn px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 transition cursor-pointer">Frases</button>
+          </div>
+        </div>
+
+        <div id="world3dCatalogGrid" class="p-3 sm:p-4 overflow-y-auto max-h-[60vh] grid grid-cols-1 md:grid-cols-2 gap-2.5">
+        </div>
+      </div>
+    `;
+
+    modal.style.display = 'flex';
+
+    function renderCards(filterType, searchQuery) {
+      const grid = document.getElementById('world3dCatalogGrid');
+      if (!grid) return;
+      const q = (searchQuery || '').toLowerCase().trim();
+      const filtered = items.filter(it => {
+        if (filterType && filterType !== 'all') {
+          if (filterType === 'object' && it.type && it.type !== 'object') return false;
+          if (filterType === 'concept' && it.type !== 'concept') return false;
+          if (filterType === 'phrase' && it.type !== 'phrase') return false;
+        }
+        if (!q) return true;
+        return (it.en && it.en.toLowerCase().includes(q)) ||
+               (it.es && it.es.toLowerCase().includes(q)) ||
+               (it.ipa && it.ipa.toLowerCase().includes(q)) ||
+               (it.category && it.category.toLowerCase().includes(q));
+      });
+
+      if (filtered.length === 0) {
+        grid.innerHTML = '<div class="col-span-full py-8 text-center text-slate-400 text-sm">No se encontraron términos con ese criterio.</div>';
+        return;
+      }
+
+      grid.innerHTML = filtered.map(item => {
+        const isDiscovered = discoveredObjectIds.has(item.id);
+        const typeBadge = item.type === 'phrase'
+          ? '<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-cyan-900/60 text-cyan-300 border border-cyan-500/40">💬 Frase</span>'
+          : (item.type === 'concept'
+              ? '<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-900/60 text-purple-300 border border-purple-500/40">💡 Concepto</span>'
+              : '<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-900/60 text-emerald-300 border border-emerald-500/40">📦 Objeto 3D</span>');
+
+        return `
+          <div class="p-3 rounded-xl bg-slate-800/80 hover:bg-slate-800 border ${isDiscovered ? 'border-purple-500/40' : 'border-slate-700/60'} transition flex flex-col justify-between gap-2 shadow-sm">
+            <div>
+              <div class="flex items-start justify-between gap-2">
+                <div>
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="text-sm font-black text-white">${item.en}</span>
+                    ${typeBadge}
+                    ${isDiscovered ? '<span class="text-[10px] text-emerald-400 font-bold">✨</span>' : ''}
+                  </div>
+                  <span class="text-[11px] font-mono text-purple-300/80">${item.ipa || ''}</span>
+                </div>
+                <button type="button" onclick="window.speakWorld3DText('${(item.en || '').replace(/'/g, "\\'")}')"
+                  title="Escuchar pronunciación"
+                  class="w-7 h-7 rounded-lg bg-slate-700 hover:bg-purple-600 text-white flex items-center justify-center text-xs transition cursor-pointer flex-shrink-0">
+                  🔊
+                </button>
+              </div>
+              <p class="text-xs font-semibold text-slate-200 mt-1">${item.es}</p>
+              ${item.example ? `<p class="text-[11px] text-slate-400 italic mt-1.5 border-l-2 border-purple-500/40 pl-2">"${item.example}"</p>` : ''}
+            </div>
+            <div class="pt-2 border-t border-slate-700/50 flex items-center justify-between text-[10px] text-slate-400">
+              <span class="truncate max-w-[150px]">${item.category || ''}</span>
+              <button type="button" onclick="window.focusObjectById('${item.id}')"
+                class="px-2.5 py-1 rounded-lg bg-indigo-600/80 hover:bg-indigo-500 text-white font-bold text-[10px] transition cursor-pointer">
+                🎯 Enfocar en 3D
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    renderCards('all', '');
+
+    const searchInput = document.getElementById('world3dCatalogSearchInput');
+    let currentFilter = 'all';
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        renderCards(currentFilter, e.target.value);
+      });
+    }
+
+    const filterButtons = modal.querySelectorAll('.catalog-filter-btn');
+    filterButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterButtons.forEach(b => {
+          b.className = 'catalog-filter-btn px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 transition cursor-pointer';
+        });
+        btn.className = 'catalog-filter-btn px-2.5 py-1 rounded-lg text-[11px] font-bold bg-purple-600 text-white border border-purple-400 transition cursor-pointer';
+        currentFilter = btn.dataset.filter || 'all';
+        renderCards(currentFilter, searchInput ? searchInput.value : '');
+      });
+    });
+  }
+  global.openWorld3DCatalogModal = openWorld3DCatalogModal;
+
+  function closeWorld3DCatalogModal() {
+    if (typeof document === 'undefined') return;
+    const modal = document.getElementById('world3dCatalogModal');
+    if (modal) modal.style.display = 'none';
+  }
+  global.closeWorld3DCatalogModal = closeWorld3DCatalogModal;
+
+  function focusObjectById(id) {
+    closeWorld3DCatalogModal();
+    const mesh = interactiveObjects.find(o => o.userData && o.userData.id === id);
+    if (mesh) {
+      selectInteractive3DObject(mesh);
+    } else {
+      const data = WORLD3D_VOCAB_CATALOG[id];
+      if (data && data.focusPos && data.lookAtPos) {
+        transitionCameraTo(data.focusPos, data.lookAtPos);
+        renderVocabHudCard(data);
+        speakWorld3DText(data.wordEn || data.en);
+      }
+    }
+  }
+  global.focusObjectById = focusObjectById;
+
   global.initOrResumeWorld3D = initOrResumeWorld3D;
   global.pauseWorld3D = pauseWorld3D;
   global.initThreeWorldTour = initOrResumeWorld3D;
@@ -5759,6 +6600,11 @@ ensureOrbitControls();
     onWindowResize,
     buildCompound3DObject,
     buildScenarioWorld,
+    openWorld3DCatalogModal,
+    closeWorld3DCatalogModal,
+    focusObjectById,
+    downloadCurrent3DWorldPdf,
+    buildHolographicConceptNode,
     buildSeatedCharacterMesh,
     rebuildDatingSeatedAvatars,
     showRobloxOverheadBubble,
@@ -5789,11 +6635,28 @@ ensureOrbitControls();
     createHotspotTexture
   });
   Object.defineProperty(global.World3D, 'camera', { get: function() { return camera; }, configurable: true });
+  Object.defineProperty(global.World3D, 'interactiveObjects', { get: function() { return interactiveObjects; }, configurable: true });
   Object.defineProperty(global.World3D, 'renderer', { get: function() { return renderer; }, configurable: true });
   Object.defineProperty(global.World3D, 'scene', { get: function() { return scene; }, configurable: true });
   Object.defineProperty(global.World3D, 'waiterGroup', { get: function() { return waiterGroup; }, configurable: true });
   Object.defineProperty(global.World3D, 'playerSeatedGroup', { get: function() { return playerSeatedGroup; }, configurable: true });
   Object.defineProperty(global.World3D, 'partnerSeatedGroup', { get: function() { return partnerSeatedGroup; }, configurable: true });
+
+
+  if (typeof window !== 'undefined') {
+    window.openWorld3DCatalogModal = openWorld3DCatalogModal;
+    window.closeWorld3DCatalogModal = closeWorld3DCatalogModal;
+    window.focusObjectById = focusObjectById;
+    window.downloadCurrent3DWorldPdf = downloadCurrent3DWorldPdf;
+    window.buildHolographicConceptNode = buildHolographicConceptNode;
+    if (window.World3D) {
+      window.World3D.openWorld3DCatalogModal = openWorld3DCatalogModal;
+      window.World3D.closeWorld3DCatalogModal = closeWorld3DCatalogModal;
+      window.World3D.focusObjectById = focusObjectById;
+      window.World3D.downloadCurrent3DWorldPdf = downloadCurrent3DWorldPdf;
+      window.World3D.buildHolographicConceptNode = buildHolographicConceptNode;
+    }
+  }
 
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = global.World3D;
