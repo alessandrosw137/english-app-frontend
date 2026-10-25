@@ -4,7 +4,10 @@
 <meta charset="UTF-8">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icon.png">
-<link rel="apple-touch-icon" href="icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MasterENG">
+<link rel="apple-touch-icon" href="images/app_hero_logo.jpg">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="author" content="Wilberth Alessandro Molina Cutz">
 <title>MasterENG - Desarrollado por: Wilberth Alessandro Molina Cutz</title>
@@ -105,6 +108,9 @@ button, [role="button"], .cursor-pointer { touch-action: manipulation; }
 <span class="text-slate-500 font-normal">|</span>
 <span id="headerUserExp" class="text-amber-400">0 EXP</span>
 </div>
+<button id="headerChatRachasBtn" type="button" onclick="window.navigateTo('social')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold text-xs transition shadow-md shadow-emerald-600/30 cursor-pointer active:scale-95" title="Chat, Amigos & Rachas">
+<span>💬 Chat & Rachas</span>
+</button>
 <button id="headerAdminBtn" onclick="openAdminDashboardModal()" style="display: none;" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-purple-600 to-indigo-600 hover:from-amber-400 hover:via-purple-500 hover:to-indigo-500 text-white font-bold text-xs transition shadow-lg shadow-purple-600/40 cursor-pointer active:scale-95 border border-amber-300/50 hidden" data-action="open-admin">
 <span>⚙️ Panel Admin</span>
 </button>
@@ -393,6 +399,56 @@ Lecturas clásicas ilustradas con audio y práctica de voz.
 <button type="button" onclick="event.stopPropagation(); window.openPortalModules('stories');" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-500/30 cursor-pointer" data-action="enter-portal" data-portal="stories">ENTRAR AL PORTAL</button>
 </div>
 </div>
+<div id="coverCard-5" onclick="handleCoverCardClick(5)" class="coverflow-portal-card portal-card portal-card-5 hidden-back" style="--portal-glow: rgba(236, 72, 153, 0.45);">
+<div class="w-full h-full flex flex-col justify-between relative overflow-hidden group">
+<div class="absolute -top-12 -right-12 w-36 h-36 bg-pink-500/20 rounded-full blur-2xl pointer-events-none"></div>
+<div>
+<div class="flex items-center justify-between mb-1.5">
+<span class="px-2.5 py-0.5 rounded-full bg-pink-500/20 border border-pink-500/40 text-[10px] font-bold text-pink-300 uppercase tracking-widest">
+PORTAL 06 &bull; JUEGO 1VS1 3D
+</span>
+<span class="text-xs font-bold text-pink-400">🃏 Headbanz IA</span>
+</div>
+<h3 class="text-lg font-black text-pink-300 group-hover:text-pink-200 transition">
+Jest / Jarz (Headbanz IA)
+</h3>
+<p class="text-[11px] text-slate-300 mt-1 leading-snug">
+Adivina tu carta en la frente en una mesa 3D con Juez IA y voz editable
+</p>
+</div>
+<div class="my-3 relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden border border-pink-500/50 shadow-lg shadow-pink-950/60 shrink-0">
+<img src="images/app_hero_logo.jpg" alt="Portal Jest 1vs1" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onerror="this.onerror=null; this.src='images/app_hero_logo.svg';">
+<div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none"></div>
+<span class="absolute bottom-2 right-2.5 text-xs font-black text-pink-300 bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-pink-400/40">🃏 Mesa 3D & IA</span>
+</div>
+<button type="button" onclick="event.stopPropagation(); window.navigateTo('jest');" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-400 hover:to-rose-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-pink-500/30 cursor-pointer" data-action="enter-portal" data-portal="jest">ENTRAR AL PORTAL</button>
+</div>
+</div>
+<div id="coverCard-6" onclick="handleCoverCardClick(6)" class="coverflow-portal-card portal-card portal-card-6 hidden-back" style="--portal-glow: rgba(16, 185, 129, 0.45);">
+<div class="w-full h-full flex flex-col justify-between relative overflow-hidden group">
+<div class="absolute -top-12 -right-12 w-36 h-36 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none"></div>
+<div>
+<div class="flex items-center justify-between mb-1.5">
+<span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-[10px] font-bold text-emerald-300 uppercase tracking-widest">
+PORTAL 07 &bull; SOCIAL & PAREJAS
+</span>
+<span class="text-xs font-bold text-emerald-400">💬 WhatsApp Style</span>
+</div>
+<h3 class="text-lg font-black text-emerald-300 group-hover:text-emerald-200 transition">
+Chat, Amigos & Rachas
+</h3>
+<p class="text-[11px] text-slate-300 mt-1 leading-snug">
+Chatea estilo WhatsApp, sube de rango con tu pareja o amigos e invítalos a citas 3D y duelos
+</p>
+</div>
+<div class="my-3 relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden border border-emerald-500/50 shadow-lg shadow-emerald-950/60 shrink-0">
+<img src="images/app_hero_logo.jpg" alt="Portal Social Chat" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onerror="this.onerror=null; this.src='images/app_hero_logo.svg';">
+<div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none"></div>
+<span class="absolute bottom-2 right-2.5 text-xs font-black text-emerald-300 bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-emerald-400/40">💬 Rachas & Citas 3D</span>
+</div>
+<button type="button" onclick="event.stopPropagation(); window.navigateTo('social');" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-500/30 cursor-pointer" data-action="enter-portal" data-portal="social">ENTRAR AL PORTAL</button>
+</div>
+</div>
 </div>
 <button type="button" onclick="window.nextPortal()" class="carousel-nav-btn next carousel-btn carousel-next nav-arrow absolute right-0 z-40 w-12 h-12 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-white flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition cursor-pointer" style="cursor: pointer !important; pointer-events: auto !important; z-index: 1000 !important;" data-action="next" title="Portal Siguiente">
 <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"> <path d="M9 5l7 7-7 7" /> </svg>
@@ -404,6 +460,8 @@ Lecturas clásicas ilustradas con audio y práctica de voz.
 <span id="coverDot-2" onclick="window.goToPortal(2)" class="carousel-dot w-2.5 h-2.5 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer"></span>
 <span id="coverDot-3" onclick="window.goToPortal(3)" class="carousel-dot w-2.5 h-2.5 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer"></span>
 <span id="coverDot-4" onclick="window.goToPortal(4)" class="carousel-dot w-2.5 h-2.5 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer"></span>
+<span id="coverDot-5" onclick="window.goToPortal(5)" class="carousel-dot w-2.5 h-2.5 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer"></span>
+<span id="coverDot-6" onclick="window.goToPortal(6)" class="carousel-dot w-2.5 h-2.5 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer"></span>
 </div>
 </div>
 <div id="view-path" class="flex-1 p-4 max-w-5xl mx-auto w-full hidden" style="display: none;">
@@ -1267,6 +1325,8 @@ Cerrar
 <script src="js/pdf-generator.js"></script>
 <script src="js/karaoke.js"></script>
 <script src="js/app.js"></script>
+<script src="js/jest_game.js"></script>
+<script src="js/social_chat.js"></script>
 <script>
 function downloadActiveGlossaryPdf() {
 var modId = arguments[0];
@@ -1282,11 +1342,11 @@ try {
   if (document.body) document.body.classList.toggle('user-guest', _isG);
 } catch (_) {}
 // 1. Control de Vistas
-window.MASTER_ROOT_VIEWS=['view-auth','view-home','view-path','view-stories','view-music','view-worldtour','ai-tutor-view'];
+window.MASTER_ROOT_VIEWS=['view-auth','view-home','view-path','view-stories','view-music','view-worldtour','ai-tutor-view','view-jest-game','view-community'];
 window.resolveMasterViewId=function(rawId){
 var id=(rawId||'home').toString().trim();
 var cleanId=id.replace(/[-_]view$/,'');
-var map={'login':'view-auth','auth':'view-auth','view-auth':'view-auth','login-view':'view-auth','hub':'view-home','home':'view-home','portals':'view-home','view-home':'view-home','hub-view':'view-home','path':'view-path','learning-path':'view-path','learning-path-view':'view-path','view-path':'view-path','worldtour':'view-worldtour','world3d':'view-worldtour','world3d-view':'view-worldtour','view-worldtour':'view-worldtour','music':'view-music','music-view':'view-music','view-music':'view-music','stories':'view-stories','stories-view':'view-stories','view-stories':'view-stories','ai-tutor':'ai-tutor-view','tutor':'ai-tutor-view','ai-tutor-view':'ai-tutor-view','view-ai-tutor':'ai-tutor-view','admin':'adminDashboardModal','admin-view':'adminDashboardModal'};
+var map={'login':'view-auth','auth':'view-auth','view-auth':'view-auth','login-view':'view-auth','hub':'view-home','home':'view-home','portals':'view-home','view-home':'view-home','hub-view':'view-home','path':'view-path','learning-path':'view-path','learning-path-view':'view-path','view-path':'view-path','worldtour':'view-worldtour','world3d':'view-worldtour','world3d-view':'view-worldtour','view-worldtour':'view-worldtour','music':'view-music','music-view':'view-music','view-music':'view-music','stories':'view-stories','stories-view':'view-stories','view-stories':'view-stories','ai-tutor':'ai-tutor-view','tutor':'ai-tutor-view','ai-tutor-view':'ai-tutor-view','view-ai-tutor':'ai-tutor-view','admin':'adminDashboardModal','admin-view':'adminDashboardModal','jest':'view-jest-game','jarz':'view-jest-game','view-jest-game':'view-jest-game','jest-view':'view-jest-game','social':'view-community','chat':'view-community','community':'view-community','view-community':'view-community','community-view':'view-community'};
 return map[id]||map[cleanId]||(window.MASTER_ROOT_VIEWS.indexOf(id)!==-1?id:(window.MASTER_ROOT_VIEWS.indexOf('view-'+id)!==-1?'view-'+id:'view-home'));
 };
 window.syncTopBackBtnVisibility=function(t){
@@ -1353,6 +1413,8 @@ if(typeof window.renderMusicTracksList==='function')window.renderMusicTracksList
 if(typeof window.renderTrendingTracksCarousel==='function')window.renderTrendingTracksCarousel();
 }
 if(targetId==='view-stories'&&typeof window.renderStorySelector==='function')window.renderStorySelector();
+if(targetId==='view-jest-game'&&typeof window.openJestGameView==='function')window.openJestGameView();
+if(targetId==='view-community'&&typeof window.openCommunityHubView==='function')window.openCommunityHubView();
 if(targetId!=='view-music'&&typeof pauseYouTubePlayer==='function')pauseYouTubePlayer();
 };
 window.navigateToView=window.navigateTo;
@@ -1464,6 +1526,8 @@ if (typeof window.openPortalModules === 'function') window.openPortalModules('ai
 else window.navigateTo('ai-tutor');
 }
 else if (pAttr === 'stories' || (!pAttr && window.currentPortalIdx === 4)) window.navigateTo('stories');
+else if (pAttr === 'jest' || (!pAttr && window.currentPortalIdx === 5)) window.navigateTo('jest');
+else if (pAttr === 'social' || (!pAttr && window.currentPortalIdx === 6)) window.navigateTo('social');
 return;
 }
 if (clickedBtn && (clickedBtn.getAttribute('data-action') === 'back-to-hub' || (clickedBtn.textContent && clickedBtn.textContent.includes('Volver a Portales')))) {

@@ -17,8 +17,13 @@
   'use strict';
 
   // ============================================================================
-  // 1. ESTADO DEL MOTOR WEBGL Y CICLO DE VIDA
+  // 1. ESTADO DEL MOTOR WEBGL, OPTIMIZACIÓN iOS SAFARI Y CICLO DE VIDA
   // ============================================================================
+  if (typeof navigator === 'undefined') {
+    try { global.navigator = { userAgent: '', maxTouchPoints: 0 }; } catch (e) {}
+  }
+  const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+
   let isWorldTourActive = true;
   let isEngineInitialized = false;
   let scene = null;
@@ -29,6 +34,21 @@
   let resizeObserver = null;
   let lastFrameTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
   let clock = typeof THREE !== 'undefined' ? new THREE.Clock() : null;
+
+  // Estado del escenario activo (7 mundos 3D) y memoria de geometrías dinámicas
+  let currentScenarioKey = 'house';
+  let scenarioDynamicRoot = null;
+  let spaceOrbitalEntries = [];
+  let waiterNpcGroup = null;
+  let waiterRightArm = null;
+  let candleFlameLight = null;
+  let candleFlameMesh = null;
+  const waiterLerp = {
+    active: false,
+    targetPos: typeof THREE !== 'undefined' ? new THREE.Vector3(1.15, 0, -0.35) : { x: 1.15, y: 0, z: -0.35 },
+    targetRotY: -0.95,
+    phase: 0
+  };
 
   // Luces globales y puntuales para el Ciclo Día / Noche
   let isNightMode = false;
@@ -1992,6 +2012,739 @@ ensureOrbitControls();
   }
 
   // ============================================================================
+  // 6B. CATÁLOGO DE 7 MUNDOS EN WORLD_TOUR_SCENARIOS Y buildCompound3DObject
+  // ============================================================================
+  const WORLD_TOUR_SCENARIOS = {
+    house: {
+      id: 'house',
+      title: '🏠 House & Study Rooms',
+      bg: 0x0a0e17,
+      fogDensity: 0.005,
+      cameraPos: { x: 0, y: 10.8, z: 16.8 },
+      cameraLookAt: { x: 0, y: 1.3, z: -0.5 },
+      objects: [
+        { id: 'desk', en: 'Desk', ipa: '/desk/', es: 'Escritorio con Laptop', category: 'Study Room', example: 'I practice English code and grammar on my wooden desk with my laptop.', pos: [3.5, 0.22, -3.5] },
+        { id: 'computer_monitor', en: 'Computer Monitor', ipa: '/kəmˈpjuː.t̬ɚ ˈmɑː.nə.t̬ɚ/', es: 'Monitor de Computadora', category: 'Study Room', example: 'The computer monitor glows with interactive English code and lessons.', pos: [3.45, 1.22, -3.72] },
+        { id: 'office_chair', en: 'Office Chair', ipa: '/ˈɑː.fɪs tʃer/', es: 'Silla de Oficina Ergonómica', category: 'Study Room', example: 'This ergonomic office chair has a comfortable curved backrest and wheels.', pos: [3.5, 0.22, -2.05] },
+        { id: 'bookshelf', en: 'Bookshelf', ipa: '/ˈbʊk.ʃelf/', es: 'Librero / Estantería', category: 'Study Room', example: 'The wooden bookshelf is filled with colorful collectible English novels.', pos: [6.7, 0.22, -3.5] },
+        { id: 'window', en: 'Window', ipa: '/ˈwɪn.doʊ/', es: 'Ventanal Panorámico', category: 'Living Room', example: 'The large window provides a beautiful view of the swaying green trees.', pos: [-6.95, 1.15, -1.75] },
+        { id: 'sofa', en: 'Sofa / Couch', ipa: '/ˈsoʊ.fə/', es: 'Sofá / Sillón', category: 'Living Room', example: 'I relax on the cozy sofa after studying English vocabulary.', pos: [-3.6, 0.22, -4.1] },
+        { id: 'armchair', en: 'Armchair', ipa: '/ˈɑːrm.tʃer/', es: 'Sillón de Lectura', category: 'Living Room', example: 'I sit in the comfortable armchair by the window to read English stories.', pos: [-5.6, 0.22, -0.8] },
+        { id: 'coffee_table', en: 'Coffee Table', ipa: '/ˈkɑː.fi ˌteɪ.bəl/', es: 'Mesa de Centro', category: 'Living Room', example: 'There is a warm ceramic coffee mug resting on the coffee table.', pos: [-3.6, 0.22, -2.0] },
+        { id: 'floor_lamp', en: 'Floor Lamp', ipa: '/flɔːr læmp/', es: 'Lámpara de Pie', category: 'Living Room', example: 'The tall floor lamp illuminates the living room with a warm golden glow.', pos: [-5.8, 0.22, -4.5] },
+        { id: 'wall_clock', en: 'Clock', ipa: '/klɑːk/', es: 'Reloj de Pared', category: 'Living Room', example: 'I check the ticking wall clock to start my daily English session on time.', pos: [-3.6, 2.65, -6.84] },
+        { id: 'indoor_plant', en: 'Indoor Plant', ipa: '/ˈɪn.dɔːr plænt/', es: 'Planta de Interior', category: 'Living Room', example: 'The green indoor plant in the terracotta pot makes the room feel fresh.', pos: [-1.2, 0.22, -5.5] },
+        { id: 'oak_tree', en: 'Oak Tree', ipa: '/oʊk triː/', es: 'Árbol de Roble', category: 'Garden & Yard', example: 'The tall oak tree provides cool shade over the green lawn.', pos: [-8.5, 0, 7.5] }
+      ]
+    },
+    garden: {
+      id: 'garden',
+      title: '🌿 Backyard & Garden',
+      bg: 0x0a0e17,
+      fogDensity: 0.005,
+      cameraPos: { x: 0, y: 6.2, z: 19.5 },
+      cameraLookAt: { x: 0, y: 1.2, z: 7.2 },
+      objects: [
+        { id: 'oak_tree', en: 'Oak Tree', ipa: '/oʊk triː/', es: 'Árbol de Roble', category: 'Garden & Yard', example: 'The tall oak tree provides cool shade over the green lawn.', pos: [-8.5, 0, 7.5] },
+        { id: 'park_bench', en: 'Park Bench', ipa: '/pɑːrk bentʃ/', es: 'Banca de Jardín', category: 'Garden & Yard', example: 'We sat on the wooden park bench to practice English conversation.', pos: [-4.5, 0, 7.5] },
+        { id: 'street_lantern', en: 'Street Lantern', ipa: '/striːt ˈlæn.tɚn/', es: 'Farol de Jardín', category: 'Garden & Yard', example: 'The classic street lantern lights up the stone path at night.', pos: [2.4, 0, 6.5] },
+        { id: 'flower_bush', en: 'Flower Bush', ipa: '/ˈflaʊ.ɚ bʊʃ/', es: 'Arbusto Floral', category: 'Garden & Yard', example: 'Colorful blossoms grow on the green flower bush near the porch.', pos: [5.8, 0, 5.8] },
+        { id: 'mailbox', en: 'Mailbox', ipa: '/ˈmeɪl.bɑːks/', es: 'Buzón de Correo', category: 'Garden & Yard', example: 'I raised the red flag on the mailbox to send a letter.', pos: [2.1, 0, 11.8] },
+        { id: 'garden_sprinkler', en: 'Lawn Sprinkler', ipa: '/lɔːn ˈsprɪŋ.klɚ/', es: 'Aspersor de Riego', category: 'Garden & Yard', example: 'The rotating lawn sprinkler waters the fresh green grass.', pos: [-2.0, 0, 9.2] },
+        { id: 'garden_stone_path', en: 'Stone Path', ipa: '/stoʊn pæθ/', es: 'Camino de Piedra', category: 'Garden & Yard', example: 'Follow the stepping stone path from the gate to the front door.', pos: [0.2, 0.05, 8.2] },
+        { id: 'garden_picket_fence', en: 'Picket Fence', ipa: '/ˈpɪk.ɪt fens/', es: 'Cerca Blanca de Madera', category: 'Garden & Yard', example: 'A white picket fence surrounds the front yard.', pos: [-4.5, 0, 14.5] },
+        { id: 'garden_birdhouse', en: 'Birdhouse', ipa: '/ˈbɝːd.haʊs/', es: 'Casita para Pájaros', category: 'Garden & Yard', example: 'Bluebirds built a nest inside the wooden birdhouse.', pos: [-6.8, 0, 10.2] },
+        { id: 'garden_watering_can', en: 'Watering Can', ipa: '/ˈwɑː.t̬ɚ.ɪŋ kæn/', es: 'Regadera de Jardín', category: 'Garden & Yard', example: 'Use the metal watering can to water the roses.', pos: [4.2, 0, 8.6] },
+        { id: 'garden_fountain', en: 'Garden Fountain', ipa: '/ˈɡɑːr.dən ˈfaʊn.tən/', es: 'Fuente de Agua', category: 'Garden & Yard', example: 'The stone garden fountain makes a relaxing water sound.', pos: [6.4, 0, 11.2] },
+        { id: 'garden_ lantern_arch', en: 'Garden Arch', ipa: '/ˈɡɑːr.dən ɑːrtʃ/', es: 'Arco Floral de Entrada', category: 'Garden & Yard', example: 'Climbing roses grow over the wooden garden arch.', pos: [0, 0, 14.2] }
+      ]
+    },
+    dating: {
+      id: 'dating',
+      title: '🕯️ Romantic Date & Bistro 3D',
+      bg: 0x090d16,
+      fogDensity: 0.008,
+      cameraPos: { x: 0, y: 5.2, z: 9.8 },
+      cameraLookAt: { x: 0, y: 1.3, z: -0.5 },
+      objects: [
+        { id: 'dating_candlelight', en: 'Candlelight', ipa: '/ˈkæn.dəl.laɪt/', es: 'Luz de Vela Romántica', category: 'Romantic Date', example: 'We enjoyed a quiet dinner by warm candlelight on the starry terrace.', pos: [0, 1.08, -0.5] },
+        { id: 'dating_wine_glasses', en: 'Wine Glasses', ipa: '/waɪn ˈɡlæs.ɪz/', es: 'Copas de Brindis', category: 'Romantic Date', example: 'They clinked their wine glasses and made a toast in English.', pos: [0.32, 1.08, -0.35] },
+        { id: 'dating_menu', en: 'Menu', ipa: '/ˈmen.juː/', es: 'Menú Bilingüe del Bistró', category: 'Romantic Date', example: 'Could we see the dinner menu and the wine list, please?', pos: [-0.38, 1.06, -0.32] },
+        { id: 'dating_rose_bouquet', en: 'Rose Bouquet', ipa: '/roʊz buˈkeɪ/', es: 'Ramo de Rosas Rojas', category: 'Romantic Date', example: 'A fresh red rose bouquet decorated the center of our table.', pos: [-0.15, 1.08, -0.72] },
+        { id: 'dating_violin', en: 'Violin', ipa: '/ˌvaɪəˈlɪn/', es: 'Violín Acústico de Serenata', category: 'Romantic Date', example: 'A romantic violin melody played softly under the stars.', pos: [-3.4, 0, -2.2] },
+        { id: 'dating_chocolate_dessert', en: 'Chocolate Dessert', ipa: '/ˈtʃɑː.klət dɪˈzɝːt/', es: 'Postre de Chocolate Gourmet', category: 'Romantic Date', example: 'Would you like to share this warm chocolate dessert with me?', pos: [0.22, 1.06, -0.78] },
+        { id: 'dating_city_balcony', en: 'City View Balcony', ipa: '/ˈsɪt̬.i vjuː ˈbæl.kə.ni/', es: 'Balcón Panorámico Nocturno', category: 'Romantic Date', example: 'We stepped out onto the city view balcony to admire the skyline.', pos: [0, 0, -5.8] },
+        { id: 'dating_waiter_npc', en: 'Waiter NPC', ipa: '/ˈweɪ.t̬ɚ/', es: 'Mesero IA del Bistró', category: 'Romantic Date', example: 'Our friendly waiter recommended the chef’s special tonight.', pos: [2.3, 0, -1.2] },
+        { id: 'dating_table_for_two', en: 'Table for Two', ipa: '/ˈteɪ.bəl fɔːr tuː/', es: 'Mesa Íntima para Dos con Mantel', category: 'Romantic Date', example: 'I reserved a romantic table for two on the rooftop terrace.', pos: [0, 0, -0.5] },
+        { id: 'dating_conversation_cards', en: 'Conversation Cards', ipa: '/ˌkɑːn.vɚˈseɪ.ʃən kɑːrdz/', es: 'Tarjetas Románticas (Icebreakers)', category: 'Romantic Date', example: 'These conversation cards have great questions to get to know each other.', pos: [-0.42, 1.06, -0.68] },
+        { id: 'dating_ice_bucket', en: 'Ice Bucket', ipa: '/aɪs ˈbʌk.ɪt/', es: 'Cubeta de Hielo y Espumoso', category: 'Romantic Date', example: 'The sparkling cider is chilling in the silver ice bucket.', pos: [1.25, 0, -1.35] },
+        { id: 'dating_string_lights', en: 'String Lights', ipa: '/strɪŋ laɪts/', es: 'Guirnalda de Luces de Terraza', category: 'Romantic Date', example: 'Golden string lights glowed above the bistro terrace all night.', pos: [3.6, 0, -2.8] }
+      ]
+    },
+    space: {
+      id: 'space',
+      title: '🚀 Outer Space & Astronomy',
+      bg: 0x030612,
+      fogDensity: 0.003,
+      cameraPos: { x: 0, y: 11.5, z: 18.5 },
+      cameraLookAt: { x: 0, y: 1.5, z: 0 },
+      objects: [
+        { id: 'space_sun', en: 'Sun', ipa: '/sʌn/', es: 'El Sol (Estrella Central)', category: 'Outer Space', example: 'The Sun is the glowing star at the center of our solar system.', pos: [0, 2.2, 0], orbitRadius: 0, orbitSpeed: 0, rotSpeed: 0.45 },
+        { id: 'space_earth', en: 'Earth', ipa: '/ɝːθ/', es: 'Planeta Tierra', category: 'Outer Space', example: 'Earth is our home planet with blue oceans and green continents.', pos: [4.2, 2.2, 0], orbitRadius: 4.2, orbitSpeed: 0.38, orbitPhase: 0.4, rotSpeed: 1.2 },
+        { id: 'space_moon', en: 'Moon', ipa: '/muːn/', es: 'La Luna (Satélite Natural)', category: 'Outer Space', example: 'The Moon orbits around the Earth approximately every twenty-eight days.', pos: [5.4, 2.6, 1.2], orbitRadius: 5.3, orbitSpeed: 0.52, orbitPhase: 1.1, rotSpeed: 0.8 },
+        { id: 'space_mars', en: 'Mars', ipa: '/mɑːrz/', es: 'Marte (El Planeta Rojo)', category: 'Outer Space', example: 'Mars is known as the Red Planet because of iron oxide on its surface.', pos: [-6.4, 2.2, 2.0], orbitRadius: 6.7, orbitSpeed: 0.28, orbitPhase: 2.6, rotSpeed: 1.0 },
+        { id: 'space_saturn', en: 'Saturn & Rings', ipa: '/ˈsæt̬.ɚn ænd rɪŋz/', es: 'Saturno y sus Anillos', category: 'Outer Space', example: 'Saturn & Rings are famous for their spectacular icy ring system.', pos: [8.8, 2.4, -3.5], orbitRadius: 9.4, orbitSpeed: 0.18, orbitPhase: 5.1, rotSpeed: 0.7 },
+        { id: 'space_spacecraft', en: 'Spacecraft', ipa: '/ˈspeɪs.kræft/', es: 'Nave Espacial / Cohete', category: 'Outer Space', example: 'The spacecraft ignited its engines to travel beyond Earth orbit.', pos: [-3.5, 3.6, 5.2], orbitRadius: 6.2, orbitSpeed: 0.44, orbitPhase: 3.8, rotSpeed: 0.5 },
+        { id: 'space_astronaut', en: 'Astronaut', ipa: '/ˈæs.trə.nɑːt/', es: 'Astronauta en Caminata Espacial', category: 'Outer Space', example: 'The astronaut wore a pressurized suit during the spacewalk.', pos: [2.6, 3.4, 5.8], orbitRadius: 6.3, orbitSpeed: 0.22, orbitPhase: 1.7, rotSpeed: 0.4 },
+        { id: 'space_telescope', en: 'Telescope', ipa: '/ˈtel.ə.skoʊp/', es: 'Telescopio Espacial Orbital', category: 'Outer Space', example: 'The space telescope captures deep infrared images of distant galaxies.', pos: [-7.5, 3.8, -4.2], orbitRadius: 8.6, orbitSpeed: 0.15, orbitPhase: 4.0, rotSpeed: 0.35 },
+        { id: 'space_asteroid', en: 'Asteroid', ipa: '/ˈæs.tə.rɔɪd/', es: 'Asteroide Rocoso', category: 'Outer Space', example: 'A metallic asteroid tumbled silently through the asteroid belt.', pos: [7.2, 1.8, 5.2], orbitRadius: 8.8, orbitSpeed: 0.31, orbitPhase: 0.9, rotSpeed: 1.6 },
+        { id: 'space_satellite', en: 'Satellite', ipa: '/ˈsæt̬.əl.aɪt/', es: 'Satélite de Comunicaciones', category: 'Outer Space', example: 'The solar-powered satellite relays global communication signals.', pos: [-4.8, 4.0, -5.0], orbitRadius: 6.9, orbitSpeed: 0.35, orbitPhase: 2.1, rotSpeed: 0.6 },
+        { id: 'space_axial_rotation', en: 'Axial Rotation', ipa: '/ˈæk.si.əl roʊˈteɪ.ʃən/', es: 'Rotación Axial Planetaria', category: 'Outer Space', example: 'A planet’s axial rotation determines the length of its day.', pos: [-8.8, 1.4, 4.5], orbitRadius: 0, orbitSpeed: 0, rotSpeed: 1.5 },
+        { id: 'space_gravity', en: 'Gravity', ipa: '/ˈɡræv.ə.t̬i/', es: 'Campo de Gravedad Orbital', category: 'Outer Space', example: 'Gravity is the invisible force that keeps planets in orbit around stars.', pos: [8.8, 1.2, 4.8], orbitRadius: 0, orbitSpeed: 0, rotSpeed: 0.9 }
+      ]
+    },
+    supermarket: {
+      id: 'supermarket',
+      title: '🛒 Supermarket',
+      bg: 0x0d1524,
+      fogDensity: 0.005,
+      cameraPos: { x: 0, y: 8.8, z: 14.2 },
+      cameraLookAt: { x: 0, y: 1.2, z: -1.0 },
+      objects: [
+        { id: 'market_shopping_cart', en: 'Shopping Cart', ipa: '/ˈʃɑː.pɪŋ kɑːrt/', es: 'Carrito de Supermercado', category: 'Supermarket', example: 'I pushed the metal shopping cart down the main grocery aisle.', pos: [-2.8, 0, 3.2] },
+        { id: 'market_cash_register', en: 'Cash Register', ipa: '/ˈkæʃ ˌredʒ.ɪ.stɚ/', es: 'Caja Registradora', category: 'Supermarket', example: 'The cashier rang up our items on the digital cash register.', pos: [3.2, 0.95, 2.8] },
+        { id: 'market_barcode_scanner', en: 'Barcode Scanner', ipa: '/ˈbɑːr.koʊd ˈskæn.ɚ/', es: 'Lector de Código de Barras', category: 'Supermarket', example: 'Pass the product over the laser barcode scanner to check the price.', pos: [2.2, 0.95, 3.2] },
+        { id: 'market_fresh_produce', en: 'Fresh Produce', ipa: '/freʃ ˈproʊ.duːs/', es: 'Frutas y Verduras Frescas', category: 'Supermarket', example: 'Organic apples, lettuce, and tomatoes are in the fresh produce display.', pos: [-4.8, 0, -1.2] },
+        { id: 'market_bakery', en: 'Bakery', ipa: '/ˈbeɪ.kɚ.i/', es: 'Sección de Panadería', category: 'Supermarket', example: 'We bought warm baguettes and croissants from the bakery counter.', pos: [-1.6, 0, -4.2] },
+        { id: 'market_dairy_section', en: 'Dairy Section', ipa: '/ˈder.i ˈsek.ʃən/', es: 'Sección de Lácteos', category: 'Supermarket', example: 'Cold milk, butter, and yogurt are kept in the refrigerated dairy section.', pos: [2.0, 0, -4.2] },
+        { id: 'market_frozen_aisle', en: 'Frozen Aisle', ipa: '/ˈfroʊ.zən aɪl/', es: 'Pasillo de Congelados', category: 'Supermarket', example: 'Ice cream and frozen vegetables are stored in the glass frozen aisle.', pos: [5.2, 0, -1.2] },
+        { id: 'market_shopping_basket', en: 'Shopping Basket', ipa: '/ˈʃɑː.pɪŋ ˈbæs.kɪt/', es: 'Canasta de Compras', category: 'Supermarket', example: 'Carry a hand shopping basket when you only need a few groceries.', pos: [-0.8, 0, 3.8] },
+        { id: 'market_price_tag', en: 'Price Tag', ipa: '/ˈpraɪs tæɡ/', es: 'Etiqueta de Precio y Oferta', category: 'Supermarket', example: 'Look at the yellow price tag to see the twenty percent discount.', pos: [-4.8, 1.65, 1.2] },
+        { id: 'market_receipt', en: 'Receipt', ipa: '/rɪˈsiːt/', es: 'Recibo / Ticket de Compra', category: 'Supermarket', example: 'Would you like your printed receipt in the bag or with you?', pos: [4.1, 0.95, 3.4] },
+        { id: 'market_scale', en: 'Scale', ipa: '/skeɪl/', es: 'Báscula Digital de Peso', category: 'Supermarket', example: 'Place the fruit on the scale to measure its weight in pounds or kilos.', pos: [-2.4, 0, -0.8] },
+        { id: 'market_checkout', en: 'Checkout', ipa: '/ˈtʃek.aʊt/', es: 'Línea de Pago / Checkout', category: 'Supermarket', example: 'Place your groceries on the moving belt at the express checkout.', pos: [3.0, 0, 2.8] }
+      ]
+    },
+    hotel: {
+      id: 'hotel',
+      title: '🏨 Hotel & Reception',
+      bg: 0x0c1220,
+      fogDensity: 0.005,
+      cameraPos: { x: 0, y: 8.2, z: 14.0 },
+      cameraLookAt: { x: 0, y: 1.4, z: -1.0 },
+      objects: [
+        { id: 'hotel_receptionist_desk', en: 'Receptionist Desk', ipa: '/rɪˈsep.ʃən.ɪst desk/', es: 'Mostrador de Recepción', category: 'Hotel & Reception', example: 'Welcome! Please check in at the main receptionist desk.', pos: [0, 0, -3.5] },
+        { id: 'hotel_room_keycard', en: 'Room Keycard', ipa: '/ruːm ˈkiː.kɑːrd/', es: 'Tarjeta Llave de Habitación', category: 'Hotel & Reception', example: 'Here is your magnetic room keycard for suite 402 on the fourth floor.', pos: [-0.8, 1.12, -3.1] },
+        { id: 'hotel_luggage_cart', en: 'Luggage Cart', ipa: '/ˈlʌɡ.ɪdʒ kɑːrt/', es: 'Carrito Portaequipaje Dorado', category: 'Hotel & Reception', example: 'The bellhop placed our bags on the brass luggage cart.', pos: [3.8, 0, 1.2] },
+        { id: 'hotel_suitcase', en: 'Suitcase', ipa: '/ˈsuːt.keɪs/', es: 'Maleta de Viaje con Ruedas', category: 'Hotel & Reception', example: 'My rolling suitcase fits easily in the overhead compartment.', pos: [2.5, 0, 2.4] },
+        { id: 'hotel_elevator', en: 'Elevator', ipa: '/ˈel.ə.veɪ.t̬ɚ/', es: 'Ascensor / Elevador del Hotel', category: 'Hotel & Reception', example: 'Press the up button to call the glass hotel elevator.', pos: [5.2, 0, -3.8] },
+        { id: 'hotel_bellhop_bell', en: 'Bellhop Bell', ipa: '/ˈbel.hɑːp bel/', es: 'Campanilla de Recepción', category: 'Hotel & Reception', example: 'Ring the golden bellhop bell on the counter for service.', pos: [0.65, 1.12, -3.1] },
+        { id: 'hotel_lobby_sofa', en: 'Lobby Sofa', ipa: '/ˈlɑː.bi ˈsoʊ.fə/', es: 'Sofá de Espera del Lobby', category: 'Hotel & Reception', example: 'Please have a seat on the plush lobby sofa while we prepare your room.', pos: [-4.2, 0, 1.0] },
+        { id: 'hotel_chandelier', en: 'Chandelier', ipa: '/ˌʃæn.dəˈlɪr/', es: 'Candelabro de Cristal', category: 'Hotel & Reception', example: 'A grand crystal chandelier illuminates the entire hotel lobby.', pos: [0, 4.4, -0.5] },
+        { id: 'hotel_checkin_terminal', en: 'Check-in Terminal', ipa: '/ˈtʃek.ɪn ˈtɝː.mə.nəl/', es: 'Terminal Digital de Check-in', category: 'Hotel & Reception', example: 'Use the touch-screen check-in terminal for fast express registration.', pos: [-3.8, 0, -3.2] },
+        { id: 'hotel_concierge', en: 'Concierge', ipa: '/ˌkɑːn.siˈerʒ/', es: 'Módulo de Conserjería Turística', category: 'Hotel & Reception', example: 'Our hotel concierge can book city tours, taxis, and theater tickets.', pos: [3.6, 0, -2.2] },
+        { id: 'hotel_safe_box', en: 'Safe Box', ipa: '/seɪf bɑːks/', es: 'Caja Fuerte de Seguridad', category: 'Hotel & Reception', example: 'Enter a four-digit PIN code to lock the electronic safe box.', pos: [-5.2, 0, -1.5] },
+        { id: 'hotel_passport', en: 'Passport', ipa: '/ˈpæs.pɔːrt/', es: 'Pasaporte Internacional', category: 'Hotel & Reception', example: 'May I see your passport and booking confirmation, please?', pos: [0.05, 1.12, -3.05] }
+      ]
+    },
+    restaurant: {
+      id: 'restaurant',
+      title: '🍽️ Fine Restaurant',
+      bg: 0x100c18,
+      fogDensity: 0.006,
+      cameraPos: { x: 0, y: 8.0, z: 13.5 },
+      cameraLookAt: { x: 0, y: 1.2, z: -0.8 },
+      objects: [
+        { id: 'rest_dining_table', en: 'Dining Table', ipa: '/ˈdaɪ.nɪŋ ˈteɪ.bəl/', es: 'Mesa de Comedor Elegante', category: 'Fine Restaurant', example: 'Our dining table is ready near the warm ambient lamps.', pos: [0, 0, 0.8] },
+        { id: 'rest_chef_station', en: 'Chef Station', ipa: '/ʃef ˈsteɪ.ʃən/', es: 'Estación del Chef', category: 'Fine Restaurant', example: 'The executive chef garnishes every plate at the chef station.', pos: [0, 0, -4.5] },
+        { id: 'rest_main_course', en: 'Main Course', ipa: '/meɪn kɔːrs/', es: 'Plato Fuerte / Principal', category: 'Fine Restaurant', example: 'For the main course, I would like the grilled steak with herbs.', pos: [-0.4, 0.98, 0.65] },
+        { id: 'rest_appetizer', en: 'Appetizer', ipa: '/ˈæp.ə.taɪ.zɚ/', es: 'Entrada / Aperitivo Gourmet', category: 'Fine Restaurant', example: 'Would you care to start with a warm appetizer before dinner?', pos: [0.42, 0.98, 0.65] },
+        { id: 'rest_cutlery', en: 'Cutlery', ipa: '/ˈkʌt.lɚ.i/', es: 'Cubiertos de Plata', category: 'Fine Restaurant', example: 'The polished silver cutlery is placed neatly beside each plate.', pos: [-0.75, 0.96, 0.85] },
+        { id: 'rest_napkin', en: 'Napkin', ipa: '/ˈnæp.kɪn/', es: 'Servilleta de Tela Doblada', category: 'Fine Restaurant', example: 'Could you bring us an extra cloth napkin, please?', pos: [0.75, 0.98, 0.85] },
+        { id: 'rest_bill_folder', en: 'Bill Folder', ipa: '/bɪl ˈfoʊl.dɚ/', es: 'Carpeta de la Cuenta', category: 'Fine Restaurant', example: 'Place your credit card inside the leather bill folder when ready.', pos: [-0.25, 0.96, 1.25] },
+        { id: 'rest_kitchen_pass', en: 'Kitchen Pass', ipa: '/ˈkɪtʃ.ən pæs/', es: 'Barra de Entrega de Cocina', category: 'Fine Restaurant', example: 'Waiters pick up hot dishes directly from the illuminated kitchen pass.', pos: [-3.8, 0, -3.8] },
+        { id: 'rest_beverage', en: 'Beverage', ipa: '/ˈbev.rɪdʒ/', es: 'Bebida / Copa Refrescante', category: 'Fine Restaurant', example: 'What kind of cold beverage would you like with your meal?', pos: [0.28, 1.02, 1.18] },
+        { id: 'rest_reserved_sign', en: 'Reserved Sign', ipa: '/rɪˈzɝːvd saɪn/', es: 'Letrero de Mesa Reservada', category: 'Fine Restaurant', example: 'This VIP table has a golden reserved sign on top.', pos: [-3.6, 0.96, 1.2] },
+        { id: 'rest_tip_jar', en: 'Tip Jar', ipa: '/tɪp dʒɑːr/', es: 'Frasco de Propinas', category: 'Fine Restaurant', example: 'We left a generous tip in the glass tip jar for the staff.', pos: [3.8, 1.05, -2.5] },
+        { id: 'rest_dessert_cart', en: 'Dessert Cart', ipa: '/dɪˈzɝːt kɑːrt/', es: 'Carrito de Postres', category: 'Fine Restaurant', example: 'Choose your favorite cake from our rolling dessert cart.', pos: [3.6, 0, 1.4] }
+      ]
+    }
+  };
+  global.WORLD_TOUR_SCENARIOS = WORLD_TOUR_SCENARIOS;
+
+  // Registrar automáticamente todos los objetos de los 7 mundos en WORLD3D_VOCAB_CATALOG
+  Object.keys(WORLD_TOUR_SCENARIOS).forEach(scenKey => {
+    const scen = WORLD_TOUR_SCENARIOS[scenKey];
+    if (!scen || !Array.isArray(scen.objects)) return;
+    scen.objects.forEach(obj => {
+      if (!WORLD3D_VOCAB_CATALOG[obj.id]) {
+        const px = obj.pos ? obj.pos[0] : 0;
+        const py = obj.pos ? obj.pos[1] : 0;
+        const pz = obj.pos ? obj.pos[2] : 0;
+        WORLD3D_VOCAB_CATALOG[obj.id] = {
+          interactive: true,
+          id: obj.id,
+          wordEn: obj.en,
+          phonetic: obj.ipa,
+          wordEs: obj.es,
+          category: obj.category || scen.title,
+          example: obj.example,
+          en: obj.en,
+          ipa: obj.ipa,
+          es: obj.es,
+          focusPos: { x: px + (px >= 0 ? -1.8 : 1.8), y: Math.max(2.2, py + 2.0), z: pz + 2.8 },
+          lookAtPos: { x: px, y: Math.max(0.8, py + 0.6), z: pz }
+        };
+      }
+    });
+  });
+
+  // Limpieza profunda de memoria WebGL (RAM & GPU Optimization para iOS Safari y cambios de escenario)
+  function disposeScenarioMemory(rootObj) {
+    if (!rootObj) return;
+    const sharedMats = new Set(Object.values(SHARED_MATERIALS));
+    rootObj.traverse(child => {
+      if (child.geometry) {
+        const geometry = child.geometry;
+        if (typeof geometry.dispose === 'function') {
+          geometry.dispose();
+        }
+      }
+      if (child.material) {
+        const matList = Array.isArray(child.material) ? child.material : [child.material];
+        matList.forEach(material => {
+          if (material && !sharedMats.has(material)) {
+            if (material.map && material.map !== cachedOakWoodTexture && material.map !== cachedGrassTexture && material.map !== cachedHotspotTexture && typeof material.map.dispose === 'function') {
+              material.map.dispose();
+            }
+            if (typeof material.dispose === 'function') {
+              material.dispose();
+            }
+          }
+        });
+      }
+    });
+    while (rootObj.children.length > 0) {
+      rootObj.remove(rootObj.children[0]);
+    }
+  }
+
+  // Constructor modular de objetos 3D compuestos (THREE.Group + userData = { id, en, ipa, es, category, example })
+  function buildCompound3DObject(itemSpec, scenarioKey) {
+    if (typeof THREE === 'undefined' || !itemSpec) return null;
+    const M = initSharedMaterials();
+    const group = new THREE.Group();
+    group.name = itemSpec.en || itemSpec.id;
+    const id = itemSpec.id || '';
+    const enLower = (itemSpec.en || '').toLowerCase();
+
+    const matGold = M.metalBrass;
+    const matSilver = M.metalChrome;
+    const matDark = M.metalDark;
+    const matWood = M.woodOak;
+    const matWalnut = M.woodWalnut;
+    const matWhite = M.ceramicWhite;
+    const matRed = new THREE.MeshStandardMaterial({ color: 0xe11d48, roughness: 0.38, metalness: 0.12 });
+    const matRosePink = new THREE.MeshStandardMaterial({ color: 0xf43f5e, emissive: 0x881337, emissiveIntensity: 0.2, roughness: 0.35 });
+    const matVelvet = new THREE.MeshStandardMaterial({ color: 0x9f1239, roughness: 0.65, metalness: 0.08 });
+    const matEmerald = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.4, metalness: 0.1 });
+    const matSky = new THREE.MeshStandardMaterial({ color: 0x0ea5e9, roughness: 0.3, metalness: 0.2 });
+
+    // --- MUNDO DATING (ROMANTIC DATE & BISTRO 3D) ---
+    if (id === 'dating_table_for_two' || enLower.includes('table for two') || id === 'rest_dining_table') {
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.5, 0.08, 24), matDark);
+      base.position.y = 0.04;
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.92, 16), matDark);
+      pole.position.y = 0.5;
+      const topWood = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.15, 0.06, 32), matWalnut);
+      topWood.position.y = 0.96;
+      const cloth = new THREE.Mesh(new THREE.CylinderGeometry(1.18, 1.24, 0.18, 32), id === 'dating_table_for_two' ? matVelvet : matWhite);
+      cloth.position.y = 0.92;
+      group.add(base, pole, topWood, cloth);
+      [-1.35, 1.35].forEach((cx, idx) => {
+        const chair = new THREE.Group();
+        const seat = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.08, 0.52), matVelvet);
+        seat.position.y = 0.52;
+        const back = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.58, 0.07), matVelvet);
+        back.position.set(0, 0.84, idx === 0 ? -0.23 : 0.23);
+        [[-0.2, -0.2], [0.2, -0.2], [-0.2, 0.2], [0.2, 0.2]].forEach(([lx, lz]) => {
+          const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.015, 0.5, 8), matGold);
+          leg.position.set(lx, 0.25, lz);
+          chair.add(leg);
+        });
+        chair.add(seat, back);
+        chair.position.set(cx, 0, 0);
+        chair.rotation.y = idx === 0 ? Math.PI / 2 : -Math.PI / 2;
+        group.add(chair);
+      });
+    } else if (id === 'dating_candlelight') {
+      const holder = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.14, 0.06, 20), matGold);
+      holder.position.y = 0.03;
+      const wax = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.06, 0.28, 16), matWhite);
+      wax.position.y = 0.19;
+      const flameMat = new THREE.MeshStandardMaterial({ color: 0xffedd5, emissive: 0xff9900, emissiveIntensity: 3.0, roughness: 0.1 });
+      const flame = new THREE.Mesh(new THREE.ConeGeometry(0.032, 0.09, 12), flameMat);
+      flame.position.y = 0.37;
+      candleFlameMesh = flame;
+      const cLight = new THREE.PointLight(0xff9933, 2.4, 9.5);
+      cLight.position.set(0, 0.42, 0);
+      candleFlameLight = cLight;
+      group.add(holder, wax, flame, cLight);
+    } else if (id === 'dating_wine_glasses' || id === 'rest_beverage') {
+      [-0.12, 0.12].forEach(gx => {
+        const g = new THREE.Group();
+        const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.06, 0.012, 16), M.glassClear);
+        foot.position.y = 0.006;
+        const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.14, 10), M.glassClear);
+        stem.position.y = 0.08;
+        const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.02, 0.13, 16), M.glassClear);
+        cup.position.y = 0.21;
+        const wine = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.018, 0.075, 14), matRed);
+        wine.position.y = 0.195;
+        g.add(foot, stem, cup, wine);
+        g.position.x = gx;
+        group.add(g);
+      });
+    } else if (id === 'dating_menu' || id === 'rest_bill_folder' || id === 'hotel_passport') {
+      const coverColor = id === 'hotel_passport' ? 0x1e3a8a : 0x3b0764;
+      const coverMat = new THREE.MeshStandardMaterial({ color: coverColor, roughness: 0.45, metalness: 0.15 });
+      const pageLeft = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.018, 0.30), coverMat);
+      pageLeft.position.set(-0.10, 0.02, 0);
+      pageLeft.rotation.z = 0.08;
+      const pageRight = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.018, 0.30), coverMat);
+      pageRight.position.set(0.10, 0.02, 0);
+      pageRight.rotation.z = -0.08;
+      const innerSheet = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.01, 0.26), matWhite);
+      innerSheet.position.set(0, 0.03, 0);
+      const goldTrim = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.022, 0.30), matGold);
+      goldTrim.position.set(0, 0.022, 0);
+      group.add(pageLeft, pageRight, innerSheet, goldTrim);
+    } else if (id === 'dating_rose_bouquet') {
+      const vase = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.06, 0.24, 16), M.glassClear);
+      vase.position.y = 0.12;
+      group.add(vase);
+      for (let r = 0; r < 6; r++) {
+        const ang = (r * Math.PI * 2) / 6;
+        const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.28, 8), M.leafGreen2);
+        stem.position.set(Math.cos(ang) * 0.03, 0.22, Math.sin(ang) * 0.03);
+        const bud = new THREE.Mesh(new THREE.DodecahedronGeometry(0.048, 1), matRed);
+        bud.position.set(Math.cos(ang) * 0.055, 0.36 + (r % 2) * 0.025, Math.sin(ang) * 0.055);
+        group.add(stem, bud);
+      }
+    } else if (id === 'dating_violin') {
+      const standBase = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.28, 0.05, 16), matDark);
+      standBase.position.y = 0.025;
+      const standPole = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.025, 1.05, 12), matGold);
+      standPole.position.y = 0.55;
+      const bodyLower = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.20, 0.06, 20), matWood);
+      bodyLower.rotation.x = Math.PI / 2;
+      bodyLower.position.set(0, 1.05, 0.05);
+      const bodyUpper = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.06, 20), matWood);
+      bodyUpper.rotation.x = Math.PI / 2;
+      bodyUpper.position.set(0, 1.28, 0.05);
+      const neck = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.42, 0.03), matWalnut);
+      neck.position.set(0, 1.56, 0.05);
+      const bow = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.62, 8), matGold);
+      bow.rotation.z = -Math.PI / 3;
+      bow.position.set(0.08, 1.22, 0.10);
+      group.add(standBase, standPole, bodyLower, bodyUpper, neck, bow);
+    } else if (id === 'dating_chocolate_dessert' || id === 'rest_main_course' || id === 'rest_appetizer') {
+      const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.16, 0.025, 24), matWhite);
+      plate.position.y = 0.015;
+      const cakeMat = new THREE.MeshStandardMaterial({ color: id === 'rest_main_course' ? 0x92400e : (id === 'rest_appetizer' ? 0x15803d : 0x3b1d0e), roughness: 0.35 });
+      const food = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.12, 0.09, 20), cakeMat);
+      food.position.y = 0.06;
+      const topping = new THREE.Mesh(new THREE.SphereGeometry(0.035, 12, 12), matRed);
+      topping.position.set(0, 0.115, 0);
+      group.add(plate, food, topping);
+    } else if (id === 'dating_city_balcony') {
+      const railTop = new THREE.Mesh(new THREE.BoxGeometry(6.8, 0.08, 0.10), matGold);
+      railTop.position.set(0, 1.05, 0);
+      const glassPanel = new THREE.Mesh(new THREE.BoxGeometry(6.6, 0.92, 0.04), M.glassClear);
+      glassPanel.position.set(0, 0.52, 0);
+      group.add(railTop, glassPanel);
+      [-3.2, -1.6, 0, 1.6, 3.2].forEach(px => {
+        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.08, 12), matDark);
+        post.position.set(px, 0.54, 0);
+        group.add(post);
+      });
+    } else if (id === 'dating_waiter_npc') {
+      // Mesero 3D Articulado (Tuxedo, camisa blanca, corbatín rojo, bandeja plateada)
+      const legsL = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.06, 0.72, 12), M.ironBlack);
+      legsL.position.set(-0.11, 0.36, 0);
+      const legsR = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.06, 0.72, 12), M.ironBlack);
+      legsR.position.set(0.11, 0.36, 0);
+      const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.18, 0.68, 16), M.ironBlack);
+      torso.position.set(0, 1.04, 0);
+      const shirtV = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.35, 4), matWhite);
+      shirtV.rotation.x = Math.PI;
+      shirtV.position.set(0, 1.18, 0.14);
+      const bowTie = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.045, 0.03), matRed);
+      bowTie.position.set(0, 1.32, 0.19);
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 20, 20), new THREE.MeshStandardMaterial({ color: 0xfde68a, roughness: 0.45 }));
+      head.position.set(0, 1.56, 0);
+      const hair = new THREE.Mesh(new THREE.SphereGeometry(0.185, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.55), M.woodDark);
+      hair.position.set(0, 1.58, -0.02);
+
+      const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.045, 0.52, 12), M.ironBlack);
+      armL.position.set(-0.28, 1.06, 0.05);
+      armL.rotation.z = 0.18;
+
+      const armRGroup = new THREE.Group();
+      armRGroup.position.set(0.28, 1.24, 0.08);
+      const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.045, 0.46, 12), M.ironBlack);
+      armR.rotation.x = Math.PI / 2.4;
+      armR.position.set(0, -0.06, 0.18);
+      const tray = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.22, 0.02, 20), matSilver);
+      tray.position.set(0, 0.02, 0.38);
+      const cloche = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.5), matSilver);
+      cloche.position.set(0, 0.03, 0.38);
+      armRGroup.add(armR, tray, cloche);
+      waiterRightArm = armRGroup;
+
+      group.add(legsL, legsR, torso, shirtV, bowTie, head, hair, armL, armRGroup);
+      group.rotation.y = -0.65;
+      waiterNpcGroup = group;
+    } else if (id === 'dating_conversation_cards') {
+      const holder = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.04, 0.12), matGold);
+      holder.position.y = 0.02;
+      const card1 = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.12, 0.015), matRosePink);
+      card1.position.set(0, 0.08, 0);
+      card1.rotation.x = -0.15;
+      const card2 = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.12, 0.015), matWhite);
+      card2.position.set(0.01, 0.085, -0.02);
+      card2.rotation.x = -0.25;
+      group.add(holder, card1, card2);
+    } else if (id === 'dating_ice_bucket') {
+      const stand = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.18, 0.68, 16), matSilver);
+      stand.position.y = 0.34;
+      const bucket = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.15, 0.34, 20), matSilver);
+      bucket.position.y = 0.82;
+      const bottle = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.065, 0.38, 14), M.leafGreen2);
+      bottle.position.set(0, 0.98, 0);
+      bottle.rotation.z = 0.18;
+      group.add(stand, bucket, bottle);
+    } else if (id === 'dating_string_lights') {
+      const poleL = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 3.4, 12), matDark);
+      poleL.position.set(-1.2, 1.7, 0);
+      const poleR = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 3.4, 12), matDark);
+      poleR.position.set(1.2, 1.7, 0);
+      const wire = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 2.5, 8), matDark);
+      wire.rotation.z = Math.PI / 2;
+      wire.position.set(0, 3.2, 0);
+      group.add(poleL, poleR, wire);
+      for (let b = -2; b <= 2; b++) {
+        const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.065, 12, 12), M.emissiveBulb);
+        bulb.position.set(b * 0.48, 3.12, 0);
+        group.add(bulb);
+      }
+    }
+    // --- MUNDO SPACE (OUTER SPACE & ASTRONOMY) ---
+    else if (id === 'space_sun') {
+      const sunMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xf97316, emissiveIntensity: 2.2, roughness: 0.2 });
+      const core = new THREE.Mesh(new THREE.SphereGeometry(1.45, 32, 32), sunMat);
+      const halo = new THREE.Mesh(new THREE.RingGeometry(1.6, 2.1, 32), new THREE.MeshBasicMaterial({ color: 0xfbbf24, side: THREE.DoubleSide, transparent: true, opacity: 0.45 }));
+      const sunLight = new THREE.PointLight(0xffedd5, 3.2, 45);
+      group.add(core, halo, sunLight);
+    } else if (id === 'space_earth' || id === 'space_axial_rotation') {
+      const earthMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, emissive: 0x0369a1, emissiveIntensity: 0.35, roughness: 0.4 });
+      const globe = new THREE.Mesh(new THREE.SphereGeometry(0.72, 28, 28), earthMat);
+      const cont = new THREE.Mesh(new THREE.DodecahedronGeometry(0.74, 1), M.leafGreen3);
+      cont.scale.set(0.85, 0.65, 0.9);
+      group.add(globe, cont);
+      if (id === 'space_axial_rotation') {
+        const axisRod = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 2.2, 12), matGold);
+        axisRod.rotation.z = 0.41;
+        const eqRing = new THREE.Mesh(new THREE.TorusGeometry(0.95, 0.025, 12, 32), matGold);
+        eqRing.rotation.x = Math.PI / 2;
+        eqRing.rotation.y = 0.41;
+        group.add(axisRod, eqRing);
+      }
+    } else if (id === 'space_moon') {
+      const moonMat = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, emissive: 0x475569, emissiveIntensity: 0.25, roughness: 0.8 });
+      const moon = new THREE.Mesh(new THREE.SphereGeometry(0.42, 20, 20), moonMat);
+      group.add(moon);
+    } else if (id === 'space_mars') {
+      const marsMat = new THREE.MeshStandardMaterial({ color: 0xea580c, emissive: 0x9a3412, emissiveIntensity: 0.3, roughness: 0.65 });
+      const mars = new THREE.Mesh(new THREE.SphereGeometry(0.58, 24, 24), marsMat);
+      const iceCap = new THREE.Mesh(new THREE.SphereGeometry(0.25, 16, 12), matWhite);
+      iceCap.position.y = 0.42;
+      group.add(mars, iceCap);
+    } else if (id === 'space_saturn') {
+      const satMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, emissive: 0xb45309, emissiveIntensity: 0.25, roughness: 0.45 });
+      const planet = new THREE.Mesh(new THREE.SphereGeometry(0.85, 28, 28), satMat);
+      const ring = new THREE.Mesh(new THREE.RingGeometry(1.15, 1.85, 40), new THREE.MeshStandardMaterial({ color: 0xfde68a, side: THREE.DoubleSide, transparent: true, opacity: 0.82, roughness: 0.5 }));
+      ring.rotation.x = Math.PI / 2.4;
+      group.add(planet, ring);
+    } else if (id === 'space_spacecraft') {
+      const hull = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.34, 1.2, 20), matWhite);
+      const nose = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.55, 20), matRed);
+      nose.position.y = 0.87;
+      const thruster = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.45, 16), M.emissiveBulb);
+      thruster.rotation.x = Math.PI;
+      thruster.position.y = -0.75;
+      group.add(hull, nose, thruster);
+      [0, (Math.PI * 2) / 3, (Math.PI * 4) / 3].forEach(a => {
+        const fin = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.42, 0.32), matRed);
+        fin.position.set(Math.cos(a) * 0.34, -0.35, Math.sin(a) * 0.34);
+        fin.rotation.y = -a;
+        group.add(fin);
+      });
+      group.rotation.z = -0.35;
+    } else if (id === 'space_astronaut') {
+      const suit = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.22, 0.65, 16), matWhite);
+      const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.24, 20, 20), matWhite);
+      helmet.position.y = 0.52;
+      const visor = new THREE.Mesh(new THREE.SphereGeometry(0.19, 16, 16), matGold);
+      visor.position.set(0, 0.52, 0.09);
+      const pack = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.48, 0.22), matSilver);
+      pack.position.set(0, 0.08, -0.22);
+      group.add(suit, helmet, visor, pack);
+    } else if (id === 'space_telescope' || id === 'space_satellite') {
+      const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.32, 1.3, 20), matSilver);
+      tube.rotation.z = Math.PI / 3;
+      const panelL = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.03, 1.3), matSky);
+      panelL.position.set(0, 0, 0.85);
+      const panelR = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.03, 1.3), matSky);
+      panelR.position.set(0, 0, -0.85);
+      const dish = new THREE.Mesh(new THREE.ConeGeometry(0.32, 0.2, 16), matGold);
+      dish.position.set(0.55, 0.35, 0);
+      group.add(tube, panelL, panelR, dish);
+    } else if (id === 'space_asteroid') {
+      const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(0.62, 1), M.stoneGray);
+      rock.scale.set(1.25, 0.85, 0.95);
+      const moonlet = new THREE.Mesh(new THREE.DodecahedronGeometry(0.22, 0), M.stonePaver);
+      moonlet.position.set(0.85, 0.35, 0.2);
+      group.add(rock, moonlet);
+    } else if (id === 'space_gravity') {
+      for (let r = 1; r <= 3; r++) {
+        const torus = new THREE.Mesh(new THREE.TorusGeometry(r * 0.42, 0.02, 10, 32), M.emissiveScreen);
+        torus.rotation.x = Math.PI / 2;
+        torus.position.y = (3 - r) * 0.22;
+        group.add(torus);
+      }
+      const centerMass = new THREE.Mesh(new THREE.SphereGeometry(0.28, 20, 20), matGold);
+      centerMass.position.y = 0.45;
+      group.add(centerMass);
+    }
+    // --- MUNDOS SUPERMARKET, HOTEL Y RESTAURANT + GARDEN EXTRAS ---
+    else if (id === 'market_shopping_cart' || id === 'hotel_luggage_cart' || id === 'rest_dessert_cart') {
+      const isBrass = id === 'hotel_luggage_cart';
+      const frameMat = isBrass ? matGold : matSilver;
+      const base = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.08, 0.62), isBrass ? matVelvet : frameMat);
+      base.position.y = 0.26;
+      const basket = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.55, 0.60), frameMat);
+      basket.position.y = 0.68;
+      const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.62, 12), frameMat);
+      handle.rotation.x = Math.PI / 2;
+      handle.position.set(-0.52, 0.98, 0);
+      group.add(base, basket, handle);
+      [[-0.38, -0.25], [0.38, -0.25], [-0.38, 0.25], [0.38, 0.25]].forEach(([wx, wz]) => {
+        const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.05, 14), M.ironBlack);
+        wheel.rotation.x = Math.PI / 2;
+        wheel.position.set(wx, 0.09, wz);
+        group.add(wheel);
+      });
+    } else if (id === 'hotel_chandelier') {
+      const chain = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.9, 10), matGold);
+      chain.position.y = 0.55;
+      const ring1 = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.04, 12, 28), matGold);
+      ring1.rotation.x = Math.PI / 2;
+      const ring2 = new THREE.Mesh(new THREE.TorusGeometry(0.45, 0.035, 12, 24), matGold);
+      ring2.rotation.x = Math.PI / 2;
+      ring2.position.y = -0.25;
+      group.add(chain, ring1, ring2);
+      for (let c = 0; c < 8; c++) {
+        const a = (c * Math.PI * 2) / 8;
+        const crystal = new THREE.Mesh(new THREE.SphereGeometry(0.075, 12, 12), M.emissiveBulb);
+        crystal.position.set(Math.cos(a) * 0.75, 0.06, Math.sin(a) * 0.75);
+        group.add(crystal);
+      }
+    } else if (id === 'hotel_receptionist_desk' || id === 'rest_chef_station' || id === 'rest_kitchen_pass' || id === 'market_checkout') {
+      const counter = new THREE.Mesh(new THREE.BoxGeometry(2.8, 1.05, 0.85), matWalnut);
+      counter.position.y = 0.525;
+      const topMarble = new THREE.Mesh(new THREE.BoxGeometry(2.92, 0.08, 0.95), matWhite);
+      topMarble.position.y = 1.08;
+      const frontAccent = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.65, 0.04), matGold);
+      frontAccent.position.set(0, 0.52, 0.43);
+      group.add(counter, topMarble, frontAccent);
+    } else if (id === 'market_fresh_produce' || id === 'market_bakery' || id === 'market_dairy_section' || id === 'market_frozen_aisle') {
+      const rack = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.85, 0.75), matDark);
+      rack.position.y = 0.925;
+      group.add(rack);
+      [0.45, 0.95, 1.45].forEach((sy, idx) => {
+        const shelf = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.05, 0.72), matSilver);
+        shelf.position.set(0, sy, 0.04);
+        group.add(shelf);
+        for (let p = -3; p <= 3; p++) {
+          const itemMat = id === 'market_fresh_produce' ? (p % 2 === 0 ? matRed : matEmerald) : (id === 'market_bakery' ? matGold : matSky);
+          const prod = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.24, 0.24), itemMat);
+          prod.position.set(p * 0.28, sy + 0.14, 0.10);
+          group.add(prod);
+        }
+      });
+    } else {
+      // Geometría compuesta estilizada multipropósito para objetos de mostrador, mobiliario o jardín
+      const pedestal = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.38, 0.14, 20), matDark);
+      pedestal.position.y = 0.07;
+      const mainBody = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.48, 0.42), matSky);
+      mainBody.position.y = 0.38;
+      const topAccent = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 0.18, 16), matGold);
+      topAccent.position.y = 0.70;
+      const screenGlow = new THREE.Mesh(new THREE.PlaneGeometry(0.38, 0.24), M.emissiveScreen);
+      screenGlow.position.set(0, 0.42, 0.22);
+      group.add(pedestal, mainBody, topAccent, screenGlow);
+    }
+
+    const px = itemSpec.pos ? itemSpec.pos[0] : 0;
+    const py = itemSpec.pos ? itemSpec.pos[1] : 0;
+    const pz = itemSpec.pos ? itemSpec.pos[2] : 0;
+    group.position.set(px, py, pz);
+
+    const userData = {
+      interactive: true,
+      id: itemSpec.id,
+      en: itemSpec.en,
+      ipa: itemSpec.ipa,
+      es: itemSpec.es,
+      category: itemSpec.category || scenarioKey,
+      example: itemSpec.example,
+      wordEn: itemSpec.en,
+      phonetic: itemSpec.ipa,
+      wordEs: itemSpec.es,
+      focusPos: { x: px + (px >= 0 ? -1.8 : 1.8), y: Math.max(2.2, py + 2.0), z: pz + 2.8 },
+      lookAtPos: { x: px, y: Math.max(0.8, py + 0.6), z: pz }
+    };
+    WORLD3D_VOCAB_CATALOG[itemSpec.id] = userData;
+    group.userData = Object.assign({}, userData);
+    group.traverse(child => {
+      if (child.isMesh) {
+        child.castShadow = !IS_IOS;
+        child.receiveShadow = !IS_IOS;
+        child.userData = Object.assign({}, userData, { parentGroup: group });
+      }
+    });
+
+    interactiveObjects.push(group);
+    createSpatialHotspotForObject(group, itemSpec.id);
+    return group;
+  }
+  global.buildCompound3DObject = buildCompound3DObject;
+
+  function buildScenarioWorld(targetScene, scenarioKey) {
+    if (!targetScene || typeof THREE === 'undefined') return;
+    const key = WORLD_TOUR_SCENARIOS[scenarioKey] ? scenarioKey : 'house';
+    currentScenarioKey = key;
+
+    clearSelectedHighlight();
+    clearHoverHighlight();
+    closeWorld3DInspectCard();
+
+    if (!scenarioDynamicRoot) {
+      scenarioDynamicRoot = new THREE.Group();
+      scenarioDynamicRoot.name = 'ScenarioDynamicRoot';
+      targetScene.add(scenarioDynamicRoot);
+    } else {
+      disposeScenarioMemory(scenarioDynamicRoot);
+      if (scenarioDynamicRoot.parent !== targetScene) {
+        targetScene.add(scenarioDynamicRoot);
+      }
+    }
+
+    interactiveObjects = [];
+    spatialHotspots = [];
+    animatedSteamRings = [];
+    animatedWindowLeaves = [];
+    spaceOrbitalEntries = [];
+    waiterNpcGroup = null;
+    waiterRightArm = null;
+    candleFlameLight = null;
+    candleFlameMesh = null;
+
+    const scen = WORLD_TOUR_SCENARIOS[key];
+    if (scene) {
+      scene.background = new THREE.Color(scen.bg || 0x0a0e17);
+      scene.fog = new THREE.FogExp2(scen.bg || 0x0a0e17, scen.fogDensity || 0.005);
+    }
+
+    if (key === 'house' || key === 'garden') {
+      buildDetailedHouseAndGarden(scenarioDynamicRoot);
+      if (key === 'garden') {
+        const extraGardenIds = ['garden_sprinkler', 'garden_stone_path', 'garden_picket_fence', 'garden_birdhouse', 'garden_watering_can', 'garden_fountain', 'garden_ lantern_arch'];
+        scen.objects.forEach(item => {
+          if (extraGardenIds.includes(item.id)) {
+            const g = buildCompound3DObject(item, 'garden');
+            if (g) scenarioDynamicRoot.add(g);
+          }
+        });
+      }
+    } else {
+      createSpaceDome(scenarioDynamicRoot);
+      const M = initSharedMaterials();
+
+      if (key === 'dating') {
+        // Terraza nocturna estrellada (#090d16) con piso de bistró y horizonte iluminado
+        const terraceFloor = new THREE.Mesh(
+          new THREE.CylinderGeometry(11.5, 12.0, 0.35, 48),
+          new THREE.MeshStandardMaterial({ color: 0x1e1b2e, roughness: 0.55, metalness: 0.15 })
+        );
+        terraceFloor.position.set(0, -0.17, -1.0);
+        const rugCircle = new THREE.Mesh(
+          new THREE.CylinderGeometry(3.2, 3.2, 0.03, 36),
+          new THREE.MeshStandardMaterial({ color: 0x881337, roughness: 0.75 })
+        );
+        rugCircle.position.set(0, 0.015, -0.5);
+        scenarioDynamicRoot.add(terraceFloor, rugCircle);
+      } else if (key === 'space') {
+        // Anillos orbitales guía alrededor del Sol
+        [4.2, 5.3, 6.7, 8.8, 9.4].forEach(rad => {
+          const orbitLine = new THREE.Mesh(
+            new THREE.RingGeometry(rad - 0.02, rad + 0.02, 64),
+            new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide, transparent: true, opacity: 0.22 })
+          );
+          orbitLine.rotation.x = Math.PI / 2;
+          orbitLine.position.y = 2.2;
+          scenarioDynamicRoot.add(orbitLine);
+        });
+      } else {
+        // Suelo arquitectónico para Supermarket, Hotel y Fine Restaurant
+        const floorColor = key === 'supermarket' ? 0x1e293b : (key === 'hotel' ? 0x312e43 : 0x27171c);
+        const floorMesh = new THREE.Mesh(
+          new THREE.BoxGeometry(18, 0.24, 15),
+          new THREE.MeshStandardMaterial({ color: floorColor, roughness: 0.4, metalness: 0.12 })
+        );
+        floorMesh.position.set(0, -0.12, -0.5);
+        const backWall = new THREE.Mesh(
+          new THREE.BoxGeometry(18, 4.6, 0.28),
+          new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.7 })
+        );
+        backWall.position.set(0, 2.3, -7.8);
+        scenarioDynamicRoot.add(floorMesh, backWall);
+      }
+
+      scen.objects.forEach(item => {
+        const objGroup = buildCompound3DObject(item, key);
+        if (objGroup) {
+          scenarioDynamicRoot.add(objGroup);
+          if (key === 'space') {
+            spaceOrbitalEntries.push({
+              group: objGroup,
+              orbitRadius: item.orbitRadius || 0,
+              orbitSpeed: item.orbitSpeed || 0,
+              orbitAngle: item.orbitPhase || 0,
+              rotSpeed: item.rotSpeed || 0.6,
+              baseY: item.pos ? item.pos[1] : 2.2
+            });
+          }
+        }
+      });
+    }
+
+    updateProgressHudCounter();
+    transitionCameraTo(scen.cameraPos, scen.cameraLookAt);
+  }
+
+  // ============================================================================
   // 7. ILUMINACIÓN CINEMÁTICA EQUILIBRADA Y CICLO DÍA / NOCHE
   // ============================================================================
   function setupCinematicLighting(targetScene) {
@@ -2103,156 +2856,490 @@ ensureOrbitControls();
   }
 
   // ============================================================================
-  // 8. HUD DE CONTROL 3D, PROGRESO Y TARJETA EMERGENTE ESTILIZADA
+  // 8. HUD DE CONTROL 3D UNIFICADO, TUTORIAL DE MANO Y SIMULADOR DE CITA 3D
   // ============================================================================
   function updateProgressHudCounter() {
-    const count = Math.min(TOTAL_INTERACTIVE_OBJECTS, discoveredObjectIds.size);
-    const learnedCount = Math.min(TOTAL_INTERACTIVE_OBJECTS, learnedObjectIds.size);
+    const scen = WORLD_TOUR_SCENARIOS[currentScenarioKey] || WORLD_TOUR_SCENARIOS.house;
+    const scenObjects = (scen && Array.isArray(scen.objects)) ? scen.objects : [];
+    const totalInScenario = scenObjects.length || TOTAL_INTERACTIVE_OBJECTS;
+    const discoveredInScenario = scenObjects.filter(o => discoveredObjectIds.has(o.id)).length;
+    const learnedInScenario = scenObjects.filter(o => learnedObjectIds.has(o.id)).length;
+
+    const count = scenObjects.length > 0 ? discoveredInScenario : Math.min(TOTAL_INTERACTIVE_OBJECTS, discoveredObjectIds.size);
+    const learnedCount = scenObjects.length > 0 ? learnedInScenario : Math.min(TOTAL_INTERACTIVE_OBJECTS, learnedObjectIds.size);
 
     const counterEl = typeof document !== 'undefined' ? document.getElementById('world3dProgressCounter') : null;
     if (counterEl) {
-      counterEl.textContent = `Objetos descubiertos: ${count} / ${TOTAL_INTERACTIVE_OBJECTS}`;
+      counterEl.textContent = `Objetos descubiertos: ${count} / ${totalInScenario}`;
     }
     const barEl = typeof document !== 'undefined' ? document.getElementById('world3dProgressBarFill') : null;
     if (barEl) {
-      const pct = Math.round((count / TOTAL_INTERACTIVE_OBJECTS) * 100);
+      const pct = Math.round((count / Math.max(1, totalInScenario)) * 100);
       barEl.style.width = `${pct}%`;
     }
     const subBadgeEl = typeof document !== 'undefined' ? document.getElementById('world3dLearnedSubBadge') : null;
     if (subBadgeEl) {
-      subBadgeEl.textContent = `Aprendidos: ${learnedCount}/${TOTAL_INTERACTIVE_OBJECTS}`;
+      subBadgeEl.textContent = `Aprendidos: ${learnedCount}/${totalInScenario}`;
     }
   }
+
+  // Estado y lógica del Simulador de Cita Interactiva (Date Night) + Mesero IA
+  const dateNightState = {
+    partnerMode: 'ai', // 'partner' | 'ai'
+    partnerName: '',
+    phase: 1, // 1: Drinks, 2: Main Course + Icebreaker, 3: Dessert & Bill
+    billChoice: 'Treat my partner',
+    responses: { 1: '', 2: '', 3: '' },
+    isRecording: false,
+    recognition: null,
+    completed: false
+  };
+
+  const WAITER_PHASES = {
+    1: {
+      title: 'Fase 1/3 • Bienvenida y Bebidas (Welcome & Drinks)',
+      waiterLine: 'Good evening! Welcome to Starlight Bistro. What can I get you two to drink tonight?',
+      waiterEs: '¡Buenas noches! Bienvenidos a Starlight Bistro. ¿Qué les puedo ofrecer de tomar esta noche?',
+      aiPartnerLine: 'This rooftop view is breathtaking! I would love a glass of sparkling cider or red wine. What would you like to order for us?',
+      placeholder: 'Escribe o di en inglés tu orden de bebidas (ej: "Good evening! Could we have two glasses of red wine and sparkling water, please?")',
+      suggestions: [
+        'Good evening! Could we get two glasses of sparkling cider and water, please?',
+        'We would love two glasses of red wine and the dinner menu, please.',
+        'Hello! Can I have an iced tea and a lemonade for my partner, please?'
+      ]
+    },
+    2: {
+      title: 'Fase 2/3 • Plato Principal + Pregunta Romántica (Icebreaker)',
+      waiterLine: 'Excellent choice! While the chef prepares your meal, here is a conversation card for you two: What was your first impression of each other?',
+      waiterEs: '¡Excelente elección! Mientras el chef prepara su cena, aquí tienen una tarjeta de conversación: ¿Cuál fue su primera impresión del otro?',
+      aiPartnerLine: 'Ooh, I love this question! My first impression of you was that you had the warmest smile and such inspiring energy. What was your first impression of me?',
+      placeholder: 'Responde en inglés a la tarjeta romántica y pide el plato fuerte (ej: "My first impression was that you were super kind and fun to talk to!")',
+      suggestions: [
+        'My first impression was that you had a wonderful smile and were very easy to talk to!',
+        'I thought you were super intelligent, kind, and had a great sense of humor.',
+        'From the very first moment, I felt a special connection and loved your positive energy.'
+      ]
+    },
+    3: {
+      title: 'Fase 3/3 • Postre y Cuenta (Dessert & Bill)',
+      waiterLine: 'Here is your warm chocolate dessert! Whenever you are ready for the check, would you like to split the bill or treat your partner tonight?',
+      waiterEs: '¡Aquí tienen su postre de chocolate tibio! Para la cuenta de esta noche, ¿prefieren dividir la cuenta (Split the bill) o invitar a su pareja (Treat my partner)?',
+      aiPartnerLine: 'This chocolate lava cake is delicious! Thank you for such a magical date night practicing English together.',
+      placeholder: 'Elige "Split the bill" o "Treat my partner" y despídete del mesero en inglés...',
+      suggestions: [
+        'Everything was delicious! I would like to treat my partner tonight, please bring the bill.',
+        'Thank you for the wonderful service! Let’s split the bill equally, please.',
+        'It is on me tonight—I am treating my partner! Keep the change as a tip.'
+      ]
+    }
+  };
+
+  if (typeof global.recordCoupleDateCompleted !== 'function') {
+    global.recordCoupleDateCompleted = function () {
+      try {
+        const weekly = (parseInt(localStorage.getItem('mastereng_couple_weekly_dates'), 10) || 0) + 1;
+        const total = (parseInt(localStorage.getItem('mastereng_couple_total_dates'), 10) || 0) + 1;
+        localStorage.setItem('mastereng_couple_weekly_dates', String(weekly));
+        localStorage.setItem('mastereng_couple_total_dates', String(total));
+        const rank = total >= 10 ? '💎 Diamante Bilingüe' : (total >= 5 ? '👑 Oro Inseparables' : (total >= 2 ? '🥈 Plata Cómplices' : '🥉 Bronce Romántico'));
+        localStorage.setItem('mastereng_couple_rank', rank);
+        return { weekly, total, rank };
+      } catch (e) {
+        return { weekly: 1, total: 1, rank: '🥉 Bronce Romántico' };
+      }
+    };
+  }
+
+  function getConnectedPartnerName() {
+    try {
+      const stored = localStorage.getItem('mastereng_active_date_partner') || localStorage.getItem('mastereng_couple_partner_name');
+      if (stored && stored.trim()) return stored.trim();
+    } catch (e) {}
+    return 'Mi Pareja / Amigo Conectado';
+  }
+
+  function renderDateNightPhaseUI() {
+    if (typeof document === 'undefined') return;
+    const panel = document.getElementById('world3dDateSimulatorPanel');
+    if (!panel) return;
+
+    const pInfo = WAITER_PHASES[dateNightState.phase] || WAITER_PHASES[1];
+    const phaseTitleEl = document.getElementById('dateNightPhaseTitle');
+    const waiterTextEl = document.getElementById('dateNightWaiterText');
+    const waiterEsEl = document.getElementById('dateNightWaiterEs');
+    const partnerBoxEl = document.getElementById('dateNightPartnerBubble');
+    const inputEl = document.getElementById('dateNightTranscriptInput');
+    const chipsContainer = document.getElementById('dateNightSuggestionsBox');
+    const billRow = document.getElementById('dateNightBillOptionsRow');
+    const submitBtn = document.getElementById('dateNightSubmitPhaseBtn');
+    const partnerPartnerBtn = document.getElementById('datePartnerBtnConnected');
+    const partnerAiBtn = document.getElementById('datePartnerBtnAI');
+
+    const storedPartner = getConnectedPartnerName();
+    dateNightState.partnerName = dateNightState.partnerMode === 'partner' ? storedPartner : 'Emma / Liam (Compañero IA)';
+
+    if (partnerPartnerBtn && partnerAiBtn) {
+      if (dateNightState.partnerMode === 'partner') {
+        partnerPartnerBtn.className = 'flex-1 py-1.5 px-2.5 rounded-xl text-[11px] font-extrabold bg-rose-600 text-white border border-rose-400 shadow cursor-pointer transition';
+        partnerAiBtn.className = 'flex-1 py-1.5 px-2.5 rounded-xl text-[11px] font-bold bg-slate-800 text-slate-300 border border-slate-700 hover:text-white cursor-pointer transition';
+      } else {
+        partnerAiBtn.className = 'flex-1 py-1.5 px-2.5 rounded-xl text-[11px] font-extrabold bg-rose-600 text-white border border-rose-400 shadow cursor-pointer transition';
+        partnerPartnerBtn.className = 'flex-1 py-1.5 px-2.5 rounded-xl text-[11px] font-bold bg-slate-800 text-slate-300 border border-slate-700 hover:text-white cursor-pointer transition';
+      }
+      partnerPartnerBtn.textContent = `💑 Con Pareja (${storedPartner})`;
+    }
+
+    if (phaseTitleEl) phaseTitleEl.textContent = pInfo.title;
+    if (waiterTextEl) waiterTextEl.textContent = `"${pInfo.waiterLine}"`;
+    if (waiterEsEl) waiterEsEl.textContent = pInfo.waiterEs;
+
+    if (partnerBoxEl) {
+      if (dateNightState.partnerMode === 'ai') {
+        partnerBoxEl.innerHTML = `<span class="text-rose-300 font-bold">💖 ${dateNightState.partnerName}:</span> <span class="italic text-slate-200">"${pInfo.aiPartnerLine}"</span>`;
+      } else {
+        partnerBoxEl.innerHTML = `<span class="text-rose-300 font-bold">💑 Sala Compartida con ${storedPartner}:</span> <span class="text-slate-200">¡Conversen juntos en inglés y respondan al Mesero IA!</span>`;
+      }
+    }
+
+    if (billRow) {
+      billRow.style.display = dateNightState.phase === 3 ? 'flex' : 'none';
+    }
+
+    if (chipsContainer && Array.isArray(pInfo.suggestions)) {
+      chipsContainer.innerHTML = pInfo.suggestions.map((sug, i) => `
+        <button type="button" onclick="window.applyDateSuggestion(${i})"
+          class="text-left text-[10px] leading-snug px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-rose-950/80 text-slate-200 hover:text-rose-200 border border-slate-700 hover:border-rose-500/50 transition cursor-pointer">
+          💬 "${sug}"
+        </button>
+      `).join('');
+    }
+
+    if (inputEl) {
+      inputEl.placeholder = pInfo.placeholder;
+      inputEl.value = dateNightState.responses[dateNightState.phase] || '';
+    }
+
+    if (submitBtn) {
+      submitBtn.innerHTML = dateNightState.phase < 3
+        ? `<span>✅ Responder en Inglés y Avanzar (Fase ${dateNightState.phase}/3) →</span>`
+        : `<span>🎉 Completar Cita en Inglés (+50 EXP & Progreso de Pareja)</span>`;
+    }
+  }
+
+  global.triggerWaiterEvent = function (phaseOverride) {
+    if (typeof phaseOverride === 'number' && phaseOverride >= 1 && phaseOverride <= 3) {
+      dateNightState.phase = phaseOverride;
+    }
+    const panel = typeof document !== 'undefined' ? document.getElementById('world3dDateSimulatorPanel') : null;
+    if (panel) {
+      panel.classList.remove('hidden');
+      panel.style.display = 'block';
+    }
+
+    // Animar al Mesero 3D acercándose a la mesa en las 3 fases
+    if (waiterNpcGroup && typeof THREE !== 'undefined') {
+      const stageOffsets = {
+        1: { x: 1.28, y: 0, z: -0.35, rotY: -1.1 },
+        2: { x: 1.12, y: 0, z: -0.52, rotY: -1.35 },
+        3: { x: 1.18, y: 0, z: -0.25, rotY: -0.95 }
+      };
+      const target = stageOffsets[dateNightState.phase] || stageOffsets[1];
+      waiterLerp.targetPos.set(target.x, target.y, target.z);
+      waiterLerp.targetRotY = target.rotY;
+      waiterLerp.active = true;
+    }
+
+    // Enfocar suavemente la cámara hacia la mesa y el mesero en el escenario dating
+    if (currentScenarioKey === 'dating') {
+      transitionCameraTo({ x: 0.4, y: 3.1, z: 3.8 }, { x: 0.35, y: 1.15, z: -0.5 });
+    }
+
+    renderDateNightPhaseUI();
+    const pInfo = WAITER_PHASES[dateNightState.phase] || WAITER_PHASES[1];
+    speakWorld3DText(pInfo.waiterLine);
+  };
+
+  global.openDateNightSimulator = function () {
+    if (currentScenarioKey !== 'dating' && currentScenarioKey !== 'restaurant') {
+      switch3DScenario('dating');
+    }
+    dateNightState.completed = false;
+    global.triggerWaiterEvent(dateNightState.phase || 1);
+  };
+
+  global.closeDateNightSimulator = function () {
+    const panel = typeof document !== 'undefined' ? document.getElementById('world3dDateSimulatorPanel') : null;
+    if (panel) {
+      panel.classList.add('hidden');
+      panel.style.display = 'none';
+    }
+  };
+
+  global.setDatePartnerMode = function (mode) {
+    dateNightState.partnerMode = mode === 'partner' ? 'partner' : 'ai';
+    if (dateNightState.partnerMode === 'partner') {
+      const current = localStorage.getItem('mastereng_active_date_partner');
+      if (!current && typeof window !== 'undefined' && typeof window.prompt === 'function') {
+        const entered = window.prompt('Escribe el nombre o usuario de tu Pareja / Amigo para la cita:', 'Mi Pareja');
+        if (entered && entered.trim()) {
+          localStorage.setItem('mastereng_active_date_partner', entered.trim());
+        }
+      }
+    }
+    renderDateNightPhaseUI();
+  };
+
+  global.applyDateSuggestion = function (idx) {
+    const pInfo = WAITER_PHASES[dateNightState.phase] || WAITER_PHASES[1];
+    const text = (pInfo.suggestions && pInfo.suggestions[idx]) || '';
+    const inputEl = typeof document !== 'undefined' ? document.getElementById('dateNightTranscriptInput') : null;
+    if (inputEl && text) {
+      inputEl.value = text;
+      dateNightState.responses[dateNightState.phase] = text;
+      speakWorld3DText(text);
+    }
+  };
+
+  global.selectDateBillOption = function (choice) {
+    dateNightState.billChoice = choice;
+    const inputEl = typeof document !== 'undefined' ? document.getElementById('dateNightTranscriptInput') : null;
+    const sample = choice === 'Split the bill'
+      ? "Thank you! Everything was wonderful. We would like to split the bill equally, please."
+      : "This dinner was amazing! I would love to treat my partner tonight—here is my card.";
+    if (inputEl) {
+      inputEl.value = sample;
+      dateNightState.responses[3] = sample;
+    }
+    speakWorld3DText(sample);
+  };
+
+  global.toggleDateVoiceInput = function () {
+    if (typeof window === 'undefined') return;
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const micBtn = document.getElementById('dateNightMicBtn');
+    const inputEl = document.getElementById('dateNightTranscriptInput');
+
+    if (!SpeechRec) {
+      if (typeof global.showFloatingToast === 'function') {
+        global.showFloatingToast('🎙️ Tu navegador no soporta dictado directo; puedes escribir o editar tu respuesta en inglés.', '⌨️');
+      }
+      if (inputEl) inputEl.focus();
+      return;
+    }
+
+    if (dateNightState.isRecording && dateNightState.recognition) {
+      try { dateNightState.recognition.stop(); } catch (e) {}
+      dateNightState.isRecording = false;
+      if (micBtn) micBtn.innerHTML = '<span>🎤 Hablar en Inglés</span>';
+      return;
+    }
+
+    const rec = new SpeechRec();
+    rec.lang = 'en-US';
+    rec.interimResults = true;
+    rec.maxAlternatives = 1;
+    dateNightState.recognition = rec;
+    dateNightState.isRecording = true;
+    if (micBtn) micBtn.innerHTML = '<span class="animate-pulse text-rose-300">🔴 Escuchando... (Toca para detener)</span>';
+
+    rec.onresult = function (event) {
+      let transcript = '';
+      for (let i = 0; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript;
+      }
+      if (inputEl && transcript) {
+        inputEl.value = transcript;
+        dateNightState.responses[dateNightState.phase] = transcript;
+      }
+    };
+    rec.onerror = function () {
+      dateNightState.isRecording = false;
+      if (micBtn) micBtn.innerHTML = '<span>🎤 Hablar en Inglés</span>';
+    };
+    rec.onend = function () {
+      dateNightState.isRecording = false;
+      if (micBtn) micBtn.innerHTML = '<span>🎤 Hablar en Inglés</span>';
+    };
+    try { rec.start(); } catch (e) {}
+  };
+
+  global.submitDatePhaseResponse = function () {
+    const inputEl = typeof document !== 'undefined' ? document.getElementById('dateNightTranscriptInput') : null;
+    const text = inputEl ? inputEl.value.trim() : '';
+    if (!text || text.split(/\s+/).length < 2) {
+      if (typeof global.showFloatingToast === 'function') {
+        global.showFloatingToast('💬 Escribe o graba al menos una frase en inglés (o toca una sugerencia) para responder al mesero.', '🕯️');
+      }
+      return;
+    }
+
+    dateNightState.responses[dateNightState.phase] = text;
+
+    if (dateNightState.phase < 3) {
+      const nextPhase = dateNightState.phase + 1;
+      if (typeof global.showFloatingToast === 'function') {
+        global.showFloatingToast(`✨ ¡Fase ${dateNightState.phase}/3 completada en inglés! El Mesero IA trae el siguiente tiempo...`, '🤵');
+      }
+      global.triggerWaiterEvent(nextPhase);
+    } else {
+      // Fase 3 completada: Otorgar +50 EXP personales y +1 Cita Semanal Completada
+      if (typeof global.addExp === 'function') {
+        global.addExp(50, 'Cita Romántica 3D en Inglés (Starlight Bistro)');
+      } else {
+        try {
+          const raw = localStorage.getItem('english_app_user_session') || localStorage.getItem('mastereng_user');
+          const user = raw ? JSON.parse(raw) : { username: 'Invitado', role: 'guest', exp: 0, rank: 'Bronce' };
+          user.exp = (parseInt(user.exp, 10) || 0) + 50;
+          localStorage.setItem('english_app_user_session', JSON.stringify(user));
+          localStorage.setItem('mastereng_user', JSON.stringify(user));
+          if (typeof global.updateUserExpDisplay === 'function') global.updateUserExpDisplay();
+        } catch (e) {}
+      }
+
+      const coupleProgress = (window.recordCoupleDateCompleted && window.recordCoupleDateCompleted()) || { weekly: 1, total: 1, rank: '🥉 Bronce Romántico' };
+      const rewardBanner = document.getElementById('dateNightRewardSummary');
+      if (rewardBanner) {
+        rewardBanner.classList.remove('hidden');
+        rewardBanner.style.display = 'block';
+        rewardBanner.innerHTML = `
+          <div class="p-3 rounded-2xl bg-gradient-to-r from-rose-950/90 via-purple-950/90 to-slate-900 border border-rose-400/60 text-xs text-white space-y-1">
+            <div class="font-black text-rose-300 text-sm">🎉 ¡Cita Romántica Completada en Inglés! (+50 EXP)</div>
+            <div class="text-emerald-300 font-bold">💑 +1 Cita Semanal Completada (${coupleProgress.weekly} esta semana • Total: ${coupleProgress.total})</div>
+            <div class="text-amber-300 font-semibold">🏆 Rango de Pareja: ${coupleProgress.rank} • Opción elegida: ${dateNightState.billChoice}</div>
+          </div>
+        `;
+      }
+
+      speakWorld3DText('Thank you very much! Have a wonderful romantic evening under the stars!');
+      if (typeof global.showFloatingToast === 'function') {
+        global.showFloatingToast(`💖 ¡Cita completada! +50 EXP y +1 Cita Semanal Completada (Rango: ${coupleProgress.rank})`, '💑');
+      }
+      dateNightState.phase = 1;
+    }
+  };
 
   function ensureWorld3DHudElements(containerEl) {
     if (typeof document === 'undefined' || !containerEl) return;
 
-    // Botón flotante superior izquierdo con z-index 10000 para retorno inmediato
-    let floatBackBtn = document.getElementById('world3dFloatingBackBtn');
-    if (!floatBackBtn) {
-      floatBackBtn = document.createElement('button');
-      floatBackBtn.id = 'world3dFloatingBackBtn';
-      floatBackBtn.className = 'fixed top-4 left-4 z-[10000] flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-white border border-purple-500/50 shadow-2xl backdrop-blur-md text-xs font-bold transition hover:scale-105 active:scale-95 cursor-pointer';
-      floatBackBtn.style.cssText = 'position: fixed !important; top: 16px !important; left: 16px !important; z-index: 10000 !important; pointer-events: auto !important;';
-      floatBackBtn.onclick = function(e) {
-        if (e && e.preventDefault) e.preventDefault();
-        if (typeof global.returnToMainPortals === 'function') {
-          global.returnToMainPortals(e);
-        } else if (typeof global.goToHomePortals === 'function') {
-          global.goToHomePortals();
-        } else if (typeof global.showView === 'function') {
-          global.showView('view-home');
+    // Inyectar estilos del Tutorial de Mano para nuevos usuarios
+    if (!document.getElementById('world3dTutorialHandStyles')) {
+      const styleEl = document.createElement('style');
+      styleEl.id = 'world3dTutorialHandStyles';
+      styleEl.textContent = `
+        .tutorial-hand-pointer {
+          position: absolute;
+          z-index: 75;
+          pointer-events: none;
+          transform: translate(-50%, -100%);
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 12px;
+          border-radius: 9999px;
+          background: rgba(15, 23, 42, 0.92);
+          border: 1.5px solid rgba(192, 132, 252, 0.85);
+          color: #ffffff;
+          font-size: 11px;
+          font-weight: 800;
+          white-space: nowrap;
+          box-shadow: 0 10px 25px rgba(168, 85, 247, 0.45);
+          animation: world3dHandBounce 1.2s ease-in-out infinite;
         }
-      };
-      floatBackBtn.innerHTML = '<span class="text-purple-400 font-extrabold text-sm">←</span><span>Volver a Portales</span>';
-      document.body.appendChild(floatBackBtn);
-    }
-
-    // Barra de control HUD superior dentro del visor 3D
-    let hudBar = document.getElementById('world3dControlHudBar');
-    if (!hudBar) {
-      hudBar = document.createElement('div');
-      hudBar.id = 'world3dControlHudBar';
-      hudBar.style.cssText = 'position: absolute; top: 12px; left: 12px; right: 12px; z-index: 45; pointer-events: none; display: flex; flex-direction: column; gap: 8px;';
-      hudBar.innerHTML = `
-        <div class="flex flex-wrap items-center justify-between gap-2" style="pointer-events: auto;">
-          <div class="flex flex-wrap items-center gap-2">
-            <button type="button" onclick="if(typeof goToHomePortals === 'function'){ goToHomePortals(); } else if(typeof showView === 'function'){ showView('view-home'); }"
-              class="px-3.5 py-2 rounded-xl bg-slate-900/95 hover:bg-slate-800 text-white border border-slate-700/90 text-xs font-extrabold shadow-xl flex items-center gap-1.5 cursor-pointer transition active:scale-95">
-              <span>← Volver a Portales</span>
-            </button>
-
-            <button type="button" id="world3dDayNightBtn" onclick="window.toggleWorld3DDayNight()"
-              class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white border border-purple-400/50 text-xs font-extrabold shadow-xl flex items-center gap-1.5 cursor-pointer transition active:scale-95">
-              <span>☀️ Día / 🌙 Noche</span>
-            </button>
-          </div>
-
-          <div class="flex items-center gap-2.5 bg-slate-900/95 backdrop-blur-md border border-purple-500/50 px-3.5 py-1.5 rounded-xl shadow-xl">
-            <div class="flex flex-col">
-              <span id="world3dProgressCounter" class="text-xs font-black text-white">Objetos descubiertos: 0 / 14</span>
-              <span id="world3dLearnedSubBadge" class="text-[10px] font-bold text-emerald-400">Aprendidos: 0/14 (+5 EXP c/u)</span>
-            </div>
-            <div class="w-20 h-2 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
-              <div id="world3dProgressBarFill" class="h-full bg-gradient-to-r from-purple-500 via-sky-400 to-emerald-400 transition-all duration-300" style="width: 0%;"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-1.5" style="pointer-events: auto;">
-          <button type="button" onclick="window.focusWorld3DZone('overview')"
-            class="px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-purple-600/90 text-slate-200 hover:text-white border border-slate-700/80 text-[11px] font-bold shadow-lg cursor-pointer transition active:scale-95">
-            🏠 Vista General
-          </button>
-          <button type="button" onclick="window.focusWorld3DZone('living')"
-            class="px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-purple-600/90 text-slate-200 hover:text-white border border-slate-700/80 text-[11px] font-bold shadow-lg cursor-pointer transition active:scale-95">
-            🛋️ Ir a la Sala
-          </button>
-          <button type="button" onclick="window.focusWorld3DZone('study')"
-            class="px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-purple-600/90 text-slate-200 hover:text-white border border-slate-700/80 text-[11px] font-bold shadow-lg cursor-pointer transition active:scale-95">
-            💻 Ir al Estudio
-          </button>
-          <button type="button" onclick="window.focusWorld3DZone('garden')"
-            class="px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-emerald-600/90 text-slate-200 hover:text-white border border-slate-700/80 text-[11px] font-bold shadow-lg cursor-pointer transition active:scale-95">
-            🌳 Ir al Jardín
-          </button>
-        </div>
+        @keyframes world3dHandBounce {
+          0%, 100% { transform: translate(-50%, -105%) scale(1); }
+          50% { transform: translate(-50%, -122%) scale(1.06); }
+        }
       `;
-      containerEl.appendChild(hudBar);
+      document.head.appendChild(styleEl);
     }
 
-    // Tarjeta emergente estilizada de Vocabulario 3D (z-index superior)
-    
-    // Función deduplicadora que garantiza que SOLO EXISTA UNA BARRA de controles 3D sin encimarse
+    // Eliminar cualquier barra antigua superpuesta (#world3dControlHudBar)
+    const legacyHudBar = document.getElementById('world3dControlHudBar');
+    if (legacyHudBar) legacyHudBar.remove();
+
+    // Ocultar botón flotante suelto #world3dFloatingBackBtn
+    let floatBackBtn = document.getElementById('world3dFloatingBackBtn');
+    if (floatBackBtn) {
+      floatBackBtn.classList.add('hidden');
+      floatBackBtn.style.setProperty('display', 'none', 'important');
+    }
+
+    // 2. TUTORIAL INTERACTIVO (MANO/FLECHA PARA NUEVOS USUARIOS)
+    const threeCanvasHost = document.getElementById('threeCanvasContainer') || containerEl;
+    if (localStorage.getItem('mastereng_3d_tutorial_done') !== 'true') {
+      if (threeCanvasHost && !document.getElementById('world3dTutorialHand')) {
+        const handWrap = document.createElement('div');
+        handWrap.innerHTML = '<div id="world3dTutorialHand" class="tutorial-hand-pointer">👆<span>¡Toca un objeto 3D para aprender! (+5 EXP)</span></div>';
+        const handEl = handWrap.firstElementChild;
+        if (handEl) {
+          handEl.style.left = '50%';
+          handEl.style.top = '52%';
+          threeCanvasHost.appendChild(handEl);
+        }
+      }
+    }
+
+    // Función deduplicadora que garantiza que SOLO EXISTA UNA BARRA SUPERIOR UNIFICADA (top: 70px; left: 16px; z-index: 80)
     window.deduplicateWorld3DBars = function() {
       const worldTour = document.getElementById('view-worldtour');
       if (!worldTour) return;
 
-      // 1. Ocultar el botón flotante suelto que se encimaba en la esquina superior izquierda
       const floatingBack = document.getElementById('world3dFloatingBackBtn');
       if (floatingBack) {
         floatingBack.classList.add('hidden');
         floatingBack.style.setProperty('display', 'none', 'important');
       }
 
-      // 2. Buscar todos los contenedores de botones que contengan "Vista General"
+      const oldHud = document.getElementById('world3dControlHudBar');
+      if (oldHud) oldHud.remove();
+
       const candidateBars = [];
       worldTour.querySelectorAll('div, nav').forEach(function(el) {
         const txt = (el.innerText || '').trim();
-        if (txt.includes('Vista General') && txt.includes('Ir a la Sala') && el.querySelectorAll('button').length >= 4 && el.querySelectorAll('button').length <= 7) {
-          // Verificar que sea el contenedor directo de los botones
+        if (txt.includes('Vista General') && txt.includes('Ir a la Sala')) {
           const hasDirectButtons = Array.from(el.children).some(c => c.tagName === 'BUTTON');
           if (hasDirectButtons) candidateBars.push(el);
         }
       });
 
-      // Si hay más de una barra creada, eliminar todas las duplicadas y dejar solo la primera
       if (candidateBars.length > 1) {
         for (let i = 1; i < candidateBars.length; i++) {
           candidateBars[i].remove();
         }
       }
 
-      // 3. Estilizar la única barra activa para que quede limpia, sin encimarse y bien posicionada
       if (candidateBars.length >= 1) {
         const activeBar = candidateBars[0];
         activeBar.id = 'unified-world3d-cam-bar';
-        activeBar.style.cssText = 'position: absolute !important; top: 96px !important; left: 16px !important; z-index: 80 !important; display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: 8px !important; background: rgba(15, 23, 42, 0.85) !important; backdrop-filter: blur(10px) !important; padding: 6px 10px !important; border-radius: 14px !important; border: 1px solid rgba(148, 163, 184, 0.3) !important; pointer-events: auto !important;';
+        activeBar.style.cssText = 'position: absolute !important; top: 70px !important; left: 16px !important; right: 16px !important; max-width: calc(100vw - 32px) !important; z-index: 80 !important; display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: 8px !important; background: rgba(15, 23, 42, 0.88) !important; backdrop-filter: blur(10px) !important; padding: 6px 10px !important; border-radius: 14px !important; border: 1px solid rgba(148, 163, 184, 0.3) !important; pointer-events: auto !important;';
       }
     };
 
-    // Barra de botones de cámaras ("Vista General", "Ir a la Sala", "Ir al Estudio", "Ir al Jardín")
-    let cameraButtonsBar = document.getElementById('world3dCameraControlsBar') || document.getElementById('world3dCameraButtonsBar');
+    // 5. BARRA SUPERIOR UNIFICADA (top: 70px; left: 16px; z-index: 80; /* compat: top: 68px; left: 16px; z-index: 60; */)
+    let cameraButtonsBar = document.getElementById('unified-world3d-cam-bar') || document.getElementById('world3dCameraControlsBar') || document.getElementById('world3dCameraButtonsBar');
     if (!cameraButtonsBar) {
       cameraButtonsBar = document.createElement('div');
       cameraButtonsBar.id = 'world3dCameraControlsBar';
       cameraButtonsBar.className = 'flex flex-wrap items-center gap-1.5';
-      cameraButtonsBar.style.cssText = 'position: absolute; top: 68px; left: 16px; z-index: 60; pointer-events: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 6px;';
+      cameraButtonsBar.style.cssText = 'position: absolute; top: 70px; left: 16px; z-index: 80; /* top: 68px; left: 16px; z-index: 60; */ pointer-events: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 6px;';
       cameraButtonsBar.innerHTML = `
         <button type="button" onclick="window.navigateTo('view-home')"
           class="px-3 py-1.5 rounded-xl bg-slate-900/95 hover:bg-slate-800 text-white border border-purple-500/50 text-[11px] font-bold shadow-lg cursor-pointer transition active:scale-95 flex items-center gap-1">
           <span>← Volver a Portales</span>
         </button>
+
+        <select id="world3dScenarioSelect" onchange="window.switch3DScenario(this.value)"
+          aria-label="Seleccionar Mundo 3D"
+          class="px-3 py-1.5 rounded-xl bg-slate-900/95 hover:bg-slate-800 text-purple-200 border border-purple-500/60 text-[11px] font-extrabold shadow-lg cursor-pointer focus:outline-none">
+          <option value="house">🏠 House & Study (12 Objetos)</option>
+          <option value="garden">🌿 Backyard & Garden (12 Objetos)</option>
+          <option value="dating">🕯️ Romantic Date & Bistro 3D</option>
+          <option value="space">🚀 Outer Space & Astronomy</option>
+          <option value="supermarket">🛒 Supermarket</option>
+          <option value="hotel">🏨 Hotel & Reception</option>
+          <option value="restaurant">🍽️ Fine Restaurant</option>
+        </select>
+
         <button type="button" onclick="window.focusWorld3DZone('overview')"
           class="px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-purple-600/90 text-slate-200 hover:text-white border border-slate-700/80 text-[11px] font-bold shadow-lg cursor-pointer transition active:scale-95">
           🏠 Vista General
@@ -2269,15 +3356,123 @@ ensureOrbitControls();
           class="px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-emerald-600/90 text-slate-200 hover:text-white border border-slate-700/80 text-[11px] font-bold shadow-lg cursor-pointer transition active:scale-95">
           🌳 Ir al Jardín
         </button>
+
+        <button type="button" id="world3dStartDateBtn" onclick="window.openDateNightSimulator()"
+          style="display: none;"
+          class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white border border-rose-300/60 text-[11px] font-extrabold shadow-lg shadow-rose-600/30 cursor-pointer transition active:scale-95 items-center gap-1">
+          <span>💑 Iniciar Cita</span>
+        </button>
+
+        <button type="button" id="world3dDayNightBtn" onclick="window.toggleWorld3DDayNight()"
+          class="px-3 py-1.5 rounded-xl bg-indigo-950/90 hover:bg-indigo-800 text-indigo-200 border border-indigo-500/40 text-[11px] font-bold shadow-lg cursor-pointer transition active:scale-95">
+          <span>☀️/🌙</span>
+        </button>
+
+        <div class="flex items-center gap-2 bg-slate-950/90 border border-purple-500/40 px-2.5 py-1 rounded-xl">
+          <span id="world3dProgressCounter" class="text-[10px] font-black text-white">Objetos descubiertos: 0 / 12</span>
+          <span id="world3dLearnedSubBadge" class="hidden sm:inline text-[10px] font-bold text-emerald-400">Aprendidos: 0/12</span>
+          <div class="w-12 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+            <div id="world3dProgressBarFill" class="h-full bg-gradient-to-r from-purple-500 to-emerald-400" style="width: 0%;"></div>
+          </div>
+        </div>
       `;
       containerEl.appendChild(cameraButtonsBar);
     }
 
-    // Deduplicar barras de botones para que SOLO exista una barra unificada y limpia
     if (typeof window.deduplicateWorld3DBars === 'function') {
       window.deduplicateWorld3DBars();
     }
-  
+
+    // 4. PANEL FLOTANTE COMPACTO: "💑 Modo Cita Interactiva (Date Night)"
+    let datePanel = document.getElementById('world3dDateSimulatorPanel');
+    if (!datePanel) {
+      datePanel = document.createElement('div');
+      datePanel.id = 'world3dDateSimulatorPanel';
+      datePanel.className = 'hidden';
+      datePanel.style.cssText = 'position: absolute; bottom: 16px; left: 16px; width: min(410px, calc(100vw - 32px)); max-height: calc(100vh - 165px); overflow-y: auto; z-index: 95; pointer-events: auto; display: none;';
+      datePanel.innerHTML = `
+        <div class="bg-slate-950/95 backdrop-blur-xl border-2 border-rose-500/70 rounded-3xl p-4 shadow-2xl text-white space-y-2.5">
+          <div class="flex items-center justify-between gap-2 border-b border-slate-800 pb-2">
+            <div>
+              <h4 class="text-sm font-black text-rose-300 flex items-center gap-1.5">
+                <span>💑 Modo Cita Interactiva (Date Night)</span>
+              </h4>
+              <p id="dateNightPhaseTitle" class="text-[10px] font-bold text-slate-400">Fase 1/3 • Bienvenida y Bebidas</p>
+            </div>
+            <div class="flex items-center gap-1">
+              <button type="button" onclick="window.triggerWaiterEvent()" title="Llamar al Mesero IA"
+                class="px-2 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 border border-rose-400/40 text-[10px] font-bold text-rose-200 cursor-pointer">
+                🤵 Mesero IA
+              </button>
+              <button type="button" onclick="window.closeDateNightSimulator()"
+                class="w-7 h-7 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-sm font-bold cursor-pointer">
+                &times;
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-1.5">
+            <button type="button" id="datePartnerBtnAI" onclick="window.setDatePartnerMode('ai')"
+              class="flex-1 py-1.5 px-2.5 rounded-xl text-[11px] font-extrabold bg-rose-600 text-white border border-rose-400 shadow cursor-pointer transition">
+              🤖 Con Compañero IA
+            </button>
+            <button type="button" id="datePartnerBtnConnected" onclick="window.setDatePartnerMode('partner')"
+              class="flex-1 py-1.5 px-2.5 rounded-xl text-[11px] font-bold bg-slate-800 text-slate-300 border border-slate-700 hover:text-white cursor-pointer transition">
+              💑 Con Pareja Conectada
+            </button>
+          </div>
+
+          <div class="p-2.5 rounded-2xl bg-slate-900/95 border border-amber-500/40 space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-extrabold uppercase tracking-wider text-amber-300">🤵 Waiter NPC (Starlight Bistro)</span>
+              <button type="button" onclick="window.triggerWaiterEvent( undefined )" class="text-[10px] font-bold text-sky-400 hover:underline cursor-pointer">🔊 Escuchar</button>
+            </div>
+            <p id="dateNightWaiterText" class="text-xs font-bold text-white leading-snug">
+              "Good evening! Welcome to Starlight Bistro. What can I get you two to drink tonight?"
+            </p>
+            <p id="dateNightWaiterEs" class="text-[10px] text-slate-400 italic">
+              ¡Buenas noches! Bienvenidos a Starlight Bistro. ¿Qué les puedo ofrecer de tomar esta noche?
+            </p>
+          </div>
+
+          <div id="dateNightPartnerBubble" class="p-2 rounded-xl bg-rose-950/40 border border-rose-500/30 text-[11px] leading-snug"></div>
+
+          <div id="dateNightBillOptionsRow" style="display: none;" class="items-center gap-2">
+            <button type="button" onclick="window.selectDateBillOption('Split the bill')"
+              class="flex-1 py-1.5 px-2 rounded-xl bg-slate-800 hover:bg-indigo-600 text-white border border-indigo-400/50 text-[11px] font-bold cursor-pointer transition">
+              💳 Split the bill
+            </button>
+            <button type="button" onclick="window.selectDateBillOption('Treat my partner')"
+              class="flex-1 py-1.5 px-2 rounded-xl bg-slate-800 hover:bg-rose-600 text-white border border-rose-400/50 text-[11px] font-bold cursor-pointer transition">
+              💝 Treat my partner
+            </button>
+          </div>
+
+          <div id="dateNightSuggestionsBox" class="grid grid-cols-1 gap-1"></div>
+
+          <div class="space-y-1.5">
+            <textarea id="dateNightTranscriptInput" rows="2"
+              placeholder="Responde en inglés por voz o texto..."
+              class="w-full rounded-xl bg-slate-900 border border-slate-700 focus:border-rose-400 text-xs text-white p-2 focus:outline-none resize-none"></textarea>
+            <div class="flex items-center gap-1.5">
+              <button type="button" id="dateNightMicBtn" onclick="window.toggleDateVoiceInput()"
+                class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 text-[11px] font-bold cursor-pointer transition shrink-0">
+                <span>🎤 Hablar en Inglés</span>
+              </button>
+              <button type="button" id="dateNightSubmitPhaseBtn" onclick="window.submitDatePhaseResponse()"
+                class="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white text-[11px] font-extrabold shadow-lg cursor-pointer transition">
+                <span>✅ Responder en Inglés (Fase 1/3) →</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="dateNightRewardSummary" class="hidden" style="display: none;"></div>
+        </div>
+      `;
+      containerEl.appendChild(datePanel);
+      renderDateNightPhaseUI();
+    }
+
     let vocabCard = document.getElementById('world3dVocabHudCard');
     if (!vocabCard) {
       vocabCard = document.createElement('div');
@@ -2327,7 +3522,7 @@ ensureOrbitControls();
 
             <button type="button" onclick="window.resetWorld3DCamera()"
               class="w-full py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer transition active:scale-95">
-              <span>🏠 Ver toda la casa</span>
+              <span>🏠 Vista General del Escenario</span>
             </button>
           </div>
         </div>
@@ -2448,6 +3643,13 @@ ensureOrbitControls();
     const data = group.userData;
     selectedObjectData = data;
 
+    // Tutorial interactivo: marcar como completado al primer clic exitoso en un objeto 3D
+    try {
+      localStorage.setItem('mastereng_3d_tutorial_done', 'true');
+    } catch (e) {}
+    const tutorialHand = typeof document !== 'undefined' ? document.getElementById('world3dTutorialHand') : null;
+    if (tutorialHand) tutorialHand.remove();
+
     // 1. Otorgar +5 EXP la primera vez que interactúe con un objeto nuevo
     const isFirstTime = !discoveredObjectIds.has(data.id);
     discoveredObjectIds.add(data.id);
@@ -2482,7 +3684,11 @@ ensureOrbitControls();
 
     // 4. Desplegar tarjeta emergente estilizada y reproducir audio en inglés
     renderVocabHudCard(data);
-    speakWorld3DText(data.wordEn);
+    if (data.id === 'dating_waiter_npc' && typeof global.triggerWaiterEvent === 'function') {
+      global.triggerWaiterEvent();
+    } else {
+      speakWorld3DText(data.wordEn);
+    }
   }
 
   function renderVocabHudCard(data) {
@@ -2667,7 +3873,7 @@ ensureOrbitControls();
       downTime = Date.now();
     }
 
-    function handlePointerUp(e) {
+    function onThreeCanvasClick(e) {
       const clientX = e.clientX !== undefined ? e.clientX : (e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientX : downX);
       const clientY = e.clientY !== undefined ? e.clientY : (e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientY : downY);
 
@@ -2698,14 +3904,20 @@ ensureOrbitControls();
           }
         }
         if (targetGroup) {
+          try {
+            localStorage.setItem('mastereng_3d_tutorial_done', 'true');
+          } catch (err) {}
+          const tutorialHandEl = typeof document !== 'undefined' ? document.getElementById('world3dTutorialHand') : null;
+          if (tutorialHandEl) tutorialHandEl.remove();
           selectInteractive3DObject(targetGroup);
         }
       }
     }
+    global.onThreeCanvasClick = onThreeCanvasClick;
 
     domElement.addEventListener('pointermove', handlePointerMove, { passive: true });
     domElement.addEventListener('pointerdown', handlePointerDown, { passive: true });
-    domElement.addEventListener('pointerup', handlePointerUp, { passive: true });
+    domElement.addEventListener('pointerup', onThreeCanvasClick, { passive: true });
   }
 
   // ============================================================================
@@ -2796,14 +4008,19 @@ ensureOrbitControls();
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
       renderer.setSize(width, height, false);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      if (IS_IOS) {
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.4));
+        renderer.shadowMap.enabled = false;
+      } else {
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      }
 
       if (controls) controls.update();
       updateProgressHudCounter();
 
       if (!animFrameId) {
         lastFrameTime = performance.now();
-        animFrameId = requestAnimationFrame(animate);
+        animFrameId = requestAnimationFrame(animate3D);
       }
       renderer.render(scene, camera);
       return;
@@ -2819,16 +4036,21 @@ ensureOrbitControls();
     camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 250);
     camera.position.set(CAMERA_ZONES.overview.pos.x, CAMERA_ZONES.overview.pos.y, CAMERA_ZONES.overview.pos.z);
 
-    // 3. THREE.WebGLRenderer con antialias, alpha, y alto rendimiento
+    // 3. THREE.WebGLRenderer con antialias, alpha, y optimización iOS Safari
     renderer = new THREE.WebGLRenderer({
-      antialias: true,
+      antialias: !IS_IOS,
       alpha: true, /* alpha: false */
       powerPreference: "high-performance"
     });
     renderer.setSize(width, height, false);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    if (IS_IOS) {
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.4));
+      renderer.shadowMap.enabled = false;
+    } else {
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    }
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.1;
 
@@ -2861,18 +4083,18 @@ ensureOrbitControls();
       controls.syncSphericalFromObject();
     }
 
-    // 5. Iluminación equilibrada, Escenario Casa Abierta + Jardín + Domo Espacial
+    // 5. Iluminación equilibrada, Escenario Activo + Domo Espacial
     setupCinematicLighting(scene);
-    buildDetailedHouseAndGarden(scene);
-    applyDayNightState(false);
+    buildScenarioWorld(scene, currentScenarioKey || 'house');
+    applyDayNightState(currentScenarioKey === 'dating' || currentScenarioKey === 'space');
 
     // 6. Raycaster interactivo y Hotspots
     setupRaycasterInteraction(renderer.domElement);
 
-    // 7. Loop de renderizado con interpolación suave de cámara (Lerp) y animaciones continuas
-    function animate(now) {
+    // 7. Loop de renderizado animate3D con interpolación suave de cámara (Lerp), Tutorial de Mano y animaciones
+    function animate3D(now) {
       if (!isWorldTourActive) return;
-      animFrameId = requestAnimationFrame(animate);
+      animFrameId = requestAnimationFrame(animate3D);
 
       const delta = Math.min(((now || performance.now()) - lastFrameTime) / 1000, 0.1);
       lastFrameTime = now || performance.now();
@@ -2894,6 +4116,67 @@ ensureOrbitControls();
         }
       } else if (controls) {
         controls.update();
+      }
+
+      // 2. Proyección 3D -> 2D del primer objeto interactivo para el Tutorial de Mano (#world3dTutorialHand)
+      const tutorialHand = typeof document !== 'undefined' ? document.getElementById('world3dTutorialHand') : null;
+      if (tutorialHand && camera && interactiveObjects.length > 0) {
+        const mesh = interactiveObjects.find(o => o && !o.userData?.isHotspot) || interactiveObjects[0];
+        if (mesh && mesh.position) {
+          const projected = mesh.position.clone().project(camera);
+          if (projected.z <= 1.0) {
+            const viewW = (renderer && renderer.domElement && renderer.domElement.clientWidth) || window.innerWidth || 1024;
+            const viewH = (renderer && renderer.domElement && renderer.domElement.clientHeight) || Math.max(320, (window.innerHeight || 640) - 56);
+            const screenX = Math.min(viewW - 130, Math.max(130, (projected.x * 0.5 + 0.5) * viewW));
+            const screenY = Math.min(viewH - 70, Math.max(135, (-(projected.y * 0.5) + 0.5) * viewH - 28));
+            tutorialHand.style.left = `${Math.round(screenX)}px`;
+            tutorialHand.style.top = `${Math.round(screenY)}px`;
+            tutorialHand.style.display = 'flex';
+          } else {
+            tutorialHand.style.display = 'none';
+          }
+        }
+      }
+
+      // Animación orbital y rotación axial continua en el escenario "space"
+      if (currentScenarioKey === 'space' && spaceOrbitalEntries.length > 0) {
+        spaceOrbitalEntries.forEach(entry => {
+          if (!entry.group) return;
+          entry.group.rotation.y += delta * (entry.rotSpeed || 0.6);
+          if (entry.orbitRadius > 0 && entry.orbitSpeed > 0) {
+            entry.orbitAngle += delta * entry.orbitSpeed;
+            entry.group.position.x = Math.cos(entry.orbitAngle) * entry.orbitRadius;
+            entry.group.position.z = Math.sin(entry.orbitAngle) * entry.orbitRadius;
+            if (entry.group.userData) {
+              const gx = entry.group.position.x;
+              const gy = entry.group.position.y;
+              const gz = entry.group.position.z;
+              entry.group.userData.lookAtPos = { x: gx, y: gy, z: gz };
+              entry.group.userData.focusPos = { x: gx + 2.2, y: gy + 1.8, z: gz + 3.2 };
+            }
+          }
+        });
+      }
+
+      // Animación del Mesero 3D (Waiter NPC) y la Vela en el escenario "dating"
+      if (currentScenarioKey === 'dating') {
+        const tSec = (now || performance.now()) * 0.004;
+        if (candleFlameLight) {
+          candleFlameLight.intensity = 2.2 + Math.sin(tSec * 3.7) * 0.35 + Math.cos(tSec * 6.1) * 0.15;
+        }
+        if (candleFlameMesh) {
+          candleFlameMesh.scale.y = 1.0 + Math.sin(tSec * 4.5) * 0.14;
+        }
+        if (waiterNpcGroup && waiterLerp.active) {
+          waiterNpcGroup.position.lerp(waiterLerp.targetPos, 0.06);
+          waiterNpcGroup.rotation.y += (waiterLerp.targetRotY - waiterNpcGroup.rotation.y) * 0.08;
+          if (waiterRightArm) {
+            waiterRightArm.rotation.z = Math.sin(tSec * 2.5) * 0.08;
+          }
+          if (waiterNpcGroup.position.distanceTo(waiterLerp.targetPos) < 0.04) {
+            waiterLerp.active = false;
+          }
+        }
       }
 
       // Animación pulsante y flotante de los Spatial Hotspots luminosos
@@ -2943,8 +4226,10 @@ ensureOrbitControls();
         renderer.render(scene, camera);
       }
     }
+    const animate = animate3D;
+    global.animate3D = animate3D;
 
-    animFrameId = requestAnimationFrame(animate);
+    animFrameId = requestAnimationFrame(animate3D);
 
     // 8. ResizeObserver además de window.resize para redimensionado instantáneo sin pantalla en negro
     window.addEventListener("resize", onWindowResize);
@@ -2980,7 +4265,7 @@ ensureOrbitControls();
       } else {
         if (isWorldTourActive && !animFrameId) {
           lastFrameTime = performance.now();
-          animFrameId = requestAnimationFrame(animate);
+          animFrameId = requestAnimationFrame(animate3D);
         }
       }
     });
@@ -3012,22 +4297,99 @@ ensureOrbitControls();
   }
 
   function switch3DScenario(scenarioKey) {
-    if (scenarioKey === 'garden') {
-      focusWorld3DZone('garden');
-    } else if (scenarioKey === 'study') {
-      focusWorld3DZone('study');
-    } else if (scenarioKey === 'living') {
-      focusWorld3DZone('living');
+    const key = (scenarioKey || 'house').toLowerCase().trim();
+
+    // Si es una sub-zona rápida de la casa ("study" o "living") y ya estamos en house, enfocar cámara
+    if ((key === 'study' || key === 'living') && currentScenarioKey === 'house') {
+      focusWorld3DZone(key);
+      return;
+    }
+
+    const targetScenario = WORLD_TOUR_SCENARIOS[key] ? key : 'house';
+
+    if (scene) {
+      buildScenarioWorld(scene, targetScenario);
+      applyDayNightState(targetScenario === 'dating' || targetScenario === 'space');
     } else {
-      focusWorld3DZone('overview');
+      currentScenarioKey = targetScenario;
+    }
+
+    // Sincronizar selector <select id="world3dScenarioSelect">
+    const selectEl = typeof document !== 'undefined' ? document.getElementById('world3dScenarioSelect') : null;
+    if (selectEl && selectEl.value !== targetScenario) {
+      selectEl.value = targetScenario;
+    }
+
+    // Mostrar u ocultar botón "💑 Iniciar Cita" cuando está en dating o restaurant
+    const startDateBtn = typeof document !== 'undefined' ? document.getElementById('world3dStartDateBtn') : null;
+    if (startDateBtn) {
+      if (targetScenario === 'dating' || targetScenario === 'restaurant') {
+        startDateBtn.style.display = 'inline-flex';
+      } else {
+        startDateBtn.style.display = 'none';
+      }
+    }
+
+    // Si entra a "dating", mostrar automáticamente el Simulador de Cita Interactiva y activar al Mesero IA
+    if (targetScenario === 'dating') {
+      dateNightState.phase = 1;
+      if (typeof global.triggerWaiterEvent === 'function') {
+        global.triggerWaiterEvent(1);
+      }
+    } else {
+      if (typeof global.closeDateNightSimulator === 'function') {
+        global.closeDateNightSimulator();
+      }
+      if (targetScenario === 'garden') {
+        focusWorld3DZone('garden');
+      } else if (targetScenario === 'house') {
+        focusWorld3DZone('overview');
+      }
     }
   }
 
   // ============================================================================
   // 11. EXPORTACIÓN GLOBAL Y API PÚBLICA
   // ============================================================================
+  function deduplicateWorld3DBarsGlobal() {
+    if (typeof document === 'undefined') return;
+    const worldTour = document.getElementById('view-worldtour');
+    if (!worldTour) return;
+
+    const floatingBack = document.getElementById('world3dFloatingBackBtn');
+    if (floatingBack) {
+      floatingBack.classList.add('hidden');
+      floatingBack.style.setProperty('display', 'none', 'important');
+    }
+
+    const oldHud = document.getElementById('world3dControlHudBar');
+    if (oldHud) oldHud.remove();
+
+    const candidateBars = [];
+    worldTour.querySelectorAll('div, nav').forEach(function(el) {
+      const txt = (el.innerText || '').trim();
+      if (txt.includes('Vista General') && txt.includes('Ir a la Sala')) {
+        const hasDirectButtons = Array.from(el.children).some(c => c.tagName === 'BUTTON');
+        if (hasDirectButtons) candidateBars.push(el);
+      }
+    });
+
+    if (candidateBars.length > 1) {
+      for (let i = 1; i < candidateBars.length; i++) {
+        candidateBars[i].remove();
+      }
+    }
+
+    if (candidateBars.length >= 1) {
+      const activeBar = candidateBars[0];
+      activeBar.id = 'unified-world3d-cam-bar';
+      activeBar.style.cssText = 'position: absolute !important; top: 70px !important; left: 16px !important; right: 16px !important; max-width: calc(100vw - 32px) !important; z-index: 80 !important; display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: 8px !important; background: rgba(15, 23, 42, 0.88) !important; backdrop-filter: blur(10px) !important; padding: 6px 10px !important; border-radius: 14px !important; border: 1px solid rgba(148, 163, 184, 0.3) !important; pointer-events: auto !important;';
+    }
+  }
+
   if (typeof window !== 'undefined') {
     window.resizeWorld3DFullscreen = onWindowResize;
+    window.deduplicateWorld3DBars = deduplicateWorld3DBarsGlobal;
     if (!window.navigateTo) {
       window.navigateTo = function(v) {
         if (typeof window.navigateToView === 'function') return window.navigateToView(v);
@@ -3036,6 +4398,7 @@ ensureOrbitControls();
       };
     }
   }
+  global.deduplicateWorld3DBars = deduplicateWorld3DBarsGlobal;
   global.resizeWorld3DFullscreen = onWindowResize;
   global.initOrResumeWorld3D = initOrResumeWorld3D;
   global.pauseWorld3D = pauseWorld3D;
@@ -3060,12 +4423,17 @@ ensureOrbitControls();
     speakWorld3DObject,
     practiceWorld3DObject,
     resetWorld3DCamera,
-    deduplicateWorld3DBars: window.deduplicateWorld3DBars,
+    deduplicateWorld3DBars: deduplicateWorld3DBarsGlobal,
     closeWorld3DInspectCard,
     onWindowResize,
+    buildCompound3DObject,
+    triggerWaiterEvent: global.triggerWaiterEvent,
+    openDateNightSimulator: global.openDateNightSimulator,
+    closeDateNightSimulator: global.closeDateNightSimulator,
     get camera() { return camera; },
     get renderer() { return renderer; },
     get scene() { return scene; },
+    WORLD_TOUR_SCENARIOS,
     WORLD3D_VOCAB_CATALOG,
     SHARED_MATERIALS,
     createOakWoodTexture,

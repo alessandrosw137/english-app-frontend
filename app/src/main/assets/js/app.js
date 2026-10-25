@@ -1514,7 +1514,7 @@ window.isCurrentUserAdmin = function() {
     }
 
     window.navigateTo = function(viewId) {
-      const views = ['login-view', 'hub-view', 'learning-path-view', 'world3d-view', 'music-view', 'admin-view'];
+      const views = ['login-view', 'hub-view', 'learning-path-view', 'world3d-view', 'music-view', 'admin-view', 'view-jest-game', 'view-community'];
       views.forEach(v => {
         const el = document.getElementById(v);
         if (el) {
@@ -1571,7 +1571,15 @@ window.isCurrentUserAdmin = function() {
         'ai-tutor-view': 'ai-tutor-view',
         'view-ai-tutor': 'ai-tutor-view',
         'admin': 'adminDashboardModal',
-        'admin-view': 'adminDashboardModal'
+        'admin-view': 'adminDashboardModal',
+        'jest': 'view-jest-game',
+        'jest-game': 'view-jest-game',
+        'jarz': 'view-jest-game',
+        'view-jest-game': 'view-jest-game',
+        'social': 'view-community',
+        'chat': 'view-community',
+        'community': 'view-community',
+        'view-community': 'view-community'
       };
       const cleanRaw = (viewId || '').toString().trim();
       const targetId = viewMap[cleanRaw] || viewMap[cleanRaw.replace(/[-_]view$/, '')] || cleanRaw;
@@ -1609,7 +1617,7 @@ window.isCurrentUserAdmin = function() {
         if (typeof window.initAiTutorChat === 'function') window.initAiTutorChat();
       }
 
-      ['view-auth', 'view-home', 'view-path', 'view-stories', 'view-music', 'view-worldtour', 'ai-tutor-view'].forEach(v => {
+      ['view-auth', 'view-home', 'view-path', 'view-stories', 'view-music', 'view-worldtour', 'ai-tutor-view', 'view-jest-game', 'view-community'].forEach(v => {
         const el = document.getElementById(v);
         if (el) {
           if (v === targetId) {
@@ -1738,6 +1746,12 @@ window.isCurrentUserAdmin = function() {
       }
       if (targetId === 'view-stories') {
         if (typeof renderStorySelector === 'function') renderStorySelector();
+      }
+      if (targetId === 'view-jest-game') {
+        if (typeof window.openJestGameView === 'function') window.openJestGameView();
+      }
+      if (targetId === 'view-community') {
+        if (typeof window.openCommunityHubView === 'function') window.openCommunityHubView();
       }
       if (targetId !== 'view-music') {
         if (typeof window.stopAllAudioAndTimers === 'function') {
@@ -2090,7 +2104,7 @@ window.logout = function() {
 
     function handleCoverCardClick(index) {
       if (index === window.currentPortal) {
-        const modules = ['path', 'worldtour', 'music', 'ai-tutor', 'stories'];
+        const modules = ['path', 'worldtour', 'music', 'ai-tutor', 'stories', 'jest', 'social'];
         if (modules[index] === 'ai-tutor' && typeof window.isUserRegistered === 'function' && !window.isUserRegistered()) {
           if (typeof showFloatingToast === 'function') {
             showFloatingToast('🔒 Inicia sesión con tu cuenta para acceder al Tutor IA.', '🔒');
@@ -2116,7 +2130,7 @@ window.logout = function() {
     window.handleCoverCardClick = handleCoverCardClick;
 
     window.openPortalModules = function(targetPortal) {
-      const portalModules = ['path', 'worldtour', 'music', 'ai-tutor', 'stories'];
+      const portalModules = ['path', 'worldtour', 'music', 'ai-tutor', 'stories', 'jest', 'social'];
       const activeIdx = (typeof window.currentPortal === 'number')
         ? ((window.currentPortal % portalModules.length + portalModules.length) % portalModules.length)
         : 0;
@@ -2193,6 +2207,18 @@ window.logout = function() {
         }
         if (typeof window.initAiTutorChat === 'function') {
           window.initAiTutorChat();
+        }
+      } else if (portal === 'jest' || portal === 'jarz' || portal === 'view-jest-game') {
+        if (typeof window.navigateTo === 'function') {
+          window.navigateTo('jest');
+        } else if (typeof window.openJestGameView === 'function') {
+          window.openJestGameView();
+        }
+      } else if (portal === 'social' || portal === 'chat' || portal === 'community' || portal === 'view-community') {
+        if (typeof window.navigateTo === 'function') {
+          window.navigateTo('social');
+        } else if (typeof window.openCommunityHubView === 'function') {
+          window.openCommunityHubView();
         }
       } else if (typeof openPortalWithLoader === 'function') {
         openPortalWithLoader(portal);
@@ -13871,6 +13897,32 @@ window.initInstallShareButton = function() {
     installBtn.onclick = async function(e) {
       e.preventDefault();
       e.stopPropagation();
+
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      if (isIOS) {
+        let iosModal = document.getElementById('iosInstallGuideModal');
+        if (!iosModal) {
+          iosModal = document.createElement('div');
+          iosModal.id = 'iosInstallGuideModal';
+          iosModal.className = 'modal active';
+          iosModal.style.cssText = 'position:fixed; inset:0; z-index:100000; background:rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center; padding:16px; backdrop-filter:blur(6px);';
+          iosModal.innerHTML = `
+            <div style="background:#0f172a; border:2px solid #38bdf8; border-radius:18px; max-width:420px; width:100%; padding:24px; box-shadow:0 20px 40px rgba(0,0,0,0.8); color:#fff; text-align:center; position:relative;">
+              <button type="button" onclick="this.closest('#iosInstallGuideModal').remove()" style="position:absolute; top:12px; right:12px; background:rgba(255,255,255,0.1); border:none; color:#fff; width:30px; height:30px; border-radius:50%; font-size:16px; cursor:pointer;">✕</button>
+              <div style="font-size:2.4rem; margin-bottom:12px;">📲</div>
+              <h3 style="font-size:1.15rem; font-weight:800; margin-bottom:12px; color:#38bdf8;">Instalar MasterENG en tu iPhone</h3>
+              <p style="font-size:0.92rem; line-height:1.5; color:#e2e8f0; margin-bottom:18px; font-weight:500;">📲 Instalar MasterENG en tu iPhone: 1) Toca el ícono Compartir (⬆️) abajo en Safari. 2) Selecciona 'Agregar a pantalla de inicio' (➕) y pulsa Agregar.</p>
+              <button type="button" onclick="this.closest('#iosInstallGuideModal').remove()" style="background:#38bdf8; color:#0b1120; font-weight:700; border:none; padding:10px 24px; border-radius:24px; cursor:pointer; font-size:0.9rem;">Entendido</button>
+            </div>
+          `;
+          document.body.appendChild(iosModal);
+        } else {
+          iosModal.style.display = 'flex';
+          iosModal.classList.remove('hidden');
+        }
+        return;
+      }
+
       if (window.deferredPwaPrompt) {
         window.deferredPwaPrompt.prompt();
         try {
@@ -13901,6 +13953,44 @@ window.initInstallShareButton = function() {
     }
   }
 };
+
+// Desbloqueo universal de AudioContext y speechSynthesis en iOS en el primer touchstart
+if (typeof document !== 'undefined') {
+  const unlockIOSAudioAndSpeech = function() {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) {
+        if (!window.__masterEngAudioCtx) {
+          window.__masterEngAudioCtx = new AudioCtx();
+        }
+        if (window.__masterEngAudioCtx.state === 'suspended') {
+          window.__masterEngAudioCtx.resume();
+        }
+        const buffer = window.__masterEngAudioCtx.createBuffer(1, 1, 22050);
+        const source = window.__masterEngAudioCtx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(window.__masterEngAudioCtx.destination);
+        source.start(0);
+      }
+    } catch (_) {}
+
+    try {
+      if ('speechSynthesis' in window && window.speechSynthesis) {
+        window.speechSynthesis.resume();
+        const silentUtterance = new SpeechSynthesisUtterance('');
+        silentUtterance.volume = 0;
+        window.speechSynthesis.speak(silentUtterance);
+      }
+    } catch (_) {}
+
+    document.removeEventListener('touchstart', unlockIOSAudioAndSpeech, true);
+    document.removeEventListener('touchend', unlockIOSAudioAndSpeech, true);
+    document.removeEventListener('click', unlockIOSAudioAndSpeech, true);
+  };
+  document.addEventListener('touchstart', unlockIOSAudioAndSpeech, { capture: true, once: true });
+  document.addEventListener('touchend', unlockIOSAudioAndSpeech, { capture: true, once: true });
+  document.addEventListener('click', unlockIOSAudioAndSpeech, { capture: true, once: true });
+}
 
 // Registro del Service Worker y detector de actualizaciones
 if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator && (typeof process === 'undefined' || !process.versions || !process.versions.node)) {

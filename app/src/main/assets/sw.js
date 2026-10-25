@@ -1,10 +1,12 @@
-// mastereng-v1 Service Worker Network-First with Auto-Cache Cleanup
-const CACHE_NAME = 'mastereng-v1-pwa-v9-' + Date.now();
+// mastereng-v1-pwa-v9-compat Service Worker Network-First with Auto-Cache Cleanup
+const CACHE_NAME = 'mastereng-pwa-v11-' + Date.now();
 const CORE_ASSETS = [
   './',
   './index.html',
   './css/style.css',
   './js/app.js',
+  './js/jest_game.js',
+  './js/social_chat.js',
   './manifest.json',
   './icon.png',
   './icon-512.png'
