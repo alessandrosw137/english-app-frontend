@@ -23,7 +23,9 @@
     CONTACTS: 'mastereng_social_contacts',
     MESSAGES: 'mastereng_social_messages',
     ACTIVE_DATE_PARTNER: 'mastereng_active_date_partner',
-    MY_FRIEND_CODE: 'mastereng_my_friend_code'
+    MY_FRIEND_CODE: 'mastereng_my_friend_code',
+    INBOX_INVITES: 'mastereng_inbox_invites',
+    CHAT_MESSAGES: 'mastereng_chat_messages'
   };
 
   // Lista negra estricta de bots de prueba que jamás deben aparecer
@@ -472,7 +474,7 @@
     }
 
     try {
-      const rawMsgs = localStorage.getItem(STORAGE_KEYS.MESSAGES);
+      const rawMsgs = localStorage.getItem(STORAGE_KEYS.MESSAGES) || localStorage.getItem(STORAGE_KEYS.CHAT_MESSAGES);
       state.messages = rawMsgs ? JSON.parse(rawMsgs) : {};
       if (!state.messages || typeof state.messages !== 'object') state.messages = {};
     } catch (e) {
@@ -534,6 +536,7 @@
       localStorage.setItem(STORAGE_KEYS.CONTACTS, JSON.stringify(state.contacts));
       localStorage.setItem(STORAGE_KEYS.BONDS, JSON.stringify(state.bonds));
       localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(state.messages));
+      localStorage.setItem(STORAGE_KEYS.CHAT_MESSAGES, JSON.stringify(state.messages));
     } catch (e) {
       console.warn('[SocialChat] No se pudo guardar en localStorage:', e);
     }
@@ -796,7 +799,7 @@
   }
 
   function renderCommunityHub() {
-    if (typeof document === 'undefined') return;
+    if (typeof document === 'undefined' || !document.body) return;
     const viewEl = ensureCommunityViewContainer();
     const activeContact = getActiveContact();
     const activeBond = activeContact ? (state.bonds[activeContact.id] || {
@@ -813,6 +816,15 @@
     const bondRankLabel = activeBond ? calculateBondRank(activeBond) : '';
     const filteredContacts = getFilteredContacts();
     const myCode = ensureUserUniqueGameId();
+
+    let inboxPendingCount = 0;
+    try {
+      const rawInb = localStorage.getItem(STORAGE_KEYS.INBOX_INVITES);
+      if (rawInb) {
+        const arr = JSON.parse(rawInb);
+        if (Array.isArray(arr)) inboxPendingCount = arr.filter(i => i && i.status === 'pending').length;
+      }
+    } catch (_) { inboxPendingCount = 0; }
 
     const m1Progress = activeBond ? Math.min(5, Number(activeBond.messagesToday) || 0) : 0;
     const m2Progress = activeBond ? Math.min(3, Number(activeBond.weeklyDatesCount) || 0) : 0;
@@ -846,6 +858,11 @@
           </div>
 
           <div class="flex items-center gap-2 flex-wrap">
+            <button type="button" onclick="window.openInboxInvitesModal ? window.openInboxInvitesModal() : window.SocialChat.openInboxInvitesModal()"
+              class="px-3 py-1.5 rounded-xl bg-purple-600/30 hover:bg-purple-600/45 border border-purple-400/40 text-purple-200 text-xs font-extrabold shadow-lg flex items-center gap-1.5 cursor-pointer transition relative" title="Bandeja de Entrada e Invitaciones">
+              <span>📥 Bandeja</span>
+              <span id="waInboxBadge" class="inbox-badge inline-flex items-center justify-center px-1.5 py-0.2 min-w-[18px] text-[10px] font-black rounded-full bg-rose-500 text-white ${inboxPendingCount > 0 ? '' : 'hidden'}">${inboxPendingCount}</span>
+            </button>
             <button type="button" onclick="window.SocialChat.openRanksGuideModal()"
               class="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/35 border border-amber-400/40 text-amber-300 text-xs font-extrabold shadow-lg flex items-center gap-1 cursor-pointer transition">
               <span>📖 Guía de Rangos y Rachas</span>
@@ -1162,6 +1179,9 @@
 
         <!-- Modal para 👥 Crear Grupo -->
         <div id="waCreateGroupModal" class="wa-modal-backdrop hidden"></div>
+
+        <!-- Modal para 📥 Bandeja de Entrada e Invitaciones Globales -->
+        <div id="waInboxInvitesModal" class="wa-modal-backdrop hidden"></div>
       </div>
     `;
   }
@@ -1291,9 +1311,9 @@
               </div>
               <p class="text-xs text-slate-200 mb-2.5">${escapeHtml(m.text)}</p>
               <button type="button"
-                onclick="window.SocialChat.acceptJestDuel('${escapeHtml(contactId)}', '${escapeHtml(friendName)}')"
+                onclick="window.SocialChat.acceptJestDuel('${escapeHtml(contactId)}', '${escapeHtml(friendName)}', '${escapeHtml(m.roomCode || '')}')"
                 class="wa-invite-cta-btn jest-cta">
-                ⚔️ Aceptar Duelo 1vs1 en Jest 3D
+                ✅ Aceptar Invitación e Ir Ahora
               </button>
               <span class="wa-bubble-time">${escapeHtml(m.timestamp || '')}</span>
             </div>
@@ -1314,9 +1334,9 @@
               </div>
               <p class="text-xs text-slate-200 mb-2.5">${escapeHtml(m.text)}</p>
               <button type="button"
-                onclick="window.SocialChat.goTo3DDateNow('${escapeHtml(contactId)}')"
+                onclick="window.SocialChat.goTo3DDateNow('${escapeHtml(contactId)}', '${escapeHtml(m.roomCode || '')}')"
                 class="wa-invite-cta-btn date3d-cta">
-                🕯️ Entrar a Cita 3D con ${escapeHtml(friendName)}
+                ✅ Aceptar Invitación e Ir Ahora
               </button>
               <span class="wa-bubble-time">${escapeHtml(m.timestamp || '')}</span>
             </div>
@@ -2079,15 +2099,15 @@
     saveSocialState();
   }
 
-  function acceptJestDuel(friendId, friendName) {
+  function acceptJestDuel(friendId, friendName, roomCode = null) {
     const contact = state.contacts.find(c => c.id === friendId);
-    const roomCode = (contact && contact.friendCode) ? `JEST-${contact.friendCode}` : 'JEST-101';
+    const code = roomCode || ((contact && contact.friendCode) ? `JEST-${contact.friendCode}` : 'JEST-101');
 
     if (typeof global.openJestGameView === 'function') {
       global.openJestGameView({
         friendId,
         friendName: friendName || (contact ? contact.name : 'Amigo'),
-        roomCode,
+        roomCode: code,
         topic: ( state.bonds[friendId] && state.bonds[friendId].role === 'partner' )
           ? 'Romantic & Couple Items'
           : 'Animals & Creatures'
@@ -2121,7 +2141,7 @@
     goTo3DDateNow(contact.id);
   }
 
-  function goTo3DDateNow(contactId) {
+  function goTo3DDateNow(contactId, roomCode = null) {
     const contact = state.contacts.find(c => c.id === contactId) || getActiveContact();
     if (!contact) return;
 
@@ -2137,11 +2157,14 @@
       role: bond.role || 'partner',
       bondRank: calculateBondRank(bond),
       streakDays: bond.streakDays || 1,
+      roomCode: roomCode || 'DATE-BISTRO-3D',
       startedAt: new Date().toISOString()
     };
 
     try {
-      localStorage.setItem(STORAGE_KEYS.ACTIVE_DATE_PARTNER, JSON.stringify(partnerPayload));
+      localStorage.setItem(STORAGE_KEYS.ACTIVE_DATE_PARTNER, contact.name);
+      localStorage.setItem('mastereng_couple_partner_name', contact.name);
+      localStorage.setItem('mastereng_active_date_partner_payload', JSON.stringify(partnerPayload));
     } catch (e) {}
 
     saveSocialState();
@@ -2164,6 +2187,15 @@
     }
     if (typeof global.switch3DScenario === 'function') {
       try { global.switch3DScenario('dating'); } catch (e) {}
+    }
+    if (typeof global.setDatePartnerMode === 'function') {
+      try { global.setDatePartnerMode('partner'); } catch (e) {}
+    }
+    if (typeof global.sitAvatarsAtDatingTable === 'function') {
+      try { global.sitAvatarsAtDatingTable(partnerPayload); } catch (e) {}
+    }
+    if (typeof global.openDatingTableChat === 'function') {
+      try { global.openDatingTableChat(partnerPayload); } catch (e) {}
     }
   }
 
@@ -2263,10 +2295,440 @@
     showSocialToast(`👥 Grupo "${name}" creado con éxito`);
   }
 
+  // ============================================================================
+  // 13.5 SISTEMA DE INVITACIONES GLOBALES Y BANDEJA DE ENTRADA (INBOX)
+  // ============================================================================
+  function setupGlobalInvitesChannel() {
+    if (typeof BroadcastChannel !== 'undefined') {
+      try {
+        if (!state._invitesChannel) {
+          state._invitesChannel = new BroadcastChannel('mastereng_global_invites');
+          state._invitesChannel.onmessage = function () {
+            updateInboxBadgeCount();
+            const modal = document.getElementById('waInboxInvitesModal');
+            if (modal && !modal.classList.contains('hidden') && modal.style.display !== 'none') {
+              openInboxInvitesModal();
+            }
+          };
+        }
+      } catch (_) {}
+    }
+  }
+
+  function updateInboxBadgeCount() {
+    let count = 0;
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.INBOX_INVITES);
+      if (raw) {
+        const list = JSON.parse(raw);
+        if (Array.isArray(list)) {
+          count = list.filter(i => i && i.status === 'pending').length;
+        }
+      }
+    } catch (_) { count = 0; }
+
+    if (typeof document !== 'undefined') {
+      const badges = document.querySelectorAll('#inboxBadgeCount, #waInboxBadge, .inbox-badge, .wa-inbox-badge');
+      badges.forEach(b => {
+        b.textContent = count;
+        if (count > 0) {
+          b.classList.remove('hidden');
+          b.style.display = 'inline-flex';
+        } else {
+          b.classList.add('hidden');
+          b.style.display = 'none';
+        }
+      });
+    }
+    return count;
+  }
+
+  function sendGlobalAppInvite(payload) {
+    if (!payload || typeof payload !== 'object') return null;
+    const toIdOrName = String(payload.toIdOrName || '').trim();
+    if (!toIdOrName) return null;
+
+    const inviteType = payload.type === 'dating_3d' ? 'dating_3d' : 'jest_duel';
+    const partnerGender = payload.partnerGender || 'unspecified';
+    const cleanTo = toIdOrName.toLowerCase();
+
+    // 1. Verificar si existe la conversación en mastereng_social_contacts
+    let contact = state.contacts.find(c => {
+      if (isBannedFakeBot(c)) return false;
+      const cId = String(c.id || '').toLowerCase();
+      const cName = String(c.name || '').toLowerCase();
+      const cUsername = String(c.username || '').toLowerCase();
+      const cCode = String(c.friendCode || c.gameId || '').toLowerCase();
+      return cId === cleanTo || cName === cleanTo || cUsername === cleanTo || cCode === cleanTo;
+    });
+
+    // 2. Si es la primera vez que se interactúa con ese amigo, crearlo automáticamente (sin bots falsos)
+    if (!contact) {
+      const isCode = toIdOrName.toUpperCase().startsWith('MENG-');
+      const friendCode = isCode ? toIdOrName.toUpperCase() : ('MENG-' + Math.floor(1000 + Math.random() * 9000));
+      const displayName = isCode ? `Compañero (${friendCode})` : toIdOrName;
+      const contactId = 'friend_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+
+      let avatar = '🧑‍🎓';
+      if (partnerGender === 'female') avatar = '👩';
+      else if (partnerGender === 'male') avatar = '👨';
+
+      contact = {
+        id: contactId,
+        name: displayName,
+        username: displayName.toLowerCase().replace(/\s+/g, '_'),
+        email: '',
+        friendCode: friendCode,
+        gameId: friendCode,
+        avatar: avatar,
+        gender: partnerGender,
+        personalRank: '🥈 Plata',
+        cefr: 'B1 Intermediate',
+        statusText: inviteType === 'dating_3d' ? 'Listo para practicar en el Bistro 3D' : 'Listo para duelo 1vs1 de Jest 3D',
+        isOnline: true,
+        lastSeen: 'En línea'
+      };
+
+      state.contacts.unshift(contact);
+
+      const initialRole = inviteType === 'dating_3d' ? 'partner' : 'friends';
+      state.bonds[contact.id] = {
+        role: initialRole,
+        roleConfirmed: true,
+        pendingRole: null,
+        theme: RELATIONSHIP_ROLES[initialRole] ? RELATIONSHIP_ROLES[initialRole].defaultTheme : 'classic',
+        streakDays: 1,
+        lastInteractionDate: getTodayIso(),
+        coupleExp: 20,
+        weeklyDatesCount: 0,
+        weeklyGamesCount: 0,
+        messagesToday: 0
+      };
+    }
+
+    // 3. Crear la sala y el mensaje estructurado con botón interactivo ("✅ Aceptar Invitación e Ir Ahora")
+    if (!Array.isArray(state.messages[contact.id])) {
+      state.messages[contact.id] = [];
+    }
+
+    const roomCode = payload.roomCode || (inviteType === 'dating_3d' ? 'DATE-BISTRO-3D' : `JEST-${contact.friendCode || '101'}`);
+    const inviteId = 'inv_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+
+    let inviteTitle = '';
+    let inviteText = '';
+
+    if (inviteType === 'dating_3d') {
+      inviteTitle = '🕯️ Cita Especial en el Bistro 3D';
+      inviteText = `¡He reservado una mesa íntima para nosotros dos en el Bistro 3D de MasterENG! Practiquemos inglés juntos frente a frente. (Mesa: ${roomCode})`;
+    } else {
+      inviteTitle = '🃏 Duelo Oficial 1vs1 • Jest / Jarz 3D';
+      inviteText = `¡Te desafío a una partida 1vs1 en la mesa 3D de Jest / Jarz! Adivina la palabra en tu frente haciendo preguntas en inglés. (Sala: ${roomCode})`;
+    }
+
+    const newMsg = {
+      id: inviteId,
+      sender: 'friend', // Como mensaje recibido para que el usuario pueda presionar el botón interactivo
+      senderName: contact.name,
+      text: inviteText,
+      type: inviteType === 'dating_3d' ? 'date3d_invite' : 'jest_invite',
+      roomCode: roomCode,
+      inviteType: inviteType,
+      contactId: contact.id,
+      partnerGender: partnerGender,
+      title: inviteTitle,
+      timestamp: getCurrentTimeStr()
+    };
+
+    state.messages[contact.id].push(newMsg);
+    saveSocialState(); // Guarda en STORAGE_KEYS.CONTACTS, STORAGE_KEYS.BONDS, STORAGE_KEYS.MESSAGES y mastereng_chat_messages
+
+    // 4. Guardar la invitación en mastereng_inbox_invites
+    const inboxItem = {
+      id: inviteId,
+      fromId: contact.id,
+      fromName: contact.name,
+      avatar: contact.avatar || '🧑‍🎓',
+      friendCode: contact.friendCode || contact.gameId || '',
+      type: inviteType,
+      roomCode: roomCode,
+      partnerGender: partnerGender,
+      title: inviteTitle,
+      description: inviteText,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      timeStr: getCurrentTimeStr()
+    };
+
+    let inboxList = [];
+    try {
+      const rawInbox = localStorage.getItem(STORAGE_KEYS.INBOX_INVITES);
+      inboxList = rawInbox ? JSON.parse(rawInbox) : [];
+      if (!Array.isArray(inboxList)) inboxList = [];
+    } catch (_) { inboxList = []; }
+
+    inboxList.unshift(inboxItem);
+    try {
+      localStorage.setItem(STORAGE_KEYS.INBOX_INVITES, JSON.stringify(inboxList));
+    } catch (_) {}
+
+    // 5. Emitir evento BroadcastChannel('mastereng_global_invites')
+    try {
+      if (typeof BroadcastChannel !== 'undefined') {
+        const bc = new BroadcastChannel('mastereng_global_invites');
+        bc.postMessage({ type: 'NEW_INVITE', invite: inboxItem });
+        bc.close();
+      }
+    } catch (_) {}
+
+    // 6. Actualizar contador de badge de bandeja de entrada
+    updateInboxBadgeCount();
+
+    if (state.activeContactId === contact.id) {
+      renderCommunityHub();
+      scrollToBottomMessages();
+    }
+
+    return inboxItem;
+  }
+
+  function openInboxInvitesModal() {
+    let modal = document.getElementById('waInboxInvitesModal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'waInboxInvitesModal';
+      modal.className = 'wa-modal-backdrop';
+      document.body.appendChild(modal);
+    }
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+
+    let invites = [];
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.INBOX_INVITES);
+      invites = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(invites)) invites = [];
+    } catch (_) { invites = []; }
+
+    // Recopilar también propuestas de roles pendientes
+    const pendingRoles = [];
+    Object.keys(state.bonds).forEach(cId => {
+      const b = state.bonds[cId];
+      if (b && b.pendingRole) {
+        const contact = state.contacts.find(c => c.id === cId);
+        if (contact) {
+          pendingRoles.push({
+            id: 'role_' + cId,
+            fromId: cId,
+            fromName: contact.name,
+            avatar: contact.avatar || '🧑‍🎓',
+            friendCode: contact.friendCode || '',
+            type: 'role_proposal',
+            role: b.pendingRole,
+            title: '🤝 Propuesta de Vínculo Conjunto',
+            description: `Te ha propuesto elegir el rol: ${escapeHtml((RELATIONSHIP_ROLES[b.pendingRole] && RELATIONSHIP_ROLES[b.pendingRole].title) || b.pendingRole)}`,
+            status: 'pending',
+            timeStr: 'Pendiente'
+          });
+        }
+      }
+    });
+
+    const allInvites = [...pendingRoles, ...invites];
+    const pendingCount = allInvites.filter(i => i.status === 'pending').length;
+
+    modal.innerHTML = `
+      <div class="wa-modal-card" style="max-width: 600px; max-height: 85vh; overflow-y: auto;">
+        <div class="flex items-center justify-between mb-3 border-b border-slate-800 pb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-2xl">📥</span>
+            <div>
+              <h3 class="text-base font-black text-white leading-tight">Bandeja de Entrada e Invitaciones</h3>
+              <p class="text-[11px] text-slate-400">Citas 3D, Duelos de Jest 1vs1 y Vínculos de Amigos</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-400/30 text-[11px] font-black">
+              ${pendingCount} pendientes
+            </span>
+            <button type="button" onclick="window.SocialChat.closeModals()" class="text-slate-400 hover:text-white text-lg font-bold cursor-pointer">✕</button>
+          </div>
+        </div>
+
+        ${allInvites.length === 0 ? `
+          <div class="p-8 text-center bg-slate-950/60 rounded-2xl border border-slate-800/80 my-2">
+            <span class="text-4xl block mb-2">📭</span>
+            <div class="text-sm font-black text-white mb-1">Tu bandeja está limpia</div>
+            <p class="text-xs text-slate-400 max-w-sm mx-auto">
+              Cuando tus amigos reales te inviten a una Cita 3D en el Bistro, a un Duelo de Jest 1vs1 o propongan un rol, aparecerán aquí.
+            </p>
+          </div>
+        ` : `
+          <div class="space-y-2.5 my-2">
+            ${allInvites.map(inv => {
+              const isPending = inv.status === 'pending';
+              const isDate = inv.type === 'dating_3d';
+              const isJest = inv.type === 'jest_duel';
+              const isRole = inv.type === 'role_proposal';
+
+              let badgeBg = 'bg-slate-800 text-slate-300 border-slate-700';
+              let badgeLabel = 'Invitación';
+              if (isDate) {
+                badgeBg = 'bg-rose-500/20 text-rose-300 border-rose-500/30';
+                badgeLabel = '🕯️ Cita 3D Bistro';
+              } else if (isJest) {
+                badgeBg = 'bg-amber-500/20 text-amber-300 border-amber-500/30';
+                badgeLabel = '🃏 Duelo Jest 3D';
+              } else if (isRole) {
+                badgeBg = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
+                badgeLabel = '🤝 Vínculo Conjunto';
+              }
+
+              return `
+                <div class="p-3.5 rounded-2xl bg-slate-950/90 border ${isPending ? 'border-purple-500/40 shadow-lg shadow-purple-950/20' : 'border-slate-800 opacity-75'} transition">
+                  <div class="flex items-center justify-between gap-2 mb-2">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                      <span class="text-2xl">${escapeHtml(inv.avatar || '🧑‍🎓')}</span>
+                      <div class="min-w-0">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                          <span class="text-xs font-black text-white truncate">${escapeHtml(inv.fromName)}</span>
+                          ${inv.friendCode ? `<span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800 text-cyan-300 border border-slate-700">${escapeHtml(inv.friendCode)}</span>` : ''}
+                        </div>
+                        <span class="text-[10px] text-slate-400 block">${escapeHtml(inv.timeStr || '')}</span>
+                      </div>
+                    </div>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border ${badgeBg}">
+                      ${badgeLabel}
+                    </span>
+                  </div>
+
+                  <div class="text-xs text-slate-200 mb-3 px-1 leading-relaxed">
+                    ${escapeHtml(inv.description || inv.title || '')}
+                  </div>
+
+                  <div class="flex items-center gap-2 pt-2 border-t border-slate-800/80">
+                    ${isPending ? `
+                      ${isDate ? `
+                        <button type="button"
+                          onclick="window.SocialChat.accept3DDateFromInbox('${escapeHtml(inv.id)}', '${escapeHtml(inv.fromId)}', '${escapeHtml(inv.roomCode || '')}')"
+                          class="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white text-xs font-black shadow-md cursor-pointer transition flex items-center justify-center gap-1.5 active:scale-95">
+                          <span>✅ Aceptar Cita 3D</span>
+                        </button>
+                      ` : ''}
+                      ${isJest ? `
+                        <button type="button"
+                          onclick="window.SocialChat.acceptJestDuelFromInbox('${escapeHtml(inv.id)}', '${escapeHtml(inv.fromId)}', '${escapeHtml(inv.fromName)}', '${escapeHtml(inv.roomCode || '')}')"
+                          class="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-white text-xs font-black shadow-md cursor-pointer transition flex items-center justify-center gap-1.5 active:scale-95">
+                          <span>⚔️ Aceptar Duelo 1vs1</span>
+                        </button>
+                      ` : ''}
+                      ${isRole ? `
+                        <button type="button"
+                          onclick="window.SocialChat.acceptJointRoleProposal('${escapeHtml(inv.fromId)}', '${escapeHtml(inv.id)}', '${escapeHtml(inv.role)}')"
+                          class="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-black shadow-md cursor-pointer transition flex items-center justify-center gap-1.5 active:scale-95">
+                          <span>🤝 Aceptar Rol en Conjunto</span>
+                        </button>
+                      ` : ''}
+                    ` : `
+                      <span class="text-xs text-emerald-400 font-extrabold flex items-center gap-1">
+                        <span>✅ Invitación Aceptada</span>
+                      </span>
+                    `}
+
+                    <button type="button"
+                      onclick="window.SocialChat.dismissInboxInvite('${escapeHtml(inv.id)}')"
+                      class="px-2.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white text-xs font-bold cursor-pointer transition"
+                      title="Eliminar de la bandeja">
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `}
+
+        <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between gap-2">
+          ${invites.length > 0 ? `
+            <button type="button" onclick="window.SocialChat.clearAllInboxInvites()"
+              class="px-3 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-400/30 text-rose-300 text-xs font-bold cursor-pointer transition">
+              Vaciar Bandeja
+            </button>
+          ` : '<div></div>'}
+          <button type="button" onclick="window.SocialChat.closeModals()"
+            class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-extrabold cursor-pointer transition">
+            Cerrar
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  function accept3DDateFromInbox(inviteId, contactId, roomCode = null) {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.INBOX_INVITES);
+      if (raw) {
+        const list = JSON.parse(raw);
+        if (Array.isArray(list)) {
+          const inv = list.find(i => i.id === inviteId);
+          if (inv) inv.status = 'accepted';
+          localStorage.setItem(STORAGE_KEYS.INBOX_INVITES, JSON.stringify(list));
+        }
+      }
+    } catch (_) {}
+
+    updateInboxBadgeCount();
+    closeModals();
+    goTo3DDateNow(contactId, roomCode);
+  }
+
+  function acceptJestDuelFromInbox(inviteId, contactId, friendName, roomCode = null) {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.INBOX_INVITES);
+      if (raw) {
+        const list = JSON.parse(raw);
+        if (Array.isArray(list)) {
+          const inv = list.find(i => i.id === inviteId);
+          if (inv) inv.status = 'accepted';
+          localStorage.setItem(STORAGE_KEYS.INBOX_INVITES, JSON.stringify(list));
+        }
+      }
+    } catch (_) {}
+
+    updateInboxBadgeCount();
+    closeModals();
+    acceptJestDuel(contactId, friendName, roomCode);
+  }
+
+  function dismissInboxInvite(inviteId) {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.INBOX_INVITES);
+      if (raw) {
+        let list = JSON.parse(raw);
+        if (Array.isArray(list)) {
+          list = list.filter(i => i.id !== inviteId);
+          localStorage.setItem(STORAGE_KEYS.INBOX_INVITES, JSON.stringify(list));
+        }
+      }
+    } catch (_) {}
+    updateInboxBadgeCount();
+    openInboxInvitesModal();
+  }
+
+  function clearAllInboxInvites() {
+    try {
+      localStorage.setItem(STORAGE_KEYS.INBOX_INVITES, JSON.stringify([]));
+    } catch (_) {}
+    updateInboxBadgeCount();
+    openInboxInvitesModal();
+  }
+
   function closeModals() {
-    ['waAddFriendModal', 'waCreateGroupModal', 'waRoleProposalModal', 'waRanksGuideModal'].forEach(id => {
+    ['waAddFriendModal', 'waCreateGroupModal', 'waRoleProposalModal', 'waRanksGuideModal', 'waInboxInvitesModal'].forEach(id => {
       const el = document.getElementById(id);
-      if (el) el.classList.add('hidden');
+      if (el) {
+        el.classList.add('hidden');
+        el.style.display = 'none';
+      }
     });
   }
 
@@ -2286,7 +2748,7 @@
   }
 
   function scrollToBottomMessages() {
-    if (typeof document === 'undefined') return;
+    if (typeof document === 'undefined' || !document.body) return;
     setTimeout(() => {
       const container = document.getElementById('waMessagesContainer');
       if (container) {
@@ -2299,7 +2761,7 @@
     if (typeof global.showToast === 'function') {
       try { global.showToast(message); return; } catch (e) {}
     }
-    if (typeof document === 'undefined') return;
+    if (typeof document === 'undefined' || !document.body) return;
     let toast = document.getElementById('waSocialFloatingToast');
     if (!toast) {
       toast = document.createElement('div');
@@ -2339,6 +2801,8 @@
   // ============================================================================
   function initSocialChat() {
     loadSocialState();
+    updateInboxBadgeCount();
+    setupGlobalInvitesChannel();
     if (typeof document !== 'undefined') {
       const existingView = document.getElementById('view-community');
       if (existingView && !existingView.classList.contains('hidden')) {
@@ -2394,6 +2858,13 @@
     calculateBondRank,
     registerRelationshipGamePlayed,
     discoverRegisteredUsers,
+    sendGlobalAppInvite,
+    openInboxInvitesModal,
+    updateInboxBadgeCount,
+    accept3DDateFromInbox,
+    acceptJestDuelFromInbox,
+    dismissInboxInvite,
+    clearAllInboxInvites,
     getSocialBonds: () => state.bonds,
     getSocialContacts: () => state.contacts,
     RELATIONSHIP_ROLES
@@ -2406,6 +2877,9 @@
   global.initSocialChat = initSocialChat;
   global.renderCommunityHub = renderCommunityHub;
   global.calculateBondRank = calculateBondRank;
+  global.sendGlobalAppInvite = sendGlobalAppInvite;
+  global.openInboxInvitesModal = openInboxInvitesModal;
+  global.updateInboxBadgeCount = updateInboxBadgeCount;
 
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = SocialChatAPI;

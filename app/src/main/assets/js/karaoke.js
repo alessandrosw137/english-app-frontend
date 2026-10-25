@@ -484,14 +484,25 @@
       const isEnded = state === 0 || (window.YT && window.YT.PlayerState && state === YT.PlayerState.ENDED);
 
       if (isPlaying) {
+        // Cero doble audio: si el video de YouTube está activo, mantener #mastereng-audio en pausa y muteado
+        const audioEl = document.getElementById('mastereng-audio') || document.getElementById('karaokeAudioSync') || document.getElementById('karaokeAudioTracker');
+        if (audioEl) {
+          try {
+            audioEl.pause();
+            audioEl.muted = true;
+          } catch (_) {}
+        }
         // Reproduciendo: iniciar seguimiento sincronizado estrofa por estrofa
         startMusicKaraokeSync();
-      } else if (isPaused) {
-        // Pausado: detener de inmediato el seguimiento y avance en la estrofa actual
-        stopMusicKaraokeSync();
-      } else if (isEnded) {
-        // Video terminado
-        stopMusicKaraokeSync();
+      } else if (isPaused || isEnded) {
+        // Pausado o finalizado: detener de inmediato y sincronizar pausa en todos los reproductores
+        if (typeof syncPauseAllMusicPlayers === 'function') {
+          syncPauseAllMusicPlayers();
+        } else if (typeof window.syncPauseAllMusicPlayers === 'function') {
+          window.syncPauseAllMusicPlayers();
+        } else {
+          stopMusicKaraokeSync();
+        }
       }
     }
 
@@ -1121,8 +1132,16 @@
       renderLyricsFromList(activeLyricsList);
       renderMusicTracksList();
 
+      let trackDurationSec = 220;
+      if (track.duration) {
+        const parts = String(track.duration).split(':');
+        if (parts.length === 2) {
+          trackDurationSec = (parseInt(parts[0], 10) || 0) * 60 + (parseInt(parts[1], 10) || 0);
+        }
+      }
+
       if (typeof window.fetchLrclibSyncedLyrics === 'function') {
-        window.fetchLrclibSyncedLyrics(track.artist, track.title).then(res => {
+        window.fetchLrclibSyncedLyrics(track.artist, track.title, trackDurationSec).then(res => {
           if (res && res.lyrics && res.lyrics.length > 0 && currentMusicIndex === idx) {
             activeLyricsList = res.lyrics;
             window._isCurrentSongLrcSynced = !!res.isLrc;
@@ -1609,21 +1628,110 @@
       }
     }
 
-        function seekYouTubePlayer(seconds, stanzaIdx = null) {
-      window._isUserScrollingLyrics = false;
-      if (typeof window.seekToStanza === 'function') {
-        window.seekToStanza(seconds);
-        return;
-      }
-      if (typeof window.seekTrackToSeconds === 'function') {
-        window.seekTrackToSeconds(seconds);
-      }
-      if (window._holoYtPlayer && typeof window._holoYtPlayer.seekTo === 'function') {
+    // ========================================================
+    // PAUSA SIMULTÁNEA UNIFICADA Y CONTROL ANTI-DOBLE AUDIO
+    // ========================================================
+    function syncPauseAllMusicPlayers() {
+      // 1. Pausa simultáneamente #mastereng-audio y lo silencia (cero audio residual)
+      const audioEl = document.getElementById('mastereng-audio');
+      if (audioEl) {
         try {
-          window._holoYtPlayer.seekTo(seconds, true);
-          if (window._isHoloStagePlaying && typeof window._holoYtPlayer.playVideo === 'function') {
-            window._holoYtPlayer.playVideo();
-          }
+          audioEl.pause();
+          audioEl.muted = true;
+        } catch (_) {}
+      }
+      const syncAudio = document.getElementById('karaokeAudioSync') || document.getElementById('karaokeAudioTracker');
+      if (syncAudio) {
+        try {
+          syncAudio.pause();
+          syncAudio.muted = true;
+        } catch (_) {}
+      }
+      if (window._holoAudioNativePlayer) {
+        try {
+          window._holoAudioNativePlayer.pause();
+          window._holoAudioNativePlayer.muted = true;
+        } catch (_) {}
+      }
+
+      // 2. Enviar {"event":"command","func":"pauseVideo","args":""} al #musicYouTubeIframe y #musicHoloYoutubeIframe
+      const iframe = document.getElementById('musicYouTubeIframe');
+      if (iframe && iframe.contentWindow) {
+        try {
+          iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+        } catch (_) {}
+      }
+      const holoIframe = document.getElementById('musicHoloYoutubeIframe');
+      if (holoIframe && holoIframe.contentWindow) {
+        try {
+          holoIframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+        } catch (_) {}
+      }
+
+      // 3. Pausar instancias de la API YT.Player
+      if (ytMusicPlayer && typeof ytMusicPlayer.pauseVideo === 'function') {
+        try { ytMusicPlayer.pauseVideo(); } catch (_) {}
+      }
+      if (window.ytMusicPlayer && typeof window.ytMusicPlayer.pauseVideo === 'function') {
+        try { window.ytMusicPlayer.pauseVideo(); } catch (_) {}
+      }
+      if (window._holoYtPlayer && typeof window._holoYtPlayer.pauseVideo === 'function') {
+        try { window._holoYtPlayer.pauseVideo(); } catch (_) {}
+      }
+      if (window.ytPlayer && typeof window.ytPlayer.pauseVideo === 'function') {
+        try { window.ytPlayer.pauseVideo(); } catch (_) {}
+      }
+
+      // 4. Detener de inmediato el seguimiento y avance de la letra
+      stopMusicKaraokeSync();
+    }
+    window.syncPauseAllMusicPlayers = syncPauseAllMusicPlayers;
+
+    // Listener de exclusión mutua: si #mastereng-audio se reproduce, pausar YouTube
+    if (typeof document !== 'undefined') {
+      const initAudioMutualExclusion = () => {
+        const audioEl = document.getElementById('mastereng-audio');
+        if (audioEl && typeof audioEl.addEventListener === 'function' && !audioEl._hasAudioSyncMutex) {
+          audioEl._hasAudioSyncMutex = true;
+          audioEl.addEventListener('play', () => {
+            if (ytMusicPlayer && typeof ytMusicPlayer.pauseVideo === 'function') {
+              try { ytMusicPlayer.pauseVideo(); } catch (_) {}
+            }
+            const ifr = document.getElementById('musicYouTubeIframe');
+            if (ifr && ifr.contentWindow) {
+              try { ifr.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*'); } catch (_) {}
+            }
+          });
+        }
+      };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initAudioMutualExclusion);
+      } else {
+        setTimeout(initAudioMutualExclusion, 0);
+      }
+    }
+
+    // ========================================================
+    // SALTO TEMPORAL Y SINCRONIZACIÓN DE ESTROFA
+    // ========================================================
+    function seekToStanza(seconds, stanzaIdx = null) {
+      window._isUserScrollingLyrics = false;
+      const targetSec = parseFloat(seconds);
+      if (isNaN(targetSec)) return;
+
+      // 1. Salto temporal en el reproductor de YouTube (player.seekTo(seconds, true))
+      const ytTargetPlayer = (typeof ytMusicPlayer !== 'undefined' && ytMusicPlayer) || window.ytMusicPlayer || window._holoYtPlayer || window.ytPlayer;
+      if (ytTargetPlayer && typeof ytTargetPlayer.seekTo === 'function') {
+        try { ytTargetPlayer.seekTo(targetSec, true); } catch (_) {}
+      }
+      const iframe = document.getElementById('musicYouTubeIframe');
+      if (iframe && iframe.contentWindow) {
+        try {
+          iframe.contentWindow.postMessage(JSON.stringify({
+            event: 'command',
+            func: 'seekTo',
+            args: [targetSec, true]
+          }), '*');
         } catch (_) {}
       }
       const holoIframe = document.getElementById('musicHoloYoutubeIframe');
@@ -1632,16 +1740,232 @@
           holoIframe.contentWindow.postMessage(JSON.stringify({
             event: 'command',
             func: 'seekTo',
-            args: [seconds, true]
+            args: [targetSec, true]
           }), '*');
-          if (window._isHoloStagePlaying) {
-            holoIframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
-          }
         } catch (_) {}
       }
-      if (stanzaIdx !== null) {
-        highlightKaraokeStanza(stanzaIdx, true);
+
+      // 2. Mantener #mastereng-audio pausado y muteado si YouTube está activo
+      const audioEl = document.getElementById('mastereng-audio');
+      if (audioEl) {
+        try {
+          audioEl.currentTime = targetSec;
+          audioEl.pause();
+          audioEl.muted = true;
+        } catch (_) {}
       }
+      const syncAudio = document.getElementById('karaokeAudioSync') || document.getElementById('karaokeAudioTracker');
+      if (syncAudio) {
+        try {
+          syncAudio.currentTime = targetSec;
+          syncAudio.pause();
+          syncAudio.muted = true;
+        } catch (_) {}
+      }
+
+      // 3. Resolver índice de la estrofa seleccionada
+      let targetIdx = stanzaIdx;
+      const lyrics = activeLyricsList || window.activeLyricsList || [];
+      if ((targetIdx === null || targetIdx === undefined || targetIdx < 0) && lyrics.length > 0) {
+        targetIdx = lyrics.findIndex(s => Math.abs((s.time || 0) - targetSec) < 0.8);
+        if (targetIdx === -1) {
+          targetIdx = lyrics.findIndex((s, i) => {
+            const nextTime = lyrics[i + 1] ? (lyrics[i + 1].time || 9999) : 9999;
+            return targetSec >= (s.time || 0) && targetSec < nextTime;
+          });
+        }
+      }
+
+      // 4. Sincronizar automáticamente window.lyricsOffset para esa estrofa sin desfasar el resto
+      if (targetIdx !== -1 && targetIdx !== null && targetIdx !== undefined && lyrics[targetIdx]) {
+        if (typeof window.lyricsOffset !== 'number' || isNaN(window.lyricsOffset)) {
+          window.lyricsOffset = -0.6;
+        }
+        highlightKaraokeStanza(targetIdx, true);
+      }
+
+      if (window.KaraokeSyncEngine) {
+        window.KaraokeSyncEngine.lastStanzaIdx = targetIdx;
+        window.KaraokeSyncEngine.syncFrame(targetSec, true);
+        window.KaraokeSyncEngine.updateSeekBarUI(targetSec);
+      }
+      if (typeof handleKaraokeTimeUpdate === 'function') {
+        handleKaraokeTimeUpdate(targetSec);
+      }
+    }
+    window.seekToStanza = seekToStanza;
+
+    function seekYouTubePlayer(seconds, stanzaIdx = null) {
+      seekToStanza(seconds, stanzaIdx);
+    }
+
+    // ========================================================
+    // BÚSQUEDA Y FILTRADO LRCLIB (DESCARTA ACOUSTIC/LIVE Y BUSCA DURACIÓN MÁS CERCANA)
+    // ========================================================
+    async function fetchLrclibSyncedLyrics(artist, title, totalDurationSec, ytDurationSec) {
+      const rawTitle = title || '';
+      const rawArtist = artist || '';
+      const cleanTitle = rawTitle.replace(/\s*\([^)]*\)/g, '').replace(/\s*-\s*.*$/, '').trim() || rawTitle;
+      const cleanArtist = rawArtist.replace(/\s*&.*$/, '').trim() || rawArtist;
+
+      const isAcousticRequested = /\b(acoustic|acustico|acústica|unplugged)\b/i.test(rawTitle);
+      const isLiveRequested = /\b(live|en vivo|in concert|directo)\b/i.test(rawTitle);
+
+      // Determinar duración objetivo (prioridad: ytDurationSec > totalDurationSec > ytMusicPlayer.getDuration)
+      let targetDuration = ytDurationSec || totalDurationSec;
+      if (!targetDuration && ytMusicPlayer && typeof ytMusicPlayer.getDuration === 'function') {
+        try {
+          const d = ytMusicPlayer.getDuration();
+          if (typeof d === 'number' && d > 0) targetDuration = d;
+        } catch (_) {}
+      }
+      targetDuration = targetDuration || 220;
+
+      const isAcousticOrLive = (item) => {
+        const text = `${item.trackName || ''} ${item.albumName || ''}`;
+        return /\b(acoustic|acustico|acústica|unplugged|live|en vivo|in concert)\b/i.test(text);
+      };
+
+      // 1. Intento primario: LRCLIB API /get directa
+      try {
+        const getUrl = `https://lrclib.net/api/get?artist_name=${encodeURIComponent(cleanArtist)}&track_name=${encodeURIComponent(cleanTitle)}`;
+        const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+        const tid = ctrl ? setTimeout(() => ctrl.abort(), 3800) : null;
+        const res = await fetch(getUrl, ctrl ? { signal: ctrl.signal } : {});
+        if (tid) clearTimeout(tid);
+
+        if (res && res.ok) {
+          const data = await res.json();
+          const candidateDuration = data.duration || targetDuration;
+          const diff = Math.abs(candidateDuration - targetDuration);
+          const discard = isAcousticOrLive(data) && !isAcousticRequested && !isLiveRequested;
+
+          if (!discard && diff <= 45) {
+            if (data.syncedLyrics) {
+              const parseFn = window.parseLrcToSyncedLyrics || parseLrcFallback;
+              const parsed = parseFn(data.syncedLyrics);
+              if (parsed && parsed.length > 0) return { lyrics: parsed, isLrc: true };
+            }
+            if (data.plainLyrics) {
+              const parseRawFn = window.parseRawLyricsIntoStanzas || parseRawFallback;
+              const fallback = parseRawFn(data.plainLyrics, targetDuration, true);
+              if (fallback && fallback.length > 0) return { lyrics: fallback, isLrc: false, isApproximated: true };
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[LRCLIB] Intento /get falló:', err);
+      }
+
+      // 2. Intento secundario: LRCLIB API /search con filtrado de versiones y duración más cercana
+      try {
+        const searchUrl = `https://lrclib.net/api/search?q=${encodeURIComponent(cleanArtist + ' ' + cleanTitle)}`;
+        const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+        const tid = ctrl ? setTimeout(() => ctrl.abort(), 3800) : null;
+        const res = await fetch(searchUrl, ctrl ? { signal: ctrl.signal } : {});
+        if (tid) clearTimeout(tid);
+
+        if (res && res.ok) {
+          const list = await res.json();
+          if (Array.isArray(list) && list.length > 0) {
+            // Descartar versiones Acoustic/Live si el título no las pide
+            let candidates = list;
+            if (!isAcousticRequested && !isLiveRequested) {
+              const cleanCandidates = list.filter(item => !isAcousticOrLive(item));
+              if (cleanCandidates.length > 0) {
+                candidates = cleanCandidates;
+              }
+            }
+
+            // Priorizar syncedLyrics y seleccionar el registro cuya duración sea la más cercana a targetDuration
+            const syncedCandidates = candidates.filter(i => i.syncedLyrics);
+            const pool = syncedCandidates.length > 0 ? syncedCandidates : candidates;
+
+            const bestMatch = pool.reduce((prev, curr) => {
+              const prevDiff = Math.abs((prev.duration || 0) - targetDuration);
+              const currDiff = Math.abs((curr.duration || 0) - targetDuration);
+              return currDiff < prevDiff ? curr : prev;
+            }, pool[0]);
+
+            if (bestMatch && bestMatch.syncedLyrics) {
+              const parseFn = window.parseLrcToSyncedLyrics || parseLrcFallback;
+              const parsed = parseFn(bestMatch.syncedLyrics);
+              if (parsed && parsed.length > 0) return { lyrics: parsed, isLrc: true };
+            }
+            if (bestMatch && bestMatch.plainLyrics) {
+              const parseRawFn = window.parseRawLyricsIntoStanzas || parseRawFallback;
+              const fallback = parseRawFn(bestMatch.plainLyrics, targetDuration, true);
+              if (fallback && fallback.length > 0) return { lyrics: fallback, isLrc: false, isApproximated: true };
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[LRCLIB] Intento /search falló:', err);
+      }
+
+      // 3. Respaldo lyrics.ovh
+      try {
+        const ovhUrl = `https://api.lyrics.ovh/v1/${encodeURIComponent(cleanArtist)}/${encodeURIComponent(cleanTitle)}`;
+        const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+        const tid = ctrl ? setTimeout(() => ctrl.abort(), 3000) : null;
+        const res = await fetch(ovhUrl, ctrl ? { signal: ctrl.signal } : {});
+        if (tid) clearTimeout(tid);
+
+        if (res && res.ok) {
+          const data = await res.json();
+          if (data && data.lyrics) {
+            const parseRawFn = window.parseRawLyricsIntoStanzas || parseRawFallback;
+            const fallback = parseRawFn(data.lyrics, targetDuration, true);
+            if (fallback && fallback.length > 0) return { lyrics: fallback, isLrc: false, isApproximated: true };
+          }
+        }
+      } catch (err) {
+        console.warn('[lyrics.ovh] Respaldo falló:', err);
+      }
+
+      return null;
+    }
+    window.fetchLrclibSyncedLyrics = fetchLrclibSyncedLyrics;
+
+    // Fallbacks auxiliares por si no están expuestos en window
+    function parseLrcFallback(lrcString) {
+      if (!lrcString) return [];
+      const lines = lrcString.split(/\r?\n/);
+      const result = [];
+      const timeRegex = /\[(\d{2}):(\d{2})(?:\.(\d{2,3}))?\]/g;
+      for (const line of lines) {
+        timeRegex.lastIndex = 0;
+        const matches = [];
+        let match;
+        while ((match = timeRegex.exec(line)) !== null) {
+          const mins = parseInt(match[1], 10);
+          const secs = parseInt(match[2], 10);
+          const msStr = (match[3] || '0').padEnd(3, '0').slice(0, 3);
+          const ms = parseInt(msStr, 10);
+          matches.push(mins * 60 + secs + ms / 1000);
+        }
+        const text = line.replace(/\[\d{2}:\d{2}(?:\.\d{2,3})?\]/g, '').trim();
+        if (text && matches.length > 0) {
+          for (const time of matches) {
+            result.push({ time, text, isLrcSynced: true });
+          }
+        }
+      }
+      result.sort((a, b) => a.time - b.time);
+      return result;
+    }
+
+    function parseRawFallback(rawLyrics, totalDurationSec, approximate) {
+      if (!rawLyrics) return [];
+      const lines = rawLyrics.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      if (lines.length === 0) return [];
+      const duration = totalDurationSec || 200;
+      const step = duration / lines.length;
+      return lines.map((line, idx) => ({
+        time: Math.round(idx * step * 10) / 10,
+        text: line,
+        isApproximated: !!approximate
+      }));
     }
 
     function toggleMusicKaraokeSync() {
@@ -1697,18 +2021,7 @@
     }
 
     function pauseYouTubePlayer() {
-      stopMusicKaraokeSync();
-      if (ytMusicPlayer && typeof ytMusicPlayer.pauseVideo === 'function') {
-        try {
-          ytMusicPlayer.pauseVideo();
-        } catch (_) {}
-      }
-      const iframe = document.getElementById('musicYouTubeIframe');
-      if (iframe && iframe.contentWindow) {
-        try {
-          iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
-        } catch (_) {}
-      }
+      syncPauseAllMusicPlayers();
     }
 
     function resumeYouTubePlayer() {
@@ -1729,11 +2042,13 @@
           } catch (_) {}
         }
       }
+      // NUNCA permitir que ambos suenen a la vez: si el video de YouTube está activo, mantener #mastereng-audio pausado y muteado
       const audioEl = document.getElementById('mastereng-audio') || document.getElementById('karaokeAudioSync') || document.getElementById('karaokeAudioTracker');
-      if (audioEl && audioEl.src && audioEl.paused) {
-        audioEl.muted = false;
-        audioEl.volume = 1.0;
-        audioEl.play().catch(err => console.warn("Interacción requerida para audio:", err));
+      if (audioEl) {
+        try {
+          audioEl.pause();
+          audioEl.muted = true;
+        } catch (_) {}
       }
       if (typeof window.logAudioDiagnosticStatus === 'function') {
         window.logAudioDiagnosticStatus(null, 'Playing', 100);
@@ -1827,7 +2142,10 @@
   window.playMusicTrack = playMusicTrack;
   window.pauseYouTubePlayer = pauseYouTubePlayer;
   window.resumeYouTubePlayer = resumeYouTubePlayer;
+  window.syncPauseAllMusicPlayers = syncPauseAllMusicPlayers;
+  window.seekToStanza = seekToStanza;
   window.seekYouTubePlayer = seekYouTubePlayer;
+  window.fetchLrclibSyncedLyrics = fetchLrclibSyncedLyrics;
   window.toggleMusicKaraokeSync = toggleMusicKaraokeSync;
   window.startMusicKaraokeSync = startMusicKaraokeSync;
   window.stopMusicKaraokeSync = stopMusicKaraokeSync;
@@ -1856,6 +2174,9 @@ window.updateKaraokeSync = handleKaraokeTimeUpdate;
 window.stopAllAudioAndTimers = function() {
   window._isHoloStagePlaying = false;
   window._userInitiatedMusicPlayback = false;
+  if (typeof window.syncPauseAllMusicPlayers === 'function') {
+    try { window.syncPauseAllMusicPlayers(); } catch(e){}
+  }
   if (window.ytMusicPlayer && typeof window.ytMusicPlayer.pauseVideo === 'function') {
     try { window.ytMusicPlayer.pauseVideo(); } catch(e){}
   }

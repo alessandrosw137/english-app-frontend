@@ -1472,13 +1472,22 @@ window.isCurrentUserAdmin = function() {
 
     function speakText(text, rate = null, onEnd = null) {
       if (!text) return;
+      if (window.isVoiceMuted) {
+        if (typeof onEnd === 'function') onEnd();
+        return;
+      }
       const effectiveRate = (rate !== null) ? rate : (window.ttsPlaybackSpeed || 1.0);
       const effectiveVolume = (window.masterAppVolume !== undefined) ? window.masterAppVolume : 1.0;
       try {
         if (window.AndroidBridge && typeof window.AndroidBridge.speak === 'function') {
+          if (typeof window.showDiscreteVoicePlayer === 'function') window.showDiscreteVoicePlayer(text);
           const ok = window.AndroidBridge.speak(text);
           if (ok) {
-            if (onEnd) setTimeout(onEnd, Math.max(1200, text.length * 65));
+            const dur = Math.max(1200, text.length * 65);
+            if (onEnd) setTimeout(onEnd, dur);
+            if (typeof window.updateDiscreteVoiceState === 'function') {
+              setTimeout(() => window.updateDiscreteVoiceState('ended', text), dur);
+            }
             return;
           }
         }
@@ -14957,4 +14966,476 @@ window._musicStageGuardInterval = setInterval(function() {
     }
   }
 }, 300);
+
+/* ==========================================================================
+   MINI-REPRODUCTOR DISCRETO FLOTANTE DE VOZ Y AUDIO + BANDEJA DE INVITACIONES
+   ========================================================================== */
+
+(function initDiscreteVoiceAndInboxSystem() {
+  // 1. Estado Global de Voz y Audio
+  window.isVoiceMuted = false;
+  try {
+    if (localStorage.getItem('master_voice_muted') === '1') {
+      window.isVoiceMuted = true;
+    }
+  } catch (_) {}
+
+  if (typeof window.masterAppVolume !== 'number') {
+    try {
+      const savedVol = localStorage.getItem('master_app_volume');
+      window.masterAppVolume = savedVol !== null ? (parseInt(savedVol, 10) / 100) : 1.0;
+    } catch (_) {
+      window.masterAppVolume = 1.0;
+    }
+  }
+
+  window.isVoicePaused = false;
+  let discreteHideTimer = null;
+  let currentSpokenText = '';
+
+  // 2. Asegurar existencia del elemento en el DOM
+  function ensureDiscreteVoicePlayerDOM() {
+    let bar = document.getElementById('discreteVoicePlayerBar');
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.id = 'discreteVoicePlayerBar';
+      bar.className = 'discrete-dimmed';
+      bar.style.display = 'none';
+      bar.setAttribute('role', 'region');
+      bar.setAttribute('aria-label', 'Reproductor Discreto de Voz');
+      bar.innerHTML = `
+        <div class="discrete-voice-wave" id="discreteVoiceWave" title="Reproduciendo Audio">
+          <span></span><span></span><span></span><span></span>
+        </div>
+        <span id="discreteVoiceText" class="discrete-voice-label" title="Audio">🔊 Pronunciando...</span>
+        <div class="discrete-voice-actions">
+          <button type="button" id="discreteVoicePauseBtn" onclick="window.toggleVoicePauseResume()" class="discrete-voice-btn" title="Pausar / Reanudar">
+            <span id="discreteVoicePauseIcon">⏸️</span>
+          </button>
+          <button type="button" id="discreteVoiceStopBtn" onclick="window.stopAllVoiceAndAudio()" class="discrete-voice-btn" title="Detener audio">
+            <span>⏹️</span>
+          </button>
+          <button type="button" id="discreteVoiceMuteBtn" onclick="window.toggleVoiceMute()" class="discrete-voice-btn" title="Silenciar / Activar voz">
+            <span id="discreteVoiceMuteIcon">${window.isVoiceMuted ? '🔈❌' : '🔇'}</span>
+          </button>
+        </div>
+        <div class="discrete-vol-wrapper">
+          <span id="discreteVoiceVolIcon" style="font-size: 0.72rem; color: #94a3b8;">🔉</span>
+          <input id="discreteVoiceVolSlider" type="range" min="0" max="100" value="${Math.round((window.masterAppVolume || 1) * 100)}" oninput="window.setDiscreteMasterVolume(this.value)" class="discrete-vol-slider" title="Volumen general">
+        </div>
+      `;
+      document.body.appendChild(bar);
+    }
+    return bar;
+  }
+
+  // 3. Mostrar la barra con el texto adecuado
+  function showDiscreteVoicePlayer(text) {
+    if (window.isVoiceMuted) return;
+    const bar = ensureDiscreteVoicePlayerDOM();
+    if (!bar) return;
+
+    currentSpokenText = (text || '').trim();
+    const truncated = currentSpokenText.length > 34 ? currentSpokenText.slice(0, 34) + '...' : currentSpokenText;
+
+    const label = document.getElementById('discreteVoiceText');
+    if (label) {
+      label.textContent = '🔊 ' + (truncated || 'Pronunciando...');
+      label.title = currentSpokenText;
+    }
+
+    if (discreteHideTimer) {
+      clearTimeout(discreteHideTimer);
+      discreteHideTimer = null;
+    }
+
+    bar.style.display = 'flex';
+    requestAnimationFrame(() => {
+      bar.classList.remove('discrete-dimmed', 'discrete-paused');
+      bar.classList.add('discrete-speaking');
+    });
+
+    window.updateDiscreteVoiceControlsUI();
+  }
+
+  // 4. Actualizar estado (playing, paused, ended)
+  function updateDiscreteVoiceState(state, text) {
+    const bar = document.getElementById('discreteVoicePlayerBar');
+    if (!bar) return;
+
+    const label = document.getElementById('discreteVoiceText');
+    const pauseIcon = document.getElementById('discreteVoicePauseIcon');
+    const txt = (text || currentSpokenText || '').trim();
+    const truncated = txt.length > 34 ? txt.slice(0, 34) + '...' : txt;
+
+    if (state === 'playing') {
+      window.isVoicePaused = false;
+      if (discreteHideTimer) {
+        clearTimeout(discreteHideTimer);
+        discreteHideTimer = null;
+      }
+      bar.style.display = 'flex';
+      bar.classList.remove('discrete-dimmed', 'discrete-paused');
+      bar.classList.add('discrete-speaking');
+      if (pauseIcon) pauseIcon.textContent = '⏸️';
+      if (label) {
+        label.textContent = '🔊 ' + (truncated || 'Pronunciando...');
+        label.title = txt;
+      }
+    } else if (state === 'paused') {
+      window.isVoicePaused = true;
+      if (discreteHideTimer) {
+        clearTimeout(discreteHideTimer);
+        discreteHideTimer = null;
+      }
+      bar.classList.remove('discrete-speaking');
+      bar.classList.add('discrete-paused');
+      if (pauseIcon) pauseIcon.textContent = '▶️';
+      if (label) {
+        label.textContent = '⏸️ Pausado: ' + (truncated || 'Audio');
+        label.title = txt;
+      }
+    } else if (state === 'ended') {
+      bar.classList.remove('discrete-speaking');
+      if (pauseIcon) pauseIcon.textContent = '⏸️';
+      if (discreteHideTimer) clearTimeout(discreteHideTimer);
+      // Requerimiento: se atenúa o minimiza automáticamente después de 2.5 segundos
+      discreteHideTimer = setTimeout(() => {
+        hideDiscreteVoicePlayer();
+      }, 2500);
+    }
+  }
+
+  // 5. Ocultar la barra
+  function hideDiscreteVoicePlayer(immediate = false) {
+    if (discreteHideTimer) {
+      clearTimeout(discreteHideTimer);
+      discreteHideTimer = null;
+    }
+    const bar = document.getElementById('discreteVoicePlayerBar');
+    if (!bar) return;
+
+    bar.classList.remove('discrete-speaking');
+    bar.classList.add('discrete-dimmed');
+
+    if (immediate) {
+      bar.style.display = 'none';
+    } else {
+      setTimeout(() => {
+        if (bar.classList.contains('discrete-dimmed')) {
+          bar.style.display = 'none';
+        }
+      }, 360);
+    }
+  }
+
+  // 6. Acciones de los Controles
+  window.toggleVoicePauseResume = function() {
+    if (typeof window.speechSynthesis === 'undefined') return;
+    if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+      window.speechSynthesis.pause();
+      updateDiscreteVoiceState('paused');
+    } else if (window.speechSynthesis.paused) {
+      window.speechSynthesis.resume();
+      updateDiscreteVoiceState('playing');
+    }
+  };
+
+  window.stopAllVoiceAndAudio = function() {
+    if ('speechSynthesis' in window) {
+      try { window.speechSynthesis.cancel(); } catch (_) {}
+    }
+    if (typeof window.forceStopAllNarrationAndMedia === 'function') {
+      try { window.forceStopAllNarrationAndMedia(false); } catch (_) {}
+    }
+    document.querySelectorAll('audio').forEach(a => {
+      try { a.pause(); } catch (_) {}
+    });
+    window.isVoicePaused = false;
+    hideDiscreteVoicePlayer(true);
+  };
+
+  window.toggleVoiceMute = function() {
+    window.isVoiceMuted = !window.isVoiceMuted;
+    try {
+      localStorage.setItem('master_voice_muted', window.isVoiceMuted ? '1' : '0');
+    } catch (_) {}
+
+    if (window.isVoiceMuted) {
+      if ('speechSynthesis' in window) {
+        try { window.speechSynthesis.cancel(); } catch (_) {}
+      }
+      updateDiscreteVoiceState('ended');
+      if (typeof window.showFloatingToast === 'function') window.showFloatingToast('Voz silenciada (Mute)', '🔇');
+    } else {
+      if (typeof window.showFloatingToast === 'function') window.showFloatingToast('Voz activada', '🔊');
+    }
+    window.updateDiscreteVoiceControlsUI();
+  };
+
+  window.setDiscreteMasterVolume = function(val) {
+    const volNum = Math.max(0, Math.min(100, parseInt(val, 10) || 0));
+    const normalized = volNum / 100;
+    window.masterAppVolume = normalized;
+
+    try {
+      localStorage.setItem('master_app_volume', volNum.toString());
+    } catch (_) {}
+
+    // Sincronizar ajustes de la app si existen
+    const settingsDisplay = document.getElementById('settingsVolumeDisplay');
+    if (settingsDisplay) settingsDisplay.textContent = `${volNum}%`;
+    const settingsSlider = document.getElementById('settingsMasterVolume');
+    if (settingsSlider && settingsSlider.value !== volNum.toString()) settingsSlider.value = volNum;
+
+    document.querySelectorAll('audio, video').forEach(el => {
+      try { el.volume = normalized; } catch (_) {}
+    });
+
+    if (window.ytMusicPlayer && typeof window.ytMusicPlayer.setVolume === 'function') {
+      try { window.ytMusicPlayer.setVolume(volNum); } catch (_) {}
+    }
+
+    window.updateDiscreteVoiceControlsUI();
+  };
+
+  window.updateDiscreteVoiceControlsUI = function() {
+    const muteBtn = document.getElementById('discreteVoiceMuteBtn');
+    const muteIcon = document.getElementById('discreteVoiceMuteIcon');
+    if (muteBtn && muteIcon) {
+      if (window.isVoiceMuted) {
+        muteIcon.textContent = '🔈❌';
+        muteBtn.classList.add('is-active-btn');
+        muteBtn.title = 'Activar voz';
+      } else {
+        muteIcon.textContent = '🔇';
+        muteBtn.classList.remove('is-active-btn');
+        muteBtn.title = 'Silenciar voz (Mute)';
+      }
+    }
+
+    const slider = document.getElementById('discreteVoiceVolSlider');
+    const volIcon = document.getElementById('discreteVoiceVolIcon');
+    const currentPct = Math.round((typeof window.masterAppVolume === 'number' ? window.masterAppVolume : 1) * 100);
+    if (slider && document.activeElement !== slider) {
+      slider.value = currentPct;
+    }
+    if (volIcon) {
+      if (window.isVoiceMuted || currentPct === 0) volIcon.textContent = '🔇';
+      else if (currentPct < 50) volIcon.textContent = '🔉';
+      else volIcon.textContent = '🔊';
+    }
+  };
+
+  window.showDiscreteVoicePlayer = showDiscreteVoicePlayer;
+  window.updateDiscreteVoiceState = updateDiscreteVoiceState;
+  window.hideDiscreteVoicePlayer = hideDiscreteVoicePlayer;
+
+  // 7. Intercepción Global de window.speechSynthesis.speak
+  if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+    if (!window._origSpeechSynthesisSpeak) {
+      window._origSpeechSynthesisSpeak = window.speechSynthesis.speak.bind(window.speechSynthesis);
+    }
+
+    window.speechSynthesis.speak = function(utterance) {
+      if (!utterance) return;
+
+      if (window.isVoiceMuted) {
+        if (typeof utterance.onend === 'function') {
+          setTimeout(() => {
+            try { utterance.onend(new Event('end')); } catch (_) {}
+          }, 60);
+        }
+        return;
+      }
+
+      if (typeof window.masterAppVolume === 'number') {
+        utterance.volume = Math.max(0, Math.min(1, window.masterAppVolume));
+      }
+
+      const text = utterance.text || '';
+      showDiscreteVoicePlayer(text);
+
+      const prevStart = utterance.onstart;
+      const prevEnd = utterance.onend;
+      const prevError = utterance.onerror;
+      const prevPause = utterance.onpause;
+      const prevResume = utterance.onresume;
+
+      utterance.onstart = function(ev) {
+        updateDiscreteVoiceState('playing', text);
+        if (typeof prevStart === 'function') prevStart.call(utterance, ev);
+      };
+
+      utterance.onend = function(ev) {
+        updateDiscreteVoiceState('ended', text);
+        if (typeof prevEnd === 'function') prevEnd.call(utterance, ev);
+      };
+
+      utterance.onerror = function(ev) {
+        updateDiscreteVoiceState('ended', text);
+        if (typeof prevError === 'function') prevError.call(utterance, ev);
+      };
+
+      utterance.onpause = function(ev) {
+        updateDiscreteVoiceState('paused', text);
+        if (typeof prevPause === 'function') prevPause.call(utterance, ev);
+      };
+
+      utterance.onresume = function(ev) {
+        updateDiscreteVoiceState('playing', text);
+        if (typeof prevResume === 'function') prevResume.call(utterance, ev);
+      };
+
+      return window._origSpeechSynthesisSpeak(utterance);
+    };
+  }
+
+  // 8. Intercepción de Funciones de Voz Globales
+  window.speakText = function(text, rate = null, onEnd = null) {
+    if (!text) return;
+    if (window.isVoiceMuted) {
+      if (typeof onEnd === 'function') onEnd();
+      return;
+    }
+
+    const effectiveRate = (rate !== null) ? rate : (window.ttsPlaybackSpeed || 1.0);
+    const effectiveVolume = (typeof window.masterAppVolume === 'number') ? window.masterAppVolume : 1.0;
+
+    try {
+      if (window.AndroidBridge && typeof window.AndroidBridge.speak === 'function') {
+        showDiscreteVoicePlayer(text);
+        const ok = window.AndroidBridge.speak(text);
+        if (ok) {
+          const duration = Math.max(1200, text.length * 65);
+          if (onEnd) setTimeout(onEnd, duration);
+          setTimeout(() => updateDiscreteVoiceState('ended', text), duration);
+          return;
+        }
+      }
+
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-US';
+        utterance.rate = effectiveRate;
+        utterance.volume = effectiveVolume;
+        if (onEnd) utterance.onend = onEnd;
+        window.speechSynthesis.speak(utterance);
+      }
+    } catch (err) {
+      console.warn('TTS error:', err);
+    }
+  };
+
+  window.speakSynthesisText = function(text) {
+    if (!text) return;
+    if (window.isVoiceMuted) return;
+    if ('speechSynthesis' in window) {
+      try { window.speechSynthesis.cancel(); } catch (_) {}
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'en-US';
+      u.volume = (typeof window.masterAppVolume === 'number') ? window.masterAppVolume : 1.0;
+      window.speechSynthesis.speak(u);
+    }
+  };
+
+  window.speakGlossaryWord = function(word, rate = 0.9) {
+    if (!word) return;
+    window.speakText(word, rate);
+  };
+
+  // 9. Actualizador del Contador de Invitaciones (Bandeja)
+  window.updateInboxBadgeCount = function() {
+    let count = 0;
+    try {
+      const raw = localStorage.getItem('mastereng_inbox_invites');
+      if (raw) {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr)) {
+          count = arr.filter(i => i && i.status === 'pending').length;
+        }
+      }
+    } catch (_) { count = 0; }
+
+    try {
+      const rawBonds = localStorage.getItem('mastereng_social_bonds');
+      if (rawBonds) {
+        const bObj = JSON.parse(rawBonds);
+        if (bObj && typeof bObj === 'object') {
+          Object.keys(bObj).forEach(k => {
+            if (bObj[k] && bObj[k].pendingRole) count++;
+          });
+        }
+      }
+    } catch (_) {}
+
+    const badge = document.getElementById('headerInboxBadge');
+    if (badge) {
+      if (count > 0) {
+        badge.textContent = count > 99 ? '99+' : count.toString();
+        badge.classList.remove('hidden');
+        badge.style.display = 'inline-block';
+      } else {
+        badge.textContent = '0';
+        badge.classList.add('hidden');
+        badge.style.display = 'none';
+      }
+    }
+
+    const innerBadge = document.getElementById('waTopInboxBadge');
+    if (innerBadge) {
+      if (count > 0) {
+        innerBadge.textContent = count > 99 ? '99+' : count.toString();
+        innerBadge.classList.remove('hidden');
+        innerBadge.style.display = 'inline-block';
+      } else {
+        innerBadge.textContent = '0';
+        innerBadge.classList.add('hidden');
+        innerBadge.style.display = 'none';
+      }
+    }
+
+    return count;
+  };
+
+  if (typeof window.openInboxInvitesModal !== 'function') {
+    window.openInboxInvitesModal = function() {
+      if (window.SocialChat && typeof window.SocialChat.openInboxInvitesModal === 'function') {
+        window.SocialChat.openInboxInvitesModal();
+      } else if (typeof window.navigateTo === 'function') {
+        window.navigateTo('social');
+        setTimeout(() => {
+          if (window.SocialChat && typeof window.SocialChat.openInboxInvitesModal === 'function') {
+            window.SocialChat.openInboxInvitesModal();
+          }
+        }, 250);
+      }
+    };
+  }
+
+  // Inicialización de eventos e intervalo de vigilancia de bandeja
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      ensureDiscreteVoicePlayerDOM();
+      window.updateInboxBadgeCount();
+      window.updateDiscreteVoiceControlsUI();
+    });
+  } else {
+    ensureDiscreteVoicePlayerDOM();
+    window.updateInboxBadgeCount();
+    window.updateDiscreteVoiceControlsUI();
+  }
+
+  window.addEventListener('storage', (ev) => {
+    if (ev.key === 'mastereng_inbox_invites' || ev.key === 'mastereng_social_bonds') {
+      window.updateInboxBadgeCount();
+    }
+  });
+
+  setInterval(() => {
+    window.updateInboxBadgeCount();
+  }, 4000);
+})();
+
 

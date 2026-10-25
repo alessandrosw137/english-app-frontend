@@ -241,6 +241,10 @@ button, [role="button"], .cursor-pointer { touch-action: manipulation; }
 <button id="headerChatRachasBtn" type="button" onclick="window.navigateTo('social')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold text-xs transition shadow-md shadow-emerald-600/30 cursor-pointer active:scale-95" title="Chat, Amigos & Rachas">
 <span>💬 Chat & Rachas</span>
 </button>
+<button id="headerInboxBtn" type="button" onclick="if(typeof window.openInboxInvitesModal==='function') window.openInboxInvitesModal();" class="relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-rose-500/40 text-rose-300 font-bold text-xs transition shadow-md cursor-pointer active:scale-95" title="Bandeja de Invitaciones">
+  <span>📥 Bandeja</span>
+  <span id="headerInboxBadge" class="px-1.5 py-0.2 rounded-full bg-rose-500 text-white font-black text-[10px] hidden">0</span>
+</button>
 <button id="headerAdminBtn" onclick="openAdminDashboardModal()" style="display: none;" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-purple-600 to-indigo-600 hover:from-amber-400 hover:via-purple-500 hover:to-indigo-500 text-white font-bold text-xs transition shadow-lg shadow-purple-600/40 cursor-pointer active:scale-95 border border-amber-300/50 hidden" data-action="open-admin">
 <span>⚙️ Panel Admin</span>
 </button>
@@ -2232,6 +2236,29 @@ Cerrar
 <div id="floatingToast" class="fixed top-16 right-4 z-50 px-4 py-2.5 rounded-2xl bg-slate-900/95 border border-sky-500/50 text-xs font-semibold text-white shadow-2xl flex items-center gap-2 transform translate-y-[-100px] opacity-0 transition-all duration-300 pointer-events-none">
 <span id="floatingToastIcon">✨</span>
 <span id="floatingToastText">Mensaje</span>
+</div>
+
+<!-- MINI-REPRODUCTOR DISCRETO FLOTANTE DE VOZ Y AUDIO -->
+<div id="discreteVoicePlayerBar" class="discrete-dimmed" style="display: none;" role="region" aria-label="Reproductor Discreto de Voz">
+  <div class="discrete-voice-wave" id="discreteVoiceWave" title="Reproduciendo Audio">
+    <span></span><span></span><span></span><span></span>
+  </div>
+  <span id="discreteVoiceText" class="discrete-voice-label" title="Audio">🔊 Pronunciando...</span>
+  <div class="discrete-voice-actions">
+    <button type="button" id="discreteVoicePauseBtn" onclick="window.toggleVoicePauseResume()" class="discrete-voice-btn" title="Pausar / Reanudar">
+      <span id="discreteVoicePauseIcon">⏸️</span>
+    </button>
+    <button type="button" id="discreteVoiceStopBtn" onclick="window.stopAllVoiceAndAudio()" class="discrete-voice-btn" title="Detener audio">
+      <span>⏹️</span>
+    </button>
+    <button type="button" id="discreteVoiceMuteBtn" onclick="window.toggleVoiceMute()" class="discrete-voice-btn" title="Silenciar / Activar voz">
+      <span id="discreteVoiceMuteIcon">🔇</span>
+    </button>
+  </div>
+  <div class="discrete-vol-wrapper">
+    <span id="discreteVoiceVolIcon" style="font-size: 0.72rem; color: #94a3b8;">🔉</span>
+    <input id="discreteVoiceVolSlider" type="range" min="0" max="100" value="100" oninput="window.setDiscreteMasterVolume(this.value)" class="discrete-vol-slider" title="Volumen general">
+  </div>
 </div>
 <script src="master_data.js"></script>
 <script src="js/pdf-generator.js"></script>

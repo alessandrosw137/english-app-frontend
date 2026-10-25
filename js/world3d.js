@@ -39,14 +39,35 @@
   let currentScenarioKey = 'house';
   let scenarioDynamicRoot = null;
   let spaceOrbitalEntries = [];
+
+  // Posiciones clave del Mesero IA (NUNCA en x: ±1.25, z: 0 donde están las sillas)
+  const WAITER_STATION_POS = { x: 2.8, y: 0, z: -2.4 };
+  const WAITER_TABLE_POS = { x: 0.0, y: 0, z: -1.45 };
+  let waiterGroup = null;
   let waiterNpcGroup = null;
+  let waiterLeftLeg = null;
+  let waiterRightLeg = null;
+  let waiterLeftArm = null;
   let waiterRightArm = null;
+  let waiterTargetPos = typeof THREE !== 'undefined'
+    ? new THREE.Vector3(WAITER_STATION_POS.x, WAITER_STATION_POS.y, WAITER_STATION_POS.z)
+    : { x: WAITER_STATION_POS.x, y: WAITER_STATION_POS.y, z: WAITER_STATION_POS.z };
+  let waiterCurrentState = 'station';
+  let waiterAutoLeaveTimer = null;
+
+  // Avatares sentados en la mesa de citas (Silla Izquierda: Jugador x=-1.25, z=0 | Silla Derecha: Cita x=1.25, z=0)
+  let playerSeatedGroup = null;
+  let partnerSeatedGroup = null;
+
+  // Burbujas de chat estilo Roblox sobre la cabeza (player, partner, waiter)
+  let activeOverheadBubbles = {};
+
   let candleFlameLight = null;
   let candleFlameMesh = null;
   const waiterLerp = {
     active: false,
-    targetPos: typeof THREE !== 'undefined' ? new THREE.Vector3(1.15, 0, -0.35) : { x: 1.15, y: 0, z: -0.35 },
-    targetRotY: -0.95,
+    targetPos: waiterTargetPos,
+    targetRotY: 0,
     phase: 0
   };
 
@@ -834,39 +855,52 @@ ensureOrbitControls();
     return tex;
   }
 
-  // Textura procedural para marcadores Hotspots luminosos
+  // Textura de tela borgoña/vino tejida para mantel romántico PBR
+  let cachedBurgundyTexture = null;
+  function createBurgundyClothTexture() {
+    if (cachedBurgundyTexture) return cachedBurgundyTexture;
+    if (typeof document === 'undefined' || typeof THREE === 'undefined') return null;
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#7f1d1d';
+    ctx.fillRect(0, 0, 256, 256);
+    // Patrón de tejido damasco sutil y borde dorado
+    ctx.strokeStyle = 'rgba(153, 27, 27, 0.55)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 256; i += 6) {
+      ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 256); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(256, i); ctx.stroke();
+    }
+    ctx.strokeStyle = 'rgba(251, 191, 36, 0.45)';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(10, 10, 236, 236);
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    cachedBurgundyTexture = tex;
+    return tex;
+  }
+
+  // Textura procedural para micro-indicadores Hotspots discretos
   let cachedHotspotTexture = null;
   function createHotspotTexture() {
     if (cachedHotspotTexture) return cachedHotspotTexture;
     if (typeof document === 'undefined' || typeof THREE === 'undefined') return null;
     const canvas = document.createElement('canvas');
-    canvas.width = 128;
-    canvas.height = 128;
+    canvas.width = 64;
+    canvas.height = 64;
     const ctx = canvas.getContext('2d');
 
-    // Resplandor exterior radial suave
-    const grad = ctx.createRadialGradient(64, 64, 10, 64, 64, 60);
-    grad.addColorStop(0, 'rgba(192, 132, 252, 0.95)');
-    grad.addColorStop(0.35, 'rgba(147, 51, 234, 0.7)');
-    grad.addColorStop(0.75, 'rgba(56, 189, 248, 0.35)');
+    const grad = ctx.createRadialGradient(32, 32, 4, 32, 32, 28);
+    grad.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+    grad.addColorStop(0.5, 'rgba(56, 189, 248, 0.45)');
     grad.addColorStop(1, 'rgba(56, 189, 248, 0)');
     ctx.fillStyle = grad;
     ctx.beginPath();
-    ctx.arc(64, 64, 60, 0, Math.PI * 2);
+    ctx.arc(32, 32, 28, 0, Math.PI * 2);
     ctx.fill();
-
-    // Núcleo blanco brillante
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(64, 64, 16, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Anillo exterior de contorno
-    ctx.strokeStyle = '#c084fc';
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.arc(64, 64, 28, 0, Math.PI * 2);
-    ctx.stroke();
 
     const tex = new THREE.CanvasTexture(canvas);
     cachedHotspotTexture = tex;
@@ -877,36 +911,39 @@ ensureOrbitControls();
     if (typeof THREE === 'undefined' || Object.keys(SHARED_MATERIALS).length > 0) return SHARED_MATERIALS;
     const woodTex = createOakWoodTexture();
     const grassTex = createGrassTexture();
+    const burgundyTex = createBurgundyClothTexture();
+    const PhysicalMat = THREE.MeshPhysicalMaterial || THREE.MeshStandardMaterial;
     const defs = {
-      // Suelos y Arquitectura (Corte Isométrico)
-      grassLawn: new THREE.MeshStandardMaterial({ color: 0x2d5a27, map: grassTex || null, roughness: 0.85, metalness: 0.05 }),
-      houseFloor: new THREE.MeshStandardMaterial({ color: 0xc2a679, map: woodTex || null, roughness: 0.45, metalness: 0.08 }),
-      wallSatin: new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.78, metalness: 0.03 }),
-      wallNavyAccent: new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.72, metalness: 0.08 }),
-      crownWhite: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.35, metalness: 0.05 }),
-      baseboardWood: new THREE.MeshStandardMaterial({ color: 0x3b1d0e, roughness: 0.45, metalness: 0.08 }),
+      // Suelos y Arquitectura (PBR Realista con Clearcoat)
+      grassLawn: new PhysicalMat({ color: 0x2d5a27, map: grassTex || null, roughness: 0.85, metalness: 0.05 }),
+      houseFloor: new PhysicalMat({ color: 0xc2a679, map: woodTex || null, roughness: 0.25, metalness: 0.08, clearcoat: 0.6 }),
+      wallSatin: new PhysicalMat({ color: 0xf1f5f9, roughness: 0.65, metalness: 0.03, clearcoat: 0.2 }),
+      wallNavyAccent: new PhysicalMat({ color: 0x1e293b, roughness: 0.55, metalness: 0.08, clearcoat: 0.3 }),
+      crownWhite: new PhysicalMat({ color: 0xffffff, roughness: 0.25, metalness: 0.05, clearcoat: 0.6 }),
+      baseboardWood: new PhysicalMat({ color: 0x3b1d0e, roughness: 0.25, metalness: 0.08, clearcoat: 0.6 }),
 
-      // Maderas Nobles
-      woodOak: new THREE.MeshStandardMaterial({ color: 0x7c4a24, roughness: 0.48, metalness: 0.08 }),
-      woodWalnut: new THREE.MeshStandardMaterial({ color: 0x3b1d0e, roughness: 0.42, metalness: 0.10 }),
-      woodDark: new THREE.MeshStandardMaterial({ color: 0x271308, roughness: 0.45, metalness: 0.10 }),
-      woodPine: new THREE.MeshStandardMaterial({ color: 0x854d0e, roughness: 0.48, metalness: 0.06 }),
-      woodLight: new THREE.MeshStandardMaterial({ color: 0xd4a373, roughness: 0.48, metalness: 0.05 }),
+      // Maderas Nobles PBR (clearcoat: 0.6, roughness: 0.25)
+      woodOak: new PhysicalMat({ color: 0x7c4a24, roughness: 0.25, metalness: 0.08, clearcoat: 0.6 }),
+      woodWalnut: new PhysicalMat({ color: 0x3b1d0e, roughness: 0.25, metalness: 0.10, clearcoat: 0.6 }),
+      woodDark: new PhysicalMat({ color: 0x271308, roughness: 0.25, metalness: 0.10, clearcoat: 0.6 }),
+      woodPine: new PhysicalMat({ color: 0x854d0e, roughness: 0.28, metalness: 0.06, clearcoat: 0.5 }),
+      woodLight: new PhysicalMat({ color: 0xd4a373, roughness: 0.25, metalness: 0.05, clearcoat: 0.6 }),
 
-      // Metales
-      metalDark: new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.32, metalness: 0.85 }),
-      metalChrome: new THREE.MeshStandardMaterial({ color: 0xcbd5e1, roughness: 0.15, metalness: 0.92 }),
-      metalBrass: new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.25, metalness: 0.88 }),
-      ironBlack: new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.42, metalness: 0.85 }),
-      mailboxBlue: new THREE.MeshStandardMaterial({ color: 0x1d4ed8, roughness: 0.35, metalness: 0.65 }),
-      mailboxRedFlag: new THREE.MeshStandardMaterial({ color: 0xdc2626, emissive: 0x7f1d1d, emissiveIntensity: 0.25, roughness: 0.35, metalness: 0.3 }),
+      // Metales PBR
+      metalDark: new PhysicalMat({ color: 0x1e293b, roughness: 0.25, metalness: 0.85, clearcoat: 0.6 }),
+      metalChrome: new PhysicalMat({ color: 0xcbd5e1, roughness: 0.12, metalness: 0.94, clearcoat: 0.8 }),
+      metalBrass: new PhysicalMat({ color: 0xd97706, roughness: 0.20, metalness: 0.90, clearcoat: 0.6 }),
+      ironBlack: new PhysicalMat({ color: 0x111827, roughness: 0.32, metalness: 0.85, clearcoat: 0.4 }),
+      mailboxBlue: new PhysicalMat({ color: 0x1d4ed8, roughness: 0.25, metalness: 0.65, clearcoat: 0.6 }),
+      mailboxRedFlag: new PhysicalMat({ color: 0xdc2626, emissive: 0x7f1d1d, emissiveIntensity: 0.25, roughness: 0.25, metalness: 0.3, clearcoat: 0.6 }),
 
-      // Telas y Tapicería
-      fabricBlue: new THREE.MeshStandardMaterial({ color: 0x1e3a8a, roughness: 0.62, metalness: 0.08 }),
-      fabricNavyTufted: new THREE.MeshStandardMaterial({ color: 0x172554, roughness: 0.65, metalness: 0.08 }),
-      fabricGold: new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.58, metalness: 0.10 }),
-      fabricTerracotta: new THREE.MeshStandardMaterial({ color: 0xea580c, roughness: 0.60, metalness: 0.10 }),
-      leatherDark: new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.55, metalness: 0.15 }),
+      // Telas y Tapicería (incluyendo Mantel Borgoña Texturizado)
+      burgundyCloth: new PhysicalMat({ color: 0x881337, map: burgundyTex || null, roughness: 0.72, metalness: 0.04, clearcoat: 0.1 }),
+      fabricBlue: new PhysicalMat({ color: 0x1e3a8a, roughness: 0.62, metalness: 0.08 }),
+      fabricNavyTufted: new PhysicalMat({ color: 0x172554, roughness: 0.65, metalness: 0.08 }),
+      fabricGold: new PhysicalMat({ color: 0xf59e0b, roughness: 0.58, metalness: 0.10 }),
+      fabricTerracotta: new PhysicalMat({ color: 0xea580c, roughness: 0.60, metalness: 0.10 }),
+      leatherDark: new PhysicalMat({ color: 0x0f172a, roughness: 0.35, metalness: 0.15, clearcoat: 0.45 }),
 
       // Naturaleza y Vegetación
       trunkBark: new THREE.MeshStandardMaterial({ color: 0x452612, roughness: 0.85, metalness: 0.04 }),
@@ -920,18 +957,18 @@ ensureOrbitControls();
       flowerPink: new THREE.MeshStandardMaterial({ color: 0xf472b6, roughness: 0.42, metalness: 0.08 }),
       flowerLavender: new THREE.MeshStandardMaterial({ color: 0xc084fc, roughness: 0.42, metalness: 0.08 }),
 
-      // Piedra, Cerámica y Cerca
-      stoneGray: new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.70, metalness: 0.10 }),
-      stonePaver: new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.72, metalness: 0.06 }),
-      picketWhite: new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.55, metalness: 0.04 }),
-      ceramicWhite: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.16, metalness: 0.08 }),
-      coffeeLiquid: new THREE.MeshStandardMaterial({ color: 0x271206, roughness: 0.12, metalness: 0.15 }),
-      terracottaPot: new THREE.MeshStandardMaterial({ color: 0xc2410c, roughness: 0.72, metalness: 0.06 }),
+      // Piedra, Cerámica PBR y Cerca
+      stoneGray: new PhysicalMat({ color: 0x64748b, roughness: 0.70, metalness: 0.10 }),
+      stonePaver: new PhysicalMat({ color: 0x94a3b8, roughness: 0.72, metalness: 0.06 }),
+      picketWhite: new PhysicalMat({ color: 0xf8fafc, roughness: 0.45, metalness: 0.04, clearcoat: 0.3 }),
+      ceramicWhite: new PhysicalMat({ color: 0xffffff, roughness: 0.15, metalness: 0.08, clearcoat: 0.75 }),
+      coffeeLiquid: new PhysicalMat({ color: 0x271206, roughness: 0.10, metalness: 0.15, clearcoat: 0.8 }),
+      terracottaPot: new PhysicalMat({ color: 0xc2410c, roughness: 0.72, metalness: 0.06 }),
       soilDark: new THREE.MeshStandardMaterial({ color: 0x27170a, roughness: 0.92, metalness: 0.0 }),
 
-      // Vidrio, Pantallas Emisivas y Luces
-      glassClear: new THREE.MeshStandardMaterial({ color: 0xbae6fd, roughness: 0.08, metalness: 0.12, transparent: true, opacity: 0.42 }),
-      glassLantern: new THREE.MeshStandardMaterial({ color: 0xfffbeb, emissive: 0xfef08a, emissiveIntensity: 0.35, roughness: 0.12, metalness: 0.10, transparent: true, opacity: 0.72 }),
+      // Vidrio Cristalino PBR (transmission: 0.85, clearcoat: 0.6, roughness: 0.25), Pantallas y Luces
+      glassClear: new PhysicalMat({ color: 0xe0f2fe, roughness: 0.12, metalness: 0.05, transmission: 0.85, clearcoat: 0.6, transparent: true, opacity: 0.55 }),
+      glassLantern: new PhysicalMat({ color: 0xfffbeb, emissive: 0xfef08a, emissiveIntensity: 0.35, roughness: 0.15, metalness: 0.10, transmission: 0.65, clearcoat: 0.6, transparent: true, opacity: 0.78 }),
       lampShadeWarm: new THREE.MeshStandardMaterial({ color: 0xfef3c7, emissive: 0xf59e0b, emissiveIntensity: 0.65, roughness: 0.35, metalness: 0.05, side: THREE.DoubleSide }),
       emissiveScreen: new THREE.MeshStandardMaterial({ color: 0x06b6d4, emissive: 0x38bdf8, emissiveIntensity: 0.85, roughness: 0.22 }),
       emissiveBulb: new THREE.MeshStandardMaterial({ color: 0xffedd5, emissive: 0xfef08a, emissiveIntensity: 2.2, roughness: 0.18 }),
@@ -943,7 +980,7 @@ ensureOrbitControls();
   if (typeof THREE !== 'undefined') initSharedMaterials();
 
   // ============================================================================
-  // 5. MARCADORES HOTSPOTS FLOTANTES Y DOMO ESPACIAL
+  // 5. MICRO-INDICADORES HOTSPOTS DISCRETOS Y DOMO ESPACIAL
   // ============================================================================
   function createSpaceDome(targetScene) {
     if (typeof THREE === 'undefined' || typeof document === 'undefined') return null;
@@ -992,29 +1029,19 @@ ensureOrbitControls();
     const hsGroup = new THREE.Group();
     hsGroup.name = `Hotspot_${vocabKey}`;
 
+    // Micro-indicador sutil (scale: 0.15, opacity: 0.35) sin aros morados invasivos
     const spriteMat = new THREE.SpriteMaterial({
       map: createHotspotTexture(),
       color: 0xffffff,
       transparent: true,
+      opacity: 0.35,
       blending: THREE.AdditiveBlending,
       depthTest: true,
       depthWrite: false
     });
     const sprite = new THREE.Sprite(spriteMat);
-    sprite.scale.set(0.65, 0.65, 0.65);
+    sprite.scale.set(0.15, 0.15, 0.15);
     hsGroup.add(sprite);
-
-    const ringGeo = new THREE.RingGeometry(0.20, 0.28, 24);
-    const ringMat = new THREE.MeshBasicMaterial({
-      color: 0xa855f7,
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 0.75,
-      depthWrite: false
-    });
-    const ring = new THREE.Mesh(ringGeo, ringMat);
-    ring.rotation.x = -Math.PI / 2;
-    hsGroup.add(ring);
 
     const bbox = new THREE.Box3().setFromObject(group);
     const center = new THREE.Vector3();
@@ -1026,7 +1053,7 @@ ensureOrbitControls();
     const localMaxY = (bbox.max && isFinite(bbox.max.y)) ? (bbox.max.y - gy) : 1.2;
     const localZ = isFinite(center.z) ? (center.z - gz) : 0;
     const height = localMaxY > 0.3 ? localMaxY : 1.2;
-    const hotspotY = height + 0.38;
+    const hotspotY = height + 0.25;
 
     hsGroup.position.set(localX, hotspotY, localZ);
     hsGroup.userData = Object.assign({}, meta, {
@@ -1037,13 +1064,12 @@ ensureOrbitControls();
       interactive: true
     });
     sprite.userData = hsGroup.userData;
-    ring.userData = hsGroup.userData;
 
     group.hotspot = hsGroup;
     spatialHotspots.push({
       group: hsGroup,
       sprite: sprite,
-      ring: ring,
+      ring: null,
       baseY: hotspotY,
       parentGroup: group
     });
@@ -2085,26 +2111,26 @@ ensureOrbitControls();
       title: '🕯️ Romantic Date & Bistro 3D',
       bg: 0x070b14,
       fogDensity: 0.008,
-      cameraPos: { x: 0, y: 5.2, z: 9.8 },
-      cameraLookAt: { x: 0, y: 1.3, z: -0.5 },
+      cameraPos: { x: 0, y: 4.8, z: 8.6 },
+      cameraLookAt: { x: 0, y: 1.25, z: -0.3 },
       zones: {
-        overview: { pos: { x: 0, y: 5.2, z: 9.8 }, lookAt: { x: 0, y: 1.3, z: -0.5 }, label: '🕯️ Vista General' },
-        zone1: { pos: { x: 0.2, y: 2.5, z: 2.8 }, lookAt: { x: 0, y: 1.08, z: -0.5 }, label: '🍷 Zona 1: Mesa Romántica' },
-        zone2: { pos: { x: 2.2, y: 2.6, z: 2.6 }, lookAt: { x: 1.5, y: 1.2, z: -1.0 }, label: '🤵 Zona 2: Mesero IA' },
-        zone3: { pos: { x: -2.2, y: 2.8, z: 1.5 }, lookAt: { x: -1.5, y: 1.4, z: -4.8 }, label: '🎻 Balcón y Violín' }
+        overview: { pos: { x: 0, y: 4.8, z: 8.6 }, lookAt: { x: 0, y: 1.25, z: -0.3 }, label: '🕯️ Vista General' },
+        zone1: { pos: { x: 0.0, y: 2.35, z: 2.75 }, lookAt: { x: 0, y: 1.15, z: 0 }, label: '🍷 Zona 1: Mesa Romántica' },
+        zone2: { pos: { x: 2.2, y: 2.5, z: 1.8 }, lookAt: { x: 1.2, y: 1.25, z: -1.8 }, label: '🤵 Zona 2: Mesero IA' },
+        zone3: { pos: { x: -2.2, y: 2.8, z: 1.5 }, lookAt: { x: -1.2, y: 1.6, z: -5.2 }, label: '🎻 Balcón y Violín' }
       },
       objects: [
-        { id: 'dating_table_for_two', en: 'Table for Two', ipa: '/ˈteɪ.bəl fɔːr tuː/', es: 'Mesa Íntima para Dos con Mantel Rojo/Vino', category: 'Romantic Date', example: 'I reserved a romantic table for two on the rooftop terrace.', pos: [0, 0, -0.5] },
-        { id: 'dating_candlelight', en: 'Candlelight', ipa: '/ˈkæn.dəl.laɪt/', es: 'Vela Encendida con Luz Cálida', category: 'Romantic Date', example: 'We enjoyed a quiet dinner by warm candlelight on the starry terrace.', pos: [0, 1.08, -0.5] },
-        { id: 'dating_wine_glasses', en: 'Wine Glasses', ipa: '/waɪn ˈɡlæs.ɪz/', es: 'Dos Copas de Brindis', category: 'Romantic Date', example: 'They clinked their wine glasses and made a toast in English.', pos: [0.32, 1.08, -0.35] },
-        { id: 'dating_menu', en: 'Menu', ipa: '/ˈmen.juː/', es: 'Menú Bilingüe del Bistró', category: 'Romantic Date', example: 'Could we see the dinner menu and the wine list, please?', pos: [-0.38, 1.06, -0.32] },
-        { id: 'dating_rose_bouquet', en: 'Rose Bouquet', ipa: '/roʊz buˈkeɪ/', es: 'Ramo de Rosas Rojas', category: 'Romantic Date', example: 'A fresh red rose bouquet decorated the center of our table.', pos: [-0.15, 1.08, -0.72] },
+        { id: 'dating_table_for_two', en: 'Table for Two', ipa: '/ˈteɪ.bəl fɔːr tuː/', es: 'Mesa Íntima para Dos con Mantel Borgoña', category: 'Romantic Date', example: 'I reserved a romantic table for two on the rooftop terrace.', pos: [0, 0, 0] },
+        { id: 'dating_candlelight', en: 'Candlelight', ipa: '/ˈkæn.dəl.laɪt/', es: 'Vela Encendida con Luz Cálida', category: 'Romantic Date', example: 'We enjoyed a quiet dinner by warm candlelight on the starry terrace.', pos: [0, 0.99, 0] },
+        { id: 'dating_wine_glasses', en: 'Wine Glasses', ipa: '/waɪn ˈɡlæs.ɪz/', es: 'Dos Copas de Cristal PBR', category: 'Romantic Date', example: 'They clinked their wine glasses and made a toast in English.', pos: [0.26, 0.99, 0.26] },
+        { id: 'dating_menu', en: 'Menu', ipa: '/ˈmen.juː/', es: 'Menú Bilingüe del Bistró', category: 'Romantic Date', example: 'Could we see the dinner menu and the wine list, please?', pos: [-0.34, 0.99, 0.28] },
+        { id: 'dating_rose_bouquet', en: 'Rose Bouquet', ipa: '/roʊz buˈkeɪ/', es: 'Ramo de Rosas Rojas', category: 'Romantic Date', example: 'A fresh red rose bouquet decorated the center of our table.', pos: [0, 0.99, -0.32] },
         { id: 'dating_violin', en: 'Violin', ipa: '/ˌvaɪəˈlɪn/', es: 'Violín Acústico de Serenata', category: 'Romantic Date', example: 'A romantic violin melody played softly under the stars.', pos: [-3.4, 0, -2.2] },
-        { id: 'dating_city_balcony', en: 'City View Balcony', ipa: '/ˈsɪt̬.i vjuː ˈbæl.kə.ni/', es: 'Balcón de Ciudad Nocturno', category: 'Romantic Date', example: 'We stepped out onto the city view balcony to admire the skyline.', pos: [0, 0, -5.8] },
-        { id: 'dating_waiter_npc', en: 'Waiter NPC', ipa: '/ˈweɪ.t̬ɚ/', es: 'Mesero 3D Interactivo', category: 'Romantic Date', example: 'Our friendly waiter recommended the chef’s special tonight.', pos: [2.3, 0, -1.2] },
-        { id: 'dating_chocolate_dessert', en: 'Chocolate Dessert', ipa: '/ˈtʃɑː.klət dɪˈzɝːt/', es: 'Postre de Chocolate Gourmet', category: 'Romantic Date', example: 'Would you like to share this warm chocolate dessert with me?', pos: [0.22, 1.06, -0.78] },
-        { id: 'dating_conversation_cards', en: 'Conversation Cards', ipa: '/ˌkɑːn.vɚˈseɪ.ʃən kɑːrdz/', es: 'Tarjetas Románticas (Icebreakers)', category: 'Romantic Date', example: 'These conversation cards have great questions to get to know each other.', pos: [-0.42, 1.06, -0.68] },
-        { id: 'dating_ice_bucket', en: 'Ice Bucket', ipa: '/aɪs ˈbʌk.ɪt/', es: 'Cubeta de Hielo y Espumoso', category: 'Romantic Date', example: 'The sparkling cider is chilling in the silver ice bucket.', pos: [1.25, 0, -1.35] },
+        { id: 'dating_city_balcony', en: 'City View Balcony', ipa: '/ˈsɪt̬.i vjuː ˈbæl.kə.ni/', es: 'Balcón con Skyline Nocturno Iluminado', category: 'Romantic Date', example: 'We stepped out onto the city view balcony to admire the skyline.', pos: [0, 0, -5.2] },
+        { id: 'dating_waiter_npc', en: 'Waiter NPC', ipa: '/ˈweɪ.t̬ɚ/', es: 'Mesero 3D Interactivo', category: 'Romantic Date', example: 'Our friendly waiter recommended the chef’s special tonight.', pos: [2.8, 0, -2.4] },
+        { id: 'dating_chocolate_dessert', en: 'Chocolate Dessert', ipa: '/ˈtʃɑː.klət dɪˈzɝːt/', es: 'Postre de Chocolate Gourmet', category: 'Romantic Date', example: 'Would you like to share this warm chocolate dessert with me?', pos: [0.24, 0.99, -0.26] },
+        { id: 'dating_conversation_cards', en: 'Conversation Cards', ipa: '/ˌkɑːn.vɚˈseɪ.ʃən kɑːrdz/', es: 'Tarjetas Románticas (Icebreakers)', category: 'Romantic Date', example: 'These conversation cards have great questions to get to know each other.', pos: [-0.32, 0.99, -0.26] },
+        { id: 'dating_ice_bucket', en: 'Ice Bucket', ipa: '/aɪs ˈbʌk.ɪt/', es: 'Cubeta de Hielo y Espumoso', category: 'Romantic Date', example: 'The sparkling cider is chilling in the silver ice bucket.', pos: [-2.15, 0, -1.25] },
         { id: 'dating_string_lights', en: 'String Lights', ipa: '/strɪŋ laɪts/', es: 'Guirnalda de Luces de Terraza', category: 'Romantic Date', example: 'Golden string lights glowed above the bistro terrace all night.', pos: [3.6, 0, -2.8] }
       ]
     },
@@ -2264,6 +2290,7 @@ ensureOrbitControls();
       cachedPaintingTexture,
       cachedClockTexture,
       cachedRugTexture,
+      cachedBurgundyTexture,
       cachedHotspotTexture
     ]);
     rootObj.traverse(child => {
@@ -2298,6 +2325,7 @@ ensureOrbitControls();
   function buildCompound3DObject(itemSpec, scenarioKey) {
     if (typeof THREE === 'undefined' || !itemSpec) return null;
     const M = initSharedMaterials();
+    const PhysicalMat = THREE.MeshPhysicalMaterial || THREE.MeshStandardMaterial;
     const group = new THREE.Group();
     group.name = itemSpec.en || itemSpec.id;
     const id = itemSpec.id || '';
@@ -2309,32 +2337,61 @@ ensureOrbitControls();
     const matWood = M.woodOak;
     const matWalnut = M.woodWalnut;
     const matWhite = M.ceramicWhite;
-    const matRed = new THREE.MeshStandardMaterial({ color: 0xe11d48, roughness: 0.38, metalness: 0.12 });
-    const matRosePink = new THREE.MeshStandardMaterial({ color: 0xf43f5e, emissive: 0x881337, emissiveIntensity: 0.2, roughness: 0.35 });
-    const matVelvet = new THREE.MeshStandardMaterial({ color: 0x9f1239, roughness: 0.65, metalness: 0.08 });
-    const matEmerald = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.4, metalness: 0.1 });
-    const matSky = new THREE.MeshStandardMaterial({ color: 0x0ea5e9, roughness: 0.3, metalness: 0.2 });
+    const matRed = new PhysicalMat({ color: 0xe11d48, roughness: 0.25, metalness: 0.12, clearcoat: 0.6 });
+    const matRosePink = new PhysicalMat({ color: 0xf43f5e, emissive: 0x881337, emissiveIntensity: 0.2, roughness: 0.28, clearcoat: 0.5 });
+    const matVelvet = M.burgundyCloth || new PhysicalMat({ color: 0x9f1239, roughness: 0.65, metalness: 0.08 });
+    const matEmerald = new PhysicalMat({ color: 0x10b981, roughness: 0.28, metalness: 0.1, clearcoat: 0.6 });
+    const matSky = new PhysicalMat({ color: 0x0ea5e9, roughness: 0.25, metalness: 0.2, clearcoat: 0.6 });
 
     // --- MUNDO DATING (ROMANTIC DATE & BISTRO 3D) ---
     if (id === 'dating_table_for_two' || enLower.includes('table for two') || id === 'rest_dining_table') {
       const base = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.5, 0.08, 24), matDark);
       base.position.y = 0.04;
-      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.92, 16), matDark);
-      pole.position.y = 0.5;
-      const topWood = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.15, 0.06, 32), matWalnut);
-      topWood.position.y = 0.96;
-      const cloth = new THREE.Mesh(new THREE.CylinderGeometry(1.18, 1.24, 0.18, 32), id === 'dating_table_for_two' ? matVelvet : matWhite);
-      cloth.position.y = 0.92;
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.90, 16), matDark);
+      pole.position.y = 0.48;
+      const topWood = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.05, 32), matWalnut);
+      topWood.position.y = 0.94;
+      const cloth = new THREE.Mesh(new THREE.CylinderGeometry(0.97, 1.04, 0.16, 32), id === 'dating_table_for_two' ? matVelvet : matWhite);
+      cloth.position.y = 0.90;
       group.add(base, pole, topWood, cloth);
-      [-1.35, 1.35].forEach((cx, idx) => {
+
+      // Comida modelada en 3D sobre los platos (corte de filete/salmón, guarnición verde y puré gourmet)
+      const steakMat = new PhysicalMat({ color: 0x7c2d12, roughness: 0.35, clearcoat: 0.45 });
+      const salmonMat = new PhysicalMat({ color: 0xfb7185, roughness: 0.30, clearcoat: 0.5 });
+      const garnishMat = new PhysicalMat({ color: 0x16a34a, roughness: 0.45 });
+      const mashMat = new PhysicalMat({ color: 0xfef3c7, roughness: 0.5 });
+
+      [-0.56, 0.56].forEach((px, pIdx) => {
+        const plateGroup = new THREE.Group();
+        const dinnerPlate = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.16, 0.022, 24), matWhite);
+        dinnerPlate.position.y = 0.011;
+        const proteinCut = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.038, 0.09), pIdx === 0 ? steakMat : salmonMat);
+        proteinCut.position.set(-0.02, 0.035, 0.02);
+        proteinCut.rotation.y = 0.25;
+        const sideMash = new THREE.Mesh(new THREE.SphereGeometry(0.045, 14, 12), mashMat);
+        sideMash.scale.set(1, 0.65, 1);
+        sideMash.position.set(0.065, 0.032, -0.04);
+        const garnish1 = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.11, 8), garnishMat);
+        garnish1.rotation.z = Math.PI / 2;
+        garnish1.rotation.y = 0.4;
+        garnish1.position.set(0.02, 0.035, 0.065);
+        const garnish2 = new THREE.Mesh(new THREE.SphereGeometry(0.022, 10, 10), matRed);
+        garnish2.position.set(-0.07, 0.032, -0.05);
+        plateGroup.add(dinnerPlate, proteinCut, sideMash, garnish1, garnish2);
+        plateGroup.position.set(px, 0.98, 0);
+        group.add(plateGroup);
+      });
+
+      // Sillas ubicadas exactamente en x: -1.25, z: 0 (Izquierda) y x: 1.25, z: 0 (Derecha), asiento y: 0.48
+      [-1.25, 1.25].forEach((cx, idx) => {
         const chair = new THREE.Group();
-        const seat = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.08, 0.52), matVelvet);
-        seat.position.y = 0.52;
-        const back = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.58, 0.07), matVelvet);
-        back.position.set(0, 0.84, idx === 0 ? -0.23 : 0.23);
-        [[-0.2, -0.2], [0.2, -0.2], [-0.2, 0.2], [0.2, 0.2]].forEach(([lx, lz]) => {
-          const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.015, 0.5, 8), matGold);
-          leg.position.set(lx, 0.25, lz);
+        const seat = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.06, 0.50), matVelvet);
+        seat.position.y = 0.45;
+        const back = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.58, 0.06), matVelvet);
+        back.position.set(0, 0.77, -0.22);
+        [[-0.20, -0.20], [0.20, -0.20], [-0.20, 0.20], [0.20, 0.20]].forEach(([lx, lz]) => {
+          const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.016, 0.44, 10), matGold);
+          leg.position.set(lx, 0.22, lz);
           chair.add(leg);
         });
         chair.add(seat, back);
@@ -2343,16 +2400,16 @@ ensureOrbitControls();
         group.add(chair);
       });
     } else if (id === 'dating_candlelight') {
-      const holder = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.14, 0.06, 20), matGold);
-      holder.position.y = 0.03;
-      const wax = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.06, 0.28, 16), matWhite);
-      wax.position.y = 0.19;
-      const flameMat = new THREE.MeshStandardMaterial({ color: 0xffedd5, emissive: 0xff9900, emissiveIntensity: 3.0, roughness: 0.1 });
-      const flame = new THREE.Mesh(new THREE.ConeGeometry(0.032, 0.09, 12), flameMat);
-      flame.position.y = 0.37;
+      const holder = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.13, 0.05, 20), matGold);
+      holder.position.y = 0.025;
+      const wax = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.052, 0.24, 16), matWhite);
+      wax.position.y = 0.16;
+      const flameMat = new THREE.MeshStandardMaterial({ color: 0xffedd5, emissive: 0xff9900, emissiveIntensity: 3.2, roughness: 0.1 });
+      const flame = new THREE.Mesh(new THREE.ConeGeometry(0.032, 0.095, 12), flameMat);
+      flame.position.y = 0.32;
       candleFlameMesh = flame;
-      const cLight = new THREE.PointLight(0xff9933, 2.4, 9.5);
-      cLight.position.set(0, 0.42, 0);
+      const cLight = new THREE.PointLight(0xff9933, 2.5, 10.0);
+      cLight.position.set(0, 0.38, 0);
       candleFlameLight = cLight;
       group.add(holder, wax, flame, cLight);
     } else if (id === 'dating_wine_glasses' || id === 'rest_beverage') {
@@ -2372,28 +2429,28 @@ ensureOrbitControls();
       });
     } else if (id === 'dating_menu' || id === 'rest_menu' || id === 'rest_bill_folder' || id === 'hotel_passport') {
       const coverColor = id === 'hotel_passport' ? 0x1e3a8a : (id === 'rest_bill_folder' ? 0x1c1917 : 0x3b0764);
-      const coverMat = new THREE.MeshStandardMaterial({ color: coverColor, roughness: 0.45, metalness: 0.15 });
-      const pageLeft = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.018, 0.30), coverMat);
-      pageLeft.position.set(-0.10, 0.02, 0);
+      const coverMat = new PhysicalMat({ color: coverColor, roughness: 0.28, metalness: 0.15, clearcoat: 0.6 });
+      const pageLeft = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.016, 0.26), coverMat);
+      pageLeft.position.set(-0.09, 0.02, 0);
       pageLeft.rotation.z = 0.08;
-      const pageRight = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.018, 0.30), coverMat);
-      pageRight.position.set(0.10, 0.02, 0);
+      const pageRight = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.016, 0.26), coverMat);
+      pageRight.position.set(0.09, 0.02, 0);
       pageRight.rotation.z = -0.08;
-      const innerSheet = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.01, 0.26), matWhite);
+      const innerSheet = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.01, 0.22), matWhite);
       innerSheet.position.set(0, 0.03, 0);
-      const goldTrim = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.022, 0.30), matGold);
+      const goldTrim = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.022, 0.26), matGold);
       goldTrim.position.set(0, 0.022, 0);
       group.add(pageLeft, pageRight, innerSheet, goldTrim);
     } else if (id === 'dating_rose_bouquet') {
-      const vase = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.06, 0.24, 16), M.glassClear);
-      vase.position.y = 0.12;
+      const vase = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.055, 0.22, 16), M.glassClear);
+      vase.position.y = 0.11;
       group.add(vase);
       for (let r = 0; r < 6; r++) {
         const ang = (r * Math.PI * 2) / 6;
-        const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.28, 8), M.leafGreen2);
-        stem.position.set(Math.cos(ang) * 0.03, 0.22, Math.sin(ang) * 0.03);
-        const bud = new THREE.Mesh(new THREE.DodecahedronGeometry(0.048, 1), matRed);
-        bud.position.set(Math.cos(ang) * 0.055, 0.36 + (r % 2) * 0.025, Math.sin(ang) * 0.055);
+        const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.26, 8), M.leafGreen2);
+        stem.position.set(Math.cos(ang) * 0.028, 0.20, Math.sin(ang) * 0.028);
+        const bud = new THREE.Mesh(new THREE.DodecahedronGeometry(0.045, 1), matRed);
+        bud.position.set(Math.cos(ang) * 0.05, 0.33 + (r % 2) * 0.022, Math.sin(ang) * 0.05);
         group.add(stem, bud);
       }
     } else if (id === 'dating_violin') {
@@ -2414,30 +2471,57 @@ ensureOrbitControls();
       bow.position.set(0.08, 1.22, 0.10);
       group.add(standBase, standPole, bodyLower, bodyUpper, neck, bow);
     } else if (id === 'dating_chocolate_dessert' || id === 'rest_main_course' || id === 'rest_appetizer') {
-      const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.16, 0.025, 24), matWhite);
-      plate.position.y = 0.015;
-      const cakeMat = new THREE.MeshStandardMaterial({ color: id === 'rest_main_course' ? 0x92400e : (id === 'rest_appetizer' ? 0x15803d : 0x3b1d0e), roughness: 0.35 });
-      const food = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.12, 0.09, 20), cakeMat);
-      food.position.y = 0.06;
-      const topping = new THREE.Mesh(new THREE.SphereGeometry(0.035, 12, 12), matRed);
-      topping.position.set(0, 0.115, 0);
-      group.add(plate, food, topping);
+      const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.14, 0.022, 24), matWhite);
+      plate.position.y = 0.012;
+      const cakeMat = new PhysicalMat({ color: id === 'rest_main_course' ? 0x92400e : (id === 'rest_appetizer' ? 0x15803d : 0x3b1d0e), roughness: 0.28, clearcoat: 0.55 });
+      const food = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.11, 0.085, 20), cakeMat);
+      food.position.y = 0.058;
+      const ganache = new THREE.Mesh(new THREE.CylinderGeometry(0.102, 0.102, 0.018, 20), new PhysicalMat({ color: 0x1c0a00, roughness: 0.12, clearcoat: 0.9 }));
+      ganache.position.y = 0.098;
+      const topping = new THREE.Mesh(new THREE.SphereGeometry(0.032, 12, 12), matRed);
+      topping.position.set(0, 0.12, 0);
+      group.add(plate, food, ganache, topping);
     } else if (id === 'dating_city_balcony') {
-      const railTop = new THREE.Mesh(new THREE.BoxGeometry(6.8, 0.08, 0.10), matGold);
-      railTop.position.set(0, 1.05, 0);
-      const glassPanel = new THREE.Mesh(new THREE.BoxGeometry(6.6, 0.92, 0.04), M.glassClear);
-      glassPanel.position.set(0, 0.52, 0);
+      const railTop = new THREE.Mesh(new THREE.BoxGeometry(8.4, 0.08, 0.10), matGold);
+      railTop.position.set(0, 1.08, 0);
+      const glassPanel = new THREE.Mesh(new THREE.BoxGeometry(8.2, 0.96, 0.04), M.glassClear);
+      glassPanel.position.set(0, 0.54, 0);
       group.add(railTop, glassPanel);
-      [-3.2, -1.6, 0, 1.6, 3.2].forEach(px => {
-        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.08, 12), matDark);
-        post.position.set(px, 0.54, 0);
+      [-4.0, -2.0, 0, 2.0, 4.0].forEach(px => {
+        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.10, 12), matDark);
+        post.position.set(px, 0.55, 0);
         group.add(post);
       });
+
+      // Skyline nocturno con edificios iluminados detrás del barandal del balcón
+      const skylineSpecs = [
+        { x: -5.2, z: -3.2, w: 1.4, h: 5.8, d: 1.2, winColor: 0xfef08a },
+        { x: -3.4, z: -4.0, w: 1.6, h: 7.4, d: 1.4, winColor: 0x38bdf8 },
+        { x: -1.5, z: -3.6, w: 1.3, h: 6.2, d: 1.2, winColor: 0xfde68a },
+        { x: 0.4,  z: -4.4, w: 1.8, h: 8.6, d: 1.5, winColor: 0xfef08a },
+        { x: 2.4,  z: -3.5, w: 1.5, h: 6.8, d: 1.3, winColor: 0x7dd3fc },
+        { x: 4.5,  z: -3.8, w: 1.7, h: 7.2, d: 1.3, winColor: 0xfde68a }
+      ];
+      const bldgMat = new PhysicalMat({ color: 0x0f172a, roughness: 0.3, metalness: 0.6, clearcoat: 0.5 });
+      skylineSpecs.forEach(b => {
+        const tower = new THREE.Mesh(new THREE.BoxGeometry(b.w, b.h, b.d), bldgMat);
+        tower.position.set(b.x, b.h * 0.5 - 1.8, b.z);
+        group.add(tower);
+        const winMat = new THREE.MeshBasicMaterial({ color: b.winColor });
+        for (let wy = -0.8; wy < b.h - 2.2; wy += 0.65) {
+          for (let wx = -b.w * 0.32; wx <= b.w * 0.32; wx += 0.32) {
+            const win = new THREE.Mesh(new THREE.PlaneGeometry(0.14, 0.24), winMat);
+            win.position.set(b.x + wx, wy, b.z + b.d * 0.5 + 0.01);
+            group.add(win);
+          }
+        }
+      });
     } else if (id === 'dating_waiter_npc') {
-      // Mesero 3D Articulado (Tuxedo, camisa blanca, corbatín rojo, bandeja plateada)
-      const legsL = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.06, 0.72, 12), M.ironBlack);
+      // Mesero 3D Articulado con piernas y brazos animados para caminar entre WAITER_STATION_POS y WAITER_TABLE_POS
+      const skinMat = new PhysicalMat({ color: 0xfde68a, roughness: 0.38, clearcoat: 0.2 });
+      const legsL = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.058, 0.72, 12), M.ironBlack);
       legsL.position.set(-0.11, 0.36, 0);
-      const legsR = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.06, 0.72, 12), M.ironBlack);
+      const legsR = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.058, 0.72, 12), M.ironBlack);
       legsR.position.set(0.11, 0.36, 0);
       const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.18, 0.68, 16), M.ironBlack);
       torso.position.set(0, 1.04, 0);
@@ -2446,9 +2530,14 @@ ensureOrbitControls();
       shirtV.position.set(0, 1.18, 0.14);
       const bowTie = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.045, 0.03), matRed);
       bowTie.position.set(0, 1.32, 0.19);
-      const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 20, 20), new THREE.MeshStandardMaterial({ color: 0xfde68a, roughness: 0.45 }));
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 20, 20), skinMat);
       head.position.set(0, 1.56, 0);
-      const hair = new THREE.Mesh(new THREE.SphereGeometry(0.185, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.55), M.woodDark);
+      const eyeMat = new THREE.MeshBasicMaterial({ color: 0x0f172a });
+      const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.022, 8, 8), eyeMat);
+      eyeL.position.set(-0.06, 1.58, 0.165);
+      const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.022, 8, 8), eyeMat);
+      eyeR.position.set(0.06, 1.58, 0.165);
+      const hair = new THREE.Mesh(new THREE.SphereGeometry(0.186, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.55), M.woodDark);
       hair.position.set(0, 1.58, -0.02);
 
       const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.045, 0.52, 12), M.ironBlack);
@@ -2465,10 +2554,15 @@ ensureOrbitControls();
       const cloche = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.5), matSilver);
       cloche.position.set(0, 0.03, 0.38);
       armRGroup.add(armR, tray, cloche);
+
+      waiterLeftLeg = legsL;
+      waiterRightLeg = legsR;
+      waiterLeftArm = armL;
       waiterRightArm = armRGroup;
 
-      group.add(legsL, legsR, torso, shirtV, bowTie, head, hair, armL, armRGroup);
-      group.rotation.y = -0.65;
+      group.add(legsL, legsR, torso, shirtV, bowTie, head, eyeL, eyeR, hair, armL, armRGroup);
+      group.rotation.y = 0;
+      waiterGroup = group;
       waiterNpcGroup = group;
     } else if (id === 'dating_conversation_cards') {
       const holder = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.04, 0.12), matGold);
@@ -2906,6 +3000,321 @@ ensureOrbitControls();
   }
   global.buildCompound3DObject = buildCompound3DObject;
 
+  // ============================================================================
+  // AVATARES SENTADOS EN LAS SILLAS + BURBUJAS DE CHAT ESTILO ROBLOX
+  // ============================================================================
+  function buildSeatedCharacterMesh(gender, role) {
+    if (typeof THREE === 'undefined') return null;
+    const M = initSharedMaterials();
+    const PhysicalMat = THREE.MeshPhysicalMaterial || THREE.MeshStandardMaterial;
+    const isFemale = gender === 'female';
+    const charGroup = new THREE.Group();
+    charGroup.name = `SeatedAvatar_${role || 'player'}_${isFemale ? 'female' : 'male'}`;
+
+    const skinMat = new PhysicalMat({ color: isFemale ? 0xfde68a : 0xfcd34d, roughness: 0.35, clearcoat: 0.25 });
+    const suitMat = new PhysicalMat({ color: role === 'partner' ? 0x1e1b4b : 0x0f172a, roughness: 0.35, metalness: 0.15, clearcoat: 0.45 });
+    const dressMat = new PhysicalMat({ color: role === 'partner' ? 0xbe123c : 0x9f1239, roughness: 0.28, metalness: 0.12, clearcoat: 0.6 });
+    const hairMat = new PhysicalMat({ color: isFemale ? (role === 'partner' ? 0x451a03 : 0x78350f) : 0x1c1917, roughness: 0.42, clearcoat: 0.35 });
+    const shoeMat = M.ironBlack;
+
+    // 1. Muslos horizontales sobre el asiento de la silla (y: 0.48), orientados hacia +Z (el frente del personaje)
+    [-0.10, 0.10].forEach(tx => {
+      const thigh = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.068, 0.062, 0.36, 12),
+        isFemale ? dressMat : suitMat
+      );
+      thigh.rotation.x = Math.PI / 2;
+      thigh.position.set(tx, 0.48, 0.08);
+      charGroup.add(thigh);
+
+      // 2. Pantorrillas bajando verticalmente hacia el suelo desde la rodilla (z: 0.24, y: 0.24)
+      const calf = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.055, 0.046, 0.44, 12),
+        isFemale ? skinMat : suitMat
+      );
+      calf.position.set(tx, 0.24, 0.24);
+      charGroup.add(calf);
+
+      const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.06, 0.16), shoeMat);
+      shoe.position.set(tx, 0.03, 0.28);
+      charGroup.add(shoe);
+    });
+
+    if (isFemale) {
+      // Falda de vestido de noche cubriendo el regazo en postura sentada
+      const skirtLap = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.11, 0.36), dressMat);
+      skirtLap.position.set(0, 0.50, 0.08);
+      charGroup.add(skirtLap);
+    }
+
+    // 3. Torso erguido apoyado cerca del respaldo (y: 0.76, z: -0.06)
+    const torso = new THREE.Mesh(
+      new THREE.CylinderGeometry(isFemale ? 0.15 : 0.18, isFemale ? 0.13 : 0.16, 0.52, 16),
+      isFemale ? dressMat : suitMat
+    );
+    torso.position.set(0, 0.76, -0.05);
+    charGroup.add(torso);
+
+    if (!isFemale) {
+      // Traje/Tuxedo elegante con camisa blanca y corbata/corbatín
+      const shirtFront = new THREE.Mesh(new THREE.ConeGeometry(0.10, 0.28, 4), M.ceramicWhite);
+      shirtFront.rotation.x = Math.PI;
+      shirtFront.position.set(0, 0.86, 0.08);
+      const tie = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.20, 0.025), new PhysicalMat({ color: 0xe11d48, roughness: 0.25, clearcoat: 0.6 }));
+      tie.position.set(0, 0.84, 0.13);
+      charGroup.add(shirtFront, tie);
+    } else {
+      // Collar sutil dorado/perla en el cuello para el vestido de noche
+      const necklace = new THREE.Mesh(new THREE.TorusGeometry(0.105, 0.014, 10, 24), M.metalBrass);
+      necklace.rotation.x = Math.PI / 2;
+      necklace.position.set(0, 1.01, -0.03);
+      charGroup.add(necklace);
+    }
+
+    // 4. Brazos descansando hacia el borde de la mesa
+    [-0.20, 0.20].forEach((ax, idx) => {
+      const upperArm = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.045, 0.04, 0.30, 10),
+        isFemale ? skinMat : suitMat
+      );
+      upperArm.position.set(ax, 0.86, 0.02);
+      upperArm.rotation.x = -0.45;
+      upperArm.rotation.z = idx === 0 ? 0.15 : -0.15;
+
+      const forearm = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.04, 0.036, 0.28, 10),
+        skinMat
+      );
+      forearm.rotation.x = Math.PI / 2.1;
+      forearm.position.set(ax * 0.88, 0.74, 0.22);
+
+      charGroup.add(upperArm, forearm);
+    });
+
+    // 5. Cabeza detallada con ojos y peinado según género (y: 1.18)
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.165, 20, 20), skinMat);
+    head.position.set(0, 1.18, -0.03);
+    const eyeMat = new THREE.MeshBasicMaterial({ color: 0x0f172a });
+    const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.02, 8, 8), eyeMat);
+    eyeL.position.set(-0.055, 1.20, 0.125);
+    const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.02, 8, 8), eyeMat);
+    eyeR.position.set(0.055, 1.20, 0.125);
+    charGroup.add(head, eyeL, eyeR);
+
+    if (!isFemale) {
+      // Cabello corto estilizado masculino
+      const hairCap = new THREE.Mesh(new THREE.SphereGeometry(0.172, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.55), hairMat);
+      hairCap.position.set(0, 1.20, -0.04);
+      const hairQuiff = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.06, 0.10), hairMat);
+      hairQuiff.position.set(0, 1.33, 0.06);
+      hairQuiff.rotation.x = -0.25;
+      charGroup.add(hairCap, hairQuiff);
+    } else {
+      // Cabello largo femenino con caída/volumen sobre la espalda y hombros
+      const hairCrown = new THREE.Mesh(new THREE.SphereGeometry(0.176, 18, 14, 0, Math.PI * 2, 0, Math.PI * 0.62), hairMat);
+      hairCrown.position.set(0, 1.21, -0.04);
+      const hairBack = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.18, 0.42, 14), hairMat);
+      hairBack.position.set(0, 1.02, -0.14);
+      const hairLockL = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.035, 0.32, 10), hairMat);
+      hairLockL.position.set(-0.14, 1.05, 0.02);
+      const hairLockR = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.035, 0.32, 10), hairMat);
+      hairLockR.position.set(0.14, 1.05, 0.02);
+      charGroup.add(hairCrown, hairBack, hairLockL, hairLockR);
+    }
+
+    charGroup.traverse(c => {
+      if (c.isMesh) {
+        c.castShadow = !IS_IOS;
+        c.receiveShadow = !IS_IOS;
+      }
+    });
+
+    return charGroup;
+  }
+  global.buildSeatedCharacterMesh = buildSeatedCharacterMesh;
+
+  function getSavedPlayerGender() {
+    try {
+      const g = localStorage.getItem('mastereng_player_gender');
+      return (g === 'female' || g === 'male') ? g : 'male';
+    } catch (e) { return 'male'; }
+  }
+
+  function getSavedPartnerGender() {
+    try {
+      const g = localStorage.getItem('mastereng_partner_gender');
+      return (g === 'female' || g === 'male' || g === 'waiting') ? g : 'female';
+    } catch (e) { return 'female'; }
+  }
+
+  function rebuildDatingSeatedAvatars() {
+    if (!scenarioDynamicRoot || currentScenarioKey !== 'dating') return;
+    if (playerSeatedGroup && playerSeatedGroup.parent) {
+      playerSeatedGroup.parent.remove(playerSeatedGroup);
+    }
+    if (partnerSeatedGroup && partnerSeatedGroup.parent) {
+      partnerSeatedGroup.parent.remove(partnerSeatedGroup);
+    }
+    playerSeatedGroup = null;
+    partnerSeatedGroup = null;
+
+    // Silla Izquierda (x: -1.25, z: 0, rotation.y = Math.PI / 2): Siempre muestra al Jugador Local sentado
+    const pGender = getSavedPlayerGender();
+    const playerMesh = buildSeatedCharacterMesh(pGender, 'player');
+    if (playerMesh) {
+      playerMesh.position.set(-1.25, 0, 0);
+      playerMesh.rotation.y = Math.PI / 2;
+      scenarioDynamicRoot.add(playerMesh);
+      playerSeatedGroup = playerMesh;
+    }
+
+    // Silla Derecha (x: 1.25, z: 0, rotation.y = -Math.PI / 2): Muestra a tu Cita / Invitado sentado frente a ti
+    const cGender = getSavedPartnerGender();
+    if (cGender === 'female' || cGender === 'male') {
+      const partnerMesh = buildSeatedCharacterMesh(cGender, 'partner');
+      if (partnerMesh) {
+        partnerMesh.position.set(1.25, 0, 0);
+        partnerMesh.rotation.y = -Math.PI / 2;
+        scenarioDynamicRoot.add(partnerMesh);
+        partnerSeatedGroup = partnerMesh;
+      }
+    }
+
+    if (renderer && scene && camera) {
+      renderer.render(scene, camera);
+    }
+  }
+  global.rebuildDatingSeatedAvatars = rebuildDatingSeatedAvatars;
+
+  // Burbujas de Chat Estilo Roblox Sobre la Cabeza (window.showRobloxOverheadBubble)
+  function showRobloxOverheadBubble(targetWho, text) {
+    if (typeof THREE === 'undefined' || !text) return null;
+    const activeScene = scenarioDynamicRoot || scene;
+    if (!activeScene) return null;
+
+    const who = (targetWho === 'partner' || targetWho === 'waiter') ? targetWho : 'player';
+    const cleanText = String(text).trim();
+    if (!cleanText) return null;
+
+    // Eliminar burbuja previa del mismo hablante si existía
+    if (activeOverheadBubbles[who] && activeOverheadBubbles[who].sprite) {
+      const oldSprite = activeOverheadBubbles[who].sprite;
+      if (oldSprite.parent) oldSprite.parent.remove(oldSprite);
+      if (oldSprite.material && oldSprite.material.map && typeof oldSprite.material.map.dispose === 'function') {
+        try { oldSprite.material.map.dispose(); } catch (e) {}
+      }
+      if (oldSprite.material && typeof oldSprite.material.dispose === 'function') {
+        try { oldSprite.material.dispose(); } catch (e) {}
+      }
+    }
+
+    let tex = null;
+    if (typeof document !== 'undefined') {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 192;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.clearRect(0, 0, 512, 192);
+
+        // Globo blanco redondeado estilo Roblox con borde oscuro sutil y cola triangular inferior
+        const bx = 20, by = 14, bw = 472, bh = 132, br = 26;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.97)';
+        ctx.strokeStyle = '#1e293b';
+        ctx.lineWidth = 5;
+
+        const qCurve = typeof ctx.quadraticCurveTo === 'function'
+          ? (cpx, cpy, x, y) => ctx.quadraticCurveTo(cpx, cpy, x, y)
+          : (_cpx, _cpy, x, y) => ctx.lineTo(x, y);
+        ctx.beginPath();
+        ctx.moveTo(bx + br, by);
+        ctx.lineTo(bx + bw - br, by);
+        qCurve(bx + bw, by, bx + bw, by + br);
+        ctx.lineTo(bx + bw, by + bh - br);
+        qCurve(bx + bw, by + bh, bx + bw - br, by + bh);
+        // Cola triangular apuntando hacia la cabeza del personaje
+        ctx.lineTo(274, by + bh);
+        ctx.lineTo(256, by + bh + 30);
+        ctx.lineTo(238, by + bh);
+        ctx.lineTo(bx + br, by + bh);
+        qCurve(bx, by + bh, bx, by + bh - br);
+        ctx.lineTo(bx, by + br);
+        qCurve(bx, by, bx + br, by);
+        if (typeof ctx.closePath === 'function') ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Dividir texto negro legible en hasta 2 líneas
+        ctx.fillStyle = '#0f172a';
+        ctx.font = 'bold 26px "Plus Jakarta Sans", Arial, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        const words = cleanText.split(/\s+/);
+        let line1 = '';
+        let line2 = '';
+        for (let i = 0; i < words.length; i++) {
+          const test1 = line1 ? (line1 + ' ' + words[i]) : words[i];
+          if (test1.length <= 32 || !line1) {
+            line1 = test1;
+          } else {
+            line2 = words.slice(i).join(' ');
+            if (line2.length > 34) line2 = line2.slice(0, 31) + '...';
+            break;
+          }
+        }
+
+        if (line2) {
+          ctx.fillText(line1, 256, 62);
+          ctx.fillText(line2, 256, 102);
+        } else {
+          ctx.fillText(line1, 256, 80);
+        }
+
+        tex = new THREE.CanvasTexture(canvas);
+      }
+    }
+
+    const spriteMat = new THREE.SpriteMaterial({
+      map: tex,
+      color: 0xffffff,
+      transparent: true,
+      opacity: 1.0,
+      depthTest: false,
+      depthWrite: false
+    });
+    const sprite = new THREE.Sprite(spriteMat);
+    sprite.scale.set(1.65, 0.62, 1);
+    sprite.renderOrder = 999;
+
+    // Posicionar justo encima de la cabeza del hablante (y = 1.65 para sentados, y = 2.05 para el mesero)
+    if (who === 'waiter') {
+      const wx = (waiterGroup && waiterGroup.position) ? waiterGroup.position.x : WAITER_TABLE_POS.x;
+      const wz = (waiterGroup && waiterGroup.position) ? waiterGroup.position.z : WAITER_TABLE_POS.z;
+      sprite.position.set(wx, 2.05, wz);
+    } else if (who === 'partner') {
+      sprite.position.set(1.25, 1.65, 0);
+    } else {
+      sprite.position.set(-1.25, 1.65, 0);
+    }
+
+    activeScene.add(sprite);
+    const nowMs = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    activeOverheadBubbles[who] = {
+      sprite: sprite,
+      targetWho: who,
+      createdAt: nowMs,
+      durationMs: 8000,
+      text: cleanText
+    };
+
+    if (renderer && scene && camera) {
+      renderer.render(scene, camera);
+    }
+    return sprite;
+  }
+  global.showRobloxOverheadBubble = showRobloxOverheadBubble;
+
   function buildScenarioWorld(targetScene, scenarioKey) {
     const activeScene = targetScene || scene;
     if (!activeScene || typeof THREE === 'undefined') return;
@@ -2932,8 +3341,15 @@ ensureOrbitControls();
     animatedSteamRings = [];
     animatedWindowLeaves = [];
     spaceOrbitalEntries = [];
+    waiterGroup = null;
     waiterNpcGroup = null;
+    waiterLeftLeg = null;
+    waiterRightLeg = null;
+    waiterLeftArm = null;
     waiterRightArm = null;
+    playerSeatedGroup = null;
+    partnerSeatedGroup = null;
+    activeOverheadBubbles = { player: null, partner: null, waiter: null };
     candleFlameLight = null;
     candleFlameMesh = null;
 
@@ -2964,18 +3380,26 @@ ensureOrbitControls();
       createSpaceDome(scenarioDynamicRoot);
 
       if (key === 'dating') {
-        // Terraza nocturna estrellada (#070b14) con piso de bistró y horizonte iluminado
+        // Terraza nocturna estrellada (#070b14) con piso de bistró PBR, alfombra borgoña y estación de servicio del Mesero al fondo
+        const PhysicalMat = THREE.MeshPhysicalMaterial || THREE.MeshStandardMaterial;
         const terraceFloor = new THREE.Mesh(
           new THREE.CylinderGeometry(11.5, 12.0, 0.35, 48),
-          new THREE.MeshStandardMaterial({ color: 0x1e1b2e, roughness: 0.55, metalness: 0.15 })
+          new PhysicalMat({ color: 0x1e1b2e, roughness: 0.25, metalness: 0.15, clearcoat: 0.6 })
         );
         terraceFloor.position.set(0, -0.17, -1.0);
         const rugCircle = new THREE.Mesh(
-          new THREE.CylinderGeometry(3.2, 3.2, 0.03, 36),
-          new THREE.MeshStandardMaterial({ color: 0x881337, roughness: 0.75 })
+          new THREE.CylinderGeometry(3.0, 3.0, 0.03, 36),
+          SHARED_MATERIALS.burgundyCloth || new PhysicalMat({ color: 0x881337, roughness: 0.72 })
         );
-        rugCircle.position.set(0, 0.015, -0.5);
-        scenarioDynamicRoot.add(terraceFloor, rugCircle);
+        rugCircle.position.set(0, 0.015, 0);
+
+        // Estación de servicio del Mesero en WAITER_STATION_POS (x: 3.35, z: -2.4, lejos de las sillas)
+        const stationPodium = new THREE.Mesh(
+          new THREE.BoxGeometry(0.62, 1.05, 0.46),
+          SHARED_MATERIALS.woodWalnut || new PhysicalMat({ color: 0x3b1d0e, roughness: 0.25, clearcoat: 0.6 })
+        );
+        stationPodium.position.set(3.45, 0.525, -2.4);
+        scenarioDynamicRoot.add(terraceFloor, rugCircle, stationPodium);
       } else if (key === 'space') {
         // Cielo profundo (#020617) con 400 estrellas brillantes (Points) + anillos orbitales guía alrededor del Sol
         const starPositions = new Float32Array(400 * 3);
@@ -3003,18 +3427,18 @@ ensureOrbitControls();
           scenarioDynamicRoot.add(orbitLine);
         });
       } else {
-        // Suelo arquitectónico diferenciado: Piso cerámico claro (Supermarket), Lobby de mármol (Hotel), Comedor gourmet (Fine Restaurant)
+        // Suelo arquitectónico diferenciado con materiales PBR (clearcoat: 0.6, roughness: 0.25)
+        const PhysicalMat = THREE.MeshPhysicalMaterial || THREE.MeshStandardMaterial;
         const floorColor = key === 'supermarket' ? 0xe2e8f0 : (key === 'hotel' ? 0xd6d3d1 : 0x3f1d28);
-        const floorRough = key === 'supermarket' ? 0.22 : (key === 'hotel' ? 0.15 : 0.35);
         const floorMesh = new THREE.Mesh(
           new THREE.BoxGeometry(18, 0.24, 15),
-          new THREE.MeshStandardMaterial({ color: floorColor, roughness: floorRough, metalness: 0.18 })
+          new PhysicalMat({ color: floorColor, roughness: 0.25, metalness: 0.18, clearcoat: 0.6 })
         );
         floorMesh.position.set(0, -0.12, -0.5);
         const wallColor = key === 'supermarket' ? 0x1e293b : (key === 'hotel' ? 0x1e1b4b : 0x1c1917);
         const backWall = new THREE.Mesh(
           new THREE.BoxGeometry(18, 4.6, 0.28),
-          new THREE.MeshStandardMaterial({ color: wallColor, roughness: 0.65 })
+          new PhysicalMat({ color: wallColor, roughness: 0.45, clearcoat: 0.3 })
         );
         backWall.position.set(0, 2.3, -7.8);
         scenarioDynamicRoot.add(floorMesh, backWall);
@@ -3036,6 +3460,13 @@ ensureOrbitControls();
           }
         }
       });
+
+      if (key === 'dating') {
+        rebuildDatingSeatedAvatars();
+        if (typeof global.setWaiterState === 'function') {
+          global.setWaiterState('approaching', { silent: true });
+        }
+      }
     }
 
     updateProgressHudCounter();
@@ -3338,196 +3769,579 @@ ensureOrbitControls();
     }
   }
 
-  global.triggerWaiterEvent = function (phaseOverride) {
-    if (typeof phaseOverride === 'number' && phaseOverride >= 1 && phaseOverride <= 3) {
-      dateNightState.phase = phaseOverride;
+  // ============================================================================
+  // CONTROL DE ESTADO Y MOVIMIENTO DINÁMICO DEL MESERO (window.setWaiterState)
+  // ============================================================================
+  const waiterChatHistory = [
+    {
+      sender: 'waiter',
+      text: "Good evening! Welcome to Starlight Bistro. What can I get you two to drink tonight?",
+      es: "¡Buenas noches! Bienvenidos a Starlight Bistro. ¿Qué les puedo ofrecer de tomar esta noche?"
     }
-    const panel = typeof document !== 'undefined' ? document.getElementById('world3dDateSimulatorPanel') : null;
-    if (panel) {
-      panel.classList.remove('hidden');
-      panel.style.display = 'block';
+  ];
+
+  const partnerChatHistory = [
+    {
+      sender: 'partner',
+      text: "This rooftop terrace is so romantic! Look at the illuminated city skyline behind us.",
+      es: "¡Esta terraza es tan romántica! Mira los edificios iluminados de la ciudad detrás de nosotros."
+    }
+  ];
+
+  function renderDatingWaiterChatMessages() {
+    if (typeof document === 'undefined') return;
+    const box = document.getElementById('datingWaiterChatHistory');
+    if (!box) return;
+    box.innerHTML = waiterChatHistory.map(msg => {
+      if (msg.sender === 'waiter') {
+        return `
+          <div class="p-2 rounded-xl bg-slate-900/95 border border-amber-500/35 text-[11px] leading-snug space-y-0.5">
+            <div class="font-extrabold text-amber-300 text-[10px]">🤵 Waiter NPC</div>
+            <div class="text-white font-semibold">"${msg.text}"</div>
+            ${msg.es ? `<div class="text-[10px] text-slate-400 italic">${msg.es}</div>` : ''}
+          </div>
+        `;
+      }
+      return `
+        <div class="p-2 rounded-xl bg-sky-950/70 border border-sky-500/40 text-[11px] leading-snug text-right">
+          <div class="font-extrabold text-sky-300 text-[10px]">👤 Tú</div>
+          <div class="text-white font-semibold">"${msg.text}"</div>
+        </div>
+      `;
+    }).join('');
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function renderDatingPartnerChatMessages() {
+    if (typeof document === 'undefined') return;
+    const box = document.getElementById('datingPartnerChatHistory');
+    if (!box) return;
+    const partnerName = getConnectedPartnerName();
+    box.innerHTML = partnerChatHistory.map(msg => {
+      if (msg.sender === 'partner') {
+        return `
+          <div class="p-2 rounded-xl bg-rose-950/60 border border-rose-500/40 text-[11px] leading-snug space-y-0.5">
+            <div class="font-extrabold text-rose-300 text-[10px]">❤️ ${partnerName}</div>
+            <div class="text-white font-semibold">"${msg.text}"</div>
+            ${msg.es ? `<div class="text-[10px] text-rose-200/75 italic">${msg.es}</div>` : ''}
+          </div>
+        `;
+      }
+      return `
+        <div class="p-2 rounded-xl bg-purple-950/70 border border-purple-500/40 text-[11px] leading-snug text-right">
+          <div class="font-extrabold text-purple-300 text-[10px]">👤 Tú</div>
+          <div class="text-white font-semibold">"${msg.text}"</div>
+        </div>
+      `;
+    }).join('');
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function setWaiterState(state, options) {
+    const opts = options || {};
+    const normalized = (state === 'leaving' || state === 'station') ? 'leaving' : 'approaching';
+    waiterCurrentState = normalized;
+
+    if (waiterAutoLeaveTimer) {
+      clearTimeout(waiterAutoLeaveTimer);
+      waiterAutoLeaveTimer = null;
     }
 
-    // Animar al Mesero 3D acercándose a la mesa en las 3 fases
-    if (waiterNpcGroup && typeof THREE !== 'undefined') {
-      const stageOffsets = {
-        1: { x: 1.28, y: 0, z: -0.35, rotY: -1.1 },
-        2: { x: 1.12, y: 0, z: -0.52, rotY: -1.35 },
-        3: { x: 1.18, y: 0, z: -0.25, rotY: -0.95 }
-      };
-      const target = stageOffsets[dateNightState.phase] || stageOffsets[1];
-      waiterLerp.targetPos.set(target.x, target.y, target.z);
-      waiterLerp.targetRotY = target.rotY;
-      waiterLerp.active = true;
-    }
-
-    // Enfocar suavemente la cámara hacia la mesa y el mesero en el escenario dating
-    if (currentScenarioKey === 'dating') {
-      transitionCameraTo({ x: 0.4, y: 3.1, z: 3.8 }, { x: 0.35, y: 1.15, z: -0.5 });
-    }
-
-    renderDateNightPhaseUI();
-    const pInfo = WAITER_PHASES[dateNightState.phase] || WAITER_PHASES[1];
-    speakWorld3DText(pInfo.waiterLine);
-  };
-
-  global.openDateNightSimulator = function () {
-    if (currentScenarioKey !== 'dating' && currentScenarioKey !== 'restaurant') {
-      switch3DScenario('dating');
-    }
-    dateNightState.completed = false;
-    global.triggerWaiterEvent(dateNightState.phase || 1);
-  };
-
-  global.closeDateNightSimulator = function () {
-    const panel = typeof document !== 'undefined' ? document.getElementById('world3dDateSimulatorPanel') : null;
-    if (panel) {
-      panel.classList.add('hidden');
-      panel.style.display = 'none';
-    }
-  };
-
-  global.setDatePartnerMode = function (mode) {
-    dateNightState.partnerMode = mode === 'partner' ? 'partner' : 'ai';
-    if (dateNightState.partnerMode === 'partner') {
-      const current = localStorage.getItem('mastereng_active_date_partner');
-      if (!current && typeof window !== 'undefined' && typeof window.prompt === 'function') {
-        const entered = window.prompt('Escribe el nombre o usuario de tu Pareja / Amigo para la cita:', 'Mi Pareja');
-        if (entered && entered.trim()) {
-          localStorage.setItem('mastereng_active_date_partner', entered.trim());
-        }
+    if (normalized === 'approaching') {
+      // Se acerca caminando a WAITER_TABLE_POS = { x: 0.0, y: 0, z: -1.45 }, mirando hacia la pareja en rotation.y = 0
+      waiterTargetPos = { x: WAITER_TABLE_POS.x, y: WAITER_TABLE_POS.y, z: WAITER_TABLE_POS.z };
+      if (typeof THREE !== 'undefined') {
+        waiterLerp.targetPos.set(WAITER_TABLE_POS.x, WAITER_TABLE_POS.y, WAITER_TABLE_POS.z);
+        waiterLerp.targetRotY = 0;
+        waiterLerp.active = true;
+      }
+      const statusBadge = typeof document !== 'undefined' ? document.getElementById('datingWaiterStatusBadge') : null;
+      if (statusBadge) {
+        statusBadge.textContent = '🟢 En la mesa';
+        statusBadge.className = 'px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/50 text-[9px] font-extrabold text-emerald-300';
+      }
+      if (!opts.silent) {
+        const greetLine = opts.customReply || "Here I am! How may I assist you two tonight?";
+        showRobloxOverheadBubble('waiter', greetLine);
+        speakWorld3DText(greetLine);
+      }
+    } else {
+      // Se despide cortésmente y camina de regreso a WAITER_STATION_POS = { x: 2.8, y: 0, z: -2.4 }
+      const leaveLine = opts.customReply || "Right away! I'll give you two some privacy while I prepare your order.";
+      waiterTargetPos = { x: WAITER_STATION_POS.x, y: WAITER_STATION_POS.y, z: WAITER_STATION_POS.z };
+      if (typeof THREE !== 'undefined') {
+        waiterLerp.targetPos.set(WAITER_STATION_POS.x, WAITER_STATION_POS.y, WAITER_STATION_POS.z);
+        waiterLerp.targetRotY = -0.45;
+        waiterLerp.active = true;
+      }
+      const statusBadge = typeof document !== 'undefined' ? document.getElementById('datingWaiterStatusBadge') : null;
+      if (statusBadge) {
+        statusBadge.textContent = '🚶 En estación (Privacidad)';
+        statusBadge.className = 'px-2 py-0.5 rounded-full bg-slate-800 border border-slate-600 text-[9px] font-bold text-slate-300';
+      }
+      if (!opts.silent) {
+        waiterChatHistory.push({
+          sender: 'waiter',
+          text: leaveLine,
+          es: '¡En seguida! Les daré privacidad a los dos mientras preparo su pedido.'
+        });
+        renderDatingWaiterChatMessages();
+        showRobloxOverheadBubble('waiter', leaveLine);
+        speakWorld3DText(leaveLine);
       }
     }
-    renderDateNightPhaseUI();
-  };
+    return waiterCurrentState;
+  }
+  global.setWaiterState = setWaiterState;
 
-  global.applyDateSuggestion = function (idx) {
-    const pInfo = WAITER_PHASES[dateNightState.phase] || WAITER_PHASES[1];
-    const text = (pInfo.suggestions && pInfo.suggestions[idx]) || '';
-    const inputEl = typeof document !== 'undefined' ? document.getElementById('dateNightTranscriptInput') : null;
-    if (inputEl && text) {
-      inputEl.value = text;
-      dateNightState.responses[dateNightState.phase] = text;
-      speakWorld3DText(text);
+  function setPlayerAvatarGender(gender) {
+    const g = gender === 'female' ? 'female' : 'male';
+    try { localStorage.setItem('mastereng_player_gender', g); } catch (e) {}
+    rebuildDatingSeatedAvatars();
+    updateDatingGenderButtonsUI();
+  }
+  global.setPlayerAvatarGender = setPlayerAvatarGender;
+
+  function setPartnerAvatarGender(gender) {
+    const g = (gender === 'male' || gender === 'waiting') ? gender : 'female';
+    try { localStorage.setItem('mastereng_partner_gender', g); } catch (e) {}
+    rebuildDatingSeatedAvatars();
+    updateDatingGenderButtonsUI();
+  }
+  global.setPartnerAvatarGender = setPartnerAvatarGender;
+
+  function updateDatingGenderButtonsUI() {
+    if (typeof document === 'undefined') return;
+    const pGender = getSavedPlayerGender();
+    const cGender = getSavedPartnerGender();
+
+    const btnPMale = document.getElementById('btnPlayerGenderMale');
+    const btnPFemale = document.getElementById('btnPlayerGenderFemale');
+    if (btnPMale && btnPFemale) {
+      btnPMale.className = pGender === 'male'
+        ? 'px-2 py-1 rounded-lg bg-sky-600 text-white text-[10px] font-extrabold border border-sky-300 shadow cursor-pointer'
+        : 'px-2 py-1 rounded-lg bg-slate-800 text-slate-300 hover:text-white text-[10px] font-bold border border-slate-700 cursor-pointer';
+      btnPFemale.className = pGender === 'female'
+        ? 'px-2 py-1 rounded-lg bg-pink-600 text-white text-[10px] font-extrabold border border-pink-300 shadow cursor-pointer'
+        : 'px-2 py-1 rounded-lg bg-slate-800 text-slate-300 hover:text-white text-[10px] font-bold border border-slate-700 cursor-pointer';
     }
-  };
 
-  global.selectDateBillOption = function (choice) {
-    dateNightState.billChoice = choice;
-    const inputEl = typeof document !== 'undefined' ? document.getElementById('dateNightTranscriptInput') : null;
-    const sample = choice === 'Split the bill'
-      ? "Thank you! Everything was wonderful. We would like to split the bill equally, please."
-      : "This dinner was amazing! I would love to treat my partner tonight—here is my card.";
-    if (inputEl) {
-      inputEl.value = sample;
-      dateNightState.responses[3] = sample;
+    const btnCFemale = document.getElementById('btnPartnerGenderFemale');
+    const btnCMale = document.getElementById('btnPartnerGenderMale');
+    const btnCWait = document.getElementById('btnPartnerGenderWaiting');
+    if (btnCFemale && btnCMale && btnCWait) {
+      btnCFemale.className = cGender === 'female'
+        ? 'px-2 py-1 rounded-lg bg-rose-600 text-white text-[10px] font-extrabold border border-rose-300 shadow cursor-pointer'
+        : 'px-2 py-1 rounded-lg bg-slate-800 text-slate-300 hover:text-white text-[10px] font-bold border border-slate-700 cursor-pointer';
+      btnCMale.className = cGender === 'male'
+        ? 'px-2 py-1 rounded-lg bg-indigo-600 text-white text-[10px] font-extrabold border border-indigo-300 shadow cursor-pointer'
+        : 'px-2 py-1 rounded-lg bg-slate-800 text-slate-300 hover:text-white text-[10px] font-bold border border-slate-700 cursor-pointer';
+      btnCWait.className = cGender === 'waiting'
+        ? 'px-2 py-1 rounded-lg bg-amber-600 text-white text-[10px] font-extrabold border border-amber-300 shadow cursor-pointer'
+        : 'px-2 py-1 rounded-lg bg-slate-800 text-slate-300 hover:text-white text-[10px] font-bold border border-slate-700 cursor-pointer';
     }
-    speakWorld3DText(sample);
-  };
+  }
 
-  global.toggleDateVoiceInput = function () {
+  function sendDatingWaiterMessage(customText) {
+    const inputEl = typeof document !== 'undefined' ? document.getElementById('datingWaiterInput') : null;
+    const rawText = customText !== undefined ? String(customText) : (inputEl ? inputEl.value : '');
+    const text = rawText.trim();
+    if (!text) return;
+    if (inputEl && customText === undefined) inputEl.value = '';
+
+    waiterChatHistory.push({ sender: 'player', text: text });
+    renderDatingWaiterChatMessages();
+    showRobloxOverheadBubble('player', text);
+
+    const lower = text.toLowerCase();
+    const isDismissing =
+      lower.includes('thank you') ||
+      lower.includes('give us a moment') ||
+      lower.includes('go away') ||
+      lower.includes("that's all") ||
+      lower.includes('thats all');
+
+    if (isDismissing) {
+      setWaiterState('leaving');
+      return;
+    }
+
+    // Si pide algo o llama al mesero ("waiter", "menu", "order", "water", "wine", "bill", "check", "help", etc.)
+    setWaiterState('approaching', { silent: true });
+
+    let replyEn = "Right away! I'll bring that to your table in just a moment.";
+    let replyEs = "¡En seguida! Se lo traeré a su mesa en un momento.";
+
+    if (lower.includes('bill') || lower.includes('check') || lower.includes('split') || lower.includes('treat')) {
+      replyEn = "Certainly! Here is your bill folder. Thank you for dining at Starlight Bistro tonight!";
+      replyEs = "¡Por supuesto! Aquí está su carpeta con la cuenta. ¡Gracias por cenar en Starlight Bistro!";
+    } else if (lower.includes('wine') || lower.includes('water') || lower.includes('cider') || lower.includes('drink')) {
+      replyEn = "Wonderful choice! Two glasses of our finest vintage and sparkling water coming right up.";
+      replyEs = "¡Excelente elección! Dos copas de nuestra mejor cosecha y agua mineral en camino.";
+    } else if (lower.includes('menu') || lower.includes('recommend') || lower.includes('special')) {
+      replyEn = "Tonight's chef special is grilled herb steak or Atlantic salmon with warm chocolate lava cake!";
+      replyEs = "¡El especial del chef hoy es filete a las finas hierbas o salmón con pastel de chocolate tibio!";
+    } else if (lower.includes('steak') || lower.includes('salmon') || lower.includes('dessert') || lower.includes('chocolate') || lower.includes('order')) {
+      replyEn = "Right away! I'll give you two some privacy while I prepare your order.";
+      replyEs = "¡En seguida! Les daré privacidad mientras preparo su pedido.";
+    }
+
+    waiterChatHistory.push({ sender: 'waiter', text: replyEn, es: replyEs });
+    renderDatingWaiterChatMessages();
+    showRobloxOverheadBubble('waiter', replyEn);
+    speakWorld3DText(replyEn);
+
+    if (typeof global.addExp === 'function') {
+      global.addExp(10, 'Orden en Inglés al Mesero IA (Romantic Date 3D)');
+    }
+
+    // Después de tomar el pedido, el Mesero regresa a su estación para dejar hablar en privado con la cita
+    if (waiterAutoLeaveTimer) clearTimeout(waiterAutoLeaveTimer);
+    waiterAutoLeaveTimer = setTimeout(() => {
+      waiterTargetPos = { x: WAITER_STATION_POS.x, y: WAITER_STATION_POS.y, z: WAITER_STATION_POS.z };
+      if (typeof THREE !== 'undefined') {
+        waiterLerp.targetPos.set(WAITER_STATION_POS.x, WAITER_STATION_POS.y, WAITER_STATION_POS.z);
+        waiterLerp.targetRotY = -0.45;
+        waiterLerp.active = true;
+      }
+      waiterCurrentState = 'leaving';
+      const statusBadge = typeof document !== 'undefined' ? document.getElementById('datingWaiterStatusBadge') : null;
+      if (statusBadge) {
+        statusBadge.textContent = '🚶 En estación (Privacidad)';
+        statusBadge.className = 'px-2 py-0.5 rounded-full bg-slate-800 border border-slate-600 text-[9px] font-bold text-slate-300';
+      }
+    }, 4200);
+  }
+  global.sendDatingWaiterMessage = sendDatingWaiterMessage;
+
+  function sendDatingPartnerMessage(customText) {
+    const inputEl = typeof document !== 'undefined' ? document.getElementById('datingPartnerInput') : null;
+    const rawText = customText !== undefined ? String(customText) : (inputEl ? inputEl.value : '');
+    const text = rawText.trim();
+    if (!text) return;
+    if (inputEl && customText === undefined) inputEl.value = '';
+
+    // Asegurar que la cita esté sentada en la silla derecha si estaba esperando
+    if (getSavedPartnerGender() === 'waiting') {
+      setPartnerAvatarGender('female');
+    }
+
+    partnerChatHistory.push({ sender: 'player', text: text });
+    renderDatingPartnerChatMessages();
+    showRobloxOverheadBubble('player', text);
+
+    const lower = text.toLowerCase();
+    // Si dentro del chat también menciona palabras para el mesero ("waiter", "menu", "order", "water", "wine", "bill", "check", "help")
+    if (/\b(waiter|menu|order|water|wine|bill|check|help)\b/i.test(lower)) {
+      setWaiterState('approaching', { silent: true });
+    } else if (lower.includes('thank you') || lower.includes('give us a moment') || lower.includes('go away') || lower.includes("that's all")) {
+      setWaiterState('leaving');
+    }
+
+    const aiReplies = [
+      {
+        en: "I love talking with you in English! You make this starry night feel magical.",
+        es: "¡Me encanta hablar contigo en inglés! Haces que esta noche estrellada se sienta mágica."
+      },
+      {
+        en: "That is so sweet! Tell me, what is your favorite dream trip we should take together?",
+        es: "¡Qué lindo! Dime, ¿cuál es el viaje de tus sueños que deberíamos hacer juntos?"
+      },
+      {
+        en: "Cheers to us! Practicing English at this romantic bistro with you is my favorite part of the day.",
+        es: "¡Salud por nosotros! Practicar inglés en este bistró contigo es mi parte favorita del día."
+      },
+      {
+        en: "You have such a great smile and your English sounds more fluent every single day!",
+        es: "¡Tienes una sonrisa increíble y tu inglés suena más fluido cada día!"
+      }
+    ];
+    const picked = aiReplies[partnerChatHistory.length % aiReplies.length];
+
+    setTimeout(() => {
+      partnerChatHistory.push({ sender: 'partner', text: picked.en, es: picked.es });
+      renderDatingPartnerChatMessages();
+      showRobloxOverheadBubble('partner', picked.en);
+      speakWorld3DText(picked.en);
+    }, 950);
+
+    if (typeof global.addExp === 'function') {
+      global.addExp(10, 'Conversación en Inglés con tu Cita (Romantic Date 3D)');
+    }
+  }
+  global.sendDatingPartnerMessage = sendDatingPartnerMessage;
+
+  function startDatingVoiceInput(targetChat) {
     if (typeof window === 'undefined') return;
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const micBtn = document.getElementById('dateNightMicBtn');
-    const inputEl = document.getElementById('dateNightTranscriptInput');
+    const inputId = targetChat === 'waiter' ? 'datingWaiterInput' : 'datingPartnerInput';
+    const inputEl = document.getElementById(inputId);
 
     if (!SpeechRec) {
       if (typeof global.showFloatingToast === 'function') {
-        global.showFloatingToast('🎙️ Tu navegador no soporta dictado directo; puedes escribir o editar tu respuesta en inglés.', '⌨️');
+        global.showFloatingToast('🎙️ Dictado de voz no disponible en este navegador; escribe tu mensaje en inglés.', '⌨️');
       }
       if (inputEl) inputEl.focus();
       return;
     }
 
-    if (dateNightState.isRecording && dateNightState.recognition) {
-      try { dateNightState.recognition.stop(); } catch (e) {}
-      dateNightState.isRecording = false;
-      if (micBtn) micBtn.innerHTML = '<span>🎤 Hablar en Inglés</span>';
-      return;
-    }
-
     const rec = new SpeechRec();
     rec.lang = 'en-US';
-    rec.interimResults = true;
+    rec.interimResults = false;
     rec.maxAlternatives = 1;
-    dateNightState.recognition = rec;
-    dateNightState.isRecording = true;
-    if (micBtn) micBtn.innerHTML = '<span class="animate-pulse text-rose-300">🔴 Escuchando... (Toca para detener)</span>';
-
+    if (typeof global.showFloatingToast === 'function') {
+      global.showFloatingToast('🎤 Escuchando en inglés... Habla ahora.', '🎙️');
+    }
     rec.onresult = function (event) {
       let transcript = '';
       for (let i = 0; i < event.results.length; i++) {
         transcript += event.results[i][0].transcript;
       }
-      if (inputEl && transcript) {
-        inputEl.value = transcript;
-        dateNightState.responses[dateNightState.phase] = transcript;
+      if (transcript.trim()) {
+        if (inputEl) inputEl.value = transcript.trim();
+        if (targetChat === 'waiter') {
+          sendDatingWaiterMessage(transcript.trim());
+        } else {
+          sendDatingPartnerMessage(transcript.trim());
+        }
       }
     };
-    rec.onerror = function () {
-      dateNightState.isRecording = false;
-      if (micBtn) micBtn.innerHTML = '<span>🎤 Hablar en Inglés</span>';
-    };
-    rec.onend = function () {
-      dateNightState.isRecording = false;
-      if (micBtn) micBtn.innerHTML = '<span>🎤 Hablar en Inglés</span>';
-    };
     try { rec.start(); } catch (e) {}
+  }
+  global.startDatingVoiceInput = startDatingVoiceInput;
+
+  // Modal de Invitación de Amigo o Pareja (De tu Lista de Contactos o por ID Único MENG-XXXX)
+  function getStoredFriendsListForDating() {
+    const list = [];
+    try {
+      const keys = ['mastereng_friends_list', 'english_app_friends', 'mastereng_contacts'];
+      keys.forEach(k => {
+        const raw = localStorage.getItem(k);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            parsed.forEach(item => {
+              if (item && (item.name || item.username || item.id)) {
+                list.push({
+                  id: item.id || item.code || 'MENG-7742',
+                  name: item.name || item.username || 'Amigo Conectado',
+                  gender: item.gender || 'female'
+                });
+              }
+            });
+          }
+        }
+      });
+    } catch (e) {}
+    if (list.length === 0) {
+      list.push(
+        { id: 'MENG-2048', name: 'Sofia (Pareja / BFF)', gender: 'female' },
+        { id: 'MENG-5190', name: 'Alex (Study Partner)', gender: 'male' },
+        { id: 'MENG-8831', name: 'Emma (C1 Tutor Friend)', gender: 'female' }
+      );
+    }
+    return list;
+  }
+
+  function openDatingInviteModal() {
+    if (typeof document === 'undefined') return;
+    let modal = document.getElementById('datingInviteModal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'datingInviteModal';
+      modal.style.cssText = 'position: fixed; inset: 0; z-index: 99999; background: rgba(2, 6, 23, 0.82); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 16px;';
+      document.body.appendChild(modal);
+    }
+    const friends = getStoredFriendsListForDating();
+    modal.innerHTML = `
+      <div class="bg-slate-950 border-2 border-rose-500/80 rounded-3xl p-5 max-w-md w-full text-white shadow-2xl space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+          <div>
+            <h3 class="text-base font-black text-rose-300 flex items-center gap-1.5">💌 Invitar Amigo o Pareja a la Mesa 3D</h3>
+            <p class="text-[11px] text-slate-400">Elige de tu lista de contactos o ingresa su ID Único (MENG-XXXX)</p>
+          </div>
+          <button type="button" onclick="window.closeDatingInviteModal()"
+            class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold cursor-pointer">&times;</button>
+        </div>
+
+        <div class="space-y-1.5">
+          <div class="text-[11px] font-extrabold uppercase tracking-wider text-rose-200">👥 Tus Contactos Agregados</div>
+          <div class="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+            ${friends.map(f => `
+              <div class="flex items-center justify-between p-2.5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-rose-500/50 transition">
+                <div>
+                  <div class="text-xs font-extrabold text-white">${f.name}</div>
+                  <div class="text-[10px] font-mono text-sky-400">ID: ${f.id}</div>
+                </div>
+                <button type="button" onclick="window.confirmDatingPartnerInvite('${f.id}', '${f.name.replace(/'/g, '')}', '${f.gender || 'female'}')"
+                  class="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-extrabold shadow cursor-pointer">
+                  💌 Invitar y Sentar
+                </button>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="space-y-2 pt-2 border-t border-slate-800">
+          <label class="block text-[11px] font-extrabold uppercase tracking-wider text-amber-300">🔑 O Invitar por ID Único (MENG-XXXX)</label>
+          <div class="flex items-center gap-2">
+            <input id="datingInviteCustomIdInput" type="text" placeholder="Ej: MENG-4821 o Nombre"
+              class="flex-1 rounded-xl bg-slate-900 border border-slate-700 focus:border-rose-400 text-xs text-white px-3 py-2 focus:outline-none" />
+            <button type="button" onclick="window.submitCustomDatingInviteId()"
+              class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white text-xs font-extrabold shadow cursor-pointer">
+              Enviar Invitación
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+    modal.style.display = 'flex';
+  }
+  global.openDatingInviteModal = openDatingInviteModal;
+
+  function closeDatingInviteModal() {
+    const modal = typeof document !== 'undefined' ? document.getElementById('datingInviteModal') : null;
+    if (modal) modal.style.display = 'none';
+  }
+  global.closeDatingInviteModal = closeDatingInviteModal;
+
+  function confirmDatingPartnerInvite(targetId, targetName, genderHint) {
+    const cleanId = (targetId || 'MENG-1024').trim();
+    const cleanName = (targetName || cleanId).trim();
+    try {
+      localStorage.setItem('mastereng_active_date_partner', cleanName);
+      localStorage.setItem('mastereng_couple_partner_name', cleanName);
+      localStorage.setItem('mastereng_active_date_partner_id', cleanId);
+      const nextGender = (genderHint === 'male' || genderHint === 'female')
+        ? genderHint
+        : (getSavedPartnerGender() === 'waiting' ? 'female' : getSavedPartnerGender());
+      localStorage.setItem('mastereng_partner_gender', nextGender);
+    } catch (e) {}
+
+    // Enviar invitación real al Buzón y al Chat de la app si existe window.sendGlobalAppInvite
+    if (typeof window !== 'undefined' && typeof window.sendGlobalAppInvite === 'function') {
+      try {
+        window.sendGlobalAppInvite(cleanId, {
+          type: 'romantic_date_3d',
+          scenario: 'dating',
+          partnerName: cleanName,
+          message: `🕯️ ¡Te invité a nuestra mesa para dos en Romantic Date & Bistro 3D! (${cleanId})`
+        });
+      } catch (e) {}
+    }
+
+    // Sentar el avatar de la cita inmediatamente en la silla derecha (x: 1.25, z: 0)
+    rebuildDatingSeatedAvatars();
+    updateDatingGenderButtonsUI();
+    closeDatingInviteModal();
+
+    const partnerTitleEl = typeof document !== 'undefined' ? document.getElementById('datingPartnerPanelNameBadge') : null;
+    if (partnerTitleEl) partnerTitleEl.textContent = cleanName;
+
+    const welcomeMsg = `Hi! I just joined your table (${cleanId}). Let's order something delicious in English!`;
+    partnerChatHistory.push({
+      sender: 'partner',
+      text: welcomeMsg,
+      es: `¡Hola! Me acabo de sentar en tu mesa (${cleanId}). ¡Pidamos algo delicioso en inglés!`
+    });
+    renderDatingPartnerChatMessages();
+    showRobloxOverheadBubble('partner', welcomeMsg);
+    speakWorld3DText(welcomeMsg);
+
+    if (typeof global.showFloatingToast === 'function') {
+      global.showFloatingToast(`💌 Invitación enviada a ${cleanName} (${cleanId}) al Buzón y Chat. ¡Ya está sentado(a) frente a ti!`, '💑');
+    }
+  }
+  global.confirmDatingPartnerInvite = confirmDatingPartnerInvite;
+
+  function submitCustomDatingInviteId() {
+    const input = typeof document !== 'undefined' ? document.getElementById('datingInviteCustomIdInput') : null;
+    const val = input ? input.value.trim() : '';
+    if (!val) return;
+    const isCode = /^MENG-/i.test(val);
+    const id = isCode ? val.toUpperCase() : `MENG-${Math.floor(1000 + Math.random() * 9000)}`;
+    const name = isCode ? `Invitado (${id})` : val;
+    confirmDatingPartnerInvite(id, name, getSavedPartnerGender() === 'male' ? 'male' : 'female');
+  }
+  global.submitCustomDatingInviteId = submitCustomDatingInviteId;
+
+  function toggleDatingDualPanelsVisibility(visible) {
+    if (typeof document === 'undefined') return;
+    const waiterPanel = document.getElementById('datingWaiterChatPanel');
+    const partnerPanel = document.getElementById('datingPartnerChatPanel');
+    const genderBar = document.getElementById('datingAvatarGenderSelectorBar');
+    const legacyPanel = document.getElementById('world3dDateSimulatorPanel');
+    if (legacyPanel) {
+      legacyPanel.classList.add('hidden');
+      legacyPanel.style.display = 'none';
+    }
+    [waiterPanel, partnerPanel, genderBar].forEach(el => {
+      if (!el) return;
+      if (visible) {
+        el.classList.remove('hidden');
+        el.style.display = el.id === 'datingAvatarGenderSelectorBar' ? 'flex' : 'block';
+      } else {
+        el.classList.add('hidden');
+        el.style.display = 'none';
+      }
+    });
+    if (visible) {
+      updateDatingGenderButtonsUI();
+      renderDatingWaiterChatMessages();
+      renderDatingPartnerChatMessages();
+    }
+  }
+
+  global.triggerWaiterEvent = function (phaseOverride) {
+    if (typeof phaseOverride === 'number' && phaseOverride >= 1 && phaseOverride <= 3) {
+      dateNightState.phase = phaseOverride;
+    }
+    if (currentScenarioKey === 'dating') {
+      toggleDatingDualPanelsVisibility(true);
+    }
+    setWaiterState('approaching', {
+      customReply: (WAITER_PHASES[dateNightState.phase] || WAITER_PHASES[1]).waiterLine
+    });
+  };
+
+  global.openDateNightSimulator = function () {
+    if (currentScenarioKey !== 'dating') {
+      switch3DScenario('dating');
+    } else {
+      toggleDatingDualPanelsVisibility(true);
+      setWaiterState('approaching');
+    }
+  };
+
+  global.closeDateNightSimulator = function () {
+    toggleDatingDualPanelsVisibility(false);
+  };
+
+  global.setDatePartnerMode = function (mode) {
+    dateNightState.partnerMode = mode === 'partner' ? 'partner' : 'ai';
+    if (mode === 'partner') openDatingInviteModal();
+  };
+
+  global.applyDateSuggestion = function (idx) {
+    const pInfo = WAITER_PHASES[dateNightState.phase] || WAITER_PHASES[1];
+    const text = (pInfo.suggestions && pInfo.suggestions[idx]) || '';
+    if (text) sendDatingWaiterMessage(text);
+  };
+
+  global.selectDateBillOption = function (choice) {
+    dateNightState.billChoice = choice;
+    const sample = choice === 'Split the bill'
+      ? "Thank you! Everything was wonderful. We would like to split the bill equally, please."
+      : "This dinner was amazing! I would love to treat my partner tonight—please bring the bill.";
+    sendDatingWaiterMessage(sample);
+  };
+
+  global.toggleDateVoiceInput = function () {
+    startDatingVoiceInput('waiter');
   };
 
   global.submitDatePhaseResponse = function () {
-    const inputEl = typeof document !== 'undefined' ? document.getElementById('dateNightTranscriptInput') : null;
-    const text = inputEl ? inputEl.value.trim() : '';
-    if (!text || text.split(/\s+/).length < 2) {
-      if (typeof global.showFloatingToast === 'function') {
-        global.showFloatingToast('💬 Escribe o graba al menos una frase en inglés (o toca una sugerencia) para responder al mesero.', '🕯️');
-      }
-      return;
-    }
-
-    dateNightState.responses[dateNightState.phase] = text;
-
-    if (dateNightState.phase < 3) {
-      const nextPhase = dateNightState.phase + 1;
-      if (typeof global.showFloatingToast === 'function') {
-        global.showFloatingToast(`✨ ¡Fase ${dateNightState.phase}/3 completada en inglés! El Mesero IA trae el siguiente tiempo...`, '🤵');
-      }
-      global.triggerWaiterEvent(nextPhase);
-    } else {
-      // Fase 3 completada: Otorgar +50 EXP personales y +1 Cita Semanal Completada
-      if (typeof global.addExp === 'function') {
-        global.addExp(50, 'Cita Romántica 3D en Inglés (Starlight Bistro)');
-      } else {
-        try {
-          const raw = localStorage.getItem('english_app_user_session') || localStorage.getItem('mastereng_user');
-          const user = raw ? JSON.parse(raw) : { username: 'Invitado', role: 'guest', exp: 0, rank: 'Bronce' };
-          user.exp = (parseInt(user.exp, 10) || 0) + 50;
-          localStorage.setItem('english_app_user_session', JSON.stringify(user));
-          localStorage.setItem('mastereng_user', JSON.stringify(user));
-          if (typeof global.updateUserExpDisplay === 'function') global.updateUserExpDisplay();
-        } catch (e) {}
-      }
-
-      const coupleProgress = (window.recordCoupleDateCompleted && window.recordCoupleDateCompleted()) || { weekly: 1, total: 1, rank: '🥉 Bronce Romántico' };
-      const rewardBanner = document.getElementById('dateNightRewardSummary');
-      if (rewardBanner) {
-        rewardBanner.classList.remove('hidden');
-        rewardBanner.style.display = 'block';
-        rewardBanner.innerHTML = `
-          <div class="p-3 rounded-2xl bg-gradient-to-r from-rose-950/90 via-purple-950/90 to-slate-900 border border-rose-400/60 text-xs text-white space-y-1">
-            <div class="font-black text-rose-300 text-sm">🎉 ¡Cita Romántica Completada en Inglés! (+50 EXP)</div>
-            <div class="text-emerald-300 font-bold">💑 +1 Cita Semanal Completada (${coupleProgress.weekly} esta semana • Total: ${coupleProgress.total})</div>
-            <div class="text-amber-300 font-semibold">🏆 Rango de Pareja: ${coupleProgress.rank} • Opción elegida: ${dateNightState.billChoice}</div>
-          </div>
-        `;
-      }
-
-      speakWorld3DText('Thank you very much! Have a wonderful romantic evening under the stars!');
-      if (typeof global.showFloatingToast === 'function') {
-        global.showFloatingToast(`💖 ¡Cita completada! +50 EXP y +1 Cita Semanal Completada (Rango: ${coupleProgress.rank})`, '💑');
-      }
-      dateNightState.phase = 1;
-    }
+    sendDatingWaiterMessage();
   };
 
   function ensureWorld3DHudElements(containerEl) {
@@ -3591,7 +4405,7 @@ ensureOrbitControls();
       }
     }
 
-    // Función deduplicadora que garantiza que SOLO EXISTA UNA BARRA SUPERIOR UNIFICADA (top: 70px; left: 16px; z-index: 80)
+    // Función deduplicadora que garantiza que SOLO EXISTA UNA BARRA SUPERIOR UNIFICADA
     window.deduplicateWorld3DBars = function() {
       const worldTour = document.getElementById('view-worldtour');
       if (!worldTour) return;
@@ -3632,7 +4446,7 @@ ensureOrbitControls();
       }
     };
 
-    // 5. BARRA SUPERIOR UNIFICADA (#unified-world3d-cam-bar, compat: top: 68px; left: 16px; z-index: 60;)
+    // BARRA SUPERIOR UNIFICADA (#unified-world3d-cam-bar)
     let cameraButtonsBar = document.getElementById('unified-world3d-cam-bar') || document.getElementById('world3dCameraControlsBar') || document.getElementById('world3dCameraButtonsBar');
     if (!cameraButtonsBar) {
       cameraButtonsBar = document.createElement('div');
@@ -3711,95 +4525,151 @@ ensureOrbitControls();
       window.deduplicateWorld3DBars();
     }
 
-    // 4. PANEL FLOTANTE COMPACTO: "💑 Modo Cita Interactiva (Date Night)"
-    let datePanel = document.getElementById('world3dDateSimulatorPanel');
-    if (!datePanel) {
-      datePanel = document.createElement('div');
-      datePanel.id = 'world3dDateSimulatorPanel';
-      datePanel.className = 'hidden';
-      datePanel.style.cssText = 'position: absolute; bottom: 16px; left: 16px; width: min(410px, calc(100vw - 32px)); max-height: calc(100vh - 165px); overflow-y: auto; z-index: 95; pointer-events: auto; display: none;';
-      datePanel.innerHTML = `
-        <div class="bg-slate-950/95 backdrop-blur-xl border-2 border-rose-500/70 rounded-3xl p-4 shadow-2xl text-white space-y-2.5">
-          <div class="flex items-center justify-between gap-2 border-b border-slate-800 pb-2">
+    // SELECTORES RÁPIDOS DE GÉNERO DE AVATAR EN LA BARRA SUPERIOR DE LA CITA (dating)
+    let genderBar = document.getElementById('datingAvatarGenderSelectorBar');
+    if (!genderBar) {
+      genderBar = document.createElement('div');
+      genderBar.id = 'datingAvatarGenderSelectorBar';
+      genderBar.className = 'hidden';
+      genderBar.style.cssText = 'position: absolute; top: 146px; left: 16px; right: 16px; z-index: 82; pointer-events: auto; display: none; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px;';
+      genderBar.innerHTML = `
+        <div class="flex flex-wrap items-center gap-2 bg-slate-950/92 backdrop-blur-md border border-rose-500/50 px-3 py-1.5 rounded-2xl shadow-xl text-white">
+          <span class="text-[11px] font-extrabold text-sky-300">👤 Mi Avatar:</span>
+          <button type="button" id="btnPlayerGenderMale" onclick="window.setPlayerAvatarGender('male')">♂️ Chico</button>
+          <button type="button" id="btnPlayerGenderFemale" onclick="window.setPlayerAvatarGender('female')">♀️ Chica</button>
+          <span class="text-slate-600 mx-1">|</span>
+          <span class="text-[11px] font-extrabold text-rose-300">💑 Avatar de mi Cita:</span>
+          <button type="button" id="btnPartnerGenderFemale" onclick="window.setPartnerAvatarGender('female')">♀️ Chica</button>
+          <button type="button" id="btnPartnerGenderMale" onclick="window.setPartnerAvatarGender('male')">♂️ Chico</button>
+          <button type="button" id="btnPartnerGenderWaiting" onclick="window.setPartnerAvatarGender('waiting')">⏳ Esperando invitado</button>
+        </div>
+      `;
+      containerEl.appendChild(genderBar);
+    }
+
+    // PANEL LATERAL IZQUIERDO COMPACTO: #datingWaiterChatPanel ("🤵 Chat con el Mesero")
+    let waiterChatPanel = document.getElementById('datingWaiterChatPanel');
+    if (!waiterChatPanel) {
+      waiterChatPanel = document.createElement('div');
+      waiterChatPanel.id = 'datingWaiterChatPanel';
+      waiterChatPanel.className = 'hidden';
+      waiterChatPanel.style.cssText = 'position: absolute; bottom: 16px; left: 16px; width: min(330px, 44vw); max-height: calc(100vh - 210px); z-index: 90; pointer-events: auto; display: none;';
+      waiterChatPanel.innerHTML = `
+        <div class="bg-slate-950/92 backdrop-blur-xl border-2 border-amber-500/65 rounded-3xl p-3.5 shadow-2xl text-white flex flex-col gap-2">
+          <div class="flex items-center justify-between gap-1 border-b border-slate-800 pb-2">
             <div>
-              <h4 class="text-sm font-black text-rose-300 flex items-center gap-1.5">
-                <span>💑 Modo Cita Interactiva (Date Night)</span>
-              </h4>
-              <p id="dateNightPhaseTitle" class="text-[10px] font-bold text-slate-400">Fase 1/3 • Bienvenida y Bebidas</p>
+              <h4 class="text-xs font-black text-amber-300 flex items-center gap-1">🤵 Chat con el Mesero</h4>
+              <p class="text-[10px] text-slate-400">Starlight Bistro • Servicio a la Mesa</p>
             </div>
-            <div class="flex items-center gap-1">
-              <button type="button" onclick="window.triggerWaiterEvent()" title="Llamar al Mesero IA"
-                class="px-2 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 border border-rose-400/40 text-[10px] font-bold text-rose-200 cursor-pointer">
-                🤵 Mesero IA
-              </button>
-              <button type="button" onclick="window.closeDateNightSimulator()"
-                class="w-7 h-7 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-sm font-bold cursor-pointer">
-                &times;
-              </button>
-            </div>
+            <span id="datingWaiterStatusBadge" class="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/50 text-[9px] font-extrabold text-emerald-300">
+              🟢 En la mesa
+            </span>
           </div>
 
           <div class="flex items-center gap-1.5">
-            <button type="button" id="datePartnerBtnAI" onclick="window.setDatePartnerMode('ai')"
-              class="flex-1 py-1.5 px-2.5 rounded-xl text-[11px] font-extrabold bg-rose-600 text-white border border-rose-400 shadow cursor-pointer transition">
-              🤖 Con Compañero IA
+            <button type="button" onclick="window.setWaiterState('approaching')"
+              class="flex-1 py-1.5 px-2 rounded-xl bg-amber-600/90 hover:bg-amber-500 text-white text-[10px] font-extrabold shadow cursor-pointer transition">
+              🔔 Llamar al Mesero
             </button>
-            <button type="button" id="datePartnerBtnConnected" onclick="window.setDatePartnerMode('partner')"
-              class="flex-1 py-1.5 px-2.5 rounded-xl text-[11px] font-bold bg-slate-800 text-slate-300 border border-slate-700 hover:text-white cursor-pointer transition">
-              💑 Con Pareja Conectada
-            </button>
-          </div>
-
-          <div class="p-2.5 rounded-2xl bg-slate-900/95 border border-amber-500/40 space-y-1">
-            <div class="flex items-center justify-between">
-              <span class="text-[10px] font-extrabold uppercase tracking-wider text-amber-300">🤵 Waiter NPC (Starlight Bistro)</span>
-              <button type="button" onclick="window.triggerWaiterEvent( undefined )" class="text-[10px] font-bold text-sky-400 hover:underline cursor-pointer">🔊 Escuchar</button>
-            </div>
-            <p id="dateNightWaiterText" class="text-xs font-bold text-white leading-snug">
-              "Good evening! Welcome to Starlight Bistro. What can I get you two to drink tonight?"
-            </p>
-            <p id="dateNightWaiterEs" class="text-[10px] text-slate-400 italic">
-              ¡Buenas noches! Bienvenidos a Starlight Bistro. ¿Qué les puedo ofrecer de tomar esta noche?
-            </p>
-          </div>
-
-          <div id="dateNightPartnerBubble" class="p-2 rounded-xl bg-rose-950/40 border border-rose-500/30 text-[11px] leading-snug"></div>
-
-          <div id="dateNightBillOptionsRow" style="display: none;" class="items-center gap-2">
-            <button type="button" onclick="window.selectDateBillOption('Split the bill')"
-              class="flex-1 py-1.5 px-2 rounded-xl bg-slate-800 hover:bg-indigo-600 text-white border border-indigo-400/50 text-[11px] font-bold cursor-pointer transition">
-              💳 Split the bill
-            </button>
-            <button type="button" onclick="window.selectDateBillOption('Treat my partner')"
-              class="flex-1 py-1.5 px-2 rounded-xl bg-slate-800 hover:bg-rose-600 text-white border border-rose-400/50 text-[11px] font-bold cursor-pointer transition">
-              💝 Treat my partner
+            <button type="button" onclick="window.setWaiterState('leaving')"
+              class="flex-1 py-1.5 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 text-[10px] font-bold cursor-pointer transition">
+              👋 Despedir Mesero
             </button>
           </div>
 
-          <div id="dateNightSuggestionsBox" class="grid grid-cols-1 gap-1"></div>
+          <div id="datingWaiterChatHistory" class="space-y-1.5 max-h-36 overflow-y-auto pr-1"></div>
 
-          <div class="space-y-1.5">
-            <textarea id="dateNightTranscriptInput" rows="2"
-              placeholder="Responde en inglés por voz o texto..."
-              class="w-full rounded-xl bg-slate-900 border border-slate-700 focus:border-rose-400 text-xs text-white p-2 focus:outline-none resize-none"></textarea>
-            <div class="flex items-center gap-1.5">
-              <button type="button" id="dateNightMicBtn" onclick="window.toggleDateVoiceInput()"
-                class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 text-[11px] font-bold cursor-pointer transition shrink-0">
-                <span>🎤 Hablar en Inglés</span>
-              </button>
-              <button type="button" id="dateNightSubmitPhaseBtn" onclick="window.submitDatePhaseResponse()"
-                class="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white text-[11px] font-extrabold shadow-lg cursor-pointer transition">
-                <span>✅ Responder en Inglés (Fase 1/3) →</span>
-              </button>
-            </div>
+          <div class="flex flex-wrap gap-1">
+            <button type="button" onclick="window.sendDatingWaiterMessage('Could we see the menu and two glasses of red wine, please?')"
+              class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-amber-950 text-amber-200 border border-amber-500/30 text-[9px] font-bold cursor-pointer">
+              🍷 Order Wine & Menu
+            </button>
+            <button type="button" onclick="window.sendDatingWaiterMessage('We would like to order the steak and salmon, please.')"
+              class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-amber-950 text-amber-200 border border-amber-500/30 text-[9px] font-bold cursor-pointer">
+              🥩 Order Dinner
+            </button>
+            <button type="button" onclick="window.sendDatingWaiterMessage('Could we have the bill, please? Thank you!')"
+              class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-amber-950 text-amber-200 border border-amber-500/30 text-[9px] font-bold cursor-pointer">
+              💳 Ask for Bill
+            </button>
           </div>
 
-          <div id="dateNightRewardSummary" class="hidden" style="display: none;"></div>
+          <div class="flex items-center gap-1.5 pt-1">
+            <input id="datingWaiterInput" type="text"
+              placeholder="Pide al mesero en inglés (wine, menu, bill...)"
+              onkeydown="if(event.key==='Enter'){window.sendDatingWaiterMessage();}"
+              class="flex-1 rounded-xl bg-slate-900 border border-slate-700 focus:border-amber-400 text-[11px] text-white px-2.5 py-1.5 focus:outline-none" />
+            <button type="button" onclick="window.startDatingVoiceInput('waiter')" title="Hablar al Mesero en Inglés"
+              class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-600 text-xs font-bold cursor-pointer">
+              🎤
+            </button>
+            <button type="button" onclick="window.sendDatingWaiterMessage()"
+              class="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-extrabold shadow cursor-pointer">
+              Enviar
+            </button>
+          </div>
         </div>
       `;
-      containerEl.appendChild(datePanel);
-      renderDateNightPhaseUI();
+      containerEl.appendChild(waiterChatPanel);
     }
+
+    // PANEL LATERAL DERECHO COMPACTO: #datingPartnerChatPanel ("❤️ Chat con tu Cita")
+    let partnerChatPanel = document.getElementById('datingPartnerChatPanel');
+    if (!partnerChatPanel) {
+      partnerChatPanel = document.createElement('div');
+      partnerChatPanel.id = 'datingPartnerChatPanel';
+      partnerChatPanel.className = 'hidden';
+      partnerChatPanel.style.cssText = 'position: absolute; bottom: 16px; right: 16px; width: min(330px, 44vw); max-height: calc(100vh - 210px); z-index: 90; pointer-events: auto; display: none;';
+      partnerChatPanel.innerHTML = `
+        <div class="bg-slate-950/92 backdrop-blur-xl border-2 border-rose-500/70 rounded-3xl p-3.5 shadow-2xl text-white flex flex-col gap-2">
+          <div class="flex items-center justify-between gap-1 border-b border-slate-800 pb-2">
+            <div>
+              <h4 class="text-xs font-black text-rose-300 flex items-center gap-1">❤️ Chat con tu Cita</h4>
+              <p id="datingPartnerPanelNameBadge" class="text-[10px] font-bold text-slate-400">${getConnectedPartnerName()}</p>
+            </div>
+            <span class="px-2 py-0.5 rounded-full bg-rose-500/20 border border-rose-400/40 text-[9px] font-extrabold text-rose-200">
+              💬 Burbujas 3D
+            </span>
+          </div>
+
+          <button type="button" id="datingOpenInviteModalBtn" onclick="window.openDatingInviteModal()"
+            class="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white border border-rose-300/60 text-[11px] font-extrabold shadow-lg cursor-pointer transition flex items-center justify-center gap-1.5">
+            <span>💌 Invitar Amigo o Pareja (De tu Lista o por ID)</span>
+          </button>
+
+          <div id="datingPartnerChatHistory" class="space-y-1.5 max-h-36 overflow-y-auto pr-1"></div>
+
+          <div class="flex flex-wrap gap-1">
+            <button type="button" onclick="window.sendDatingPartnerMessage('You look amazing tonight! What would you like to order?')"
+              class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-rose-950 text-rose-200 border border-rose-500/30 text-[9px] font-bold cursor-pointer">
+              💖 Compliment Date
+            </button>
+            <button type="button" onclick="window.sendDatingPartnerMessage('Cheers! I love practicing English with you on this terrace.')"
+              class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-rose-950 text-rose-200 border border-rose-500/30 text-[9px] font-bold cursor-pointer">
+              🥂 Make a Toast
+            </button>
+          </div>
+
+          <div class="flex items-center gap-1.5 pt-1">
+            <input id="datingPartnerInput" type="text"
+              placeholder="Habla con tu cita en inglés..."
+              onkeydown="if(event.key==='Enter'){window.sendDatingPartnerMessage();}"
+              class="flex-1 rounded-xl bg-slate-900 border border-slate-700 focus:border-rose-400 text-[11px] text-white px-2.5 py-1.5 focus:outline-none" />
+            <button type="button" onclick="window.startDatingVoiceInput('partner')" title="Hablar a tu Cita en Inglés"
+              class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-rose-300 border border-slate-600 text-xs font-bold cursor-pointer">
+              🎤
+            </button>
+            <button type="button" onclick="window.sendDatingPartnerMessage()"
+              class="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-extrabold shadow cursor-pointer">
+              Enviar
+            </button>
+          </div>
+        </div>
+      `;
+      containerEl.appendChild(partnerChatPanel);
+    }
+
+    toggleDatingDualPanelsVisibility(currentScenarioKey === 'dating');
 
     let vocabCard = document.getElementById('world3dVocabHudCard');
     if (!vocabCard) {
@@ -4522,7 +5392,7 @@ ensureOrbitControls();
         });
       }
 
-      // Animación del Mesero 3D (Waiter NPC) y la Vela en el escenario "dating"
+      // Animación del Mesero 3D (Waiter NPC), caminata hacia waiterTargetPos, Vela y Burbujas Roblox en "dating"
       if (currentScenarioKey === 'dating') {
         const tSec = (now || performance.now()) * 0.004;
         if (candleFlameLight) {
@@ -4531,28 +5401,62 @@ ensureOrbitControls();
         if (candleFlameMesh) {
           candleFlameMesh.scale.y = 1.0 + Math.sin(tSec * 4.5) * 0.14;
         }
-        if (waiterNpcGroup && waiterLerp.active) {
-          waiterNpcGroup.position.lerp(waiterLerp.targetPos, 0.06);
-          waiterNpcGroup.rotation.y += (waiterLerp.targetRotY - waiterNpcGroup.rotation.y) * 0.08;
-          if (waiterRightArm) {
-            waiterRightArm.rotation.z = Math.sin(tSec * 2.5) * 0.08;
-          }
-          if (waiterNpcGroup.position.distanceTo(waiterLerp.targetPos) < 0.04) {
+        if (waiterGroup && waiterTargetPos) {
+          waiterLerp.targetPos.set(waiterTargetPos.x, waiterTargetPos.y, waiterTargetPos.z);
+          const distToTarget = waiterGroup.position.distanceTo(waiterLerp.targetPos);
+          if (distToTarget > 0.03) {
+            waiterGroup.position.lerp(waiterLerp.targetPos, 0.065);
+            const targetRot = waiterCurrentState === 'approaching' ? 0 : -0.45;
+            waiterGroup.rotation.y += (targetRot - waiterGroup.rotation.y) * 0.10;
+            // Ligero balanceo de brazos y pasos mientras camina
+            const walkCycle = (now || performance.now()) * 0.012;
+            if (waiterLeftLeg) waiterLeftLeg.rotation.x = Math.sin(walkCycle) * 0.32;
+            if (waiterRightLeg) waiterRightLeg.rotation.x = -Math.sin(walkCycle) * 0.32;
+            if (waiterLeftArm) waiterLeftArm.rotation.x = -Math.sin(walkCycle) * 0.22;
+            if (waiterRightArm) waiterRightArm.rotation.z = Math.sin(walkCycle) * 0.08;
+          } else {
+            waiterGroup.position.set(waiterTargetPos.x, waiterTargetPos.y, waiterTargetPos.z);
+            waiterGroup.rotation.y = waiterCurrentState === 'approaching' ? 0 : -0.45;
+            if (waiterLeftLeg) waiterLeftLeg.rotation.x = 0;
+            if (waiterRightLeg) waiterRightLeg.rotation.x = 0;
+            if (waiterLeftArm) waiterLeftArm.rotation.x = 0;
+            if (waiterRightArm) waiterRightArm.rotation.z = Math.sin(tSec * 2.0) * 0.03;
             waiterLerp.active = false;
           }
         }
       }
 
-      // Animación pulsante y flotante de los Spatial Hotspots luminosos
+      // Actualizar posición y fade-out de las Burbujas de Chat Estilo Roblox (duración 8 segundos)
+      const nowTimeMs = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+      ['player', 'partner', 'waiter'].forEach(whoKey => {
+        const bEntry = activeOverheadBubbles[whoKey];
+        if (!bEntry || !bEntry.sprite) return;
+        if (whoKey === 'waiter' && waiterGroup) {
+          bEntry.sprite.position.set(waiterGroup.position.x, 2.05, waiterGroup.position.z);
+        } else if (whoKey === 'partner') {
+          bEntry.sprite.position.set(1.25, 1.65, 0);
+        } else if (whoKey === 'player') {
+          bEntry.sprite.position.set(-1.25, 1.65, 0);
+        }
+        const ageMs = nowTimeMs - bEntry.createdAt;
+        if (ageMs >= bEntry.durationMs) {
+          if (bEntry.sprite.parent) bEntry.sprite.parent.remove(bEntry.sprite);
+          activeOverheadBubbles[whoKey] = null;
+        } else if (ageMs > bEntry.durationMs - 1500 && bEntry.sprite.material) {
+          bEntry.sprite.material.opacity = Math.max(0, (bEntry.durationMs - ageMs) / 1500);
+        }
+      });
+
+      // Micro-indicadores discretos (scale: 0.15, opacity: 0.35, más visibles al pasar cerca en hover)
       const t = (now || performance.now()) * 0.003;
       spatialHotspots.forEach((hs, idx) => {
-        const pulse = 1.0 + Math.sin(t * 3.5 + idx * 0.8) * 0.15;
-        hs.sprite.scale.set(0.65 * pulse, 0.65 * pulse, 0.65 * pulse);
-        hs.group.position.y = hs.baseY + Math.sin(t * 2.0 + idx * 0.8) * 0.05;
-        if (hs.ring) {
-          hs.ring.scale.set(pulse * 1.2, pulse * 1.2, 1);
-          hs.ring.material.opacity = Math.max(0.2, 0.8 - (pulse - 1.0) * 2.2);
+        const isHovered = hs.parentGroup && hs.parentGroup === hoveredObjectGroup;
+        const baseScale = isHovered ? 0.22 : 0.15;
+        hs.sprite.scale.set(baseScale, baseScale, baseScale);
+        if (hs.sprite.material) {
+          hs.sprite.material.opacity = isHovered ? 0.78 : 0.35;
         }
+        hs.group.position.y = hs.baseY + Math.sin(t * 2.0 + idx * 0.8) * 0.03;
       });
 
       // Animación exterior de hojas/árboles en la ventana
@@ -4703,16 +5607,15 @@ ensureOrbitControls();
       }
     }
 
-    // Si entra a "dating", mostrar automáticamente el Simulador de Cita Interactiva y activar al Mesero IA
+    // Si entra a "dating", mostrar automáticamente los 2 paneles laterales de Doble Chat + Selectores de Género y acercar al Mesero IA
     if (targetScenario === 'dating') {
       dateNightState.phase = 1;
-      if (typeof global.triggerWaiterEvent === 'function') {
-        global.triggerWaiterEvent(1);
-      }
+      toggleDatingDualPanelsVisibility(true);
+      setWaiterState('approaching', {
+        customReply: (WAITER_PHASES[1] && WAITER_PHASES[1].waiterLine) || 'Good evening! Welcome to Starlight Bistro.'
+      });
     } else {
-      if (typeof global.closeDateNightSimulator === 'function') {
-        global.closeDateNightSimulator();
-      }
+      toggleDatingDualPanelsVisibility(false);
       focusWorld3DZone('overview');
     }
 
@@ -4856,6 +5759,19 @@ ensureOrbitControls();
     onWindowResize,
     buildCompound3DObject,
     buildScenarioWorld,
+    buildSeatedCharacterMesh,
+    rebuildDatingSeatedAvatars,
+    showRobloxOverheadBubble,
+    setWaiterState,
+    setPlayerAvatarGender,
+    setPartnerAvatarGender,
+    openDatingInviteModal,
+    closeDatingInviteModal,
+    confirmDatingPartnerInvite,
+    sendDatingWaiterMessage,
+    sendDatingPartnerMessage,
+    WAITER_STATION_POS,
+    WAITER_TABLE_POS,
     triggerWaiterEvent: global.triggerWaiterEvent,
     openDateNightSimulator: global.openDateNightSimulator,
     closeDateNightSimulator: global.closeDateNightSimulator,
@@ -4869,11 +5785,15 @@ ensureOrbitControls();
     createPaintingTexture,
     createClockFaceTexture,
     createRugTexture,
+    createBurgundyClothTexture,
     createHotspotTexture
   });
   Object.defineProperty(global.World3D, 'camera', { get: function() { return camera; }, configurable: true });
   Object.defineProperty(global.World3D, 'renderer', { get: function() { return renderer; }, configurable: true });
   Object.defineProperty(global.World3D, 'scene', { get: function() { return scene; }, configurable: true });
+  Object.defineProperty(global.World3D, 'waiterGroup', { get: function() { return waiterGroup; }, configurable: true });
+  Object.defineProperty(global.World3D, 'playerSeatedGroup', { get: function() { return playerSeatedGroup; }, configurable: true });
+  Object.defineProperty(global.World3D, 'partnerSeatedGroup', { get: function() { return partnerSeatedGroup; }, configurable: true });
 
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = global.World3D;
