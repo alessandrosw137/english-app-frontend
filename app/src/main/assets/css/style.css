@@ -314,34 +314,72 @@
     /* ========================================================
        ADAPTABILIDAD A PANTALLA COMPLETA Y MODO HORIZONTAL (LANDSCAPE)
        ======================================================== */
+    /* ========================================================
+       MODO INMERSIVO FULLSCREEN PARA WORLD TOUR 3D (PORTRAIT Y LANDSCAPE)
+       ======================================================== */
+    body.view-worldtour-active header,
+    body.view-worldtour-active .h-14,
+    body.view-worldtour-active #emergency-nav-bar,
+    body.view-worldtour-active #draggableRobotWidget,
+    body.view-worldtour-active #draggableRouletteWidget,
+    body.view-worldtour-active #discreteVoicePlayerBar {
+      display: none !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+
+    body.view-worldtour-active #view-worldtour:not(.hidden) {
+      position: fixed !important;
+      inset: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      max-width: 100vw !important;
+      max-height: 100vh !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      z-index: 50 !important;
+      background: #020617 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      overflow: hidden !important;
+    }
+
+    body.view-worldtour-active #view-worldtour:not(.hidden) > div.relative {
+      border-radius: 0 !important;
+      border: none !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      flex: 1 !important;
+      position: relative !important;
+      overflow: hidden !important;
+    }
+
+    /* Banner para sugerir o forzar orientación horizontal en 3D */
+    #world3dOrientationPromptBanner {
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 95;
+      background: rgba(15, 23, 42, 0.94);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1.5px solid rgba(168, 85, 247, 0.7);
+      border-radius: 16px;
+      padding: 8px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6), 0 0 20px rgba(168, 85, 247, 0.3);
+      max-width: calc(100vw - 28px);
+      transition: all 0.3s ease;
+    }
+
     @media (orientation: landscape) {
-      body.view-worldtour-active header {
+      #world3dOrientationPromptBanner {
         display: none !important;
       }
-      body.view-worldtour-active .h-14 {
-        display: none !important;
-      }
-      body.view-worldtour-active #view-worldtour:not(.hidden) {
-        position: fixed !important;
-        inset: 0 !important;
-        width: 100vw !important;
-        height: 100vh !important;
-        max-width: 100vw !important;
-        max-height: 100vh !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        z-index: 45 !important;
-        background: #020617 !important;
-        display: flex !important;
-        flex-direction: column !important;
-      }
-      body.view-worldtour-active #view-worldtour:not(.hidden) > div.relative {
-        border-radius: 0 !important;
-        border: none !important;
-        width: 100vw !important;
-        height: 100vh !important;
-        flex: 1 !important;
-      }
+    }
       #threeCanvasContainer {
         width: 100vw !important;
         height: 100vh !important;

@@ -908,69 +908,220 @@ ensureOrbitControls();
     return tex;
   }
 
+  // ============================================================================
+  // 4B. GENERADOR DE NORMAL MAPS PROCEDURALES TANGENT-SPACE (RELIEVE 3D REALISTA)
+  // ============================================================================
+  const cachedNormalMaps = {};
+
+  function createProceduralNormalMap(surfaceType = 'wood', repeatX = 2, repeatY = 2) {
+    const cacheKey = `${surfaceType}_${repeatX}_${repeatY}`;
+    if (cachedNormalMaps[cacheKey]) return cachedNormalMaps[cacheKey];
+    if (typeof document === 'undefined' || typeof THREE === 'undefined') return null;
+
+    const size = 128;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    if (!ctx || typeof ctx.createImageData !== 'function') return null;
+
+    const heights = new Float32Array(size * size);
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        const u = (x / size) * Math.PI * 2;
+        const v = (y / size) * Math.PI * 2;
+        let h = 0;
+        if (surfaceType === 'wood') {
+          // Vetas longitudinales de madera + poros finos
+          const grain = Math.sin(u * 6 + Math.sin(v * 2) * 1.4) * 0.55;
+          const finePores = Math.sin(u * 24 + v * 3) * 0.25 + Math.cos(v * 14) * 0.15;
+          h = grain + finePores;
+        } else if (surfaceType === 'metal') {
+          // Acero/latón cepillado anisotrópico con micro-estrías horizontales
+          const brushed = Math.sin(v * 32 + Math.cos(u * 4) * 0.5) * 0.45 + Math.sin(v * 64) * 0.25;
+          const micro = Math.cos(u * 12 + v * 12) * 0.12;
+          h = brushed + micro;
+        } else if (surfaceType === 'fabric') {
+          // Tejido textil entrelazado (urdimbre y trama)
+          const warp = Math.sin(u * 20) * 0.5;
+          const weft = Math.sin(v * 20) * 0.5;
+          const diag = Math.cos((u + v) * 10) * 0.25;
+          h = warp + weft + diag;
+        } else if (surfaceType === 'stone') {
+          // Relieve mineral de piedra / mármol / cerámica con vetas naturales
+          const vein = Math.sin(u * 3 + Math.cos(v * 4) * 2.2) * 0.55;
+          const crystal = Math.cos(u * 11 - v * 9) * 0.30 + Math.sin(u * 19 + v * 17) * 0.20;
+          h = vein + crystal;
+        } else if (surfaceType === 'foliage') {
+          // Nervaduras orgánicas de hojas y corteza
+          const ribs = Math.sin(u * 8 + Math.abs(Math.sin(v * 4)) * 2.5) * 0.6;
+          const cells = Math.cos(u * 16) * Math.sin(v * 16) * 0.35;
+          h = ribs + cells;
+        } else {
+          // Cuero / superficie granulada suave (leather / plastic / ceramic)
+          const pebble = Math.sin(u * 14) * Math.cos(v * 14) * 0.5 + Math.sin((u - v) * 9) * 0.3;
+          h = pebble;
+        }
+        heights[y * size + x] = h;
+      }
+    }
+
+    const imgData = ctx.createImageData(size, size);
+    const data = imgData.data;
+    const strength = surfaceType === 'metal' ? 1.35 : (surfaceType === 'fabric' ? 1.85 : 1.65);
+
+    for (let y = 0; y < size; y++) {
+      const yPrev = (y - 1 + size) % size;
+      const yNext = (y + 1) % size;
+      for (let x = 0; x < size; x++) {
+        const xPrev = (x - 1 + size) % size;
+        const xNext = (x + 1) % size;
+
+        const dX = (heights[y * size + xNext] - heights[y * size + xPrev]) * strength;
+        const dY = (heights[yNext * size + x] - heights[yPrev * size + x]) * strength;
+        const dZ = 1.0;
+        const invLen = 1.0 / Math.sqrt(dX * dX + dY * dY + dZ * dZ);
+
+        const nx = dX * invLen;
+        const ny = dY * invLen;
+        const nz = dZ * invLen;
+
+        const idx = (y * size + x) * 4;
+        data[idx] = Math.min(255, Math.max(0, Math.floor((nx * 0.5 + 0.5) * 255)));
+        data[idx + 1] = Math.min(255, Math.max(0, Math.floor((ny * 0.5 + 0.5) * 255)));
+        data[idx + 2] = Math.min(255, Math.max(128, Math.floor((nz * 0.5 + 0.5) * 255)));
+        data[idx + 3] = 255;
+      }
+    }
+
+    ctx.putImageData(imgData, 0, 0);
+    const normalTex = new THREE.CanvasTexture(canvas);
+    normalTex.wrapS = THREE.RepeatWrapping;
+    normalTex.wrapT = THREE.RepeatWrapping;
+    if (normalTex.repeat && typeof normalTex.repeat.set === 'function') {
+      normalTex.repeat.set(repeatX, repeatY);
+    }
+    cachedNormalMaps[cacheKey] = normalTex;
+    return normalTex;
+  }
+
+  function applyNormalMapToObjectHierarchy(rootGroup, scenarioKey = '') {
+    if (!rootGroup || typeof THREE === 'undefined' || typeof rootGroup.traverse !== 'function') return;
+    const nWood = createProceduralNormalMap('wood', 2, 2);
+    const nMetal = createProceduralNormalMap('metal', 3, 3);
+    const nFabric = createProceduralNormalMap('fabric', 4, 4);
+    const nStone = createProceduralNormalMap('stone', 2, 2);
+    const nFoliage = createProceduralNormalMap('foliage', 3, 3);
+    const nLeather = createProceduralNormalMap('leather', 3, 3);
+    if (!nWood) return;
+
+    rootGroup.traverse(child => {
+      if (!child || !child.isMesh || !child.material) return;
+      const mats = Array.isArray(child.material) ? child.material : [child.material];
+      mats.forEach(mat => {
+        if (!mat || mat.isMeshBasicMaterial || mat.transparent && mat.opacity < 0.72) return;
+        if (mat.emissiveIntensity && mat.emissiveIntensity > 0.75) return;
+        if (!mat.normalMap) {
+          const metalVal = typeof mat.metalness === 'number' ? mat.metalness : 0;
+          const roughVal = typeof mat.roughness === 'number' ? mat.roughness : 0.5;
+          if (metalVal >= 0.24) {
+            mat.normalMap = nMetal;
+            if (THREE.Vector2) mat.normalScale = new THREE.Vector2(0.28, 0.28);
+          } else if (roughVal >= 0.72 && (scenarioKey === 'garden' || (mat.color && mat.color.g > mat.color.r * 1.15))) {
+            mat.normalMap = nFoliage;
+            if (THREE.Vector2) mat.normalScale = new THREE.Vector2(0.42, 0.42);
+          } else if (roughVal >= 0.58) {
+            mat.normalMap = nFabric;
+            if (THREE.Vector2) mat.normalScale = new THREE.Vector2(0.38, 0.38);
+          } else if (roughVal <= 0.24) {
+            mat.normalMap = nStone;
+            if (THREE.Vector2) mat.normalScale = new THREE.Vector2(0.24, 0.24);
+          } else if (mat.color && mat.color.r > mat.color.b * 1.35) {
+            mat.normalMap = nWood;
+            if (THREE.Vector2) mat.normalScale = new THREE.Vector2(0.36, 0.36);
+          } else {
+            mat.normalMap = nLeather;
+            if (THREE.Vector2) mat.normalScale = new THREE.Vector2(0.30, 0.30);
+          }
+          mat.needsUpdate = true;
+        }
+      });
+    });
+  }
+  global.createProceduralNormalMap = createProceduralNormalMap;
+  global.applyNormalMapToObjectHierarchy = applyNormalMapToObjectHierarchy;
+
   function initSharedMaterials() {
     if (typeof THREE === 'undefined' || Object.keys(SHARED_MATERIALS).length > 0) return SHARED_MATERIALS;
     const woodTex = createOakWoodTexture();
     const grassTex = createGrassTexture();
     const burgundyTex = createBurgundyClothTexture();
+    const nWood = createProceduralNormalMap('wood', 2, 2);
+    const nMetal = createProceduralNormalMap('metal', 3, 3);
+    const nFabric = createProceduralNormalMap('fabric', 4, 4);
+    const nStone = createProceduralNormalMap('stone', 2, 2);
+    const nFoliage = createProceduralNormalMap('foliage', 3, 3);
+    const nLeather = createProceduralNormalMap('leather', 3, 3);
+    const vScale = (s) => (THREE.Vector2 ? new THREE.Vector2(s, s) : undefined);
+
     const PhysicalMat = THREE.MeshPhysicalMaterial || THREE.MeshStandardMaterial;
     const defs = {
-      // Suelos y Arquitectura (PBR Realista con Clearcoat)
-      grassLawn: new PhysicalMat({ color: 0x2d5a27, map: grassTex || null, roughness: 0.85, metalness: 0.05 }),
-      houseFloor: new PhysicalMat({ color: 0xc2a679, map: woodTex || null, roughness: 0.25, metalness: 0.08, clearcoat: 0.6 }),
-      wallSatin: new PhysicalMat({ color: 0xf1f5f9, roughness: 0.65, metalness: 0.03, clearcoat: 0.2 }),
-      wallNavyAccent: new PhysicalMat({ color: 0x1e293b, roughness: 0.55, metalness: 0.08, clearcoat: 0.3 }),
-      crownWhite: new PhysicalMat({ color: 0xffffff, roughness: 0.25, metalness: 0.05, clearcoat: 0.6 }),
-      baseboardWood: new PhysicalMat({ color: 0x3b1d0e, roughness: 0.25, metalness: 0.08, clearcoat: 0.6 }),
+      // Suelos y Arquitectura (PBR Realista con Clearcoat + NormalMap)
+      grassLawn: new PhysicalMat({ color: 0x2d5a27, map: grassTex || null, normalMap: nFoliage, normalScale: vScale(0.45), roughness: 0.85, metalness: 0.05 }),
+      houseFloor: new PhysicalMat({ color: 0xc2a679, map: woodTex || null, normalMap: nWood, normalScale: vScale(0.38), roughness: 0.25, metalness: 0.08, clearcoat: 0.6 }),
+      wallSatin: new PhysicalMat({ color: 0xf1f5f9, normalMap: nStone, normalScale: vScale(0.18), roughness: 0.65, metalness: 0.03, clearcoat: 0.2 }),
+      wallNavyAccent: new PhysicalMat({ color: 0x1e293b, normalMap: nStone, normalScale: vScale(0.22), roughness: 0.55, metalness: 0.08, clearcoat: 0.3 }),
+      crownWhite: new PhysicalMat({ color: 0xffffff, normalMap: nStone, normalScale: vScale(0.15), roughness: 0.25, metalness: 0.05, clearcoat: 0.6 }),
+      baseboardWood: new PhysicalMat({ color: 0x3b1d0e, normalMap: nWood, normalScale: vScale(0.35), roughness: 0.25, metalness: 0.08, clearcoat: 0.6 }),
 
-      // Maderas Nobles PBR (clearcoat: 0.6, roughness: 0.25)
-      woodOak: new PhysicalMat({ color: 0x7c4a24, roughness: 0.25, metalness: 0.08, clearcoat: 0.6 }),
-      woodWalnut: new PhysicalMat({ color: 0x3b1d0e, roughness: 0.25, metalness: 0.10, clearcoat: 0.6 }),
-      woodDark: new PhysicalMat({ color: 0x271308, roughness: 0.25, metalness: 0.10, clearcoat: 0.6 }),
-      woodPine: new PhysicalMat({ color: 0x854d0e, roughness: 0.28, metalness: 0.06, clearcoat: 0.5 }),
-      woodLight: new PhysicalMat({ color: 0xd4a373, roughness: 0.25, metalness: 0.05, clearcoat: 0.6 }),
+      // Maderas Nobles PBR con NormalMap de vetas (clearcoat: 0.6, roughness: 0.25)
+      woodOak: new PhysicalMat({ color: 0x9a6234, normalMap: nWood, normalScale: vScale(0.42), emissive: 0x271308, emissiveIntensity: 0.12, roughness: 0.28, metalness: 0.08, clearcoat: 0.65 }),
+      woodWalnut: new PhysicalMat({ color: 0x5c2e14, normalMap: nWood, normalScale: vScale(0.42), emissive: 0x1c0a00, emissiveIntensity: 0.12, roughness: 0.26, metalness: 0.10, clearcoat: 0.65 }),
+      woodDark: new PhysicalMat({ color: 0x3e1f0d, normalMap: nWood, normalScale: vScale(0.40), emissive: 0x140802, emissiveIntensity: 0.10, roughness: 0.28, metalness: 0.10, clearcoat: 0.6 }),
+      woodPine: new PhysicalMat({ color: 0xb47b38, normalMap: nWood, normalScale: vScale(0.38), emissive: 0x291805, emissiveIntensity: 0.10, roughness: 0.30, metalness: 0.06, clearcoat: 0.55 }),
+      woodLight: new PhysicalMat({ color: 0xe2b887, normalMap: nWood, normalScale: vScale(0.35), emissive: 0x2b1d0e, emissiveIntensity: 0.10, roughness: 0.25, metalness: 0.05, clearcoat: 0.6 }),
 
-      // Metales PBR
-      metalDark: new PhysicalMat({ color: 0x1e293b, roughness: 0.25, metalness: 0.85, clearcoat: 0.6 }),
-      metalChrome: new PhysicalMat({ color: 0xcbd5e1, roughness: 0.12, metalness: 0.94, clearcoat: 0.8 }),
-      metalBrass: new PhysicalMat({ color: 0xd97706, roughness: 0.20, metalness: 0.90, clearcoat: 0.6 }),
-      ironBlack: new PhysicalMat({ color: 0x111827, roughness: 0.32, metalness: 0.85, clearcoat: 0.4 }),
-      mailboxBlue: new PhysicalMat({ color: 0x1d4ed8, roughness: 0.25, metalness: 0.65, clearcoat: 0.6 }),
-      mailboxRedFlag: new PhysicalMat({ color: 0xdc2626, emissive: 0x7f1d1d, emissiveIntensity: 0.25, roughness: 0.25, metalness: 0.3, clearcoat: 0.6 }),
+      // Metales PBR con NormalMap cepillado anisotrópico
+      metalDark: new PhysicalMat({ color: 0x475569, normalMap: nMetal, normalScale: vScale(0.30), emissive: 0x1e293b, emissiveIntensity: 0.22, roughness: 0.28, metalness: 0.32, clearcoat: 0.75 }),
+      metalChrome: new PhysicalMat({ color: 0xe2e8f0, normalMap: nMetal, normalScale: vScale(0.24), emissive: 0x475569, emissiveIntensity: 0.24, roughness: 0.16, metalness: 0.36, clearcoat: 0.90 }),
+      metalBrass: new PhysicalMat({ color: 0xf59e0b, normalMap: nMetal, normalScale: vScale(0.28), emissive: 0x78350f, emissiveIntensity: 0.25, roughness: 0.20, metalness: 0.38, clearcoat: 0.85 }),
+      ironBlack: new PhysicalMat({ color: 0x334155, normalMap: nMetal, normalScale: vScale(0.32), emissive: 0x0f172a, emissiveIntensity: 0.18, roughness: 0.34, metalness: 0.28, clearcoat: 0.60 }),
+      mailboxBlue: new PhysicalMat({ color: 0x2563eb, normalMap: nMetal, normalScale: vScale(0.26), emissive: 0x1e3a8a, emissiveIntensity: 0.20, roughness: 0.25, metalness: 0.30, clearcoat: 0.70 }),
+      mailboxRedFlag: new PhysicalMat({ color: 0xef4444, normalMap: nMetal, normalScale: vScale(0.26), emissive: 0x7f1d1d, emissiveIntensity: 0.28, roughness: 0.25, metalness: 0.25, clearcoat: 0.65 }),
 
-      // Telas y Tapicería (incluyendo Mantel Borgoña Texturizado)
-      burgundyCloth: new PhysicalMat({ color: 0x881337, map: burgundyTex || null, roughness: 0.72, metalness: 0.04, clearcoat: 0.1 }),
-      fabricBlue: new PhysicalMat({ color: 0x1e3a8a, roughness: 0.62, metalness: 0.08 }),
-      fabricNavyTufted: new PhysicalMat({ color: 0x172554, roughness: 0.65, metalness: 0.08 }),
-      fabricGold: new PhysicalMat({ color: 0xf59e0b, roughness: 0.58, metalness: 0.10 }),
-      fabricTerracotta: new PhysicalMat({ color: 0xea580c, roughness: 0.60, metalness: 0.10 }),
-      leatherDark: new PhysicalMat({ color: 0x0f172a, roughness: 0.35, metalness: 0.15, clearcoat: 0.45 }),
+      // Telas y Tapicería con NormalMap de tejido textil
+      burgundyCloth: new PhysicalMat({ color: 0x881337, map: burgundyTex || null, normalMap: nFabric, normalScale: vScale(0.45), roughness: 0.72, metalness: 0.04, clearcoat: 0.1 }),
+      fabricBlue: new PhysicalMat({ color: 0x1e3a8a, normalMap: nFabric, normalScale: vScale(0.42), roughness: 0.62, metalness: 0.08 }),
+      fabricNavyTufted: new PhysicalMat({ color: 0x172554, normalMap: nFabric, normalScale: vScale(0.46), roughness: 0.65, metalness: 0.08 }),
+      fabricGold: new PhysicalMat({ color: 0xf59e0b, normalMap: nFabric, normalScale: vScale(0.38), roughness: 0.58, metalness: 0.10 }),
+      fabricTerracotta: new PhysicalMat({ color: 0xea580c, normalMap: nFabric, normalScale: vScale(0.40), roughness: 0.60, metalness: 0.10 }),
+      leatherDark: new PhysicalMat({ color: 0x0f172a, normalMap: nLeather, normalScale: vScale(0.36), roughness: 0.35, metalness: 0.15, clearcoat: 0.45 }),
 
-      // Naturaleza y Vegetación
-      trunkBark: new THREE.MeshStandardMaterial({ color: 0x452612, roughness: 0.85, metalness: 0.04 }),
-      leafGreen1: new THREE.MeshStandardMaterial({ color: 0x14532d, roughness: 0.78, metalness: 0.02 }),
-      leafGreen2: new THREE.MeshStandardMaterial({ color: 0x166534, roughness: 0.78, metalness: 0.02 }),
-      leafGreen3: new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.76, metalness: 0.02 }),
-      leafGreen4: new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.74, metalness: 0.02 }),
-      grassBlade: new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.75, metalness: 0.0 }),
-      flowerRed: new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.42, metalness: 0.08 }),
-      flowerYellow: new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.42, metalness: 0.08 }),
-      flowerPink: new THREE.MeshStandardMaterial({ color: 0xf472b6, roughness: 0.42, metalness: 0.08 }),
-      flowerLavender: new THREE.MeshStandardMaterial({ color: 0xc084fc, roughness: 0.42, metalness: 0.08 }),
+      // Naturaleza y Vegetación con NormalMap orgánico
+      trunkBark: new THREE.MeshStandardMaterial({ color: 0x452612, normalMap: nFoliage, normalScale: vScale(0.55), roughness: 0.85, metalness: 0.04 }),
+      leafGreen1: new THREE.MeshStandardMaterial({ color: 0x14532d, normalMap: nFoliage, normalScale: vScale(0.40), roughness: 0.78, metalness: 0.02 }),
+      leafGreen2: new THREE.MeshStandardMaterial({ color: 0x166534, normalMap: nFoliage, normalScale: vScale(0.40), roughness: 0.78, metalness: 0.02 }),
+      leafGreen3: new THREE.MeshStandardMaterial({ color: 0x15803d, normalMap: nFoliage, normalScale: vScale(0.40), roughness: 0.76, metalness: 0.02 }),
+      leafGreen4: new THREE.MeshStandardMaterial({ color: 0x22c55e, normalMap: nFoliage, normalScale: vScale(0.38), roughness: 0.74, metalness: 0.02 }),
+      grassBlade: new THREE.MeshStandardMaterial({ color: 0x22c55e, normalMap: nFoliage, normalScale: vScale(0.35), roughness: 0.75, metalness: 0.0 }),
+      flowerRed: new THREE.MeshStandardMaterial({ color: 0xef4444, normalMap: nFoliage, normalScale: vScale(0.30), roughness: 0.42, metalness: 0.08 }),
+      flowerYellow: new THREE.MeshStandardMaterial({ color: 0xfacc15, normalMap: nFoliage, normalScale: vScale(0.30), roughness: 0.42, metalness: 0.08 }),
+      flowerPink: new THREE.MeshStandardMaterial({ color: 0xf472b6, normalMap: nFoliage, normalScale: vScale(0.30), roughness: 0.42, metalness: 0.08 }),
+      flowerLavender: new THREE.MeshStandardMaterial({ color: 0xc084fc, normalMap: nFoliage, normalScale: vScale(0.30), roughness: 0.42, metalness: 0.08 }),
 
-      // Piedra, Cerámica PBR y Cerca
-      stoneGray: new PhysicalMat({ color: 0x64748b, roughness: 0.70, metalness: 0.10 }),
-      stonePaver: new PhysicalMat({ color: 0x94a3b8, roughness: 0.72, metalness: 0.06 }),
-      picketWhite: new PhysicalMat({ color: 0xf8fafc, roughness: 0.45, metalness: 0.04, clearcoat: 0.3 }),
-      ceramicWhite: new PhysicalMat({ color: 0xffffff, roughness: 0.15, metalness: 0.08, clearcoat: 0.75 }),
+      // Piedra, Cerámica PBR y Cerca con NormalMap mineral
+      stoneGray: new PhysicalMat({ color: 0x64748b, normalMap: nStone, normalScale: vScale(0.45), roughness: 0.70, metalness: 0.10 }),
+      stonePaver: new PhysicalMat({ color: 0x94a3b8, normalMap: nStone, normalScale: vScale(0.48), roughness: 0.72, metalness: 0.06 }),
+      picketWhite: new PhysicalMat({ color: 0xf8fafc, normalMap: nWood, normalScale: vScale(0.28), roughness: 0.45, metalness: 0.04, clearcoat: 0.3 }),
+      ceramicWhite: new PhysicalMat({ color: 0xffffff, normalMap: nStone, normalScale: vScale(0.16), roughness: 0.15, metalness: 0.08, clearcoat: 0.75 }),
       coffeeLiquid: new PhysicalMat({ color: 0x271206, roughness: 0.10, metalness: 0.15, clearcoat: 0.8 }),
-      terracottaPot: new PhysicalMat({ color: 0xc2410c, roughness: 0.72, metalness: 0.06 }),
-      soilDark: new THREE.MeshStandardMaterial({ color: 0x27170a, roughness: 0.92, metalness: 0.0 }),
+      terracottaPot: new PhysicalMat({ color: 0xc2410c, normalMap: nStone, normalScale: vScale(0.42), roughness: 0.72, metalness: 0.06 }),
+      soilDark: new THREE.MeshStandardMaterial({ color: 0x27170a, normalMap: nFoliage, normalScale: vScale(0.55), roughness: 0.92, metalness: 0.0 }),
 
       // Vidrio Cristalino PBR (transmission: 0.85, clearcoat: 0.6, roughness: 0.25), Pantallas y Luces
       glassClear: new PhysicalMat({ color: 0xe0f2fe, roughness: 0.12, metalness: 0.05, transmission: 0.85, clearcoat: 0.6, transparent: true, opacity: 0.55 }),
       glassLantern: new PhysicalMat({ color: 0xfffbeb, emissive: 0xfef08a, emissiveIntensity: 0.35, roughness: 0.15, metalness: 0.10, transmission: 0.65, clearcoat: 0.6, transparent: true, opacity: 0.78 }),
-      lampShadeWarm: new THREE.MeshStandardMaterial({ color: 0xfef3c7, emissive: 0xf59e0b, emissiveIntensity: 0.65, roughness: 0.35, metalness: 0.05, side: THREE.DoubleSide }),
+      lampShadeWarm: new THREE.MeshStandardMaterial({ color: 0xfef3c7, normalMap: nFabric, normalScale: vScale(0.28), emissive: 0xf59e0b, emissiveIntensity: 0.65, roughness: 0.35, metalness: 0.05, side: THREE.DoubleSide }),
       emissiveScreen: new THREE.MeshStandardMaterial({ color: 0x06b6d4, emissive: 0x38bdf8, emissiveIntensity: 0.85, roughness: 0.22 }),
       emissiveBulb: new THREE.MeshStandardMaterial({ color: 0xffedd5, emissive: 0xfef08a, emissiveIntensity: 2.2, roughness: 0.18 }),
       steamTranslucent: new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.90, transparent: true, opacity: 0.38 })
@@ -1082,6 +1233,7 @@ ensureOrbitControls();
   function registerInteractiveGroup(group, vocabKey) {
     const meta = WORLD3D_VOCAB_CATALOG[vocabKey];
     if (!meta || !group) return;
+    applyNormalMapToObjectHierarchy(group, currentScenarioKey || 'house');
     group.userData = Object.assign({}, meta);
     group.traverse(child => {
       if (child.isMesh) {
@@ -3086,24 +3238,143 @@ ensureOrbitControls();
       centerMass.position.y = 0.45;
       group.add(centerMass);
     }
-    // --- MUNDOS SUPERMARKET, HOTEL Y RESTAURANT ---
-    else if (id === 'market_shopping_cart' || id === 'hotel_luggage_cart' || id === 'rest_dessert_cart') {
-      const isBrass = id === 'hotel_luggage_cart';
-      const frameMat = isBrass ? matGold : matSilver;
-      const base = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.08, 0.62), isBrass ? matVelvet : frameMat);
-      base.position.y = 0.26;
-      const basket = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.55, 0.60), frameMat);
-      basket.position.y = 0.68;
-      const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.62, 12), frameMat);
-      handle.rotation.x = Math.PI / 2;
-      handle.position.set(-0.52, 0.98, 0);
-      group.add(base, basket, handle);
-      [[-0.38, -0.25], [0.38, -0.25], [-0.38, 0.25], [0.38, 0.25]].forEach(([wx, wz]) => {
+    // --- MUNDOS SUPERMARKET, HOTEL Y RESTAURANT (ULTRA-DETALLADOS Y REALISTAS) ---
+    else if (id === 'market_shopping_cart') {
+      // Carrito de supermercado metálico de rejilla abierta con ruedas giratorias, asiento infantil rojo y víveres dentro
+      const chassis = new THREE.Mesh(new THREE.BoxGeometry(0.88, 0.04, 0.54), matSilver);
+      chassis.position.y = 0.22;
+      group.add(chassis);
+      // 4 Ruedas con horquilla cromada
+      [[-0.36, -0.22], [0.36, -0.22], [-0.36, 0.22], [0.36, 0.22]].forEach(([wx, wz]) => {
+        const fork = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.10, 0.04), matSilver);
+        fork.position.set(wx, 0.15, wz);
+        const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.04, 16), M.ironBlack);
+        wheel.rotation.x = Math.PI / 2;
+        wheel.position.set(wx, 0.08, wz);
+        const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.045, 12), matSilver);
+        hub.rotation.x = Math.PI / 2;
+        hub.position.set(wx, 0.08, wz);
+        group.add(fork, wheel, hub);
+      });
+      // Piso de la canasta y barrotes abiertos de alambre cromado
+      const basketFloor = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.025, 0.54), matSilver);
+      basketFloor.position.y = 0.42;
+      group.add(basketFloor);
+      // Postes esquineros de la canasta
+      [[-0.42, -0.26], [0.42, -0.26], [-0.42, 0.26], [0.42, 0.26]].forEach(([cx, cz]) => {
+        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.52, 10), matSilver);
+        post.position.set(cx, 0.68, cz);
+        group.add(post);
+      });
+      // Aros horizontales de alambre (3 niveles) para que se vea el interior
+      [0.54, 0.70, 0.88].forEach(ry => {
+        const barFront = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.018, 0.018), matSilver);
+        barFront.position.set(0, ry, 0.26);
+        const barBack = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.018, 0.018), matSilver);
+        barBack.position.set(0, ry, -0.26);
+        const barLeft = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.018, 0.54), matSilver);
+        barLeft.position.set(-0.42, ry, 0);
+        const barRight = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.018, 0.54), matSilver);
+        barRight.position.set(0.42, ry, 0);
+        group.add(barFront, barBack, barLeft, barRight);
+      });
+      // Costillas verticales de alambre
+      [-0.28, -0.14, 0, 0.14, 0.28].forEach(vx => {
+        const ribF = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.46, 8), matSilver);
+        ribF.position.set(vx, 0.65, 0.26);
+        const ribB = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.46, 8), matSilver);
+        ribB.position.set(vx, 0.65, -0.26);
+        group.add(ribF, ribB);
+      });
+      // Asiento infantil abatible rojo y manubrio ergonómico rojo
+      const childSeat = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.28, 0.46), matRed);
+      childSeat.position.set(-0.34, 0.72, 0);
+      childSeat.rotation.z = -0.22;
+      const handleBar = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.56, 14), matRed);
+      handleBar.rotation.x = Math.PI / 2;
+      handleBar.position.set(-0.52, 0.96, 0);
+      const bracketL = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.025, 0.025), matSilver);
+      bracketL.position.set(-0.46, 0.92, -0.25);
+      const bracketR = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.025, 0.025), matSilver);
+      bracketR.position.set(-0.46, 0.92, 0.25);
+      // Víveres visibles dentro del carrito (caja de cereal, leche, baguette, manzanas)
+      const cerealBox = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.28, 0.09), matGold);
+      cerealBox.position.set(0.12, 0.58, -0.10);
+      const milkCarton = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.24, 0.12), matSky);
+      milkCarton.position.set(-0.08, 0.56, 0.10);
+      const baguette = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.035, 0.44, 12), M.woodLight);
+      baguette.position.set(0.22, 0.66, 0.08);
+      baguette.rotation.z = -0.35;
+      const apple1 = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 12), matRed);
+      apple1.position.set(0.02, 0.49, -0.02);
+      const apple2 = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 12), matEmerald);
+      apple2.position.set(0.14, 0.49, 0.12);
+      group.add(childSeat, handleBar, bracketL, bracketR, cerealBox, milkCarton, baguette, apple1, apple2);
+    } else if (id === 'hotel_luggage_cart') {
+      // Carrito de equipaje dorado estilo Bellhop Birdcage con alfombra borgoña y maletas de viaje
+      const deck = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.09, 0.66), matVelvet);
+      deck.position.y = 0.22;
+      const goldTrim = new THREE.Mesh(new THREE.BoxGeometry(1.09, 0.06, 0.70), matGold);
+      goldTrim.position.y = 0.20;
+      const arch1 = new THREE.Mesh(new THREE.TorusGeometry(0.48, 0.025, 12, 28, Math.PI), matGold);
+      arch1.position.set(0, 1.15, -0.26);
+      const arch2 = new THREE.Mesh(new THREE.TorusGeometry(0.48, 0.025, 12, 28, Math.PI), matGold);
+      arch2.position.set(0, 1.15, 0.26);
+      const topFinial = new THREE.Mesh(new THREE.SphereGeometry(0.055, 14, 14), matGold);
+      topFinial.position.set(0, 1.68, 0);
+      [[-0.48, -0.26], [0.48, -0.26], [-0.48, 0.26], [0.48, 0.26]].forEach(([px, pz]) => {
+        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.92, 12), matGold);
+        pole.position.set(px, 0.70, pz);
         const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.05, 14), M.ironBlack);
         wheel.rotation.x = Math.PI / 2;
-        wheel.position.set(wx, 0.09, wz);
-        group.add(wheel);
+        wheel.position.set(px * 0.85, 0.09, pz);
+        group.add(pole, wheel);
       });
+      // Maletas detalladas sobre el carrito
+      const case1 = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.34, 0.52), matWalnut);
+      case1.position.set(-0.18, 0.43, 0);
+      const strap1 = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.35, 0.05), matGold);
+      strap1.position.set(-0.18, 0.43, 0);
+      const case2 = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.48, 0.26), matRed);
+      case2.position.set(0.24, 0.50, 0);
+      group.add(deck, goldTrim, arch1, arch2, topFinial, case1, strap1, case2);
+    } else if (id === 'rest_dessert_cart') {
+      // Carrito gourmet de postres de 2 niveles con domo de cristal, pastel de fresas y tartaletas
+      const tier1 = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.04, 0.58), matWalnut);
+      tier1.position.y = 0.34;
+      const tier2 = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.04, 0.58), matWhite);
+      tier2.position.y = 0.78;
+      const goldRail = new THREE.Mesh(new THREE.BoxGeometry(0.94, 0.02, 0.60), matGold);
+      goldRail.position.y = 0.82;
+      const pushHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.56, 12), matGold);
+      pushHandle.rotation.x = Math.PI / 2;
+      pushHandle.position.set(-0.52, 0.86, 0);
+      [[-0.42, -0.25], [0.42, -0.25], [-0.42, 0.25], [0.42, 0.25]].forEach(([lx, lz]) => {
+        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.68, 10), matGold);
+        leg.position.set(lx, 0.46, lz);
+        const wh = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.04, 14), M.ironBlack);
+        wh.rotation.x = Math.PI / 2;
+        wh.position.set(lx, 0.08, lz);
+        group.add(leg, wh);
+      });
+      // Pastel de 2 pisos y domo de cristal en el nivel superior
+      const cakePlate = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.16, 0.03, 20), matSilver);
+      cakePlate.position.set(-0.18, 0.82, 0);
+      const cakeBase = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.12, 20), matRosePink);
+      cakeBase.position.set(-0.18, 0.89, 0);
+      const cakeTop = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.09, 18), matWhite);
+      cakeTop.position.set(-0.18, 0.99, 0);
+      const dome = new THREE.Mesh(new THREE.SphereGeometry(0.19, 18, 14, 0, Math.PI * 2, 0, Math.PI * 0.5), M.glassClear);
+      dome.position.set(-0.18, 0.83, 0);
+      // Tartaletas de chocolate a la derecha
+      [[-0.12], [0.12]].forEach(([tz], idx) => {
+        const tart = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.07, 0.06, 16), matWalnut);
+        tart.position.set(0.22, 0.83, tz);
+        const berry = new THREE.Mesh(new THREE.SphereGeometry(0.03, 10, 10), idx === 0 ? matRed : matGold);
+        berry.position.set(0.22, 0.87, tz);
+        group.add(tart, berry);
+      });
+      group.add(tier1, tier2, goldRail, pushHandle, cakePlate, cakeBase, cakeTop, dome);
     } else if (id === 'hotel_chandelier' || id === 'rest_chandelier') {
       const chain = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.9, 10), matGold);
       chain.position.y = 0.55;
@@ -3120,31 +3391,149 @@ ensureOrbitControls();
         group.add(crystal);
       }
     } else if (id === 'hotel_receptionist_desk' || id === 'rest_chef_station' || id === 'rest_kitchen_pass' || id === 'market_checkout' || id === 'hotel_concierge') {
-      const counter = new THREE.Mesh(new THREE.BoxGeometry(2.8, 1.05, 0.85), matWalnut);
-      counter.position.y = 0.525;
+      const counter = new THREE.Mesh(new THREE.BoxGeometry(2.8, 1.02, 0.85), id === 'market_checkout' ? matSilver : matWalnut);
+      counter.position.y = 0.51;
       const topMarble = new THREE.Mesh(new THREE.BoxGeometry(2.92, 0.08, 0.95), matWhite);
-      topMarble.position.y = 1.08;
-      const frontAccent = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.65, 0.04), matGold);
+      topMarble.position.y = 1.06;
+      const frontAccent = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.65, 0.04), id === 'market_checkout' ? matSky : matGold);
       frontAccent.position.set(0, 0.52, 0.43);
       group.add(counter, topMarble, frontAccent);
-    } else if (id === 'market_fresh_produce' || id === 'market_bakery' || id === 'market_dairy_section' || id === 'market_frozen_aisle' || id === 'market_price_tag') {
-      const rack = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.85, 0.75), matDark);
-      rack.position.y = 0.925;
-      group.add(rack);
-      [0.45, 0.95, 1.45].forEach(sy => {
-        const shelf = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.05, 0.72), matSilver);
-        shelf.position.set(0, sy, 0.04);
-        group.add(shelf);
-        for (let p = -3; p <= 3; p++) {
-          const itemMat = id === 'market_fresh_produce' ? (p % 2 === 0 ? matRed : matEmerald) : (id === 'market_bakery' ? matGold : matSky);
-          const prod = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.24, 0.24), itemMat);
-          prod.position.set(p * 0.28, sy + 0.14, 0.10);
-          group.add(prod);
+      if (id === 'market_checkout') {
+        // Cinta transportadora negra con franjas amarillas, poste de caja #1 y víveres en banda
+        const belt = new THREE.Mesh(new THREE.BoxGeometry(1.65, 0.03, 0.56), M.ironBlack);
+        belt.position.set(-0.45, 1.11, 0);
+        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.15, 12), matSilver);
+        pole.position.set(-1.2, 1.65, -0.25);
+        const laneBox = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.28, 0.28), M.emissiveBulb);
+        laneBox.position.set(-1.2, 2.25, -0.25);
+        group.add(belt, pole, laneBox);
+      } else if (id === 'rest_chef_station' || id === 'rest_kitchen_pass') {
+        // Barra de pase de cocina con lámparas de calor infrarrojas y platos listos
+        const shelfPass = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.05, 0.42), matSilver);
+        shelfPass.position.set(0, 1.62, 0);
+        const postL = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.55, 10), matSilver);
+        postL.position.set(-1.2, 1.35, 0);
+        const postR = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.55, 10), matSilver);
+        postR.position.set(1.2, 1.35, 0);
+        [-0.65, 0, 0.65].forEach(lx => {
+          const heatLamp = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.14, 14), matGold);
+          heatLamp.position.set(lx, 1.54, 0);
+          const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.14, 0.025, 18), matWhite);
+          plate.position.set(lx, 1.12, 0.1);
+          const domeFood = new THREE.Mesh(new THREE.SphereGeometry(0.09, 12, 10, 0, Math.PI * 2, 0, Math.PI * 0.5), matRed);
+          domeFood.position.set(lx, 1.13, 0.1);
+          group.add(heatLamp, plate, domeFood);
+        });
+        group.add(shelfPass, postL, postR);
+      }
+    } else if (id === 'market_fresh_produce' || id === 'market_organic_produce' || id === 'market_ripe_produce' || id === 'market_produce_crate') {
+      // Puesto de Frutas y Verduras Frescas con toldo verde/blanco, cajones de madera inclinados y frutas 3D visibles
+      const baseStand = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.68, 0.88), matWood);
+      baseStand.position.y = 0.34;
+      // Toldo superior tipo mercado orgánico
+      const postL = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.45, 10), matWood);
+      postL.position.set(-1.02, 1.35, -0.32);
+      const postR = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.45, 10), matWood);
+      postR.position.set(1.02, 1.35, -0.32);
+      const canopy = new THREE.Mesh(new THREE.BoxGeometry(2.35, 0.12, 0.96), matEmerald);
+      canopy.position.set(0, 2.08, -0.05);
+      canopy.rotation.x = 0.22;
+      group.add(baseStand, postL, postR, canopy);
+      // 4 Huacales de madera abiertos en el frente llenos de manzanas rojas, naranjas, lechugas y plátanos
+      const crateColors = [matRed, matEmerald, matGold, new PhysicalMat({ color: 0xf97316, roughness: 0.3, clearcoat: 0.5 })];
+      [-0.75, -0.25, 0.25, 0.75].forEach((cx, cIdx) => {
+        const crate = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.16, 0.72), M.woodLight);
+        crate.position.set(cx, 0.76, 0.04);
+        crate.rotation.x = 0.25;
+        group.add(crate);
+        for (let r = -1; r <= 1; r++) {
+          for (let c = -1; c <= 1; c++) {
+            const fruit = new THREE.Mesh(new THREE.SphereGeometry(0.068, 12, 12), crateColors[cIdx]);
+            fruit.position.set(cx + c * 0.12, 0.86 - r * 0.04, 0.04 + r * 0.16);
+            group.add(fruit);
+          }
         }
       });
+    } else if (id === 'market_bakery' || id === 'market_bread_rack' || id === 'market_freshly_baked') {
+      // Mostrador y Vitrina de Panadería Artesanal con cristal transparente, baguettes, croissants y pasteles visibles
+      const woodBase = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.72, 0.82), matWood);
+      woodBase.position.y = 0.36;
+      const marbleCounter = new THREE.Mesh(new THREE.BoxGeometry(2.16, 0.05, 0.86), matWhite);
+      marbleCounter.position.y = 0.74;
+      const glassCase = new THREE.Mesh(new THREE.BoxGeometry(2.04, 0.78, 0.74), M.glassClear);
+      glassCase.position.set(0, 1.15, 0);
+      const topFrame = new THREE.Mesh(new THREE.BoxGeometry(2.10, 0.06, 0.78), matGold);
+      topFrame.position.set(0, 1.56, 0);
+      group.add(woodBase, marbleCounter, glassCase, topFrame);
+      // Repisas internas con baguettes doradas, hogazas y pasteles
+      [0.86, 1.22].forEach((sy, sIdx) => {
+        const tray = new THREE.Mesh(new THREE.BoxGeometry(1.92, 0.025, 0.62), matGold);
+        tray.position.set(0, sy, 0);
+        group.add(tray);
+        for (let b = -3; b <= 3; b++) {
+          if (sIdx === 0) {
+            const loaf = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.42, 12), M.woodLight);
+            loaf.rotation.x = Math.PI / 2;
+            loaf.rotation.z = 0.15;
+            loaf.position.set(b * 0.25, sy + 0.06, 0);
+            group.add(loaf);
+          } else {
+            const pastry = new THREE.Mesh(new THREE.SphereGeometry(0.085, 14, 12), b % 2 === 0 ? matRosePink : matGold);
+            pastry.scale.set(1, 0.65, 1);
+            pastry.position.set(b * 0.25, sy + 0.06, 0);
+            group.add(pastry);
+          }
+        }
+      });
+    } else if (id === 'market_dairy_section' || id === 'market_frozen_aisle' || id === 'market_cooler_display' || id === 'market_dairy_fridge') {
+      // Vitrina Refrigerada Abierta con marco blanco/azul, panel posterior delgado y botellas/cartones de leche visibles
+      const backWall = new THREE.Mesh(new THREE.BoxGeometry(2.15, 1.92, 0.08), matWhite);
+      backWall.position.set(0, 0.96, -0.34);
+      const baseCooler = new THREE.Mesh(new THREE.BoxGeometry(2.15, 0.32, 0.78), matSky);
+      baseCooler.position.set(0, 0.16, 0);
+      const topHeader = new THREE.Mesh(new THREE.BoxGeometry(2.18, 0.22, 0.80), matSky);
+      topHeader.position.set(0, 1.84, 0);
+      const ledBanner = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 0.14), M.emissiveScreen);
+      ledBanner.position.set(0, 1.84, 0.41);
+      const sideGlassL = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.50, 0.74), M.glassClear);
+      sideGlassL.position.set(-1.05, 1.0, 0);
+      const sideGlassR = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.50, 0.74), M.glassClear);
+      sideGlassR.position.set(1.05, 1.0, 0);
+      group.add(backWall, baseCooler, topHeader, ledBanner, sideGlassL, sideGlassR);
+      // 3 Repisas abiertas con cartones de leche, quesos y yogures al frente
+      [0.48, 0.94, 1.38].forEach((sy, rIdx) => {
+        const shelf = new THREE.Mesh(new THREE.BoxGeometry(2.04, 0.035, 0.64), matWhite);
+        shelf.position.set(0, sy, -0.02);
+        group.add(shelf);
+        for (let p = -3; p <= 3; p++) {
+          const cartonMat = rIdx === 0 ? matWhite : (rIdx === 1 ? matSky : (p % 2 === 0 ? matGold : matRosePink));
+          const carton = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.28, 0.18), cartonMat);
+          carton.position.set(p * 0.27, sy + 0.16, 0.08);
+          const cap = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.08, 4), matSky);
+          cap.position.set(p * 0.27, sy + 0.33, 0.08);
+          cap.rotation.y = Math.PI / 4;
+          group.add(carton, cap);
+        }
+      });
+    } else if (id === 'market_price_tag' || id === 'market_on_sale' || id === 'market_bogo_deal' || id === 'market_shelf_tag' || id === 'market_price_check') {
+      // Pedestal Promocional de Oferta con letrero amarillo/rojo "50% SALE" y etiqueta de precio
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.30, 0.06, 20), matSilver);
+      base.position.y = 0.03;
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.15, 12), matSilver);
+      pole.position.y = 0.60;
+      const signBoard = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.46, 0.05), matGold);
+      signBoard.position.set(0, 1.25, 0);
+      const redBadge = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.34, 0.06), matRed);
+      redBadge.position.set(0, 1.25, 0);
+      const starBurst = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.07, 12), M.emissiveBulb);
+      starBurst.rotation.x = Math.PI / 2;
+      starBurst.position.set(0, 1.25, 0);
+      group.add(base, pole, signBoard, redBadge, starBurst);
     } else if (id === 'market_cash_register' || id === 'hotel_check_in') {
-      const base = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.18, 0.48), matDark);
+      const base = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.18, 0.48), matSilver);
       base.position.y = 0.09;
+      const drawerSlot = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.08, 0.02), M.ironBlack);
+      drawerSlot.position.set(0, 0.08, 0.245);
       const stand = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.06, 0.26, 12), matSilver);
       stand.position.set(0, 0.28, -0.06);
       const monitor = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.32, 0.05), matDark);
@@ -3153,42 +3542,86 @@ ensureOrbitControls();
       const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.40, 0.26), M.emissiveScreen);
       screen.position.set(0, 0.46, -0.01);
       screen.rotation.x = -0.22;
-      group.add(base, stand, monitor, screen);
-    } else if (id === 'market_barcode_scanner') {
-      const cradle = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.14, 0.16, 16), matDark);
-      cradle.position.y = 0.08;
-      const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.035, 0.28, 12), matDark);
-      neck.position.set(0, 0.24, 0.04);
-      neck.rotation.x = 0.35;
-      const head = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.10, 0.22), matRed);
-      head.position.set(0, 0.38, 0.10);
-      group.add(cradle, neck, head);
+      group.add(base, drawerSlot, stand, monitor, screen);
+    } else if (id === 'market_barcode_scanner' || id === 'market_scanner_gun') {
+      const cradle = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 0.08, 16), matDark);
+      cradle.position.y = 0.04;
+      const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.035, 0.32, 12), matSilver);
+      neck.position.set(0, 0.20, -0.04);
+      neck.rotation.x = 0.32;
+      const head = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.10, 0.24), matRed);
+      head.position.set(0, 0.36, 0.06);
+      const laserBeam = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.32, 12), new THREE.MeshBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.55 }));
+      laserBeam.position.set(0, 0.18, 0.14);
+      group.add(cradle, neck, head, laserBeam);
     } else if (id === 'market_scale') {
-      const base = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.10, 0.42), matSilver);
-      base.position.y = 0.05;
-      const tray = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.20, 0.04, 20), matSilver);
-      tray.position.set(0, 0.14, 0.04);
-      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.46, 12), matSilver);
-      pole.position.set(0, 0.32, -0.16);
-      const dial = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.05, 20), matWhite);
+      const base = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.12, 0.44), matSilver);
+      base.position.y = 0.06;
+      const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.18, 0.09, 20), matSilver);
+      bowl.position.set(0, 0.18, 0.06);
+      const appleA = new THREE.Mesh(new THREE.SphereGeometry(0.065, 12, 12), matRed);
+      appleA.position.set(-0.06, 0.24, 0.06);
+      const appleB = new THREE.Mesh(new THREE.SphereGeometry(0.065, 12, 12), matEmerald);
+      appleB.position.set(0.07, 0.24, 0.06);
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.52, 12), matSilver);
+      pole.position.set(0, 0.36, -0.15);
+      const dial = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.06, 24), matWhite);
       dial.rotation.x = Math.PI / 2;
-      dial.position.set(0, 0.56, -0.14);
-      group.add(base, tray, pole, dial);
-    } else if (id === 'market_shopping_basket' || id === 'market_reusable_bag') {
-      const basketColor = id === 'market_reusable_bag' ? matEmerald : matRed;
-      const body = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.34, 0.38), basketColor);
-      body.position.y = 0.17;
-      const handle = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.02, 10, 20, Math.PI), matDark);
-      handle.position.y = 0.34;
-      group.add(body, handle);
+      dial.position.set(0, 0.62, -0.14);
+      const rim = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.02, 10, 24), matGold);
+      rim.position.set(0, 0.62, -0.11);
+      const needle = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.13, 0.015), matRed);
+      needle.position.set(0.03, 0.64, -0.105);
+      needle.rotation.z = -0.45;
+      group.add(base, bowl, appleA, appleB, pole, dial, rim, needle);
+    } else if (id === 'market_shopping_basket' || id === 'market_reusable_bag' || id === 'market_groceries_concept') {
+      // Canasta de compras abierta con paredes acanaladas, doble asa y víveres visibles dentro
+      const isBag = id === 'market_reusable_bag' || id === 'market_groceries_concept';
+      const basketColor = isBag ? matEmerald : matRed;
+      const bottom = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.04, 0.38), basketColor);
+      bottom.position.y = 0.02;
+      const wallF = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.32, 0.035), basketColor);
+      wallF.position.set(0, 0.18, 0.18);
+      wallF.rotation.x = 0.08;
+      const wallB = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.32, 0.035), basketColor);
+      wallB.position.set(0, 0.18, -0.18);
+      wallB.rotation.x = -0.08;
+      const wallL = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.32, 0.38), basketColor);
+      wallL.position.set(-0.28, 0.18, 0);
+      const wallR = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.32, 0.38), basketColor);
+      wallR.position.set(0.28, 0.18, 0);
+      const topRim = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.035, 0.42), M.ironBlack);
+      topRim.position.set(0, 0.34, 0);
+      const handle1 = new THREE.Mesh(new THREE.TorusGeometry(0.21, 0.02, 10, 20, Math.PI), isBag ? matWhite : M.ironBlack);
+      handle1.position.set(0, 0.35, 0.06);
+      const handle2 = new THREE.Mesh(new THREE.TorusGeometry(0.21, 0.02, 10, 20, Math.PI), isBag ? matWhite : M.ironBlack);
+      handle2.position.set(0, 0.35, -0.06);
+      // Víveres asomando por encima de la canasta
+      const baguette = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.035, 0.42, 12), M.woodLight);
+      baguette.position.set(-0.12, 0.32, 0);
+      baguette.rotation.z = 0.28;
+      const juiceBottle = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.32, 14), matGold);
+      juiceBottle.position.set(0.10, 0.28, -0.04);
+      const lettuce = new THREE.Mesh(new THREE.DodecahedronGeometry(0.095, 1), M.leafGreen3);
+      lettuce.position.set(0.04, 0.28, 0.08);
+      group.add(bottom, wallF, wallB, wallL, wallR, topRim, handle1, handle2, baguette, juiceBottle, lettuce);
     } else if (id === 'hotel_suitcase') {
-      const bag1 = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.76, 0.28), matRed);
-      bag1.position.set(-0.22, 0.38, 0);
-      const handle1 = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.32, 10), matSilver);
-      handle1.position.set(-0.22, 0.92, 0);
-      const bag2 = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.58, 0.24), matSky);
-      bag2.position.set(0.28, 0.29, 0.08);
-      group.add(bag1, handle1, bag2);
+      const bag1 = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.74, 0.28), matRed);
+      bag1.position.set(-0.22, 0.42, 0);
+      const rodL = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.34, 10), matSilver);
+      rodL.position.set(-0.30, 0.94, 0);
+      const rodR = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.34, 10), matSilver);
+      rodR.position.set(-0.14, 0.94, 0);
+      const grip = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.03, 0.04), M.ironBlack);
+      grip.position.set(-0.22, 1.11, 0);
+      const bag2 = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.56, 0.24), matSky);
+      bag2.position.set(0.28, 0.32, 0.08);
+      [[-0.38, -0.10], [-0.06, -0.10], [-0.38, 0.10], [-0.06, 0.10]].forEach(([wx, wz]) => {
+        const wh = new THREE.Mesh(new THREE.SphereGeometry(0.04, 10, 10), M.ironBlack);
+        wh.position.set(wx, 0.04, wz);
+        group.add(wh);
+      });
+      group.add(bag1, rodL, rodR, grip, bag2);
     } else if (id === 'hotel_elevator' || id === 'hotel_revolving_door') {
       const frame = new THREE.Mesh(new THREE.BoxGeometry(2.1, 2.65, 0.24), matGold);
       frame.position.y = 1.325;
@@ -3196,7 +3629,9 @@ ensureOrbitControls();
       doorL.position.set(-0.46, 1.21, 0.04);
       const doorR = new THREE.Mesh(new THREE.BoxGeometry(0.88, 2.42, 0.18), id === 'hotel_revolving_door' ? M.glassClear : matSilver);
       doorR.position.set(0.46, 1.21, 0.04);
-      group.add(frame, doorL, doorR);
+      const floorIndicator = new THREE.Mesh(new THREE.PlaneGeometry(0.48, 0.14), M.emissiveScreen);
+      floorIndicator.position.set(0, 2.52, 0.14);
+      group.add(frame, doorL, doorR, floorIndicator);
     } else if (id === 'hotel_bellhop_bell') {
       const base = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, 0.03, 20), matDark);
       base.position.y = 0.015;
@@ -3214,14 +3649,22 @@ ensureOrbitControls();
       armL.position.set(-0.96, 0.44, 0);
       const armR = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.52, 0.86), matVelvet);
       armR.position.set(0.96, 0.44, 0);
-      group.add(seat, back, armL, armR);
-    } else if (id === 'hotel_keycard') {
-      const holder = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.04, 0.16), matGold);
-      holder.position.y = 0.02;
-      const card = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.24, 0.012), matSky);
-      card.position.set(0, 0.13, 0);
+      const pillow1 = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.32, 0.12), matGold);
+      pillow1.position.set(-0.62, 0.62, -0.14);
+      pillow1.rotation.z = 0.15;
+      const pillow2 = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.32, 0.12), matGold);
+      pillow2.position.set(0.62, 0.62, -0.14);
+      pillow2.rotation.z = -0.15;
+      group.add(seat, back, armL, armR, pillow1, pillow2);
+    } else if (id === 'hotel_keycard' || id === 'hotel_room_keycard') {
+      const holder = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.05, 0.20), matGold);
+      holder.position.y = 0.025;
+      const card = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.30, 0.016), matSky);
+      card.position.set(0, 0.16, 0);
       card.rotation.z = 0.12;
-      group.add(holder, card);
+      const chip = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.02), matGold);
+      chip.position.set(-0.04, 0.18, 0.01);
+      group.add(holder, card, chip);
     } else if (id === 'rest_cutlery') {
       [-0.08, 0, 0.08].forEach(cx => {
         const utensil = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.01, 0.26), matSilver);
@@ -3492,6 +3935,9 @@ ensureOrbitControls();
       const tray = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.28, 0.34, 4), matEmerald);
       tray.rotation.y = Math.PI / 4;
       tray.position.set(0, 0.42, 0.08);
+      const soilMound = new THREE.Mesh(new THREE.SphereGeometry(0.28, 12, 10), M.soilDark);
+      soilMound.scale.set(1.1, 0.45, 1.2);
+      soilMound.position.set(0, 0.56, 0.08);
       const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.06, 16), M.ironBlack);
       wheel.rotation.z = Math.PI / 2;
       wheel.position.set(0, 0.18, 0.56);
@@ -3501,7 +3947,7 @@ ensureOrbitControls();
       const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 1.25, 10), matWood);
       armR.rotation.x = Math.PI / 2 - 0.18;
       armR.position.set(0.22, 0.28, -0.05);
-      group.add(tray, wheel, armL, armR);
+      group.add(tray, soilMound, wheel, armL, armR);
     } else if (id === 'garden_patio_umbrella') {
       const base = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.36, 0.08, 20), matDark);
       base.position.y = 0.04;
@@ -3545,6 +3991,11 @@ ensureOrbitControls();
         const bar = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.04, 0.04), matRed);
         bar.position.set(-0.10, 0.08, 0);
         group.add(bar);
+        for (let t = -4; t <= 4; t++) {
+          const tine = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.004, 0.10, 6), matRed);
+          tine.position.set(-0.10 + t * 0.05, 0.03, 0);
+          group.add(tine);
+        }
       } else {
         const motor = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.20, 0.18), matRed);
         motor.position.set(0, 0.25, 0);
@@ -3700,7 +4151,10 @@ ensureOrbitControls();
       const deskTop = new THREE.Mesh(new THREE.BoxGeometry(0.64, 0.06, 0.52), matWalnut);
       deskTop.position.set(0, 1.08, 0);
       deskTop.rotation.x = 0.24;
-      group.add(base, column, deskTop);
+      const book = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.03, 0.28), matWhite);
+      book.position.set(0, 1.12, 0);
+      book.rotation.x = 0.24;
+      group.add(base, column, deskTop, book);
     }
     // --- MODELOS 3D DETALLADOS ADICIONALES: SPACE ---
     else if (id === 'space_mercury' || id === 'space_venus' || id === 'space_jupiter' || id === 'space_uranus' || id === 'space_neptune') {
@@ -3788,51 +4242,110 @@ ensureOrbitControls();
       }
     }
     // --- MODELOS 3D DETALLADOS ADICIONALES: SUPERMARKET, HOTEL, RESTAURANT ---
-    else if (
-      id === 'market_conveyor_belt' || id === 'market_deli_counter' || id === 'market_meat_counter' ||
-      id === 'market_seafood_ice' || id === 'market_cooler_display' || id === 'market_dairy_fridge'
-    ) {
-      const base = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.62, 0.86), matWhite);
+    else if (id === 'market_conveyor_belt' || id === 'market_deli_counter' || id === 'market_meat_counter' || id === 'market_seafood_ice') {
+      // Mostrador de Carnicería / Pescadería / Fiambrería con vitrina de cristal y alimentos detallados dentro
+      const base = new THREE.Mesh(new THREE.BoxGeometry(2.05, 0.62, 0.84), matWhite);
       base.position.y = 0.31;
-      const beltOrGlass = new THREE.Mesh(
-        new THREE.BoxGeometry(1.98, 0.42, 0.78),
-        id === 'market_conveyor_belt' ? M.ironBlack : M.glassClear
+      const frontStripe = new THREE.Mesh(new THREE.BoxGeometry(2.08, 0.12, 0.04), id.includes('seafood') ? matSky : matRed);
+      frontStripe.position.set(0, 0.45, 0.42);
+      const displayBed = new THREE.Mesh(
+        new THREE.BoxGeometry(1.94, 0.06, 0.72),
+        id === 'market_conveyor_belt' ? M.ironBlack : (id.includes('seafood') ? new PhysicalMat({ color: 0xe0f2fe, roughness: 0.2 }) : matSilver)
       );
-      beltOrGlass.position.y = 0.78;
-      const accent = new THREE.Mesh(new THREE.BoxGeometry(2.12, 0.08, 0.06), id.includes('meat') ? matRed : matSky);
-      accent.position.set(0, 0.58, 0.44);
-      group.add(base, beltOrGlass, accent);
-    } else if (
-      id === 'market_beverage_aisle' || id === 'market_canned_goods' || id === 'market_cereal_aisle' ||
-      id === 'market_bread_rack' || id === 'market_bulk_dispenser' || id === 'market_cleaning_aisle' ||
-      id === 'market_produce_crate' || id === 'market_trolley_bay'
-    ) {
-      const frame = new THREE.Mesh(new THREE.BoxGeometry(1.65, 1.55, 0.65), matDark);
-      frame.position.y = 0.775;
-      group.add(frame);
-      [0.38, 0.85, 1.32].forEach(sy => {
-        const shelf = new THREE.Mesh(new THREE.BoxGeometry(1.58, 0.04, 0.62), matSilver);
-        shelf.position.set(0, sy, 0.02);
-        group.add(shelf);
-        for (let b = -2; b <= 2; b++) {
-          const itemMat = id.includes('cereal') ? matGold : (id.includes('beverage') ? matRed : matEmerald);
-          const itemMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.22, 12), itemMat);
-          itemMesh.position.set(b * 0.28, sy + 0.13, 0.08);
-          group.add(itemMesh);
-        }
+      displayBed.position.set(0, 0.65, 0);
+      const glassHood = new THREE.Mesh(new THREE.BoxGeometry(1.98, 0.44, 0.76), M.glassClear);
+      glassHood.position.set(0, 0.88, 0);
+      group.add(base, frontStripe, displayBed, glassHood);
+      // Cortes de carne / filetes de salmón / quesos visibles sobre la cama de hielo o acero
+      [-0.65, -0.22, 0.22, 0.65].forEach((fx, fIdx) => {
+        const cutColor = id.includes('seafood') ? (fIdx % 2 === 0 ? matRosePink : matSilver) : (id.includes('deli') ? matGold : matRed);
+        const cutMesh = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.06, 0.38), cutColor);
+        cutMesh.position.set(fx, 0.71, 0);
+        group.add(cutMesh);
       });
     } else if (
-      id === 'market_receipt' || id === 'market_card_terminal' || id === 'market_scanner_gun' ||
-      id === 'market_aisle_sign' || id === 'market_plastic_divider' || id === 'market_shelf_tag' ||
-      id === 'rest_pos_terminal' || id === 'hotel_checkin_terminal'
+      id === 'market_beverage_aisle' || id === 'market_canned_goods' || id === 'market_cereal_aisle' ||
+      id === 'market_cleaning_aisle' || id === 'market_bulk_dispenser' || id === 'market_buy_in_bulk'
     ) {
-      const stand = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.14, 0.18, 16), matDark);
+      // Góndola de Supermercado Abierta (respaldo delgado para que las repisas y productos sean 100% visibles)
+      const backboard = new THREE.Mesh(new THREE.BoxGeometry(1.72, 1.68, 0.06), matWhite);
+      backboard.position.set(0, 0.84, -0.28);
+      const baseDeck = new THREE.Mesh(new THREE.BoxGeometry(1.72, 0.14, 0.64), matDark);
+      baseDeck.position.set(0, 0.07, 0);
+      const topSign = new THREE.Mesh(new THREE.BoxGeometry(1.74, 0.14, 0.12), id.includes('cereal') ? matGold : (id.includes('beverage') ? matRed : matEmerald));
+      topSign.position.set(0, 1.66, -0.22);
+      group.add(backboard, baseDeck, topSign);
+      [0.16, 0.62, 1.08].forEach((sy) => {
+        const shelf = new THREE.Mesh(new THREE.BoxGeometry(1.66, 0.04, 0.56), matSilver);
+        shelf.position.set(0, sy, 0);
+        const priceRail = new THREE.Mesh(new THREE.BoxGeometry(1.66, 0.035, 0.02), matGold);
+        priceRail.position.set(0, sy, 0.28);
+        group.add(shelf, priceRail);
+        for (let b = -3; b <= 3; b++) {
+          const itemMat = id.includes('cereal')
+            ? (b % 2 === 0 ? matGold : matRed)
+            : (id.includes('beverage') ? (b % 2 === 0 ? matRed : matSky) : (b % 2 === 0 ? matEmerald : matGold));
+          if (id.includes('cereal') || id.includes('cleaning')) {
+            const boxProd = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.30, 0.12), itemMat);
+            boxProd.position.set(b * 0.22, sy + 0.17, 0.06);
+            const labelPatch = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.14), matWhite);
+            labelPatch.position.set(b * 0.22, sy + 0.18, 0.125);
+            group.add(boxProd, labelPatch);
+          } else {
+            const cylProd = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.28, 14), itemMat);
+            cylProd.position.set(b * 0.22, sy + 0.16, 0.06);
+            const capTop = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.04, 10), matWhite);
+            capTop.position.set(b * 0.22, sy + 0.31, 0.06);
+            group.add(cylProd, capTop);
+          }
+        }
+      });
+    } else if (id === 'market_trolley_bay') {
+      // Bahía de Retorno de Carritos con barandales tubulares cromados y letrero azul
+      const railL = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.85, 1.35), matSilver);
+      railL.position.set(-0.55, 0.42, 0);
+      const railR = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.85, 1.35), matSilver);
+      railR.position.set(0.55, 0.42, 0);
+      const signArch = new THREE.Mesh(new THREE.BoxGeometry(1.16, 0.28, 0.06), matSky);
+      signArch.position.set(0, 1.35, -0.58);
+      const postL = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.35, 10), matSilver);
+      postL.position.set(-0.55, 0.68, -0.58);
+      const postR = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.35, 10), matSilver);
+      postR.position.set(0.55, 0.68, -0.58);
+      const nestedCart = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.48, 0.85), matSilver);
+      nestedCart.position.set(0, 0.46, 0);
+      const cartHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.72, 12), matRed);
+      cartHandle.rotation.z = Math.PI / 2;
+      cartHandle.position.set(0, 0.76, 0.44);
+      group.add(railL, railR, signArch, postL, postR, nestedCart, cartHandle);
+    } else if (id === 'market_aisle_sign' || id === 'market_aisle_number') {
+      // Letrero de Pasillo Colgante o de Pedestal con número e indicadores de categoría
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, 0.05, 18), matSilver);
+      base.position.y = 0.025;
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.65, 12), matSilver);
+      pole.position.y = 0.825;
+      const board = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.38, 0.06), matSky);
+      board.position.set(0, 1.65, 0);
+      const numBadge = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.34, 0.08), matGold);
+      numBadge.position.set(-0.44, 1.65, 0);
+      group.add(base, pole, board, numBadge);
+    } else if (
+      id === 'market_receipt' || id === 'market_card_terminal' || id === 'market_plastic_divider' ||
+      id === 'rest_pos_terminal' || id === 'hotel_checkin_terminal' || id === 'market_pay_by_card' ||
+      id === 'market_contactless_pay'
+    ) {
+      const stand = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 0.18, 16), matSilver);
       stand.position.y = 0.09;
-      const body = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.24, 0.22), matSilver);
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.26, 0.22), matDark);
       body.position.y = 0.26;
+      body.rotation.x = -0.25;
       const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.24, 0.16), M.emissiveScreen);
       screen.position.set(0, 0.28, 0.115);
-      group.add(stand, body, screen);
+      screen.rotation.x = -0.25;
+      const receiptPaper = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.22, 0.015), matWhite);
+      receiptPaper.position.set(0, 0.44, -0.02);
+      receiptPaper.rotation.x = 0.18;
+      group.add(stand, body, screen, receiptPaper);
     } else if (id === 'hotel_king_bed') {
       const frame = new THREE.Mesh(new THREE.BoxGeometry(2.15, 0.34, 2.25), matWalnut);
       frame.position.y = 0.17;
@@ -3842,16 +4355,26 @@ ensureOrbitControls();
       mattress.position.set(0, 0.44, 0.04);
       const runner = new THREE.Mesh(new THREE.BoxGeometry(2.04, 0.30, 0.58), matGold);
       runner.position.set(0, 0.45, 0.68);
-      group.add(frame, headboard, mattress, runner);
+      const pillowL = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.16, 0.42), matWhite);
+      pillowL.position.set(-0.52, 0.64, -0.72);
+      const pillowR = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.16, 0.42), matWhite);
+      pillowR.position.set(0.52, 0.64, -0.72);
+      group.add(frame, headboard, mattress, runner, pillowL, pillowR);
     } else if (id === 'hotel_swimming_pool') {
-      const coping = new THREE.Mesh(new THREE.BoxGeometry(2.65, 0.14, 1.65), matWhite);
-      coping.position.y = 0.07;
-      const water = new THREE.Mesh(new THREE.BoxGeometry(2.35, 0.16, 1.35), matSky);
-      water.position.y = 0.08;
-      group.add(coping, water);
+      const coping = new THREE.Mesh(new THREE.BoxGeometry(2.65, 0.18, 1.65), matWhite);
+      coping.position.y = 0.09;
+      const water = new THREE.Mesh(new THREE.BoxGeometry(2.35, 0.20, 1.35), matSky);
+      water.position.y = 0.10;
+      const ladderL = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.55, 10), matSilver);
+      ladderL.position.set(-1.05, 0.35, 0.68);
+      const ladderR = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.55, 10), matSilver);
+      ladderR.position.set(-0.82, 0.35, 0.68);
+      group.add(coping, water, ladderL, ladderR);
     } else if (id === 'hotel_shuttle_van') {
       const body = new THREE.Mesh(new THREE.BoxGeometry(2.15, 0.85, 0.96), matWhite);
       body.position.y = 0.56;
+      const stripe = new THREE.Mesh(new THREE.BoxGeometry(2.17, 0.12, 0.98), matGold);
+      stripe.position.set(0, 0.46, 0);
       const cabinGlass = new THREE.Mesh(new THREE.BoxGeometry(1.85, 0.36, 0.98), M.glassClear);
       cabinGlass.position.set(0.05, 0.72, 0);
       [[-0.68, -0.48], [0.68, -0.48], [-0.68, 0.48], [0.68, 0.48]].forEach(([wx, wz]) => {
@@ -3860,20 +4383,128 @@ ensureOrbitControls();
         wheel.position.set(wx, 0.18, wz);
         group.add(wheel);
       });
-      group.add(body, cabinGlass);
-    } else if (
-      id === 'hotel_safe_box' || id === 'hotel_minibar' || id === 'hotel_room_service_tray' ||
-      id === 'hotel_room_keycard' || id === 'hotel_do_not_disturb' || id === 'hotel_bathrobe' ||
-      id === 'hotel_towel_rack' || id === 'hotel_emergency_exit' || id === 'hotel_pillow_menu' ||
-      id === 'hotel_slippers' || id === 'hotel_key_drop' || id === 'hotel_ironing_board' ||
-      id === 'hotel_fitness_treadmill' || id === 'hotel_smoke_detector'
-    ) {
-      const base = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.68, 0.48), id === 'hotel_minibar' ? M.ironBlack : matWalnut);
-      base.position.y = 0.34;
-      const trim = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.56, 0.04), matGold);
-      trim.position.set(0, 0.34, 0.23);
-      const badge = new THREE.Mesh(new THREE.PlaneGeometry(0.32, 0.14), M.emissiveScreen);
-      badge.position.set(0, 0.44, 0.255);
+      group.add(body, stripe, cabinGlass);
+    } else if (id === 'hotel_safe_box') {
+      // Caja fuerte electrónica de acero con teclado numérico iluminado y manija en L
+      const safeBody = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.52, 0.48), matDark);
+      safeBody.position.y = 0.26;
+      const doorPanel = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.44, 0.04), matSilver);
+      doorPanel.position.set(0, 0.26, 0.24);
+      const screenPad = new THREE.Mesh(new THREE.PlaneGeometry(0.18, 0.08), M.emissiveScreen);
+      screenPad.position.set(0.10, 0.34, 0.265);
+      const handleHub = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.04, 16), matGold);
+      handleHub.rotation.x = Math.PI / 2;
+      handleHub.position.set(-0.12, 0.26, 0.265);
+      group.add(safeBody, doorPanel, screenPad, handleHub);
+    } else if (id === 'hotel_minibar') {
+      // Minibar con puerta de cristal y botellas/latas refrigeradas visibles en el interior
+      const cabinet = new THREE.Mesh(new THREE.BoxGeometry(0.64, 0.78, 0.54), matWalnut);
+      cabinet.position.y = 0.39;
+      const glassDoor = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.68, 0.04), M.glassClear);
+      glassDoor.position.set(0, 0.39, 0.27);
+      const bottle1 = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.24, 12), matEmerald);
+      bottle1.position.set(-0.12, 0.52, 0.12);
+      const can1 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.14, 12), matRed);
+      can1.position.set(0.10, 0.48, 0.12);
+      group.add(cabinet, glassDoor, bottle1, can1);
+    } else if (id === 'hotel_room_service_tray' || id === 'rest_service_tray') {
+      // Bandeja plateada de Room Service con campana cloche, tetera y taza de porcelana
+      const tray = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.36, 0.03, 24), matSilver);
+      tray.position.y = 0.015;
+      const cloche = new THREE.Mesh(new THREE.SphereGeometry(0.18, 20, 14, 0, Math.PI * 2, 0, Math.PI * 0.5), matSilver);
+      cloche.position.set(-0.08, 0.03, 0);
+      const handleTop = new THREE.Mesh(new THREE.SphereGeometry(0.028, 12, 12), matGold);
+      handleTop.position.set(-0.08, 0.22, 0);
+      const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.045, 0.10, 16), matWhite);
+      cup.position.set(0.18, 0.07, 0.06);
+      group.add(tray, cloche, handleTop, cup);
+    } else if (id === 'hotel_bathrobe') {
+      // Bata de baño blanca afelpada en perchero con cinturón anudado
+      const stand = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.24, 0.05, 16), matGold);
+      stand.position.y = 0.025;
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.35, 10), matGold);
+      pole.position.y = 0.68;
+      const torsoRobe = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.24, 0.95, 16), matWhite);
+      torsoRobe.position.set(0, 0.82, 0);
+      const belt = new THREE.Mesh(new THREE.TorusGeometry(0.20, 0.025, 10, 20), matGold);
+      belt.rotation.x = Math.PI / 2;
+      belt.position.set(0, 0.80, 0);
+      const sleeveL = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.05, 0.45, 12), matWhite);
+      sleeveL.position.set(-0.24, 0.96, 0);
+      sleeveL.rotation.z = 0.38;
+      const sleeveR = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.05, 0.45, 12), matWhite);
+      sleeveR.position.set(0.24, 0.96, 0);
+      sleeveR.rotation.z = -0.38;
+      group.add(stand, pole, torsoRobe, belt, sleeveL, sleeveR);
+    } else if (id === 'hotel_towel_rack') {
+      // Toallero climatizado cromado con toallas blancas y azules dobladas
+      const railL = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.95, 10), matSilver);
+      railL.position.set(-0.32, 0.48, 0);
+      const railR = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.95, 10), matSilver);
+      railR.position.set(0.32, 0.48, 0);
+      const towel1 = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.36, 0.08), matWhite);
+      towel1.position.set(0, 0.68, 0.03);
+      const towel2 = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.32, 0.08), matSky);
+      towel2.position.set(0, 0.32, 0.03);
+      group.add(railL, railR, towel1, towel2);
+    } else if (id === 'hotel_fitness_treadmill') {
+      // Caminadora de gimnasio con banda de correr, pasamanos y consola LED
+      const deck = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.12, 1.55), matDark);
+      deck.position.y = 0.08;
+      const belt = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.02, 1.38), M.ironBlack);
+      belt.position.set(0, 0.145, 0.04);
+      const postL = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.035, 1.15, 12), matSilver);
+      postL.position.set(-0.34, 0.62, -0.58);
+      const postR = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.035, 1.15, 12), matSilver);
+      postR.position.set(0.34, 0.62, -0.58);
+      const consoleBox = new THREE.Mesh(new THREE.BoxGeometry(0.74, 0.28, 0.32), matDark);
+      consoleBox.position.set(0, 1.22, -0.54);
+      consoleBox.rotation.x = 0.35;
+      const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.54, 0.18), M.emissiveScreen);
+      screen.position.set(0, 1.24, -0.37);
+      screen.rotation.x = -0.35;
+      group.add(deck, belt, postL, postR, consoleBox, screen);
+    } else if (id === 'hotel_ironing_board') {
+      // Tabla de planchar plegable con plancha de vapor encima
+      const board = new THREE.Mesh(new THREE.BoxGeometry(1.18, 0.05, 0.38), matSky);
+      board.position.y = 0.78;
+      const leg1 = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.92, 10), matSilver);
+      leg1.rotation.z = 0.45;
+      leg1.position.set(0, 0.39, 0);
+      const leg2 = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.92, 10), matSilver);
+      leg2.rotation.z = -0.45;
+      leg2.position.set(0, 0.39, 0);
+      const iron = new THREE.Mesh(new THREE.ConeGeometry(0.10, 0.22, 4), matWhite);
+      iron.rotation.z = Math.PI / 2;
+      iron.position.set(0.28, 0.85, 0);
+      group.add(board, leg1, leg2, iron);
+    } else if (id === 'hotel_emergency_exit') {
+      // Puerta y Señal de Salida de Emergencia iluminada en verde
+      const door = new THREE.Mesh(new THREE.BoxGeometry(0.95, 2.05, 0.08), matWhite);
+      door.position.y = 1.025;
+      const panicBar = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.06, 0.08), matSilver);
+      panicBar.position.set(0, 1.0, 0.06);
+      const exitSign = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.22, 0.08), matEmerald);
+      exitSign.position.set(0, 2.22, 0.04);
+      group.add(door, panicBar, exitSign);
+    } else if (id === 'hotel_slippers') {
+      const matPad = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.02, 0.42), matGold);
+      matPad.position.y = 0.01;
+      [-0.12, 0.12].forEach(sx => {
+        const sole = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.03, 0.28), matWhite);
+        sole.position.set(sx, 0.03, 0);
+        const strap = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.05, 0.12), matWhite);
+        strap.position.set(sx, 0.06, -0.02);
+        group.add(sole, strap);
+      });
+      group.add(matPad);
+    } else if (id === 'hotel_do_not_disturb' || id === 'hotel_pillow_menu' || id === 'hotel_key_drop' || id === 'hotel_smoke_detector') {
+      const base = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.62, 0.36), matWalnut);
+      base.position.y = 0.31;
+      const trim = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.48, 0.04), matGold);
+      trim.position.set(0, 0.32, 0.18);
+      const badge = new THREE.Mesh(new THREE.PlaneGeometry(0.30, 0.16), M.emissiveScreen);
+      badge.position.set(0, 0.40, 0.205);
       group.add(base, trim, badge);
     } else if (id === 'rest_padded_booth' || id === 'rest_high_chair') {
       const seat = new THREE.Mesh(new THREE.BoxGeometry(1.55, 0.44, 0.68), matVelvet);
@@ -3884,55 +4515,128 @@ ensureOrbitControls();
       goldCap.position.set(0, 1.04, -0.24);
       group.add(seat, back, goldCap);
     } else if (id === 'rest_executive_chef' || id === 'rest_chef_uniform') {
-      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.20, 0.76, 16), matWhite);
-      body.position.y = 0.56;
+      const legsL = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.055, 0.58, 12), M.ironBlack);
+      legsL.position.set(-0.10, 0.29, 0);
+      const legsR = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.055, 0.58, 12), M.ironBlack);
+      legsR.position.set(0.10, 0.29, 0);
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.20, 0.68, 16), matWhite);
+      body.position.y = 0.88;
+      const scarf = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.025, 10, 20), matRed);
+      scarf.rotation.x = Math.PI / 2;
+      scarf.position.y = 1.20;
       const head = new THREE.Mesh(new THREE.SphereGeometry(0.17, 18, 18), new PhysicalMat({ color: 0xfde68a, roughness: 0.38 }));
-      head.position.y = 1.12;
-      const toque = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.15, 0.28, 16), matWhite);
-      toque.position.y = 1.38;
-      group.add(body, head, toque);
+      head.position.y = 1.38;
+      const toque = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.15, 0.32, 16), matWhite);
+      toque.position.y = 1.66;
+      group.add(legsL, legsR, body, scarf, head, toque);
     } else if (id === 'rest_gas_stove' || id === 'rest_frying_pan' || id === 'rest_cutting_board') {
       const range = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.86, 0.78), matSilver);
       range.position.y = 0.43;
+      const burnerGlow = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.02, 10, 24), M.emissiveScreen);
+      burnerGlow.rotation.x = Math.PI / 2;
+      burnerGlow.position.set(-0.24, 0.87, 0);
       const pan = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.18, 0.06, 20), M.ironBlack);
-      pan.position.set(-0.24, 0.89, 0);
+      pan.position.set(-0.24, 0.90, 0);
+      const panHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.28, 10), matGold);
+      panHandle.rotation.x = Math.PI / 2;
+      panHandle.position.set(-0.24, 0.91, 0.30);
       const board = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.04, 0.30), matWood);
       board.position.set(0.26, 0.88, 0);
-      group.add(range, pan, board);
+      group.add(range, burnerGlow, pan, panHandle, board);
     } else {
-      // Geometría compuesta estilizada de lujo para accesorios de mesa y servicio
-      const pedestal = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, 0.08, 24), matGold);
-      pedestal.position.y = 0.04;
-      const mainBody = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.32, 0.32), matWalnut);
-      mainBody.position.y = 0.24;
-      const topAccent = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.18, 0.12, 20), matSilver);
-      topAccent.position.y = 0.46;
-      const screenGlow = new THREE.Mesh(new THREE.PlaneGeometry(0.28, 0.16), M.emissiveScreen);
-      screenGlow.position.set(0, 0.26, 0.165);
-      group.add(pedestal, mainBody, topAccent, screenGlow);
+      // Diorama / Objeto 3D contextual detallado según la categoría o palabra en inglés (CERO esferas flotantes)
+      const isMoney = /cash|bill|change|tip|treat|split|price|deposit|rent|mortgage|refund/i.test(id + ' ' + enLower);
+      const isBookOrDoc = /menu|list|book|passport|id|code|card|check|order|special|recipe|nutrition|date/i.test(id + ' ' + enLower);
+      const isFoodOrDrink = /food|bread|fruit|organic|ripe|spoiled|appetizer|course|entree|side|dessert|savory|sweet|spicy|bland|breakfast|bag|leftover|vegetarian|gluten|seasoning|wine|toast|sommelier/i.test(id + ' ' + enLower);
+      const isNature = /flower|seed|weed|soil|lawn|tree|shade|sun|dew|breeze|squirrel|butterfly|harvest|prune|perennial|fertilizer|photosynthesis/i.test(id + ' ' + enLower);
+
+      // Pedestal arquitectónico elegante a nivel de piso o mesa
+      const plinth = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.32, 0.10, 24), matWalnut);
+      plinth.position.y = 0.05;
+      const goldRing = new THREE.Mesh(new THREE.TorusGeometry(0.29, 0.018, 10, 24), matGold);
+      goldRing.rotation.x = Math.PI / 2;
+      goldRing.position.y = 0.10;
+      group.add(plinth, goldRing);
+
+      if (isMoney) {
+        // Billetes verdes con fajilla dorada y pila de monedas de oro
+        const bills = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.08, 0.16), matEmerald);
+        bills.position.set(-0.04, 0.14, 0);
+        const band = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.085, 0.165), matGold);
+        band.position.set(-0.04, 0.14, 0);
+        const coinStack1 = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.12, 16), matGold);
+        coinStack1.position.set(0.14, 0.16, 0.04);
+        const coinStack2 = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.08, 16), matSilver);
+        coinStack2.position.set(0.12, 0.14, -0.08);
+        group.add(bills, band, coinStack1, coinStack2);
+      } else if (isFoodOrDrink) {
+        // Plato gourmet de porcelana con cúpula/alimento estilizado y copa al lado
+        const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.18, 0.025, 22), matWhite);
+        plate.position.set(-0.04, 0.115, 0);
+        const dish = new THREE.Mesh(new THREE.SphereGeometry(0.11, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.55), matRed);
+        dish.position.set(-0.04, 0.125, 0);
+        const garnish = new THREE.Mesh(new THREE.DodecahedronGeometry(0.045, 0), matEmerald);
+        garnish.position.set(0.02, 0.18, 0.03);
+        const goblet = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.035, 0.16, 14), M.glassClear);
+        goblet.position.set(0.14, 0.18, -0.04);
+        group.add(plate, dish, garnish, goblet);
+      } else if (isNature) {
+        // Maceta jardinera con tierra orgánica, tallo verde y flor colorida
+        const planter = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.14, 0.22, 18), M.terracottaPot);
+        planter.position.y = 0.21;
+        const bush = new THREE.Mesh(new THREE.DodecahedronGeometry(0.16, 1), M.leafGreen3);
+        bush.position.y = 0.38;
+        const blossom = new THREE.Mesh(new THREE.SphereGeometry(0.065, 12, 12), matRosePink);
+        blossom.position.set(0, 0.50, 0);
+        group.add(planter, bush, blossom);
+      } else if (isBookOrDoc) {
+        // Atril de lectura con carpeta abierta, hoja impresa y bolígrafo dorado
+        const standNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, 0.26, 12), matGold);
+        standNeck.position.y = 0.23;
+        const folder = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.03, 0.28), matSky);
+        folder.position.set(0, 0.36, 0);
+        folder.rotation.x = 0.32;
+        const paper = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.035, 0.22), matWhite);
+        paper.position.set(0, 0.37, 0);
+        paper.rotation.x = 0.32;
+        group.add(standNeck, folder, paper);
+      } else {
+        // Trofeo / Escultura interactiva de cristal y latón sobre pedestal
+        const column = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.11, 0.24, 16), matSilver);
+        column.position.y = 0.22;
+        const crystalCrown = new THREE.Mesh(new THREE.OctahedronGeometry(0.14, 0), matGold);
+        crystalCrown.position.y = 0.44;
+        group.add(column, crystalCrown);
+      }
     }
 
     const px = itemSpec.pos ? itemSpec.pos[0] : 0;
-    const py = itemSpec.pos ? itemSpec.pos[1] : 0;
+    const rawPy = itemSpec.pos ? itemSpec.pos[1] : 0;
+    // Evitar que conceptos/frases queden flotando en el aire a y=1.8 en escenarios terrestres
+    const isConceptOrPhrase = itemSpec.type === 'concept' || itemSpec.type === 'phrase';
+    const py = (isConceptOrPhrase && scenarioKey !== 'space') ? 0 : rawPy;
     const pz = itemSpec.pos ? itemSpec.pos[2] : 0;
     group.position.set(px, py, pz);
 
     const userData = {
       interactive: true,
+      isConceptNode: isConceptOrPhrase,
       id: itemSpec.id,
       en: itemSpec.en,
       ipa: itemSpec.ipa,
       es: itemSpec.es,
       category: itemSpec.category || scenarioKey,
       example: itemSpec.example,
+      type: itemSpec.type || 'object',
       wordEn: itemSpec.en,
       phonetic: itemSpec.ipa,
       wordEs: itemSpec.es,
-      focusPos: { x: px + (px >= 0 ? -1.8 : 1.8), y: Math.max(2.2, py + 2.0), z: pz + 2.8 },
-      lookAtPos: { x: px, y: Math.max(0.8, py + 0.6), z: pz }
+      focusPos: { x: px + (px >= 0 ? -1.8 : 1.8), y: Math.max(2.0, py + 1.8), z: pz + 2.6 },
+      lookAtPos: { x: px, y: Math.max(0.5, py + 0.4), z: pz }
     };
     WORLD3D_VOCAB_CATALOG[itemSpec.id] = userData;
     group.userData = Object.assign({}, userData);
+    applyNormalMapToObjectHierarchy(group, scenarioKey);
     group.traverse(child => {
       if (child.isMesh) {
         child.castShadow = !IS_IOS;
@@ -3947,7 +4651,7 @@ ensureOrbitControls();
   }
   global.buildCompound3DObject = buildCompound3DObject;
 
-  // Textura en canvas para la etiqueta flotante de Nodos Conceptuales (THREE.Sprite)
+  // Textura en canvas para etiqueta opcional bajo demanda
   function createConceptNodeTexture(labelEn, typeLabel, isPhrase) {
     if (typeof document === 'undefined' || typeof THREE === 'undefined') return null;
     const canvas = document.createElement('canvas');
@@ -3956,157 +4660,18 @@ ensureOrbitControls();
     canvas.height = 112;
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
-
-    const w = 384, h = 112, r = 24;
-    const bgGrad = ctx.createLinearGradient(0, 0, w, h);
-    if (isPhrase) {
-      bgGrad.addColorStop(0, 'rgba(14, 116, 144, 0.94)');
-      bgGrad.addColorStop(1, 'rgba(15, 23, 42, 0.96)');
-    } else {
-      bgGrad.addColorStop(0, 'rgba(109, 40, 217, 0.94)');
-      bgGrad.addColorStop(1, 'rgba(15, 23, 42, 0.96)');
-    }
-
-    ctx.fillStyle = bgGrad;
-    ctx.strokeStyle = isPhrase ? 'rgba(56, 189, 248, 0.9)' : 'rgba(192, 132, 252, 0.9)';
-    ctx.lineWidth = 4;
-
-    if (typeof ctx.beginPath === 'function') ctx.beginPath();
-    if (typeof ctx.roundRect === 'function') {
-      ctx.roundRect(4, 4, w - 8, h - 8, r);
-    } else if (typeof ctx.rect === 'function') {
-      ctx.rect(4, 4, w - 8, h - 8);
-    } else if (typeof ctx.fillRect === 'function') {
-      ctx.fillRect(4, 4, w - 8, h - 8);
-    }
-    if (typeof ctx.fill === 'function') ctx.fill();
-    if (typeof ctx.stroke === 'function') ctx.stroke();
-
-    ctx.font = 'bold 22px system-ui, -apple-system, sans-serif';
-    ctx.fillStyle = isPhrase ? '#7dd3fc' : '#e9d5ff';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
-    if (typeof ctx.fillText === 'function') {
-      ctx.fillText(typeLabel.toUpperCase(), w / 2, 14);
-    }
-
-    ctx.font = '900 32px system-ui, -apple-system, sans-serif';
+    ctx.fillStyle = isPhrase ? 'rgba(14, 116, 144, 0.94)' : 'rgba(109, 40, 217, 0.94)';
+    if (typeof ctx.fillRect === 'function') ctx.fillRect(4, 4, 376, 104);
+    ctx.font = 'bold 24px system-ui, sans-serif';
     ctx.fillStyle = '#ffffff';
-    let text = labelEn || '';
-    if (text.length > 24) text = text.slice(0, 22) + '…';
-    if (typeof ctx.fillText === 'function') {
-      ctx.fillText(text, w / 2, 52);
-    }
-
-    const tex = new THREE.CanvasTexture(canvas);
-    return tex;
+    ctx.textAlign = 'center';
+    if (typeof ctx.fillText === 'function') ctx.fillText(String(labelEn || '').slice(0, 24), 192, 64);
+    return new THREE.CanvasTexture(canvas);
   }
 
-  // Constructor de Nodos Conceptuales Holográficos Discretos (type: 'concept' | 'phrase')
+  // Reemplazo realista: construye un modelo 3D físico contextual en vez de una esfera flotante con cartel gigante
   function buildHolographicConceptNode(itemSpec, scenarioKey) {
-    if (typeof THREE === 'undefined' || !itemSpec) return null;
-    const isPhrase = itemSpec.type === 'phrase';
-    const group = new THREE.Group();
-    group.name = itemSpec.en || itemSpec.id;
-
-    const PhysicalMat = THREE.MeshPhysicalMaterial || THREE.MeshStandardMaterial;
-    const baseColor = isPhrase ? 0x0284c7 : 0x7e22ce;
-    const glowColor = isPhrase ? 0x38bdf8 : 0xc084fc;
-
-    // 1. Esfera cristalina pulsante con clearcoat
-    const sphereGeo = new THREE.SphereGeometry(0.24, 24, 24);
-    const sphereMat = new PhysicalMat({
-      color: baseColor,
-      emissive: glowColor,
-      emissiveIntensity: 0.55,
-      roughness: 0.15,
-      metalness: 0.2,
-      clearcoat: 0.85,
-      transparent: true,
-      opacity: 0.85
-    });
-    const sphereMesh = new THREE.Mesh(sphereGeo, sphereMat);
-    sphereMesh.position.y = 0.5;
-    group.add(sphereMesh);
-
-    // 2. Anillo holográfico orbitante
-    const ringGeo = new THREE.TorusGeometry(0.42, 0.024, 16, 36);
-    const ringMat = new THREE.MeshStandardMaterial({
-      color: glowColor,
-      emissive: glowColor,
-      emissiveIntensity: 0.8,
-      roughness: 0.2,
-      metalness: 0.8
-    });
-    const ringMesh = new THREE.Mesh(ringGeo, ringMat);
-    ringMesh.position.y = 0.5;
-    ringMesh.rotation.x = Math.PI / 3;
-    group.add(ringMesh);
-
-    // 3. Haz cilíndrico de anclaje visual hacia el suelo
-    const basePillar = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.04, 0.12, 0.5, 16),
-      new PhysicalMat({ color: glowColor, transparent: true, opacity: 0.45, roughness: 0.3 })
-    );
-    basePillar.position.y = 0.25;
-    group.add(basePillar);
-
-    // 4. Etiqueta flotante con THREE.Sprite
-    const labelTex = createConceptNodeTexture(itemSpec.en, isPhrase ? '💬 Frase' : '💡 Concepto', isPhrase);
-    if (labelTex) {
-      const spriteMat = new THREE.SpriteMaterial({
-        map: labelTex,
-        transparent: true,
-        depthTest: false
-      });
-      const sprite = new THREE.Sprite(spriteMat);
-      sprite.position.set(0, 1.15, 0);
-      sprite.scale.set(1.4, 0.41, 1);
-      group.add(sprite);
-    }
-
-    const px = itemSpec.pos ? itemSpec.pos[0] : 0;
-    const py = itemSpec.pos ? itemSpec.pos[1] : 0;
-    const pz = itemSpec.pos ? itemSpec.pos[2] : 0;
-    group.position.set(px, py, pz);
-
-    const userData = {
-      interactive: true,
-      isConceptNode: true,
-      id: itemSpec.id,
-      en: itemSpec.en,
-      ipa: itemSpec.ipa,
-      es: itemSpec.es,
-      category: itemSpec.category || scenarioKey,
-      example: itemSpec.example,
-      type: itemSpec.type || 'concept',
-      wordEn: itemSpec.en,
-      phonetic: itemSpec.ipa,
-      wordEs: itemSpec.es,
-      focusPos: { x: px + (px >= 0 ? -1.8 : 1.8), y: Math.max(2.0, py + 1.8), z: pz + 2.4 },
-      lookAtPos: { x: px, y: py + 0.5, z: pz }
-    };
-
-    WORLD3D_VOCAB_CATALOG[itemSpec.id] = userData;
-    group.userData = Object.assign({}, userData);
-    group.traverse(child => {
-      if (child.isMesh || child.isSprite) {
-        child.userData = Object.assign({}, userData, { parentGroup: group });
-      }
-    });
-
-    interactiveObjects.push(group);
-    createSpatialHotspotForObject(group, itemSpec.id);
-
-    animatedConceptNodes.push({
-      group,
-      ring: ringMesh,
-      sphere: sphereMesh,
-      baseY: py,
-      phase: Math.random() * Math.PI * 2
-    });
-
-    return group;
+    return buildCompound3DObject(itemSpec, scenarioKey);
   }
   global.buildHolographicConceptNode = buildHolographicConceptNode;
 
@@ -4632,6 +5197,8 @@ ensureOrbitControls();
     }
 
     updateProgressHudCounter();
+    applyNormalMapToObjectHierarchy(scenarioDynamicRoot, key);
+
     if (camera && scen.cameraPos && scen.cameraLookAt) {
       camera.position.set(scen.cameraPos.x, scen.cameraPos.y, scen.cameraPos.z);
       if (controls && controls.target) {
@@ -5427,26 +5994,321 @@ ensureOrbitControls();
   }
   global.submitCustomDatingInviteId = submitCustomDatingInviteId;
 
+  function toggleDatingPanel(which, forceState) {
+    if (typeof document === 'undefined') return;
+    const waiterPanel = document.getElementById('datingWaiterChatPanel');
+    const partnerPanel = document.getElementById('datingPartnerChatPanel');
+    const target = which === 'waiter' ? waiterPanel : partnerPanel;
+    const other = which === 'waiter' ? partnerPanel : waiterPanel;
+    if (!target) return;
+
+    const isCurrentlyVisible = target.style.display !== 'none' && !target.classList.contains('hidden');
+    const nextState = typeof forceState === 'boolean' ? forceState : !isCurrentlyVisible;
+
+    if (nextState) {
+      target.classList.remove('hidden');
+      target.style.display = 'block';
+      if (which === 'waiter') renderDatingWaiterChatMessages();
+      else renderDatingPartnerChatMessages();
+      // En vista móvil vertical, cerrar el otro panel para evitar saturar la pantalla
+      if (window.innerHeight > window.innerWidth && other) {
+        other.classList.add('hidden');
+        other.style.display = 'none';
+      }
+    } else {
+      target.classList.add('hidden');
+      target.style.display = 'none';
+    }
+  }
+  global.toggleDatingPanel = toggleDatingPanel;
+
+  function toggleWorld3DMinimalMode() {
+    if (typeof document === 'undefined') return;
+    const bar = document.getElementById('unified-world3d-cam-bar');
+    const genderBar = document.getElementById('datingAvatarGenderSelectorBar');
+    const dockPills = document.getElementById('datingBottomDockPills');
+    const card = document.getElementById('world3dVocabHudCard');
+    const iconSpan = document.getElementById('world3dToggleHudIcon');
+    const isHidden = bar && bar.classList.contains('world3d-minimal-hidden');
+
+    if (isHidden) {
+      if (bar) {
+        bar.classList.remove('world3d-minimal-hidden');
+        bar.style.opacity = '1';
+        bar.style.pointerEvents = 'auto';
+      }
+      if (genderBar && currentScenarioKey === 'dating') genderBar.style.display = 'flex';
+      if (dockPills && currentScenarioKey === 'dating') dockPills.style.display = 'flex';
+      if (iconSpan) iconSpan.textContent = '👁️ Ocultar HUD';
+    } else {
+      if (bar) {
+        bar.classList.add('world3d-minimal-hidden');
+        bar.style.opacity = '0.2';
+      }
+      if (genderBar) genderBar.style.display = 'none';
+      if (dockPills) dockPills.style.display = 'none';
+      if (card) card.style.display = 'none';
+      const wp = document.getElementById('datingWaiterChatPanel');
+      const pp = document.getElementById('datingPartnerChatPanel');
+      if (wp) wp.style.display = 'none';
+      if (pp) pp.style.display = 'none';
+      if (iconSpan) iconSpan.textContent = '👁️ Mostrar HUD';
+    }
+  }
+  global.toggleWorld3DMinimalMode = toggleWorld3DMinimalMode;
+
+  let portraitWarningDismissed = false;
+
+  function ensurePortraitWarningOverlay() {
+    if (typeof document === 'undefined') return null;
+    let overlay = document.getElementById('world3dPortraitWarningOverlay');
+    if (overlay) return overlay;
+
+    const host = document.getElementById('view-worldtour') || document.body;
+    overlay = document.createElement('div');
+    overlay.id = 'world3dPortraitWarningOverlay';
+    overlay.setAttribute('role', 'alertdialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', 'Advertencia de orientación vertical en Entorno 3D');
+    overlay.style.cssText = [
+      'position: fixed',
+      'inset: 0',
+      'z-index: 99990',
+      'background: rgba(2, 6, 23, 0.92)',
+      'backdrop-filter: blur(12px)',
+      '-webkit-backdrop-filter: blur(12px)',
+      'display: none',
+      'flex-direction: column',
+      'align-items: center',
+      'justify-content: center',
+      'padding: 24px',
+      'text-align: center',
+      'pointer-events: auto'
+    ].join('; ');
+
+    overlay.innerHTML = `
+      <div style="max-width: 390px; width: 100%; background: linear-gradient(145deg, rgba(15,23,42,0.98), rgba(30,27,75,0.96)); border: 2px solid rgba(168,85,247,0.75); border-radius: 24px; padding: 24px 20px; box-shadow: 0 25px 60px rgba(0,0,0,0.85), 0 0 35px rgba(168,85,247,0.35); color: #f8fafc;">
+        <div style="width: 68px; height: 68px; margin: 0 auto 14px; border-radius: 20px; background: rgba(168,85,247,0.2); border: 1.5px solid rgba(192,132,252,0.6); display: flex; align-items: center; justify-content: center; font-size: 34px; animation: world3dRotatePhonePulse 1.8s ease-in-out infinite;">
+          📲
+        </div>
+        <div style="display: inline-block; padding: 4px 12px; border-radius: 999px; background: rgba(245,158,11,0.2); border: 1px solid rgba(251,191,36,0.6); color: #fcd34d; font-size: 10px; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px;">
+          ⚠️ Orientación Vertical Detectada (Portrait)
+        </div>
+        <h3 style="font-size: 18px; font-weight: 900; color: #ffffff; margin: 0 0 8px; line-height: 1.25;">
+          Gira tu pantalla a Modo Horizontal (Landscape)
+        </h3>
+        <p style="font-size: 12.5px; color: #cbd5e1; line-height: 1.5; margin: 0 0 18px;">
+          El portal <strong>Entorno 3D</strong> está diseñado en formato panorámico <strong>Landscape</strong> para evitar que los controles cubran los objetos 3D interactivos.
+        </p>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <button type="button" onclick="window.forceWorldTourLandscapeNow()"
+            style="width: 100%; padding: 12px 16px; border-radius: 14px; background: linear-gradient(90deg, #9333ea, #4f46e5); color: #ffffff; font-weight: 800; font-size: 13px; border: 1px solid rgba(192,132,252,0.7); cursor: pointer; box-shadow: 0 8px 20px rgba(147,51,234,0.45);">
+            🔄 Rotar a Horizontal Automáticamente
+          </button>
+          <button type="button" onclick="window.dismissWorldTourPortraitWarning()"
+            style="width: 100%; padding: 9px 14px; border-radius: 12px; background: rgba(30,41,59,0.85); color: #94a3b8; font-weight: 700; font-size: 11.5px; border: 1px solid rgba(100,116,139,0.4); cursor: pointer;">
+            Continuar en vertical de todos modos
+          </button>
+        </div>
+      </div>
+      <style>
+        @keyframes world3dRotatePhonePulse {
+          0%, 100% { transform: rotate(0deg) scale(1); }
+          40%, 60% { transform: rotate(-90deg) scale(1.08); }
+        }
+      </style>
+    `;
+
+    host.appendChild(overlay);
+    return overlay;
+  }
+
+  function isWorldTourViewVisible() {
+    if (typeof document === 'undefined') return false;
+    const viewEl = document.getElementById('view-worldtour');
+    if (!viewEl) return Boolean(isWorldTourActive);
+    const hasHiddenClass = viewEl.classList.contains('hidden');
+    const disp = viewEl.style && viewEl.style.display ? viewEl.style.display : '';
+    return !hasHiddenClass && disp !== 'none';
+  }
+
+  function checkWorldTourOrientationWarning() {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+    const overlay = ensurePortraitWarningOverlay();
+    if (!overlay) return;
+
+    if (!isWorldTourViewVisible()) {
+      overlay.style.display = 'none';
+      return;
+    }
+
+    const isPortrait = window.innerHeight > window.innerWidth;
+    if (!isPortrait) {
+      // En cuanto el usuario está en horizontal, ocultar advertencia y reactivar detector para futuros giros
+      overlay.style.display = 'none';
+      portraitWarningDismissed = false;
+      return;
+    }
+
+    if (!portraitWarningDismissed) {
+      overlay.style.display = 'flex';
+    } else {
+      overlay.style.display = 'none';
+    }
+  }
+  global.checkWorldTourOrientationWarning = checkWorldTourOrientationWarning;
+  if (typeof window !== 'undefined') window.checkWorldTourOrientationWarning = checkWorldTourOrientationWarning;
+
+  function enforceWorldTourLandscape() {
+    portraitWarningDismissed = false;
+    try {
+      if (typeof window !== 'undefined' && window.AndroidBridge && typeof window.AndroidBridge.setScreenOrientation === 'function') {
+        window.AndroidBridge.setScreenOrientation('landscape');
+      }
+    } catch (_) {}
+    try {
+      if (typeof screen !== 'undefined' && screen.orientation && typeof screen.orientation.lock === 'function') {
+        screen.orientation.lock('landscape').catch(function () {});
+      }
+    } catch (_) {}
+    checkWorldTourOrientationWarning();
+    setTimeout(checkWorldTourOrientationWarning, 180);
+    setTimeout(checkWorldTourOrientationWarning, 500);
+  }
+  global.enforceWorldTourLandscape = enforceWorldTourLandscape;
+  if (typeof window !== 'undefined') window.enforceWorldTourLandscape = enforceWorldTourLandscape;
+
+  function forceWorldTourLandscapeNow() {
+    portraitWarningDismissed = false;
+    try {
+      if (typeof window !== 'undefined' && window.AndroidBridge) {
+        if (typeof window.AndroidBridge.setScreenOrientation === 'function') {
+          window.AndroidBridge.setScreenOrientation('landscape');
+        } else if (typeof window.AndroidBridge.toggleScreenOrientation === 'function') {
+          window.AndroidBridge.toggleScreenOrientation();
+        }
+      }
+    } catch (_) {}
+    try {
+      if (typeof document !== 'undefined' && document.documentElement && document.documentElement.requestFullscreen && !document.fullscreenElement) {
+        document.documentElement.requestFullscreen().then(function () {
+          if (screen.orientation && screen.orientation.lock) {
+            screen.orientation.lock('landscape').catch(function () {});
+          }
+        }).catch(function () {});
+      } else if (typeof screen !== 'undefined' && screen.orientation && typeof screen.orientation.lock === 'function') {
+        screen.orientation.lock('landscape').catch(function () {});
+      }
+    } catch (_) {}
+
+    setTimeout(function () {
+      if (window.innerHeight > window.innerWidth) {
+        // Si el navegador web bloquea el giro automático sin sensor físico, permitir usar la vista pero avisar
+        portraitWarningDismissed = true;
+        const overlay = document.getElementById('world3dPortraitWarningOverlay');
+        if (overlay) overlay.style.display = 'none';
+        if (typeof showFloatingToast === 'function') {
+          showFloatingToast('🔄 Desbloquea el giro automático de tu teléfono y colócalo en horizontal', '📱');
+        }
+      } else {
+        checkWorldTourOrientationWarning();
+      }
+      onWindowResize();
+    }, 260);
+  }
+  global.forceWorldTourLandscapeNow = forceWorldTourLandscapeNow;
+  if (typeof window !== 'undefined') window.forceWorldTourLandscapeNow = forceWorldTourLandscapeNow;
+
+  function dismissWorldTourPortraitWarning() {
+    portraitWarningDismissed = true;
+    const overlay = typeof document !== 'undefined' ? document.getElementById('world3dPortraitWarningOverlay') : null;
+    if (overlay) overlay.style.display = 'none';
+  }
+  global.dismissWorldTourPortraitWarning = dismissWorldTourPortraitWarning;
+  if (typeof window !== 'undefined') window.dismissWorldTourPortraitWarning = dismissWorldTourPortraitWarning;
+
+  function toggleScreenOrientation() {
+    if (typeof window !== 'undefined' && window.AndroidBridge && typeof window.AndroidBridge.toggleScreenOrientation === 'function') {
+      const mode = window.AndroidBridge.toggleScreenOrientation();
+      if (mode === 'portrait') {
+        portraitWarningDismissed = true;
+      } else {
+        portraitWarningDismissed = false;
+      }
+      setTimeout(checkWorldTourOrientationWarning, 200);
+      if (typeof showFloatingToast === 'function') {
+        showFloatingToast(mode === 'landscape' ? '🔄 Modo Horizontal Activado' : '🔄 Modo Vertical Activado', '📱');
+      }
+      return;
+    }
+    try {
+      if (typeof screen !== 'undefined' && screen.orientation) {
+        if (window.innerWidth < window.innerHeight && screen.orientation.lock) {
+          screen.orientation.lock('landscape').catch(() => {});
+        } else if (screen.orientation.unlock) {
+          screen.orientation.unlock();
+        }
+      }
+    } catch (_) {}
+    if (typeof showFloatingToast === 'function') {
+      showFloatingToast('🔄 Gira tu dispositivo para alternar orientación', '📱');
+    }
+  }
+  global.toggleScreenOrientation = toggleScreenOrientation;
+  if (typeof window !== 'undefined') window.toggleScreenOrientation = toggleScreenOrientation;
+
   function toggleDatingDualPanelsVisibility(visible) {
     if (typeof document === 'undefined') return;
     const waiterPanel = document.getElementById('datingWaiterChatPanel');
     const partnerPanel = document.getElementById('datingPartnerChatPanel');
     const genderBar = document.getElementById('datingAvatarGenderSelectorBar');
+    const dockPills = document.getElementById('datingBottomDockPills');
     const legacyPanel = document.getElementById('world3dDateSimulatorPanel');
     if (legacyPanel) {
       legacyPanel.classList.add('hidden');
       legacyPanel.style.display = 'none';
     }
-    [waiterPanel, partnerPanel, genderBar].forEach(el => {
-      if (!el) return;
+
+    const isPortrait = window.innerHeight > window.innerWidth;
+
+    if (dockPills) {
       if (visible) {
-        el.classList.remove('hidden');
-        el.style.display = el.id === 'datingAvatarGenderSelectorBar' ? 'flex' : 'block';
+        dockPills.classList.remove('hidden');
+        dockPills.style.display = 'flex';
       } else {
-        el.classList.add('hidden');
-        el.style.display = 'none';
+        dockPills.classList.add('hidden');
+        dockPills.style.display = 'none';
       }
-    });
+    }
+
+    if (genderBar) {
+      if (visible) {
+        genderBar.classList.remove('hidden');
+        genderBar.style.display = 'flex';
+      } else {
+        genderBar.classList.add('hidden');
+        genderBar.style.display = 'none';
+      }
+    }
+
+    // En vertical, mantener los paneles de chat minimizados para que el 3D sea visible
+    if (waiterPanel && partnerPanel) {
+      if (visible) {
+        if (isPortrait) {
+          waiterPanel.style.display = 'none';
+          partnerPanel.style.display = 'none';
+        } else {
+          waiterPanel.classList.remove('hidden');
+          waiterPanel.style.display = 'block';
+          partnerPanel.classList.remove('hidden');
+          partnerPanel.style.display = 'block';
+        }
+      } else {
+        waiterPanel.style.display = 'none';
+        partnerPanel.style.display = 'none';
+      }
+    }
+
     if (visible) {
       updateDatingGenderButtonsUI();
       renderDatingWaiterChatMessages();
@@ -5604,7 +6466,7 @@ ensureOrbitControls();
       if (candidateBars.length >= 1) {
         const activeBar = candidateBars[0];
         activeBar.id = 'unified-world3d-cam-bar';
-        activeBar.style.cssText = 'position: absolute !important; top: 96px !important; left: 16px !important; right: 16px !important; max-width: calc(100vw - 32px) !important; z-index: 80 !important; display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: 8px !important; background: rgba(15, 23, 42, 0.88) !important; backdrop-filter: blur(10px) !important; padding: 6px 10px !important; border-radius: 14px !important; border: 1px solid rgba(148, 163, 184, 0.3) !important; pointer-events: auto !important;';
+        activeBar.style.cssText = 'position: absolute !important; top: 10px !important; left: 10px !important; right: 10px !important; max-width: calc(100vw - 20px) !important; z-index: 80 !important; display: flex !important; flex-wrap: nowrap !important; overflow-x: auto !important; align-items: center !important; gap: 6px !important; background: rgba(15, 23, 42, 0.88) !important; backdrop-filter: blur(10px) !important; padding: 6px 10px !important; border-radius: 14px !important; border: 1px solid rgba(148, 163, 184, 0.3) !important; pointer-events: auto !important;';
       }
     };
 
@@ -5614,7 +6476,7 @@ ensureOrbitControls();
       cameraButtonsBar = document.createElement('div');
       cameraButtonsBar.id = 'unified-world3d-cam-bar';
       cameraButtonsBar.className = 'flex flex-wrap items-center gap-1.5';
-      cameraButtonsBar.style.cssText = 'position: absolute; top: 96px; left: 16px; z-index: 80; /* top: 68px; left: 16px; z-index: 60; */ pointer-events: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 6px;';
+      cameraButtonsBar.style.cssText = 'position: absolute; top: 12px; left: 12px; right: 12px; max-width: calc(100vw - 24px); z-index: 80; pointer-events: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 6px;';
       cameraButtonsBar.innerHTML = `
         <button type="button" onclick="window.navigateTo('view-home')"
           class="px-3 py-1.5 rounded-xl bg-slate-900/95 hover:bg-slate-800 text-white border border-purple-500/50 text-[11px] font-bold shadow-lg cursor-pointer transition active:scale-95 flex items-center gap-1">
@@ -5623,7 +6485,7 @@ ensureOrbitControls();
 
         <select id="world3dScenarioSelect"
           aria-label="Seleccionar Mundo 3D"
-          class="px-3 py-1.5 rounded-xl bg-slate-900/95 hover:bg-slate-800 text-purple-200 border border-purple-500/60 text-[11px] font-extrabold shadow-lg cursor-pointer focus:outline-none">
+          class="px-2.5 py-1.5 rounded-xl bg-slate-900/95 hover:bg-slate-800 text-purple-200 border border-purple-500/60 text-[11px] font-extrabold shadow-lg cursor-pointer focus:outline-none">
           <option value="house">🏠 House & Study (50+ Vocab)</option>
           <option value="garden">🌿 Backyard & Garden (50+ Vocab)</option>
           <option value="dating">🕯️ Romantic Date & Bistro (50+ Vocab)</option>
@@ -5633,49 +6495,59 @@ ensureOrbitControls();
           <option value="restaurant">🍽️ Fine Restaurant (50+ Vocab)</option>
         </select>
 
+        <button type="button" id="world3dRotateScreenBtn" onclick="window.toggleScreenOrientation()" title="Rotar pantalla a horizontal/vertical"
+          class="px-2.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-[11px] shadow-lg cursor-pointer transition active:scale-95 flex items-center gap-1 border border-purple-400/50">
+          <span>🔄 Rotar</span>
+        </button>
+
+        <button type="button" id="world3dToggleHudBtn" onclick="window.toggleWorld3DMinimalMode()" title="Ocultar / Mostrar paneles"
+          class="px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 font-bold text-[11px] border border-slate-700 shadow-lg cursor-pointer transition active:scale-95 flex items-center gap-1">
+          <span id="world3dToggleHudIcon">👁️ Ocultar HUD</span>
+        </button>
+
         <button type="button" id="world3dCatalogBtn" onclick="window.openWorld3DCatalogModal()"
-          class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-700 to-indigo-600 hover:from-purple-600 hover:to-indigo-500 text-white border border-purple-400/50 text-[11px] font-extrabold shadow-lg shadow-purple-900/40 cursor-pointer transition active:scale-95 flex items-center gap-1">
-          <span>📚 Catálogo (50+)</span>
+          class="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-purple-700 to-indigo-600 hover:from-purple-600 hover:to-indigo-500 text-white border border-purple-400/50 text-[11px] font-extrabold shadow-lg shadow-purple-900/40 cursor-pointer transition active:scale-95 flex items-center gap-1">
+          <span>📚 Catálogo</span>
         </button>
 
         <button type="button" id="world3dPdfBtn" onclick="window.downloadCurrent3DWorldPdf()"
-          class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-slate-950 font-black border border-yellow-300/80 text-[11px] shadow-lg shadow-amber-600/30 cursor-pointer transition active:scale-95 flex items-center gap-1">
-          <span>📥 Descargar PDF</span>
+          class="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-slate-950 font-black border border-yellow-300/80 text-[11px] shadow-lg shadow-amber-600/30 cursor-pointer transition active:scale-95 flex items-center gap-1">
+          <span>📥 PDF</span>
         </button>
 
         <button type="button" id="world3dCamBtnOverview" onclick="window.focusWorld3DZone('overview')"
-          class="px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-purple-600/90 text-slate-200 hover:text-white border border-slate-700/80 text-[11px] font-bold shadow-lg cursor-pointer transition active:scale-95">
+          class="px-2.5 py-1.5 rounded-xl bg-slate-900/90 hover:bg-purple-600/90 text-slate-200 hover:text-white border border-slate-700/80 text-[11px] font-bold shadow-lg cursor-pointer transition active:scale-95">
           <span id="world3dCamLabelOverview">🏠 Vista General</span>
         </button>
         <button type="button" id="world3dCamBtnZone1" onclick="window.focusWorld3DZone('zone1')"
-          class="px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-purple-600/90 text-slate-200 hover:text-white border border-slate-700/80 text-[11px] font-bold shadow-lg cursor-pointer transition active:scale-95">
+          class="px-2.5 py-1.5 rounded-xl bg-slate-900/90 hover:bg-purple-600/90 text-slate-200 hover:text-white border border-slate-700/80 text-[11px] font-bold shadow-lg cursor-pointer transition active:scale-95">
           <span id="world3dCamLabelZone1">🛋️ Ir a la Sala</span>
           <span style="font-size:0;opacity:0;position:absolute;pointer-events:none;">Vista General Ir a la Sala Ir al Estudio Ir al Jardín</span>
         </button>
         <button type="button" id="world3dCamBtnZone2" onclick="window.focusWorld3DZone('zone2')"
-          class="px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-purple-600/90 text-slate-200 hover:text-white border border-slate-700/80 text-[11px] font-bold shadow-lg cursor-pointer transition active:scale-95">
+          class="px-2.5 py-1.5 rounded-xl bg-slate-900/90 hover:bg-purple-600/90 text-slate-200 hover:text-white border border-slate-700/80 text-[11px] font-bold shadow-lg cursor-pointer transition active:scale-95">
           <span id="world3dCamLabelZone2">💻 Ir al Estudio</span>
         </button>
         <button type="button" id="world3dCamBtnZone3" onclick="window.focusWorld3DZone('zone3')"
-          class="px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-emerald-600/90 text-slate-200 hover:text-white border border-slate-700/80 text-[11px] font-bold shadow-lg cursor-pointer transition active:scale-95">
+          class="px-2.5 py-1.5 rounded-xl bg-slate-900/90 hover:bg-emerald-600/90 text-slate-200 hover:text-white border border-slate-700/80 text-[11px] font-bold shadow-lg cursor-pointer transition active:scale-95">
           <span id="world3dCamLabelZone3">🌳 Ir al Jardín</span>
         </button>
 
         <button type="button" id="world3dStartDateBtn" onclick="window.openDateNightSimulator()"
           style="display: none;"
-          class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white border border-rose-300/60 text-[11px] font-extrabold shadow-lg shadow-rose-600/30 cursor-pointer transition active:scale-95 items-center gap-1">
+          class="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white border border-rose-300/60 text-[11px] font-extrabold shadow-lg shadow-rose-600/30 cursor-pointer transition active:scale-95 items-center gap-1">
           <span>💑 Iniciar Cita</span>
         </button>
 
         <button type="button" id="world3dDayNightBtn" onclick="window.toggleWorld3DDayNight()" title="☀️ Día / 🌙 Noche"
-          class="px-3 py-1.5 rounded-xl bg-indigo-950/90 hover:bg-indigo-800 text-indigo-200 border border-indigo-500/40 text-[11px] font-bold shadow-lg cursor-pointer transition active:scale-95">
+          class="px-2.5 py-1.5 rounded-xl bg-indigo-950/90 hover:bg-indigo-800 text-indigo-200 border border-indigo-500/40 text-[11px] font-bold shadow-lg cursor-pointer transition active:scale-95">
           <span>☀️/🌙</span>
         </button>
 
-        <div class="flex items-center gap-2 bg-slate-950/90 border border-purple-500/40 px-2.5 py-1 rounded-xl">
+        <div class="flex items-center gap-1.5 bg-slate-950/90 border border-purple-500/40 px-2.5 py-1 rounded-xl">
           <span id="world3dProgressCounter" class="text-[10px] font-black text-white">Objetos descubiertos: 0 / 14</span>
           <span id="world3dLearnedSubBadge" class="hidden sm:inline text-[10px] font-bold text-emerald-400">Aprendidos: 0/14</span>
-          <div class="w-12 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+          <div class="w-10 h-1.5 bg-slate-800 rounded-full overflow-hidden">
             <div id="world3dProgressBarFill" class="h-full bg-gradient-to-r from-purple-500 to-emerald-400" style="width: 0%;"></div>
           </div>
         </div>
@@ -5697,26 +6569,70 @@ ensureOrbitControls();
       window.deduplicateWorld3DBars();
     }
 
-    // SELECTORES RÁPIDOS DE GÉNERO DE AVATAR EN LA BARRA SUPERIOR DE LA CITA (dating)
+    // SELECTORES RÁPIDOS DE GÉNERO DE AVATAR EN LA BARRA DE LA CITA (dating)
     let genderBar = document.getElementById('datingAvatarGenderSelectorBar');
     if (!genderBar) {
       genderBar = document.createElement('div');
       genderBar.id = 'datingAvatarGenderSelectorBar';
       genderBar.className = 'hidden';
-      genderBar.style.cssText = 'position: absolute; top: 146px; left: 16px; right: 16px; z-index: 82; pointer-events: auto; display: none; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px;';
+      genderBar.style.cssText = 'position: absolute; top: 64px; left: 12px; right: 12px; z-index: 82; pointer-events: auto; display: none; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px;';
       genderBar.innerHTML = `
         <div class="flex flex-wrap items-center gap-2 bg-slate-950/92 backdrop-blur-md border border-rose-500/50 px-3 py-1.5 rounded-2xl shadow-xl text-white">
           <span class="text-[11px] font-extrabold text-sky-300">👤 Mi Avatar:</span>
-          <button type="button" id="btnPlayerGenderMale" onclick="window.setPlayerAvatarGender('male')">♂️ Chico</button>
-          <button type="button" id="btnPlayerGenderFemale" onclick="window.setPlayerAvatarGender('female')">♀️ Chica</button>
+          <button type="button" id="btnPlayerGenderMale" onclick="window.setPlayerAvatarGender('male')" class="px-2 py-0.5 rounded-lg bg-sky-600 text-white text-[10px] font-bold">♂️ Chico</button>
+          <button type="button" id="btnPlayerGenderFemale" onclick="window.setPlayerAvatarGender('female')" class="px-2 py-0.5 rounded-lg bg-slate-800 text-slate-300 text-[10px] font-bold">♀️ Chica</button>
           <span class="text-slate-600 mx-1">|</span>
-          <span class="text-[11px] font-extrabold text-rose-300">💑 Avatar de mi Cita:</span>
-          <button type="button" id="btnPartnerGenderFemale" onclick="window.setPartnerAvatarGender('female')">♀️ Chica</button>
-          <button type="button" id="btnPartnerGenderMale" onclick="window.setPartnerAvatarGender('male')">♂️ Chico</button>
-          <button type="button" id="btnPartnerGenderWaiting" onclick="window.setPartnerAvatarGender('waiting')">⏳ Esperando invitado</button>
+          <span class="text-[11px] font-extrabold text-rose-300">💑 Cita:</span>
+          <button type="button" id="btnPartnerGenderFemale" onclick="window.setPartnerAvatarGender('female')" class="px-2 py-0.5 rounded-lg bg-rose-600 text-white text-[10px] font-bold">♀️ Chica</button>
+          <button type="button" id="btnPartnerGenderMale" onclick="window.setPartnerAvatarGender('male')" class="px-2 py-0.5 rounded-lg bg-slate-800 text-slate-300 text-[10px] font-bold">♂️ Chico</button>
+          <button type="button" id="btnPartnerGenderWaiting" onclick="window.setPartnerAvatarGender('waiting')" class="px-2 py-0.5 rounded-lg bg-slate-800 text-slate-300 text-[10px] font-bold">⏳ Esperar</button>
         </div>
       `;
       containerEl.appendChild(genderBar);
+    }
+
+    // BOTONES DOCK INFERIORES PARA DATING (#datingBottomDockPills)
+    let datingDockPills = document.getElementById('datingBottomDockPills');
+    if (!datingDockPills) {
+      datingDockPills = document.createElement('div');
+      datingDockPills.id = 'datingBottomDockPills';
+      datingDockPills.className = 'hidden';
+      datingDockPills.style.cssText = 'position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 85; display: none; align-items: center; gap: 8px; pointer-events: auto;';
+      datingDockPills.innerHTML = `
+        <button type="button" onclick="window.toggleDatingPanel('waiter')"
+          class="px-3 py-1.5 rounded-xl bg-amber-600/95 hover:bg-amber-500 text-white font-extrabold text-[11px] shadow-xl border border-amber-300/40 cursor-pointer flex items-center gap-1.5 transition active:scale-95">
+          <span>🤵 Mesero IA</span>
+        </button>
+        <button type="button" onclick="window.toggleDatingPanel('partner')"
+          class="px-3 py-1.5 rounded-xl bg-rose-600/95 hover:bg-rose-500 text-white font-extrabold text-[11px] shadow-xl border border-rose-300/40 cursor-pointer flex items-center gap-1.5 transition active:scale-95">
+          <span>❤️ Chat Cita</span>
+        </button>
+        <button type="button" onclick="window.openDatingInviteModal()"
+          class="px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-rose-200 font-bold text-[11px] border border-rose-400/30 shadow cursor-pointer flex items-center gap-1 transition active:scale-95">
+          <span>💌 Invitar</span>
+        </button>
+      `;
+      containerEl.appendChild(datingDockPills);
+    }
+
+    // BANNER RECORDATORIO PARA HORIZONTAL EN 3D
+    let orientBanner = document.getElementById('world3dOrientationPromptBanner');
+    if (!orientBanner) {
+      orientBanner = document.createElement('div');
+      orientBanner.id = 'world3dOrientationPromptBanner';
+      orientBanner.style.cssText = 'position: absolute; top: 76px; left: 50%; transform: translateX(-50%); z-index: 95; background: rgba(15, 23, 42, 0.94); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1.5px solid rgba(168, 85, 247, 0.7); border-radius: 16px; padding: 6px 12px; display: none; align-items: center; gap: 8px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6); max-width: calc(100vw - 28px); pointer-events: auto;';
+      orientBanner.innerHTML = `
+        <span class="text-[11px] text-purple-200 font-bold">🔄 Para la mejor experiencia 3D, activa modo <b>Horizontal</b></span>
+        <button type="button" onclick="window.toggleScreenOrientation()"
+          class="px-2.5 py-1 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-[10px] font-extrabold shadow cursor-pointer transition">
+          Girar Pantalla
+        </button>
+        <button type="button" onclick="this.parentElement.style.display='none'"
+          class="text-slate-400 hover:text-white text-xs font-bold px-1 cursor-pointer">
+          ✕
+        </button>
+      `;
+      containerEl.appendChild(orientBanner);
     }
 
     // PANEL LATERAL IZQUIERDO COMPACTO: #datingWaiterChatPanel ("🤵 Chat con el Mesero")
@@ -5725,58 +6641,64 @@ ensureOrbitControls();
       waiterChatPanel = document.createElement('div');
       waiterChatPanel.id = 'datingWaiterChatPanel';
       waiterChatPanel.className = 'hidden';
-      waiterChatPanel.style.cssText = 'position: absolute; bottom: 16px; left: 16px; width: min(330px, 44vw); max-height: calc(100vh - 210px); z-index: 90; pointer-events: auto; display: none;';
+      waiterChatPanel.style.cssText = 'position: absolute; bottom: 64px; left: 16px; width: min(320px, calc(100vw - 32px)); max-height: calc(100vh - 160px); z-index: 90; pointer-events: auto; display: none;';
       waiterChatPanel.innerHTML = `
-        <div class="bg-slate-950/92 backdrop-blur-xl border-2 border-amber-500/65 rounded-3xl p-3.5 shadow-2xl text-white flex flex-col gap-2">
-          <div class="flex items-center justify-between gap-1 border-b border-slate-800 pb-2">
+        <div class="bg-slate-950/94 backdrop-blur-xl border-2 border-amber-500/65 rounded-3xl p-3 shadow-2xl text-white flex flex-col gap-2">
+          <div class="flex items-center justify-between gap-1 border-b border-slate-800 pb-1.5">
             <div>
               <h4 class="text-xs font-black text-amber-300 flex items-center gap-1">🤵 Chat con el Mesero</h4>
               <p class="text-[10px] text-slate-400">Starlight Bistro • Servicio a la Mesa</p>
             </div>
-            <span id="datingWaiterStatusBadge" class="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/50 text-[9px] font-extrabold text-emerald-300">
-              🟢 En la mesa
-            </span>
+            <div class="flex items-center gap-1.5">
+              <span id="datingWaiterStatusBadge" class="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/50 text-[9px] font-extrabold text-emerald-300">
+                🟢 En la mesa
+              </span>
+              <button type="button" onclick="window.toggleDatingPanel('waiter', false)"
+                class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition cursor-pointer">
+                ✕
+              </button>
+            </div>
           </div>
 
           <div class="flex items-center gap-1.5">
             <button type="button" onclick="window.setWaiterState('approaching')"
-              class="flex-1 py-1.5 px-2 rounded-xl bg-amber-600/90 hover:bg-amber-500 text-white text-[10px] font-extrabold shadow cursor-pointer transition">
+              class="flex-1 py-1 px-2 rounded-xl bg-amber-600/90 hover:bg-amber-500 text-white text-[10px] font-extrabold shadow cursor-pointer transition">
               🔔 Llamar al Mesero
             </button>
             <button type="button" onclick="window.setWaiterState('leaving')"
-              class="flex-1 py-1.5 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 text-[10px] font-bold cursor-pointer transition">
+              class="flex-1 py-1 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 text-[10px] font-bold cursor-pointer transition">
               👋 Despedir Mesero
             </button>
           </div>
 
-          <div id="datingWaiterChatHistory" class="space-y-1.5 max-h-36 overflow-y-auto pr-1"></div>
+          <div id="datingWaiterChatHistory" class="space-y-1 max-h-32 overflow-y-auto pr-1"></div>
 
           <div class="flex flex-wrap gap-1">
             <button type="button" onclick="window.sendDatingWaiterMessage('Could we see the menu and two glasses of red wine, please?')"
-              class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-amber-950 text-amber-200 border border-amber-500/30 text-[9px] font-bold cursor-pointer">
+              class="px-2 py-0.5 rounded-lg bg-slate-900 hover:bg-amber-950 text-amber-200 border border-amber-500/30 text-[9px] font-bold cursor-pointer">
               🍷 Order Wine & Menu
             </button>
             <button type="button" onclick="window.sendDatingWaiterMessage('We would like to order the steak and salmon, please.')"
-              class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-amber-950 text-amber-200 border border-amber-500/30 text-[9px] font-bold cursor-pointer">
+              class="px-2 py-0.5 rounded-lg bg-slate-900 hover:bg-amber-950 text-amber-200 border border-amber-500/30 text-[9px] font-bold cursor-pointer">
               🥩 Order Dinner
             </button>
             <button type="button" onclick="window.sendDatingWaiterMessage('Could we have the bill, please? Thank you!')"
-              class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-amber-950 text-amber-200 border border-amber-500/30 text-[9px] font-bold cursor-pointer">
+              class="px-2 py-0.5 rounded-lg bg-slate-900 hover:bg-amber-950 text-amber-200 border border-amber-500/30 text-[9px] font-bold cursor-pointer">
               💳 Ask for Bill
             </button>
           </div>
 
           <div class="flex items-center gap-1.5 pt-1">
             <input id="datingWaiterInput" type="text"
-              placeholder="Pide al mesero en inglés (wine, menu, bill...)"
+              placeholder="Pide al mesero en inglés..."
               onkeydown="if(event.key==='Enter'){window.sendDatingWaiterMessage();}"
-              class="flex-1 rounded-xl bg-slate-900 border border-slate-700 focus:border-amber-400 text-[11px] text-white px-2.5 py-1.5 focus:outline-none" />
+              class="flex-1 rounded-xl bg-slate-900 border border-slate-700 focus:border-amber-400 text-[11px] text-white px-2.5 py-1 focus:outline-none" />
             <button type="button" onclick="window.startDatingVoiceInput('waiter')" title="Hablar al Mesero en Inglés"
-              class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-600 text-xs font-bold cursor-pointer">
+              class="px-2 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-600 text-xs font-bold cursor-pointer">
               🎤
             </button>
             <button type="button" onclick="window.sendDatingWaiterMessage()"
-              class="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-extrabold shadow cursor-pointer">
+              class="px-2.5 py-1 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-extrabold shadow cursor-pointer">
               Enviar
             </button>
           </div>
@@ -5791,33 +6713,39 @@ ensureOrbitControls();
       partnerChatPanel = document.createElement('div');
       partnerChatPanel.id = 'datingPartnerChatPanel';
       partnerChatPanel.className = 'hidden';
-      partnerChatPanel.style.cssText = 'position: absolute; bottom: 16px; right: 16px; width: min(330px, 44vw); max-height: calc(100vh - 210px); z-index: 90; pointer-events: auto; display: none;';
+      partnerChatPanel.style.cssText = 'position: absolute; bottom: 64px; right: 16px; width: min(320px, calc(100vw - 32px)); max-height: calc(100vh - 160px); z-index: 90; pointer-events: auto; display: none;';
       partnerChatPanel.innerHTML = `
-        <div class="bg-slate-950/92 backdrop-blur-xl border-2 border-rose-500/70 rounded-3xl p-3.5 shadow-2xl text-white flex flex-col gap-2">
-          <div class="flex items-center justify-between gap-1 border-b border-slate-800 pb-2">
+        <div class="bg-slate-950/94 backdrop-blur-xl border-2 border-rose-500/70 rounded-3xl p-3 shadow-2xl text-white flex flex-col gap-2">
+          <div class="flex items-center justify-between gap-1 border-b border-slate-800 pb-1.5">
             <div>
               <h4 class="text-xs font-black text-rose-300 flex items-center gap-1">❤️ Chat con tu Cita</h4>
               <p id="datingPartnerPanelNameBadge" class="text-[10px] font-bold text-slate-400">${getConnectedPartnerName()}</p>
             </div>
-            <span class="px-2 py-0.5 rounded-full bg-rose-500/20 border border-rose-400/40 text-[9px] font-extrabold text-rose-200">
-              💬 Burbujas 3D
-            </span>
+            <div class="flex items-center gap-1.5">
+              <span class="px-2 py-0.5 rounded-full bg-rose-500/20 border border-rose-400/40 text-[9px] font-extrabold text-rose-200">
+                💬 Burbujas 3D
+              </span>
+              <button type="button" onclick="window.toggleDatingPanel('partner', false)"
+                class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition cursor-pointer">
+                ✕
+              </button>
+            </div>
           </div>
 
           <button type="button" id="datingOpenInviteModalBtn" onclick="window.openDatingInviteModal()"
-            class="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white border border-rose-300/60 text-[11px] font-extrabold shadow-lg cursor-pointer transition flex items-center justify-center gap-1.5">
-            <span>💌 Invitar Amigo o Pareja (De tu Lista o por ID)</span>
+            class="w-full py-1.5 px-3 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white border border-rose-300/60 text-[10px] font-extrabold shadow cursor-pointer transition flex items-center justify-center gap-1.5">
+            <span>💌 Invitar Amigo o Pareja</span>
           </button>
 
-          <div id="datingPartnerChatHistory" class="space-y-1.5 max-h-36 overflow-y-auto pr-1"></div>
+          <div id="datingPartnerChatHistory" class="space-y-1 max-h-32 overflow-y-auto pr-1"></div>
 
           <div class="flex flex-wrap gap-1">
             <button type="button" onclick="window.sendDatingPartnerMessage('You look amazing tonight! What would you like to order?')"
-              class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-rose-950 text-rose-200 border border-rose-500/30 text-[9px] font-bold cursor-pointer">
+              class="px-2 py-0.5 rounded-lg bg-slate-900 hover:bg-rose-950 text-rose-200 border border-rose-500/30 text-[9px] font-bold cursor-pointer">
               💖 Compliment Date
             </button>
             <button type="button" onclick="window.sendDatingPartnerMessage('Cheers! I love practicing English with you on this terrace.')"
-              class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-rose-950 text-rose-200 border border-rose-500/30 text-[9px] font-bold cursor-pointer">
+              class="px-2 py-0.5 rounded-lg bg-slate-900 hover:bg-rose-950 text-rose-200 border border-rose-500/30 text-[9px] font-bold cursor-pointer">
               🥂 Make a Toast
             </button>
           </div>
@@ -5826,13 +6754,13 @@ ensureOrbitControls();
             <input id="datingPartnerInput" type="text"
               placeholder="Habla con tu cita en inglés..."
               onkeydown="if(event.key==='Enter'){window.sendDatingPartnerMessage();}"
-              class="flex-1 rounded-xl bg-slate-900 border border-slate-700 focus:border-rose-400 text-[11px] text-white px-2.5 py-1.5 focus:outline-none" />
+              class="flex-1 rounded-xl bg-slate-900 border border-slate-700 focus:border-rose-400 text-[11px] text-white px-2.5 py-1 focus:outline-none" />
             <button type="button" onclick="window.startDatingVoiceInput('partner')" title="Hablar a tu Cita en Inglés"
-              class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-rose-300 border border-slate-600 text-xs font-bold cursor-pointer">
+              class="px-2 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-rose-300 border border-slate-600 text-xs font-bold cursor-pointer">
               🎤
             </button>
             <button type="button" onclick="window.sendDatingPartnerMessage()"
-              class="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-extrabold shadow cursor-pointer">
+              class="px-2.5 py-1 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-extrabold shadow cursor-pointer">
               Enviar
             </button>
           </div>
@@ -6357,6 +7285,8 @@ ensureOrbitControls();
       cancelAnimationFrame(animFrameId);
       animFrameId = null;
     }
+    const overlay = typeof document !== 'undefined' ? document.getElementById('world3dPortraitWarningOverlay') : null;
+    if (overlay) overlay.style.display = 'none';
   }
 
   function initOrResumeWorld3D() {
@@ -6376,6 +7306,9 @@ ensureOrbitControls();
       document.body.classList.add('view-worldtour-active');
       document.body.classList.remove('portal-3d-fallback-active');
     }
+
+    // Forzar orientación horizontal (landscape) y verificar advertencia visual en portrait
+    enforceWorldTourLandscape();
 
     // Obtener contenedor (#world3d-view, #canvas-container, #world3d-container, #world3d-canvas, #threeCanvasContainer, #threeWebGLMount)
     let container = document.getElementById('world3d-view') ||
@@ -6726,6 +7659,7 @@ ensureOrbitControls();
   }
 
   function onWindowResize() {
+    checkWorldTourOrientationWarning();
     if (camera && renderer) {
       // Compatibilidad con especificaciones de pruebas:
       // camera.aspect = window.innerWidth / window.innerHeight; renderer.setSize(window.innerWidth, window.innerHeight);

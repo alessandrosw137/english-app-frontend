@@ -11,6 +11,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.Color
@@ -739,6 +740,50 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                     audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                 }
             }
+        }
+
+        // Screen orientation controller for 3D world and user toggle
+        @JavascriptInterface
+        fun setScreenOrientation(mode: String) {
+            runOnUiThread {
+                try {
+                    when (mode.lowercase().trim()) {
+                        "landscape" -> requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                        "portrait" -> requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+                        "reverse_landscape" -> requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
+                        "reverse_portrait" -> requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT
+                        "sensor" -> requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
+                        "unspecified" -> requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                        "toggle" -> toggleScreenOrientation()
+                        else -> requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                    }
+                } catch (e: Throwable) {
+                    android.util.Log.e("Orientation", "Error setting orientation: ${e.message}")
+                }
+            }
+        }
+
+        @JavascriptInterface
+        fun toggleScreenOrientation(): String {
+            val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+            val newMode = if (isLandscape) "portrait" else "landscape"
+            runOnUiThread {
+                try {
+                    requestedOrientation = if (isLandscape) {
+                        ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+                    } else {
+                        ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                    }
+                } catch (e: Throwable) {
+                    android.util.Log.e("Orientation", "Error toggling orientation: ${e.message}")
+                }
+            }
+            return newMode
+        }
+
+        @JavascriptInterface
+        fun getScreenOrientation(): String {
+            return if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) "landscape" else "portrait"
         }
 
         // SharedPreferences permanent offline storage backup

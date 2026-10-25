@@ -1838,10 +1838,14 @@ window.isCurrentUserAdmin = function() {
         }
       }
       if (targetId === 'view-worldtour') {
+        if (typeof window.enforceWorldTourLandscape === 'function') {
+          try { window.enforceWorldTourLandscape(); } catch (e) {}
+        }
         setTimeout(() => {
           try {
             if (typeof window.initOrResumeWorld3D === 'function') window.initOrResumeWorld3D();
             else if (typeof initThreeWorldTour === 'function') initThreeWorldTour();
+            if (typeof window.enforceWorldTourLandscape === 'function') window.enforceWorldTourLandscape();
             window.dispatchEvent(new Event('resize'));
           } catch (err) { console.error(err); }
         }, 60);
@@ -1876,10 +1880,28 @@ window.isCurrentUserAdmin = function() {
         if (typeof renderStorySelector === 'function') renderStorySelector();
       }
       if (targetId === 'view-jest-game') {
+        try {
+          if (window.AndroidBridge && typeof window.AndroidBridge.setScreenOrientation === 'function') {
+            window.AndroidBridge.setScreenOrientation('landscape');
+          }
+          if (typeof screen !== 'undefined' && screen.orientation && typeof screen.orientation.lock === 'function') {
+            screen.orientation.lock('landscape').catch(() => {});
+          }
+        } catch (_) {}
         if (typeof window.openJestGameView === 'function') window.openJestGameView();
       }
       if (targetId === 'view-community') {
         if (typeof window.openCommunityHubView === 'function') window.openCommunityHubView();
+      }
+      if (targetId !== 'view-worldtour' && targetId !== 'view-jest-game') {
+        try {
+          if (window.AndroidBridge && typeof window.AndroidBridge.setScreenOrientation === 'function') {
+            window.AndroidBridge.setScreenOrientation('sensor');
+          }
+          if (typeof screen !== 'undefined' && screen.orientation && typeof screen.orientation.unlock === 'function') {
+            screen.orientation.unlock();
+          }
+        } catch (_) {}
       }
       if (targetId !== 'view-music') {
         if (typeof window.stopAllAudioAndTimers === 'function') {
@@ -1961,6 +1983,9 @@ window.logout = function() {
         wt.style.setProperty('display', 'none', 'important');
       }
       if (document.body && document.body.classList) { document.body.classList.remove('view-worldtour-active', 'portal-3d-fallback-active'); }
+      if (window.AndroidBridge && typeof window.AndroidBridge.setScreenOrientation === 'function') {
+        try { window.AndroidBridge.setScreenOrientation('sensor'); } catch (e) {}
+      }
       if (typeof window.ensureEmergencyBackBar === 'function') window.ensureEmergencyBackBar(false);
       if (typeof window.stopAllAudioAndTimers === 'function') window.stopAllAudioAndTimers();
       if (typeof window.pauseWorld3D === 'function') window.pauseWorld3D();
@@ -10895,6 +10920,14 @@ window.logout = function() {
         this.lastStanzaIdx = -999;
         this.lastWordIdx = -999;
         this.isUserSeeking = false;
+        this._wallClockAnchorTime = 0;
+        this._wallClockAnchorPerf = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+        this._lastPingPerf = 0;
+        if (window.ytMasterState) {
+          window.ytMasterState.lastReportedTime = 0;
+          window.ytMasterState.currentTime = 0;
+          window.ytMasterState.lastReportedTimestamp = this._wallClockAnchorPerf;
+        }
         window.lastKnownPlaybackTime = 0;
         window._currentTrackCurrentTime = 0;
         window.lyricsOffset = 0;
@@ -11006,6 +11039,13 @@ window.logout = function() {
         }
         window._currentTrackCurrentTime = sec;
         window.lastKnownPlaybackTime = sec;
+        this._wallClockAnchorTime = sec;
+        this._wallClockAnchorPerf = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+        if (window.ytMasterState) {
+          window.ytMasterState.lastReportedTime = sec;
+          window.ytMasterState.currentTime = sec;
+          window.ytMasterState.lastReportedTimestamp = this._wallClockAnchorPerf;
+        }
         window._isSeekingGracePeriod = true;
         window._lastSeekTimestamp = Date.now();
         window._lastSeekTargetSeconds = sec;
@@ -11024,27 +11064,41 @@ window.logout = function() {
       },
 
       getCurrentPlaybackTime() {
+        const nowPerf = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+        if (!this._lastPingPerf || (nowPerf - this._lastPingPerf) > 220) {
+          this._lastPingPerf = nowPerf;
+          if (typeof window.pingYouTubeIframeListening === 'function') {
+            try { window.pingYouTubeIframeListening(); } catch (_) {}
+          }
+        }
+
         const isSeekingGrace = window._isSeekingGracePeriod && (Date.now() - (window._lastSeekTimestamp || 0)) < 1500;
         const targetSeek = window._lastSeekTargetSeconds;
 
-        const yt = window.ytPlayer || window._holoYtPlayer;
-        if (window.activeMediaMode === 'youtube' && yt && typeof yt.getCurrentTime === 'function') {
-          try {
-            const t = yt.getCurrentTime() || 0;
-            if (isSeekingGrace && typeof targetSeek === 'number') {
-              if (Math.abs(t - targetSeek) > 2.5) {
-                const elapsedSinceSeek = (Date.now() - window._lastSeekTimestamp) / 1000;
-                return targetSeek + elapsedSinceSeek;
-              }
-              window._isSeekingGracePeriod = false;
-            }
-            return t;
-          } catch (e) { return (typeof targetSeek === 'number' && isSeekingGrace) ? targetSeek : 0; }
+        // 1. Si YouTube IFrame postMessage bridge reportó currentTime recientemente en ytMasterState
+        if (window.ytMasterState && typeof window.ytMasterState.lastReportedTime === 'number' && window.ytMasterState.lastReportedTime > 0) {
+          const ytTime = window.ytMasterState.lastReportedTime;
+          const elapsed = window.ytMasterState.isPlaying
+            ? Math.min(2.0, Math.max(0, (nowPerf - (window.ytMasterState.lastReportedTimestamp || nowPerf)) / 1000))
+            : 0;
+          const interpolated = ytTime + elapsed;
+          this._wallClockAnchorTime = interpolated;
+          this._wallClockAnchorPerf = nowPerf;
+          if (isSeekingGrace && typeof targetSeek === 'number' && Math.abs(interpolated - targetSeek) > 2.5) {
+            return targetSeek + Math.max(0, (Date.now() - window._lastSeekTimestamp) / 1000);
+          }
+          window._isSeekingGracePeriod = false;
+          return interpolated;
         }
-        if (yt && typeof yt.getCurrentTime === 'function' && window._isHoloStagePlaying) {
+
+        // 2. API directa YT.Player (ytPlayer / _holoYtPlayer / ytMusicPlayer)
+        const yt = window.ytPlayer || window._holoYtPlayer || window.ytMusicPlayer;
+        if (yt && typeof yt.getCurrentTime === 'function') {
           try {
             const t = yt.getCurrentTime();
-            if (typeof t === 'number' && !isNaN(t) && t >= 0) {
+            if (typeof t === 'number' && !isNaN(t) && t > 0) {
+              this._wallClockAnchorTime = t;
+              this._wallClockAnchorPerf = nowPerf;
               if (isSeekingGrace && typeof targetSeek === 'number') {
                 if (Math.abs(t - targetSeek) > 2.5) {
                   const elapsedSinceSeek = (Date.now() - window._lastSeekTimestamp) / 1000;
@@ -11056,22 +11110,39 @@ window.logout = function() {
             }
           } catch (e) {}
         }
+
+        // 3. Elemento <audio id="mastereng-audio"> nativo
         const audioEl = document.getElementById('mastereng-audio');
-        if (audioEl && !audioEl.paused) {
-          if (window._holoPlayerFallbackStage >= 2) {
-            const dur = window._currentTrackTotalDuration || 225;
-            const elapsed = (Date.now() - (window._currentTrackStartTime || Date.now())) / 1000;
-            return Math.min(dur, Math.max(0, elapsed));
-          }
-          return audioEl.currentTime || 0;
+        if (audioEl && !audioEl.paused && audioEl.currentTime > 0) {
+          this._wallClockAnchorTime = audioEl.currentTime;
+          this._wallClockAnchorPerf = nowPerf;
+          return audioEl.currentTime;
         }
+
+        // 4. Reloj de alta precisión en reproducción activa cuando el iframe embebido restringe getCurrentTime
+        if (window._isHoloStagePlaying) {
+          if (typeof this._wallClockAnchorPerf !== 'number') {
+            this._wallClockAnchorPerf = nowPerf;
+            this._wallClockAnchorTime = window.lastKnownPlaybackTime || 0;
+          }
+          const deltaSec = Math.max(0, (nowPerf - this._wallClockAnchorPerf) / 1000);
+          const dur = window.currentTrackDurationSec || window._currentTrackTotalDuration || 225;
+          return Math.min(dur, (this._wallClockAnchorTime || 0) + deltaSec);
+        }
+
+        this._wallClockAnchorPerf = nowPerf;
         return (isSeekingGrace && typeof targetSeek === 'number') ? targetSeek : (window.lastKnownPlaybackTime || window._currentTrackCurrentTime || 0);
       },
 
       isPlayerPlaying() {
-        const yt = window.ytPlayer || window._holoYtPlayer;
+        if (window.ytMasterState && window.ytMasterState.playerState === 1) return true;
+        const yt = window.ytPlayer || window._holoYtPlayer || window.ytMusicPlayer;
         if (window.activeMediaMode === 'youtube' && yt && typeof yt.getPlayerState === 'function') {
-          try { return yt.getPlayerState() === 1; } catch (e) { return false; }
+          try {
+            const st = yt.getPlayerState();
+            if (st === 1) return true;
+            if (st === 2 || st === 0) return false;
+          } catch (e) {}
         }
         if (yt && typeof yt.getPlayerState === 'function' && window._isHoloStagePlaying) {
           try {
@@ -14219,6 +14290,9 @@ window.parseLrcUniversal = function(lrcString, totalSongDuration = 210) {
       try { window.World3D.pauseWorld3D(); } catch (_) {}
     }
     if (document.body && document.body.classList) { document.body.classList.remove('view-worldtour-active', 'portal-3d-fallback-active'); }
+    if (window.AndroidBridge && typeof window.AndroidBridge.setScreenOrientation === 'function') {
+      try { window.AndroidBridge.setScreenOrientation('sensor'); } catch (_) {}
+    }
 
     // 2. Ocultar vistas secundarias e inyectadas
     const secondaryIds = [
@@ -15073,15 +15147,18 @@ window.open3DPortalView = function(e) {
 
     const topBar = document.getElementById('worldTourTopBar');
     if (topBar) {
-      topBar.classList.remove('hidden');
-      topBar.style.setProperty('display', 'flex', 'important');
+      topBar.classList.add('hidden');
+      topBar.style.setProperty('display', 'none', 'important');
     }
 
     const floatingBack = document.getElementById('world3dFloatingBackBtn');
     if (floatingBack) {
-      floatingBack.classList.remove('hidden');
-      floatingBack.style.setProperty('display', 'flex', 'important');
-      floatingBack.style.setProperty('pointer-events', 'auto', 'important');
+      floatingBack.classList.add('hidden');
+      floatingBack.style.setProperty('display', 'none', 'important');
+    }
+
+    if (typeof window.enforceWorldTourLandscape === 'function') {
+      try { window.enforceWorldTourLandscape(); } catch (_) {}
     }
 
     // Iniciar o reanudar el motor 3D interactivo real de Three.js
@@ -15096,7 +15173,7 @@ window.open3DPortalView = function(e) {
     }
 
     if (typeof window.ensureEmergencyBackBar === 'function') {
-      window.ensureEmergencyBackBar(true);
+      window.ensureEmergencyBackBar(false);
     }
 
     setTimeout(() => {
@@ -15517,13 +15594,18 @@ window.deduplicateWorld3DBars = function() {
     floatingBack.classList.add('hidden');
     floatingBack.style.setProperty('display', 'none', 'important');
   }
+  const oldTopBar = document.getElementById('worldTourTopBar');
+  if (oldTopBar) {
+    oldTopBar.classList.add('hidden');
+    oldTopBar.style.setProperty('display', 'none', 'important');
+  }
 
   const candidateBars = [];
   worldTour.querySelectorAll('div, nav').forEach(function(el) {
     const txt = (el.innerText || '').trim();
-    if (txt.includes('Vista General') && txt.includes('Ir a la Sala')) {
+    if ((txt.includes('Vista General') && txt.includes('Ir a la Sala')) || el.id === 'unified-world3d-cam-bar' || el.id === 'world3dCameraControlsBar') {
       const hasDirectButtons = Array.from(el.children).some(c => c.tagName === 'BUTTON');
-      if (hasDirectButtons) candidateBars.push(el);
+      if (hasDirectButtons && !candidateBars.includes(el)) candidateBars.push(el);
     }
   });
 
@@ -15536,8 +15618,7 @@ window.deduplicateWorld3DBars = function() {
   if (candidateBars.length >= 1) {
     const activeBar = candidateBars[0];
     activeBar.id = 'unified-world3d-cam-bar';
-    // FIX: top: 96px para que quede cómodamente debajo del header superior (56px-75px) y del pill "Modo Online"
-    activeBar.style.cssText = 'position: absolute !important; top: 96px !important; left: 16px !important; z-index: 80 !important; display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: 8px !important; background: rgba(15, 23, 42, 0.85) !important; backdrop-filter: blur(10px) !important; padding: 6px 10px !important; border-radius: 14px !important; border: 1px solid rgba(148, 163, 184, 0.3) !important; pointer-events: auto !important;';
+    activeBar.style.cssText = 'position: absolute !important; top: 10px !important; left: 10px !important; right: 10px !important; max-width: calc(100vw - 20px) !important; z-index: 80 !important; display: flex !important; flex-wrap: nowrap !important; overflow-x: auto !important; align-items: center !important; gap: 6px !important; background: rgba(15, 23, 42, 0.88) !important; backdrop-filter: blur(10px) !important; padding: 6px 10px !important; border-radius: 14px !important; border: 1px solid rgba(148, 163, 184, 0.3) !important; pointer-events: auto !important;';
   }
 };
 

@@ -12,6 +12,7 @@ app/build/
 .cxx/
 .externalNativeBuild/
 captures/
+.build-outputs/
 
 # Environment and sensitive files
 .env

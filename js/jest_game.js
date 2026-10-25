@@ -1029,9 +1029,14 @@
           <p class="jest-rotate-subtitle">
             Para jugar cómodamente a Jest / Jarz 3D Headbanz, ver las cartas en la frente del rival y alcanzar todos los controles, usa el modo horizontal (Landscape).
           </p>
-          <button type="button" id="jestBypassRotateBtn" onclick="window.dismissJestRotateOverlay()" class="jest-btn jest-btn-primary">
-            Continuar de todos modos
-          </button>
+          <div style="display:flex; flex-direction:column; gap:8px; width:100%; max-width:300px; margin:0 auto;">
+            <button type="button" onclick="window.forceJestLandscapeNow ? window.forceJestLandscapeNow() : (window.toggleScreenOrientation && window.toggleScreenOrientation())" class="jest-btn jest-btn-primary" style="width:100%; justify-content:center;">
+              🔄 Rotar a Horizontal Automáticamente
+            </button>
+            <button type="button" id="jestBypassRotateBtn" onclick="window.dismissJestRotateOverlay()" class="jest-btn jest-btn-ghost" style="width:100%; justify-content:center;">
+              Continuar de todos modos
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1059,6 +1064,9 @@
             ${JEST_TOPICS.map(t => `<option value="${t}">${t}</option>`).join('')}
           </select>
 
+          <button type="button" onclick="window.toggleScreenOrientation && window.toggleScreenOrientation()" class="jest-btn jest-btn-purple" title="Rotar pantalla Horizontal / Vertical">
+            🔄 Rotar
+          </button>
           <button type="button" id="jestNewMatchBtn" class="jest-btn jest-btn-primary">
             🔄 Nueva Partida
           </button>
@@ -1459,6 +1467,10 @@
     verdictSprite.position.set(0, 1.82, 0.25);
     verdictSprite.scale.set(2.3, 0.65, 1);
     scene.add(verdictSprite);
+
+    if (typeof window !== 'undefined' && typeof window.applyNormalMapToObjectHierarchy === 'function') {
+      try { window.applyNormalMapToObjectHierarchy(scene, 'jest'); } catch (_) {}
+    }
 
     const clock = new THREE.Clock();
     jestState.three = {
@@ -2397,10 +2409,36 @@
     if (jestState.isOpen) setTimeout(checkJestOrientation, 100);
   });
 
+  function forceJestLandscapeNow() {
+    jestState.bypassOrientation = false;
+    try {
+      if (typeof window !== 'undefined' && window.AndroidBridge && typeof window.AndroidBridge.setScreenOrientation === 'function') {
+        window.AndroidBridge.setScreenOrientation('landscape');
+      }
+    } catch (_) {}
+    try {
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(() => {});
+      }
+    } catch (_) {}
+    setTimeout(() => {
+      if (window.innerHeight > window.innerWidth) {
+        jestState.bypassOrientation = true;
+      }
+      checkJestOrientation();
+    }, 240);
+  }
+  global.forceJestLandscapeNow = forceJestLandscapeNow;
+
   // ==========================================================================
   // 11. APERTURA Y CIERRE DE LA VISTA (#view-jest-game) + INVITACIONES DE CHAT
   // ==========================================================================
   function openJestGameView(inviteOptions = null) {
+    try {
+      if (typeof window !== 'undefined' && window.AndroidBridge && typeof window.AndroidBridge.setScreenOrientation === 'function') {
+        window.AndroidBridge.setScreenOrientation('landscape');
+      }
+    } catch (_) {}
     if (screen.orientation && screen.orientation.lock) {
       screen.orientation.lock('landscape').catch(() => {});
     }
@@ -2412,6 +2450,7 @@
     jestState.bypassOrientation = false;
 
     checkJestOrientation();
+    setTimeout(checkJestOrientation, 200);
 
     const modeSelect = document.getElementById('jestRivalModeSelect');
     const topicSelect = document.getElementById('jestTopicSelect');
@@ -2452,6 +2491,11 @@
 
   function closeJestGameView() {
     jestState.isOpen = false;
+    try {
+      if (typeof window !== 'undefined' && window.AndroidBridge && typeof window.AndroidBridge.setScreenOrientation === 'function') {
+        window.AndroidBridge.setScreenOrientation('sensor');
+      }
+    } catch (_) {}
     if (screen.orientation && screen.orientation.unlock) {
       try { screen.orientation.unlock(); } catch (_) {}
     }
@@ -2470,6 +2514,9 @@
     if (container) {
       container.classList.add('hidden');
       container.style.display = 'none';
+    }
+    if (typeof window !== 'undefined' && typeof window.navigateTo === 'function') {
+      try { window.navigateTo('view-home'); } catch (_) {}
     }
   }
 
