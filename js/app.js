@@ -91,501 +91,609 @@ window._realWorld3DEngine = (typeof window !== 'undefined' && window.World3D && 
     
 
   const STORIES_DATA = [
-      {
-        id: "three-little-pigs",
-        title: "The Three Little Pigs",
-        titleEs: "Los tres cerditos",
-        level: "Nivel A2",
-        category: "Fábula Clásica",
-        moralEn: "Hard work, patience, and solid preparation build lasting security.",
-        moralEs: "El trabajo constante, la paciencia y la buena preparación construyen una seguridad duradera.",
-        illustrationSvg: `<svg viewBox="0 0 800 320" preserveAspectRatio="xMidYMid slice" class="w-full h-full rounded-2xl" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="pigsSky" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stop-color="#09152b"/><stop offset="55%" stop-color="#0f3d3e"/><stop offset="100%" stop-color="#065f46"/>
-            </linearGradient>
-            <linearGradient id="pigsSun" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#fef08a"/><stop offset="100%" stop-color="#f59e0b"/>
-            </linearGradient>
-            <linearGradient id="brickWall" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stop-color="#dc2626"/><stop offset="100%" stop-color="#7f1d1d"/>
-            </linearGradient>
-          </defs>
-          <rect width="800" height="320" fill="url(#pigsSky)"/>
-          <circle cx="670" cy="72" r="46" fill="url(#pigsSun)" opacity="0.25"/>
-          <circle cx="670" cy="72" r="34" fill="url(#pigsSun)" opacity="0.92"/>
-          <!-- Distant mountains and hills -->
-          <path d="M 0 320 L 0 215 Q 160 145 340 205 T 680 185 L 800 205 L 800 320 Z" fill="#064e3b" opacity="0.75"/>
-          <path d="M 0 320 L 0 245 Q 240 190 480 240 T 800 230 L 800 320 Z" fill="#047857"/>
-          <path d="M 0 320 L 0 272 Q 360 238 800 270 L 800 320 Z" fill="#065f46"/>
-          <!-- Winding dirt path -->
-          <path d="M 145 268 Q 310 295 535 265 L 575 320 L 95 320 Z" fill="#d97706" opacity="0.35"/>
-          <!-- House 1: Straw Hut -->
-          <g transform="translate(85, 165)">
-            <rect x="12" y="45" width="66" height="52" rx="4" fill="#eab308" stroke="#a16207" stroke-width="2"/>
-            <line x1="25" y1="45" x2="25" y2="97" stroke="#ca8a04" stroke-width="1.5"/>
-            <line x1="45" y1="45" x2="45" y2="97" stroke="#ca8a04" stroke-width="1.5"/>
-            <line x1="65" y1="45" x2="65" y2="97" stroke="#ca8a04" stroke-width="1.5"/>
-            <polygon points="0,48 45,4 90,48" fill="#facc15" stroke="#a16207" stroke-width="2"/>
-            <rect x="36" y="65" width="18" height="32" rx="3" fill="#713f12"/>
-          </g>
-          <!-- House 2: Wooden Stick Cabin -->
-          <g transform="translate(265, 148)">
-            <rect x="14" y="52" width="82" height="62" rx="3" fill="#92400e" stroke="#451a03" stroke-width="2"/>
-            <line x1="14" y1="67" x2="96" y2="67" stroke="#78350f" stroke-width="2.5"/>
-            <line x1="14" y1="82" x2="96" y2="82" stroke="#78350f" stroke-width="2.5"/>
-            <line x1="14" y1="97" x2="96" y2="97" stroke="#78350f" stroke-width="2.5"/>
-            <polygon points="2,55 55,6 108,55" fill="#b45309" stroke="#451a03" stroke-width="2"/>
-            <rect x="44" y="76" width="22" height="38" rx="2" fill="#451a03"/>
-            <rect x="24" y="68" width="14" height="14" rx="2" fill="#fde047" opacity="0.8"/>
-          </g>
-          <!-- House 3: Strong Red Brick Fortress -->
-          <g transform="translate(470, 118)">
-            <rect x="88" y="6" width="22" height="48" fill="#7f1d1d" stroke="#450a0a" stroke-width="2"/>
-            <circle cx="102" cy="-6" r="8" fill="#cbd5e1" opacity="0.55"/>
-            <circle cx="114" cy="-18" r="11" fill="#cbd5e1" opacity="0.4"/>
-            <rect x="16" y="60" width="118" height="82" rx="4" fill="url(#brickWall)" stroke="#450a0a" stroke-width="2.5"/>
-            <!-- Brick pattern lines -->
-            <line x1="16" y1="78" x2="134" y2="78" stroke="#fca5a5" stroke-width="1" opacity="0.35"/>
-            <line x1="16" y1="96" x2="134" y2="96" stroke="#fca5a5" stroke-width="1" opacity="0.35"/>
-            <line x1="16" y1="114" x2="134" y2="114" stroke="#fca5a5" stroke-width="1" opacity="0.35"/>
-            <polygon points="2,64 75,8 148,64" fill="#991b1b" stroke="#450a0a" stroke-width="2.5"/>
-            <rect x="61" y="96" width="28" height="46" rx="14" fill="#451a03" stroke="#fef08a" stroke-width="1.5"/>
-            <rect x="28" y="78" width="22" height="22" rx="3" fill="#fef08a" stroke="#451a03" stroke-width="2"/>
-            <rect x="100" y="78" width="22" height="22" rx="3" fill="#fef08a" stroke="#451a03" stroke-width="2"/>
-          </g>
-          <!-- Three Little Pigs silhouettes/figures -->
-          <g transform="translate(645, 226)">
-            <ellipse cx="20" cy="24" rx="15" ry="12" fill="#f472b6"/>
-            <circle cx="20" cy="10" r="11" fill="#f9a8d4"/>
-            <ellipse cx="20" cy="12" rx="5" ry="3.5" fill="#ec4899"/>
-            <ellipse cx="56" cy="26" rx="15" ry="12" fill="#f472b6"/>
-            <circle cx="56" cy="12" r="11" fill="#f9a8d4"/>
-            <ellipse cx="56" cy="14" rx="5" ry="3.5" fill="#ec4899"/>
-            <ellipse cx="92" cy="24" rx="15" ry="12" fill="#f472b6"/>
-            <circle cx="92" cy="10" r="11" fill="#f9a8d4"/>
-            <ellipse cx="92" cy="12" rx="5" ry="3.5" fill="#ec4899"/>
-          </g>
-        </svg>`,
-        paragraphs: [
-          {
-            en: "Once upon a time, three little pigs left their cozy family home to explore the wide world and build their own houses.",
-            es: "Érase una vez, tres cerditos dejaron su acogedor hogar familiar para explorar el ancho mundo y construir sus propias casas."
-          },
-          {
-            en: "The first little pig built his house out of yellow straw because it was quick and easy, allowing him plenty of time to play.",
-            es: "El primer cerdito construyó su casa de paja amarilla porque era rápido y fácil, lo que le dejaba mucho tiempo para jugar."
-          },
-          {
-            en: "The second little pig gathered bundles of sticks and twigs from the forest to assemble a modest wooden cabin.",
-            es: "El segundo cerdito reunió ramas y palos del bosque para armar una modesta cabaña de madera."
-          },
-          {
-            en: "The third little pig worked diligently from sunrise to sunset, laying heavy red bricks and strong mortar with unwavering patience.",
-            es: "El tercer cerdito trabajó diligentemente desde el amanecer hasta el anochecer, colocando pesados ladrillos rojos y cemento fuerte con paciencia."
-          },
-          {
-            en: "When the big hungry wolf blew away the straw and stick houses, both brothers found safe shelter in the unbreakable brick fortress.",
-            es: "Cuando el gran lobo hambriento derribó las casas de paja y ramas, ambos hermanos hallaron refugio seguro en la fortaleza de ladrillos."
-          }
-        ],
-        vocab: [
-          { term: "Straw", ipa: "/strɔː/", es: "Paja seca" },
-          { term: "Bundles of sticks", ipa: "/ˈbʌn.dəlz əv stɪks/", es: "Atados de ramas" },
-          { term: "Diligently", ipa: "/ˈdɪl.ə.dʒənt.li/", es: "Diligentemente / Con esmero" },
-          { term: "Mortar", ipa: "/ˈmɔːr.t̬ɚ/", es: "Mortero / Cemento" },
-          { term: "Fortress", ipa: "/ˈfɔːr.trəs/", es: "Fortaleza" }
-        ]
-      },
-      {
-        id: "little-red-riding-hood",
-        title: "Little Red Riding Hood",
-        titleEs: "Caperucita Roja",
-        level: "Nivel A2",
-        category: "Cuento Popular",
-        moralEn: "Stay alert on your journey and listen carefully to wise family advice.",
-        moralEs: "Mantente alerta en tu camino y escucha con atención los sabios consejos familiares.",
-        illustrationSvg: `<svg viewBox="0 0 800 320" preserveAspectRatio="xMidYMid slice" class="w-full h-full rounded-2xl" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="redSky" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stop-color="#0f172a"/><stop offset="50%" stop-color="#1e1b4b"/><stop offset="100%" stop-color="#064e3b"/>
-            </linearGradient>
-            <radialGradient id="moonGlow" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stop-color="#fef9c3" stop-opacity="0.95"/><stop offset="100%" stop-color="#fef08a" stop-opacity="0"/>
-            </radialGradient>
-          </defs>
-          <rect width="800" height="320" fill="url(#redSky)"/>
-          <circle cx="135" cy="76" r="68" fill="url(#moonGlow)"/>
-          <circle cx="135" cy="76" r="36" fill="#fefce8"/>
-          <!-- Deep forest pine silhouettes -->
-          <polygon points="40,320 85,110 130,320" fill="#022c22" opacity="0.7"/>
-          <polygon points="150,320 205,85 260,320" fill="#064e3b" opacity="0.85"/>
-          <polygon points="240,320 295,105 350,320" fill="#022c22" opacity="0.8"/>
-          <polygon points="460,320 515,90 570,320" fill="#064e3b" opacity="0.85"/>
-          <polygon points="545,320 600,110 655,320" fill="#022c22" opacity="0.75"/>
-          <!-- Forest ground and stone path -->
-          <path d="M 0 320 L 0 248 Q 260 220 520 250 T 800 242 L 800 320 Z" fill="#065f46"/>
-          <path d="M 280 320 Q 375 265 635 255 L 690 262 Q 445 282 390 320 Z" fill="#94a3b8" opacity="0.5"/>
-          <!-- Grandmother's cottage in distance -->
-          <g transform="translate(615, 165)">
-            <rect x="12" y="40" width="96" height="58" rx="3" fill="#78350f" stroke="#451a03" stroke-width="2"/>
-            <polygon points="0,44 60,4 120,44" fill="#9a3412" stroke="#451a03" stroke-width="2"/>
-            <rect x="48" y="62" width="22" height="36" rx="3" fill="#451a03"/>
-            <rect x="22" y="54" width="18" height="18" rx="2" fill="#fde047"/>
-            <rect x="80" y="54" width="18" height="18" rx="2" fill="#fde047"/>
-          </g>
-          <!-- Little Red Riding Hood figure with scarlet cloak and wicker basket -->
-          <g transform="translate(350, 172)">
-            <path d="M 30 32 L 6 105 L 62 105 Z" fill="#dc2626" stroke="#991b1b" stroke-width="2"/>
-            <path d="M 18 32 Q 34 2 50 32 Z" fill="#ef4444"/>
-            <circle cx="34" cy="24" r="12" fill="#fed7aa"/>
-            <path d="M 16 18 Q 34 -4 52 18 Q 45 36 34 36 Q 22 36 16 18 Z" fill="#b91c1c"/>
-            <circle cx="34" cy="25" r="9" fill="#fde68a"/>
-            <!-- Wicker basket -->
-            <rect x="48" y="64" width="24" height="16" rx="4" fill="#d97706" stroke="#78350f" stroke-width="1.5"/>
-            <path d="M 52 64 Q 60 50 68 64" fill="none" stroke="#78350f" stroke-width="2"/>
-          </g>
-        </svg>`,
-        paragraphs: [
-          {
-            en: "Little Red Riding Hood lived in a cheerful cottage at the edge of a deep, whispering forest.",
-            es: "Caperucita Roja vivía en una alegre cabaña al borde de un profundo y susurrante bosque."
-          },
-          {
-            en: "Her loving mother packed a wicker basket with fresh bread and herbal honey for her sick grandmother.",
-            es: "Su amorosa madre empacó una canasta de mimbre con pan fresco y miel de hierbas para su abuela enferma."
-          },
-          {
-            en: "She promised never to leave the cobblestone path, yet the sweet forest flowers led her into conversation with a sly wolf.",
-            es: "Prometió nunca salir del camino empedrado, pero las dulces flores del bosque la llevaron a conversar con un lobo astuto."
-          },
-          {
-            en: "The cunning wolf hurried ahead to the cottage, disguising himself inside the grandmother's warm bedroom.",
-            es: "El astuto lobo se adelantó rápidamente hacia la cabaña, disfrazándose dentro de la cálida habitación de la abuela."
-          },
-          {
-            en: "Thanks to a courageous local woodsman, the grandmother and the girl were safely rescued, and the forest became peaceful once more.",
-            es: "Gracias a un valiente leñador local, la abuela y la niña fueron rescatadas a salvo, y el bosque volvió a ser pacífico."
-          }
-        ],
-        vocab: [
-          { term: "Wicker basket", ipa: "/ˈwɪk.ɚ ˈbæs.kɪt/", es: "Canasta de mimbre" },
-          { term: "Cobblestone path", ipa: "/ˈkɑː.bəl.stoʊn pæθ/", es: "Camino empedrado" },
-          { term: "Sly / Cunning", ipa: "/slaɪ / ˈkʌn.ɪŋ/", es: "Astuto / Engañoso" },
-          { term: "Courageous", ipa: "/kəˈreɪ.dʒəs/", es: "Valiente" },
-          { term: "Woodsman", ipa: "/ˈwʊdz.mən/", es: "Leñador" }
-        ]
-      },
-      {
-        id: "goldilocks-three-bears",
-        title: "Goldilocks and the Three Bears",
-        titleEs: "Ricitos de Oro y los tres osos",
-        level: "Nivel B1",
-        category: "Cuento Clásico",
-        moralEn: "Respect the home and belongings of others, and value moderation in all things.",
-        moralEs: "Respeta el hogar y las pertenencias de los demás, y valora el equilibrio en todo momento.",
-        illustrationSvg: `<svg viewBox="0 0 800 320" preserveAspectRatio="xMidYMid slice" class="w-full h-full rounded-2xl" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="bearsBg" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#271202"/><stop offset="55%" stop-color="#451a03"/><stop offset="100%" stop-color="#78350f"/>
-            </linearGradient>
-          </defs>
-          <rect width="800" height="320" fill="url(#bearsBg)"/>
-          <!-- Cabin window looking out to green woods -->
-          <rect x="75" y="42" width="170" height="115" rx="8" fill="#065f46" stroke="#b45309" stroke-width="6"/>
-          <polygon points="95,155 125,85 155,155" fill="#047857"/>
-          <polygon points="150,155 185,72 220,155" fill="#064e3b"/>
-          <line x1="160" y1="42" x2="160" y2="157" stroke="#b45309" stroke-width="4"/>
-          <line x1="75" y1="100" x2="245" y2="100" stroke="#b45309" stroke-width="4"/>
-          <!-- Rustic wooden dining table -->
-          <rect x="140" y="218" width="520" height="18" rx="5" fill="#d97706" stroke="#78350f" stroke-width="2"/>
-          <rect x="185" y="236" width="22" height="84" fill="#92400e"/>
-          <rect x="595" y="236" width="22" height="84" fill="#92400e"/>
-          <!-- Bowl 1: Large Papa Bear Bowl -->
-          <path d="M 225 190 Q 225 220 270 220 Q 315 220 315 190 Z" fill="#3b82f6" stroke="#dbeafe" stroke-width="2"/>
-          <ellipse cx="270" cy="190" rx="45" ry="9" fill="#fde68a" stroke="#3b82f6" stroke-width="2"/>
-          <path d="M 255 174 Q 262 160 255 148" stroke="#f8fafc" stroke-width="2.5" fill="none" opacity="0.65"/>
-          <path d="M 282 172 Q 289 158 282 145" stroke="#f8fafc" stroke-width="2.5" fill="none" opacity="0.65"/>
-          <!-- Bowl 2: Medium Mama Bear Bowl -->
-          <path d="M 375 196 Q 375 220 412 220 Q 450 220 450 196 Z" fill="#ef4444" stroke="#fee2e2" stroke-width="2"/>
-          <ellipse cx="412" cy="196" rx="37" ry="7.5" fill="#fde68a" stroke="#ef4444" stroke-width="2"/>
-          <!-- Bowl 3: Small Baby Bear Bowl (Just Right) -->
-          <path d="M 505 201 Q 505 220 535 220 Q 565 220 565 201 Z" fill="#10b981" stroke="#d1fae5" stroke-width="2"/>
-          <ellipse cx="535" cy="201" rx="30" ry="6.5" fill="#fde68a" stroke="#10b981" stroke-width="2"/>
-          <circle cx="535" cy="172" r="4" fill="#fbbf24"/>
-          <!-- Three Bears silhouettes on right side -->
-          <g transform="translate(635, 118)">
-            <circle cx="38" cy="24" r="10" fill="#92400e"/>
-            <circle cx="72" cy="24" r="10" fill="#92400e"/>
-            <circle cx="55" cy="42" r="24" fill="#b45309"/>
-            <ellipse cx="55" cy="95" rx="34" ry="42" fill="#92400e"/>
-          </g>
-        </svg>`,
-        paragraphs: [
-          {
-            en: "Deep inside the peaceful green woods stood a charming wooden home belonging to a family of three brown bears.",
-            es: "En lo profundo del bosque verde y pacífico se encontraba una encantadora casa de madera perteneciente a una familia de tres osos pardos."
-          },
-          {
-            en: "Before sitting down for breakfast, they stepped out for a morning stroll while their freshly cooked porridge cooled down.",
-            es: "Antes de sentarse a desayunar, salieron a dar un paseo matutino mientras su avena recién cocinada se enfriaba."
-          },
-          {
-            en: "A golden-haired girl named Goldilocks knocked on the open door and curiously tasted the steaming porridge bowls.",
-            es: "Una niña de cabellos dorados llamada Ricitos de Oro llamó a la puerta abierta y probó curiosamente los humeantes tazones de avena."
-          },
-          {
-            en: "The smallest bowl was neither too hot nor too cold: it was just right, and she ate it all before resting in the baby bed.",
-            es: "El tazón más pequeño no estaba ni muy caliente ni muy frío: estaba en su punto justo, y lo comió todo antes de descansar."
-          },
-          {
-            en: "When the bears returned home, Goldilocks woke up startled and hurried back through the forest, promising never to enter uninvited again.",
-            es: "Cuando los osos regresaron a casa, Ricitos de Oro despertó sobresaltada y corrió por el bosque, prometiendo no entrar sin invitación."
-          }
-        ],
-        vocab: [
-          { term: "Morning stroll", ipa: "/ˈmɔːr.nɪŋ stroʊl/", es: "Paseo matutino" },
-          { term: "Porridge", ipa: "/ˈpɔːr.ɪdʒ/", es: "Avena cocida / Gachas" },
-          { term: "Steaming", ipa: "/ˈstiː.mɪŋ/", es: "Humeante / Muy caliente" },
-          { term: "Just right", ipa: "/dʒʌst raɪt/", es: "En su punto exacto" },
-          { term: "Uninvited", ipa: "/ˌʌn.ɪnˈvaɪ.t̬ɪd/", es: "Sin invitación" }
-        ]
-      },
-      {
-        id: "tortoise-and-hare",
-        title: "The Tortoise and the Hare",
-        titleEs: "La tortuga y la liebre",
-        level: "Nivel A2",
-        category: "Fábula de Esopo",
-        moralEn: "Slow, steady, and disciplined perseverance always triumphs over arrogance.",
-        moralEs: "La constancia disciplinada y firme siempre triunfa sobre la arrogancia.",
-        illustrationSvg: `<svg viewBox="0 0 800 320" preserveAspectRatio="xMidYMid slice" class="w-full h-full rounded-2xl" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="raceSky" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stop-color="#082f49"/><stop offset="60%" stop-color="#065f46"/><stop offset="100%" stop-color="#047857"/>
-            </linearGradient>
-          </defs>
-          <rect width="800" height="320" fill="url(#raceSky)"/>
-          <circle cx="710" cy="64" r="38" fill="#fde047" opacity="0.9"/>
-          <!-- Meadow hills -->
-          <path d="M 0 320 L 0 200 Q 230 145 470 195 T 800 185 L 800 320 Z" fill="#065f46"/>
-          <path d="M 0 320 L 0 235 Q 320 195 800 230 L 800 320 Z" fill="#047857"/>
-          <!-- Winding golden race track -->
-          <path d="M 0 285 Q 260 235 520 268 T 800 255" stroke="#fde68a" stroke-width="34" fill="none" stroke-linecap="round"/>
-          <path d="M 0 285 Q 260 235 520 268 T 800 255" stroke="#d97706" stroke-width="2" stroke-dasharray="12,10" fill="none"/>
-          <!-- Shade Oak Tree where the hare naps -->
-          <rect x="155" y="130" width="24" height="85" rx="4" fill="#78350f"/>
-          <circle cx="167" cy="112" r="46" fill="#15803d"/>
-          <circle cx="135" cy="128" r="34" fill="#166534"/>
-          <circle cx="198" cy="126" r="34" fill="#166534"/>
-          <!-- Sleeping Hare under the oak -->
-          <ellipse cx="198" cy="212" rx="18" ry="11" fill="#cbd5e1"/>
-          <circle cx="214" cy="206" r="9" fill="#e2e8f0"/>
-          <ellipse cx="210" cy="192" rx="3" ry="10" fill="#cbd5e1" transform="rotate(-20 210 192)"/>
-          <!-- Finish line banner on the right -->
-          <rect x="645" y="165" width="8" height="105" fill="#f8fafc"/>
-          <rect x="725" y="165" width="8" height="105" fill="#f8fafc"/>
-          <rect x="645" y="172" width="88" height="22" fill="#ef4444" stroke="#fef2f2" stroke-width="2"/>
-          <!-- Determined Tortoise crossing the finish line -->
-          <g transform="translate(545, 228)">
-            <path d="M 10 28 Q 38 -6 66 28 Z" fill="#065f46" stroke="#34d399" stroke-width="2.5"/>
-            <path d="M 22 20 L 54 20 M 38 10 L 38 28" stroke="#10b981" stroke-width="2"/>
-            <circle cx="76" cy="20" r="9" fill="#34d399"/>
-            <circle cx="79" cy="18" r="2" fill="#022c22"/>
-            <rect x="18" y="28" width="10" height="10" rx="3" fill="#10b981"/>
-            <rect x="48" y="28" width="10" height="10" rx="3" fill="#10b981"/>
-          </g>
-        </svg>`,
-        paragraphs: [
-          {
-            en: "A boastful hare continually mocked a humble tortoise for his slow and measured walking pace.",
-            es: "Una liebre presumida se burlaba continuamente de una humilde tortuga por su paso lento y medido al caminar."
-          },
-          {
-            en: "Tired of the relentless taunts, the tortoise challenged the swift hare to an official five-mile cross-country race.",
-            es: "Cansada de las incesantes burlas, la tortuga desafió a la veloz liebre a una carrera oficial de campo traviesa."
-          },
-          {
-            en: "Overconfident in her speed, the hare sprinted ahead and decided to take a long nap beneath an oak tree.",
-            es: "Excesivamente confiada en su velocidad, la liebre corrió con ímpetu y decidió tomar una larga siesta bajo un roble."
-          },
-          {
-            en: "While the hare slept soundly in the cool shade, the determined tortoise kept walking forward without a single pause.",
-            es: "Mientras la liebre dormía profundamente en la fresca sombra, la decidida tortuga siguió avanzando sin una sola pausa."
-          },
-          {
-            en: "Step by step without stopping, the tortoise crossed the finish line amid thunderous applause: slow and steady wins the race.",
-            es: "Paso a paso sin detenerse, la tortuga cruzó la línea de meta entre aplausos: lento y constante gana la carrera."
-          }
-        ],
-        vocab: [
-          { term: "Boastful", ipa: "/ˈboʊst.fəl/", es: "Presumido / Jactancioso" },
-          { term: "Relentless taunts", ipa: "/rɪˈlent.ləs tɑːnts/", es: "Burlas incesantes" },
-          { term: "Overconfident", ipa: "/ˌoʊ.vɚˈkɑːn.fə.dənt/", es: "Excesivamente confiado" },
-          { term: "Thunderous applause", ipa: "/ˈθʌn.dɚ.əs əˈplɑːz/", es: "Aplausos estruendosos" },
-          { term: "Slow and steady", ipa: "/sloʊ ænd ˈsted.i/", es: "Lento pero constante" }
-        ]
-      },
-      {
-        id: "boy-who-cried-wolf",
-        title: "The Boy Who Cried Wolf",
-        titleEs: "El pastorcito mentiroso",
-        level: "Nivel B1",
-        category: "Fábula Moral",
-        moralEn: "Honesty builds trust; a liar will not be believed even when speaking the truth.",
-        moralEs: "La honestidad construye confianza; a quien miente no se le cree ni cuando dice la verdad.",
-        illustrationSvg: `<svg viewBox="0 0 800 320" preserveAspectRatio="xMidYMid slice" class="w-full h-full rounded-2xl" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="wolfSky" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stop-color="#1e1b4b"/><stop offset="55%" stop-color="#7c2d12"/><stop offset="100%" stop-color="#f59e0b"/>
-            </linearGradient>
-          </defs>
-          <rect width="800" height="320" fill="url(#wolfSky)"/>
-          <circle cx="660" cy="88" r="44" fill="#fed7aa" opacity="0.85"/>
-          <!-- Distant village roofs in valley -->
-          <path d="M 0 320 L 0 215 Q 240 165 520 215 T 800 195 L 800 320 Z" fill="#1e293b"/>
-          <!-- Rolling pasture hillside -->
-          <path d="M 0 320 L 0 225 Q 280 155 560 225 T 800 220 L 800 320 Z" fill="#365314"/>
-          <path d="M 0 320 L 0 260 Q 340 215 800 255 L 800 320 Z" fill="#3f6212"/>
-          <!-- Grazing sheep flock on hillside -->
-          <g transform="translate(210, 210)">
-            <ellipse cx="30" cy="24" rx="22" ry="15" fill="#f8fafc"/>
-            <circle cx="16" cy="18" r="10" fill="#f1f5f9"/>
-            <circle cx="48" cy="20" r="9" fill="#334155"/>
-            <rect x="20" y="36" width="4" height="10" fill="#334155"/>
-            <rect x="36" y="36" width="4" height="10" fill="#334155"/>
-          </g>
-          <g transform="translate(295, 222)">
-            <ellipse cx="30" cy="24" rx="24" ry="16" fill="#f8fafc"/>
-            <circle cx="16" cy="18" r="11" fill="#f1f5f9"/>
-            <circle cx="50" cy="20" r="9" fill="#334155"/>
-            <rect x="20" y="36" width="4" height="10" fill="#334155"/>
-            <rect x="38" y="36" width="4" height="10" fill="#334155"/>
-          </g>
-          <g transform="translate(385, 214)">
-            <ellipse cx="26" cy="22" rx="20" ry="14" fill="#f8fafc"/>
-            <circle cx="44" cy="18" r="8" fill="#334155"/>
-          </g>
-          <!-- Shepherd boy with wooden crook on hilltop -->
-          <g transform="translate(115, 152)">
-            <line x1="48" y1="6" x2="48" y2="88" stroke="#fde68a" stroke-width="3.5"/>
-            <path d="M 48 12 Q 48 -4 62 2 Q 70 8 60 16" fill="none" stroke="#fde68a" stroke-width="3.5"/>
-            <circle cx="26" cy="24" r="12" fill="#fed7aa"/>
-            <path d="M 12 40 L 40 40 L 44 82 L 8 82 Z" fill="#0284c7"/>
-          </g>
-          <!-- Prowling wolf silhouette near dark woods -->
-          <g transform="translate(610, 198)">
-            <polygon points="10,36 35,18 75,22 92,10 98,26 84,38 88,58 76,58 70,40 30,40 22,58 12,58" fill="#0f172a"/>
-            <circle cx="88" cy="19" r="2.5" fill="#ef4444"/>
-          </g>
-        </svg>`,
-        paragraphs: [
-          {
-            en: "A young shepherd boy watched over a flock of village sheep upon a breezy grassy hillside every single day.",
-            es: "Un joven pastorcillo cuidaba un rebaño de ovejas del pueblo en una ventosa colina cubierta de pasto todos los días."
-          },
-          {
-            en: "Growing bored with his quiet duties, he cried out aloud: 'Wolf! Wolf! A ferocious beast is attacking the flock!'",
-            es: "Aburriéndose de sus tranquilas tareas, gritó en voz alta: '¡Lobo! ¡Lobo! ¡Una bestia feroz está atacando el rebaño!'"
-          },
-          {
-            en: "Kind villagers dropped their tools and rushed up the steep hill to help, only to find the boy laughing at his trick.",
-            es: "Los amables aldeanos soltaron sus herramientas y subieron corriendo la empinada colina para ayudar, solo para encontrar al niño riéndose."
-          },
-          {
-            en: "He repeated the false alarm a second time, and the disappointed villagers warned him never to deceive the community again.",
-            es: "Repitió la falsa alarma por segunda vez, y los decepcionados aldeanos le advirtieron que nunca volviera a engañar a la comunidad."
-          },
-          {
-            en: "When a real wolf finally prowled from the dark woods, the villagers ignored his genuine cries, teaching that truth is precious.",
-            es: "Cuando un lobo real finalmente merodeó desde el bosque oscuro, los aldeanos ignoraron sus gritos, enseñando que la verdad es preciosa."
-          }
-        ],
-        vocab: [
-          { term: "Shepherd boy", ipa: "/ˈʃep.ɚd bɔɪ/", es: "Pastorcillo" },
-          { term: "Flock of sheep", ipa: "/flɑːk əv ʃiːp/", es: "Rebaño de ovejas" },
-          { term: "Ferocious", ipa: "/fəˈroʊ.ʃəs/", es: "Feroz" },
-          { term: "Deceive", ipa: "/dɪˈsiːv/", es: "Engañar" },
-          { term: "Prowled", ipa: "/praʊld/", es: "Merodeó / Acechó" }
-        ]
-      },
-      {
-        id: "the-ugly-duckling",
-        title: "The Ugly Duckling",
-        titleEs: "El patito feo",
-        level: "Nivel B1",
-        category: "Cuento de Andersen",
-        moralEn: "True beauty and inner worth blossom in their own time; never judge by appearances.",
-        moralEs: "La verdadera belleza y el valor interior florecen a su debido tiempo; nunca juzgues por las apariencias.",
-        illustrationSvg: `<svg viewBox="0 0 800 320" preserveAspectRatio="xMidYMid slice" class="w-full h-full rounded-2xl" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="swanSky" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stop-color="#0f172a"/><stop offset="45%" stop-color="#0e7490"/><stop offset="100%" stop-color="#0891b2"/>
-            </linearGradient>
-            <linearGradient id="swanLake" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stop-color="#06b6d4"/><stop offset="100%" stop-color="#164e63"/>
-            </linearGradient>
-          </defs>
-          <rect width="800" height="320" fill="url(#swanSky)"/>
-          <circle cx="650" cy="68" r="42" fill="#fef9c3" opacity="0.88"/>
-          <!-- Distant hills -->
-          <path d="M 0 205 Q 220 150 460 195 T 800 180 L 800 225 L 0 225 Z" fill="#0f766e" opacity="0.65"/>
-          <!-- Shimmering crystal lake -->
-          <rect x="0" y="205" width="800" height="115" fill="url(#swanLake)"/>
-          <!-- Water ripples & golden reflections -->
-          <ellipse cx="650" cy="235" rx="75" ry="6" fill="#fef08a" opacity="0.35"/>
-          <ellipse cx="650" cy="255" rx="52" ry="4" fill="#fef08a" opacity="0.25"/>
-          <ellipse cx="420" cy="265" rx="95" ry="4" fill="#a5f3fc" opacity="0.35"/>
-          <!-- Reeds and cattails on left bank -->
-          <path d="M 0 320 L 0 215 Q 95 210 155 245 L 155 320 Z" fill="#065f46"/>
-          <line x1="48" y1="240" x2="55" y2="115" stroke="#15803d" stroke-width="4"/>
-          <rect x="51" y="122" width="8" height="28" rx="4" fill="#78350f"/>
-          <line x1="82" y1="245" x2="76" y2="130" stroke="#15803d" stroke-width="4"/>
-          <rect x="72" y="136" width="8" height="26" rx="4" fill="#78350f"/>
-          <!-- Graceful White Swan gliding on lake -->
-          <g transform="translate(360, 145)">
-            <path d="M 20 85 C 5 62 35 38 78 46 C 102 50 112 72 95 88 Z" fill="#ffffff" stroke="#e2e8f0" stroke-width="2"/>
-            <path d="M 38 68 C 52 52 82 56 92 74" fill="none" stroke="#cbd5e1" stroke-width="2"/>
-            <path d="M 85 52 C 98 22 86 2 104 2 C 116 2 114 18 106 24" fill="none" stroke="#ffffff" stroke-width="9" stroke-linecap="round"/>
-            <polygon points="112,6 126,11 112,15" fill="#f97316"/>
-            <circle cx="107" cy="8" r="2" fill="#0f172a"/>
-            <!-- Subtle water reflection below swan -->
-            <ellipse cx="62" cy="96" rx="46" ry="6" fill="#ffffff" opacity="0.25"/>
-          </g>
-        </svg>`,
-        paragraphs: [
-          {
-            en: "On a warm summer morning near a crystal-clear rural lake, a mother duck waited patiently as her eggs began to hatch.",
-            es: "En una cálida mañana de verano junto a un lago de aguas cristalinas, una mamá pata esperaba mientras sus huevos eclosionaban."
-          },
-          {
-            en: "The last egg was unusually large, and when it cracked open, a gray and clumsy fledgling emerged looking quite different.",
-            es: "El último huevo era inusualmente grande, y cuando se rompió, emergió un pichón gris y torpe que se veía diferente."
-          },
-          {
-            en: "The other farmyard birds teased him for his awkward feathers, so he wandered alone across the cold autumn marshes.",
-            es: "Las demás aves del corral se burlaban de sus plumas desgarbadas, por lo que vagó solo por los fríos pantanos de otoño."
-          },
-          {
-            en: "He endured the freezing winter with quiet courage, sheltering among the tall reeds until the warm sun returned.",
-            es: "Soportó el gélido invierno con silenciosa valentía, refugiándose entre los altos juncos hasta que regresó el cálido sol."
-          },
-          {
-            en: "When spring arrived, he gazed at his reflection in the shimmering lake: he was no longer an ugly duckling, but a magnificent swan.",
-            es: "Cuando llegó la primavera, contempló su reflejo en el lago: ya no era un patito feo, sino un magnífico cisne."
-          }
-        ],
-        vocab: [
-          { term: "Crystal-clear", ipa: "/ˌkrɪs.təl ˈklɪr/", es: "Cristalino / Transparente" },
-          { term: "Hatch", ipa: "/hætʃ/", es: "Eclosionar / Salir del cascarón" },
-          { term: "Fledgling", ipa: "/ˈfledʒ.lɪŋ/", es: "Pichón / Polluelo" },
-          { term: "Endured", ipa: "/ɪnˈdʊrd/", es: "Soportó / Resistió" },
-          { term: "Magnificent swan", ipa: "/mæɡˈnɪf.ə.sənt swɑːn/", es: "Magnífico cisne" }
-        ]
-      }
-    ];
+    {
+      id: "three-little-pigs",
+      title: "The Three Little Pigs",
+      titleEs: "Los tres cerditos",
+      level: "Nivel A2",
+      category: "Fábula Clásica",
+      coverImage: "images/story_three_little_pigs.jpg",
+      moralEn: "Hard work, patience, and solid preparation build lasting security and peace of mind.",
+      moralEs: "El trabajo constante, la paciencia y la sólida preparación construyen una seguridad duradera y paz mental.",
+      acts: ["Act I: The Beginning", "Act II: The Challenge", "Act III: The Resolution"],
+      paragraphs: [
+        {
+          act: "Act I: The Beginning",
+          en: "Once upon a time in a verdant valley, three little pig brothers lived happily with their wise mother until the day arrived to build their own independent lives.",
+          es: "Érase una vez en un valle verdeante, tres hermanos cerditos vivían felices con su sabia madre hasta que llegó el día de forjar sus vidas independientes."
+        },
+        {
+          act: "Act I: The Beginning",
+          en: "Before bidding them farewell, their mother urged them with solemn words: 'Whatever you do in this wide world, do it with dedication and build carefully, for the perils of the forest are real.'",
+          es: "Antes de despedirlos, su madre les aconsejó con palabras solemnes: 'Hagan lo que hagan en este ancho mundo, háganlo con esmero y construyan con cuidado, pues los peligros del bosque son reales.'"
+        },
+        {
+          act: "Act I: The Beginning",
+          en: "The first pig was jovial and impatient; he gathered bundles of dry golden straw from a local farmer to quickly assemble a light hut in less than an hour.",
+          es: "El primer cerdito era jovial e impaciente; reunió atados de paja dorada y seca de un granjero local para armar rápidamente una choza ligera en menos de una hora."
+        },
+        {
+          act: "Act I: The Beginning",
+          en: "Delighted with his rapid construction, he merrily danced along the meadow path while teasing his brothers for wasting valuable leisure hours.",
+          es: "Encantado con su rápida construcción, bailó alegremente por el sendero del prado mientras se burlaba de sus hermanos por gastar valiosas horas de ocio."
+        },
+        {
+          act: "Act II: The Challenge",
+          en: "The second brother, slightly more thoughtful, gathered sturdy wooden sticks and pine branches from the forest floor to craft a rustic timber cabin.",
+          es: "El segundo hermano, un poco más pensativo, recolectó ramas firmes y palos de pino del suelo del bosque para confeccionar una cabaña rústica de madera."
+        },
+        {
+          act: "Act II: The Challenge",
+          en: "Although stronger than the straw hut, the wooden cabin trembled under gusty winds, yet the second pig concluded it was solid enough before rushing off to play.",
+          es: "Aunque era más fuerte que la choza de paja, la cabaña temblaba ante las ráfagas de viento; aun así, el segundo cerdito concluyó que era suficientemente sólida y corrió a jugar."
+        },
+        {
+          act: "Act II: The Challenge",
+          en: "The third brother, known for his patience and diligence, hauled heavy red bricks, wet sand, and bags of grey lime mortar from the riverside quarry.",
+          es: "El tercer hermano, célebre por su paciencia y diligencia, acarreó pesados ladrillos rojos, arena húmeda y sacos de mortero de cal desde la cantera ribereña."
+        },
+        {
+          act: "Act II: The Challenge",
+          en: "From dawn until dusk, he meticulously laid brick after brick, ignoring the playful mockery of his siblings, until a fortified fortress stood complete with a smoking brick chimney.",
+          es: "Desde el amanecer hasta el anochecer, colocó meticulosamente ladrillo tras ladrillo, ignorando las burlas de sus hermanos, hasta erigir una fortaleza fortificada con chimenea humeante."
+        },
+        {
+          act: "Act III: The Resolution",
+          en: "One chilly autumn twilight, a ravenous grey wolf crept from the forest shadows, knocked menacingly at the straw hut, and roared: 'Little pig, let me in!'",
+          es: "En un gélido crepúsculo otoñal, un lobo gris voraz surgió de las sombras del bosque, golpeó amenazante la choza de paja y rugió: '¡Cerdito, déjame entrar!'"
+        },
+        {
+          act: "Act III: The Resolution",
+          en: "When the terrified pig refused, the fierce beast took a deep breath, puffed out his chest, and blew the flimsy straw structure into the air with one tremendous blast.",
+          es: "Cuando el cerdito aterrorizado se negó, la feroz bestia respiró hondo, hinchó el pecho y sopló la endeble estructura de paja por los aires de un solo bramido."
+        },
+        {
+          act: "Act III: The Resolution",
+          en: "The first pig bolted frantically toward his brother's stick cabin, where they slammed the wooden door, but the wolf took two monstrous breaths and shattered the timber into splinters.",
+          es: "El primer cerdito corrió despavorido hacia la cabaña de ramas de su hermano, donde atrancaron la puerta, pero el lobo sopló dos veces y redujo la madera a astillas."
+        },
+        {
+          act: "Act III: The Resolution",
+          en: "Gasping for air, both brothers raced into the brick house; the wise third pig locked the heavy iron bolt and calmly placed a boiling cauldron over the blazing hearth.",
+          es: "Jadeando por aire, ambos hermanos corrieron a la casa de ladrillo; el sabio tercer cerdito cerró el pesado cerrojo de hierro y colocó con calma un caldero hirviente sobre el fogón."
+        },
+        {
+          act: "Act III: The Resolution",
+          en: "The wolf puffed and blew until he was utterly exhausted, but the brick walls remained immovable; in furious desperation, he scrambled up the roof to slide down the chimney.",
+          es: "El lobo sopló y resopló hasta quedar exhausto, pero los muros de ladrillo permanecieron inamovibles; en furiosa desesperación, trepó al tejado para deslizarse por la chimenea."
+        },
+        {
+          act: "Act III: The Resolution",
+          en: "With a piercing howl, the ferocious intruder splashed straight into the bubbling kettle of boiling soup, leaping out of the hearth and fleeing into the dark wilderness never to return.",
+          es: "Con un aullido desgarrador, el feroz intruso cayó directamente en la olla burbujeante de sopa hirviendo, saltó fuera de la chimenea y huyó hacia la selva oscura para no regresar jamás."
+        }
+      ],
+      vocab: [
+        { term: "Verdant valley", ipa: "/ˈvɜːr.dənt ˈvæl.i/", es: "Valle verdeante y frondoso" },
+        { term: "Perils", ipa: "/ˈper.əlz/", es: "Peligros / Amenazas" },
+        { term: "Jovial", ipa: "/ˈdʒoʊ.vi.əl/", es: "Jovial / Alegre y despreocupado" },
+        { term: "Straw", ipa: "/strɔː/", es: "Paja seca para techos" },
+        { term: "Assemble", ipa: "/əˈsem.bəl/", es: "Armar / Ensamblar" },
+        { term: "Sturdy sticks", ipa: "/ˈstɜː.di stɪks/", es: "Ramas firmes y robustas" },
+        { term: "Timber cabin", ipa: "/ˈtɪm.bɚ ˈkæb.ɪn/", es: "Cabaña de vigas de madera" },
+        { term: "Diligence", ipa: "/ˈdɪl.ə.dʒəns/", es: "Diligencia / Constancia y esmero" },
+        { term: "Mortar", ipa: "/ˈmɔːr.t̬ɚ/", es: "Mortero / Mezcla de cemento" },
+        { term: "Fortress", ipa: "/ˈfɔːr.trəs/", es: "Fortaleza impenetrable" },
+        { term: "Ravenous wolf", ipa: "/ˈræv.ən.əs wʊlf/", es: "Lobo voraz y hambriento" },
+        { term: "Flimsy", ipa: "/ˈflɪm.zi/", es: "Endeble / Poco resistente" },
+        { term: "Splinters", ipa: "/ˈsplɪn.tɚz/", es: "Astillas de madera rota" },
+        { term: "Cauldron", ipa: "/ˈkɑːl.drən/", es: "Caldero / Olla grande de hierro" },
+        { term: "Immovable", ipa: "/ɪˈmuː.və.bəl/", es: "Inamovible / Firme y sólido" }
+      ]
+    },
+    {
+      id: "little-red-riding-hood",
+      title: "Little Red Riding Hood",
+      titleEs: "Caperucita Roja",
+      level: "Nivel A2",
+      category: "Cuento Popular",
+      coverImage: "images/story_red_riding_hood.jpg",
+      moralEn: "Stay vigilant on life's path, cherish wise guidance, and never trust flattering deceivers.",
+      moralEs: "Mantente alerta en tu camino, valora los sabios consejos y nunca confíes en aduladores engañosos.",
+      acts: ["Act I: The Beginning", "Act II: The Challenge", "Act III: The Resolution"],
+      paragraphs: [
+        {
+          act: "Act I: The Beginning",
+          en: "At the sunny fringe of an ancient whispering forest lived a cheerful young girl celebrated throughout the countryside for her vibrant scarlet velvet cloak.",
+          es: "En el lindero soleado de un antiguo y susurrante bosque vivía una alegre niña célebre en la campiña por su vibrante capa de terciopelo escarlata."
+        },
+        {
+          act: "Act I: The Beginning",
+          en: "Because she wore her cherished hood everywhere she traveled, villagers and wanderers affectionately called her Little Red Riding Hood.",
+          es: "Como llevaba su preciada caperuza a dondequiera que iba, tanto aldeanos como caminantes la llamaban cariñosamente Caperucita Roja."
+        },
+        {
+          act: "Act I: The Beginning",
+          en: "One crisp spring morning, her mother baked a batch of warm honey cakes and prepared a vial of soothing blackberry syrup in a woven wicker basket.",
+          es: "Una fresca mañana primaveral, su madre horneó un lote de pasteles de miel y preparó un frasco de jarabe de moras en una canasta de mimbre tejida."
+        },
+        {
+          act: "Act I: The Beginning",
+          en: "'Your dear grandmother is feeling weak and bedridden across the woods,' her mother instructed gently. 'Walk directly along the cobblestone path and never stray into the wilderness.'",
+          es: "'Tu querida abuela se siente débil y postrada en cama al otro lado del bosque,' le instruyó su madre con dulzura. 'Camina directamente por el sendero empedrado y nunca te desvíes.'"
+        },
+        {
+          act: "Act II: The Challenge",
+          en: "Little Red Riding Hood promised complete obedience, but as she stepped beneath the dappled green canopy, fragrant bluebells and dancing butterflies captivated her eyes.",
+          es: "Caperucita Roja prometió obediencia total, pero al internarse bajo el dosel verde moteado por el sol, fragantes campanillas y mariposas cautivaron su mirada."
+        },
+        {
+          act: "Act II: The Challenge",
+          en: "Suddenly, a charming yet deceitful wolf emerged silently from behind a mossy oak, masking his predatory appetite behind courteous greetings.",
+          es: "De repente, un lobo encantador pero taimado emergió sigiloso de detrás de un roble musgoso, ocultando su apetito voraz tras saludos corteses."
+        },
+        {
+          act: "Act II: The Challenge",
+          en: "'Where are you strolling so delightfully on this lovely morning, sweet child?' inquired the cunning predator with a flattering grin.",
+          es: "'¿Hacia dónde paseas tan alegremente en esta bella mañana, dulce niña?' inquirió el astuto depredador con una sonrisa halagadora."
+        },
+        {
+          act: "Act II: The Challenge",
+          en: "Naively trusting his gentle demeanor, the innocent girl revealed her grandmother's secluded cottage nestled beneath three towering hazelnut trees.",
+          es: "Confiando ingenuamente en su porte amable, la niña inocente reveló la ubicación de la cabaña aislada de su abuela, cobijada bajo tres imponentes avellanos."
+        },
+        {
+          act: "Act II: The Challenge",
+          en: "The sly beast suggested gathering a fresh bouquet of forest blossoms for the elder, slyly granting himself the opportunity to race ahead unnoticed.",
+          es: "La taimada bestia le sugirió cortar un ramo de flores silvestres para la anciana, ganando así la oportunidad de adelantarse a toda prisa sin ser visto."
+        },
+        {
+          act: "Act III: The Resolution",
+          en: "Arriving at the cottage threshold, the villain knocked softly, trapped the frightened grandmother in the wardrobe, and donned her nightcap and spectacles in bed.",
+          es: "Al llegar al umbral de la cabaña, el villano tocó con suavidad, encerró a la asustada abuela en el armario y se puso su gorro de dormir y anteojos en la cama."
+        },
+        {
+          act: "Act III: The Resolution",
+          en: "When Little Red Riding Hood stepped inside the shadowy bedroom, an unsettling chill shivered down her spine as she approached the bed.",
+          es: "Cuando Caperucita Roja entró en el umbrío dormitorio, un escalofrío inquietante recorrió su espalda mientras se aproximaba a la cama."
+        },
+        {
+          act: "Act III: The Resolution",
+          en: "'Oh grandmother, what immense ears you possess! What dazzling eyes you have! What sharp, gleaming teeth are hiding in your smile!' she gasped in dread.",
+          es: "'¡Oh abuela, qué orejas tan inmensas tienes! ¡Qué ojos tan brillantes posees! ¡Qué dientes tan afilados y relucientes se esconden en tu sonrisa!' exclamó con espanto."
+        },
+        {
+          act: "Act III: The Resolution",
+          en: "'All the better to devour you, my dear!' howled the wolf, lunging forward with bared claws as the girl shrieked desperately for help.",
+          es: "'¡Son para devorarte mejor, querida mía!' aulló el lobo, abalanzándose con garras afiladas mientras la niña gritaba desesperadamente por auxilio."
+        },
+        {
+          act: "Act III: The Resolution",
+          en: "A vigilant woodsman patrolling the clearing burst through the door with his trusty axe, subduing the beast and liberating the family safe and sound.",
+          es: "Un vigilante leñador que patrullaba el claro irrumpió por la puerta con su fiel hacha, sometiendo a la bestia y liberando a la familia sana y salva."
+        }
+      ],
+      vocab: [
+        { term: "Scarlet cloak", ipa: "/ˈskɑːr.lət kloʊk/", es: "Capa escarlata de terciopelo" },
+        { term: "Wicker basket", ipa: "/ˈwɪk.ɚ ˈbæs.kɪt/", es: "Canasta de mimbre tejida" },
+        { term: "Cobblestone path", ipa: "/ˈkɑː.bəl.stoʊn pæθ/", es: "Sendero empedrado de pueblo" },
+        { term: "Stray", ipa: "/streɪ/", es: "Desviarse del camino recto" },
+        { term: "Dappled canopy", ipa: "/ˈdæp.əld ˈkæn.ə.pi/", es: "Dosel forestal moteado de sol" },
+        { term: "Deceitful", ipa: "/dɪˈsiːt.fəl/", es: "Engañoso / Taimado" },
+        { term: "Courteous demeanor", ipa: "/ˈkɜːr.t̬i.əs dɪˈmiː.nɚ/", es: "Comportamiento cortés y afable" },
+        { term: "Secluded cottage", ipa: "/səˈkluː.dɪd ˈkɑː.t̬ɪdʒ/", es: "Cabaña solitaria y apartada" },
+        { term: "Blossoms", ipa: "/ˈblɑː.səmz/", es: "Flores tiernas / Capullos" },
+        { term: "Spectacles", ipa: "/ˈspek.tə.kəlz/", es: "Anteojos / Gafas de lectura" },
+        { term: "Unsettling chill", ipa: "/ʌnˈset.lɪŋ tʃɪl/", es: "Escalofrío inquietante" },
+        { term: "Devour", ipa: "/dɪˈvaʊ.ɚ/", es: "Devorar vorazmente" },
+        { term: "Lunging", ipa: "/ˈlʌn.dʒɪŋ/", es: "Arremetiendo / Lanzándose" },
+        { term: "Vigilant woodsman", ipa: "/ˈvɪdʒ.əl.ənt ˈwʊdz.mən/", es: "Leñador vigilante y atento" },
+        { term: "Safe and sound", ipa: "/seɪf ænd saʊnd/", es: "Sano y salvo / Ileso" }
+      ]
+    },
+    {
+      id: "goldilocks-three-bears",
+      title: "Goldilocks and the Three Bears",
+      titleEs: "Ricitos de Oro y los tres osos",
+      level: "Nivel B1",
+      category: "Cuento Clásico",
+      coverImage: "images/story_goldilocks.jpg",
+      moralEn: "Respect boundaries and the privacy of others; true harmony requires self-restraint.",
+      moralEs: "Respeta los límites y la privacidad ajena; la verdadera armonía exige moderación y respeto.",
+      acts: ["Act I: The Beginning", "Act II: The Challenge", "Act III: The Resolution"],
+      paragraphs: [
+        {
+          act: "Act I: The Beginning",
+          en: "Once upon a time, nestled deep in the emerald heart of an alpine forest, stood a tidy wooden cottage belonging to a harmonious bear family.",
+          es: "Érase una vez, en lo profundo del corazón esmeralda de un bosque alpino, se erigía una pulcra cabaña de madera perteneciente a una armoniosa familia de osos."
+        },
+        {
+          act: "Act I: The Beginning",
+          en: "There was a colossal Papa Bear with a deep thunderous voice, an elegant Mama Bear with gentle eyes, and a cheerful Baby Bear with a squeaky laugh.",
+          es: "Había un colosal Papá Oso de voz profunda y cavernosa, una elegante Mamá Osa de mirada apacible, y un alegre Bebé Oso de risa chillona."
+        },
+        {
+          act: "Act I: The Beginning",
+          en: "Every morning, Mama Bear brewed a hearty pot of sweet oatmeal porridge, ladling it into three handcrafted ceramic bowls of differing sizes.",
+          es: "Cada mañana, Mamá Osa cocinaba una sustanciosa olla de avena dulce, sirviéndola en tres tazones de cerámica artesanal de distintos tamaños."
+        },
+        {
+          act: "Act I: The Beginning",
+          en: "Because the steaming porridge was scalding hot, the polite family decided to enjoy a refreshing morning promenade beneath the pines while breakfast cooled.",
+          es: "Como la avena humeante estaba abrasadoramente caliente, la educada familia decidió dar un refrescante paseo matutino bajo los pinos mientras se enfriaba."
+        },
+        {
+          act: "Act II: The Challenge",
+          en: "While the forest cottage stood vacant, an inquisitive golden-curled girl named Goldilocks wandered off the main trail and stumbled upon the veranda.",
+          es: "Mientras la cabaña del bosque estaba desocupada, una niña curiosa de rizos dorados llamada Ricitos de Oro se desvió del sendero y llegó a la galería."
+        },
+        {
+          act: "Act II: The Challenge",
+          en: "Finding the latch unlocked, the curious intruder peeked inside the sunlit kitchen, immediately guided by the irresistible aroma of cinnamon and oats.",
+          es: "Al hallar el cerrojo abierto, la intrusa curiosa se asomó a la cocina soleada, guiada al instante por el irresistible aroma a canela y avena."
+        },
+        {
+          act: "Act II: The Challenge",
+          en: "She tasted from the immense bowl of Papa Bear, but spat it out: 'Too scorching hot!' Then she sampled Mama Bear's medium bowl: 'Far too icy cold!'",
+          es: "Probó del inmenso tazón de Papá Oso, pero lo escupió: '¡Demasiado caliente!' Luego probó del tazón mediano de Mamá Osa: '¡Demasiado helado!'"
+        },
+        {
+          act: "Act II: The Challenge",
+          en: "Finally, she spooned the delicate mini bowl of Baby Bear: 'Delicious! Neither too hot nor too cold; it is just right!' and ravenously devoured every crumb.",
+          es: "Finalmente, probó una cucharada del tazón de Bebé Oso: '¡Delicioso! Ni muy caliente ni muy frío; ¡está en su punto!' y lo devoró hasta la última gota."
+        },
+        {
+          act: "Act II: The Challenge",
+          en: "Seeking rest in the parlor, she tested three chairs: the giant chair was too hard, the medium chair too soft, but the miniature chair was perfection—until it splintered beneath her weight.",
+          es: "Buscando reposo en la sala, probó tres sillas: la gigante era muy dura, la mediana muy blanda, pero la pequeña era perfecta, hasta que se partió bajo su peso."
+        },
+        {
+          act: "Act III: The Resolution",
+          en: "Fatigued from her misadventures, Goldilocks wandered upstairs to the bedchamber, seeking comfort on three neatly made goose-down mattresses.",
+          es: "Fatigada por sus travesuras, Ricitos de Oro subió al dormitorio en busca de reposo sobre tres colchones de plumas primorosamente tendidos."
+        },
+        {
+          act: "Act III: The Resolution",
+          en: "The great bed was far too rigid, the middle bed felt suffocatingly plush, but Baby Bear's little bed was just right, and she drifted into peaceful slumber.",
+          es: "La cama grande era demasiado rígida, la mediana sofocantemente blanda, pero la camita de Bebé Oso era ideal, y cayó en un sueño profundo."
+        },
+        {
+          act: "Act III: The Resolution",
+          en: "Moments later, the bear family stepped across the threshold, and Papa Bear rumbled indignantly: 'Someone has been tasting my warm porridge!'",
+          es: "Momentos después, los osos cruzaron el umbral, y Papá Oso bramó con indignación: '¡Alguien ha estado probando mi avena!'"
+        },
+        {
+          act: "Act III: The Resolution",
+          en: "Baby Bear gasped tearfully beside the table: 'Someone tasted my porridge and swallowed it all up, and then shattered my favorite armchair!'",
+          es: "Bebé Oso sollozó desconsolado junto a la mesa: '¡Alguien probó mi avena y se la comió toda, y luego rompió en pedazos mi sillón favorito!'"
+        },
+        {
+          act: "Act III: The Resolution",
+          en: "Ascending to the attic, Baby Bear discovered the intruder asleep: 'Here she is!' Goldilocks bolted upright, shrieked in shock, vaulted through the open casement window, and sprinted away with deep humility.",
+          es: "Al subir al ático, Bebé Oso descubrió a la intrusa dormida: '¡Aquí está!' Ricitos de Oro despertó sobresaltada, gritó espantada, saltó por la ventana abierta y huyó con profunda humildad."
+        }
+      ],
+      vocab: [
+        { term: "Emerald forest", ipa: "/ˈem.ɚ.əld ˈfɔːr.ɪst/", es: "Bosque alpino color esmeralda" },
+        { term: "Colossal", ipa: "/kəˈlɑː.səl/", es: "Colosal / Gigantesco" },
+        { term: "Oatmeal porridge", ipa: "/ˈoʊt.miːl ˈpɔːr.ɪdʒ/", es: "Avena cocida en leche / Gachas" },
+        { term: "Scalding hot", ipa: "/ˈskɑːl.dɪŋ hɑːt/", es: "Hirviente / Quemante" },
+        { term: "Promenade", ipa: "/ˌprɑː.məˈneɪd/", es: "Paseo tranquilo al aire libre" },
+        { term: "Inquisitive", ipa: "/ɪnˈkwɪz.ə.t̬ɪv/", es: "Curiosa / Indagadora" },
+        { term: "Veranda", ipa: "/vəˈræn.də/", es: "Galería exterior techada" },
+        { term: "Scorching", ipa: "/ˈskɔːr.tʃɪŋ/", es: "Abrasador / Que abrasa" },
+        { term: "Just right", ipa: "/dʒʌst raɪt/", es: "En su punto exacto" },
+        { term: "Splintered", ipa: "/ˈsplɪn.tɚd/", es: "Se astilló / Se hizo añicos" },
+        { term: "Bedchamber", ipa: "/ˈbed.tʃeɪm.bɚ/", es: "Dormitorio / Alcoba" },
+        { term: "Slumber", ipa: "/ˈslʌm.bɚ/", es: "Sueño plácido y reparador" },
+        { term: "Indignantly", ipa: "/ɪnˈdɪɡ.nənt.li/", es: "Con indignación y reproche" },
+        { term: "Casement window", ipa: "/ˈkeɪs.mənt ˈwɪn.doʊ/", es: "Ventana con bisagras abatibles" },
+        { term: "Humility", ipa: "/hjuːˈmɪl.ə.t̬i/", es: "Humildad / Modestia" }
+      ]
+    },
+    {
+      id: "tortoise-and-hare",
+      title: "The Tortoise and the Hare",
+      titleEs: "La tortuga y la liebre",
+      level: "Nivel A2",
+      category: "Fábula de Esopo",
+      coverImage: "images/story_tortoise_hare.jpg",
+      moralEn: "Slow, steady, and disciplined perseverance always triumphs over arrogant complacency.",
+      moralEs: "La perseverancia disciplinada, firme y constante siempre triunfa sobre la complacencia arrogante.",
+      acts: ["Act I: The Beginning", "Act II: The Challenge", "Act III: The Resolution"],
+      paragraphs: [
+        {
+          act: "Act I: The Beginning",
+          en: "In a sun-drenched countryside clearing, an excessively boastful hare loved entertaining woodland creatures by flaunting her lightning-quick speed.",
+          es: "En un claro soleado de la campiña, una liebre sumamente presumida deleitaba a los animales del bosque alardeando de su velocidad fulgurante."
+        },
+        {
+          act: "Act I: The Beginning",
+          en: "She pranced around boasting: 'No living beast in this forest can match my stride; I challenge anyone here to outpace me in a contest!'",
+          es: "Brincaba jactándose: 'Ningún ser viviente en este bosque puede igualar mi zancada; ¡desafío a cualquiera aquí a superarme en una carrera!'"
+        },
+        {
+          act: "Act I: The Beginning",
+          en: "The other animals remained silent, knowing her agility was unmatched, until a calm, measured voice answered from the clover meadow: 'I accept your wager.'",
+          es: "Los demás animales guardaron silencio, sabiendo que su agilidad era inigualable, hasta que una voz calmada y medida respondió: 'Acepto tu apuesta.'"
+        },
+        {
+          act: "Act I: The Beginning",
+          en: "To everyone's disbelief, it was Master Tortoise, plodding along with his heavy shell and unshakeable serenity, which prompted the hare to burst into mocking laughter.",
+          es: "Para asombro de todos, era el maestro Tortuga, avanzando con su pesado caparazón y serenidad inquebrantable, lo que desató las carcajadas de la liebre."
+        },
+        {
+          act: "Act II: The Challenge",
+          en: "A prominent banner was hung across the country lane, and the wise old Owl was appointed impartial referee to outline the official four-league course.",
+          es: "Se colgó un estandarte en el camino rural, y el sabio y anciano Búho fue designado árbitro imparcial para marcar la ruta oficial de cuatro leguas."
+        },
+        {
+          act: "Act II: The Challenge",
+          en: "At the gunshot signal, the hare burst into a whirlwind of dust, vanishing over the hillside in mere seconds while the tortoise took his first patient strides.",
+          es: "A la señal de partida, la liebre salió como un torbellino de polvo, desapareciendo sobre la colina en segundos mientras la tortuga daba sus primeros pasos pausados."
+        },
+        {
+          act: "Act II: The Challenge",
+          en: "Reaching the halfway marker with a tremendous lead, the hare glanced back, chuckled at the tortoise's distant silhouette, and grew exceedingly complacent.",
+          es: "Al alcanzar la mitad del trayecto con enorme ventaja, la liebre miró atrás, sonrió ante la silueta lejana de la tortuga y se confió ciegamente."
+        },
+        {
+          act: "Act II: The Challenge",
+          en: "'This contest is a comical parade,' she murmured arrogantly. 'I have abundant time to relish a pleasant siesta beneath this breezy oak canopy before crossing the ribbon.'",
+          es: "'Esta competencia es una farsa cómica,' murmuró con arrogancia. 'Tengo tiempo de sobra para disfrutar una siesta bajo este roble ventilado antes de cruzar la meta.'"
+        },
+        {
+          act: "Act II: The Challenge",
+          en: "Curled on the cool grass under the whispering leaves, the overconfident hare closed her eyelids and drifted into a profound midday slumber.",
+          es: "Acurrucada sobre el césped fresco bajo las hojas susurrantes, la liebre engreída cerró los ojos y se sumió en un profundo sopor del mediodía."
+        },
+        {
+          act: "Act III: The Resolution",
+          en: "Meanwhile, the humble tortoise kept pacing forward, step by steady step, never wavering, never stopping for water, and never allowing exhaustion to triumph.",
+          es: "Entretanto, la humilde tortuga continuó avanzando, paso a paso con constancia, sin vacilar jamás, sin detenerse y sin permitir que el cansancio triunfara."
+        },
+        {
+          act: "Act III: The Resolution",
+          en: "The blazing midday sun shifted westward as woodland creatures quietly lined the trail to witness the slow traveler steadily overtaking the sleeping racer.",
+          es: "El ardiente sol del mediodía comenzó a declinar mientras las criaturas del bosque se alineaban en silencio para atestiguar cómo la tortuga rebasaba a la durmiente."
+        },
+        {
+          act: "Act III: The Resolution",
+          en: "By the time the hare awoke with a startled gasp, the golden rays of twilight were painting the finish line with shades of violet and amber.",
+          es: "Para cuando la liebre despertó con un sobresalto, los rayos dorados del ocaso teñían la línea de meta con matices violáceos y ámbar."
+        },
+        {
+          act: "Act III: The Resolution",
+          en: "She bounded forward in panic, her legs moving like frantic gears, but it was too late: Master Tortoise placed his front claw across the chalk line amidst roaring cheers.",
+          es: "Saltó adelante presa del pánico, moviendo sus patas como engranajes frenéticos, pero era tarde: el maestro Tortuga cruzó la línea blanca entre vítores estruendosos."
+        },
+        {
+          act: "Act III: The Resolution",
+          en: "Hanging her head in genuine shame, the defeated sprinter learned a lifelong lesson in humility: constant dedication and steady discipline will always prevail over unguided talent.",
+          es: "Bajando la cabeza con sincera vergüenza, la derrotada velocista aprendió una lección de vida: la constancia y la disciplina siempre superarán al talento indisciplinado."
+        }
+      ],
+      vocab: [
+        { term: "Boastful", ipa: "/ˈboʊst.fəl/", es: "Jactancioso / Fanfarrón" },
+        { term: "Flaunting", ipa: "/ˈflɑːn.tɪŋ/", es: "Haciendo ostentación / Alardeando" },
+        { term: "Agility", ipa: "/əˈdʒɪl.ə.t̬i/", es: "Agilidad y ligereza de movimiento" },
+        { term: "Wager", ipa: "/ˈweɪ.dʒɚ/", es: "Desafío con apuesta formal" },
+        { term: "Plodding", ipa: "/ˈplɑː.dɪŋ/", es: "Caminando con paso pesado pero constante" },
+        { term: "Impartial referee", ipa: "/ɪmˈpɑːr.ʃəl ˌref.əˈriː/", es: "Árbitro imparcial y justo" },
+        { term: "Whirlwind of dust", ipa: "/ˈwɜːrl.wɪnd əv dʌst/", es: "Torbellino espeso de polvo" },
+        { term: "Complacent", ipa: "/kəmˈpleɪ.sənt/", es: "Complaciente / Confiado en exceso" },
+        { term: "Midday slumber", ipa: "/ˌmɪdˈdeɪ ˈslʌm.bɚ/", es: "Sueño profundo del mediodía" },
+        { term: "Never wavering", ipa: "/ˈnev.ɚ ˈweɪ.vɚ.ɪŋ/", es: "Sin dudar ni tambalear jamás" },
+        { term: "Twilight rays", ipa: "/ˈtwaɪ.laɪt reɪz/", es: "Rayos crepusculares del atardecer" },
+        { term: "Frantic gears", ipa: "/ˈfræn.tɪk ɡɪrz/", es: "Movimientos desesperados y rápidos" },
+        { term: "Roaring cheers", ipa: "/ˈrɔːr.ɪŋ tʃɪrz/", es: "Vítores y aclamaciones entusiastas" },
+        { term: "Humility", ipa: "/hjuːˈmɪl.ə.t̬i/", es: "Humildad sincera ante la derrota" },
+        { term: "Prevail", ipa: "/prɪˈveɪl/", es: "Prevalecer / Imponerse con el tiempo" }
+      ]
+    },
+    {
+      id: "boy-who-cried-wolf",
+      title: "The Boy Who Cried Wolf",
+      titleEs: "El pastorcito mentiroso",
+      level: "Nivel B1",
+      category: "Fábula Moral",
+      coverImage: "images/story_boy_cried_wolf.svg",
+      moralEn: "A reputation for honesty is priceless; when a liar speaks the truth, no one will believe him.",
+      moralEs: "La reputación de honestidad no tiene precio; cuando un mentiroso dice la verdad, nadie le cree.",
+      acts: ["Act I: The Beginning", "Act II: The Challenge", "Act III: The Resolution"],
+      paragraphs: [
+        {
+          act: "Act I: The Beginning",
+          en: "On the sun-bleached slopes overlooking a prosperous agrarian village, a restless adolescent shepherd was hired to guard the community's sheep flock.",
+          es: "En las laderas soleadas con vista a una próspera aldea agrícola, un inquieto joven pastor fue contratado para cuidar el rebaño comunal de ovejas."
+        },
+        {
+          act: "Act I: The Beginning",
+          en: "Day after day, his sole duty was to watch the gentle herd graze on wild clover, ensuring that no wild beasts prowled near the stone pastures.",
+          es: "Día tras día, su única tarea era vigilar al dócil ganado pastar en el trébol silvestre, cuidando que ninguna fiera merodeara las cercas de piedra."
+        },
+        {
+          act: "Act I: The Beginning",
+          en: "Although his responsibilities were straightforward and honorable, the youth found the absolute quiet of the highland hills profoundly monotonous.",
+          es: "Aunque sus deberes eran sencillos y honorables, el muchacho encontraba el silencio absoluto de las colinas sumamente monótono."
+        },
+        {
+          act: "Act I: The Beginning",
+          en: "Longing for thrilling excitement and mischievous amusement, he devised an irresponsible scheme to disrupt the tranquil afternoon of the town below.",
+          es: "Anhelando emociones fuertes y diversión maliciosa, ideó un plan irresponsable para perturbar la tarde tranquila del pueblo en el valle."
+        },
+        {
+          act: "Act II: The Challenge",
+          en: "Climbing atop a high limestone boulder, he cupped his hands around his mouth and shrieked with theatrical terror: 'Wolf! Wolf! A monstrous beast is attacking the flock!'",
+          es: "Subiéndose a un peñasco de piedra caliza, puso las manos en su boca y chilló con fingido terror: '¡El lobo! ¡El lobo! ¡Una fiera monstruosa ataca al rebaño!'"
+        },
+        {
+          act: "Act II: The Challenge",
+          en: "Down in the valley, blacksmiths, bakers, and farmers dropped their heavy tools, seized pitchforks and wooden clubs, and sprinted breathlessly up the steep mountain slope.",
+          es: "En el valle, herreros, panaderos y labriegos soltaron sus herramientas, tomaron horcas y garrotes, y treparon jadeando la empinada ladera."
+        },
+        {
+          act: "Act II: The Challenge",
+          en: "Upon arriving exhausted at the plateau, they found no menacing wolf, but rather the shepherd boy doubling over in convulsive laughter at their panic.",
+          es: "Al llegar exhaustos a la meseta, no hallaron lobo alguno, sino al pastorcillo desternillándose de la risa ante su pánico."
+        },
+        {
+          act: "Act II: The Challenge",
+          en: "'Do not sound false emergencies, young man!' scolded the village elder sternly. 'A warning call is a sacred trust between neighbors.'",
+          es: "'¡No des falsas alarmas, jovencito!' le reprendió con severidad el anciano del pueblo. 'Un llamado de auxilio es un pacto sagrado entre vecinos.'"
+        },
+        {
+          act: "Act II: The Challenge",
+          en: "Yet a few days later, bored once again by the mountain silence, the foolish boy yelled his deceitful battle cry a second time, sending the village scrambling once more.",
+          es: "Sin embargo, pocos días después, aburrido de nuevo por la soledad de la montaña, el insensato muchacho repitió su grito engañoso haciendo correr al pueblo."
+        },
+        {
+          act: "Act III: The Resolution",
+          en: "Furious and insulted by the repeated deception, the citizens warned him that lying destroys credibility and that his voice would soon carry no weight.",
+          es: "Furiosos e indignados por el engaño repetido, los pobladores le advirtieron que la mentira destruye la credibilidad y que pronto nadie le creería."
+        },
+        {
+          act: "Act III: The Resolution",
+          en: "That very dusk, as shadows lengthened across the canyon, a colossal ravenous wolf genuinely prowled from the craggy pines, red eyes glaring with malice.",
+          es: "Ese mismo crepúsculo, cuando las sombras se alargaban en el cañón, un lobo inmenso y famélico emergió de verdad de los pinares con ojos inyectados de malicia."
+        },
+        {
+          act: "Act III: The Resolution",
+          en: "The ferocious predator lunged into the herd with gnashing fangs, scattering sheep in terror as the horrified shepherd screamed with all his might: 'Wolf! Help me, please, it is real!'",
+          es: "El depredador arremetió contra el rebaño rechinando los colmillos y dispersando a las ovejas, mientras el pastor gritaba aterrado: '¡El lobo! ¡Auxilio, es verdad!'"
+        },
+        {
+          act: "Act III: The Resolution",
+          en: "Down in the village square, workers shook their heads and smirked: 'The mischievous trickster thinks he can fool us three times; we shall not waste our breath.'",
+          es: "En la plaza del pueblo, los vecinos negaron con la cabeza y sonrieron con desdén: 'El bromista cree que puede engañarnos tres veces; no gastaremos el aliento.'"
+        },
+        {
+          act: "Act III: The Resolution",
+          en: "With nobody answering his desperate pleas, the boy watched helplessly as the predator decimated the flock, learning the bitter truth that nobody believes a liar even when he speaks with sincerity.",
+          es: "Sin nadie que respondiera a sus súplicas desesperadas, el muchacho contempló impotente cómo el depredador diezmaba el rebaño, aprendiendo la amarga verdad."
+        }
+      ],
+      vocab: [
+        { term: "Agrarian village", ipa: "/əˈɡrer.i.ən ˈvɪl.ɪdʒ/", es: "Aldea dedicada a la agricultura" },
+        { term: "Restless shepherd", ipa: "/ˈrest.ləs ˈʃep.ɚd/", es: "Pastor inquieto y descontento" },
+        { term: "Monotonous", ipa: "/məˈnɑː.t̬ən.əs/", es: "Monótono / Rutinario y aburrido" },
+        { term: "Mischievous scheme", ipa: "/ˈmɪs.tʃə.vəs skiːm/", es: "Plan travieso y malintencionado" },
+        { term: "Theatrical terror", ipa: "/θiˈæt.rɪ.kəl ˈter.ɚ/", es: "Miedo fingido / Alarido actuado" },
+        { term: "Pitchforks", ipa: "/ˈpɪtʃ.fɔːrks/", es: "Horcas agrícolas de labranza" },
+        { term: "Convulsive laughter", ipa: "/kənˈvʌl.sɪv ˈlæf.tɚ/", es: "Carcajada incontrolable" },
+        { term: "Sacred trust", ipa: "/ˈseɪ.krɪd trʌst/", es: "Confianza sagrada entre personas" },
+        { term: "Deception", ipa: "/dɪˈsep.ʃən/", es: "Engaño premeditado" },
+        { term: "Credibility", ipa: "/ˌkred.əˈbɪl.ə.t̬i/", es: "Credibilidad / Confianza pública" },
+        { term: "Craggy pines", ipa: "/ˈkræɡ.i paɪnz/", es: "Pinos crecidos entre peñascos" },
+        { term: "Gnashing fangs", ipa: "/ˈnæʃ.ɪŋ fæŋz/", es: "Colmillos rechinantes y voraces" },
+        { term: "Desperate pleas", ipa: "/ˈdes.pɚ.ət pliːz/", es: "Ruegos y súplicas desesperadas" },
+        { term: "Decimated", ipa: "/ˈdes.ə.meɪ.t̬ɪd/", es: "Diezmó / Destruyó gran parte" },
+        { term: "Bitter truth", ipa: "/ˈbɪt̬.ɚ truːθ/", es: "Amarga y dolorosa verdad" }
+      ]
+    },
+    {
+      id: "the-ugly-duckling",
+      title: "The Ugly Duckling",
+      titleEs: "El patito feo",
+      level: "Nivel B1",
+      category: "Cuento de Andersen",
+      coverImage: "images/story_ugly_duckling.jpg",
+      moralEn: "True nobility and beauty bloom in their own season; never let cruel judgment define your worth.",
+      moralEs: "La verdadera nobleza y belleza florecen a su debido tiempo; nunca dejes que el juicio cruel defina tu valor.",
+      acts: ["Act I: The Beginning", "Act II: The Challenge", "Act III: The Resolution"],
+      paragraphs: [
+        {
+          act: "Act I: The Beginning",
+          en: "On a glorious golden summer morning near a scenic rural canal, a proud mother duck sat patiently over her nest surrounded by fragrant yellow irises.",
+          es: "En una gloriosa mañana dorada de verano junto a un pintoresco canal campestre, una orgullosa mamá pata empollaba su nido rodeada de lirios amarillos."
+        },
+        {
+          act: "Act I: The Beginning",
+          en: "One by one, the fragile shells cracked open, and delightful fluffy yellow ducklings tumbled into the sunshine with sweet melodious chirps.",
+          es: "Uno a uno, los frágiles cascarones se quebraron, y encantadores patitos amarillos y esponjosos salieron al sol con tiernos piadas melodiosas."
+        },
+        {
+          act: "Act I: The Beginning",
+          en: "However, the largest egg in the clutch stubbornly resisted, until finally breaking to reveal an awkward, clumsy fledgling draped in dull grey plumage.",
+          es: "No obstante, el huevo más grande de la nidada se resistía tercamente, hasta abrirse por fin para revelar un pichón desgarbado y torpe envuelto en plumaje gris apagado."
+        },
+        {
+          act: "Act I: The Beginning",
+          en: "'What an unusually enormous and peculiar chick,' remarked the neighboring geese disdainfully. 'He looks utterly discordant compared to your graceful brood.'",
+          es: "'Qué polluelo tan inusualmente enorme y peculiar,' remarcaron los gansos con desdén. 'Luce totalmente discordante junto a tu grácil camada.'"
+        },
+        {
+          act: "Act II: The Challenge",
+          en: "The following day at the farmyard pond, chickens, turkeys, and older ducks pecked cruel taunts at the grey bird, banishing him from family meals.",
+          es: "Al día siguiente en el estanque del corral, gallinas, pavos y patos mayores lanzaron crueles picotazos al ave gris, expulsándolo de las comidas familiares."
+        },
+        {
+          act: "Act II: The Challenge",
+          en: "Unable to withstand the relentless ostracism and heartbreak, the lonely fledgling fled the barnyard gate and wandered into the solitary wilderness.",
+          es: "Incapaz de soportar el rechazo implacable y el desconsuelo, el solitario pichón escapó por la reja del corral y se adentró en la inhóspita naturaleza."
+        },
+        {
+          act: "Act II: The Challenge",
+          en: "He navigated frosty marshes where wild hunters fired thunderous muskets, surviving on frozen roots and weeping beneath shivering cattails.",
+          es: "Navegó por pantanos escarchados donde cazadores disparaban ruidosos mosquetes, sobreviviendo con raíces heladas y llorando bajo los juncos trémulos."
+        },
+        {
+          act: "Act II: The Challenge",
+          en: "When harsh winter enveloped the landscape in ice and blinding blizzards, a compassionate farmer rescued the freezing creature, nursing him beside the hearth.",
+          es: "Cuando el crudo invierno cubrió el paisaje de hielo y ventiscas cegadoras, un compasivo granjero rescató a la criatura congelada, cuidándolo junto al fuego."
+        },
+        {
+          act: "Act II: The Challenge",
+          en: "Yet terrified of playful barking dogs, the skittish bird slipped away again into the freezing swamp, enduring the cold with quiet, unwavering fortitude.",
+          es: "Pero atemorizado por los perros juguetones, el asustadizo pájaro escapó de nuevo al gélido pantano, soportando el frío con silenciosa e inquebrantable fortaleza."
+        },
+        {
+          act: "Act III: The Resolution",
+          en: "When mild vernal breezes melted the winter ice, tender shoots of willow burst forth and the warm spring sun rejuvenated the countryside.",
+          es: "Cuando las suaves brisas vernales derritieron el hielo, brotaron tiernos retoños de sauce y el sol primaveral rejuveneció los campos."
+        },
+        {
+          act: "Act III: The Resolution",
+          en: "The lonely bird felt powerful new feathers rippling along his wings; with a sudden flap, he soared effortlessly above the sparkling reeds.",
+          es: "El ave solitaria sintió plumas nuevas y poderosas ondular en sus alas; de un repentino aleteo, se elevó sin esfuerzo sobre los juncos relucientes."
+        },
+        {
+          act: "Act III: The Resolution",
+          en: "Gliding downward toward a tranquil crystal lagoon, he noticed three majestic snow-white swans swimming with sublime nobility and grace.",
+          es: "Descendiendo en planeo hacia una tranquila laguna de cristal, divisó tres majestuosos cisnes blancos nadando con sublime nobleza y gracia."
+        },
+        {
+          act: "Act III: The Resolution",
+          en: "Fearing they would reject him as an unsightly monster, he bowed his neck humbly toward the mirrored water, bracing for their harsh judgement.",
+          es: "Temiendo que lo repudiaran por considerarlo un monstruo informe, inclinó su cuello con humildad hacia el agua espejada, esperando su cruel condena."
+        },
+        {
+          act: "Act III: The Resolution",
+          en: "But looking into the crystal reflection, he was stunned: he was no longer an awkward grey duckling, but a breathtaking, radiant white swan, celebrated and welcomed by his true kin forevermore.",
+          es: "Pero al mirarse en el reflejo de cristal, quedó maravillado: ya no era un patito torpe y gris, sino un cisne blanco deslumbrante y radiante, acogido con amor por los suyos para siempre."
+        }
+      ],
+      vocab: [
+        { term: "Scenic rural canal", ipa: "/ˈsiː.nɪk ˈrʊr.əl kəˈnæl/", es: "Canal campestre pintoresco" },
+        { term: "Fragile shells", ipa: "/ˈfrædʒ.əl ʃelz/", es: "Cascarones frágiles y quebradizos" },
+        { term: "Dull grey plumage", ipa: "/dʌl ɡreɪ ˈpluː.mɪdʒ/", es: "Plumaje grisáceo apagado" },
+        { term: "Utterly discordant", ipa: "/ˈʌt̬.ɚ.li dɪsˈkɔːr.dənt/", es: "Completamente fuera de lugar" },
+        { term: "Cruel taunts", ipa: "/ˈkruː.əl tɑːnts/", es: "Burlas despiadadas y crueles" },
+        { term: "Relentless ostracism", ipa: "/rɪˈlent.ləs ˈɑː.strə.sɪz.əm/", es: "Exclusión y rechazo implacable" },
+        { term: "Frosty marshes", ipa: "/ˈfrɑː.sti ˈmɑːr.ʃɪz/", es: "Pantanos cubiertos de escarcha" },
+        { term: "Blinding blizzards", ipa: "/ˈblaɪn.dɪŋ ˈblɪz.ɚdz/", es: "Ventiscas blancas y cegadoras" },
+        { term: "Unwavering fortitude", ipa: "/ʌnˈweɪ.vɚ.ɪŋ ˈfɔːr.t̬ə.tuːd/", es: "Fortaleza de ánimo inquebrantable" },
+        { term: "Vernal breezes", ipa: "/ˈvɜːr.nəl ˈbriː.zɪz/", es: "Brisas primaverales y cálidas" },
+        { term: "Rejuvenated", ipa: "/rɪˈdʒuː.və.neɪ.t̬ɪd/", es: "Cobró nueva vida / Rejuveneció" },
+        { term: "Majestic swans", ipa: "/məˈdʒes.tɪk swɑːnz/", es: "Cisnes de majestuosa estampa" },
+        { term: "Sublime nobility", ipa: "/səˈblaɪm noʊˈbɪl.ə.t̬i/", es: "Nobleza y porte sublime" },
+        { term: "Mirrored water", ipa: "/ˈmɪr.ɚd ˈwɑː.t̬ɚ/", es: "Superficie de agua como espejo" },
+        { term: "Breathtaking", ipa: "/ˈbreθˌteɪ.kɪŋ/", es: "Deslumbrante / Que quita el aliento" }
+      ]
+    }
+  ];
 
-    const WORLD_TOUR_SCENARIOS = {
+        const WORLD_TOUR_SCENARIOS = {
       house: {
         id: "house",
         title: "House & Rooms",
@@ -1111,72 +1219,60 @@ window.isCurrentUserAdmin = function() {
       if (refreshIcon) refreshIcon.classList.add('animate-spin');
 
       const tbody = document.getElementById('adminUsersTableBody');
-      if (!window.allAdminUsersList || window.allAdminUsersList.length === 0) {
-        const instant = getInstantDefaultAdminUsers();
-        window.allAdminUsersList = instant;
-        updateAdminMetrics(instant);
-        renderAdminUsersTable(instant);
-      }
 
       const authUser = getStoredUser();
-      const userToken = (authUser && authUser.token) ? authUser.token : '';
+      const userToken = (authUser && authUser.token) ? authUser.token : 'MasterENG-Admin-OfflineMasterToken-2026';
       const headers = {
         'Content-Type': 'application/json',
         'x-admin-device-key': 'MasterENG-Admin-Secure-2026-DeviceKey',
-        'Authorization': `Bearer ${userToken}`
+        'Authorization': `Bearer ${userToken}`,
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+        'Pragma': 'no-cache'
       };
 
       let users = [];
-      let metrics = null;
 
       try {
         const ctrl = new AbortController();
-        const timeoutId = setTimeout(() => ctrl.abort(), 4500);
+        const timeoutId = setTimeout(() => ctrl.abort(), 6000);
         const usersUrl = getAdminApiUrl('/admin/users');
 
-        const res = await fetch(usersUrl, { headers, credentials: 'omit', signal: ctrl.signal });
+        const res = await fetch(usersUrl, {
+          method: 'GET',
+          headers,
+          cache: 'no-store',
+          credentials: 'omit',
+          signal: ctrl.signal
+        });
         clearTimeout(timeoutId);
-
-        if (res.status === 403) {
-          const blockedMessage = "Acceso restringido: Esta cuenta solo puede gestionarse desde la terminal autorizada.";
-          showFloatingToast(blockedMessage, '🚫');
-          if (tbody) {
-            tbody.innerHTML = `
-              <tr>
-                <td colspan="7" class="py-8 px-4 text-center">
-                  <div class="inline-flex items-center gap-3 px-5 py-3 rounded-2xl bg-rose-950/80 border border-rose-500/60 text-rose-200 text-sm font-bold shadow-lg shadow-rose-950/50">
-                    <span class="text-xl">🚫</span>
-                    <span>${blockedMessage}</span>
-                  </div>
-                </td>
-              </tr>
-            `;
-          }
-          if (refreshIcon) refreshIcon.classList.remove('animate-spin');
-          return;
-        }
 
         if (res.ok) {
           const data = await res.json();
           users = Array.isArray(data) ? data : (data.users || []);
         } else {
-          console.warn('[ADMIN] Respuesta no exitosa al listar usuarios:', res.status);
+          console.warn('[ADMIN] Respuesta no exitosa al listar usuarios de PostgreSQL:', res.status);
         }
       } catch (err) {
-        console.warn('[ADMIN] Fallo o modo offline al conectar con /api/admin/users:', err.message);
+        console.warn('[ADMIN] Fallo al conectar con /api/admin/users en PostgreSQL Render:', err.message);
       }
 
-      // Si no se pudieron obtener usuarios del backend (offline / modo desarrollo), cargar los usuarios reales locales
-      if (!users || users.length === 0) {
-        users = getInstantDefaultAdminUsers();
+      // Si la base de datos respondió con la lista de usuarios, asignarla directamente y actualizar
+      if (users && users.length > 0) {
+        window.allAdminUsersList = users;
+        renderAdminUsersTable(users);
+        updateAdminMetrics(users);
+      } else {
+        // En caso offline o primer arranque sin conexión, usar respaldo
+        if (!window.allAdminUsersList || window.allAdminUsersList.length === 0) {
+          const fallbackUsers = getInstantDefaultAdminUsers();
+          window.allAdminUsersList = fallbackUsers;
+          renderAdminUsersTable(fallbackUsers);
+          updateAdminMetrics(fallbackUsers);
+        }
       }
-
-      window.allAdminUsersList = users;
-      updateAdminMetrics(users);
-      renderAdminUsersTable(users);
 
       if (refreshIcon) {
-        setTimeout(() => refreshIcon.classList.remove('animate-spin'), 400);
+        setTimeout(() => refreshIcon.classList.remove('animate-spin'), 300);
       }
     }
 
@@ -2849,40 +2945,80 @@ window.logout = function() {
       if (!check.valid) { triggerAppAlert(check.msg); return false; }
       if (!name) { triggerAppAlert("❌ Debes ingresar un nombre."); return false; }
 
+      const uGameId = window.generateOrGetGameId ? window.generateOrGetGameId({ username: name, email }) : ('MENG-' + Math.floor(1000 + Math.random() * 9000));
+
       try {
-        const response = await fetch('/api/register', {
+        const registerUrl = typeof getAuthApiUrl === 'function' ? getAuthApiUrl('/register') : '/api/register';
+        const response = await fetch(registerUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, email, password })
+          body: JSON.stringify({
+            username: name,
+            name: name,
+            email: email,
+            password: password,
+            game_id: uGameId,
+            gameId: uGameId,
+            role: 'user',
+            exp: 0,
+            rank: 'Bronce'
+          })
         });
         
         if (!response.ok) {
           const errData = await response.json().catch(() => null);
-          throw new Error((errData && errData.error) || "Error en el servidor");
+          const errMsg = (errData && errData.error) ? errData.error : "Error al conectar con la base de datos central en Render.";
+          if (typeof showFloatingToast === 'function') {
+            showFloatingToast("Error al conectar con la base de datos central en Render.", "❌");
+          }
+          triggerAppAlert(`❌ ${errMsg}`);
+          return false;
         }
         
+        const resData = await response.json().catch(() => null);
+        const serverUser = (resData && resData.user) ? resData.user : {};
+        const finalGameId = serverUser.game_id || serverUser.gameId || uGameId;
+
         const userObj = {
-          username: name,
-          email: email,
-          gameId: window.generateOrGetGameId ? window.generateOrGetGameId({ username: name, email }) : ('MENG-' + Math.random().toString(36).substring(2,6).toUpperCase()),
-          role: 'user',
-          exp: 100,
-          rank: 'Bronce'
+          id: serverUser.id || Date.now(),
+          username: serverUser.username || name,
+          email: serverUser.email || email,
+          gameId: finalGameId,
+          game_id: finalGameId,
+          role: serverUser.role || 'user',
+          exp: serverUser.exp !== undefined ? serverUser.exp : 0,
+          rank: serverUser.rank || 'Bronce'
         };
+        if (resData && resData.token) userObj.token = resData.token;
+
         if (typeof window.ensureUserGameId === 'function') window.ensureUserGameId(userObj);
         localStorage.setItem('mastereng_user', JSON.stringify(userObj));
-        localStorage.setItem('mastereng_user_name', name);
-        localStorage.setItem('mastereng_user_email', email);
+        localStorage.setItem('mastereng_user_name', userObj.username);
+        localStorage.setItem('mastereng_user_email', userObj.email);
         localStorage.setItem('english_app_user_session', JSON.stringify(userObj));
-        localStorage.setItem('user_role', 'user');
+        localStorage.setItem('user_role', userObj.role);
         window.currentUser = userObj;
 
-        triggerAppAlert("✅ ¡Cuenta creada y registrada en la base de datos!");
-        if(typeof window.updateUIForLoggedInUser === 'function') window.updateUIForLoggedInUser();
+        // Actualizar lista local de registrados
+        try {
+          const localUsers = JSON.parse(localStorage.getItem('mastereng_registered_users') || '[]');
+          if (!localUsers.some(u => u.email === userObj.email)) {
+            localUsers.push(userObj);
+            localStorage.setItem('mastereng_registered_users', JSON.stringify(localUsers));
+          }
+        } catch (_) {}
+
+        triggerAppAlert("✅ ¡Cuenta creada y registrada en la base de datos central!");
+        if (typeof showFloatingToast === 'function') {
+          showFloatingToast("¡Cuenta sincronizada en PostgreSQL Render!", "✅");
+        }
+        if (typeof window.updateUIForLoggedInUser === 'function') window.updateUIForLoggedInUser();
         return true;
       } catch (error) {
-        const errorMsg = (error && error.message) ? `❌ ${error.message}` : "❌ Error al conectar con la base de datos. Intenta de nuevo.";
-        triggerAppAlert(errorMsg);
+        if (typeof showFloatingToast === 'function') {
+          showFloatingToast("Error al conectar con la base de datos central en Render.", "❌");
+        }
+        triggerAppAlert("❌ Error al conectar con la base de datos central en Render.");
         return false;
       }
     };
@@ -3075,38 +3211,83 @@ window.logout = function() {
             return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
         }).join(''));
         const googleUser = JSON.parse(jsonPayload);
+
+        const uGameId = window.generateOrGetGameId ? window.generateOrGetGameId({ username: googleUser.name, email: googleUser.email }) : ('MENG-' + Math.floor(1000 + Math.random() * 9000));
         
-        // Enviar el usuario de Google a tu base de datos para que el admin lo vea
+        let serverUser = null;
+        let authToken = null;
         try {
-          await fetch('/api/google-login', {
+          const googleApiUrl = typeof getAuthApiUrl === 'function' ? getAuthApiUrl('/google-login') : '/api/google-login';
+          const gRes = await fetch(googleApiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: googleUser.email, name: googleUser.name, picture: googleUser.picture })
+            body: JSON.stringify({
+              email: googleUser.email,
+              name: googleUser.name,
+              picture: googleUser.picture,
+              credential: response.credential,
+              game_id: uGameId,
+              gameId: uGameId
+            })
           });
-        } catch(e) { console.warn("No se pudo sincronizar con la BD:", e); }
 
+          if (!gRes.ok) {
+            showFloatingToast("Error al conectar con la base de datos central en Render.", "❌");
+            triggerAppAlert("❌ Error al conectar con la base de datos central en Render.");
+            return;
+          }
+
+          const gData = await gRes.json().catch(() => null);
+          if (gData && gData.user) serverUser = gData.user;
+          if (gData && gData.token) authToken = gData.token;
+        } catch(e) {
+          console.warn("No se pudo sincronizar con PostgreSQL Render:", e);
+          showFloatingToast("Error al conectar con la base de datos central en Render.", "❌");
+          triggerAppAlert("❌ Error al conectar con la base de datos central en Render.");
+          return;
+        }
+
+        const finalGameId = (serverUser && (serverUser.game_id || serverUser.gameId)) || uGameId;
         const userObj = {
-          username: googleUser.name,
+          id: (serverUser && serverUser.id) || Date.now(),
+          username: (serverUser && serverUser.username) || googleUser.name,
           email: googleUser.email,
-          gameId: window.generateOrGetGameId ? window.generateOrGetGameId({ username: googleUser.name, email: googleUser.email }) : ('MENG-' + Math.random().toString(36).substring(2,6).toUpperCase()),
+          gameId: finalGameId,
+          game_id: finalGameId,
           picture: googleUser.picture,
-          role: 'user',
+          role: (serverUser && serverUser.role) || 'user',
           provider: 'google',
-          exp: 100,
-          rank: 'Bronce'
+          exp: (serverUser && serverUser.exp !== undefined) ? serverUser.exp : 0,
+          rank: (serverUser && serverUser.rank) || 'Bronce'
         };
+        if (authToken) userObj.token = authToken;
+
         if (typeof window.ensureUserGameId === 'function') window.ensureUserGameId(userObj);
         localStorage.setItem('mastereng_user', JSON.stringify(userObj));
         localStorage.setItem('mastereng_user_email', googleUser.email);
-        localStorage.setItem('mastereng_user_name', googleUser.name);
+        localStorage.setItem('mastereng_user_name', userObj.username);
         localStorage.setItem('mastereng_user_pic', googleUser.picture);
         localStorage.setItem('english_app_user_session', JSON.stringify(userObj));
-        localStorage.setItem('user_role', 'user');
+        localStorage.setItem('user_role', userObj.role);
         window.currentUser = userObj;
+
+        // Actualizar lista local de registrados
+        try {
+          const localUsers = JSON.parse(localStorage.getItem('mastereng_registered_users') || '[]');
+          if (!localUsers.some(u => u.email === userObj.email)) {
+            localUsers.push(userObj);
+            localStorage.setItem('mastereng_registered_users', JSON.stringify(localUsers));
+          }
+        } catch (_) {}
         
-        triggerAppAlert("✅ ¡Bienvenido " + googleUser.name + "!");
+        triggerAppAlert("✅ ¡Bienvenido " + userObj.username + "!");
+        if (typeof showFloatingToast === 'function') {
+          showFloatingToast("¡Sesión sincronizada en PostgreSQL Render!", "✅");
+        }
         const loginModal = document.getElementById('login-modal');
         if(loginModal) loginModal.style.display = 'none';
+        const authView = document.getElementById('view-auth');
+        if (authView) { authView.style.display = 'none'; authView.classList.add('hidden'); }
         if(typeof window.updateUIForLoggedInUser === 'function') window.updateUIForLoggedInUser();
       }
     };
@@ -3327,13 +3508,24 @@ window.logout = function() {
 
       try {
         const ctrl = new AbortController();
-        const timeoutId = setTimeout(() => ctrl.abort(), 4000);
+        const timeoutId = setTimeout(() => ctrl.abort(), 6000);
         const registerUrl = getAuthApiUrl('/auth/register');
+        const uGameId = window.generateOrGetGameId ? window.generateOrGetGameId({ username, email }) : ('MENG-' + Math.floor(1000 + Math.random() * 9000));
 
         const res = await fetch(registerUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, email, password }),
+          body: JSON.stringify({
+            username,
+            name: username,
+            email,
+            password,
+            game_id: uGameId,
+            gameId: uGameId,
+            role: 'user',
+            exp: 0,
+            rank: 'Bronce'
+          }),
           signal: ctrl.signal
         });
         clearTimeout(timeoutId);
@@ -3343,12 +3535,38 @@ window.logout = function() {
 
         if (res.ok || res.status === 201) {
           registerSuccess = true;
+          const serverUser = (data && data.user) ? data.user : {};
+          const finalGameId = serverUser.game_id || serverUser.gameId || uGameId;
+          try {
+            const localUsers = JSON.parse(localStorage.getItem('mastereng_registered_users') || localStorage.getItem('english_app_registered_users') || '[]');
+            if (!localUsers.some(u => u.email === email)) {
+              localUsers.push({
+                id: serverUser.id || Date.now(),
+                gameId: finalGameId,
+                game_id: finalGameId,
+                username,
+                email,
+                role: serverUser.role || 'user',
+                exp: 0,
+                rank: 'Bronce',
+                created_at: serverUser.created_at || new Date().toISOString()
+              });
+              localStorage.setItem('mastereng_registered_users', JSON.stringify(localUsers));
+              localStorage.setItem('english_app_registered_users', JSON.stringify(localUsers));
+            }
+          } catch (_) {}
         } else {
-          errorMessage = (data && data.error) ? data.error : 'No se pudo completar el registro.';
+          errorMessage = (data && data.error) ? data.error : 'Error al conectar con la base de datos central en Render.';
+          if (typeof showFloatingToast === 'function') {
+            showFloatingToast("Error al conectar con la base de datos central en Render.", "❌");
+          }
         }
       } catch (fetchErr) {
         console.warn('[AUTH] Error al conectar con /api/auth/register:', fetchErr);
-        errorMessage = 'No se pudo conectar con el servidor para registrar la cuenta. Asegúrate de que el servidor esté activo.';
+        errorMessage = 'Error al conectar con la base de datos central en Render.';
+        if (typeof showFloatingToast === 'function') {
+          showFloatingToast("Error al conectar con la base de datos central en Render.", "❌");
+        }
       } finally {
         if (regBtn) {
           regBtn.disabled = false;
@@ -3357,20 +3575,12 @@ window.logout = function() {
       }
 
       if (!registerSuccess) {
-        showAuthAlert(errorMessage || 'Error al registrar usuario.', 'error');
+        showAuthAlert(errorMessage || 'Error al conectar con la base de datos central en Render.', 'error');
+        if (typeof showFloatingToast === 'function') {
+          showFloatingToast("Error al conectar con la base de datos central en Render.", "❌");
+        }
         return;
       }
-
-      // Registro exitoso: Guardar en caché de usuarios registrados locales con gameId único
-      try {
-        const uGameId = window.generateOrGetGameId ? window.generateOrGetGameId({ username, email }) : ('MENG-' + Math.random().toString(36).substring(2,6).toUpperCase());
-        const localUsers = JSON.parse(localStorage.getItem('mastereng_registered_users') || localStorage.getItem('english_app_registered_users') || '[]');
-        if (!localUsers.some(u => u.username === username || u.email === email)) {
-          localUsers.push({ id: Date.now(), gameId: uGameId, username, email, role: 'student', exp: 0, rank: 'Bronce', created_at: new Date().toISOString() });
-          localStorage.setItem('mastereng_registered_users', JSON.stringify(localUsers));
-          localStorage.setItem('english_app_registered_users', JSON.stringify(localUsers));
-        }
-      } catch (err) {}
 
       // Al completar el registro con éxito, cambia la pestaña automáticamente a "Iniciar Sesión"
       // para que el usuario ingrese sus datos recién creados
@@ -5022,6 +5232,12 @@ window.logout = function() {
     let currentStoryIndex = 0;
     let isBilingualStoryModeActive = true;
     let activeStoryRecognition = null;
+    let currentStoryFontSize = parseInt(localStorage.getItem('story_font_size') || '16', 10);
+
+    let storyContinuousActive = false;
+    let storyContinuousPIdx = 0;
+    let storyContinuousPaused = false;
+    let storyContinuousTimeout = null;
 
     function renderStorySelector() {
       const container = document.getElementById('storiesSelectorContainer');
@@ -5029,15 +5245,20 @@ window.logout = function() {
 
       container.innerHTML = STORIES_DATA.map((story, idx) => {
         const isSelected = idx === currentStoryIndex;
+        const coverImg = story.coverImage || 'images/portal_stories.jpg';
         return `
-        <div onclick="selectStory(${idx})" id="storyTab-${idx}" class="group p-2.5 rounded-2xl cursor-pointer transition-all duration-200 border flex flex-col justify-between ${isSelected ? 'bg-emerald-950/70 border-emerald-500 shadow-lg shadow-emerald-500/20 scale-[1.01]' : 'bg-slate-900/85 border-slate-800 hover:border-slate-700 hover:bg-slate-900'}">
+        <div onclick="selectStory(${idx})" id="storyTab-${idx}" class="group p-2.5 rounded-2xl cursor-pointer transition-all duration-200 border flex flex-col justify-between ${isSelected ? 'bg-emerald-950/80 border-emerald-400 shadow-lg shadow-emerald-500/25 scale-[1.02]' : 'bg-slate-900/85 border-slate-800 hover:border-slate-700 hover:bg-slate-900'}">
           <div>
-            <div class="w-full h-16 rounded-xl overflow-hidden bg-slate-950 mb-2 flex items-center justify-center border ${isSelected ? 'border-emerald-500/50' : 'border-slate-800'}">
-              ${story.illustrationSvg}
+            <div class="relative w-full h-20 rounded-xl overflow-hidden bg-slate-950 mb-2 border ${isSelected ? 'border-emerald-500/70 shadow-md shadow-emerald-500/30' : 'border-slate-800'}">
+              <img src="${coverImg}" alt="${story.title}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" onerror="this.onerror=null; this.src='images/portal_stories.jpg';">
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent pointer-events-none"></div>
+              <span class="absolute bottom-1 right-1 px-1.5 py-0.2 rounded bg-slate-950/90 text-emerald-300 font-mono text-[9px] font-bold border border-emerald-500/30">
+                ${story.level || 'A2'}
+              </span>
             </div>
             <div class="flex items-center justify-between gap-1 mb-1">
               <span class="text-[9px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded ${isSelected ? 'bg-emerald-500/20 text-emerald-300 font-bold' : 'bg-slate-800 text-slate-400'}">${story.level || 'Nivel A2'}</span>
-              <span class="text-[9px] font-mono text-slate-400 truncate">${story.paragraphs ? story.paragraphs.length : 5} párr.</span>
+              <span class="text-[9px] font-mono text-slate-400 truncate">${story.paragraphs ? story.paragraphs.length : 14} escenas</span>
             </div>
             <h4 class="text-xs font-extrabold ${isSelected ? 'text-emerald-300' : 'text-white group-hover:text-emerald-200'} leading-tight line-clamp-1">${story.title}</h4>
             <p class="text-[10px] text-slate-400 italic truncate mt-0.5">${story.titleEs || ''}</p>
@@ -5061,6 +5282,7 @@ window.logout = function() {
     }
 
     function selectStory(idx) {
+      stopContinuousStoryNarration();
       stopStoryNarration();
       if (activeStoryRecognition) {
         try { activeStoryRecognition.abort(); } catch (e) { }
@@ -5074,15 +5296,170 @@ window.logout = function() {
       const story = STORIES_DATA[currentStoryIndex];
       if (!story || !story.paragraphs || !story.paragraphs[pIdx]) return;
       const text = story.paragraphs[pIdx].en;
-      const cardEl = document.getElementById(`storyParagraphCard-${pIdx}`);
-      if (cardEl) {
-        cardEl.classList.add('border-sky-500/70', 'bg-slate-800/90');
-      }
+      highlightAndScrollToParagraph(pIdx);
       speakText(text, 0.92, () => {
-        if (cardEl) {
-          cardEl.classList.remove('border-sky-500/70', 'bg-slate-800/90');
+        if (!storyContinuousActive) {
+          const cardEl = document.getElementById(`storyParagraphCard-${pIdx}`);
+          if (cardEl) {
+            cardEl.classList.remove('story-active-paragraph', 'border-amber-400');
+          }
         }
       });
+    }
+
+    window.changeStoryFontSize = function(delta) {
+      currentStoryFontSize = Math.max(13, Math.min(24, currentStoryFontSize + delta));
+      try {
+        localStorage.setItem('story_font_size', currentStoryFontSize.toString());
+      } catch (_) {}
+      applyStoryFontSize();
+    };
+
+    function applyStoryFontSize() {
+      document.querySelectorAll('.story-en-text').forEach(el => {
+        el.style.fontSize = `${currentStoryFontSize}px`;
+        el.style.lineHeight = `${Math.round(currentStoryFontSize * 1.58)}px`;
+      });
+      const indicator = document.getElementById('storyFontSizeIndicator');
+      if (indicator) indicator.textContent = `${currentStoryFontSize}px`;
+    }
+
+    function updateStoryReadingProgress(currentIdx, totalCount) {
+      const pct = Math.min(100, Math.round(((currentIdx + 1) / totalCount) * 100));
+      const fill = document.getElementById('storyReadingProgressFill');
+      const text = document.getElementById('storyReadingProgressPct');
+      if (fill) fill.style.width = `${pct}%`;
+      if (text) text.textContent = `${pct}%`;
+    }
+
+    function highlightAndScrollToParagraph(pIdx) {
+      document.querySelectorAll('.story-paragraph-card').forEach(c => {
+        c.classList.remove('story-active-paragraph');
+      });
+      const cardEl = document.getElementById(`storyParagraphCard-${pIdx}`);
+      if (cardEl) {
+        cardEl.classList.add('story-active-paragraph');
+        cardEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+
+    window.startContinuousStoryNarration = function() {
+      const story = STORIES_DATA[currentStoryIndex];
+      if (!story || !story.paragraphs || !story.paragraphs.length) return;
+
+      storyContinuousActive = true;
+      storyContinuousPaused = false;
+      storyContinuousPIdx = 0;
+      updateContinuousNarrationUI();
+      narrateNextContinuousStep();
+    };
+
+    window.pauseContinuousStoryNarration = function() {
+      if (!storyContinuousActive) return;
+      if (storyContinuousPaused) {
+        storyContinuousPaused = false;
+        updateContinuousNarrationUI();
+        narrateNextContinuousStep();
+      } else {
+        storyContinuousPaused = true;
+        if ('speechSynthesis' in window) {
+          try { window.speechSynthesis.pause(); } catch (_) {}
+        }
+        updateContinuousNarrationUI();
+      }
+    };
+
+    window.stopContinuousStoryNarration = function() {
+      storyContinuousActive = false;
+      storyContinuousPaused = false;
+      if (storyContinuousTimeout) {
+        clearTimeout(storyContinuousTimeout);
+        storyContinuousTimeout = null;
+      }
+      stopStoryNarration();
+      document.querySelectorAll('.story-paragraph-card').forEach(c => {
+        c.classList.remove('story-active-paragraph');
+      });
+      updateContinuousNarrationUI();
+    };
+
+    function updateContinuousNarrationUI() {
+      const playBtn = document.getElementById('storyContinuousPlayBtn');
+      const pauseBtn = document.getElementById('storyContinuousPauseBtn');
+      const stopBtn = document.getElementById('storyContinuousStopBtn');
+
+      if (playBtn) {
+        playBtn.style.display = storyContinuousActive ? 'none' : 'inline-flex';
+      }
+      if (pauseBtn) {
+        pauseBtn.style.display = storyContinuousActive ? 'inline-flex' : 'none';
+        pauseBtn.innerHTML = storyContinuousPaused ? '<span>▶️ Reanudar</span>' : '<span>⏸️ Pausar</span>';
+      }
+      if (stopBtn) {
+        stopBtn.style.display = storyContinuousActive ? 'inline-flex' : 'none';
+      }
+    }
+
+    function narrateNextContinuousStep() {
+      if (!storyContinuousActive || storyContinuousPaused) return;
+      const story = STORIES_DATA[currentStoryIndex];
+      if (!story || !story.paragraphs || storyContinuousPIdx >= story.paragraphs.length) {
+        window.stopContinuousStoryNarration();
+        if (typeof showFloatingToast === 'function') {
+          showFloatingToast('¡Obra literaria completada con éxito!', '📖');
+        }
+        return;
+      }
+
+      const pIdx = storyContinuousPIdx;
+      const p = story.paragraphs[pIdx];
+
+      highlightAndScrollToParagraph(pIdx);
+      updateStoryReadingProgress(pIdx, story.paragraphs.length);
+
+      speakText(p.en, 0.92, () => {
+        if (!storyContinuousActive || storyContinuousPaused) return;
+        storyContinuousPIdx++;
+        storyContinuousTimeout = setTimeout(() => {
+          narrateNextContinuousStep();
+        }, 550);
+      });
+    }
+
+    window.handleStoryWordClick = function(event, word) {
+      if (event && event.stopPropagation) event.stopPropagation();
+      if (!word) return;
+      const clean = word.replace(/[^a-zA-Z'-]/g, '').trim();
+      if (!clean) return;
+
+      speakText(clean, 0.9);
+
+      // Check if word is in current story vocabulary
+      const story = STORIES_DATA[currentStoryIndex];
+      let foundVocab = null;
+      if (story && Array.isArray(story.vocab)) {
+        foundVocab = story.vocab.find(v => v.term.toLowerCase().includes(clean.toLowerCase()));
+      }
+
+      if (foundVocab && typeof showFloatingToast === 'function') {
+        showFloatingToast(`${foundVocab.term} (${foundVocab.ipa || ''}): ${foundVocab.es}`, '📖');
+      } else if (typeof showFloatingToast === 'function') {
+        showFloatingToast(`"${clean}" (Escuchando pronunciación)`, '🔊');
+      }
+    };
+
+    function renderClickableParagraphWords(rawText) {
+      if (!rawText) return '';
+      const words = rawText.split(/(\s+)/);
+      return words.map(w => {
+        if (/^\s+$/.test(w)) return w;
+        const cleanWord = w.replace(/[^a-zA-Z'-]/g, '');
+        if (!cleanWord) return w;
+        const safeWord = cleanWord.replace(/'/g, "\\'");
+        const prefix = w.match(/^[^a-zA-Z'-]+/)?.[0] || '';
+        const suffix = w.match(/[^a-zA-Z'-]+$/)?.[0] || '';
+        return `${prefix}<span class="story-word-clickable" onclick="window.handleStoryWordClick(event, '${safeWord}')" title="Clic para escuchar pronunciación y significado">${cleanWord}</span>${suffix}`;
+      }).join('');
     }
 
     function loadStoryViewer(idx) {
@@ -5101,24 +5478,92 @@ window.logout = function() {
       if (subtitleEl) subtitleEl.textContent = story.titleEs || story.title_es || story.title || '';
       if (diffEl) diffEl.textContent = story.level || story.difficulty || 'Nivel A2';
       if (catEl) catEl.textContent = story.category || 'Obra Clásica';
-      if (illEl) illEl.innerHTML = story.illustrationSvg || '<svg viewBox="0 0 800 320" class="w-full h-full"><rect width="800" height="320" fill="#0f172a"/></svg>';
+
+      if (illEl) {
+        const coverImg = story.coverImage || 'images/portal_stories.jpg';
+        illEl.innerHTML = `
+          <div class="relative w-full h-full group overflow-hidden rounded-2xl shadow-xl border border-slate-700/60">
+            <img src="${coverImg}" alt="${story.title}" class="w-full h-full object-cover transition-transform duration-700 hover:scale-105" onerror="this.onerror=null; this.src='images/portal_stories.jpg';">
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/25 to-transparent pointer-events-none"></div>
+            <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between pointer-events-none">
+              <span class="px-2.5 py-1 rounded-full bg-slate-900/90 text-emerald-300 border border-emerald-400/40 text-[10px] font-bold uppercase tracking-wider backdrop-blur-sm shadow">
+                ${story.category || 'Fábula Clásica'} • ${story.level || 'Nivel A2'}
+              </span>
+              <span class="px-2 py-0.5 rounded-full bg-slate-950/85 text-amber-300 border border-amber-400/40 text-[10px] font-mono font-bold">
+                ${story.paragraphs.length} Escenas Literarias
+              </span>
+            </div>
+          </div>
+        `;
+      }
 
       if (pContainer && story.paragraphs) {
-        pContainer.innerHTML = story.paragraphs.map((p, pIdx) => {
+        let currentRenderedAct = '';
+        let paragraphsHtml = `
+          <!-- BARRA EDITORIAL DE PROGRESO Y CONTROLES DE NARRACIÓN -->
+          <div class="mb-5 p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="w-full sm:w-1/2">
+              <div class="flex items-center justify-between mb-1.5">
+                <span class="text-[11px] font-mono font-bold text-slate-300 uppercase tracking-wider">Progreso de Lectura</span>
+                <span id="storyReadingProgressPct" class="text-xs font-mono font-bold text-amber-400">0%</span>
+              </div>
+              <div class="story-reading-progress-track">
+                <div id="storyReadingProgressFill" class="story-reading-progress-fill" style="width: 0%;"></div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 flex-wrap justify-end">
+              <!-- Selector de Tamaño de Letra -->
+              <div class="flex items-center gap-1 bg-slate-900/90 border border-slate-700/70 rounded-xl px-2 py-1">
+                <span class="text-[10px] text-slate-400 font-bold mr-1">Fuente:</span>
+                <button type="button" onclick="window.changeStoryFontSize(-1)" class="story-font-btn" title="Reducir tamaño de letra">A-</button>
+                <span id="storyFontSizeIndicator" class="text-[10px] font-mono text-amber-300 font-bold px-1">${currentStoryFontSize}px</span>
+                <button type="button" onclick="window.changeStoryFontSize(1)" class="story-font-btn" title="Aumentar tamaño de letra">A+</button>
+              </div>
+
+              <!-- Controles de Narración Continua -->
+              <button type="button" id="storyContinuousPlayBtn" onclick="window.startContinuousStoryNarration()" class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 text-xs font-extrabold flex items-center gap-1.5 transition shadow-md shadow-amber-500/20 cursor-pointer active:scale-95" title="Narrar Obra Completa de corrido con Auto-Scroll">
+                <span>▶️ Narrar Obra Completa (Auto-Scroll)</span>
+              </button>
+              <button type="button" id="storyContinuousPauseBtn" onclick="window.pauseContinuousStoryNarration()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition cursor-pointer hidden" title="Pausar / Reanudar">
+                <span>⏸️ Pausar</span>
+              </button>
+              <button type="button" id="storyContinuousStopBtn" onclick="window.stopContinuousStoryNarration()" class="px-3 py-1.5 rounded-xl bg-rose-950/60 hover:bg-rose-900/80 border border-rose-500/40 text-rose-300 text-xs font-bold transition cursor-pointer hidden" title="Detener Narración">
+                <span>⏹️ Detener</span>
+              </button>
+            </div>
+          </div>
+        `;
+
+        story.paragraphs.forEach((p, pIdx) => {
+          if (p.act && p.act !== currentRenderedAct) {
+            currentRenderedAct = p.act;
+            paragraphsHtml += `
+              <div class="story-act-separator">
+                <span class="story-act-badge">${currentRenderedAct}</span>
+              </div>
+            `;
+          }
+
           const safeEn = (p.en || '').replace(/\\/g, "\\\\").replace(/'/g, "\\'");
-          return `
-          <div id="storyParagraphCard-${pIdx}" class="p-4 sm:p-5 rounded-2xl bg-slate-800/60 border border-slate-700/60 transition-all space-y-2.5">
+          const clickableEnText = renderClickableParagraphWords(p.en || '');
+          const sceneNum = (pIdx + 1) < 10 ? `0${pIdx + 1}` : `${pIdx + 1}`;
+
+          paragraphsHtml += `
+          <div id="storyParagraphCard-${pIdx}" class="story-paragraph-card space-y-2.5">
             <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
               <div class="flex items-start gap-3 flex-1">
-                <span class="px-2 py-0.5 rounded-lg bg-slate-900 border border-slate-700 text-[10px] font-mono font-bold text-emerald-400 shrink-0 mt-0.5">
-                  0${pIdx + 1}
+                <span class="px-2 py-0.5 rounded-lg bg-slate-900 border border-slate-700 text-[10px] font-mono font-bold text-amber-400 shrink-0 mt-0.5">
+                  §${sceneNum}
                 </span>
-                <p class="text-sm sm:text-base font-semibold text-white leading-relaxed">${p.en || ''}</p>
+                <p class="story-en-text font-semibold text-white leading-relaxed tracking-wide" style="font-size: ${currentStoryFontSize}px; line-height: ${Math.round(currentStoryFontSize * 1.58)}px;">
+                  ${clickableEnText}
+                </p>
               </div>
               <div class="flex items-center gap-2 shrink-0 self-end sm:self-start">
                 <button onclick="speakStoryParagraph(${pIdx}); speakText('${safeEn}')"
-                  class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-700/90 hover:bg-sky-600 text-slate-200 hover:text-white text-xs font-semibold transition cursor-pointer"
-                  title="Escuchar pronunciación nativa (TTS)">
+                  class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-sky-600 border border-slate-700 text-slate-200 hover:text-white text-xs font-semibold transition cursor-pointer"
+                  title="Escuchar pronunciación de este párrafo">
                   <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
                   </svg>
@@ -5134,28 +5579,37 @@ window.logout = function() {
                 </button>
               </div>
             </div>
-            ${isBilingualStoryModeActive ? `<p class="text-xs sm:text-sm text-slate-400 italic pt-2 border-t border-slate-700/40 pl-9">${p.es || ''}</p>` : ''}
+            ${isBilingualStoryModeActive ? `<p class="text-xs sm:text-sm text-slate-300 italic pt-2 border-t border-slate-700/40 pl-9">${p.es || ''}</p>` : ''}
             <div id="voiceFeedback-${pIdx}" class="text-xs font-mono hidden pt-2 pl-9"></div>
           </div>
         `;
-        }).join('');
+        });
+
+        pContainer.innerHTML = paragraphsHtml;
+        applyStoryFontSize();
       }
 
       if (moralContainer) {
         const vocabHtml = (story.vocab && story.vocab.length)
           ? `
-            <div class="mt-4">
-              <h4 class="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-2">Vocabulario Clave de la Obra (Clic para escuchar)</h4>
-              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2">
+            <div class="mt-6">
+              <div class="flex items-center justify-between mb-3">
+                <h4 class="text-[11px] font-mono uppercase tracking-wider text-emerald-400 font-bold flex items-center gap-2">
+                  <span>📚 Glosario Literario & Audio (${story.vocab.length} Expresiones Clave)</span>
+                </h4>
+                <span class="text-[10px] text-slate-400">Toca cualquier tarjeta para escuchar su pronunciación</span>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5">
                 ${story.vocab.map(v => {
                   const safeTerm = (v.term || '').replace(/'/g, "\\'");
                   return `
-                    <button onclick="speakText('${safeTerm}', 0.9)" class="text-left p-2.5 rounded-xl bg-slate-800/70 hover:bg-slate-800 border border-slate-700/60 hover:border-emerald-500/40 transition cursor-pointer">
-                      <div class="flex items-center justify-between gap-1">
-                        <span class="text-xs font-bold text-emerald-300">${v.term}</span>
-                        <span class="text-[10px] font-mono text-sky-400">${v.ipa || ''}</span>
+                    <button onclick="speakText('${safeTerm}', 0.9)" class="story-vocab-card text-left p-3 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/70 hover:border-emerald-500/50 transition cursor-pointer flex flex-col justify-between">
+                      <div class="flex items-start justify-between gap-1 mb-1">
+                        <span class="text-xs font-bold text-emerald-300 leading-tight">${v.term}</span>
+                        <span class="text-xs text-sky-400 shrink-0">🔊</span>
                       </div>
-                      <p class="text-[11px] text-slate-400 mt-0.5">${v.es || ''}</p>
+                      <span class="text-[10px] font-mono text-sky-400/90 mb-1">${v.ipa || ''}</span>
+                      <p class="text-[11px] text-slate-300 mt-auto leading-snug">${v.es || ''}</p>
                     </button>
                   `;
                 }).join('')}
@@ -5165,10 +5619,10 @@ window.logout = function() {
           : '';
 
         moralContainer.innerHTML = `
-          <div class="p-4 rounded-2xl bg-emerald-950/30 border border-emerald-500/30">
-            <span class="text-[10px] font-mono uppercase tracking-widest text-emerald-400 font-bold block mb-1">Moraleja / Moral of the Story</span>
-            <p class="text-xs sm:text-sm font-bold text-white">${story.moralEn || ''}</p>
-            ${isBilingualStoryModeActive && story.moralEs ? `<p class="text-xs text-slate-400 italic mt-0.5">${story.moralEs}</p>` : ''}
+          <div class="p-5 rounded-2xl bg-gradient-to-r from-emerald-950/40 to-teal-950/40 border border-emerald-500/40 shadow-lg">
+            <span class="text-[10px] font-mono uppercase tracking-widest text-emerald-400 font-bold block mb-1">Moraleja de la Obra / Moral of the Story</span>
+            <p class="text-sm sm:text-base font-bold text-white leading-relaxed">${story.moralEn || ''}</p>
+            ${isBilingualStoryModeActive && story.moralEs ? `<p class="text-xs sm:text-sm text-slate-300 italic mt-1.5">${story.moralEs}</p>` : ''}
           </div>
           ${vocabHtml}
         `;
@@ -5188,13 +5642,8 @@ window.logout = function() {
     }
 
     function readEntireStoryAudio() {
-      const story = STORIES_DATA[currentStoryIndex];
-      if (!story) return;
-      const fullText = story.paragraphs.map(p => p.en).join(' ');
-      speakText(fullText, 0.92);
-      showFloatingToast('Reproduciendo narración completa en inglés...', 'Audio');
+      window.startContinuousStoryNarration();
     }
-
     function startVoicePracticeParagraph(pIdx, targetText) {
       const feedbackEl = document.getElementById(`voiceFeedback-${pIdx}`);
       const micBtn = document.getElementById(`storyMicBtn-${pIdx}`);

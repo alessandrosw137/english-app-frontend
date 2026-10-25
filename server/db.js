@@ -68,21 +68,46 @@ async function initializeDatabase() {
 
     // 2. DDL: Creación y verificación de tablas requeridas
     const ddl = `
-      -- 1. Tabla de Usuarios
+      -- 1. Tabla de Usuarios (Esquema Oficial Central)
       CREATE TABLE IF NOT EXISTS users (
           id SERIAL PRIMARY KEY,
-          username VARCHAR(100) UNIQUE NOT NULL,
-          email VARCHAR(150) UNIQUE NOT NULL,
-          password_hash VARCHAR(255) NOT NULL,
-          created_at TIMESTAMP DEFAULT NOW()
+          game_id VARCHAR(32) UNIQUE NOT NULL,
+          username VARCHAR(100) NOT NULL,
+          email VARCHAR(255) UNIQUE NOT NULL,
+          password VARCHAR(255),
+          role VARCHAR(20) DEFAULT 'user',
+          rank VARCHAR(50) DEFAULT 'Bronce',
+          exp INT DEFAULT 0,
+          streak_days INT DEFAULT 1,
+          provider VARCHAR(50) DEFAULT 'local',
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
 
+      -- Migraciones seguras para compatibilidad si la tabla users ya existía en Render
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS game_id VARCHAR(32);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS password VARCHAR(255);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash VARCHAR(255);
       ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(20) DEFAULT 'user';
-      ALTER TABLE users ALTER COLUMN role SET DEFAULT 'user';
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS rank VARCHAR(50) DEFAULT 'Bronce';
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS exp INT DEFAULT 0;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS streak_days INT DEFAULT 1;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS provider VARCHAR(50) DEFAULT 'local';
       ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id VARCHAR(255);
       ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
 
-      -- 2. Tabla de Estadísticas de Usuario
+      -- Garantizar que password y password_hash permitan nulos para OAuth o hashes
+      ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;
+      ALTER TABLE users ALTER COLUMN password DROP NOT NULL;
+
+      -- Asignar game_id a cualquier usuario existente que no lo posea
+      UPDATE users SET game_id = 'MENG-' || LPAD(id::text, 4, '0') WHERE game_id IS NULL OR game_id = '';
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_users_game_id ON users(game_id);
+
+      -- Sincronizar contraseñas entre password y password_hash
+      UPDATE users SET password = password_hash WHERE password IS NULL AND password_hash IS NOT NULL;
+      UPDATE users SET password_hash = password WHERE password_hash IS NULL AND password IS NOT NULL;
+
+      -- 2. Tabla de Estadísticas de Usuario (Retrocompatibilidad)
       CREATE TABLE IF NOT EXISTS user_stats (
           user_id INT REFERENCES users(id) ON DELETE CASCADE,
           exp INT DEFAULT 0,
@@ -93,6 +118,14 @@ async function initializeDatabase() {
 
       ALTER TABLE user_stats ADD COLUMN IF NOT EXISTS level INT DEFAULT 1;
       ALTER TABLE user_stats ADD COLUMN IF NOT EXISTS last_login TIMESTAMP DEFAULT NOW();
+
+      -- Sincronizar stats en tabla users
+      UPDATE users u
+      SET exp = COALESCE(s.exp, u.exp, 0),
+          rank = COALESCE(s.rank, u.rank, 'Bronce'),
+          streak_days = COALESCE(s.streak_days, u.streak_days, 1)
+      FROM user_stats s
+      WHERE u.id = s.user_id;
 
       -- 3. Tabla de Progreso por Módulos
       CREATE TABLE IF NOT EXISTS module_progress (
@@ -188,33 +221,33 @@ async function initializeDatabase() {
 
     // 3. Crear o verificar usuario administrador principal ('admin' / 'admin@antigravity.com' / 'Admin2026!Master')
     const checkMainAdmin = await client.query(
-      'SELECT id, role, password_hash FROM users WHERE username = $1 OR email = $2',
+      'SELECT id, role, password_hash, password FROM users WHERE username = $1 OR email = $2',
       ['admin', 'admin@antigravity.com']
     );
 
     if (checkMainAdmin.rows.length === 0) {
       const mainHash = await bcrypt.hash('Admin2026!Master', 10);
       const insertAdminRes = await client.query(
-        `INSERT INTO users (username, email, password_hash, role)
-         VALUES ($1, $2, $3, $4)
+        `INSERT INTO users (game_id, username, email, password, password_hash, role, exp, rank, streak_days, provider)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
          RETURNING id`,
-        ['admin', 'admin@antigravity.com', mainHash, 'admin']
+        ['MENG-0001', 'admin', 'admin@antigravity.com', mainHash, mainHash, 'admin', 1250, 'Diamante', 14, 'local']
       );
       const adminId = insertAdminRes.rows[0].id;
       await client.query(
         `INSERT INTO user_stats (user_id, exp, level, rank, streak_days, last_login)
-         VALUES ($1, 1000, 5, 'Platino', 10, NOW())
-         ON CONFLICT (user_id) DO UPDATE SET exp = GREATEST(user_stats.exp, 1000), rank = 'Platino'`,
+         VALUES ($1, 1250, 5, 'Diamante', 14, NOW())
+         ON CONFLICT (user_id) DO UPDATE SET exp = GREATEST(user_stats.exp, 1250), rank = 'Diamante'`,
         [adminId]
       );
       console.log('👑 [PostgreSQL Render] Usuario administrador principal creado: "admin" (admin@antigravity.com).');
     } else {
       const existingAdmin = checkMainAdmin.rows[0];
-      const matchPass = await bcrypt.compare('Admin2026!Master', existingAdmin.password_hash || '');
+      const matchPass = await bcrypt.compare('Admin2026!Master', existingAdmin.password_hash || existingAdmin.password || '');
       if (existingAdmin.role !== 'admin' || !matchPass) {
         const newHash = await bcrypt.hash('Admin2026!Master', 10);
         await client.query(
-          "UPDATE users SET role = 'admin', password_hash = $1 WHERE id = $2",
+          "UPDATE users SET role = 'admin', password = $1, password_hash = $1 WHERE id = $2",
           [newHash, existingAdmin.id]
         );
       }
@@ -227,12 +260,14 @@ async function initializeDatabase() {
       const hash = await bcrypt.hash('master-admin-2026', 10);
       const devEmail = 'wilberth.admin@englishapp.com';
       const insertDevRes = await client.query(
-        'INSERT INTO users (username, email, password_hash, role) VALUES ($1, $2, $3, $4) RETURNING id',
-        [devUser, devEmail, hash, 'admin']
+        `INSERT INTO users (game_id, username, email, password, password_hash, role, exp, rank, streak_days, provider)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+         RETURNING id`,
+        ['MENG-0002', devUser, devEmail, hash, hash, 'admin', 1250, 'Diamante', 14, 'local']
       );
       const devId = insertDevRes.rows[0].id;
       await client.query(
-        "INSERT INTO user_stats (user_id, exp, level, rank, streak_days, last_login) VALUES ($1, 500, 2, 'Plata', 7, NOW()) ON CONFLICT (user_id) DO NOTHING",
+        "INSERT INTO user_stats (user_id, exp, level, rank, streak_days, last_login) VALUES ($1, 1250, 5, 'Diamante', 14, NOW()) ON CONFLICT (user_id) DO NOTHING",
         [devId]
       );
       console.log(`👑 [PostgreSQL Render] Usuario desarrollador creado: "${devUser}".`);
