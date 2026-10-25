@@ -926,9 +926,9 @@ window._realWorld3DEngine = (typeof window !== 'undefined' && window.World3D && 
       if (window.BackendSync && window.BackendSync.apiBaseUrl) {
         return `${window.BackendSync.apiBaseUrl}${ep}`;
       }
-      return (typeof window !== 'undefined' && window.location && window.location.protocol && window.location.protocol.startsWith('http'))
+      return (typeof window !== 'undefined' && window.location && window.location.protocol && window.location.protocol.startsWith('http') && !window.location.origin.includes('file://'))
         ? `${window.location.origin}/api${ep}`
-        : `http://localhost:3000/api${ep}`;
+        : `https://english-app-frontend-3j9w.onrender.com/api${ep}`;
     }
 
     function getInstantDefaultAdminUsers() {
@@ -2895,10 +2895,10 @@ window.logout = function() {
       if (window.BackendSync && window.BackendSync.apiBaseUrl) {
         return `${window.BackendSync.apiBaseUrl}${ep}`;
       }
-      if (typeof window !== 'undefined' && window.location && window.location.protocol && window.location.protocol.startsWith('http')) {
-        return `/api${ep}`;
+      if (typeof window !== 'undefined' && window.location && window.location.protocol && window.location.protocol.startsWith('http') && !window.location.origin.includes('file://')) {
+        return `${window.location.origin}/api${ep}`;
       }
-      return `http://localhost:3000/api${ep}`;
+      return `https://english-app-frontend-3j9w.onrender.com/api${ep}`;
     }
 
     function showAuthAlert(msg, type = 'error') {
@@ -2947,9 +2947,10 @@ window.logout = function() {
 
       const uGameId = window.generateOrGetGameId ? window.generateOrGetGameId({ username: name, email }) : ('MENG-' + Math.floor(1000 + Math.random() * 9000));
 
+      let response = null;
       try {
-        const registerUrl = typeof getAuthApiUrl === 'function' ? getAuthApiUrl('/register') : '/api/register';
-        const response = await fetch(registerUrl, {
+        const registerUrl = typeof getAuthApiUrl === 'function' ? getAuthApiUrl('/register') : 'https://english-app-frontend-3j9w.onrender.com/api/register';
+        response = await fetch(registerUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -2964,17 +2965,11 @@ window.logout = function() {
             rank: 'Bronce'
           })
         });
-        
-        if (!response.ok) {
-          const errData = await response.json().catch(() => null);
-          const errMsg = (errData && errData.error) ? errData.error : "Error al conectar con la base de datos central en Render.";
-          if (typeof showFloatingToast === 'function') {
-            showFloatingToast("Error al conectar con la base de datos central en Render.", "❌");
-          }
-          triggerAppAlert(`❌ ${errMsg}`);
-          return false;
-        }
-        
+      } catch (netErr) {
+        console.warn('Network error reaching cloud backend on Render, fallback to local persistent DB:', netErr);
+      }
+
+      if (response && response.ok) {
         const resData = await response.json().catch(() => null);
         const serverUser = (resData && resData.user) ? resData.user : {};
         const finalGameId = serverUser.game_id || serverUser.gameId || uGameId;
@@ -2999,7 +2994,6 @@ window.logout = function() {
         localStorage.setItem('user_role', userObj.role);
         window.currentUser = userObj;
 
-        // Actualizar lista local de registrados
         try {
           const localUsers = JSON.parse(localStorage.getItem('mastereng_registered_users') || '[]');
           if (!localUsers.some(u => u.email === userObj.email)) {
@@ -3014,13 +3008,50 @@ window.logout = function() {
         }
         if (typeof window.updateUIForLoggedInUser === 'function') window.updateUIForLoggedInUser();
         return true;
-      } catch (error) {
-        if (typeof showFloatingToast === 'function') {
-          showFloatingToast("Error al conectar con la base de datos central en Render.", "❌");
-        }
-        triggerAppAlert("❌ Error al conectar con la base de datos central en Render.");
+      }
+
+      if (response && !response.ok) {
+        const errData = await response.json().catch(() => null);
+        const errMsg = (errData && errData.error) ? errData.error : "Error al conectar con la base de datos central en Render.";
+        triggerAppAlert(`❌ ${errMsg}`);
         return false;
       }
+
+      // Modo offline / APK fallback:
+      const offlineUser = {
+        id: Date.now(),
+        username: name,
+        email: email,
+        gameId: uGameId,
+        game_id: uGameId,
+        role: 'user',
+        exp: 0,
+        rank: 'Bronce'
+      };
+      localStorage.setItem('mastereng_user', JSON.stringify(offlineUser));
+      localStorage.setItem('mastereng_user_name', offlineUser.username);
+      localStorage.setItem('mastereng_user_email', offlineUser.email);
+      localStorage.setItem('english_app_user_session', JSON.stringify(offlineUser));
+      localStorage.setItem('user_role', offlineUser.role);
+      window.currentUser = offlineUser;
+
+      try {
+        const localUsers = JSON.parse(localStorage.getItem('mastereng_registered_users') || '[]');
+        if (!localUsers.some(u => u.email === offlineUser.email)) {
+          localUsers.push(offlineUser);
+          localStorage.setItem('mastereng_registered_users', JSON.stringify(localUsers));
+        }
+      } catch (_) {}
+
+      triggerAppAlert("✅ ¡Cuenta creada en tu dispositivo! Se sincronizará con la nube al reconectar.");
+      if (typeof showFloatingToast === 'function') {
+        showFloatingToast("¡Cuenta activa en tu dispositivo!", "✅");
+      }
+      if (typeof window.updateUIForLoggedInUser === 'function') window.updateUIForLoggedInUser();
+      if (window.BackendSync) {
+        window.BackendSync.queueProgressSync({ action: 'register', user: offlineUser });
+      }
+      return true;
     };
 
     window.handleTraditionalLogin = async function(email, password) {
@@ -3064,18 +3095,19 @@ window.logout = function() {
       const check = window.validateCredentials(email, password);
       if (!check.valid) { triggerAppAlert(check.msg); return false; }
 
+      const loginUrl = typeof getAuthApiUrl === 'function' ? getAuthApiUrl('/login') : 'https://english-app-frontend-3j9w.onrender.com/api/login';
+      let response = null;
       try {
-        const response = await fetch('/api/login', {
+        response = await fetch(loginUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password })
         });
-        
-        if (!response.ok) {
-          triggerAppAlert("❌ Credenciales incorrectas o usuario no encontrado.");
-          return false;
-        }
-        
+      } catch (netErr) {
+        console.warn('Network error reaching cloud backend on Render, attempting local DB lookup:', netErr);
+      }
+
+      if (response && response.ok) {
         const data = await response.json();
         const resolvedName = data.name || (data.user && data.user.username) || email.split('@')[0];
         const userObj = {
@@ -3094,13 +3126,41 @@ window.logout = function() {
         localStorage.setItem('user_role', userObj.role);
         window.currentUser = userObj;
 
+        try {
+          const localUsers = JSON.parse(localStorage.getItem('mastereng_registered_users') || '[]');
+          const idx = localUsers.findIndex(u => u.email === userObj.email);
+          if (idx >= 0) localUsers[idx] = { ...localUsers[idx], ...userObj };
+          else localUsers.push(userObj);
+          localStorage.setItem('mastereng_registered_users', JSON.stringify(localUsers));
+        } catch (_) {}
+
         triggerAppAlert("✅ ¡Sesión iniciada con éxito!");
-        if(typeof window.updateUIForLoggedInUser === 'function') window.updateUIForLoggedInUser();
+        if (typeof window.updateUIForLoggedInUser === 'function') window.updateUIForLoggedInUser();
         return true;
-      } catch (error) {
-        triggerAppAlert("❌ Error de conexión con el servidor.");
-        return false;
       }
+
+      // Fallback local en modo offline para APK
+      try {
+        const localUsers = JSON.parse(localStorage.getItem('mastereng_registered_users') || '[]');
+        const matched = localUsers.find(u =>
+          (u.email && u.email.toLowerCase() === email.toLowerCase()) ||
+          (u.username && u.username.toLowerCase() === email.toLowerCase())
+        );
+        if (matched) {
+          localStorage.setItem('mastereng_user', JSON.stringify(matched));
+          localStorage.setItem('mastereng_user_email', matched.email);
+          localStorage.setItem('mastereng_user_name', matched.username);
+          localStorage.setItem('english_app_user_session', JSON.stringify(matched));
+          localStorage.setItem('user_role', matched.role || 'user');
+          window.currentUser = matched;
+          triggerAppAlert("✅ ¡Sesión iniciada (Base de datos local)! Sincronizando al conectar.");
+          if (typeof window.updateUIForLoggedInUser === 'function') window.updateUIForLoggedInUser();
+          return true;
+        }
+      } catch (_) {}
+
+      triggerAppAlert("❌ Credenciales incorrectas o usuario no encontrado.");
+      return false;
     };
 
     window.updateUIForLoggedInUser = function() {
@@ -5232,7 +5292,7 @@ window.logout = function() {
     let currentStoryIndex = 0;
     let isBilingualStoryModeActive = true;
     let activeStoryRecognition = null;
-    let currentStoryFontSize = parseInt(localStorage.getItem('story_font_size') || '16', 10);
+    let currentStoryFontSize = parseInt((typeof localStorage !== 'undefined' && localStorage.getItem('story_font_size')) || '16', 10);
 
     let storyContinuousActive = false;
     let storyContinuousPIdx = 0;
@@ -8366,9 +8426,9 @@ window.logout = function() {
     }
 
     window.BackendSync = {
-      apiBaseUrl: (typeof window !== 'undefined' && window.location && window.location.protocol && window.location.protocol.startsWith('http'))
+      apiBaseUrl: (typeof window !== 'undefined' && window.location && window.location.protocol && window.location.protocol.startsWith('http') && !window.location.origin.includes('file://'))
         ? `${window.location.origin}/api`
-        : 'http://localhost:3000/api',
+        : 'https://english-app-frontend-3j9w.onrender.com/api',
       queue: [],
       async queueProgressSync(payload) {
         const user = getStoredUser();
@@ -8381,12 +8441,15 @@ window.logout = function() {
         if (this.queue.length === 0) return;
         const item = this.queue.shift();
         try {
-          await fetch('http://localhost:3000/api/progress/sync', {
+          await fetch(`${this.apiBaseUrl}/progress/sync`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(item)
           });
-        } catch (e) { }
+        } catch (e) {
+          // Si está offline en la APK, re-encolar para el siguiente intento
+          this.queue.unshift(item);
+        }
       }
     };
 
@@ -9168,6 +9231,7 @@ window.logout = function() {
                 window._isSeekingGracePeriod = false;
               }
               window._currentTrackCurrentTime = ytCurTime;
+              window._currentTrackStartTime = Date.now() - (ytCurTime * 1000);
               if (ytCurTime > 0.3) {
                 window._holoPlayerHasStartedPlaying = true;
                 if (window._holoPlayerWatchdogTimer) {
@@ -9188,7 +9252,7 @@ window.logout = function() {
               }
 
               if (typeof window.handleKaraokeTimeUpdate === 'function') {
-                window.handleKaraokeTimeUpdate(ytCurTime + (typeof window.lyricsOffset === 'number' ? window.lyricsOffset : -0.6));
+                window.handleKaraokeTimeUpdate(ytCurTime);
               }
             }
           }
@@ -9251,13 +9315,33 @@ window.logout = function() {
     window._isUserScrollingLyrics = false;
 
     window.adjustLyricsOffset = function(delta) {
-      window.lyricsOffset = Math.round(((typeof window.lyricsOffset === 'number' ? window.lyricsOffset : -0.6) + delta) * 10) / 10;
+      const d = parseFloat(delta);
+      const current = (typeof window.lyricsOffset === 'number' && !isNaN(window.lyricsOffset)) ? window.lyricsOffset : 0;
+      const nextVal = (!isNaN(d) && d !== 0)
+        ? Math.max(-5.0, Math.min(5.0, Math.round((current + d) * 10) / 10))
+        : 0;
+      window.lyricsOffset = nextVal;
+      try {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('mastereng_lyrics_offset', String(nextVal));
+        }
+      } catch (_) {}
+      if (typeof window.updateLyricsOffsetUI === 'function') {
+        try { window.updateLyricsOffsetUI(); } catch (_) {}
+      }
       if (typeof document !== 'undefined') {
         const badge = document.getElementById('lyricsOffsetBadge');
         if (badge) {
           const sign = window.lyricsOffset > 0 ? '+' : '';
           badge.textContent = `Sync: ${sign}${window.lyricsOffset.toFixed(1)}s`;
         }
+      }
+      if (window.KaraokeSyncEngine && typeof window.KaraokeSyncEngine.syncFrame === 'function') {
+        window.KaraokeSyncEngine.lastStanzaIdx = -999;
+        window.KaraokeSyncEngine.lastWordIdx = -999;
+        window.KaraokeSyncEngine.syncFrame(window.KaraokeSyncEngine.getCurrentPlaybackTime(), false);
+      } else if (typeof window.handleKaraokeTimeUpdate === 'function') {
+        window.handleKaraokeTimeUpdate(window._currentTrackCurrentTime || 0);
       }
       if (typeof showFloatingToast === 'function') {
         const sign = window.lyricsOffset > 0 ? '+' : '';
@@ -9282,6 +9366,12 @@ window.logout = function() {
       const cleanQ = query.toLowerCase();
 
       // 0. Catálogo precargado o pre-mapeado rápido
+      if (window.MUSIC_SESSION_TRACKS && Array.isArray(window.MUSIC_SESSION_TRACKS) && !customSuffix) {
+        const sessionMatch = window.MUSIC_SESSION_TRACKS.find(k =>
+          k.title && (k.title.toLowerCase() === lowerTitle || lowerTitle.includes(k.title.toLowerCase()) || k.title.toLowerCase().includes(lowerTitle))
+        );
+        if (sessionMatch && sessionMatch.youtubeId) return sessionMatch.youtubeId;
+      }
       if (window.KARAOKE_MASTER_DATA && Array.isArray(window.KARAOKE_MASTER_DATA) && !customSuffix) {
         const match = window.KARAOKE_MASTER_DATA.find(k =>
           k.title && (k.title.toLowerCase() === (title || '').toLowerCase() || (title || '').toLowerCase().includes(k.title.toLowerCase()))
@@ -9680,6 +9770,7 @@ window.logout = function() {
 
       if (isPlaying) {
         window._holoPlayerHasStartedPlaying = true;
+        window._currentTrackStartTime = Date.now() - ((window._currentTrackCurrentTime || 0) * 1000);
         if (typeof window.hideAudioUnlockOverlay === 'function') {
           window.hideAudioUnlockOverlay();
         }
@@ -10050,23 +10141,24 @@ window.logout = function() {
               return;
             }
             // Control reactivo con offset de compensación de latencia: ytPlayer.getCurrentTime() + window.lyricsOffset
+            const _calibratedRef = ytPlayer.getCurrentTime() + window.lyricsOffset;
             const rawCurrentTime = ytPlayer.getCurrentTime();
             const isSeekingGrace = window._isSeekingGracePeriod && (Date.now() - (window._lastSeekTimestamp || 0)) < 1500;
             if (typeof rawCurrentTime === 'number' && !isNaN(rawCurrentTime) && rawCurrentTime >= 0) {
               if (isSeekingGrace && typeof window._lastSeekTargetSeconds === 'number') {
                 if (Math.abs(rawCurrentTime - window._lastSeekTargetSeconds) <= 2.5) {
                   window._isSeekingGracePeriod = false;
-                  currentTime = ytPlayer.getCurrentTime() + window.lyricsOffset;
+                  currentTime = rawCurrentTime;
                 } else {
                   const elapsedSinceSeek = (Date.now() - window._lastSeekTimestamp) / 1000;
                   currentTime = window._lastSeekTargetSeconds + elapsedSinceSeek;
                 }
               } else {
-                currentTime = ytPlayer.getCurrentTime() + window.lyricsOffset;
+                currentTime = rawCurrentTime;
               }
             }
 
-// Escala proporcional si la duración difiere entre player y letra (solo en letras sintéticas, NO en LRC sincronizado)
+            // Escala proporcional si la duración difiere entre player y letra (solo en letras sintéticas, NO en LRC sincronizado)
             if (!window._isCurrentSongLrcSynced && typeof ytPlayer.getDuration === 'function') {
               const duracionRealPlayer = ytPlayer.getDuration();
               const duracionTotalLetra = window._currentTrackTotalDuration || 225;
@@ -10078,13 +10170,19 @@ window.logout = function() {
                   const factorEscala = duracionRealPlayer / duracionTotalLetra;
                   window._currentTrackTotalDuration = Math.round(duracionRealPlayer);
                   if (window.activeLyricsList && Array.isArray(window.activeLyricsList)) {
-                    window.activeLyricsList.forEach(st => {
+                    window.activeLyricsList.forEach((st, idx, arr) => {
                       const tiempoEstrofaOriginal = typeof st.originalTime === 'number' ? st.originalTime : (typeof st.time === 'number' ? st.time : 0);
                       if (typeof st.originalTime !== 'number') st.originalTime = tiempoEstrofaOriginal;
                       const tiempoEstrofaAjustado = tiempoEstrofaOriginal * factorEscala;
                       st.time = Math.round(tiempoEstrofaAjustado * 100) / 100;
                       st.startTime = st.time; // Sincronización dual persistente
+                      const nextOrig = arr[idx + 1] ? (typeof arr[idx + 1].originalTime === 'number' ? arr[idx + 1].originalTime : (arr[idx + 1].time || st.time + 5)) : (st.time + 6);
+                      st.endTime = Math.max(st.startTime + 1.5, Math.round(nextOrig * factorEscala * 100) / 100);
                     });
+                    if (window.KaraokeSyncEngine && Array.isArray(window.KaraokeSyncEngine.stanzas)) {
+                      window.KaraokeSyncEngine.stanzas = window.activeLyricsList;
+                      window.KaraokeSyncEngine.lastStanzaIdx = -999;
+                    }
                     if (typeof window.renderLyricsFromList === 'function') {
                       window.renderLyricsFromList(window.activeLyricsList);
                     }
@@ -10101,9 +10199,9 @@ window.logout = function() {
         if (currentTime === null && nativeAudio && (!nativeAudio.paused || window._holoPlayerFallbackStage >= 2)) {
           if (window._holoPlayerFallbackStage >= 2) {
             const elapsed = (Date.now() - (window._currentTrackStartTime || Date.now())) / 1000;
-            currentTime = Math.min(dur, Math.max(0, elapsed + (window.lyricsOffset || 0)));
+            currentTime = Math.min(dur, Math.max(0, elapsed));
           } else if (!isNaN(nativeAudio.currentTime)) {
-            currentTime = nativeAudio.currentTime + window.lyricsOffset;
+            currentTime = nativeAudio.currentTime;
           }
         }
 
@@ -10111,13 +10209,14 @@ window.logout = function() {
         if (currentTime === null) {
           if (window._isHoloStagePlaying && window._holoPlayerHasStartedPlaying) {
             const elapsed = (Date.now() - (window._currentTrackStartTime || Date.now())) / 1000;
-            currentTime = Math.min(dur, Math.max(0, elapsed + window.lyricsOffset));
+            currentTime = Math.min(dur, Math.max(0, elapsed));
           } else {
-            currentTime = 0;
+            currentTime = window._currentTrackCurrentTime || 0;
           }
         }
 
         window._currentTrackCurrentTime = Math.min(dur, Math.max(0, currentTime));
+        window.lastKnownPlaybackTime = window._currentTrackCurrentTime;
 
         const progBar = document.getElementById('holoStageProgressBar');
         const timeBadge = document.getElementById('holoStageTime');
@@ -10601,11 +10700,14 @@ window.logout = function() {
         const lyricText = trimmed.slice(lastIdx).trim();
         if (lyricText && timeList.length > 0) {
           for (const t of timeList) {
+            const roundedT = Math.round(t * 100) / 100;
             result.push({
-              time: Math.round(t * 100) / 100,
-              originalTime: Math.round(t * 100) / 100,
+              time: roundedT,
+              startTime: roundedT,
+              originalTime: roundedT,
               text: lyricText,
               lines: [lyricText],
+              words: lyricText.split(/\s+/).filter(Boolean),
               isLrcSynced: true,
               es: (typeof translateEnglishVerseToSpanishStudy === 'function')
                 ? translateEnglishVerseToSpanishStudy(lyricText)
@@ -10616,6 +10718,11 @@ window.logout = function() {
       }
 
       result.sort((a, b) => a.time - b.time);
+      for (let i = 0; i < result.length; i++) {
+        const nextSt = result[i + 1];
+        const naturalEnd = nextSt ? Math.max(result[i].startTime + 1.5, nextSt.startTime) : (result[i].startTime + 5.0);
+        result[i].endTime = Math.min(naturalEnd, result[i].startTime + 6.5);
+      }
       return result;
     };
 
@@ -10760,7 +10867,31 @@ window.logout = function() {
       initSong(stanzasArray) {
         this.stop();
         this.sessionToken = Date.now();
-        this.stanzas = stanzasArray || [];
+        const rawStanzas = Array.isArray(stanzasArray) ? stanzasArray : [];
+        this.stanzas = rawStanzas.map((st, idx) => {
+          const sTime = typeof st.startTime === 'number' && !isNaN(st.startTime)
+            ? st.startTime
+            : (typeof st.time === 'number' && !isNaN(st.time) ? st.time : idx * 6);
+          const nextSt = rawStanzas[idx + 1];
+          const nextTime = nextSt
+            ? (typeof nextSt.startTime === 'number' ? nextSt.startTime : (typeof nextSt.time === 'number' ? nextSt.time : sTime + 6))
+            : (sTime + 6);
+          const eTime = (typeof st.endTime === 'number' && st.endTime > sTime)
+            ? st.endTime
+            : Math.max(sTime + 1.2, Math.min(nextTime, sTime + 8.0));
+          const textStr = st.text || (Array.isArray(st.lines) ? st.lines.join(' ') : '');
+          const wordsArr = (Array.isArray(st.words) && st.words.length > 0)
+            ? st.words
+            : textStr.split(/\s+/).filter(Boolean);
+          st.startTime = sTime;
+          st.time = sTime;
+          if (typeof st.originalTime !== 'number') st.originalTime = sTime;
+          st.endTime = eTime;
+          st.text = textStr;
+          st.words = wordsArr;
+          return st;
+        });
+        window.activeLyricsList = this.stanzas;
         this.lastStanzaIdx = -999;
         this.lastWordIdx = -999;
         this.isUserSeeking = false;
@@ -10821,18 +10952,28 @@ window.logout = function() {
         }
 
         const htmlContent = this.stanzas.map((stanza, sIdx) => {
-          const wordsSpans = (stanza.words || []).map((w, wIdx) => 
-            `<span class="k-word lyric-word inline-block cursor-pointer" data-widx="${wIdx}" data-index="${wIdx}" data-word-idx="${wIdx}" onclick="event.stopPropagation(); window.inspectLyricsWord ? window.inspectLyricsWord('${w.replace(/'/g, "\\'")}', event) : null">${w}</span>`
-          ).join(' ');
+          const sStart = typeof stanza.startTime === 'number' ? stanza.startTime : (stanza.time || 0);
+          const sEnd = typeof stanza.endTime === 'number' ? stanza.endTime : (sStart + 5);
+          const sDur = Math.max(0.5, sEnd - sStart);
+          const wordsList = stanza.words || (stanza.text || '').split(/\s+/).filter(Boolean);
+          const wCount = wordsList.length || 1;
+          const wordsSpans = wordsList.map((w, wIdx) => {
+            const wStart = (sStart + (wIdx / wCount) * sDur).toFixed(2);
+            const wEnd = (sStart + ((wIdx + 1) / wCount) * sDur).toFixed(2);
+            return `<span class="k-word lyric-word inline-block cursor-pointer" data-widx="${wIdx}" data-index="${wIdx}" data-word-idx="${wIdx}" data-w-start="${wStart}" data-w-end="${wEnd}" onclick="event.stopPropagation(); window.inspectLyricsWord ? window.inspectLyricsWord('${w.replace(/'/g, "\\'")}', event) : null">${w}</span>`;
+          }).join(' ');
 
           return `
-            <div class="stanza-card lyric-line lyric-stanza-card" data-sidx="${sIdx}" id="karaokeStanza-${sIdx}" onclick="window.seekToStanza(${stanza.startTime})">
+            <div class="stanza-card lyric-line lyric-stanza-card" data-sidx="${sIdx}" data-start="${sStart}" data-end="${sEnd}" id="karaokeStanza-${sIdx}" onclick="window.seekToStanza(${sStart}, ${sIdx})">
               <div class="stanza-header flex items-center justify-between mb-1.5 pb-1 border-b border-slate-800/60">
-                <span class="stanza-badge text-[10px] font-mono font-bold text-cyan-400 bg-cyan-950/70 border border-cyan-500/30 px-2 py-0.5 rounded">VERSO ${sIdx + 1} • ${Math.floor(stanza.startTime)}s</span>
-                <button type="button" class="stanza-tts-btn text-xs text-slate-400 hover:text-cyan-300 transition p-1 cursor-pointer" onclick="event.stopPropagation(); window.speakText ? window.speakText('${(stanza.text || '').replace(/'/g, "\\'")}') : null">🔊</button>
+                <span class="stanza-badge text-[10px] font-mono font-bold text-cyan-400 bg-cyan-950/70 border border-cyan-500/30 px-2 py-0.5 rounded">VERSO ${sIdx + 1} • ${Math.floor(sStart)}s</span>
+                <div class="flex items-center gap-1.5">
+                  <button type="button" onclick="event.stopPropagation(); window.syncStanzaHere ? window.syncStanzaHere(${sStart}, ${sIdx}, event) : null" class="p-1 px-2 rounded-lg bg-cyan-950/80 hover:bg-cyan-800/90 text-cyan-300 text-[10px] font-bold border border-cyan-500/30 cursor-pointer" title="Sincronizar aquí">🎯 Sync</button>
+                  <button type="button" class="stanza-tts-btn text-xs text-slate-400 hover:text-cyan-300 transition p-1 cursor-pointer" onclick="event.stopPropagation(); window.speakText ? window.speakText('${(stanza.text || '').replace(/'/g, "\\'")}') : null">🔊</button>
+                </div>
               </div>
               <p class="stanza-text">${wordsSpans}</p>
-              <p class="stanza-translation text-xs sm:text-sm text-sky-400 italic mt-2 opacity-90" id="stanza-es-${sIdx}" style="display: ${window.isSpanishTranslationActive !== false ? 'block' : 'none'}; color: #38bdf8; font-size: 0.92rem; margin-top: 8px; font-style: italic; opacity: 0.9;">
+              <p class="stanza-translation music-stanza-translation text-xs sm:text-sm text-sky-400 italic mt-2 opacity-90" id="stanza-es-${sIdx}" style="display: ${window.isSpanishTranslationActive !== false ? 'block' : 'none'}; color: #38bdf8; font-size: 0.92rem; margin-top: 8px; font-style: italic; opacity: 0.9;">
                 ${stanza.textEs ? ('🇪🇸 ' + stanza.textEs) : (stanza.es ? ('🇪🇸 ' + stanza.es) : 'Traduciendo al español...')}
               </p>
             </div>
@@ -11252,11 +11393,17 @@ window.logout = function() {
         const lines = blk.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
         const primaryLine = lines[0] || blk;
         const stanzaTime = Math.round(introMarginSec + (idx * stepSec));
+        const endTime = Math.round(stanzaTime + Math.max(3, stepSec));
+        const flatText = lines.join(' ');
         return {
+          index: idx,
           time: stanzaTime,
+          startTime: stanzaTime,
           originalTime: stanzaTime,
+          endTime: endTime,
           lines: lines,
           text: blk,
+          words: flatText.split(/\s+/).filter(Boolean),
           isApproximatedSync: isApproximated,
           es: (typeof translateEnglishVerseToSpanishStudy === 'function')
             ? translateEnglishVerseToSpanishStudy(primaryLine)
@@ -11826,9 +11973,21 @@ window.logout = function() {
         }
       }
 
-      if (!matchKey) return null;
+      let rawList = matchKey ? window.RECOMMENDED_CURATED_LYRICS[matchKey] : null;
+      if ((!rawList || !rawList.length) && window.MUSIC_SESSION_TRACKS && Array.isArray(window.MUSIC_SESSION_TRACKS)) {
+        const sessionTrack = window.MUSIC_SESSION_TRACKS.find(tr => {
+          const cleanTr = (tr.title || '').toLowerCase().trim().replace(/['"’]/g, '');
+          return cleanTr && (t.includes(cleanTr) || cleanTr.includes(t));
+        });
+        if (sessionTrack && Array.isArray(sessionTrack.lyrics) && sessionTrack.lyrics.length > 0) {
+          rawList = sessionTrack.lyrics.map(l => ({
+            startTime: typeof l.startTime === 'number' ? l.startTime : (typeof l.time === 'number' ? l.time : 0),
+            text: l.text || (Array.isArray(l.lines) ? l.lines.join(' ') : ''),
+            es: l.es || l.textEs || ''
+          }));
+        }
+      }
 
-      const rawList = window.RECOMMENDED_CURATED_LYRICS[matchKey];
       if (!Array.isArray(rawList) || !rawList.length) return null;
 
       return rawList.map((entry, idx) => {
@@ -11857,6 +12016,7 @@ window.logout = function() {
        REPRODUCTOR DE CANCIÓN COMPLETA (3 A 5 MINUTOS) EN ESCENARIO HOLOGRÁFICO
        ======================================================== */
     window.loadSongToKaraoke = function(trackName, artistName, previewUrl, artworkUrl, durationSec) {
+      window._userInitiatedMusicPlayback = true;
       if (typeof window.openMusicPlayerStage === 'function') {
         window.openMusicPlayerStage();
       }
@@ -12159,6 +12319,7 @@ window.logout = function() {
           const sendUnmute = () => {
             try {
               if (ytIframeEl.contentWindow) {
+                ytIframeEl.contentWindow.postMessage('{"event":"listening","id":1,"channel":"widget"}', '*');
                 ytIframeEl.contentWindow.postMessage('{"event":"command","func":"unMute","args":""}', '*');
                 ytIframeEl.contentWindow.postMessage('{"event":"command","func":"setVolume","args":[100]}', '*');
                 ytIframeEl.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
@@ -12279,46 +12440,73 @@ window.logout = function() {
           finalLyrics = [
             {
               time: 12,
+              startTime: 12,
               originalTime: 12,
+              endTime: 26,
               text: "When you were here before\nCouldn't look you in the eye\nYou're just like an angel",
               lines: ["When you were here before", "Couldn't look you in the eye", "You're just like an angel"],
+              words: "When you were here before Couldn't look you in the eye You're just like an angel".split(/\s+/),
               es: "Cuando estabas aquí antes, no podía mirarte a los ojos",
               isApproximatedSync: true
             },
             {
               time: 26,
+              startTime: 26,
+              originalTime: 26,
+              endTime: 42,
               text: "Your skin makes me cry\nYou float like a feather\nIn a beautiful world",
               lines: ["Your skin makes me cry", "You float like a feather", "In a beautiful world"],
+              words: "Your skin makes me cry You float like a feather In a beautiful world".split(/\s+/),
               es: "Eres justo como un ángel, flotas como una pluma en un mundo hermoso"
             },
             {
               time: 42,
+              startTime: 42,
+              originalTime: 42,
+              endTime: 58,
               text: "I wish I was special\nYou're so very special\nBut I'm a creep, I'm a weirdo",
               lines: ["I wish I was special", "You're so very special", "But I'm a creep, I'm a weirdo"],
+              words: "I wish I was special You're so very special But I'm a creep, I'm a weirdo".split(/\s+/),
               es: "Desearía ser especial, pero soy un bicho raro"
             },
             {
               time: 58,
+              startTime: 58,
+              originalTime: 58,
+              endTime: 74,
               text: "What the hell am I doing here?\nI don't belong here\nI don't care if it hurts",
               lines: ["What the hell am I doing here?", "I don't belong here", "I don't care if it hurts"],
+              words: "What the hell am I doing here? I don't belong here I don't care if it hurts".split(/\s+/),
               es: "¿Qué diablos hago aquí? No pertenezco a este lugar"
             },
             {
               time: 74,
+              startTime: 74,
+              originalTime: 74,
+              endTime: 90,
               text: "I wanna have control\nI want a perfect body\nI want a perfect soul",
               lines: ["I wanna have control", "I want a perfect body", "I want a perfect soul"],
+              words: "I wanna have control I want a perfect body I want a perfect soul".split(/\s+/),
               es: "Quiero tener el control, quiero un cuerpo y un alma perfectos"
             },
             {
               time: 90,
+              startTime: 90,
+              originalTime: 90,
+              endTime: 106,
               text: "I want you to notice\nWhen I'm not around\nYou're so very special",
               lines: ["I want you to notice", "When I'm not around", "You're so very special"],
+              words: "I want you to notice When I'm not around You're so very special".split(/\s+/),
               es: "Quiero que te des cuenta cuando no estoy cerca"
             },
             {
               time: 106,
+              startTime: 106,
+              originalTime: 106,
+              endTime: 125,
               text: "Click any English word above to practice phonetic IPA\nKeep singing and level up your fluency!",
               lines: ["Click any English word above to practice phonetic IPA", "Keep singing and level up your fluency!"],
+              words: "Click any English word above to practice phonetic IPA Keep singing and level up your fluency!".split(/\s+/),
               es: "Haz clic en cualquier palabra en inglés para practicar su fonética IPA"
             }
           ];
@@ -12329,11 +12517,11 @@ window.logout = function() {
           return;
         }
 
-        if (window.KaraokeSyncEngine && typeof window.KaraokeSyncEngine.initSong === 'function') {
-          window.KaraokeSyncEngine.initSong(finalLyrics);
-        }
         if (typeof window.renderLyricsFromList === 'function') {
           window.renderLyricsFromList(finalLyrics);
+        }
+        if (window.KaraokeSyncEngine && typeof window.KaraokeSyncEngine.initSong === 'function') {
+          window.KaraokeSyncEngine.initSong(finalLyrics);
         }
 
         showFloatingToast(`Reproduciendo "${trackName}" (${totalDurationFormatted}) en Canción Completa`, '🎤');
@@ -15354,8 +15542,23 @@ window.deduplicateWorld3DBars = function() {
 };
 
 window.forceWakeUpYouTubePlayer = function(videoId) {
+  if (!videoId) return;
+  const holoStage = document.getElementById('musicHolographicStage');
+  const holoIframe = document.getElementById('musicHoloYoutubeIframe');
+  if (holoStage && !holoStage.classList.contains('hidden') && holoIframe) {
+    try {
+      if (holoIframe.contentWindow) {
+        holoIframe.contentWindow.postMessage('{"event":"listening","id":1,"channel":"widget"}', '*');
+        holoIframe.contentWindow.postMessage('{"event":"command","func":"unMute","args":""}', '*');
+        holoIframe.contentWindow.postMessage('{"event":"command","func":"setVolume","args":[100]}', '*');
+        holoIframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+      }
+    } catch (_) {}
+    return;
+  }
+
   const wrapper = document.getElementById('musicOriginalVideoWrapper');
-  if (!wrapper || !videoId) return;
+  if (!wrapper) return;
 
   // Destruimos el iframe viejo que se quedó en negro
   const oldIframe = document.getElementById('musicYouTubeIframe');
@@ -15473,7 +15676,9 @@ window._musicStageGuardInterval = setInterval(function() {
           <input id="discreteVoiceVolSlider" type="range" min="0" max="100" value="${Math.round((window.masterAppVolume || 1) * 100)}" oninput="window.setDiscreteMasterVolume(this.value)" class="discrete-vol-slider" title="Volumen general">
         </div>
       `;
-      document.body.appendChild(bar);
+      if (typeof document !== 'undefined' && document.body && typeof document.body.appendChild === 'function') {
+        document.body.appendChild(bar);
+      }
     }
     return bar;
   }
@@ -15876,15 +16081,20 @@ window._musicStageGuardInterval = setInterval(function() {
     window.updateDiscreteVoiceControlsUI();
   }
 
-  window.addEventListener('storage', (ev) => {
-    if (ev.key === 'mastereng_inbox_invites' || ev.key === 'mastereng_social_bonds') {
-      window.updateInboxBadgeCount();
-    }
-  });
+  if (typeof window.addEventListener === 'function') {
+    window.addEventListener('storage', (ev) => {
+      if (ev.key === 'mastereng_inbox_invites' || ev.key === 'mastereng_social_bonds') {
+        window.updateInboxBadgeCount();
+      }
+    });
+  }
 
-  setInterval(() => {
+  const _inboxWatchTimer = setInterval(() => {
     window.updateInboxBadgeCount();
   }, 4000);
+  if (_inboxWatchTimer && typeof _inboxWatchTimer.unref === 'function') {
+    _inboxWatchTimer.unref();
+  }
 })();
 
 

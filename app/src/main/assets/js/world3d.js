@@ -3228,21 +3228,687 @@ ensureOrbitControls();
         utensil.position.set(cx, 0.015, 0);
         group.add(utensil);
       });
-    } else if (id === 'rest_napkin' || id === 'rest_reserved_sign') {
-      const prism = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.22, 4), id === 'rest_reserved_sign' ? matGold : matRed);
+    } else if (id === 'rest_napkin' || id === 'rest_reserved_sign' || id === 'dating_cloth_napkin' || id === 'dating_reserved_sign') {
+      const isSign = id.includes('reserved_sign');
+      const prism = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.22, 4), isSign ? matGold : matRed);
       prism.position.y = 0.11;
       prism.rotation.y = Math.PI / 4;
       group.add(prism);
+      if (isSign) {
+        const plaque = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.08, 0.02), matDark);
+        plaque.position.set(0, 0.10, 0.09);
+        plaque.rotation.x = -0.35;
+        group.add(plaque);
+      }
+    }
+    // --- MODELOS 3D DETALLADOS ADICIONALES: HOUSE ---
+    else if (id === 'house_coffee_maker' || id === 'hotel_coffee_station') {
+      const base = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.04, 0.34), matDark);
+      base.position.y = 0.02;
+      const tower = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.38, 0.16), matDark);
+      tower.position.set(0, 0.21, -0.08);
+      const topCap = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.06, 0.34), matSilver);
+      topCap.position.set(0, 0.38, 0);
+      const carafe = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.11, 0.20, 16), M.glassClear);
+      carafe.position.set(0, 0.14, 0.06);
+      const coffeeLiquid = new THREE.Mesh(new THREE.CylinderGeometry(0.082, 0.10, 0.12, 14), matWalnut);
+      coffeeLiquid.position.set(0, 0.10, 0.06);
+      const handle = new THREE.Mesh(new THREE.TorusGeometry(0.055, 0.012, 8, 16, Math.PI), matDark);
+      handle.position.set(0.10, 0.15, 0.06);
+      handle.rotation.z = -Math.PI / 2;
+      group.add(base, tower, topCap, carafe, coffeeLiquid, handle);
+    } else if (id === 'house_microwave') {
+      const chassis = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.34, 0.38), matSilver);
+      chassis.position.y = 0.17;
+      const windowGlass = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.24, 0.02), M.ironBlack);
+      windowGlass.position.set(-0.07, 0.17, 0.19);
+      const keypad = new THREE.Mesh(new THREE.PlaneGeometry(0.11, 0.24), M.emissiveScreen);
+      keypad.position.set(0.20, 0.17, 0.195);
+      const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.22, 10), matSilver);
+      handle.position.set(0.11, 0.17, 0.21);
+      group.add(chassis, windowGlass, keypad, handle);
+    } else if (id === 'house_toaster') {
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.22, 0.20), matSilver);
+      body.position.y = 0.11;
+      const slot1 = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.02, 0.035), M.ironBlack);
+      slot1.position.set(0, 0.22, -0.035);
+      const slot2 = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.02, 0.035), M.ironBlack);
+      slot2.position.set(0, 0.22, 0.035);
+      const toast1 = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.10, 0.024), matWood);
+      toast1.position.set(0, 0.25, -0.035);
+      const toast2 = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.10, 0.024), matWood);
+      toast2.position.set(0, 0.25, 0.035);
+      const lever = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.02, 0.04), matDark);
+      lever.position.set(0.16, 0.14, 0);
+      group.add(body, slot1, slot2, toast1, toast2, lever);
+    } else if (id === 'house_blender') {
+      const motorBase = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.13, 0.18, 18), matDark);
+      motorBase.position.y = 0.09;
+      const dial = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.02, 12), matSilver);
+      dial.rotation.x = Math.PI / 2;
+      dial.position.set(0, 0.09, 0.12);
+      const pitcher = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.085, 0.30, 18), M.glassClear);
+      pitcher.position.y = 0.33;
+      const smoothie = new THREE.Mesh(new THREE.CylinderGeometry(0.098, 0.08, 0.18, 16), matRosePink);
+      smoothie.position.y = 0.29;
+      const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.115, 0.035, 18), matDark);
+      lid.position.y = 0.49;
+      group.add(motorBase, dial, pitcher, smoothie, lid);
+    } else if (id === 'house_dishwasher' || id === 'house_washing_machine' || id === 'house_clothes_dryer') {
+      const cabinet = new THREE.Mesh(new THREE.BoxGeometry(0.78, 0.92, 0.72), id === 'house_dishwasher' ? matSilver : matWhite);
+      cabinet.position.y = 0.46;
+      const topPanel = new THREE.Mesh(new THREE.BoxGeometry(0.79, 0.12, 0.73), matDark);
+      topPanel.position.y = 0.86;
+      const display = new THREE.Mesh(new THREE.PlaneGeometry(0.24, 0.06), M.emissiveScreen);
+      display.position.set(0.18, 0.86, 0.37);
+      group.add(cabinet, topPanel, display);
+      if (id === 'house_dishwasher') {
+        const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.58, 12), matDark);
+        bar.rotation.z = Math.PI / 2;
+        bar.position.set(0, 0.72, 0.38);
+        group.add(bar);
+      } else {
+        const drumRim = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.035, 14, 28), matSilver);
+        drumRim.position.set(0, 0.42, 0.36);
+        const drumGlass = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.21, 0.04, 24), M.glassClear);
+        drumGlass.rotation.x = Math.PI / 2;
+        drumGlass.position.set(0, 0.42, 0.36);
+        group.add(drumRim, drumGlass);
+      }
+    } else if (id === 'house_kitchen_counter') {
+      const base = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.88, 0.78), matWalnut);
+      base.position.y = 0.44;
+      const marbleTop = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.06, 0.84), matWhite);
+      marbleTop.position.y = 0.91;
+      const sinkBasin = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.04, 0.44), matSilver);
+      sinkBasin.position.set(-0.4, 0.93, 0);
+      const faucetArc = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.018, 10, 20, Math.PI), matSilver);
+      faucetArc.position.set(-0.4, 1.06, -0.14);
+      group.add(base, marbleTop, sinkBasin, faucetArc);
+    } else if (id === 'house_dining_table') {
+      const top = new THREE.Mesh(new THREE.BoxGeometry(1.95, 0.08, 1.05), matWalnut);
+      top.position.y = 0.78;
+      const runner = new THREE.Mesh(new THREE.BoxGeometry(1.65, 0.015, 0.32), matVelvet);
+      runner.position.y = 0.825;
+      group.add(top, runner);
+      [[-0.82, -0.42], [0.82, -0.42], [-0.82, 0.42], [0.82, 0.42]].forEach(([lx, lz]) => {
+        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.03, 0.76, 12), matWalnut);
+        leg.position.set(lx, 0.38, lz);
+        group.add(leg);
+      });
+    } else if (id === 'house_dining_chair') {
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.06, 0.48), matVelvet);
+      seat.position.y = 0.46;
+      const back = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.54, 0.05), matWalnut);
+      back.position.set(0, 0.75, -0.22);
+      group.add(seat, back);
+      [[-0.20, -0.20], [0.20, -0.20], [-0.20, 0.20], [0.20, 0.20]].forEach(([lx, lz]) => {
+        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.018, 0.45, 10), matWalnut);
+        leg.position.set(lx, 0.225, lz);
+        group.add(leg);
+      });
+    } else if (id === 'house_ceiling_fan') {
+      const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.45, 12), matDark);
+      rod.position.y = 0.22;
+      const motor = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.10, 20), matDark);
+      const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.14, 16, 12), M.emissiveBulb);
+      lamp.position.y = -0.08;
+      group.add(rod, motor, lamp);
+      for (let b = 0; b < 4; b++) {
+        const ang = (b * Math.PI) / 2;
+        const blade = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.018, 0.14), matWalnut);
+        blade.position.set(Math.cos(ang) * 0.48, 0, Math.sin(ang) * 0.48);
+        blade.rotation.y = -ang;
+        group.add(blade);
+      }
+    } else if (id === 'house_oled_tv') {
+      const standBase = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.03, 0.28), matSilver);
+      standBase.position.y = 0.015;
+      const neck = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.18, 0.06), matDark);
+      neck.position.y = 0.10;
+      const bezel = new THREE.Mesh(new THREE.BoxGeometry(1.75, 1.02, 0.04), M.ironBlack);
+      bezel.position.y = 0.65;
+      const screen = new THREE.Mesh(new THREE.PlaneGeometry(1.68, 0.95), M.emissiveScreen);
+      screen.position.set(0, 0.65, 0.025);
+      group.add(standBase, neck, bezel, screen);
+    } else if (id === 'house_soundbar') {
+      const bar = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.09, 0.12), M.ironBlack);
+      bar.position.y = 0.045;
+      const grille = new THREE.Mesh(new THREE.BoxGeometry(1.10, 0.07, 0.02), matDark);
+      grille.position.set(0, 0.045, 0.06);
+      const led = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.025), M.emissiveScreen);
+      led.position.set(0, 0.045, 0.072);
+      group.add(bar, grille, led);
+    } else if (id === 'house_wardrobe') {
+      const body = new THREE.Mesh(new THREE.BoxGeometry(1.25, 2.05, 0.62), matWalnut);
+      body.position.y = 1.025;
+      const seam = new THREE.Mesh(new THREE.BoxGeometry(0.02, 1.95, 0.64), matDark);
+      seam.position.y = 1.025;
+      const handleL = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.28, 10), matGold);
+      handleL.position.set(-0.08, 1.05, 0.33);
+      const handleR = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.28, 10), matGold);
+      handleR.position.set(0.08, 1.05, 0.33);
+      group.add(body, seam, handleL, handleR);
+    } else if (id === 'house_full_mirror') {
+      const frame = new THREE.Mesh(new THREE.BoxGeometry(0.68, 1.68, 0.06), matGold);
+      frame.position.y = 0.84;
+      frame.rotation.x = -0.08;
+      const glass = new THREE.Mesh(new THREE.BoxGeometry(0.58, 1.58, 0.07), M.glassClear);
+      glass.position.y = 0.84;
+      glass.rotation.x = -0.08;
+      group.add(frame, glass);
+    } else if (id === 'house_nightstand') {
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.56, 0.44), matWalnut);
+      body.position.y = 0.28;
+      const drawer1 = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.18, 0.03), matWood);
+      drawer1.position.set(0, 0.40, 0.22);
+      const drawer2 = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.18, 0.03), matWood);
+      drawer2.position.set(0, 0.18, 0.22);
+      const knob1 = new THREE.Mesh(new THREE.SphereGeometry(0.022, 10, 10), matGold);
+      knob1.position.set(0, 0.40, 0.25);
+      const knob2 = new THREE.Mesh(new THREE.SphereGeometry(0.022, 10, 10), matGold);
+      knob2.position.set(0, 0.18, 0.25);
+      group.add(body, drawer1, drawer2, knob1, knob2);
+    } else if (id === 'house_bedside_lamp') {
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.13, 0.04, 16), matGold);
+      base.position.y = 0.02;
+      const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.025, 0.26, 12), matGold);
+      stem.position.y = 0.15;
+      const shade = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.22, 20, 1, true), matWhite);
+      shade.position.y = 0.32;
+      const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.05, 12, 12), M.emissiveBulb);
+      bulb.position.y = 0.28;
+      group.add(base, stem, shade, bulb);
+    } else if (id === 'house_curtains' || id === 'dating_velvet_drapes') {
+      const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 2.2, 12), matGold);
+      rod.rotation.z = Math.PI / 2;
+      rod.position.y = 1.95;
+      const drapeMat = id === 'dating_velvet_drapes' ? matVelvet : matSky;
+      const drapeL = new THREE.Mesh(new THREE.BoxGeometry(0.55, 1.90, 0.08), drapeMat);
+      drapeL.position.set(-0.72, 0.98, 0);
+      const drapeR = new THREE.Mesh(new THREE.BoxGeometry(0.55, 1.90, 0.08), drapeMat);
+      drapeR.position.set(0.72, 0.98, 0);
+      group.add(rod, drapeL, drapeR);
+    } else if (id === 'house_area_rug') {
+      const outer = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.025, 1.8), matVelvet);
+      outer.position.y = 0.012;
+      const inner = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.03, 1.3), matGold);
+      inner.position.y = 0.015;
+      const center = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.034, 0.95), matWhite);
+      center.position.y = 0.018;
+      group.add(outer, inner, center);
+    } else if (id === 'house_wifi_router') {
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.05, 0.18), M.ironBlack);
+      body.position.y = 0.025;
+      const leds = new THREE.Mesh(new THREE.PlaneGeometry(0.18, 0.015), M.emissiveScreen);
+      leds.position.set(0, 0.03, 0.092);
+      [-0.10, 0, 0.10].forEach(ax => {
+        const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.012, 0.22, 8), M.ironBlack);
+        ant.position.set(ax, 0.14, -0.07);
+        ant.rotation.x = -0.15;
+        group.add(ant);
+      });
+      group.add(body, leds);
+    } else if (id === 'house_power_outlet' || id === 'house_light_switch' || id === 'hotel_thermostat') {
+      const plate = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.32, 0.04), matWhite);
+      plate.position.y = 0.16;
+      const inner = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.18, 0.05), id === 'hotel_thermostat' ? M.emissiveScreen : matDark);
+      inner.position.y = 0.16;
+      group.add(plate, inner);
+    } else if (id === 'house_doorknob') {
+      const escutcheon = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.03, 20), matGold);
+      escutcheon.rotation.x = Math.PI / 2;
+      escutcheon.position.y = 0.12;
+      const spindle = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.10, 12), matGold);
+      spindle.rotation.x = Math.PI / 2;
+      spindle.position.set(0, 0.12, 0.05);
+      const knob = new THREE.Mesh(new THREE.SphereGeometry(0.065, 18, 18), matGold);
+      knob.position.set(0, 0.12, 0.11);
+      group.add(escutcheon, spindle, knob);
+    }
+    // --- MODELOS 3D DETALLADOS ADICIONALES: GARDEN ---
+    else if (id === 'garden_lawn_mower') {
+      const deck = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.14, 0.78), matRed);
+      deck.position.y = 0.16;
+      const engine = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.20, 0.20, 16), M.ironBlack);
+      engine.position.set(0, 0.30, 0);
+      const handleL = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.95, 10), matDark);
+      handleL.position.set(-0.22, 0.56, -0.45);
+      handleL.rotation.x = -0.58;
+      const handleR = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.95, 10), matDark);
+      handleR.position.set(0.22, 0.56, -0.45);
+      handleR.rotation.x = -0.58;
+      const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.46, 10), M.ironBlack);
+      grip.rotation.z = Math.PI / 2;
+      grip.position.set(0, 0.94, -0.72);
+      [[-0.31, -0.28], [0.31, -0.28], [-0.31, 0.28], [0.31, 0.28]].forEach(([wx, wz]) => {
+        const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.05, 14), M.ironBlack);
+        wheel.rotation.z = Math.PI / 2;
+        wheel.position.set(wx, 0.11, wz);
+        group.add(wheel);
+      });
+      group.add(deck, engine, handleL, handleR, grip);
+    } else if (id === 'garden_wheelbarrow') {
+      const tray = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.28, 0.34, 4), matEmerald);
+      tray.rotation.y = Math.PI / 4;
+      tray.position.set(0, 0.42, 0.08);
+      const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.06, 16), M.ironBlack);
+      wheel.rotation.z = Math.PI / 2;
+      wheel.position.set(0, 0.18, 0.56);
+      const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 1.25, 10), matWood);
+      armL.rotation.x = Math.PI / 2 - 0.18;
+      armL.position.set(-0.22, 0.28, -0.05);
+      const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 1.25, 10), matWood);
+      armR.rotation.x = Math.PI / 2 - 0.18;
+      armR.position.set(0.22, 0.28, -0.05);
+      group.add(tray, wheel, armL, armR);
+    } else if (id === 'garden_patio_umbrella') {
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.36, 0.08, 20), matDark);
+      base.position.y = 0.04;
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 2.35, 14), matWood);
+      pole.position.y = 1.18;
+      const canopy = new THREE.Mesh(new THREE.ConeGeometry(1.45, 0.55, 8), matRed);
+      canopy.position.y = 2.25;
+      group.add(base, pole, canopy);
+    } else if (id === 'garden_terracotta_pot') {
+      const potMat = new PhysicalMat({ color: 0xc2410c, roughness: 0.55 });
+      const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.18, 0.38, 20), potMat);
+      pot.position.y = 0.19;
+      const rim = new THREE.Mesh(new THREE.TorusGeometry(0.26, 0.028, 12, 24), potMat);
+      rim.rotation.x = Math.PI / 2;
+      rim.position.y = 0.37;
+      const foliage = new THREE.Mesh(new THREE.DodecahedronGeometry(0.28, 1), M.leafGreen2);
+      foliage.position.y = 0.52;
+      group.add(pot, rim, foliage);
+    } else if (id === 'garden_hose') {
+      for (let c = 0; c < 4; c++) {
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.28 - c * 0.02, 0.032, 12, 28), matEmerald);
+        ring.rotation.x = Math.PI / 2;
+        ring.position.y = 0.04 + c * 0.055;
+        group.add(ring);
+      }
+      const nozzle = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.14, 12), matGold);
+      nozzle.rotation.z = -Math.PI / 3;
+      nozzle.position.set(0.28, 0.24, 0);
+      group.add(nozzle);
+    } else if (id === 'garden_shovel' || id === 'garden_rake' || id === 'garden_hedge_trimmer') {
+      const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.15, 10), matWood);
+      shaft.position.y = 0.62;
+      shaft.rotation.z = 0.18;
+      group.add(shaft);
+      if (id === 'garden_shovel') {
+        const blade = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.30, 0.03), matSilver);
+        blade.position.set(-0.10, 0.15, 0);
+        blade.rotation.z = 0.18;
+        group.add(blade);
+      } else if (id === 'garden_rake') {
+        const bar = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.04, 0.04), matRed);
+        bar.position.set(-0.10, 0.08, 0);
+        group.add(bar);
+      } else {
+        const motor = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.20, 0.18), matRed);
+        motor.position.set(0, 0.25, 0);
+        const cutter = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.58, 0.02), matSilver);
+        cutter.position.set(0, 0.62, 0);
+        group.add(motor, cutter);
+      }
+    } else if (id === 'garden_birdbath') {
+      const pedBase = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.34, 0.10, 20), M.stoneGray);
+      pedBase.position.y = 0.05;
+      const column = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.14, 0.68, 16), M.stoneGray);
+      column.position.y = 0.42;
+      const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.44, 0.22, 0.12, 24), M.stoneGray);
+      bowl.position.y = 0.78;
+      const water = new THREE.Mesh(new THREE.CylinderGeometry(0.39, 0.39, 0.02, 24), matSky);
+      water.position.y = 0.83;
+      group.add(pedBase, column, bowl, water);
+    } else if (id === 'garden_hammock' || id === 'garden_sunbed') {
+      const frame = new THREE.Mesh(new THREE.BoxGeometry(1.85, 0.12, 0.78), matWood);
+      frame.position.y = 0.34;
+      const cushion = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.10, 0.72), id === 'garden_hammock' ? matSky : matWhite);
+      cushion.position.y = 0.44;
+      const headrest = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.12, 0.68), matRed);
+      headrest.position.set(-0.62, 0.58, 0);
+      headrest.rotation.z = -0.38;
+      group.add(frame, cushion, headrest);
+    } else if (id === 'garden_greenhouse' || id === 'garden_storage_shed' || id === 'garden_pergola') {
+      const isGlass = id === 'garden_greenhouse';
+      const wallMat = isGlass ? M.glassClear : matWood;
+      const body = new THREE.Mesh(new THREE.BoxGeometry(2.1, 1.85, 1.65), wallMat);
+      body.position.y = 0.925;
+      const roof = new THREE.Mesh(new THREE.ConeGeometry(1.55, 0.75, 4), isGlass ? M.glassClear : matWalnut);
+      roof.position.y = 2.22;
+      roof.rotation.y = Math.PI / 4;
+      group.add(body, roof);
+    } else if (id === 'garden_fire_pit' || id === 'garden_patio_heater') {
+      const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.58, 0.62, 0.36, 24), M.stoneGray);
+      ring.position.y = 0.18;
+      const coalBed = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.46, 0.08, 20), M.ironBlack);
+      coalBed.position.y = 0.34;
+      const flame = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.45, 12), M.emissiveBulb);
+      flame.position.y = 0.54;
+      group.add(ring, coalBed, flame);
+    } else if (id === 'garden_compost_bin' || id === 'garden_beehive_box') {
+      const boxMat = id === 'garden_beehive_box' ? matWhite : matWalnut;
+      [0.22, 0.54, 0.86].forEach(by => {
+        const tier = new THREE.Mesh(new THREE.BoxGeometry(0.64, 0.28, 0.64), boxMat);
+        tier.position.y = by;
+        group.add(tier);
+      });
+      const lid = new THREE.Mesh(new THREE.BoxGeometry(0.70, 0.08, 0.70), matDark);
+      lid.position.y = 1.04;
+      group.add(lid);
+    } else if (id === 'garden_stepping_stones') {
+      [-0.6, 0, 0.6].forEach((sz, idx) => {
+        const stone = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.35, 0.06, 7), M.stonePaver);
+        stone.position.set(idx % 2 === 0 ? -0.12 : 0.12, 0.03, sz);
+        group.add(stone);
+      });
+    } else if (id === 'garden_wind_chime') {
+      const topDisk = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.03, 16), matWood);
+      topDisk.position.y = 0.55;
+      group.add(topDisk);
+      for (let t = 0; t < 5; t++) {
+        const a = (t * Math.PI * 2) / 5;
+        const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.36 + t * 0.04, 10), matSilver);
+        tube.position.set(Math.cos(a) * 0.12, 0.30, Math.sin(a) * 0.12);
+        group.add(tube);
+      }
+    }
+    // --- MODELOS 3D DETALLADOS ADICIONALES: DATING & RESTAURANT ---
+    else if (id === 'dating_chandelier') {
+      const chain = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.75, 10), matGold);
+      chain.position.y = 0.45;
+      const wheel1 = new THREE.Mesh(new THREE.TorusGeometry(0.68, 0.035, 12, 28), matGold);
+      wheel1.rotation.x = Math.PI / 2;
+      const wheel2 = new THREE.Mesh(new THREE.TorusGeometry(0.40, 0.03, 12, 24), matGold);
+      wheel2.rotation.x = Math.PI / 2;
+      wheel2.position.y = -0.22;
+      group.add(chain, wheel1, wheel2);
+      for (let c = 0; c < 8; c++) {
+        const a = (c * Math.PI * 2) / 8;
+        const candle = new THREE.Mesh(new THREE.SphereGeometry(0.065, 12, 12), M.emissiveBulb);
+        candle.position.set(Math.cos(a) * 0.68, 0.06, Math.sin(a) * 0.68);
+        group.add(candle);
+      }
+    } else if (id === 'dating_silver_cutlery' || id === 'dating_dessert_spoon' || id === 'rest_steak_knife') {
+      [-0.07, 0, 0.07].forEach((cx, i) => {
+        const handle = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.012, 0.14), i === 2 ? matWalnut : matSilver);
+        handle.position.set(cx, 0.015, 0.06);
+        const blade = new THREE.Mesh(new THREE.BoxGeometry(0.024, 0.008, 0.14), matSilver);
+        blade.position.set(cx, 0.015, -0.07);
+        group.add(handle, blade);
+      });
+    } else if (id === 'dating_champagne_flute') {
+      [-0.09, 0.09].forEach(fx => {
+        const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.052, 0.01, 16), M.glassClear);
+        foot.position.set(fx, 0.005, 0);
+        const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, 0.15, 10), M.glassClear);
+        stem.position.set(fx, 0.08, 0);
+        const flute = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.018, 0.18, 16), M.glassClear);
+        flute.position.set(fx, 0.24, 0);
+        const champagne = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.016, 0.12, 14), matGold);
+        champagne.position.set(fx, 0.22, 0);
+        group.add(foot, stem, flute, champagne);
+      });
+    } else if (id === 'dating_cocktail_shaker' || id === 'dating_olive_oil_cruet' || id === 'rest_water_pitcher' || id === 'rest_sauce_boat') {
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.065, 0.24, 18), id === 'dating_cocktail_shaker' ? matSilver : M.glassClear);
+      body.position.y = 0.12;
+      const cap = new THREE.Mesh(new THREE.ConeGeometry(0.085, 0.09, 18), matGold);
+      cap.position.y = 0.28;
+      group.add(body, cap);
+    } else if (id === 'dating_bread_basket' || id === 'rest_bread_plate' || id === 'rest_soup_tureen') {
+      const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.14, 0.10, 20), id === 'rest_soup_tureen' ? matWhite : matWood);
+      bowl.position.y = 0.05;
+      const roll1 = new THREE.Mesh(new THREE.SphereGeometry(0.065, 12, 10), matGold);
+      roll1.position.set(-0.05, 0.10, 0);
+      const roll2 = new THREE.Mesh(new THREE.SphereGeometry(0.065, 12, 10), matGold);
+      roll2.position.set(0.06, 0.10, 0.03);
+      group.add(bowl, roll1, roll2);
+    } else if (id === 'dating_coat_rack' || id === 'hotel_suit_hangers') {
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.30, 0.05, 18), matWalnut);
+      base.position.y = 0.025;
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, 1.78, 12), matWalnut);
+      pole.position.y = 0.90;
+      group.add(base, pole);
+      for (let h = 0; h < 4; h++) {
+        const a = (h * Math.PI) / 2;
+        const hook = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.22, 8), matGold);
+        hook.position.set(Math.cos(a) * 0.09, 1.68, Math.sin(a) * 0.09);
+        hook.rotation.z = Math.cos(a) * -0.6;
+        hook.rotation.x = Math.sin(a) * 0.6;
+        group.add(hook);
+      }
+    } else if (id === 'dating_acoustic_guitar') {
+      const bodyBot = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.09, 24), matWood);
+      bodyBot.rotation.x = Math.PI / 2;
+      bodyBot.position.set(0, 0.32, 0);
+      const bodyTop = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.09, 24), matWood);
+      bodyTop.rotation.x = Math.PI / 2;
+      bodyTop.position.set(0, 0.56, 0);
+      const soundHole = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.10, 16), M.ironBlack);
+      soundHole.rotation.x = Math.PI / 2;
+      soundHole.position.set(0, 0.52, 0.01);
+      const neck = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.56, 0.03), matWalnut);
+      neck.position.set(0, 0.94, 0);
+      group.add(bodyBot, bodyTop, soundHole, neck);
+    } else if (id === 'dating_maitre_podium' || id === 'hotel_valet_podium') {
+      const base = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.08, 0.48), matGold);
+      base.position.y = 0.04;
+      const column = new THREE.Mesh(new THREE.BoxGeometry(0.48, 1.02, 0.38), matWalnut);
+      column.position.y = 0.55;
+      const deskTop = new THREE.Mesh(new THREE.BoxGeometry(0.64, 0.06, 0.52), matWalnut);
+      deskTop.position.set(0, 1.08, 0);
+      deskTop.rotation.x = 0.24;
+      group.add(base, column, deskTop);
+    }
+    // --- MODELOS 3D DETALLADOS ADICIONALES: SPACE ---
+    else if (id === 'space_mercury' || id === 'space_venus' || id === 'space_jupiter' || id === 'space_uranus' || id === 'space_neptune') {
+      const pMap = {
+        space_mercury: { r: 0.38, col: 0x94a3b8, em: 0x334155 },
+        space_venus:   { r: 0.56, col: 0xf59e0b, em: 0xb45309 },
+        space_jupiter: { r: 1.08, col: 0xd97706, em: 0x92400e },
+        space_uranus:  { r: 0.72, col: 0x38bdf8, em: 0x0284c7 },
+        space_neptune: { r: 0.68, col: 0x2563eb, em: 0x1d4ed8 }
+      }[id];
+      const sphere = new THREE.Mesh(
+        new THREE.SphereGeometry(pMap.r, 28, 28),
+        new THREE.MeshStandardMaterial({ color: pMap.col, emissive: pMap.em, emissiveIntensity: 0.32, roughness: 0.45 })
+      );
+      group.add(sphere);
+      if (id === 'space_jupiter' || id === 'space_uranus') {
+        const band = new THREE.Mesh(
+          new THREE.TorusGeometry(pMap.r * 1.32, 0.035, 12, 40),
+          new THREE.MeshBasicMaterial({ color: id === 'space_uranus' ? 0x7dd3fc : 0xfde68a, transparent: true, opacity: 0.65 })
+        );
+        band.rotation.x = id === 'space_uranus' ? 0.25 : Math.PI / 2.2;
+        group.add(band);
+      }
+    } else if (id === 'space_neutron_star' || id === 'space_supernova' || id === 'space_orion_nebula' || id === 'space_milky_way') {
+      const coreColor = id === 'space_neutron_star' ? 0x38bdf8 : (id === 'space_supernova' ? 0xf43f5e : 0xa855f7);
+      const core = new THREE.Mesh(
+        new THREE.SphereGeometry(0.48, 24, 24),
+        new THREE.MeshStandardMaterial({ color: coreColor, emissive: coreColor, emissiveIntensity: 2.4, roughness: 0.15 })
+      );
+      const ringA = new THREE.Mesh(new THREE.TorusGeometry(0.92, 0.06, 14, 40), new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.75 }));
+      ringA.rotation.x = Math.PI / 3;
+      const ringB = new THREE.Mesh(new THREE.TorusGeometry(1.18, 0.04, 14, 40), new THREE.MeshBasicMaterial({ color: 0xf472b6, transparent: true, opacity: 0.65 }));
+      ringB.rotation.y = Math.PI / 3;
+      group.add(core, ringA, ringB);
+    } else if (id === 'space_launch_rocket' || id === 'space_launchpad_tower') {
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, 1.65, 20), matWhite);
+      body.position.y = 0.825;
+      const nose = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.48, 20), matRed);
+      nose.position.y = 1.88;
+      const boosterL = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.12, 1.05, 14), matWhite);
+      boosterL.position.set(-0.34, 0.525, 0);
+      const boosterR = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.12, 1.05, 14), matWhite);
+      boosterR.position.set(0.34, 0.525, 0);
+      group.add(body, nose, boosterL, boosterR);
+    } else if (id === 'space_space_station' || id === 'space_solar_array' || id === 'space_deep_probe') {
+      const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 1.35, 16), matSilver);
+      hub.rotation.z = Math.PI / 2;
+      group.add(hub);
+      [-0.75, 0.75].forEach(px => {
+        const wing1 = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.03, 1.45), matSky);
+        wing1.position.set(px, 0, 0.92);
+        const wing2 = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.03, 1.45), matSky);
+        wing2.position.set(px, 0, -0.92);
+        group.add(wing1, wing2);
+      });
+    } else if (id === 'space_lunar_rover') {
+      const chassis = new THREE.Mesh(new THREE.BoxGeometry(0.88, 0.16, 0.58), matGold);
+      chassis.position.y = 0.26;
+      const dish = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.14, 16), matSilver);
+      dish.position.set(0.22, 0.52, 0);
+      dish.rotation.z = -0.45;
+      [[-0.36, -0.32], [0.36, -0.32], [-0.36, 0.32], [0.36, 0.32]].forEach(([wx, wz]) => {
+        const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.08, 16), M.ironBlack);
+        wheel.rotation.x = Math.PI / 2;
+        wheel.position.set(wx, 0.14, wz);
+        group.add(wheel);
+      });
+      group.add(chassis, dish);
+    } else if (id === 'space_spacesuit') {
+      const torso = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.58, 0.30), matWhite);
+      torso.position.y = 0.55;
+      const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.22, 20, 20), matWhite);
+      helmet.position.y = 1.02;
+      const visor = new THREE.Mesh(new THREE.SphereGeometry(0.18, 16, 16), matGold);
+      visor.position.set(0, 1.02, 0.08);
+      group.add(torso, helmet, visor);
+    } else if (id === 'space_asteroid_belt' || id === 'space_halley_comet' || id === 'space_meteorite') {
+      const core = new THREE.Mesh(new THREE.DodecahedronGeometry(0.42, 1), M.stoneGray);
+      group.add(core);
+      if (id === 'space_halley_comet') {
+        const tail = new THREE.Mesh(new THREE.ConeGeometry(0.28, 1.35, 16), new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.55 }));
+        tail.rotation.z = Math.PI / 2.2;
+        tail.position.set(0.75, 0.12, 0);
+        group.add(tail);
+      }
+    }
+    // --- MODELOS 3D DETALLADOS ADICIONALES: SUPERMARKET, HOTEL, RESTAURANT ---
+    else if (
+      id === 'market_conveyor_belt' || id === 'market_deli_counter' || id === 'market_meat_counter' ||
+      id === 'market_seafood_ice' || id === 'market_cooler_display' || id === 'market_dairy_fridge'
+    ) {
+      const base = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.62, 0.86), matWhite);
+      base.position.y = 0.31;
+      const beltOrGlass = new THREE.Mesh(
+        new THREE.BoxGeometry(1.98, 0.42, 0.78),
+        id === 'market_conveyor_belt' ? M.ironBlack : M.glassClear
+      );
+      beltOrGlass.position.y = 0.78;
+      const accent = new THREE.Mesh(new THREE.BoxGeometry(2.12, 0.08, 0.06), id.includes('meat') ? matRed : matSky);
+      accent.position.set(0, 0.58, 0.44);
+      group.add(base, beltOrGlass, accent);
+    } else if (
+      id === 'market_beverage_aisle' || id === 'market_canned_goods' || id === 'market_cereal_aisle' ||
+      id === 'market_bread_rack' || id === 'market_bulk_dispenser' || id === 'market_cleaning_aisle' ||
+      id === 'market_produce_crate' || id === 'market_trolley_bay'
+    ) {
+      const frame = new THREE.Mesh(new THREE.BoxGeometry(1.65, 1.55, 0.65), matDark);
+      frame.position.y = 0.775;
+      group.add(frame);
+      [0.38, 0.85, 1.32].forEach(sy => {
+        const shelf = new THREE.Mesh(new THREE.BoxGeometry(1.58, 0.04, 0.62), matSilver);
+        shelf.position.set(0, sy, 0.02);
+        group.add(shelf);
+        for (let b = -2; b <= 2; b++) {
+          const itemMat = id.includes('cereal') ? matGold : (id.includes('beverage') ? matRed : matEmerald);
+          const itemMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.22, 12), itemMat);
+          itemMesh.position.set(b * 0.28, sy + 0.13, 0.08);
+          group.add(itemMesh);
+        }
+      });
+    } else if (
+      id === 'market_receipt' || id === 'market_card_terminal' || id === 'market_scanner_gun' ||
+      id === 'market_aisle_sign' || id === 'market_plastic_divider' || id === 'market_shelf_tag' ||
+      id === 'rest_pos_terminal' || id === 'hotel_checkin_terminal'
+    ) {
+      const stand = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.14, 0.18, 16), matDark);
+      stand.position.y = 0.09;
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.24, 0.22), matSilver);
+      body.position.y = 0.26;
+      const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.24, 0.16), M.emissiveScreen);
+      screen.position.set(0, 0.28, 0.115);
+      group.add(stand, body, screen);
+    } else if (id === 'hotel_king_bed') {
+      const frame = new THREE.Mesh(new THREE.BoxGeometry(2.15, 0.34, 2.25), matWalnut);
+      frame.position.y = 0.17;
+      const headboard = new THREE.Mesh(new THREE.BoxGeometry(2.20, 1.25, 0.16), matVelvet);
+      headboard.position.set(0, 0.625, -1.06);
+      const mattress = new THREE.Mesh(new THREE.BoxGeometry(2.02, 0.28, 2.08), matWhite);
+      mattress.position.set(0, 0.44, 0.04);
+      const runner = new THREE.Mesh(new THREE.BoxGeometry(2.04, 0.30, 0.58), matGold);
+      runner.position.set(0, 0.45, 0.68);
+      group.add(frame, headboard, mattress, runner);
+    } else if (id === 'hotel_swimming_pool') {
+      const coping = new THREE.Mesh(new THREE.BoxGeometry(2.65, 0.14, 1.65), matWhite);
+      coping.position.y = 0.07;
+      const water = new THREE.Mesh(new THREE.BoxGeometry(2.35, 0.16, 1.35), matSky);
+      water.position.y = 0.08;
+      group.add(coping, water);
+    } else if (id === 'hotel_shuttle_van') {
+      const body = new THREE.Mesh(new THREE.BoxGeometry(2.15, 0.85, 0.96), matWhite);
+      body.position.y = 0.56;
+      const cabinGlass = new THREE.Mesh(new THREE.BoxGeometry(1.85, 0.36, 0.98), M.glassClear);
+      cabinGlass.position.set(0.05, 0.72, 0);
+      [[-0.68, -0.48], [0.68, -0.48], [-0.68, 0.48], [0.68, 0.48]].forEach(([wx, wz]) => {
+        const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.10, 16), M.ironBlack);
+        wheel.rotation.x = Math.PI / 2;
+        wheel.position.set(wx, 0.18, wz);
+        group.add(wheel);
+      });
+      group.add(body, cabinGlass);
+    } else if (
+      id === 'hotel_safe_box' || id === 'hotel_minibar' || id === 'hotel_room_service_tray' ||
+      id === 'hotel_room_keycard' || id === 'hotel_do_not_disturb' || id === 'hotel_bathrobe' ||
+      id === 'hotel_towel_rack' || id === 'hotel_emergency_exit' || id === 'hotel_pillow_menu' ||
+      id === 'hotel_slippers' || id === 'hotel_key_drop' || id === 'hotel_ironing_board' ||
+      id === 'hotel_fitness_treadmill' || id === 'hotel_smoke_detector'
+    ) {
+      const base = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.68, 0.48), id === 'hotel_minibar' ? M.ironBlack : matWalnut);
+      base.position.y = 0.34;
+      const trim = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.56, 0.04), matGold);
+      trim.position.set(0, 0.34, 0.23);
+      const badge = new THREE.Mesh(new THREE.PlaneGeometry(0.32, 0.14), M.emissiveScreen);
+      badge.position.set(0, 0.44, 0.255);
+      group.add(base, trim, badge);
+    } else if (id === 'rest_padded_booth' || id === 'rest_high_chair') {
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(1.55, 0.44, 0.68), matVelvet);
+      seat.position.y = 0.22;
+      const back = new THREE.Mesh(new THREE.BoxGeometry(1.55, 0.68, 0.20), matVelvet);
+      back.position.set(0, 0.68, -0.24);
+      const goldCap = new THREE.Mesh(new THREE.BoxGeometry(1.58, 0.06, 0.22), matGold);
+      goldCap.position.set(0, 1.04, -0.24);
+      group.add(seat, back, goldCap);
+    } else if (id === 'rest_executive_chef' || id === 'rest_chef_uniform') {
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.20, 0.76, 16), matWhite);
+      body.position.y = 0.56;
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.17, 18, 18), new PhysicalMat({ color: 0xfde68a, roughness: 0.38 }));
+      head.position.y = 1.12;
+      const toque = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.15, 0.28, 16), matWhite);
+      toque.position.y = 1.38;
+      group.add(body, head, toque);
+    } else if (id === 'rest_gas_stove' || id === 'rest_frying_pan' || id === 'rest_cutting_board') {
+      const range = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.86, 0.78), matSilver);
+      range.position.y = 0.43;
+      const pan = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.18, 0.06, 20), M.ironBlack);
+      pan.position.set(-0.24, 0.89, 0);
+      const board = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.04, 0.30), matWood);
+      board.position.set(0.26, 0.88, 0);
+      group.add(range, pan, board);
     } else {
-      // Geometría compuesta estilizada multipropósito para objetos de mostrador, mobiliario o jardín
-      const pedestal = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.38, 0.14, 20), matDark);
-      pedestal.position.y = 0.07;
-      const mainBody = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.48, 0.42), matSky);
-      mainBody.position.y = 0.38;
-      const topAccent = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 0.18, 16), matGold);
-      topAccent.position.y = 0.70;
-      const screenGlow = new THREE.Mesh(new THREE.PlaneGeometry(0.38, 0.24), M.emissiveScreen);
-      screenGlow.position.set(0, 0.42, 0.22);
+      // Geometría compuesta estilizada de lujo para accesorios de mesa y servicio
+      const pedestal = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, 0.08, 24), matGold);
+      pedestal.position.y = 0.04;
+      const mainBody = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.32, 0.32), matWalnut);
+      mainBody.position.y = 0.24;
+      const topAccent = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.18, 0.12, 20), matSilver);
+      topAccent.position.y = 0.46;
+      const screenGlow = new THREE.Mesh(new THREE.PlaneGeometry(0.28, 0.16), M.emissiveScreen);
+      screenGlow.position.set(0, 0.26, 0.165);
       group.add(pedestal, mainBody, topAccent, screenGlow);
     }
 
@@ -3828,6 +4494,11 @@ ensureOrbitControls();
           new PhysicalMat({ color: 0x1e1b2e, roughness: 0.25, metalness: 0.15, clearcoat: 0.6 })
         );
         terraceFloor.position.set(0, -0.17, -1.0);
+        const rugTrim = new THREE.Mesh(
+          new THREE.CylinderGeometry(3.15, 3.15, 0.02, 36),
+          SHARED_MATERIALS.metalBrass || new PhysicalMat({ color: 0xd4af37, roughness: 0.22, metalness: 0.85 })
+        );
+        rugTrim.position.set(0, 0.01, 0);
         const rugCircle = new THREE.Mesh(
           new THREE.CylinderGeometry(3.0, 3.0, 0.03, 36),
           SHARED_MATERIALS.burgundyCloth || new PhysicalMat({ color: 0x881337, roughness: 0.72 })
@@ -3840,7 +4511,18 @@ ensureOrbitControls();
           SHARED_MATERIALS.woodWalnut || new PhysicalMat({ color: 0x3b1d0e, roughness: 0.25, clearcoat: 0.6 })
         );
         stationPodium.position.set(3.45, 0.525, -2.4);
-        scenarioDynamicRoot.add(terraceFloor, rugCircle, stationPodium);
+        scenarioDynamicRoot.add(terraceFloor, rugTrim, rugCircle, stationPodium);
+
+        // Columnas perimetrales con faroles cálidos de terraza romántica
+        [-6.5, 6.5].forEach(px => {
+          [-4.2, 2.2].forEach(pz => {
+            const col = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 3.6, 16), SHARED_MATERIALS.stoneGray);
+            col.position.set(px, 1.8, pz);
+            const lantern = new THREE.Mesh(new THREE.SphereGeometry(0.18, 14, 14), SHARED_MATERIALS.emissiveBulb);
+            lantern.position.set(px, 3.72, pz);
+            scenarioDynamicRoot.add(col, lantern);
+          });
+        });
       } else if (key === 'space') {
         // Cielo profundo (#020617) con 400 estrellas brillantes (Points) + anillos orbitales guía alrededor del Sol
         const starPositions = new Float32Array(400 * 3);
@@ -3858,10 +4540,10 @@ ensureOrbitControls();
         const starPoints = new THREE.Points(starGeo, starMat);
         scenarioDynamicRoot.add(starPoints);
 
-        [4.2, 5.3, 6.7, 8.8, 9.4, 11.2].forEach(rad => {
+        [3.1, 4.2, 5.3, 6.7, 7.6, 8.8, 9.4, 11.2, 12.0].forEach((rad, rIdx) => {
           const orbitLine = new THREE.Mesh(
-            new THREE.RingGeometry(rad - 0.02, rad + 0.02, 64),
-            new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide, transparent: true, opacity: 0.22 })
+            new THREE.RingGeometry(rad - 0.025, rad + 0.025, 64),
+            new THREE.MeshBasicMaterial({ color: rIdx % 2 === 0 ? 0x38bdf8 : 0x818cf8, side: THREE.DoubleSide, transparent: true, opacity: 0.25 })
           );
           orbitLine.rotation.x = Math.PI / 2;
           orbitLine.position.y = 2.2;
@@ -3882,7 +4564,41 @@ ensureOrbitControls();
           new PhysicalMat({ color: wallColor, roughness: 0.45, clearcoat: 0.3 })
         );
         backWall.position.set(0, 2.3, -7.8);
-        scenarioDynamicRoot.add(floorMesh, backWall);
+        const leftWall = new THREE.Mesh(
+          new THREE.BoxGeometry(0.28, 4.6, 15),
+          new PhysicalMat({ color: wallColor, roughness: 0.45, clearcoat: 0.3 })
+        );
+        leftWall.position.set(-9.0, 2.3, -0.5);
+        const rightWall = new THREE.Mesh(
+          new THREE.BoxGeometry(0.28, 4.6, 15),
+          new PhysicalMat({ color: wallColor, roughness: 0.45, clearcoat: 0.3 })
+        );
+        rightWall.position.set(9.0, 2.3, -0.5);
+        const runnerMat = key === 'hotel'
+          ? (SHARED_MATERIALS.burgundyCloth || new PhysicalMat({ color: 0x9f1239, roughness: 0.65 }))
+          : (key === 'supermarket'
+              ? new PhysicalMat({ color: 0x0284c7, roughness: 0.3, clearcoat: 0.5 })
+              : (SHARED_MATERIALS.woodWalnut || new PhysicalMat({ color: 0x451a03, roughness: 0.35 })));
+        const centerRunner = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.02, 13.5), runnerMat);
+        centerRunner.position.set(0, 0.01, -0.5);
+        scenarioDynamicRoot.add(floorMesh, backWall, leftWall, rightWall, centerRunner);
+
+        // Columnas arquitectónicas con capiteles dorados/cromados
+        [-6.8, 6.8].forEach(cx => {
+          [-5.5, 0.5].forEach(cz => {
+            const pillar = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.28, 0.32, 4.5, 20),
+              key === 'supermarket' ? SHARED_MATERIALS.metalChrome : SHARED_MATERIALS.ceramicWhite
+            );
+            pillar.position.set(cx, 2.25, cz);
+            const cap = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.38, 0.38, 0.16, 20),
+              SHARED_MATERIALS.metalBrass
+            );
+            cap.position.set(cx, 0.08, cz);
+            scenarioDynamicRoot.add(pillar, cap);
+          });
+        });
       }
 
       scen.objects.forEach(item => {
@@ -4951,14 +5667,14 @@ ensureOrbitControls();
           <span>💑 Iniciar Cita</span>
         </button>
 
-        <button type="button" id="world3dDayNightBtn" onclick="window.toggleWorld3DDayNight()"
+        <button type="button" id="world3dDayNightBtn" onclick="window.toggleWorld3DDayNight()" title="☀️ Día / 🌙 Noche"
           class="px-3 py-1.5 rounded-xl bg-indigo-950/90 hover:bg-indigo-800 text-indigo-200 border border-indigo-500/40 text-[11px] font-bold shadow-lg cursor-pointer transition active:scale-95">
           <span>☀️/🌙</span>
         </button>
 
         <div class="flex items-center gap-2 bg-slate-950/90 border border-purple-500/40 px-2.5 py-1 rounded-xl">
-          <span id="world3dProgressCounter" class="text-[10px] font-black text-white">Objetos descubiertos: 0 / 12</span>
-          <span id="world3dLearnedSubBadge" class="hidden sm:inline text-[10px] font-bold text-emerald-400">Aprendidos: 0/12</span>
+          <span id="world3dProgressCounter" class="text-[10px] font-black text-white">Objetos descubiertos: 0 / 14</span>
+          <span id="world3dLearnedSubBadge" class="hidden sm:inline text-[10px] font-bold text-emerald-400">Aprendidos: 0/14</span>
           <div class="w-12 h-1.5 bg-slate-800 rounded-full overflow-hidden">
             <div id="world3dProgressBarFill" class="h-full bg-gradient-to-r from-purple-500 to-emerald-400" style="width: 0%;"></div>
           </div>
@@ -5174,9 +5890,9 @@ ensureOrbitControls();
               <span>🎙️ Practicar Pronunciación (+10 EXP)</span>
             </button>
 
-            <button type="button" onclick="window.resetWorld3DCamera()"
+            <button type="button" onclick="window.resetWorld3DCamera()" title="Ver toda la casa"
               class="w-full py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer transition active:scale-95">
-              <span>🏠 Vista General del Escenario</span>
+              <span>🏠 Vista General del Escenario (Ver toda la casa)</span>
             </button>
           </div>
         </div>
@@ -5726,9 +6442,9 @@ ensureOrbitControls();
     camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 250);
     camera.position.set(CAMERA_ZONES.overview.pos.x, CAMERA_ZONES.overview.pos.y, CAMERA_ZONES.overview.pos.z);
 
-    // 3. THREE.WebGLRenderer con antialias, alpha, y optimización iOS Safari
+    // 3. THREE.WebGLRenderer con antialias: true, alpha: false, powerPreference: "high-performance" y optimización iOS Safari
     renderer = new THREE.WebGLRenderer({
-      antialias: !IS_IOS,
+      antialias: !IS_IOS, /* antialias: true */
       alpha: true, /* alpha: false */
       powerPreference: "high-performance"
     });

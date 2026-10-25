@@ -35,8 +35,7 @@
   window.adjustLyricsOffset = function(delta) {
     let curr = (typeof window.lyricsOffset === 'number' && !isNaN(window.lyricsOffset)) ? window.lyricsOffset : -0.6;
     let next = Math.round((curr + delta) * 10) / 10;
-    // Rango amplio de ajuste manual (-15s a +15s para intros de video)
-    next = Math.max(-15.0, Math.min(15.0, next));
+    next = Math.max(-5.0, Math.min(5.0, next));
     window.lyricsOffset = next;
     try {
       if (typeof localStorage !== 'undefined') {
@@ -870,33 +869,6 @@
       showFloatingToast(`Practicando vocabulario interactivo de "${title}"`, '📖');
     }
 
-    async function practiceVocabularyFromMusic(ytId, title, artist, duration) {
-      await selectMusicSearchResultItem(ytId, title, artist, duration);
-      const lyricsEl = document.getElementById('musicLyricsContainer');
-      if (lyricsEl) {
-        lyricsEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-      showFloatingToast(`Practicando vocabulario interactivo de "${title}"`, '📖');
-    }
-
-    async function practiceVocabularyFromMusic(ytId, title, artist, duration) {
-      await selectMusicSearchResultItem(ytId, title, artist, duration);
-      const lyricsEl = document.getElementById('musicLyricsContainer');
-      if (lyricsEl) {
-        lyricsEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-      showFloatingToast(`Practicando vocabulario interactivo de "${title}"`, '📖');
-    }
-
-    async function practiceVocabularyFromMusic(ytId, title, artist, duration) {
-      await selectMusicSearchResultItem(ytId, title, artist, duration);
-      const lyricsEl = document.getElementById('musicLyricsContainer');
-      if (lyricsEl) {
-        lyricsEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-      showFloatingToast(`Practicando vocabulario interactivo de "${title}"`, '📖');
-    }
-
     async function selectMusicSearchResultItem(ytId, title, artist, duration) {
       const suggestionsEl = document.getElementById('musicSearchSuggestions');
       if (suggestionsEl) suggestionsEl.classList.add('hidden');
@@ -978,6 +950,10 @@
     }
 
     async function loadCustomYouTubeTrack(ytId, title = 'Video', artist = 'Artista', duration = '3:30') {
+      window._userInitiatedMusicPlayback = true;
+      if (typeof window.openMusicPlayerStage === 'function') {
+        window.openMusicPlayerStage();
+      }
       stopMusicKaraokeSync();
 
       const titleEl = document.getElementById('activeMusicTitle');
@@ -1016,20 +992,32 @@
         console.warn('No se pudo obtener letra remota:', err);
       }
 
+      if ((!lyrics || lyrics.length === 0) && typeof window.fetchLrclibSyncedLyrics === 'function') {
+        try {
+          const lrcRes = await window.fetchLrclibSyncedLyrics(artist, title, 210);
+          if (lrcRes && Array.isArray(lrcRes.lyrics) && lrcRes.lyrics.length > 0) {
+            lyrics = lrcRes.lyrics;
+          }
+        } catch (_) {}
+      }
+
       if (!lyrics || lyrics.length === 0) {
         lyrics = [
-          { time: 5, text: `Listen carefully to the melody of ${title}`, es: `Escucha atentamente la melodía de ${title}` },
-          { time: 18, text: `Feel the rhythm and musical emotion by ${artist}`, es: `Siente el ritmo y la emoción musical de ${artist}` },
-          { time: 32, text: "Touch any word in the lyrics to inspect its phonetic pronunciation", es: "Toca cualquier palabra de la letra para ver su pronunciación fonética" },
-          { time: 50, text: "Sing along with the music to master spoken English fluency", es: "Canta con la música para dominar la fluidez en inglés hablado" },
-          { time: 75, text: "Every stanza boosts your listening comprehension and TOEFL vocabulary", es: "Cada estrofa potencia tu comprensión auditiva y vocabulario TOEFL" },
-          { time: 105, text: "Keep practicing daily with your favorite English songs and melodies", es: "Sigue practicando a diario con tus canciones y melodías favoritas en inglés" }
+          { time: 5, startTime: 5, endTime: 18, text: `Listen carefully to the melody of ${title}`, es: `Escucha atentamente la melodía de ${title}` },
+          { time: 18, startTime: 18, endTime: 32, text: `Feel the rhythm and musical emotion by ${artist}`, es: `Siente el ritmo y la emoción musical de ${artist}` },
+          { time: 32, startTime: 32, endTime: 50, text: "Touch any word in the lyrics to inspect its phonetic pronunciation", es: "Toca cualquier palabra de la letra para ver su pronunciación fonética" },
+          { time: 50, startTime: 50, endTime: 75, text: "Sing along with the music to master spoken English fluency", es: "Canta con la música para dominar la fluidez en inglés hablado" },
+          { time: 75, startTime: 75, endTime: 105, text: "Every stanza boosts your listening comprehension and TOEFL vocabulary", es: "Cada estrofa potencia tu comprensión auditiva y vocabulario TOEFL" },
+          { time: 105, startTime: 105, endTime: 135, text: "Keep practicing daily with your favorite English songs and melodies", es: "Sigue practicando a diario con tus canciones y melodías favoritas en inglés" }
         ];
       }
 
       activeLyricsList = lyrics;
       currentKaraokeStanzaIndex = 0;
       renderLyricsFromList(lyrics);
+      if (window.KaraokeSyncEngine && typeof window.KaraokeSyncEngine.initSong === 'function') {
+        window.KaraokeSyncEngine.initSong(lyrics);
+      }
       startMusicKaraokeSync();
       showFloatingToast(`Cargado: "${title}"`, '🎵');
     }
@@ -1067,6 +1055,9 @@
       const viewMusic = document.getElementById('view-music');
       const searchSub = document.getElementById('music-search-subview');
       const playerSub = document.getElementById('music-player-subview');
+      const holoStage = document.getElementById('musicHolographicStage');
+      const origVideoWrapper = document.getElementById('musicOriginalVideoWrapper');
+      const origMetaWrapper = document.getElementById('musicOriginalMetaWrapper');
       if (playerSub) {
         playerSub.classList.add('hidden');
         playerSub.style.setProperty('display', 'none', 'important');
@@ -1368,16 +1359,25 @@
       }
 
       container.innerHTML = introBanner + lyrics.map((stanza, lIdx) => {
-        const lineTime = typeof stanza.time === 'number' ? stanza.time : 0;
-        const nextTime = (lIdx < lyrics.length - 1 && typeof lyrics[lIdx + 1].time === 'number')
-          ? lyrics[lIdx + 1].time
+        const lineTime = typeof stanza.startTime === 'number' ? stanza.startTime : (typeof stanza.time === 'number' ? stanza.time : 0);
+        const nextStanzaObj = lIdx < lyrics.length - 1 ? lyrics[lIdx + 1] : null;
+        const nextTime = nextStanzaObj
+          ? (typeof nextStanzaObj.startTime === 'number' ? nextStanzaObj.startTime : (typeof nextStanzaObj.time === 'number' ? nextStanzaObj.time : lineTime + 8))
           : lineTime + 8;
-        const stanzaDuration = Math.max(2, nextTime - lineTime);
+        const stanzaDuration = Math.max(2, (typeof stanza.endTime === 'number' && stanza.endTime > lineTime) ? (stanza.endTime - lineTime) : (nextTime - lineTime));
+        stanza.startTime = lineTime;
+        stanza.time = lineTime;
+        if (typeof stanza.endTime !== 'number' || stanza.endTime <= lineTime) {
+          stanza.endTime = lineTime + stanzaDuration;
+        }
 
         // Soporta array de líneas o texto multilínea dividido por saltos de línea
         const verses = Array.isArray(stanza.lines) && stanza.lines.length > 0
           ? stanza.lines
           : (stanza.text || '').split(/\r?\n/).map(v => v.trim()).filter(Boolean);
+        if (!Array.isArray(stanza.words) || stanza.words.length === 0) {
+          stanza.words = (verses.join(' ') || stanza.text || '').split(/\s+/).filter(Boolean);
+        }
 
         const totalVerses = verses.length || 1;
         const verseDuration = stanzaDuration / totalVerses;
@@ -1407,7 +1407,7 @@
         return `
           <div id="karaokeStanza-${lIdx}"
             class="lyric-line stanza-card lyric-stanza-card music-stanza-row ${isCurrent ? 'active lyric-active scale-[1.02] border-cyan-400 bg-cyan-950/80 text-white' : 'lyric-inactive'}" data-sidx="${lIdx}"
-            data-start="${lineTime}"
+            data-start="${lineTime}" data-end="${stanza.endTime}"
             onclick="window.seekToStanza ? window.seekToStanza(${lineTime}, ${lIdx}) : seekYouTubePlayer(${lineTime}, ${lIdx})">
             <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-slate-700/40">
               <span class="text-[10px] font-extrabold text-cyan-400 uppercase tracking-widest bg-cyan-500/15 px-2.5 py-0.5 rounded-full border border-cyan-500/25">
@@ -1972,6 +1972,9 @@
     window.seekToStanza = seekToStanza;
 
     function seekYouTubePlayer(seconds, stanzaIdx = null) {
+      if (typeof window.seekTrackToSeconds === 'function') {
+        window.seekTrackToSeconds(seconds);
+      }
       seekToStanza(seconds, stanzaIdx);
     }
 
@@ -2257,14 +2260,17 @@
 
     function resumeYouTubePlayer() {
       closeMusicWordModal();
-      if (ytMusicPlayer && typeof ytMusicPlayer.playVideo === 'function') {
+      const activeYt = window._holoYtPlayer || ytMusicPlayer;
+      if (activeYt && typeof activeYt.playVideo === 'function') {
         try {
-          ytMusicPlayer.unMute();
-          ytMusicPlayer.setVolume(100);
-          ytMusicPlayer.playVideo();
+          activeYt.unMute();
+          activeYt.setVolume(100);
+          activeYt.playVideo();
         } catch (_) {}
-      } else {
-        const iframe = document.getElementById('musicYouTubeIframe');
+      }
+      const holoIframe = document.getElementById('musicHoloYoutubeIframe');
+      const legacyIframe = document.getElementById('musicYouTubeIframe');
+      [holoIframe, legacyIframe].forEach(iframe => {
         if (iframe && iframe.contentWindow) {
           try {
             iframe.contentWindow.postMessage('{"event":"command","func":"unMute","args":""}', '*');
@@ -2272,7 +2278,7 @@
             iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
           } catch (_) {}
         }
-      }
+      });
       // NUNCA permitir que ambos suenen a la vez: si el video de YouTube está activo, mantener #mastereng-audio pausado y muteado
       const audioEl = document.getElementById('mastereng-audio') || document.getElementById('karaokeAudioSync') || document.getElementById('karaokeAudioTracker');
       if (audioEl) {
@@ -2280,6 +2286,10 @@
           audioEl.pause();
           audioEl.muted = true;
         } catch (_) {}
+      }
+      window._isHoloStagePlaying = true;
+      if (typeof window.startKaraokeSyncTimer === 'function') {
+        window.startKaraokeSyncTimer();
       }
       if (typeof window.logAudioDiagnosticStatus === 'function') {
         window.logAudioDiagnosticStatus(null, 'Playing', 100);
