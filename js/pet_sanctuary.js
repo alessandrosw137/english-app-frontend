@@ -935,28 +935,75 @@
   }
 
   function closePetSanctuary() {
-    const container = document.getElementById('view-pet-sanctuary');
-    if (container) {
-      container.style.display = 'none';
-      container.classList.add('hidden');
-    }
+    const petSelectors = [
+      '#view-pet-sanctuary',
+      '#pet-sanctuary-root',
+      '#masterpet-sanctuary-view',
+      '#view-pet-game',
+      '#pet-habitat-view',
+      '#pet-engine-root',
+      '#pet-engine-modal',
+      '#pet-arcade-modal',
+      '#masterpet-feed-drawer',
+      '#coopGroupModalOverlay',
+      '#masterpet-coop-modal',
+      '#masterpet-adopt-modal',
+      '#masterpet-vip-limit-modal',
+      '#masterpet-invite-modal',
+      '#masterpet-shop-modal',
+      '#masterpet-auth-lock-modal',
+      '#petShopModal',
+      '#petRenameModal',
+      '#petSpeciesModal',
+      '#petEggHatchModal',
+      '.pet-sanctuary-view',
+      '.pet-habitat-view',
+      '.pet-sanctuary-overlay',
+      '.coop-modal-overlay'
+    ];
+
+    petSelectors.forEach(sel => {
+      try {
+        document.querySelectorAll(sel).forEach(el => {
+          if (el) {
+            el.classList.add('hidden');
+            el.style.setProperty('display', 'none', 'important');
+            el.style.setProperty('visibility', 'hidden', 'important');
+            el.style.setProperty('pointer-events', 'none', 'important');
+          }
+        });
+      } catch (_) {}
+    });
+
     sanctuaryState.isOpen = false;
     sanctuaryState.selectedPetId = null;
+    sanctuaryState.currentView = null;
 
     if (typeof document !== 'undefined' && document.body) {
-      document.body.classList.remove('pet-sanctuary-active');
+      document.body.classList.remove('pet-sanctuary-active', 'pet-view-active');
     }
 
-    // Limpieza de modales residuales
-    ['masterpet-adopt-modal', 'masterpet-coop-modal', 'masterpet-vip-limit-modal', 'masterpet-invite-modal', 'masterpet-shop-modal', 'masterpet-auth-lock-modal'].forEach(id => {
+    // Limpieza y eliminación de modales dinámicos
+    [
+      'masterpet-adopt-modal',
+      'masterpet-coop-modal',
+      'masterpet-vip-limit-modal',
+      'masterpet-invite-modal',
+      'masterpet-shop-modal',
+      'masterpet-auth-lock-modal',
+      'petShopModal',
+      'petRenameModal',
+      'petSpeciesModal',
+      'petEggHatchModal',
+      'coopGroupModalOverlay'
+    ].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.remove();
     });
 
-    const viewGame = document.getElementById('view-pet-game');
-    if (viewGame) {
-      viewGame.style.display = 'none';
-      viewGame.classList.add('hidden');
+    // Detener y cerrar el motor 2D si está activo
+    if (global.PetEngine2D && typeof global.PetEngine2D.closeView === 'function') {
+      try { global.PetEngine2D.closeView(); } catch (_) {}
     }
 
     removeFloatingPetButtons();
@@ -964,19 +1011,53 @@
     // Restaurar con precisión el estado de visualización previo del carrusel de Portales Arcanos
     restorePortalViewsState();
 
-    // Restaurar flujo hacia el menú principal de Portales Arcanos
-    if (typeof global.goToHomePortals === 'function') {
-      try { global.goToHomePortals(); } catch (e) { console.warn(e); }
-    } else if (typeof global.returnToMainPortals === 'function') {
-      try { global.returnToMainPortals(); } catch (e) { console.warn(e); }
-    } else if (typeof global.navigateTo === 'function') {
-      try { global.navigateTo('hub'); } catch (e) { console.warn(e); }
-    } else if (typeof global.showView === 'function') {
-      try { global.showView('view-home'); } catch (e) { console.warn(e); }
+    const portalSelectors = [
+      '#view-home',
+      '#viewHome',
+      '#portalHub',
+      '.portals-section',
+      '#coverFlowViewport',
+      '.coverflow-viewport',
+      '.hub-carousel',
+      '.carousel-viewport',
+      '#portalStarsCanvas'
+    ];
+    portalSelectors.forEach(sel => {
+      try {
+        document.querySelectorAll(sel).forEach(el => {
+          if (el) {
+            el.classList.remove('hidden');
+            el.style.removeProperty('display');
+            el.style.removeProperty('visibility');
+            el.style.removeProperty('pointer-events');
+          }
+        });
+      } catch (_) {}
+    });
+
+    const viewHome = document.getElementById('view-home') || document.getElementById('viewHome');
+    if (viewHome) {
+      viewHome.classList.remove('hidden');
+      viewHome.style.setProperty('display', 'flex', 'important');
+      viewHome.style.setProperty('visibility', 'visible', 'important');
+      viewHome.style.setProperty('pointer-events', 'auto', 'important');
+      viewHome.style.setProperty('opacity', '1', 'important');
+    }
+
+    // Restaurar flujo hacia el menú principal de Portales Arcanos si no se está ejecutando ya returnToMainPortals
+    if (!global._isReturningToPortals) {
+      if (typeof global.goToHomePortals === 'function') {
+        try { global.goToHomePortals(); } catch (e) { console.warn(e); }
+      } else if (typeof global.returnToMainPortals === 'function') {
+        try { global.returnToMainPortals(); } catch (e) { console.warn(e); }
+      } else if (typeof global.navigateTo === 'function') {
+        try { global.navigateTo('hub'); } catch (e) { console.warn(e); }
+      } else if (typeof global.showView === 'function') {
+        try { global.showView('view-home'); } catch (e) { console.warn(e); }
+      }
     }
   }
 
-  // Modal de bloqueo si el usuario no tiene sesión iniciada
   function renderAuthLockModal() {
     ensureSanctuaryStyles();
     let modal = document.getElementById('masterpet-auth-lock-modal');
@@ -2971,6 +3052,7 @@
   global.openPetSanctuary = openPetSanctuary;
   global.closePetSanctuary = closePetSanctuary;
   global.returnToPortals = closePetSanctuary;
+  global.closeMasterPet = closePetSanctuary;
   global.renderSanctuaryHub = renderSanctuaryHub;
   global.openPetRoom = openPetRoom;
   global.loadStoredPets = loadStoredPets;

@@ -370,7 +370,8 @@
   // ============================================================================
   // 7. GESTIÓN Y SUBIDA DE AVATAR (CANVAS COMPRESS 256x256 -> BASE64)
   // ============================================================================
-  function triggerAvatarUpload() {
+  function triggerAvatarUpload(e) {
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
     let fileInput = document.getElementById('profileAvatarFileInput');
     if (!fileInput) {
       fileInput = document.createElement('input');
@@ -496,7 +497,7 @@
         <!-- 1. FOTO DE PORTADA PERSONALIZABLE -->
         <div class="profile-cover-wrapper" style="${coverStyle}">
           <div class="profile-cover-overlay"></div>
-          <button type="button" onclick="window.openEditProfileModal('cover')" class="cover-edit-btn" title="Personalizar portada">
+          <button type="button" onclick="event.stopPropagation(); window.openEditCoverModal(event)" class="cover-edit-btn" title="Personalizar portada">
             <span>📷</span>
             <span>Editar Portada</span>
           </button>
@@ -509,13 +510,13 @@
               <div class="profile-avatar-img">
                 ${avatarHtml}
               </div>
-              <div class="profile-avatar-badge" onclick="window.triggerAvatarUpload()" title="Subir foto de perfil desde tu dispositivo">
+              <div class="profile-avatar-badge" onclick="event.stopPropagation(); window.triggerAvatarUpload(event)" title="Subir foto de perfil desde tu dispositivo">
                 <span>📸</span>
               </div>
             </div>
 
             <div class="profile-action-buttons">
-              <button type="button" onclick="window.openEditProfileModal('general')" class="btn-profile-primary">
+              <button type="button" onclick="event.stopPropagation(); window.openEditProfileModal('general', event)" class="btn-profile-primary">
                 <span>✏️</span>
                 <span>Editar Perfil</span>
               </button>
@@ -528,13 +529,13 @@
               ` : ''}
 
               <!-- BOTÓN SALIR: Cierra el modal limpiamente sin cerrar sesión -->
-              <button type="button" onclick="window.closeProfileModal()" class="btn-profile-secondary border-slate-700 text-slate-300 hover:text-white" title="Cerrar perfil y regresar">
+              <button type="button" onclick="event.stopPropagation(); window.closeProfileModal(event)" class="btn-profile-secondary border-slate-700 text-slate-300 hover:text-white" title="Cerrar perfil y regresar">
                 <span>🚪</span>
                 <span>Salir</span>
               </button>
 
               <!-- BOTÓN CERRAR SESIÓN SEPARADO CON CONFIRMACIÓN -->
-              <button type="button" onclick="window.confirmProfileLogout()" class="btn-profile-secondary border-rose-500/40 text-rose-300 hover:bg-rose-950/40" title="Cerrar sesión de la cuenta">
+              <button type="button" onclick="event.stopPropagation(); window.confirmProfileLogout(event)" class="btn-profile-secondary border-rose-500/40 text-rose-300 hover:bg-rose-950/40" title="Cerrar sesión de la cuenta">
                 <span>🔒</span>
                 <span>Cerrar Sesión</span>
               </button>
@@ -578,7 +579,7 @@
             `).join('') : `
               <span class="text-xs text-slate-500 italic mr-2">Sin intereses agregados</span>
             `}
-            <button type="button" onclick="window.openAddHobbyModal()" class="hobby-pill border-dashed border-sky-400/40 text-sky-300 hover:border-sky-400 cursor-pointer">
+            <button type="button" onclick="event.stopPropagation(); window.openAddHobbyModal(event)" class="hobby-pill border-dashed border-sky-400/40 text-sky-300 hover:border-sky-400 cursor-pointer">
               <span>➕ Agregar</span>
             </button>
           </div>
@@ -637,7 +638,7 @@
             <span class="text-xs text-slate-500 italic mr-2">Sin redes vinculadas</span>
           `}
 
-          <button type="button" onclick="window.openEditSocialLinksModal()" class="ml-auto text-[11px] font-bold text-sky-400 hover:text-sky-300 transition cursor-pointer">
+          <button type="button" onclick="event.stopPropagation(); window.openEditSocialLinksModal(event)" class="ml-auto text-[11px] font-bold text-sky-400 hover:text-sky-300 transition cursor-pointer">
             ⚙️ Editar Redes
           </button>
         </div>
@@ -758,15 +759,15 @@
 
               <!-- Botones Interactivos de Cuidado -->
               <div class="craft-pet-actions-row">
-                <button type="button" onclick="window.interactWithPet('feed')" class="btn-craft-action" title="Alimentar con Vocabulario">
+                <button type="button" onclick="event.stopPropagation(); window.interactWithPet('feed', event)" class="btn-craft-action" title="Alimentar con Vocabulario">
                   <span>🍎</span>
                   <span>Alimentar</span>
                 </button>
-                <button type="button" onclick="window.interactWithPet('pet')" class="btn-craft-action" title="Acariciar">
+                <button type="button" onclick="event.stopPropagation(); window.interactWithPet('pet', event)" class="btn-craft-action" title="Acariciar">
                   <span>✋</span>
                   <span>Acariciar</span>
                 </button>
-                <button type="button" onclick="window.interactWithPet('learn')" class="btn-craft-action" title="Enseñar Palabra en Inglés">
+                <button type="button" onclick="event.stopPropagation(); window.interactWithPet('learn', event)" class="btn-craft-action" title="Enseñar Palabra en Inglés">
                   <span>💡</span>
                   <span>Enseñar (+IQ)</span>
                 </button>
@@ -779,7 +780,7 @@
                 <p class="text-[11px] text-amber-900/80 m-0 leading-relaxed max-w-xs mx-auto">
                   Aún no has adoptado a tu primer Casimerito. ¡Explora el Santuario para incubar un huevo o adoptar tu primera mascota!
                 </p>
-                <button type="button" onclick="window.navigateToMasterPetSanctuary()" class="mt-1 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white text-xs font-black shadow-md border-b-2 border-amber-900 cursor-pointer transition active:scale-95 inline-flex items-center gap-1.5">
+                <button type="button" onclick="event.stopPropagation(); window.navigateToMasterPetSanctuary(event)" class="mt-1 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white text-xs font-black shadow-md border-b-2 border-amber-900 cursor-pointer transition active:scale-95 inline-flex items-center gap-1.5">
                   <span>🐾</span>
                   <span>Ir a MasterPet Sanctuary</span>
                 </button>
@@ -806,7 +807,7 @@
                     <span><strong>${escapeHtml(coopGroup.name)}</strong> (${coopGroup.members ? coopGroup.members.length : 1} miembros)</span>
                   </div>
                 </div>
-                <button type="button" onclick="window.openCoopGroupModal('manage')" class="w-full mt-2 py-2 px-3 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-black text-xs shadow-md border-2 border-amber-800 border-b-4 flex items-center justify-center gap-2 cursor-pointer transition active:translate-y-0.5">
+                <button type="button" onclick="event.stopPropagation(); window.openCoopGroupModal('manage', event)" class="w-full mt-2 py-2 px-3 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-black text-xs shadow-md border-2 border-amber-800 border-b-4 flex items-center justify-center gap-2 cursor-pointer transition active:translate-y-0.5">
                   <span>👥</span>
                   <span>Gestionar Grupo & Invitar Amigos</span>
                 </button>
@@ -814,7 +815,7 @@
                 <p class="text-[11px] text-amber-900/80 my-1 leading-relaxed">
                   Cría mascotas en vivo junto a tu pareja o amigos compartiendo un código de 6 caracteres.
                 </p>
-                <button type="button" onclick="window.openCoopGroupModal('create')" class="w-full mt-1.5 py-2 px-3 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-black text-xs shadow-md border-2 border-amber-800 border-b-4 flex items-center justify-center gap-2 cursor-pointer transition active:translate-y-0.5">
+                <button type="button" onclick="event.stopPropagation(); window.openCoopGroupModal('create', event)" class="w-full mt-1.5 py-2 px-3 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-black text-xs shadow-md border-2 border-amber-800 border-b-4 flex items-center justify-center gap-2 cursor-pointer transition active:translate-y-0.5">
                   <span>🤝</span>
                   <span>Crear o Unirme a Grupo Co-Op</span>
                 </button>
@@ -832,7 +833,8 @@
   // ============================================================================
   // 9. NAVEGACIÓN Y CIERRE DE MODAL LIMPIO
   // ============================================================================
-  function closeProfileModal() {
+  function closeProfileModal(e) {
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
     if (typeof window.closeAllModals === 'function') {
       window.closeAllModals();
     }
@@ -845,7 +847,8 @@
   }
   global.closeProfileModal = closeProfileModal;
 
-  function confirmProfileLogout() {
+  function confirmProfileLogout(e) {
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
     const ok = window.confirm('¿Seguro que deseas cerrar sesión de tu cuenta en este dispositivo?');
     if (ok && typeof window.handleProfileLogout === 'function') {
       window.handleProfileLogout();
@@ -853,8 +856,31 @@
   }
   global.confirmProfileLogout = confirmProfileLogout;
 
-  function navigateToMasterPetSanctuary() {
-    closeProfileModal();
+  function closeSocialProfile(e) {
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+    try {
+      if (typeof window.closeProfileModal === 'function') window.closeProfileModal();
+    } catch (_) {}
+    try {
+      if (typeof window.closeAllModals === 'function') window.closeAllModals();
+    } catch (_) {}
+    const targets = ['profileModal', 'profile-modal', 'user-profile-modal', 'social-profile-modal'];
+    targets.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.style.display = 'none';
+        el.classList.add('hidden');
+        el.classList.remove('active');
+      }
+    });
+  }
+  global.closeSocialProfile = closeSocialProfile;
+  window.closeSocialProfile = closeSocialProfile;
+
+  function navigateToMasterPetSanctuary(e) {
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+    // Requerimiento 2: Cierra primero automáticamente el modal del Perfil de Usuario y luego abre openPetSanctuary
+    closeSocialProfile(e);
     if (typeof window.openPetSanctuary === 'function') {
       window.openPetSanctuary();
     } else if (typeof window.navigateTo === 'function') {
@@ -862,11 +888,13 @@
     }
   }
   global.navigateToMasterPetSanctuary = navigateToMasterPetSanctuary;
+  window.navigateToMasterPetSanctuary = navigateToMasterPetSanctuary;
 
   // ============================================================================
   // 10. INTERACCIÓN CON MASCOTAS EN VIVO (ALIMENTAR, ACARICIAR, ENSEÑAR)
   // ============================================================================
-  function interactWithPet(action) {
+  function interactWithPet(action, e) {
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
     const { pets, hasPet, activePet } = getUserPetsData();
     const toast = (typeof showFloatingToast === 'function')
       ? showFloatingToast
@@ -912,7 +940,8 @@
   // ============================================================================
   // 11. GESTIÓN DE INTERESES & HOBBIES (AGREGAR Y ELIMINAR CON ×)
   // ============================================================================
-  function openAddHobbyModal() {
+  function openAddHobbyModal(e) {
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
     const oldModal = document.getElementById('addHobbyModalOverlay');
     if (oldModal) oldModal.remove();
 
@@ -925,7 +954,7 @@
     overlay.className = 'profile-edit-modal-overlay';
 
     overlay.innerHTML = `
-      <div class="profile-edit-card" onclick="event.stopPropagation();" style="max-width: 480px;">
+      <div class="profile-edit-card" onclick="event.stopPropagation();" style="max-width: 480px; position: relative !important; z-index: 25001 !important;">
         <div class="flex items-center justify-between pb-3 border-b border-slate-700">
           <h3 class="text-base font-black text-white flex items-center gap-2">
             <span>➕</span>
@@ -1000,7 +1029,8 @@
   }
   global.openAddHobbyModal = openAddHobbyModal;
 
-  function addSocialHobby(hobbyText) {
+  function addSocialHobby(hobbyText, e) {
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
     const clean = String(hobbyText || '').trim();
     if (!clean) return;
 
@@ -1038,7 +1068,8 @@
   }
   global.addSocialHobby = addSocialHobby;
 
-  function submitCustomHobby() {
+  function submitCustomHobby(e) {
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
     const inp = document.getElementById('customHobbyInput');
     if (!inp) return;
     const val = inp.value.trim();
@@ -1049,7 +1080,8 @@
   }
   global.submitCustomHobby = submitCustomHobby;
 
-  function removeSocialHobby(hobbyText, keepModalOpen) {
+  function removeSocialHobby(hobbyText, keepModalOpen, e) {
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
     const clean = String(hobbyText || '').trim();
     if (!clean) return;
 
@@ -1125,7 +1157,8 @@
     return `@${clean}`;
   }
 
-  function openEditSocialLinksModal() {
+  function openEditSocialLinksModal(e) {
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
     const oldModal = document.getElementById('editSocialLinksModalOverlay');
     if (oldModal) oldModal.remove();
 
@@ -1138,7 +1171,7 @@
     overlay.className = 'profile-edit-modal-overlay';
 
     overlay.innerHTML = `
-      <div class="profile-edit-card" onclick="event.stopPropagation();" style="max-width: 520px;">
+      <div class="profile-edit-card" onclick="event.stopPropagation();" style="max-width: 520px; position: relative !important; z-index: 25001 !important;">
         <div class="flex items-center justify-between pb-3 border-b border-slate-700">
           <h3 class="text-base font-black text-white flex items-center gap-2">
             <span>🌐</span>
@@ -1197,7 +1230,8 @@
   }
   global.openEditSocialLinksModal = openEditSocialLinksModal;
 
-  function saveSocialLinksEdits() {
+  function saveSocialLinksEdits(e) {
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
     const user = getStoredUser();
     const social = getSocialProfileData(user);
     const newLinks = {};
@@ -1234,6 +1268,142 @@
   // ============================================================================
   // 13. MODAL DE EDICIÓN GENERAL DEL PERFIL (NOMBRE, BIO, CIUDAD, SITUACIÓN)
   // ============================================================================
+  
+  // ============================================================================
+  // GESTIÓN DE PORTADA CON SUB-MODAL DEDICADO (Z-INDEX 25000)
+  // ============================================================================
+  function openEditCoverModal(e) {
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+    const oldModal = document.getElementById('editSocialCoverModalOverlay');
+    if (oldModal) oldModal.remove();
+
+    const user = getStoredUser();
+    const social = getSocialProfileData(user);
+
+    const overlay = document.createElement('div');
+    overlay.id = 'editSocialCoverModalOverlay';
+    overlay.className = 'profile-edit-modal-overlay profile-submodal-overlay';
+    overlay.style.cssText = 'position: fixed !important; inset: 0 !important; z-index: 25000 !important; display: flex !important; align-items: center !important; justify-content: center !important; padding: 16px !important; background: rgba(4, 7, 13, 0.88) !important; backdrop-filter: blur(16px) !important; -webkit-backdrop-filter: blur(16px) !important;';
+
+    overlay.innerHTML = `
+      <div class="profile-edit-card" onclick="event.stopPropagation();" style="max-width: 520px; position: relative !important; z-index: 25001 !important;">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-700">
+          <h3 class="text-base font-black text-white flex items-center gap-2">
+            <span>🖼️</span>
+            <span>Editar Portada del Perfil</span>
+          </h3>
+          <button type="button" onclick="document.getElementById('editSocialCoverModalOverlay').remove()" class="text-slate-400 hover:text-white text-xl font-bold p-1 cursor-pointer">&times;</button>
+        </div>
+
+        <div class="space-y-4 py-3 text-xs">
+          <div>
+            <label class="text-slate-300 font-bold block mb-2">Selecciona un fondo temático:</label>
+            <div class="cover-presets-grid">
+              ${DEFAULT_COVERS.map(c => `
+                <div onclick="window.selectSocialCoverPreset('${c.bg}', '${c.id}')" class="cover-preset-thumb ${social.coverId === c.id ? 'active' : ''}" style="background: ${c.bg}; cursor: pointer;" title="${c.name}">
+                  <span class="sr-only">${c.name}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <div class="pt-2 border-t border-slate-800">
+            <label class="text-slate-300 font-bold block mb-1">O sube una imagen personalizada:</label>
+            <button type="button" onclick="window.triggerCoverUpload(event)" class="w-full py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-sky-300 text-xs font-bold flex items-center justify-center gap-2 cursor-pointer transition">
+              <span>📷</span>
+              <span>Seleccionar imagen de mi dispositivo</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-slate-700 flex justify-end">
+          <button type="button" onclick="document.getElementById('editSocialCoverModalOverlay').remove()" class="btn-profile-primary px-5 py-2 text-xs">
+            <span>Listo</span>
+          </button>
+        </div>
+      </div>
+    `;
+
+    overlay.onclick = function (ev) {
+      if (ev.target === overlay) overlay.remove();
+    };
+
+    document.body.appendChild(overlay);
+  }
+  global.openEditCoverModal = openEditCoverModal;
+  window.openEditCoverModal = openEditCoverModal;
+
+  function triggerCoverUpload(e) {
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+    let fileInput = document.getElementById('profileCoverFileInput');
+    if (!fileInput) {
+      fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.id = 'profileCoverFileInput';
+      fileInput.accept = 'image/*';
+      fileInput.style.display = 'none';
+      document.body.appendChild(fileInput);
+    }
+
+    fileInput.onchange = function (ev) {
+      const file = ev.target.files && ev.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function (event) {
+        const img = new Image();
+        img.onload = function () {
+          const canvas = document.createElement('canvas');
+          canvas.width = 1024;
+          canvas.height = 340;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return;
+
+          const targetAspect = 1024 / 340;
+          const imgAspect = img.width / img.height;
+          let sWidth = img.width;
+          let sHeight = img.height;
+          let sx = 0;
+          let sy = 0;
+
+          if (imgAspect > targetAspect) {
+            sWidth = img.height * targetAspect;
+            sx = (img.width - sWidth) / 2;
+          } else {
+            sHeight = img.width / targetAspect;
+            sy = (img.height - sHeight) / 2;
+          }
+
+          ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, 1024, 340);
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.82);
+
+          const user = getStoredUser();
+          const social = getSocialProfileData(user);
+          social.coverPhoto = compressedBase64;
+          social.coverId = 'custom';
+          saveSocialProfileData(social);
+
+          renderSocialProfileView();
+
+          const coverModal = document.getElementById('editSocialCoverModalOverlay');
+          if (coverModal) coverModal.remove();
+
+          const toast = (typeof showFloatingToast === 'function')
+            ? showFloatingToast
+            : (typeof window !== 'undefined' && typeof window.showFloatingToast === 'function' ? window.showFloatingToast : console.log);
+          toast('🖼️ Portada personalizada actualizada con éxito.');
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+      fileInput.value = '';
+    };
+
+    fileInput.click();
+  }
+  global.triggerCoverUpload = triggerCoverUpload;
+  window.triggerCoverUpload = triggerCoverUpload;
+
   function openEditProfileModal(initialTab) {
     if (initialTab === 'social') {
       openEditSocialLinksModal();
@@ -1259,7 +1429,7 @@
     overlay.className = 'profile-edit-modal-overlay';
 
     overlay.innerHTML = `
-      <div class="profile-edit-card" onclick="event.stopPropagation();">
+      <div class="profile-edit-card" onclick="event.stopPropagation();" style="position: relative !important; z-index: 25001 !important;">
         <div class="flex items-center justify-between pb-3 border-b border-slate-700">
           <h3 class="text-base font-black text-white flex items-center gap-2">
             <span>✏️</span>
@@ -1367,7 +1537,8 @@
   }
   global.selectSocialCoverPreset = selectSocialCoverPreset;
 
-  function saveSocialProfileEdits() {
+  function saveSocialProfileEdits(e) {
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
     const user = getStoredUser();
     const social = getSocialProfileData(user);
 
@@ -1517,7 +1688,7 @@
     overlay.className = 'coop-modal-overlay';
 
     overlay.innerHTML = `
-      <div class="coop-modal-card" onclick="event.stopPropagation();">
+      <div class="coop-modal-card" onclick="event.stopPropagation();" style="position: relative !important; z-index: 25001 !important;">
         <div class="coop-modal-header">
           <h3>
             <span>🤝</span>
@@ -1906,7 +2077,8 @@
     renderSocialProfileView();
   };
 
-  window.closeCoopGroupModal = function () {
+  window.closeCoopGroupModal = function (e) {
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
     const modal = document.getElementById('coopGroupModalOverlay');
     if (modal) modal.remove();
   };

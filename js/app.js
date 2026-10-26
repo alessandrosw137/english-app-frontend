@@ -1661,12 +1661,22 @@ window.isCurrentUserAdmin = function() {
           return;
         }
       } else {
+        if (typeof window.closePetSanctuary === 'function') {
+          try { window.closePetSanctuary(); } catch (_) {}
+        }
         const petSanctuary = document.getElementById('view-pet-sanctuary');
         if (petSanctuary) {
           petSanctuary.classList.add('hidden');
           petSanctuary.style.setProperty('display', 'none', 'important');
           petSanctuary.style.setProperty('pointer-events', 'none', 'important');
           petSanctuary.style.setProperty('visibility', 'hidden', 'important');
+        }
+        const petGame = document.getElementById('view-pet-game');
+        if (petGame) {
+          petGame.classList.add('hidden');
+          petGame.style.setProperty('display', 'none', 'important');
+          petGame.style.setProperty('pointer-events', 'none', 'important');
+          petGame.style.setProperty('visibility', 'hidden', 'important');
         }
         if (typeof window.removeFloatingPetButtons === 'function') {
           window.removeFloatingPetButtons();
@@ -2005,6 +2015,9 @@ window.logout = function() {
     }
 
     function goToHomePortals() {
+      if (typeof window.closePetSanctuary === 'function') {
+        try { window.closePetSanctuary(); } catch (_) {}
+      }
       if (window._isReturningToPortals) return;
       if (typeof window.returnToMainPortals === 'function') {
         window.returnToMainPortals();
@@ -14389,6 +14402,14 @@ window.parseLrcUniversal = function(lrcString, totalSongDuration = 210) {
   window._isReturningToPortals = true;
 
   try {
+    // 0. Cierre total e infalible de MasterPet Sanctuary y hábitat 2D
+    if (typeof window.closePetSanctuary === 'function') {
+      try { window.closePetSanctuary(); } catch (_) {}
+    }
+    if (typeof window.removeFloatingPetButtons === 'function') {
+      try { window.removeFloatingPetButtons(); } catch (_) {}
+    }
+
     // 1. Detener cualquier audio, narración o video en reproducción
     if (typeof window.forceStopAllNarrationAndMedia === 'function') {
       window.forceStopAllNarrationAndMedia(true);
@@ -14401,7 +14422,9 @@ window.parseLrcUniversal = function(lrcString, totalSongDuration = 210) {
     } else if (window.World3D && typeof window.World3D.pauseWorld3D === 'function') {
       try { window.World3D.pauseWorld3D(); } catch (_) {}
     }
-    if (document.body && document.body.classList) { document.body.classList.remove('view-worldtour-active', 'portal-3d-fallback-active'); }
+    if (document.body && document.body.classList) {
+      document.body.classList.remove('view-worldtour-active', 'portal-3d-fallback-active', 'pet-sanctuary-active', 'pet-view-active');
+    }
     if (window.AndroidBridge && typeof window.AndroidBridge.setScreenOrientation === 'function') {
       try { window.AndroidBridge.setScreenOrientation('sensor'); } catch (_) {}
     }
@@ -14416,7 +14439,27 @@ window.parseLrcUniversal = function(lrcString, totalSongDuration = 210) {
       'admin-dashboard-view',
       'crash-recovery-overlay',
       'world3dFloatingBackBtn',
-      'worldTourTopBar'
+      'worldTourTopBar',
+      'view-pet-sanctuary',
+      'pet-sanctuary-root',
+      'masterpet-sanctuary-view',
+      'view-pet-game',
+      'pet-habitat-view',
+      'pet-engine-root',
+      'pet-engine-modal',
+      'pet-arcade-modal',
+      'masterpet-feed-drawer',
+      'coopGroupModalOverlay',
+      'masterpet-coop-modal',
+      'masterpet-adopt-modal',
+      'masterpet-vip-limit-modal',
+      'masterpet-invite-modal',
+      'masterpet-shop-modal',
+      'masterpet-auth-lock-modal',
+      'petShopModal',
+      'petRenameModal',
+      'petSpeciesModal',
+      'petEggHatchModal'
     ];
     secondaryIds.forEach(id => {
       const el = document.getElementById(id);
@@ -14627,11 +14670,14 @@ window.switchMasterView = function(targetMode) {
 
       const text = (btn.textContent || '').trim().toLowerCase();
 
-      // 1. Si el texto del botón pulsado incluye 'regresar a portales', 'volver a portales', 'volver al hub' o 'volver al inicio':
-      if (text.includes('regresar a portales') || text.includes('volver a portales') || text.includes('volver al hub') || text.includes('volver al inicio')) {
+      // 1. Si el texto del botón pulsado incluye 'regresar a portales', 'volver a portales', 'volver al hub', 'volver al inicio' o es #headerGlobalBackBtn:
+      if (text.includes('regresar a portales') || text.includes('volver a portales') || text.includes('volver al hub') || text.includes('volver al inicio') || (btn.id === 'headerGlobalBackBtn')) {
         e.preventDefault();
         e.stopPropagation();
         if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+        if (typeof window.closePetSanctuary === 'function') {
+          try { window.closePetSanctuary(); } catch (_) {}
+        }
         if (typeof window.returnToMainPortals === 'function') window.returnToMainPortals(e);
         return;
       }

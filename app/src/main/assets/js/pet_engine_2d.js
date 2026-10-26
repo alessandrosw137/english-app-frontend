@@ -2236,8 +2236,8 @@
                 <span class="hidden sm:inline">Volver a Mis Mascotas (Santuario)</span>
                 <span class="sm:hidden">Santuario</span>
               </button>
-              <button onclick="window.PetEngine2D.returnToPortals()"
-                      class="px-2.5 py-1.5 bg-[#e0f2fe] hover:bg-[#bae6fd] text-[#0369a1] font-black text-xs rounded-xl border-2 border-[#0284c7] shadow active:scale-95 transition flex items-center gap-1"
+              <button onclick="if (typeof window.closePetSanctuary === 'function') { window.closePetSanctuary(); } else { window.PetEngine2D.returnToPortals(); }"
+                      class="px-2.5 py-1.5 bg-[#e0f2fe] hover:bg-[#bae6fd] text-[#0369a1] font-black text-xs rounded-xl border-2 border-[#0284c7] shadow active:scale-95 transition flex items-center gap-1 cursor-pointer"
                       title="Volver a los Portales">
                 <span>🏠</span>
                 <span>Portales</span>
@@ -2819,7 +2819,11 @@
       this.saveState();
       this.syncWithStoredPets();
       this.closeView();
-      if (typeof window.navigateTo === 'function') {
+      if (typeof window.closePetSanctuary === 'function') {
+        try { window.closePetSanctuary(); } catch (_) {}
+      } else if (typeof window.returnToMainPortals === 'function') {
+        try { window.returnToMainPortals(); } catch (_) {}
+      } else if (typeof window.navigateTo === 'function') {
         window.navigateTo('portals');
       } else if (typeof window.navigateToView === 'function') {
         window.navigateToView('portals');
@@ -3031,7 +3035,9 @@
     closeView() {
       if (this.container) {
         this.container.classList.add('hidden');
-        this.container.style.display = 'none';
+        this.container.style.setProperty('display', 'none', 'important');
+        this.container.style.setProperty('visibility', 'hidden', 'important');
+        this.container.style.setProperty('pointer-events', 'none', 'important');
       }
       this.stopLoop();
       this.saveState();
@@ -3049,6 +3055,21 @@
   // Atajos globales
   global.openPetGameView = (petId) => instance.openView(petId);
   global.closePetGameView = () => instance.closeView();
+  if (typeof global.closePetSanctuary !== 'function') {
+    global.closePetSanctuary = function() {
+      instance.closeView();
+      const s = document.getElementById('view-pet-sanctuary');
+      if (s) {
+        s.classList.add('hidden');
+        s.style.setProperty('display', 'none', 'important');
+        s.style.setProperty('visibility', 'hidden', 'important');
+        s.style.setProperty('pointer-events', 'none', 'important');
+      }
+      if (typeof global.returnToMainPortals === 'function') {
+        global.returnToMainPortals();
+      }
+    };
+  }
   global.togglePetGameView = (petId) => {
     if (instance.container && !instance.container.classList.contains('hidden')) {
       instance.closeView();

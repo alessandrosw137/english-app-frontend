@@ -55,10 +55,19 @@
 /* ==========================================================================
    2. LAYOUT COMPACTO DE PANTALLA ÚNICA PARA EL HÁBITAT 2D (MAX-WIDTH: 960PX)
    ========================================================================== */
-#view-pet-game,
-#view-pet-sanctuary {
+#view-pet-game:not(.hidden):not([style*="display: none"]),
+#view-pet-sanctuary:not(.hidden):not([style*="display: none"]) {
   display: flex !important;
   flex-direction: column !important;
+}
+
+#view-pet-game.hidden,
+#view-pet-sanctuary.hidden,
+#view-pet-game[style*="display: none"],
+#view-pet-sanctuary[style*="display: none"] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
 
 #view-pet-sanctuary main,
@@ -296,8 +305,46 @@ body:has(#view-pet-sanctuary:not(.hidden):not([style*="display: none"])) .carous
 /* ==========================================================================
    4. MODAL EXPANDIDO DE PERFIL SOCIAL
    ========================================================================== */
-#profileModal {
-  z-index: 9999 !important;
+#profileModal,
+#profile-modal,
+#user-profile-modal,
+#social-profile-modal,
+.social-profile-overlay,
+html body #profileModal,
+html body #profileModal:not(.hidden),
+html body #profileModal.active,
+html body #profile-modal,
+html body #user-profile-modal,
+html body #social-profile-modal,
+html body .social-profile-overlay {
+  z-index: 10000 !important;
+}
+
+#profileModal > div,
+#profile-modal > div,
+#user-profile-modal > div,
+#social-profile-modal > div,
+.social-profile-overlay > div,
+html body #profileModal > div,
+html body #profileModal:not(.hidden) > div,
+html body #profileModal.active > div,
+html body #profile-modal > div,
+html body #user-profile-modal > div,
+html body #social-profile-modal > div,
+html body .social-profile-overlay > div {
+  position: relative !important;
+  z-index: 10001 !important;
+}
+
+#profileModal button,
+#profile-modal button,
+#user-profile-modal button,
+#social-profile-modal button,
+html body #profileModal button,
+html body #profileModal:not(.hidden) button,
+html body #profileModal.active button {
+  position: relative !important;
+  z-index: 10002 !important;
 }
 
 #profileModal > div {
@@ -1104,17 +1151,20 @@ body:has(#view-pet-sanctuary:not(.hidden):not([style*="display: none"])) .carous
 /* ==========================================================================
    8. SISTEMA DE GRUPOS CO-OP Y SALAS DE CRIANZA COMPARTIDA
    ========================================================================== */
-.coop-modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(4, 7, 13, 0.88);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  z-index: 100020;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
+.coop-modal-overlay,
+#coopGroupModalOverlay,
+html body .coop-modal-overlay,
+html body #coopGroupModalOverlay {
+  position: fixed !important;
+  inset: 0 !important;
+  background: rgba(4, 7, 13, 0.88) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  z-index: 25000 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 16px !important;
 }
 
 .coop-modal-card {
@@ -1454,17 +1504,28 @@ body:has(#view-pet-sanctuary:not(.hidden):not([style*="display: none"])) .carous
 /* ==========================================================================
    9. EDIT SOCIAL PROFILE MODAL OVERLAY
    ========================================================================== */
-.profile-edit-modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(4, 7, 13, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  z-index: 100002;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
+.profile-edit-modal-overlay,
+.profile-submodal-overlay,
+#editSocialProfileModalOverlay,
+#addHobbyModalOverlay,
+#editSocialLinksModalOverlay,
+#editSocialCoverModalOverlay,
+html body .profile-edit-modal-overlay,
+html body .profile-submodal-overlay,
+html body #editSocialProfileModalOverlay,
+html body #addHobbyModalOverlay,
+html body #editSocialLinksModalOverlay,
+html body #editSocialCoverModalOverlay {
+  position: fixed !important;
+  inset: 0 !important;
+  background: rgba(4, 7, 13, 0.85) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  z-index: 25000 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 16px !important;
 }
 
 .profile-edit-card {
