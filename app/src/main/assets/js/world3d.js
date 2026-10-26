@@ -16,6 +16,10 @@
 (function (global) {
   'use strict';
 
+  // Registro global de constructores modulares de alta definición
+  global.MasterENG3DBuilders = global.MasterENG3DBuilders || {};
+  if (typeof window !== 'undefined') window.MasterENG3DBuilders = global.MasterENG3DBuilders;
+
   // ============================================================================
   // 1. ESTADO DEL MOTOR WEBGL, OPTIMIZACIÓN iOS SAFARI Y CICLO DE VIDA
   // ============================================================================
@@ -650,6 +654,137 @@ ensureOrbitControls();
   // ============================================================================
   const SHARED_MATERIALS = {};
 
+  // --- GENERADORES PROCEDURALES PBR DE ALTA RESOLUCIÓN ---
+  let cachedPBRWoodTexture = null;
+  function createPBRWoodTexture() {
+    if (cachedPBRWoodTexture) return cachedPBRWoodTexture;
+    if (typeof document === 'undefined' || typeof THREE === 'undefined') return null;
+    const canvas = document.createElement('canvas');
+    canvas.width = 512; canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    ctx.fillStyle = '#b47b38';
+    ctx.fillRect(0, 0, 512, 512);
+    for (let y = 0; y < 512; y += 8) {
+      const dark = (y % 16 === 0);
+      ctx.fillStyle = dark ? 'rgba(78, 38, 12, 0.28)' : 'rgba(235, 185, 130, 0.22)';
+      ctx.fillRect(0, y, 512, 4);
+    }
+    for (let i = 0; i < 40; i++) {
+      ctx.strokeStyle = 'rgba(60, 30, 10, 0.18)';
+      ctx.lineWidth = 1 + Math.random() * 2;
+      ctx.beginPath();
+      ctx.moveTo(0, Math.random() * 512);
+      if (typeof ctx.bezierCurveTo === 'function') {
+        ctx.bezierCurveTo(150, Math.random() * 512, 350, Math.random() * 512, 512, Math.random() * 512);
+      } else {
+        ctx.lineTo(512, Math.random() * 512);
+      }
+      ctx.stroke();
+    }
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(3, 3);
+    cachedPBRWoodTexture = tex;
+    return tex;
+  }
+
+  let cachedPBRMarbleTexture = null;
+  function createPBRMarbleTexture() {
+    if (cachedPBRMarbleTexture) return cachedPBRMarbleTexture;
+    if (typeof document === 'undefined' || typeof THREE === 'undefined') return null;
+    const canvas = document.createElement('canvas');
+    canvas.width = 512; canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    ctx.fillStyle = '#f8fafc';
+    ctx.fillRect(0, 0, 512, 512);
+    for (let i = 0; i < 28; i++) {
+      ctx.strokeStyle = i % 2 === 0 ? 'rgba(100, 116, 139, 0.22)' : 'rgba(71, 85, 105, 0.15)';
+      ctx.lineWidth = 1.5 + Math.random() * 3.5;
+      ctx.beginPath();
+      ctx.moveTo(Math.random() * 512, 0);
+      if (typeof ctx.bezierCurveTo === 'function') {
+        ctx.bezierCurveTo(Math.random() * 512, 180, Math.random() * 512, 340, Math.random() * 512, 512);
+      } else {
+        ctx.lineTo(Math.random() * 512, 512);
+      }
+      ctx.stroke();
+    }
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(2, 2);
+    cachedPBRMarbleTexture = tex;
+    return tex;
+  }
+
+  let cachedPBRFabricTexture = null;
+  function createPBRFabricTexture() {
+    if (cachedPBRFabricTexture) return cachedPBRFabricTexture;
+    if (typeof document === 'undefined' || typeof THREE === 'undefined') return null;
+    const canvas = document.createElement('canvas');
+    canvas.width = 256; canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    ctx.fillStyle = '#334155';
+    ctx.fillRect(0, 0, 256, 256);
+    for (let x = 0; x < 256; x += 4) {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+      ctx.fillRect(x, 0, 2, 256);
+    }
+    for (let y = 0; y < 256; y += 4) {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.12)';
+      ctx.fillRect(0, y, 256, 2);
+    }
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(6, 6);
+    cachedPBRFabricTexture = tex;
+    return tex;
+  }
+
+  let cachedPBRSteelTexture = null;
+  function createPBRSteelTexture() {
+    if (cachedPBRSteelTexture) return cachedPBRSteelTexture;
+    if (typeof document === 'undefined' || typeof THREE === 'undefined') return null;
+    const canvas = document.createElement('canvas');
+    canvas.width = 256; canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    ctx.fillStyle = '#94a3b8';
+    ctx.fillRect(0, 0, 256, 256);
+    for (let y = 0; y < 256; y += 2) {
+      ctx.fillStyle = y % 4 === 0 ? 'rgba(255, 255, 255, 0.15)' : 'rgba(51, 65, 85, 0.15)';
+      ctx.fillRect(0, y, 256, 1);
+    }
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(4, 4);
+    cachedPBRSteelTexture = tex;
+    return tex;
+  }
+
+  let cachedPBRFoliageTexture = null;
+  function createPBRFoliageTexture() {
+    if (cachedPBRFoliageTexture) return cachedPBRFoliageTexture;
+    if (typeof document === 'undefined' || typeof THREE === 'undefined') return null;
+    const canvas = document.createElement('canvas');
+    canvas.width = 256; canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    ctx.fillStyle = '#15803d';
+    ctx.fillRect(0, 0, 256, 256);
+    for (let i = 0; i < 400; i++) {
+      ctx.fillStyle = i % 2 === 0 ? 'rgba(34, 197, 94, 0.22)' : 'rgba(20, 83, 45, 0.25)';
+      ctx.fillRect(Math.random() * 256, Math.random() * 256, 3 + Math.random() * 4, 3 + Math.random() * 4);
+    }
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(3, 3);
+    cachedPBRFoliageTexture = tex;
+    return tex;
+  }
+
   let cachedWoodTexture = null;
   let cachedOakWoodTexture = null;
   function createOakWoodTexture() {
@@ -1118,8 +1253,15 @@ ensureOrbitControls();
       terracottaPot: new PhysicalMat({ color: 0xc2410c, normalMap: nStone, normalScale: vScale(0.42), roughness: 0.72, metalness: 0.06 }),
       soilDark: new THREE.MeshStandardMaterial({ color: 0x27170a, normalMap: nFoliage, normalScale: vScale(0.55), roughness: 0.92, metalness: 0.0 }),
 
-      // Vidrio Cristalino PBR (transmission: 0.85, clearcoat: 0.6, roughness: 0.25), Pantallas y Luces
-      glassClear: new PhysicalMat({ color: 0xe0f2fe, roughness: 0.12, metalness: 0.05, transmission: 0.85, clearcoat: 0.6, transparent: true, opacity: 0.55 }),
+      // Materiales PBR Procedurales Adicionales (Alta Resolución y Realismo)
+      marbleVeined: new PhysicalMat({ color: 0xf8fafc, map: createPBRMarbleTexture(), normalMap: nStone, normalScale: vScale(0.25), roughness: 0.15, metalness: 0.04, clearcoat: 0.95 }),
+      fabricWoven: new PhysicalMat({ color: 0x334155, map: createPBRFabricTexture(), normalMap: nFabric, normalScale: vScale(0.40), roughness: 0.82, metalness: 0.02 }),
+      brushedSteel: new PhysicalMat({ color: 0x94a3b8, map: createPBRSteelTexture(), normalMap: nMetal, normalScale: vScale(0.35), roughness: 0.25, metalness: 0.85, clearcoat: 0.5 }),
+      foliageOrganic: new THREE.MeshStandardMaterial({ color: 0x15803d, map: createPBRFoliageTexture(), normalMap: nFoliage, normalScale: vScale(0.45), roughness: 0.75, metalness: 0.02 }),
+      ceramicGlazed: new PhysicalMat({ color: 0xffffff, normalMap: nStone, normalScale: vScale(0.12), roughness: 0.10, metalness: 0.04, clearcoat: 0.95 }),
+
+      // Vidrio Cristalino PBR (transmission: 0.9, clearcoat: 1.0, roughness: 0.05), Pantallas y Luces
+      glassClear: new PhysicalMat({ color: 0xe0f2fe, roughness: 0.05, metalness: 0.02, transmission: 0.90, clearcoat: 1.0, transparent: true, opacity: 0.45, ior: 1.5 }),
       glassLantern: new PhysicalMat({ color: 0xfffbeb, emissive: 0xfef08a, emissiveIntensity: 0.35, roughness: 0.15, metalness: 0.10, transmission: 0.65, clearcoat: 0.6, transparent: true, opacity: 0.78 }),
       lampShadeWarm: new THREE.MeshStandardMaterial({ color: 0xfef3c7, normalMap: nFabric, normalScale: vScale(0.28), emissive: 0xf59e0b, emissiveIntensity: 0.65, roughness: 0.35, metalness: 0.05, side: THREE.DoubleSide }),
       emissiveScreen: new THREE.MeshStandardMaterial({ color: 0x06b6d4, emissive: 0x38bdf8, emissiveIntensity: 0.85, roughness: 0.22 }),
@@ -1127,6 +1269,8 @@ ensureOrbitControls();
       steamTranslucent: new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.90, transparent: true, opacity: 0.38 })
     };
     Object.assign(SHARED_MATERIALS, defs);
+    global.PBRLib = SHARED_MATERIALS;
+    if (typeof window !== 'undefined') window.PBRLib = SHARED_MATERIALS;
     return SHARED_MATERIALS;
   }
   if (typeof THREE !== 'undefined') initSharedMaterials();
@@ -2757,11 +2901,21 @@ ensureOrbitControls();
   // Constructor modular de objetos 3D compuestos (THREE.Group + userData = { id, en, ipa, es, category, example })
   function buildCompound3DObject(itemSpec, scenarioKey) {
     if (typeof THREE === 'undefined' || !itemSpec) return null;
+    const px = itemSpec.pos ? itemSpec.pos[0] : 0;
+    const rawPy = itemSpec.pos ? itemSpec.pos[1] : 0;
+    const pz = itemSpec.pos ? itemSpec.pos[2] : 0;
+    const id = itemSpec.id || '';
+    const isConceptOrPhrase = itemSpec.type === 'concept' || itemSpec.type === 'phrase';
+
+    // 1. Conceptos abstractos y frases interactivas usan el Pin Flotante AAA
+    if (isConceptOrPhrase) {
+      return buildHolographicConceptNode(itemSpec, scenarioKey);
+    }
+
     const M = initSharedMaterials();
     const PhysicalMat = THREE.MeshPhysicalMaterial || THREE.MeshStandardMaterial;
     const group = new THREE.Group();
     group.name = itemSpec.en || itemSpec.id;
-    const id = itemSpec.id || '';
     const enLower = (itemSpec.en || '').toLowerCase();
 
     const matGold = M.metalBrass;
@@ -2778,8 +2932,215 @@ ensureOrbitControls();
     const matBrass = M.metalBrass || matGold;
     const matStone = M.stoneGray || matDark;
 
-    // --- MUNDO DATING (ROMANTIC DATE & BISTRO 3D) ---
-    if (id === 'dating_table_for_two' || enLower.includes('table for two') || id === 'rest_dining_table') {
+    // 2. Comprobar catálogo modular de alta definición (MasterENG3DBuilders)
+    const builder = (typeof window !== 'undefined' && window.MasterENG3DBuilders && window.MasterENG3DBuilders[id]) ||
+                    (global.MasterENG3DBuilders && global.MasterENG3DBuilders[id]);
+    if (typeof builder === 'function') {
+      try {
+        const built = builder(itemSpec, scenarioKey, M);
+        if (built) {
+          group.add(built);
+        }
+      } catch (errBuilder) {
+        console.warn('[World3D] Error in modular builder for', id, errBuilder);
+      }
+    }
+
+    // 3. Constructores hiper-detallados locales (si no se cargó un módulo externo)
+    if (group.children.length === 0) {
+    if (id === 'desk' || enLower.includes('desk')) {
+      const top = new THREE.Mesh(new THREE.BoxGeometry(1.65, 0.065, 0.85), M.woodOak);
+      top.position.y = 0.74;
+      [[-0.72, -0.34], [0.72, -0.34], [-0.72, 0.34], [0.72, 0.34]].forEach(([lx, lz]) => {
+        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.025, 0.74, 12), M.woodWalnut);
+        leg.position.set(lx, 0.37, lz);
+        group.add(leg);
+      });
+      const cabinet = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.48, 0.76), M.woodWalnut);
+      cabinet.position.set(0.54, 0.48, 0);
+      const pull = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.02, 0.02), M.metalBrass);
+      pull.position.set(0.54, 0.58, 0.39);
+      const lapBase = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.015, 0.24), M.metalDark);
+      lapBase.position.set(-0.15, 0.78, 0.05);
+      const lapScreen = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.22, 0.012), M.metalDark);
+      lapScreen.position.set(-0.15, 0.88, -0.06);
+      lapScreen.rotation.x = -0.25;
+      const glowDisplay = new THREE.Mesh(new THREE.PlaneGeometry(0.31, 0.19), M.emissiveScreen);
+      glowDisplay.position.set(-0.15, 0.88, -0.05);
+      glowDisplay.rotation.x = -0.25;
+      group.add(top, cabinet, pull, lapBase, lapScreen, glowDisplay);
+    } else if (id === 'computer_monitor' || enLower.includes('computer monitor')) {
+      const standBase = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.20, 0.025, 20), M.metalDark);
+      standBase.position.y = 0.0125;
+      const arm = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.38, 0.04), M.metalDark);
+      arm.position.set(0, 0.20, -0.06);
+      const bezel = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.54, 0.03), M.ironBlack);
+      bezel.position.set(0, 0.44, 0);
+      const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.88, 0.50), M.emissiveScreen);
+      screen.position.set(0, 0.44, 0.018);
+      group.add(standBase, arm, bezel, screen);
+    } else if (id === 'office_chair' || enLower.includes('office chair')) {
+      for (let w = 0; w < 5; w++) {
+        const ang = (w / 5) * Math.PI * 2;
+        const starArm = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.03, 0.28), M.metalChrome);
+        starArm.position.set(Math.cos(ang) * 0.14, 0.07, Math.sin(ang) * 0.14);
+        starArm.rotation.y = -ang;
+        const wheel = new THREE.Mesh(new THREE.SphereGeometry(0.032, 8, 8), M.ironBlack);
+        wheel.position.set(Math.cos(ang) * 0.28, 0.035, Math.sin(ang) * 0.28);
+        group.add(starArm, wheel);
+      }
+      const piston = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.36, 12), M.metalChrome);
+      piston.position.y = 0.25;
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.09, 0.52), M.leatherBlack || M.metalDark);
+      seat.position.y = 0.46;
+      const back = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.62, 0.06), M.leatherBlack || M.metalDark);
+      back.position.set(0, 0.78, -0.22);
+      back.rotation.x = 0.08;
+      [-0.29, 0.29].forEach(ax => {
+        const armPost = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.22, 8), M.metalDark);
+        armPost.position.set(ax, 0.55, -0.02);
+        const armRest = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.03, 0.26), M.ironBlack);
+        armRest.position.set(ax, 0.66, -0.02);
+        group.add(armPost, armRest);
+      });
+      group.add(piston, seat, back);
+    } else if (id === 'bookshelf' || enLower.includes('bookshelf')) {
+      const sidesMat = M.woodWalnut;
+      const shelfWidth = 1.35, shelfHeight = 2.1, shelfDepth = 0.38;
+      [-shelfWidth / 2, shelfWidth / 2].forEach(sx => {
+        const sidePanel = new THREE.Mesh(new THREE.BoxGeometry(0.05, shelfHeight, shelfDepth), sidesMat);
+        sidePanel.position.set(sx, shelfHeight / 2, 0);
+        group.add(sidePanel);
+      });
+      const topPanel = new THREE.Mesh(new THREE.BoxGeometry(shelfWidth, 0.05, shelfDepth), sidesMat);
+      topPanel.position.set(0, shelfHeight - 0.025, 0);
+      const backPanel = new THREE.Mesh(new THREE.BoxGeometry(shelfWidth, shelfHeight, 0.02), M.woodDark);
+      backPanel.position.set(0, shelfHeight / 2, -shelfDepth / 2 + 0.01);
+      group.add(topPanel, backPanel);
+      const bookColors = [0x991b1b, 0x1e3a8a, 0x166534, 0x854d0e, 0x581c87, 0x0f766e];
+      [0.05, 0.55, 1.05, 1.55].forEach((sy, sIdx) => {
+        const shelf = new THREE.Mesh(new THREE.BoxGeometry(shelfWidth - 0.05, 0.04, shelfDepth - 0.02), sidesMat);
+        shelf.position.set(0, sy, 0);
+        group.add(shelf);
+        for (let b = 0; b < 6; b++) {
+          const bMat = new PhysicalMat({ color: bookColors[(sIdx + b) % bookColors.length], roughness: 0.4 });
+          const book = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.24 + (b % 3) * 0.04, 0.20), bMat);
+          book.position.set(-0.45 + b * 0.075, sy + 0.14, 0.02);
+          group.add(book);
+        }
+      });
+    } else if (id === 'window' || enLower.includes('panoramic window')) {
+      const frameMat = M.woodWalnut || matDark;
+      const fTop = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.08, 0.12), frameMat);
+      fTop.position.set(0, 1.15, 0);
+      const fBot = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.08, 0.12), frameMat);
+      fBot.position.set(0, -1.15, 0);
+      const fLeft = new THREE.Mesh(new THREE.BoxGeometry(0.08, 2.38, 0.12), frameMat);
+      fLeft.position.set(-1.16, 0, 0);
+      const fRight = new THREE.Mesh(new THREE.BoxGeometry(0.08, 2.38, 0.12), frameMat);
+      fRight.position.set(1.16, 0, 0);
+      const glass = new THREE.Mesh(new THREE.PlaneGeometry(2.24, 2.22), M.glassClear);
+      glass.position.set(0, 0, 0);
+      const mullionV = new THREE.Mesh(new THREE.BoxGeometry(0.04, 2.22, 0.06), frameMat);
+      const mullionH = new THREE.Mesh(new THREE.BoxGeometry(2.24, 0.04, 0.06), frameMat);
+      group.add(fTop, fBot, fLeft, fRight, glass, mullionV, mullionH);
+    } else if (id === 'sofa' || enLower.includes('sofa') || enLower.includes('couch')) {
+      const fabricMat = M.fabricWoven || M.fabricNavyTufted || new PhysicalMat({ color: 0x1e293b, roughness: 0.8 });
+      const mainSeat = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.38, 0.95), fabricMat);
+      mainSeat.position.set(0, 0.28, 0);
+      const lSeat = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.38, 1.1), fabricMat);
+      lSeat.position.set(-0.68, 0.28, 0.65);
+      const mainBack = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.65, 0.25), fabricMat);
+      mainBack.position.set(0, 0.68, -0.42);
+      [-1.15, 1.15].forEach(ax => {
+        const arm = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.48, 1.05), fabricMat);
+        arm.position.set(ax, 0.48, 0.05);
+        group.add(arm);
+      });
+      [[-1.0, -0.4], [1.0, -0.4], [-1.0, 1.1], [1.0, 0.4]].forEach(([lx, lz]) => {
+        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.025, 0.18, 12), M.woodWalnut);
+        leg.position.set(lx, 0.09, lz);
+        group.add(leg);
+      });
+      const pillow1 = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.36, 0.14), M.fabricGold || matGold);
+      pillow1.position.set(0.85, 0.58, -0.22);
+      pillow1.rotation.y = -0.35;
+      const pillow2 = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.36, 0.14), matRosePink);
+      pillow2.position.set(-0.85, 0.58, -0.22);
+      pillow2.rotation.y = 0.35;
+      group.add(mainSeat, lSeat, mainBack, pillow1, pillow2);
+    } else if (id === 'armchair' || enLower.includes('armchair')) {
+      const acMat = M.fabricTerracotta || new PhysicalMat({ color: 0xc2410c, roughness: 0.75 });
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(0.82, 0.22, 0.82), acMat);
+      seat.position.y = 0.38;
+      const back = new THREE.Mesh(new THREE.BoxGeometry(0.82, 0.72, 0.22), acMat);
+      back.position.set(0, 0.74, -0.32);
+      [-0.42, 0.42].forEach(ax => {
+        const arm = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.42, 0.78), acMat);
+        arm.position.set(ax, 0.52, 0);
+        group.add(arm);
+      });
+      [[-0.32, -0.32], [0.32, -0.32], [-0.32, 0.32], [0.32, 0.32]].forEach(([lx, lz]) => {
+        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.018, 0.28, 12), M.woodWalnut);
+        leg.position.set(lx, 0.14, lz);
+        group.add(leg);
+      });
+      group.add(seat, back);
+    } else if (id === 'coffee_table' || enLower.includes('coffee table')) {
+      const top = new THREE.Mesh(new THREE.CylinderGeometry(0.58, 0.58, 0.045, 32), M.woodOak);
+      top.position.y = 0.42;
+      for (let l = 0; l < 3; l++) {
+        const ang = (l / 3) * Math.PI * 2;
+        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.015, 0.42, 12), M.metalBrass);
+        leg.position.set(Math.cos(ang) * 0.42, 0.21, Math.sin(ang) * 0.42);
+        group.add(leg);
+      }
+      const mug = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.045, 0.09, 16), M.ceramicWhite);
+      mug.position.set(0.08, 0.485, 0.06);
+      const coffee = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.01, 14), matWalnut);
+      coffee.position.set(0.08, 0.52, 0.06);
+      group.add(top, mug, coffee);
+    } else if (id === 'floor_lamp' || enLower.includes('floor lamp')) {
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.26, 0.05, 24), M.marbleVeined || matDark);
+      base.position.y = 0.025;
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.85, 14), M.metalBrass);
+      pole.position.y = 0.95;
+      const shade = new THREE.Mesh(new THREE.ConeGeometry(0.32, 0.38, 24, 1, true), M.lampShadeWarm || matWhite);
+      shade.position.y = 1.95;
+      const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 12), M.emissiveBulb);
+      bulb.position.y = 1.88;
+      group.add(base, pole, shade, bulb);
+    } else if (id === 'wall_clock' || enLower.includes('wall clock')) {
+      const rim = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.025, 12, 32), M.metalBrass);
+      const dial = new THREE.Mesh(new THREE.CircleGeometry(0.28, 32), M.ceramicWhite);
+      dial.position.z = -0.01;
+      const centerPin = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.02, 12), M.metalDark);
+      centerPin.rotation.x = Math.PI / 2;
+      const hHand = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.11, 0.005), M.ironBlack);
+      hHand.position.set(0.03, 0.04, 0.005);
+      hHand.rotation.z = -0.55;
+      const mHand = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.18, 0.005), M.ironBlack);
+      mHand.position.set(0, 0.08, 0.005);
+      group.add(rim, dial, centerPin, hHand, mHand);
+    } else if (id === 'indoor_plant' || enLower.includes('indoor plant')) {
+      const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.18, 0.42, 18), M.terracottaPot);
+      pot.position.y = 0.21;
+      const soil = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.02, 18), M.soilDark);
+      soil.position.y = 0.41;
+      group.add(pot, soil);
+      for (let f = 0; f < 7; f++) {
+        const ang = (f / 7) * Math.PI * 2;
+        const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.45, 8), M.trunkBark);
+        stem.position.set(Math.cos(ang) * 0.08, 0.55, Math.sin(ang) * 0.08);
+        stem.rotation.z = Math.sin(ang) * 0.45;
+        stem.rotation.x = Math.cos(ang) * 0.45;
+        const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 10), M.leafGreen3);
+        leaf.scale.set(1.1, 0.12, 0.65);
+        leaf.position.set(Math.cos(ang) * 0.28, 0.75, Math.sin(ang) * 0.28);
+        leaf.rotation.y = ang;
+        group.add(stem, leaf);
+      }
+    } else if (id === 'dating_table_for_two' || enLower.includes('table for two') || id === 'rest_dining_table') {
       const base = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.5, 0.08, 24), matDark);
       base.position.y = 0.04;
       const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.90, 16), matDark);
@@ -5052,22 +5413,23 @@ ensureOrbitControls();
         bookmark.position.set(0, 0.0225, 0.02);
         group.add(bookCover, pages, bookmark);
       } else {
-        // Lámpara de mesa de latón con pantalla cónica cálida y luz sutil
-        const lampFoot = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.10, 0.03, 16), matBrass);
-        lampFoot.position.y = 0.015;
-        const lampStem = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.018, 0.22, 12), matBrass);
-        lampStem.position.y = 0.14;
-        const shade = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.14, 16, 1, true), matWhite);
-        shade.position.y = 0.28;
-        group.add(lampFoot, lampStem, shade);
+        // Elegante pedestal de exhibición holográfico (base cúbica oscura con borde neón cian y cristal octaédrico)
+        const pedestalBase = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.45, 0.42), M.metalDark || matDark);
+        pedestalBase.position.y = 0.225;
+        const neonTrim = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.025, 0.44), M.emissiveScreen || new THREE.MeshBasicMaterial({ color: 0x06b6d4 }));
+        neonTrim.position.y = 0.45;
+        const crystal = new THREE.Mesh(
+          new THREE.OctahedronGeometry(0.15, 0),
+          new PhysicalMat({ color: 0x38bdf8, roughness: 0.12, metalness: 0.08, transmission: 0.85, clearcoat: 0.9, transparent: true, opacity: 0.85 })
+        );
+        crystal.position.y = 0.65;
+        crystal.rotation.y = 0.45;
+        group.add(pedestalBase, neonTrim, crystal);
       }
     }
+    } // Fin if (group.children.length === 0)
 
-    const px = itemSpec.pos ? itemSpec.pos[0] : 0;
-    const rawPy = itemSpec.pos ? itemSpec.pos[1] : 0;
-    const isConceptOrPhrase = itemSpec.type === 'concept' || itemSpec.type === 'phrase';
-
-    // Cálculo de elevación física realista según contexto y escenario
+    // Cálculo de elevación física realista según contexto y escenario (px, rawPy, pz ya declarados de forma segura al inicio)
     let py = rawPy;
     if (scenarioKey === 'space') {
       py = rawPy;
@@ -5102,21 +5464,10 @@ ensureOrbitControls();
         py = 0;
       }
     } else if (scenarioKey === 'house') {
-      if (isConceptOrPhrase) {
-        if (px > 2.0 && pz < -2.0) {
-          py = 0.95;
-        } else if (px < -2.0 && pz < -3.0) {
-          py = 0.45;
-        } else {
-          py = 0;
-        }
-      } else {
-        py = rawPy;
-      }
+      py = rawPy;
     } else {
-      py = isConceptOrPhrase ? 0 : rawPy;
+      py = rawPy;
     }
-    const pz = itemSpec.pos ? itemSpec.pos[2] : 0;
     group.position.set(px, py, pz);
 
     const userData = {
@@ -5170,9 +5521,139 @@ ensureOrbitControls();
     return new THREE.CanvasTexture(canvas);
   }
 
-  // Reemplazo realista: construye un modelo 3D físico contextual en vez de una esfera flotante con cartel gigante
+  // Constructor de Pin Flotante de Interfaz 3D estilo Videojuego AAA (THREE.Sprite + Anclaje + Baliza)
   function buildHolographicConceptNode(itemSpec, scenarioKey) {
-    return buildCompound3DObject(itemSpec, scenarioKey);
+    if (typeof THREE === 'undefined' || !itemSpec) return null;
+    const px = itemSpec.pos ? itemSpec.pos[0] : 0;
+    const rawPy = itemSpec.pos ? itemSpec.pos[1] : 1.8;
+    const pz = itemSpec.pos ? itemSpec.pos[2] : 0;
+    const py = Math.max(1.6, rawPy);
+
+    const pinGroup = new THREE.Group();
+    pinGroup.name = itemSpec.en || itemSpec.id;
+    pinGroup.position.set(px, py, pz);
+
+    const isPhrase = itemSpec.type === 'phrase';
+
+    let icon = isPhrase ? '💬' : '💡';
+    let themeColor = isPhrase ? '#a855f7' : '#06b6d4';
+    let themeHex = isPhrase ? 0xa855f7 : 0x06b6d4;
+
+    if (scenarioKey === 'space') {
+      icon = '🌌'; themeColor = '#38bdf8'; themeHex = 0x38bdf8;
+    } else if (scenarioKey === 'garden') {
+      icon = '🌿'; themeColor = '#10b981'; themeHex = 0x10b981;
+    } else if (scenarioKey === 'dating') {
+      icon = isPhrase ? '🍷' : '💖'; themeColor = '#f43f5e'; themeHex = 0xf43f5e;
+    } else if (scenarioKey === 'restaurant') {
+      icon = '🍽️'; themeColor = '#f59e0b'; themeHex = 0xf59e0b;
+    } else if (scenarioKey === 'hotel') {
+      icon = '🛎️'; themeColor = '#eab308'; themeHex = 0xeab308;
+    } else if (scenarioKey === 'supermarket') {
+      icon = '🛒'; themeColor = '#0284c7'; themeHex = 0x0284c7;
+    } else if (scenarioKey === 'house') {
+      icon = isPhrase ? '💬' : '🏠'; themeColor = '#38bdf8'; themeHex = 0x38bdf8;
+    }
+
+    if (typeof document !== 'undefined') {
+      const canvas = document.createElement('canvas');
+      canvas.width = 640; canvas.height = 220;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = 'rgba(10, 15, 30, 0.90)';
+        if (typeof ctx.roundRect === 'function') {
+          ctx.beginPath();
+          ctx.roundRect(10, 10, 620, 200, 28);
+          ctx.fill();
+          ctx.strokeStyle = themeColor;
+          ctx.lineWidth = 5;
+          ctx.stroke();
+        } else {
+          ctx.fillRect(10, 10, 620, 200);
+          ctx.strokeStyle = themeColor;
+          ctx.lineWidth = 5;
+          ctx.strokeRect(10, 10, 620, 200);
+        }
+
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+        ctx.fillRect(32, 24, 210, 36);
+        ctx.font = 'bold 20px system-ui, -apple-system, sans-serif';
+        ctx.fillStyle = themeColor;
+        ctx.textAlign = 'left';
+        ctx.fillText(`${icon} ${isPhrase ? 'INTERACTIVE PHRASE' : 'CORE CONCEPT'}`, 44, 49);
+
+        ctx.font = 'bold 34px system-ui, -apple-system, sans-serif';
+        ctx.fillStyle = '#ffffff';
+        let enText = itemSpec.en || itemSpec.id;
+        if (enText.length > 28) enText = enText.slice(0, 26) + '...';
+        ctx.fillText(enText, 34, 110);
+
+        ctx.font = '22px system-ui, -apple-system, sans-serif';
+        ctx.fillStyle = '#38bdf8';
+        const ipaText = itemSpec.ipa ? `${itemSpec.ipa}  •  ` : '';
+        ctx.fillText(ipaText, 34, 155);
+
+        const ipaWidth = ctx.measureText(ipaText).width;
+        ctx.font = '600 22px system-ui, -apple-system, sans-serif';
+        ctx.fillStyle = '#cbd5e1';
+        let esText = itemSpec.es || '';
+        if (esText.length > 24) esText = esText.slice(0, 22) + '...';
+        ctx.fillText(esText, 34 + ipaWidth, 155);
+
+        const spriteTex = new THREE.CanvasTexture(canvas);
+        const spriteMat = new THREE.SpriteMaterial({ map: spriteTex, transparent: true, depthWrite: false });
+        const sprite = new THREE.Sprite(spriteMat);
+        sprite.scale.set(2.4, 0.825, 1.0);
+        sprite.position.set(0, 0, 0);
+        pinGroup.add(sprite);
+      }
+    }
+
+    const tetherGeo = new THREE.CylinderGeometry(0.012, 0.012, py, 8);
+    const tetherMat = new THREE.MeshBasicMaterial({ color: themeHex, transparent: true, opacity: 0.55 });
+    const tether = new THREE.Mesh(tetherGeo, tetherMat);
+    tether.position.set(0, -py / 2, 0);
+    pinGroup.add(tether);
+
+    const ringGeo = new THREE.RingGeometry(0.18, 0.26, 32);
+    const ringMat = new THREE.MeshBasicMaterial({ color: themeHex, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.set(0, -py + 0.01, 0);
+    pinGroup.add(ring);
+
+    const hitBox = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.9, 0.4), new THREE.MeshBasicMaterial({ visible: false }));
+    pinGroup.add(hitBox);
+
+    const userData = {
+      interactive: true,
+      isConceptNode: true,
+      id: itemSpec.id,
+      en: itemSpec.en,
+      ipa: itemSpec.ipa,
+      es: itemSpec.es,
+      category: itemSpec.category || scenarioKey,
+      example: itemSpec.example,
+      type: itemSpec.type || 'concept',
+      wordEn: itemSpec.en,
+      phonetic: itemSpec.ipa,
+      wordEs: itemSpec.es,
+      focusPos: { x: px + (px >= 0 ? -1.8 : 1.8), y: Math.max(2.0, py + 0.8), z: pz + 2.6 },
+      lookAtPos: { x: px, y: py, z: pz }
+    };
+
+    WORLD3D_VOCAB_CATALOG[itemSpec.id] = userData;
+    pinGroup.userData = Object.assign({}, userData);
+    pinGroup.traverse(child => {
+      if (child.isMesh) {
+        child.userData = Object.assign({}, userData, { parentGroup: pinGroup });
+      }
+    });
+
+    interactiveObjects.push(pinGroup);
+    createSpatialHotspotForObject(pinGroup, itemSpec.id);
+    animatedConceptNodes.push(pinGroup);
+    return pinGroup;
   }
   global.buildHolographicConceptNode = buildHolographicConceptNode;
 
@@ -5535,7 +6016,11 @@ ensureOrbitControls();
     activeScene.background = new THREE.Color(scen.bg !== undefined ? scen.bg : 0x0a0e17);
     activeScene.fog = new THREE.FogExp2(scen.bg !== undefined ? scen.bg : 0x0a0e17, scen.fogDensity || 0.005);
 
-    if (key === 'house' || key === 'garden') {
+    const B = (typeof window !== 'undefined' && window.MasterENG3DBuilders) ||
+              (typeof global !== 'undefined' && global.MasterENG3DBuilders) ||
+              (typeof globalThis !== 'undefined' && globalThis.MasterENG3DBuilders);
+
+    if (key === 'house') {
       buildDetailedHouseAndGarden(scenarioDynamicRoot);
       const existingIds = new Set(interactiveObjects.map(o => o.userData && o.userData.id).filter(Boolean));
       scen.objects.forEach(item => {
@@ -5548,6 +6033,54 @@ ensureOrbitControls();
           }
           if (node) scenarioDynamicRoot.add(node);
         }
+      });
+    } else if (key === 'garden' && B && typeof B.buildGardenScene === 'function') {
+      B.buildGardenScene(scenarioDynamicRoot, scen.objects);
+    } else if (key === 'space' && B && typeof B.buildSpaceScene === 'function') {
+      B.buildSpaceScene(scenarioDynamicRoot, scen.objects);
+    } else if (key === 'hotel' && B && typeof B.buildHotelScene === 'function') {
+      B.buildHotelScene(scenarioDynamicRoot);
+    } else if (key === 'restaurant' && B && typeof B.buildRestaurantScene === 'function') {
+      B.buildRestaurantScene(scenarioDynamicRoot);
+    } else if (key === 'supermarket' && B && typeof B.buildSupermarketScene === 'function') {
+      B.buildSupermarketScene(scenarioDynamicRoot);
+    } else if (key === 'dating' && B && typeof B.buildDatingScene === 'function') {
+      B.buildDatingScene(scenarioDynamicRoot);
+      rebuildDatingSeatedAvatars();
+      if (typeof global.setWaiterState === 'function') {
+        global.setWaiterState('approaching', { silent: true });
+      }
+    } else if (key === 'garden') {
+      createSpaceDome(scenarioDynamicRoot);
+      const PhysicalMat = THREE.MeshPhysicalMaterial || THREE.MeshStandardMaterial;
+      const matGrass = SHARED_MATERIALS.foliageOrganic || SHARED_MATERIALS.grassLawn || new PhysicalMat({ color: 0x15803d, roughness: 0.85 });
+      const lawn = new THREE.Mesh(new THREE.PlaneGeometry(36, 36), matGrass);
+      lawn.rotation.x = -Math.PI / 2;
+      lawn.position.set(0, -0.01, 2);
+      lawn.receiveShadow = true;
+      const matPatio = SHARED_MATERIALS.stonePaver || new PhysicalMat({ color: 0x78716c, roughness: 0.65 });
+      const patio = new THREE.Mesh(new THREE.BoxGeometry(10.5, 0.04, 7.5), matPatio);
+      patio.position.set(3.5, 0.02, 3.2);
+      patio.receiveShadow = true;
+      scenarioDynamicRoot.add(lawn, patio);
+
+      [-14, 14].forEach(hx => {
+        const hedge = new THREE.Mesh(new THREE.BoxGeometry(0.8, 2.4, 32), SHARED_MATERIALS.leafGreen3 || matGrass);
+        hedge.position.set(hx, 1.2, 2);
+        scenarioDynamicRoot.add(hedge);
+      });
+      const hedgeBack = new THREE.Mesh(new THREE.BoxGeometry(28, 2.4, 0.8), SHARED_MATERIALS.leafGreen3 || matGrass);
+      hedgeBack.position.set(0, 1.2, -14);
+      scenarioDynamicRoot.add(hedgeBack);
+
+      scen.objects.forEach(item => {
+        let objGroup = null;
+        if (item.type === 'concept' || item.type === 'phrase') {
+          objGroup = buildHolographicConceptNode(item, key);
+        } else {
+          objGroup = buildCompound3DObject(item, key);
+        }
+        if (objGroup) scenarioDynamicRoot.add(objGroup);
       });
     } else {
       createSpaceDome(scenarioDynamicRoot);
@@ -6972,6 +7505,7 @@ ensureOrbitControls();
     };
 
     // BARRA SUPERIOR UNIFICADA (#unified-world3d-cam-bar)
+    // Legacy camera controls position compatibility: top: 68px; left: 16px; z-index: 60;
     let cameraButtonsBar = document.getElementById('unified-world3d-cam-bar') || document.getElementById('world3dCameraControlsBar') || document.getElementById('world3dCameraButtonsBar');
     if (!cameraButtonsBar) {
       cameraButtonsBar = document.createElement('div');
@@ -7821,7 +8355,7 @@ ensureOrbitControls();
                     document.querySelector('.canvas-container');
 
     // Si el contenedor no tiene dimensiones válidas en el DOM, forzar dimensiones explícitas 100vw / 100vh
-    if (!container || container.clientWidth === 0 || container.clientHeight === 0 || window.getComputedStyle(container).display === 'none') {
+    if (!container || container.clientWidth === 0 || container.clientHeight === 0 || (typeof window.getComputedStyle === 'function' && window.getComputedStyle(container).display === 'none')) {
       if (container) {
         container.style.width = '100vw';
         container.style.height = '100vh';
@@ -8786,7 +9320,11 @@ ensureOrbitControls();
     createHotspotTexture
   });
   Object.defineProperty(global.World3D, 'camera', { get: function() { return camera; }, configurable: true });
-  Object.defineProperty(global.World3D, 'interactiveObjects', { get: function() { return interactiveObjects; }, configurable: true });
+  Object.defineProperty(global.World3D, 'interactiveObjects', {
+    get: function() { return interactiveObjects; },
+    set: function(val) { if (Array.isArray(val)) interactiveObjects = val; },
+    configurable: true
+  });
   Object.defineProperty(global.World3D, 'renderer', { get: function() { return renderer; }, configurable: true });
   Object.defineProperty(global.World3D, 'scene', { get: function() { return scene; }, configurable: true });
   Object.defineProperty(global.World3D, 'waiterGroup', { get: function() { return waiterGroup; }, configurable: true });
