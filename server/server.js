@@ -28,6 +28,7 @@ const { pool, initializeDatabase, getDatabaseUrl, RENDER_INTERNAL_URL, RENDER_EX
 // Almacenamiento volátil de respaldo para MasterPet y Perfil Social
 const inMemoryPets = new Map();
 const inMemoryProfiles = new Map();
+const inMemoryCoopGroups = new Map();
 
 
 const PORT = process.env.PORT || 3000;
@@ -1785,16 +1786,29 @@ app.post('/api/feedback', async (req, res) => {
 // MASTERPET SANCTUARY & CRIANZA COMPARTIDA (/api/pets, /api/pets/co-parent)
 // ========================================================
 
-// 1. GET /api/pets: Obtiene mascotas del usuario o criadas en co-parenting
+// ========================================================
+// 1. GET /api/pets: Obtiene mascotas reales del usuario (0 por defecto para usuarios nuevos)
+// ========================================================
 app.get('/api/pets', async (req, res) => {
   try {
     const username = (req.query.username || req.headers['x-user-username'] || '').trim();
     const userId = req.query.userId || req.headers['x-user-id'] || null;
 
+    // Si no se especifica usuario, responder lista vacía (sin mezclar ni mostrar demos)
     if (!username && !userId) {
-      const allMem = Array.from(inMemoryPets.values());
-      return res.json({ success: true, pets: allMem });
+      return res.json({ success: true, pets: [] });
     }
+
+    const isFakePet = (p) => {
+      if (!p) return true;
+      const name = String(p.name || '').toLowerCase();
+      const id = String(p.id || '').toLowerCase();
+      const coParent = String(p.coParentUsername || (p.coParent && p.coParent.username) || '').toLowerCase();
+      if (id.startsWith('pet_demo_') || id.startsWith('pet_starter_') || id.startsWith('pet_coop_demo_')) return true;
+      if (name === 'crocody' || name === 'coco' || name === 'sparky' || name === 'luna') return true;
+      if (coParent.includes('starlight') || coParent.includes('cyberpup')) return true;
+      return false;
+    };
 
     let client;
     try {
@@ -1802,31 +1816,35 @@ app.get('/api/pets', async (req, res) => {
       const query = `
         SELECT id, user_id, username, species, name, data, co_parent_user_id, co_parent_username, updated_at
         FROM user_pets
-        WHERE username = $1 OR co_parent_username = $1
+        WHERE LOWER(username) = LOWER($1) OR LOWER(co_parent_username) = LOWER($1)
         ORDER BY updated_at DESC
       `;
       const result = await client.query(query, [username]);
       client.release();
 
-      const pets = result.rows.map(r => {
-        let petData = typeof r.data === 'string' ? JSON.parse(r.data) : (r.data || {});
-        return {
-          id: r.id,
-          name: r.name,
-          species: r.species,
-          userId: r.user_id,
-          username: r.username,
-          coParentUsername: r.co_parent_username,
-          ...petData
-        };
-      });
+      const pets = result.rows
+        .map(r => {
+          let petData = typeof r.data === 'string' ? JSON.parse(r.data) : (r.data || {});
+          return {
+            id: r.id,
+            name: r.name,
+            species: r.species,
+            userId: r.user_id,
+            username: r.username,
+            coParentUsername: r.co_parent_username,
+            ...petData
+          };
+        })
+        .filter(p => !isFakePet(p));
 
       return res.json({ success: true, pets });
     } catch (dbErr) {
       if (client) client.release();
       console.warn('⚠️ [PETS-DB] Fallback a memoria en GET /api/pets:', dbErr.message);
       const userPets = Array.from(inMemoryPets.values()).filter(p =>
-        p.username === username || p.coParentUsername === username
+        !isFakePet(p) &&
+        ((p.username && p.username.toLowerCase() === username.toLowerCase()) ||
+         (p.coParentUsername && p.coParentUsername.toLowerCase() === username.toLowerCase()))
       );
       return res.json({ success: true, pets: userPets, fallback: true });
     }
@@ -1836,7 +1854,9 @@ app.get('/api/pets', async (req, res) => {
   }
 });
 
-// 2. POST /api/pets: Crea o actualiza mascotas del usuario
+// ========================================================
+// 2. POST /api/pets: Crea o actualiza mascotas reales del usuario
+// ========================================================
 app.post('/api/pets', async (req, res) => {
   try {
     const body = req.body || {};
@@ -1854,7 +1874,6 @@ app.post('/api/pets', async (req, res) => {
     }
 
     const username = (body.username || req.headers['x-user-username'] || 'user').trim();
-    const userId = body.userId || null;
 
     // Actualizar siempre memoria volátil
     petsToSave.forEach(p => {
@@ -1910,7 +1929,9 @@ app.post('/api/pets', async (req, res) => {
   }
 });
 
-// 3. POST /api/pets/co-parent: Asocia crianza compartida para una mascota
+// ========================================================
+// 3. POST /api/pets/co-parent: Asocia crianza compartida (sin bots ni datos demo)
+// ========================================================
 app.post('/api/pets/co-parent', async (req, res) => {
   try {
     const { petId, ownerUsername, coParentUsername, relationship } = req.body || {};
@@ -1918,8 +1939,20 @@ app.post('/api/pets/co-parent', async (req, res) => {
       return res.status(400).json({ error: 'petId y coParentUsername son requeridos.' });
     }
 
-    const coParent = coParentUsername.trim();
-    const owner = (ownerUsername || '').trim();
+    const coParent = String(coParentUsername).trim();
+    const owner = String(ownerUsername || '').trim();
+
+    // Bloquear asignación de bots o nombres hardcodeados falsos
+    const lowerCoParent = coParent.toLowerCase();
+    if (
+      lowerCoParent.includes('starlight') ||
+      lowerCoParent.includes('cyberpup') ||
+      lowerCoParent.includes('sofia') ||
+      lowerCoParent.includes('alex') ||
+      lowerCoParent.includes('emma')
+    ) {
+      return res.status(400).json({ error: 'No se permiten compañeros demo o bots falsos en crianza compartida.' });
+    }
 
     // Actualizar en memoria
     if (inMemoryPets.has(petId)) {
@@ -1974,10 +2007,8 @@ app.post('/api/pets/co-parent', async (req, res) => {
 });
 
 // ========================================================
-// PERFIL SOCIAL ESTILO FACEBOOK / DISCORD (/api/profile/update)
+// 4. POST /api/profile/update: Actualiza perfil real (sin datos hardcodeados)
 // ========================================================
-
-// 4. POST /api/profile/update: Actualiza biografía, avatar, portada, enlaces y hobbies
 app.post('/api/profile/update', async (req, res) => {
   try {
     const {
@@ -1999,17 +2030,36 @@ app.post('/api/profile/update', async (req, res) => {
       return res.status(400).json({ error: 'El nombre de usuario es obligatorio para actualizar el perfil.' });
     }
 
+    // Sanitización estricta: purgar cualquier texto hardcodeado prohibido
+    let cleanLocation = location !== undefined ? String(location).trim() : '';
+    if (cleanLocation.toLowerCase().includes('ciudad de méxico') && !location) {
+      cleanLocation = '';
+    }
+
+    let cleanRelationship = relationship !== undefined ? String(relationship).trim() : '';
+    if (cleanRelationship.toLowerCase().includes('starlight') || cleanRelationship.toLowerCase().includes('cyberpup')) {
+      cleanRelationship = '';
+    }
+
+    let cleanSocialLinks = (socialLinks && typeof socialLinks === 'object') ? { ...socialLinks } : {};
+    Object.keys(cleanSocialLinks).forEach(k => {
+      const v = String(cleanSocialLinks[k] || '');
+      if (v.includes('mastereng_learner') || v.includes('starlight') || v.includes('cyberpup')) {
+        delete cleanSocialLinks[k];
+      }
+    });
+
     const profileData = {
       username: uname,
       bio: bio !== undefined ? String(bio).trim() : '',
-      location: location !== undefined ? String(location).trim() : '',
-      relationship: relationship !== undefined ? String(relationship).trim() : '',
+      location: cleanLocation,
+      relationship: cleanRelationship,
       coverPhoto: coverPhoto || 'linear-gradient(135deg, #0284c7 0%, #6366f1 50%, #a855f7 100%)',
       avatarType: avatarType || 'emoji',
       avatarEmoji: avatarEmoji || '🦊',
       avatarCustomUrl: avatarCustomUrl || '',
-      hobbies: Array.isArray(hobbies) ? hobbies : [],
-      socialLinks: (socialLinks && typeof socialLinks === 'object') ? socialLinks : {},
+      hobbies: Array.isArray(hobbies) ? hobbies.filter(h => !String(h).includes('CyberPup')) : [],
+      socialLinks: cleanSocialLinks,
       updatedAt: new Date().toISOString()
     };
 
@@ -2017,6 +2067,9 @@ app.post('/api/profile/update', async (req, res) => {
     inMemoryProfiles.set(uname.toLowerCase(), profileData);
 
     let client;
+    let realExp = 0;
+    let realRank = 'Bronce';
+    let realLevel = 1;
     try {
       client = await pool.connect();
       let uid = userId;
@@ -2026,6 +2079,19 @@ app.post('/api/profile/update', async (req, res) => {
           uid = uRes.rows[0].id;
         }
       }
+
+      // Obtener EXP y rango real
+      try {
+        const statsRes = await client.query(
+          'SELECT exp, rank, level FROM user_stats WHERE user_id = $1',
+          [uid]
+        );
+        if (statsRes.rows.length > 0) {
+          realExp = Number(statsRes.rows[0].exp) || 0;
+          realRank = statsRes.rows[0].rank || 'Bronce';
+          realLevel = Number(statsRes.rows[0].level) || 1;
+        }
+      } catch (_) {}
 
       await client.query(`
         INSERT INTO user_social_profiles (
@@ -2060,6 +2126,10 @@ app.post('/api/profile/update', async (req, res) => {
       ]);
       client.release();
 
+      profileData.exp = realExp;
+      profileData.rank = realRank;
+      profileData.level = realLevel;
+
       return res.json({
         success: true,
         message: 'Perfil social actualizado exitosamente en PostgreSQL.',
@@ -2068,6 +2138,9 @@ app.post('/api/profile/update', async (req, res) => {
     } catch (dbErr) {
       if (client) client.release();
       console.warn('⚠️ [PROFILE-UPDATE-DB] Fallback a memoria:', dbErr.message);
+      profileData.exp = realExp;
+      profileData.rank = realRank;
+      profileData.level = realLevel;
       return res.json({
         success: true,
         message: 'Perfil social actualizado (Modo Fallback en memoria).',
@@ -2081,15 +2154,37 @@ app.post('/api/profile/update', async (req, res) => {
   }
 });
 
-// 5. GET /api/profile/:username: Recupera perfil social
+// ========================================================
+// 5. GET /api/profile/:username: Recupera perfil limpio con EXP real
+// ========================================================
 app.get('/api/profile/:username', async (req, res) => {
   try {
     const uname = (req.params.username || '').trim();
     if (!uname) return res.status(400).json({ error: 'Username requerido' });
 
     let client;
+    let userExp = 0;
+    let userRank = 'Bronce';
+    let userLevel = 1;
+
     try {
       client = await pool.connect();
+
+      // Consultar EXP real del usuario en la base de datos
+      try {
+        const statsRes = await client.query(`
+          SELECT s.exp, s.rank, s.level
+          FROM user_stats s
+          JOIN users u ON s.user_id = u.id
+          WHERE LOWER(u.username) = LOWER($1)
+        `, [uname]);
+        if (statsRes.rows.length > 0) {
+          userExp = Number(statsRes.rows[0].exp) || 0;
+          userRank = statsRes.rows[0].rank || 'Bronce';
+          userLevel = Number(statsRes.rows[0].level) || 1;
+        }
+      } catch (_) {}
+
       const result = await client.query(`
         SELECT username, bio, location, relationship, cover_photo,
                avatar_type, avatar_emoji, avatar_custom_url, hobbies, social_links, updated_at
@@ -2100,19 +2195,37 @@ app.get('/api/profile/:username', async (req, res) => {
 
       if (result.rows.length > 0) {
         const row = result.rows[0];
+
+        // Higienizar cualquier dato demo residual en BD
+        let loc = row.location || '';
+        if (loc.toLowerCase().includes('ciudad de méxico')) loc = '';
+
+        let rel = row.relationship || '';
+        if (rel.toLowerCase().includes('starlight') || rel.toLowerCase().includes('cyberpup')) rel = '';
+
+        let links = typeof row.social_links === 'string' ? JSON.parse(row.social_links) : (row.social_links || {});
+        Object.keys(links).forEach(k => {
+          if (String(links[k]).includes('mastereng_learner')) delete links[k];
+        });
+
         return res.json({
           success: true,
           profile: {
             username: row.username,
-            bio: row.bio,
-            location: row.location,
-            relationship: row.relationship,
+            bio: row.bio || '',
+            location: loc,
+            relationship: rel,
             coverPhoto: row.cover_photo,
-            avatarType: row.avatar_type,
-            avatarEmoji: row.avatar_emoji,
-            avatarCustomUrl: row.avatar_custom_url,
+            avatarType: row.avatar_type || 'emoji',
+            avatarEmoji: row.avatar_emoji || '🦊',
+            avatarCustomUrl: row.avatar_custom_url || '',
             hobbies: typeof row.hobbies === 'string' ? JSON.parse(row.hobbies) : (row.hobbies || []),
-            socialLinks: typeof row.social_links === 'string' ? JSON.parse(row.social_links) : (row.social_links || {}),
+            socialLinks: links,
+            exp: userExp,
+            rank: userRank,
+            level: userLevel,
+            petsCount: 0,
+            coopCount: 0,
             updatedAt: row.updated_at
           }
         });
@@ -2124,27 +2237,192 @@ app.get('/api/profile/:username', async (req, res) => {
 
     const mem = inMemoryProfiles.get(uname.toLowerCase());
     if (mem) {
-      return res.json({ success: true, profile: mem });
+      return res.json({
+        success: true,
+        profile: {
+          ...mem,
+          exp: userExp,
+          rank: userRank,
+          level: userLevel,
+          petsCount: 0,
+          coopCount: 0
+        }
+      });
     }
 
+    // Perfil inicial limpio para usuario nuevo (sin datos hardcodeados ni demos)
     return res.json({
       success: true,
       profile: {
         username: uname,
-        bio: 'Estudiante apasionado de inglés en MasterENG 🚀',
+        bio: '',
         location: '',
-        relationship: 'Soltero',
+        relationship: '',
         coverPhoto: 'linear-gradient(135deg, #0284c7 0%, #6366f1 50%, #a855f7 100%)',
         avatarType: 'emoji',
         avatarEmoji: '🦊',
         avatarCustomUrl: '',
-        hobbies: ['Lectura en inglés', 'Música', 'Pronunciación'],
-        socialLinks: {}
+        hobbies: [],
+        socialLinks: {},
+        exp: userExp,
+        rank: userRank,
+        level: userLevel,
+        petsCount: 0,
+        coopCount: 0
       }
     });
   } catch (err) {
     console.error('❌ [PROFILE-GET] Error:', err.message);
     res.status(500).json({ error: 'Error al obtener perfil' });
+  }
+});
+
+// ========================================================
+// 6. ENDPOINTS REALES DE GRUPOS CO-OP (/api/pets/coop & /api/coop)
+// ========================================================
+app.get(['/api/pets/coop', '/api/coop'], async (req, res) => {
+  try {
+    const username = (req.query.username || req.headers['x-user-username'] || '').trim().toLowerCase();
+    if (!username) {
+      return res.json({ success: true, groups: [], count: 0 });
+    }
+
+    // Un usuario nuevo inicia con 0 grupos Co-Op
+    const userGroups = Array.from(inMemoryCoopGroups.values()).filter(g => {
+      if (!g || !Array.isArray(g.members)) return false;
+      const gName = String(g.name || '').toLowerCase();
+      if (gName.includes('team english pros')) return false;
+      return g.members.some(m => {
+        const mUser = String(m.username || '').toLowerCase();
+        if (mUser.includes('starlight') || mUser.includes('cyberpup')) return false;
+        return mUser === username;
+      });
+    });
+
+    return res.json({
+      success: true,
+      groups: userGroups,
+      count: userGroups.length
+    });
+  } catch (err) {
+    console.error('❌ [COOP-GET] Error:', err.message);
+    res.status(500).json({ error: 'Error al consultar grupos Co-Op' });
+  }
+});
+
+app.get(['/api/pets/coop/:code', '/api/coop/:code'], async (req, res) => {
+  try {
+    const code = (req.params.code || '').trim().toUpperCase();
+    if (!code) {
+      return res.status(400).json({ success: false, error: 'Código requerido' });
+    }
+
+    const group = inMemoryCoopGroups.get(code);
+    if (!group) {
+      return res.status(404).json({ success: false, error: 'Grupo Co-Op no encontrado' });
+    }
+
+    return res.json({ success: true, group });
+  } catch (err) {
+    res.status(500).json({ error: 'Error al consultar sala Co-Op' });
+  }
+});
+
+app.post(['/api/pets/coop', '/api/coop'], async (req, res) => {
+  try {
+    const { name, type, petName, petSpecies, username, maxMembers } = req.body || {};
+    const uname = (username || req.headers['x-user-username'] || 'user').trim();
+    const gName = (name || '').trim();
+    if (!gName || gName.toLowerCase() === 'team english pros') {
+      return res.status(400).json({ error: 'Nombre de grupo requerido y no puede ser demo' });
+    }
+
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = 'COOP-';
+    for (let i = 0; i < 4; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+
+    const newGroup = {
+      id: 'coop_' + Date.now(),
+      code,
+      name: gName,
+      type: type === 'duo' ? 'duo' : 'squad',
+      maxMembers: type === 'duo' ? 2 : (Number(maxMembers) || 4),
+      petName: petName || 'Mascota',
+      petSpecies: petSpecies || 'fox',
+      totalExpPool: 0,
+      createdAt: new Date().toISOString(),
+      members: [
+        {
+          id: 'mem_' + Date.now(),
+          username: uname,
+          avatar: '🦊',
+          role: 'Líder de Crianza',
+          isOwner: true,
+          expContributed: 0,
+          streakDays: 1,
+          joinedAt: new Date().toISOString()
+        }
+      ]
+    };
+
+    inMemoryCoopGroups.set(code, newGroup);
+    return res.json({ success: true, message: 'Grupo Co-Op creado con éxito', group: newGroup });
+  } catch (err) {
+    res.status(500).json({ error: 'Error al crear grupo Co-Op' });
+  }
+});
+
+app.post(['/api/pets/coop/join', '/api/coop/join'], async (req, res) => {
+  try {
+    const { code, username } = req.body || {};
+    const uname = (username || req.headers['x-user-username'] || '').trim();
+    const cleanCode = (code || '').trim().toUpperCase();
+
+    if (!cleanCode || !uname) {
+      return res.status(400).json({ error: 'Código de sala y usuario son requeridos' });
+    }
+
+    let group = inMemoryCoopGroups.get(cleanCode);
+    if (!group) {
+      group = {
+        id: 'coop_' + cleanCode,
+        code: cleanCode,
+        name: 'Sala Co-Op ' + cleanCode,
+        type: 'squad',
+        maxMembers: 4,
+        petName: 'Mascota Compartida',
+        petSpecies: 'fox',
+        totalExpPool: 0,
+        createdAt: new Date().toISOString(),
+        members: []
+      };
+      inMemoryCoopGroups.set(cleanCode, group);
+    }
+
+    const exists = group.members.some(m => m.username && m.username.toLowerCase() === uname.toLowerCase());
+    if (!exists) {
+      if (group.members.length >= group.maxMembers) {
+        return res.status(400).json({ error: 'La sala Co-Op ya alcanzó su límite máximo de miembros' });
+      }
+      group.members.push({
+        id: 'mem_' + Date.now(),
+        username: uname,
+        avatar: '🎓',
+        role: 'Co-Parent',
+        isOwner: false,
+        expContributed: 0,
+        streakDays: 1,
+        joinedAt: new Date().toISOString()
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: `¡Te has vinculado exitosamente a la sala compartida ${cleanCode}!`,
+      group
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Error al unirse a sala Co-Op' });
   }
 });
 

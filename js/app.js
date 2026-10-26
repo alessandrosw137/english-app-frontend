@@ -1655,6 +1655,9 @@ window.isCurrentUserAdmin = function() {
         });
         if (typeof window.openPetSanctuary === 'function') {
           window.openPetSanctuary();
+          if (typeof window.checkAndLinkPendingCoop === 'function') {
+            setTimeout(window.checkAndLinkPendingCoop, 450);
+          }
           return;
         }
       } else {
@@ -2485,6 +2488,9 @@ window.logout = function() {
         }
         if (typeof window.openPetSanctuary === 'function') {
           window.openPetSanctuary();
+        }
+        if (typeof window.checkAndLinkPendingCoop === 'function') {
+          setTimeout(window.checkAndLinkPendingCoop, 450);
         }
       } else if (typeof openPortalWithLoader === 'function') {
         openPortalWithLoader(portal);
@@ -16281,6 +16287,187 @@ window._musicStageGuardInterval = setInterval(function() {
   }, 4000);
   if (_inboxWatchTimer && typeof _inboxWatchTimer.unref === 'function') {
     _inboxWatchTimer.unref();
+  }
+
+  /* ==========================================================================
+     DETECTOR DE ENLACE DE INVITACIÓN CO-OP (?coop=CODIGO) & HIGIENE DE DATOS
+     ========================================================================== */
+  function sanitizeInitialProfileAndCoopData() {
+    try {
+      if (typeof localStorage === 'undefined') return;
+
+      // 1. Sanitizar mastereng_profile_social_data
+      const rawSocial = localStorage.getItem('mastereng_profile_social_data');
+      if (rawSocial) {
+        let p = null;
+        try { p = JSON.parse(rawSocial); } catch (_) {}
+        if (p && typeof p === 'object') {
+          let changed = false;
+          const locStr = String(p.location || '').toLowerCase();
+          if (locStr.includes('ciudad de m') || locStr.includes('mexico')) {
+            p.location = '';
+            changed = true;
+          }
+          const relStr = String(p.relationship || '').toLowerCase();
+          if (relStr.includes('starlight') || relStr.includes('cyberpup') || relStr.includes('criador solitario')) {
+            p.relationship = '';
+            changed = true;
+          }
+          if (p.socialLinks && typeof p.socialLinks === 'object') {
+            Object.keys(p.socialLinks).forEach(k => {
+              const val = String(p.socialLinks[k] || '');
+              if (val.includes('mastereng_learner') || val.includes('starlight') || val.includes('cyberpup')) {
+                delete p.socialLinks[k];
+                changed = true;
+              }
+            });
+          }
+          if (Array.isArray(p.hobbies)) {
+            const cleanHobbies = p.hobbies.filter(h => !String(h).includes('CyberPup'));
+            if (cleanHobbies.length !== p.hobbies.length) {
+              p.hobbies = cleanHobbies;
+              changed = true;
+            }
+          }
+          if (changed) {
+            localStorage.setItem('mastereng_profile_social_data', JSON.stringify(p));
+          }
+        }
+      }
+
+      // 2. Sanitizar mastereng_coop_groups
+      const rawCoop = localStorage.getItem('mastereng_coop_groups');
+      if (rawCoop) {
+        let g = null;
+        try { g = JSON.parse(rawCoop); } catch (_) {}
+        if (g && typeof g === 'object') {
+          const gName = String(g.name || '').toLowerCase();
+          const hasBots = Array.isArray(g.members) && g.members.some(m => {
+            const u = String(m.username || '').toLowerCase();
+            return u.includes('cyberpup') || u.includes('starlight');
+          });
+          if (gName.includes('team english pros') || hasBots) {
+            localStorage.removeItem('mastereng_coop_groups');
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('⚠️ Error en sanitización de perfil/coop local:', e);
+    }
+  }
+
+  function initUrlCoopInviteDetector() {
+    try {
+      if (typeof window === 'undefined' || !window.location) return;
+
+      const urlParams = new URLSearchParams(window.location.search);
+      let coopCode = urlParams.get('coop') || urlParams.get('co-op') || urlParams.get('coopCode') || urlParams.get('coop_code');
+
+      // Si no viene en search, verificar en hash (#coop=XXXXXX)
+      if (!coopCode && window.location.hash) {
+        const hashMatch = window.location.hash.match(/[?&#]coop=([a-zA-Z0-9_-]+)/i);
+        if (hashMatch) {
+          coopCode = hashMatch[1];
+        }
+      }
+
+      if (coopCode) {
+        const cleanCode = String(coopCode).trim().toUpperCase();
+        if (cleanCode.length >= 3) {
+          window.pendingCoopCode = cleanCode;
+          try {
+            sessionStorage.setItem('mastereng_pending_coop_code', cleanCode);
+            localStorage.setItem('mastereng_pending_coop_code', cleanCode);
+          } catch (_) {}
+
+          console.log('🐾 [COOP-INVITE] Enlace de invitación detectado:', cleanCode);
+
+          // Notificar en UI
+          setTimeout(() => {
+            if (typeof window.showFloatingToast === 'function') {
+              window.showFloatingToast(`🔗 Invitación Co-Op recibida: ${cleanCode}. Abre MasterPet para vincularte.`, '🤝');
+            }
+          }, 1200);
+        }
+      }
+    } catch (err) {
+      console.warn('⚠️ Error al leer enlace de invitación coop:', err);
+    }
+  }
+
+  window.checkAndLinkPendingCoop = function() {
+    try {
+      const code = window.pendingCoopCode ||
+        (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('mastereng_pending_coop_code')) ||
+        (typeof localStorage !== 'undefined' && localStorage.getItem('mastereng_pending_coop_code'));
+
+      if (!code) return;
+
+      const cleanCode = String(code).trim().toUpperCase();
+
+      // Abrir modal de Co-Op en MasterPet Sanctuary si está disponible
+      if (typeof window.openPetCoopModal === 'function') {
+        window.openPetCoopModal();
+
+        setTimeout(() => {
+          if (typeof window.switchCoopModalTab === 'function') {
+            window.switchCoopModalTab('join');
+          }
+
+          const input = document.getElementById('coopJoinCodeInput');
+          if (input) {
+            input.value = cleanCode;
+            input.focus();
+            if (typeof input.dispatchEvent === 'function') {
+              input.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+          }
+
+          if (typeof window.showPetPaperToast === 'function') {
+            window.showPetPaperToast(`🤝 Enlace de invitación detectado: ${cleanCode}. ¡Listo para vincular tu sala!`);
+          }
+        }, 350);
+      }
+    } catch (e) {
+      console.warn('⚠️ Error al vincular sala Co-Op pendiente:', e);
+    }
+  };
+
+  window.handleJoinCoopGroupByCode = function(code) {
+    if (!code) return;
+    const clean = String(code).trim().toUpperCase();
+    window.pendingCoopCode = clean;
+    try {
+      sessionStorage.setItem('mastereng_pending_coop_code', clean);
+      localStorage.setItem('mastereng_pending_coop_code', clean);
+    } catch (_) {}
+
+    if (typeof window.openPetSanctuary === 'function') {
+      window.openPetSanctuary();
+    } else if (typeof window.openPortal === 'function') {
+      window.openPortal('pet_sanctuary');
+    }
+
+    setTimeout(() => {
+      if (typeof window.checkAndLinkPendingCoop === 'function') {
+        window.checkAndLinkPendingCoop();
+      }
+    }, 500);
+  };
+
+  // Exponer detectores globalmente
+  window.initUrlCoopInviteDetector = initUrlCoopInviteDetector;
+  window.sanitizeInitialProfileAndCoopData = sanitizeInitialProfileAndCoopData;
+
+  // Ejecución inmediata y en DOMContentLoaded
+  sanitizeInitialProfileAndCoopData();
+  initUrlCoopInviteDetector();
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      sanitizeInitialProfileAndCoopData();
+      initUrlCoopInviteDetector();
+    });
   }
 })();
 

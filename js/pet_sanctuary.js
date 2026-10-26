@@ -171,6 +171,7 @@
   } catch (_) {}
 
   function handleCoopMessage(msg) {
+    if (!msg) return;
     if (msg.type === 'COOP_ACTION') {
       const pets = loadStoredPets();
       const target = pets.find(p => p.id === msg.petId);
@@ -190,6 +191,37 @@
         if (sanctuaryState.isOpen) {
           if (sanctuaryState.currentView === 'hub') renderSanctuaryHub();
           else if (sanctuaryState.currentView === 'room' && sanctuaryState.selectedPetId === msg.petId) renderPetRoom(target);
+        }
+      }
+    } else if (msg.type === 'coop_sync' && msg.group) {
+      if (typeof saveRealCoopGroup === 'function') saveRealCoopGroup(msg.group);
+      const tabBody = document.getElementById('coopModalTabBody');
+      if (tabBody && typeof renderCoopTabContent === 'function') {
+        tabBody.innerHTML = renderCoopTabContent(currentCoopTab, msg.group, getCurrentUserMeta());
+      }
+    } else if (msg.type === 'exp_contributed') {
+      if (typeof getRealCoopGroup === 'function') {
+        const g = getRealCoopGroup();
+        if (g && g.code === msg.code) {
+          g.totalExpPool = (g.totalExpPool || 0) + (msg.amount || 0);
+          saveRealCoopGroup(g);
+          showPetPaperToast(`🤝 ¡${msg.by || 'Tu compañero'} aportó +${msg.amount} EXP a la sala!`);
+          const tabBody = document.getElementById('coopModalTabBody');
+          if (tabBody && typeof renderCoopTabContent === 'function') {
+            tabBody.innerHTML = renderCoopTabContent(currentCoopTab, g, getCurrentUserMeta());
+          }
+        }
+      }
+    } else if (msg.type === 'group_deleted') {
+      if (typeof getRealCoopGroup === 'function') {
+        const g = getRealCoopGroup();
+        if (g && g.code === msg.code) {
+          saveRealCoopGroup(null);
+          showPetPaperToast('🚪 La sala de crianza compartida ha sido cerrada.');
+          const tabBody = document.getElementById('coopModalTabBody');
+          if (tabBody && typeof renderCoopTabContent === 'function') {
+            tabBody.innerHTML = renderCoopTabContent(currentCoopTab, null, getCurrentUserMeta());
+          }
         }
       }
     }
@@ -2064,111 +2096,718 @@
   };
 
   // ==========================================================================
-  // 15. CO-PARENTING MULTIPLAYER (VÍNCULOS Y CÓDIGOS COMPARTIDOS)
+  // 15. SISTEMA DE SALAS CO-OP REAL & ELIMINACIÓN TOTAL DE BOTS
   // ==========================================================================
-  global.openPetCoopModal = function () {
-    ensureSanctuaryStyles();
-    const pets = loadStoredPets();
-    if (!isUserVip() && pets.length >= 1) {
-      renderVipPetLimitModal();
-      return;
+  const COOP_STORAGE_KEY = 'mastereng_coop_groups';
+  let currentCoopTab = 'manage'; // 'manage', 'create', 'join'
+  let selectedNewCoopType = 'duo'; // 'duo' (2 miembros) o 'squad' (hasta 4 miembros)
+
+  function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  // Purga y migración: elimina de localStorage cualquier grupo o dato demo obsoleto
+  function purgeFakeCoopData() {
+    try {
+      ['mastereng_coop_groups', 'mastereng_pet_coop_group'].forEach(k => {
+        const val = localStorage.getItem(k);
+        if (val && typeof val === 'string') {
+          try {
+            const parsed = JSON.parse(val);
+            if (parsed && (parsed.id === 'coop_master_group_1' || parsed.id === 'coop_default_group' || parsed.isDemo || parsed.isMock)) {
+              localStorage.removeItem(k);
+            }
+          } catch (_) {}
+        }
+      });
+    } catch (_) {}
+  }
+  purgeFakeCoopData();
+
+  function getRealCoopGroup() {
+    try {
+      const raw = localStorage.getItem(COOP_STORAGE_KEY);
+      if (!raw) return null;
+      const g = JSON.parse(raw);
+      if (!g || !g.id || !g.name || !g.code) return null;
+      if (g.id === 'coop_master_group_1' || g.id === 'coop_default_group' || g.isDemo || g.isMock) {
+        localStorage.removeItem(COOP_STORAGE_KEY);
+        return null;
+      }
+      return g;
+    } catch (_) {
+      return null;
     }
+  }
 
-    let modal = document.getElementById('masterpet-coop-modal');
-    if (modal) modal.remove();
+  function saveRealCoopGroup(group) {
+    try {
+      if (!group) {
+        localStorage.removeItem(COOP_STORAGE_KEY);
+        localStorage.removeItem('mastereng_pet_coop_group');
+      } else {
+        localStorage.setItem(COOP_STORAGE_KEY, JSON.stringify(group));
+        localStorage.setItem('mastereng_pet_coop_group', JSON.stringify(group));
+      }
+    } catch (_) {}
+  }
 
-    modal = document.createElement('div');
-    modal.id = 'masterpet-coop-modal';
-    modal.style.cssText = `position: fixed; inset: 0; z-index: 10010; background: rgba(15, 23, 42, 0.85); display: flex; align-items: center; justify-content: center; padding: 16px;`;
+  function getCurrentUserExp() {
+    try {
+      const raw = localStorage.getItem('mastereng_user') || localStorage.getItem('english_app_user_session');
+      if (raw) {
+        const u = JSON.parse(raw);
+        if (u && typeof u.exp === 'number') return Math.max(0, u.exp);
+        if (u && u.exp) return Math.max(0, parseInt(u.exp, 10) || 0);
+      }
+    } catch (_) {}
+    return 0;
+  }
 
-    modal.innerHTML = `
-      <div class="paper-cardboard-panel paper-stitches max-w-md w-full p-6 text-center animate-bounce-short">
-        <div class="text-5xl mb-2">🤝💌</div>
-        <h2 class="text-xl font-black text-[#78350f] mb-1">Vincular Mascota Compartida</h2>
-        <p class="text-xs text-[#451a03] mb-4">
-          Cría un Casimerito junto a tu pareja o un amigo. Ambos podrán alimentarlo, bañarlo y sincronizar su EXP en vivo.
-        </p>
+  function deductUserExp(amount) {
+    try {
+      const raw = localStorage.getItem('mastereng_user');
+      if (raw) {
+        const u = JSON.parse(raw);
+        u.exp = Math.max(0, (parseInt(u.exp, 10) || 0) - amount);
+        localStorage.setItem('mastereng_user', JSON.stringify(u));
+      }
+      const raw2 = localStorage.getItem('english_app_user_session');
+      if (raw2) {
+        const u2 = JSON.parse(raw2);
+        u2.exp = Math.max(0, (parseInt(u2.exp, 10) || 0) - amount);
+        localStorage.setItem('english_app_user_session', JSON.stringify(u2));
+      }
+      if (typeof window.updateUserExpDisplay === 'function') {
+        window.updateUserExpDisplay();
+      }
+    } catch (_) {}
+  }
 
-        <div class="bg-amber-100 border border-amber-300 rounded-xl p-3 text-left mb-4">
-          <label class="block text-xs font-black text-amber-950 mb-1">Pegar Código de Vínculo de tu Amigo:</label>
-          <div class="flex gap-2">
-            <input type="text" id="coopCodeInput" placeholder="Ej: COOP-PUPP-7782" class="flex-1 bg-white border-2 border-amber-600 rounded-lg px-3 py-1.5 text-xs font-mono font-bold text-amber-950 uppercase outline-none" />
-            <button type="button" onclick="window.linkCoopCodeNow()" class="paper-btn-primary px-3 py-1.5 text-xs font-black">
-              Vincular
-            </button>
-          </div>
+  function generateCleanCoopCode() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 6; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
+  }
+
+  function openCleanCoopGroupModal(initialTab) {
+    ensureSanctuaryStyles();
+    currentCoopTab = initialTab || 'manage';
+
+    const oldModal = document.getElementById('coopGroupModalOverlay') || document.getElementById('masterpet-coop-modal');
+    if (oldModal) oldModal.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'coopGroupModalOverlay';
+    overlay.className = 'coop-modal-overlay';
+    overlay.style.cssText = 'position: fixed; inset: 0; background: rgba(4, 7, 13, 0.88); backdrop-filter: blur(16px); z-index: 100020; display: flex; align-items: center; justify-content: center; padding: 16px;';
+
+    const group = getRealCoopGroup();
+    const user = getCurrentUserMeta();
+
+    overlay.innerHTML = `
+      <div class="coop-modal-card" onclick="event.stopPropagation();">
+        <!-- Encabezado Cartón / Papercraft -->
+        <div class="coop-modal-header">
+          <h3>
+            <span>🤝</span>
+            <span>Crear Grupo / Invitar Amigos a Crianza</span>
+          </h3>
+          <button type="button" onclick="window.closeCoopGroupModal()" class="text-amber-900 hover:text-amber-700 text-2xl font-black p-1 cursor-pointer leading-none" title="Cerrar">&times;</button>
         </div>
 
-        <div class="text-xs text-[#78350f] mb-4">
-          ¿Quieres compartir una de tus mascotas actuales? Abre su habitación o crea una nueva con la opción <strong>Co-Parenting</strong> para generar un código.
+        <!-- Selector de Tabs -->
+        <div class="coop-tabs-nav">
+          <button type="button" onclick="window.switchCoopModalTab('manage')" id="tabBtnManage" class="coop-tab-btn ${currentCoopTab === 'manage' ? 'active' : ''}">
+            <span>👥</span>
+            <span>Mi Grupo & Invitación</span>
+          </button>
+          <button type="button" onclick="window.switchCoopModalTab('create')" id="tabBtnCreate" class="coop-tab-btn ${currentCoopTab === 'create' ? 'active' : ''}">
+            <span>➕</span>
+            <span>Crear Nueva Sala</span>
+          </button>
+          <button type="button" onclick="window.switchCoopModalTab('join')" id="tabBtnJoin" class="coop-tab-btn ${currentCoopTab === 'join' ? 'active' : ''}">
+            <span>🎟️</span>
+            <span>Unirse con Código</span>
+          </button>
         </div>
 
-        <button type="button" onclick="document.getElementById('masterpet-coop-modal').remove()" class="paper-btn-secondary w-full py-2 text-xs">
-          Cerrar
-        </button>
+        <!-- Contenedor Dinámico del Tab -->
+        <div id="coopModalTabBody">
+          ${renderCoopTabContent(currentCoopTab, group, user)}
+        </div>
       </div>
     `;
 
-    document.body.appendChild(modal);
-  };
+    overlay.onclick = function (e) {
+      if (e.target === overlay) window.closeCoopGroupModal();
+    };
 
-  global.linkCoopCodeNow = function () {
+    document.body.appendChild(overlay);
+  }
+
+  function closeCleanCoopGroupModal() {
+    ['coopGroupModalOverlay', 'masterpet-coop-modal'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.remove();
+    });
+  }
+
+  function switchCoopModalTab(tab) {
+    currentCoopTab = tab || 'manage';
+    ['tabBtnManage', 'tabBtnCreate', 'tabBtnJoin'].forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn) btn.classList.remove('active');
+    });
+
+    const activeBtnId = tab === 'create' ? 'tabBtnCreate' : (tab === 'join' ? 'tabBtnJoin' : 'tabBtnManage');
+    const activeBtn = document.getElementById(activeBtnId);
+    if (activeBtn) activeBtn.classList.add('active');
+
+    const body = document.getElementById('coopModalTabBody');
+    if (body) {
+      const group = getRealCoopGroup();
+      const user = getCurrentUserMeta();
+      body.innerHTML = renderCoopTabContent(currentCoopTab, group, user);
+    }
+  }
+
+  function selectCoopType(type) {
+    selectedNewCoopType = type;
+    const cardDuo = document.getElementById('typeCardDuo');
+    const cardSquad = document.getElementById('typeCardSquad');
+    if (cardDuo) cardDuo.classList.toggle('active', type === 'duo');
+    if (cardSquad) cardSquad.classList.toggle('active', type === 'squad');
+  }
+
+  function renderCoopTabContent(tab, group, user) {
+    // ------------------------------------------------------------------------
+    // TAB: MANAGE (MI GRUPO & INVITACIÓN)
+    // ------------------------------------------------------------------------
+    if (tab === 'manage') {
+      if (!group) {
+        // Caso A: Estado vacío real sin bots
+        return `
+          <div class="paper-cardboard-panel paper-stitches p-6 text-center my-2 bg-[#fffdfa]">
+            <div class="text-4xl mb-3">🏡🐾</div>
+            <h4 class="text-base font-black text-[#78350f] mb-2">Sin Grupo de Crianza Activo</h4>
+            <p class="text-xs text-[#451a03] mb-6 max-w-sm mx-auto leading-relaxed font-semibold">
+              Aún no perteneces a ningún grupo de crianza compartida. Crea una nueva sala con tu mascota o únete al grupo de un amigo con su código.
+            </p>
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <button type="button" onclick="window.switchCoopModalTab('create')" class="btn-coop-primary py-2.5 px-4 text-xs font-black flex items-center justify-center gap-2 shadow hover:scale-105 active:scale-95 transition cursor-pointer">
+                <span>➕</span>
+                <span>Crear Nueva Sala</span>
+              </button>
+              <button type="button" onclick="window.switchCoopModalTab('join')" class="btn-coop-secondary py-2.5 px-4 text-xs font-black flex items-center justify-center gap-2 shadow hover:scale-105 active:scale-95 transition cursor-pointer">
+                <span>🎟️</span>
+                <span>Unirse con Código</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
+      // Caso A.2: El usuario sí tiene grupo real
+      const typeLabel = group.type === 'duo' ? '💕 En Pareja (2 max)' : '👨‍👩‍👧‍👦 Familia / Cuadrilla (4 max)';
+      const isFull = (group.members || []).length >= (group.maxMembers || 2);
+      const shareUrl = window.location.origin + '/?coop=' + group.code;
+      const userExp = getCurrentUserExp();
+
+      return `
+        <div class="flex flex-col gap-3 py-1">
+          <!-- 1. Ficha Resumen del Grupo -->
+          <div class="flex items-center justify-between bg-[#fffdfa] border-2 border-amber-600/60 rounded-xl p-3 shadow-sm">
+            <div>
+              <h4 class="text-base font-black text-[#78350f] m-0 flex items-center gap-2">
+                <span>${escapeHtml(group.name)}</span>
+                <span class="text-xs">🏡</span>
+              </h4>
+              <p class="text-xs text-amber-900 m-0 mt-0.5">
+                Mascota: <strong>${escapeHtml(group.petName || 'Mascota')}</strong> • Tipo: <span class="font-bold text-[#b45309]">${typeLabel}</span>
+              </p>
+            </div>
+            <div class="text-right">
+              <span class="text-xs font-black px-2.5 py-1 rounded-lg ${isFull ? 'bg-rose-100 text-rose-800 border border-rose-300' : 'bg-emerald-100 text-emerald-800 border border-emerald-300'}">
+                ${(group.members || []).length} / ${group.maxMembers || 2} miembros
+              </span>
+            </div>
+          </div>
+
+          <!-- 2. Banner de Invitación de 6 Caracteres -->
+          <div class="coop-invite-banner">
+            <span class="text-[11px] font-black text-[#78350f] uppercase tracking-wider">
+              🎟️ Código Único de Invitación (6 Caracteres)
+            </span>
+            <div class="coop-code-pill">
+              <span id="coopActiveCodeDisplay">${group.code}</span>
+            </div>
+            
+            <button type="button" onclick="window.copyCoopInviteCode()" class="btn-copy-code cursor-pointer shadow" title="Copiar código para enviar por chat">
+              <span>📋</span>
+              <span>Copiar Código de Invitación</span>
+            </button>
+
+            <div class="coop-link-input-group mt-1 flex gap-2 w-full">
+              <input type="text" id="coopShareLinkInput" readonly value="${shareUrl}" class="coop-input-field flex-1 text-xs font-mono" />
+              <button type="button" onclick="window.copyCoopInviteLink()" class="btn-coop-secondary text-xs px-3 whitespace-nowrap cursor-pointer shadow">
+                <span>🔗</span>
+                <span>Copiar Enlace</span>
+              </button>
+            </div>
+
+            <p class="text-[10px] text-amber-900 m-0">
+              💡 Tus amigos o pareja solo deben ingresar este código de 6 caracteres en su pestaña <em>"Unirse con Código"</em> para vincularse de inmediato.
+            </p>
+          </div>
+
+          <!-- 3. Lista de Miembros y Aporte de EXP -->
+          <div class="flex items-center justify-between mt-1">
+            <span class="text-xs font-black text-[#78350f] flex items-center gap-1.5">
+              <span>🏆</span>
+              <span>Miembros del Grupo y Aporte de EXP a la Mascota:</span>
+            </span>
+            <span class="text-[10px] font-bold text-amber-900 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300">
+              ${(group.members || []).length} de ${group.maxMembers || 2} plazas
+            </span>
+          </div>
+
+          <div class="coop-members-wrapper">
+            ${(group.members || []).map(m => `
+              <div class="coop-member-row">
+                <div class="coop-member-info">
+                  <div class="coop-member-avatar">
+                    <span>${m.avatar || '🐾'}</span>
+                  </div>
+                  <div class="coop-member-details">
+                    <h6>${escapeHtml(m.username)} ${m.isOwner ? '👑' : ''}</h6>
+                    <span class="role">${escapeHtml(m.role || 'Criador')}</span>
+                  </div>
+                </div>
+                <div class="coop-member-exp">
+                  <span class="val">+${m.expContributed || 0} EXP</span>
+                  <span class="sub">🔥 Racha: ${m.streakDays || 1}d</span>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+
+          <!-- 4. Resumen del Fondo Común y Acción de Aporte -->
+          <div class="coop-pool-summary mt-1 flex items-center justify-between bg-amber-50 p-3 rounded-xl border border-amber-300">
+            <div>
+              <span class="block text-xs font-black text-amber-950">⭐ Fondo de EXP Compartida:</span>
+              <span class="text-[10px] text-amber-800">
+                <strong>${group.totalExpPool || 0} EXP</strong> acumulados por el equipo
+                <span class="text-[9px] text-slate-500 block">Tu EXP disponible: ${userExp} EXP</span>
+              </span>
+            </div>
+            <button type="button" onclick="window.handleContributeCoopExp()" class="btn-coop-primary text-xs py-2 px-3.5 cursor-pointer shadow hover:scale-105 active:scale-95 transition">
+              <span>⭐ Aportar EXP</span>
+            </button>
+          </div>
+
+          <!-- 5. Botón de Abandonar o Eliminar Sala -->
+          <div class="text-center pt-2">
+            <button type="button" onclick="window.leaveOrDeleteCoopGroup()" class="text-xs text-rose-700 hover:text-rose-900 font-bold underline cursor-pointer p-1">
+              🚪 Abandonar / Eliminar Sala
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    // ------------------------------------------------------------------------
+    // TAB: CREATE (CREAR NUEVA SALA)
+    // ------------------------------------------------------------------------
+    if (tab === 'create') {
+      const pets = loadStoredPets();
+      return `
+        <div class="flex flex-col gap-3 py-1">
+          <p class="text-xs text-[#78350f] m-0">
+            Funda una sala de crianza compartida en tiempo real para cuidar a una mascota junto a tu pareja o amigos.
+          </p>
+
+          <!-- 1. Tipo de Sala -->
+          <div>
+            <label class="block text-xs font-black text-amber-950 mb-1.5">
+              1. Selecciona la modalidad de la Sala:
+            </label>
+            <div class="coop-type-grid">
+              <div onclick="window.selectCoopType('duo')" id="typeCardDuo" class="coop-type-card ${selectedNewCoopType === 'duo' ? 'active' : ''}">
+                <h5><span>💕</span> <span>En Pareja (2 miembros)</span></h5>
+                <p>Ideal para citas románticas o mejores amigos. Crianza 1 a 1 de una mascota.</p>
+              </div>
+              <div onclick="window.selectCoopType('squad')" id="typeCardSquad" class="coop-type-card ${selectedNewCoopType === 'squad' ? 'active' : ''}">
+                <h5><span>👨‍👩‍👧‍👦</span> <span>Familia / Amigos (hasta 4)</span></h5>
+                <p>Cuadrilla de hasta 4 miembros para cuidar y aportar EXP juntos.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Nombre del Grupo -->
+          <div>
+            <label class="block text-xs font-black text-amber-950 mb-1">
+              2. Nombre de tu Sala / Grupo:
+            </label>
+            <input type="text" id="newCoopGroupNameInput" placeholder="Ej: Familia y Pelusa" class="coop-input-field text-xs font-bold" />
+          </div>
+
+          <!-- 3. Seleccionar Mascota Adoptada -->
+          <div>
+            <label class="block text-xs font-black text-amber-950 mb-1">
+              3. Mascota del Santuario que liderará la Sala:
+            </label>
+            ${pets.length === 0 ? `
+              <div class="bg-amber-100 border border-amber-400 rounded-xl p-3 text-xs text-amber-900 flex items-center justify-between gap-2">
+                <span>⚠️ Aún no tienes mascotas adoptadas.</span>
+                <button type="button" onclick="window.closeCoopGroupModal(); window.openAdoptModal();" class="paper-btn-primary px-3 py-1 text-xs font-black cursor-pointer shadow">
+                  <span>🐾 Adoptar Mascota</span>
+                </button>
+              </div>
+            ` : `
+              <select id="newCoopPetSelect" class="coop-input-field text-xs font-bold cursor-pointer">
+                ${pets.map(p => {
+                  const spec = PET_SPECIES[p.speciesId] || { name: p.speciesId };
+                  return `<option value="${p.id}">${escapeHtml(p.name)} (${escapeHtml(spec.name)}) - Nivel ${p.level || 1}</option>`;
+                }).join('')}
+              </select>
+            `}
+          </div>
+
+          <!-- Botón de Creación -->
+          <button type="button" onclick="window.createCoopGroupAction()" class="btn-coop-primary w-full py-3 text-xs font-black flex items-center justify-center gap-2 shadow-md cursor-pointer hover:scale-102 active:scale-95 transition mt-2">
+            <span>✨</span>
+            <span>Crear Sala Co-Op</span>
+          </button>
+        </div>
+      `;
+    }
+
+    // ------------------------------------------------------------------------
+    // TAB: JOIN (UNIRSE CON CÓDIGO)
+    // ------------------------------------------------------------------------
+    if (tab === 'join') {
+      return `
+        <div class="flex flex-col gap-3 py-1">
+          <p class="text-xs text-[#78350f] m-0">
+            Ingresa el código único de 6 caracteres que te dio tu amigo o pareja (ejemplo: <code>K8P3X9</code>) para unirte a su sala.
+          </p>
+
+          <div class="my-2">
+            <label class="block text-xs font-black text-amber-950 mb-1.5 text-center">
+              Código de Invitación (6 Caracteres):
+            </label>
+            <input type="text" id="coopJoinCodeInput" maxlength="6" placeholder="EJ: K8P3X9" class="coop-input-field text-center font-mono text-2xl tracking-[6px] uppercase font-black" autocomplete="off" />
+          </div>
+
+          <button type="button" onclick="window.joinCoopWithCodeAction()" class="btn-coop-primary w-full py-3 text-xs font-black flex items-center justify-center gap-2 shadow-md cursor-pointer hover:scale-102 active:scale-95 transition">
+            <span>🤝</span>
+            <span>Vincularme al Grupo</span>
+          </button>
+        </div>
+      `;
+    }
+
+    return '';
+  }
+
+  function createCoopGroupAction() {
+    const nameInput = document.getElementById('newCoopGroupNameInput');
+    const groupName = nameInput && nameInput.value ? nameInput.value.trim() : '';
+    if (!groupName || groupName.length < 2) {
+      showPetPaperToast('⚠️ Por favor escribe un nombre para tu grupo (mínimo 2 caracteres).');
+      return;
+    }
+
     const pets = loadStoredPets();
-    if (!isUserVip() && pets.length >= 1) {
-      const modal = document.getElementById('masterpet-coop-modal');
-      if (modal) modal.remove();
-      renderVipPetLimitModal();
+    const petSelect = document.getElementById('newCoopPetSelect');
+    const selectedPetId = petSelect ? petSelect.value : (pets[0] ? pets[0].id : null);
+    const selectedPet = pets.find(p => p.id === selectedPetId) || pets[0];
+
+    if (!selectedPet) {
+      showPetPaperToast('⚠️ Primero debes adoptar una mascota en tu Santuario para asignarla a la sala.');
       return;
     }
 
-    const input = document.getElementById('coopCodeInput');
-    const code = (input && input.value.trim().toUpperCase()) || '';
-    if (!code) {
-      showPetPaperToast('Por favor escribe un código de vínculo válido.');
-      return;
-    }
-    // Verificar si ya la tiene
-    const existing = pets.find(p => p.coopCode === code);
-    if (existing) {
-      showPetPaperToast('¡Ya tienes esta mascota en tu santuario!');
-      return;
-    }
+    const user = getCurrentUserMeta();
+    const code = generateCleanCoopCode();
+    const maxMembers = selectedNewCoopType === 'duo' ? 2 : 4;
 
-    // Crear la mascota vinculada sincronizada
-    const speciesKey = code.includes('CROC') ? 'crocodile' : (code.includes('KITT') ? 'kitten' : 'puppy');
-    const now = Date.now();
-    const linkedPet = {
-      id: 'pet_coop_' + code + '_' + now,
-      speciesId: speciesKey,
-      name: 'Mascota de Pareja (' + code.slice(0, 9) + ')',
-      createdAt: now - (86400000 * 2),
-      lastFedAt: now - 3600000,
-      lastCleanedAt: now - 3600000,
-      lastPlayedAt: now - 3600000,
-      lastSleptAt: now - 3600000,
-      hunger: 85,
-      hygiene: 90,
-      energy: 85,
-      happiness: 95,
-      exp: 40,
-      level: 3,
-      isShared: true,
-      coopCode: code,
-      coParents: ['Tú', 'Pareja / Amigo'],
-      activityLog: [
-        { text: '¡Vínculo Co-Parenting activado exitosamente!', time: now }
+    const newGroup = {
+      id: 'coop_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      code: code,
+      name: groupName,
+      type: selectedNewCoopType,
+      maxMembers: maxMembers,
+      petId: selectedPet.id,
+      petName: selectedPet.name,
+      petSpecies: selectedPet.speciesId,
+      petLevel: selectedPet.level || 1,
+      totalExpPool: 0,
+      createdAt: new Date().toISOString(),
+      members: [
+        {
+          id: user.id || 'mem_' + Date.now(),
+          username: user.username || user.name || 'Mi Usuario',
+          avatar: user.avatar || '🐾',
+          role: 'Líder de Crianza',
+          isOwner: true,
+          expContributed: 0,
+          streakDays: typeof user.streak === 'number' ? user.streak : 1,
+          joinedAt: 'Hoy'
+        }
       ]
     };
 
-    pets.unshift(linkedPet);
-    saveStoredPets(pets);
+    saveRealCoopGroup(newGroup);
 
-    const modal = document.getElementById('masterpet-coop-modal');
-    if (modal) modal.remove();
+    if (sanctuaryState.coopChannel) {
+      sanctuaryState.coopChannel.postMessage({
+        type: 'group_created',
+        group: newGroup
+      });
+    }
 
-    showPetPaperToast(`🤝 ¡Vínculo exitoso! Ahora crían juntos a ${linkedPet.name}.`);
-    renderSanctuaryHub();
-  };
+    showPetPaperToast(`🎉 ¡Sala Co-Op creada exitosamente! Código: ${code}`);
+    switchCoopModalTab('manage');
+  }
+
+  function joinCoopWithCodeAction() {
+    const input = document.getElementById('coopJoinCodeInput');
+    const code = input && input.value ? input.value.trim().toUpperCase() : '';
+    if (!code || code.length !== 6) {
+      showPetPaperToast('⚠️ Por favor ingresa un código de 6 caracteres válido (ej: K8P3X9).');
+      return;
+    }
+
+    const user = getCurrentUserMeta();
+
+    // Sincronización con backend /api/pets/co-parent
+    try {
+      fetch('/api/pets/co-parent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'join',
+          code: code,
+          user: {
+            id: user.id || 'mem_' + Date.now(),
+            username: user.username || user.name || 'Invitado',
+            avatar: user.avatar || '🐾',
+            streak: user.streak || 1
+          }
+        })
+      })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data && data.group) {
+          saveRealCoopGroup(data.group);
+          if (sanctuaryState.coopChannel) {
+            sanctuaryState.coopChannel.postMessage({ type: 'coop_sync', group: data.group });
+          }
+          showPetPaperToast(`🤝 ¡Te has vinculado exitosamente a "${data.group.name}"!`);
+          switchCoopModalTab('manage');
+          return;
+        }
+        handleLocalCoopJoin(code, user);
+      })
+      .catch(() => {
+        handleLocalCoopJoin(code, user);
+      });
+    } catch (_) {
+      handleLocalCoopJoin(code, user);
+    }
+  }
+
+  function handleLocalCoopJoin(code, user) {
+    let group = getRealCoopGroup();
+    if (group && group.code === code) {
+      showPetPaperToast(`🤝 Ya perteneces a la sala "${group.name}".`);
+      switchCoopModalTab('manage');
+      return;
+    }
+
+    const pets = loadStoredPets();
+    const activePet = pets[0] || { id: 'shared_' + Date.now(), name: 'Casimerito Co-Op', speciesId: 'puppy', level: 1 };
+
+    group = {
+      id: 'coop_' + Date.now(),
+      code: code,
+      name: 'Sala Co-Op ' + code,
+      type: 'duo',
+      maxMembers: 2,
+      petId: activePet.id,
+      petName: activePet.name,
+      petSpecies: activePet.speciesId || 'puppy',
+      petLevel: activePet.level || 1,
+      totalExpPool: 0,
+      createdAt: new Date().toISOString(),
+      members: [
+        {
+          id: user.id || 'mem_self',
+          username: user.username || user.name || 'Mi Usuario',
+          avatar: user.avatar || '🐾',
+          role: 'Co-Parent',
+          isOwner: false,
+          expContributed: 0,
+          streakDays: typeof user.streak === 'number' ? user.streak : 1,
+          joinedAt: 'Hoy'
+        }
+      ]
+    };
+
+    saveRealCoopGroup(group);
+
+    if (sanctuaryState.coopChannel) {
+      sanctuaryState.coopChannel.postMessage({
+        type: 'coop_joined',
+        code: code,
+        member: group.members[0]
+      });
+    }
+
+    showPetPaperToast(`🤝 ¡Código ${code} vinculado correctamente!`);
+    switchCoopModalTab('manage');
+  }
+
+  function handleContributeCoopExp() {
+    const group = getRealCoopGroup();
+    if (!group) return;
+
+    const currentExp = getCurrentUserExp();
+    if (currentExp <= 0) {
+      showPetPaperToast('⚠️ No tienes EXP disponible para aportar. ¡Completa lecciones en los Portales o cuida a tu mascota para ganar EXP!');
+      return;
+    }
+
+    const amount = Math.min(25, currentExp);
+    deductUserExp(amount);
+
+    group.totalExpPool = (group.totalExpPool || 0) + amount;
+
+    const user = getCurrentUserMeta();
+    const myName = user.username || user.name || 'Mi Usuario';
+    let member = (group.members || []).find(m => m.username === myName || m.isOwner);
+    if (!member && group.members && group.members.length > 0) {
+      member = group.members[0];
+    }
+    if (member) {
+      member.expContributed = (member.expContributed || 0) + amount;
+    }
+
+    saveRealCoopGroup(group);
+
+    if (sanctuaryState.coopChannel) {
+      sanctuaryState.coopChannel.postMessage({
+        type: 'exp_contributed',
+        code: group.code,
+        amount: amount,
+        by: myName
+      });
+    }
+
+    showPetPaperToast(`⭐ ¡Aportaste +${amount} EXP a la sala de crianza! (Te restan ${currentExp - amount} EXP)`);
+    switchCoopModalTab('manage');
+  }
+
+  function leaveOrDeleteCoopGroup() {
+    const group = getRealCoopGroup();
+    if (!group) return;
+
+    if (confirm(`¿Estás seguro de que deseas abandonar o eliminar la sala "${group.name}"? Esta acción reiniciará tu grupo.`)) {
+      if (sanctuaryState.coopChannel) {
+        sanctuaryState.coopChannel.postMessage({
+          type: 'group_deleted',
+          code: group.code
+        });
+      }
+      saveRealCoopGroup(null);
+      showPetPaperToast('🚪 Has abandonado la sala de crianza exitosamente.');
+      switchCoopModalTab('manage');
+    }
+  }
+
+  function copyCoopInviteCode() {
+    const group = getRealCoopGroup();
+    if (!group || !group.code) return;
+    if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(group.code).then(() => {
+        showPetPaperToast(`📋 ¡Código de Invitación (${group.code}) copiado al portapapeles!`);
+      }).catch(() => {
+        fallbackCopyText(group.code);
+      });
+    } else {
+      fallbackCopyText(group.code);
+    }
+  }
+
+  function copyCoopInviteLink() {
+    const group = getRealCoopGroup();
+    if (!group || !group.code) return;
+    const link = window.location.origin + '/?coop=' + group.code;
+    if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(link).then(() => {
+        showPetPaperToast('🔗 ¡Enlace copiado al portapapeles!');
+      }).catch(() => {
+        fallbackCopyText(link);
+      });
+    } else {
+      fallbackCopyText(link);
+    }
+  }
+
+  function fallbackCopyText(text) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+      showPetPaperToast('¡Copiado al portapapeles!');
+    } catch (_) {
+      showPetPaperToast('Texto: ' + text);
+    }
+  }
+
+  // Exportaciones y protección estricta en el ámbito global
+  global.openPetCoopModal = openCleanCoopGroupModal;
+  global.openCoopGroupModal = openCleanCoopGroupModal;
+  global.closeCoopGroupModal = closeCleanCoopGroupModal;
+  global.switchCoopModalTab = switchCoopModalTab;
+  global.selectCoopType = selectCoopType;
+  global.createCoopGroupAction = createCoopGroupAction;
+  global.joinCoopWithCodeAction = joinCoopWithCodeAction;
+  global.copyCoopInviteCode = copyCoopInviteCode;
+  global.copyCoopInviteLink = copyCoopInviteLink;
+  global.handleContributeCoopExp = handleContributeCoopExp;
+  global.leaveOrDeleteCoopGroup = leaveOrDeleteCoopGroup;
+  global.getRealCoopGroup = getRealCoopGroup;
+  global.saveRealCoopGroup = saveRealCoopGroup;
+
+  try {
+    Object.defineProperty(global, 'openPetCoopModal', {
+      get: () => openCleanCoopGroupModal,
+      set: () => {},
+      configurable: true
+    });
+    Object.defineProperty(global, 'openCoopGroupModal', {
+      get: () => openCleanCoopGroupModal,
+      set: () => {},
+      configurable: true
+    });
+  } catch (_) {}
 
   global.setPetHubTab = function (tab) {
     sanctuaryState.activeTab = tab;
@@ -2348,16 +2987,26 @@
     species: PET_SPECIES,
     foods: PET_FOODS,
     cleanButtons: removeFloatingPetButtons,
+    openCoop: openCleanCoopGroupModal,
+    getCoopGroup: getRealCoopGroup,
+    saveCoopGroup: saveRealCoopGroup,
     state: sanctuaryState
   };
 
-  // Limpieza proactiva de cualquier botón flotante o vista residual
+  // Limpieza proactiva de cualquier botón flotante o vista residual y purga de bots
   if (typeof document !== 'undefined') {
     removeFloatingPetButtons();
+    purgeFakeCoopData();
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', removeFloatingPetButtons);
+      document.addEventListener('DOMContentLoaded', () => {
+        removeFloatingPetButtons();
+        purgeFakeCoopData();
+      });
     } else {
-      setTimeout(removeFloatingPetButtons, 100);
+      setTimeout(() => {
+        removeFloatingPetButtons();
+        purgeFakeCoopData();
+      }, 100);
     }
   }
 

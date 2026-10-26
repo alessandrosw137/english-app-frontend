@@ -6,6 +6,11 @@
  *  - window.MasterENGSocialProfile
  *  - window.renderUserProfile (Hooks into core modal renderer)
  *  - window.openEditProfileModal
+ *  - window.openAddHobbyModal
+ *  - window.openEditSocialLinksModal
+ *  - window.triggerAvatarUpload
+ *  - window.closeProfileModal
+ *  - window.confirmProfileLogout
  *  - window.interactWithPet
  */
 (function (global) {
@@ -29,6 +34,9 @@
   // 2. CONSTANTS & PRESETS (AVATARS, COVERS, HOBBIES)
   // ============================================================================
   const STORAGE_KEY_SOCIAL = 'mastereng_profile_social_data';
+  const STORAGE_KEY_PETS = 'mastereng_pets';
+  const STORAGE_KEY_COOP = 'mastereng_coop_groups';
+  const MIGRATION_FLAG_V3 = 'mastereng_profile_clean_v3';
 
   const DEFAULT_AVATARS = [
     { id: 'fox', emoji: '🦊', label: 'Papercraft Fox' },
@@ -52,23 +60,102 @@
 
   const COMMON_HOBBIES = [
     '🎮 Gaming', '🏋️ Gym & Fitness', '🎵 Music & Guitar', '💻 Coding',
-    '📚 Reading', '✈️ Travel', '☕ Specialty Coffee', '🎬 Cinema',
-    '🍕 Foodie', '🎨 Digital Art', '🗣️ Language Exchange', '🐾 Pet Lover'
+    '📚 Reading', '✈️ Travel', '☕ Coffee Enthusiast', '🎬 Cinema',
+    '🍕 Foodie', '🎨 Digital Art', '🗣️ Language Exchange', '🐾 Pet Lover',
+    '🌱 Gardening', '⚽ Football', '🧘 Yoga & Wellness'
   ];
 
   // ============================================================================
-  // 3. DATA PERSISTENCE & MERGE
+  // 3. MIGRATION V3 (LIMPIEZA DE MOCK DATA / VALORES POR DEFECTO HARDCODEADOS)
+  // ============================================================================
+  function runProfileMigrationV3() {
+    try {
+      const cleaned = localStorage.getItem(MIGRATION_FLAG_V3);
+      if (cleaned === 'true') return;
+
+      const raw = localStorage.getItem(STORAGE_KEY_SOCIAL);
+      if (raw) {
+        let parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          // Detectar y purgar datos de relleno demo
+          if (parsed.location && parsed.location.includes('Ciudad de México')) {
+            parsed.location = 'Sin especificar';
+          }
+          if (parsed.relationship && parsed.relationship.includes('Criador Solitario')) {
+            parsed.relationship = 'Sin compañero de crianza';
+          }
+          if (parsed.bio && (
+            parsed.bio.includes('Explorando MasterENG en modo invitado') ||
+            parsed.bio.includes('Dominando el inglés con IA y cuidando de mis mascotas')
+          )) {
+            parsed.bio = "Sin biografía aún. Haz clic en 'Editar Perfil' para presentarte.";
+          }
+          if (parsed.socialLinks && (
+            parsed.socialLinks.instagram === 'mastereng_learner' ||
+            parsed.socialLinks.twitter === 'mastereng_ai' ||
+            parsed.socialLinks.tiktok === 'english.fluent' ||
+            (parsed.socialLinks.facebook && parsed.socialLinks.facebook.includes('mastereng'))
+          )) {
+            parsed.socialLinks = {};
+          }
+          if (Array.isArray(parsed.hobbies) && (
+            parsed.hobbies.includes('☕ Coffee Enthusiast') &&
+            parsed.hobbies.includes('🎵 Music & Guitar') &&
+            parsed.hobbies.includes('💻 Coding')
+          )) {
+            parsed.hobbies = [];
+          }
+          // Eliminar mascota de relleno si no está en mastereng_pets
+          delete parsed.pet;
+          delete parsed.sharedPets;
+
+          localStorage.setItem(STORAGE_KEY_SOCIAL, JSON.stringify(parsed));
+        }
+      }
+
+      // Limpiar también grupo Co-Op demo pre-cargado si era un placeholder
+      const rawCoop = localStorage.getItem(STORAGE_KEY_COOP);
+      if (rawCoop) {
+        try {
+          const parsedCoop = JSON.parse(rawCoop);
+          if (parsedCoop && parsedCoop.id === 'coop_master_group_1' && Array.isArray(parsedCoop.members)) {
+            if (parsedCoop.id === 'coop_master_group_1' || parsedCoop.isDemo) {
+              localStorage.removeItem(STORAGE_KEY_COOP);
+            }
+          }
+        } catch (_) {}
+      }
+
+      localStorage.setItem(MIGRATION_FLAG_V3, 'true');
+    } catch (err) {
+      console.warn('[ProfileSocial] Error in migration v3:', err);
+    }
+  }
+
+  // Ejecutar migración de forma inmediata
+  runProfileMigrationV3();
+
+  // ============================================================================
+  // 4. DATA PERSISTENCE & MERGE
   // ============================================================================
   function getStoredUser() {
     try {
       const raw = localStorage.getItem('mastereng_user') || localStorage.getItem('english_app_user_session');
-      return raw ? JSON.parse(raw) : { role: 'guest', username: 'Invitado' };
+      if (raw) {
+        const u = JSON.parse(raw);
+        if (u && typeof u === 'object') {
+          u.username = u.username || u.name || (u.email ? u.email.split('@')[0] : 'Master Learner');
+          return u;
+        }
+      }
+      return { role: 'guest', username: 'Invitado' };
     } catch (_) {
       return { role: 'guest', username: 'Invitado' };
     }
   }
 
   function getSocialProfileData(user) {
+    runProfileMigrationV3();
     let data = null;
     try {
       const raw = localStorage.getItem(STORAGE_KEY_SOCIAL);
@@ -76,9 +163,8 @@
     } catch (_) {}
 
     const isGuest = user.role === 'guest' || user.username === 'Invitado';
-    const fallbackName = user.username || 'Master Learner';
 
-    // Recuperar posible pareja/compañero de citas 3D de world3d.js / social_chat.js
+    // Recuperar posible pareja/compañero real de citas 3D de world3d.js
     const couplePartner = localStorage.getItem('mastereng_active_date_partner') ||
                           localStorage.getItem('mastereng_couple_partner_name') ||
                           null;
@@ -88,54 +174,22 @@
       coverId: 'cosmic',
       avatarType: 'emoji',
       avatarEmoji: isGuest ? '👤' : '🦊',
-      avatarCustomUrl: '',
-      bio: isGuest
-        ? 'Explorando MasterENG en modo invitado.'
-        : 'Dominando el inglés con IA y cuidando de mis mascotas 🚀 ¡Practiquemos juntos!',
-      location: 'Ciudad de México, México',
-      relationship: couplePartner ? `Compañero de Crianza con @${couplePartner}` : 'Enfoque Total / Criador Solitario',
-      hobbies: ['🎮 Gaming', '🎵 Music & Guitar', '💻 Coding', '☕ Specialty Coffee'],
-      socialLinks: {
-        instagram: 'mastereng_learner',
-        tiktok: 'english.fluent',
-        facebook: 'mastereng.club',
-        twitter: 'mastereng_ai',
-        github: 'english-developer',
-        linkedin: 'mastereng-pro'
-      },
-      pet: {
-        name: 'Sparky',
-        species: 'Papercraft Cyber-Fox',
-        level: 8,
-        exp: 720,
-        stage: 'Teen (Joven Ágil)',
-        streakDays: 14,
-        hunger: 85,
-        happiness: 92,
-        energy: 78,
-        englishIQ: 145,
-        favoriteWord: 'Resilience'
-      },
-      sharedPets: [
-        {
-          name: 'Luna',
-          species: 'Origami Owl',
-          coParent: couplePartner || '@StarlightPartner',
-          level: 6,
-          stage: 'Baby (Cachorro)',
-          streak: 11
-        }
-      ]
+      avatarCustomUrl: (user && user.avatar && user.avatar.startsWith('data:')) ? user.avatar : '',
+      bio: "Sin biografía aún. Haz clic en 'Editar Perfil' para presentarte.",
+      location: 'Sin especificar',
+      relationship: couplePartner ? `Compañero de Crianza con @${couplePartner}` : 'Sin compañero de crianza',
+      hobbies: [],
+      socialLinks: {}
     };
 
     if (!data) {
-      data = defaultState;
+      data = Object.assign({}, defaultState);
       saveSocialProfileData(data);
     } else {
-      // Garantizar campos completos
+      // Garantizar campos sin mezclar con mocks
       data = Object.assign({}, defaultState, data);
-      data.socialLinks = Object.assign({}, defaultState.socialLinks, data.socialLinks);
-      data.pet = Object.assign({}, defaultState.pet, data.pet);
+      if (!Array.isArray(data.hobbies)) data.hobbies = [];
+      if (!data.socialLinks || typeof data.socialLinks !== 'object') data.socialLinks = {};
     }
 
     return data;
@@ -150,12 +204,44 @@
   }
 
   // ============================================================================
-  // 4. RANK ALGORITHMS (ENGLISH CEFR + PET PARENT RANK)
+  // 5. RECUPERAR MASCOTAS REALES DEL USUARIO (localStorage: mastereng_pets)
+  // ============================================================================
+  function getUserPetsData() {
+    let pets = [];
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_PETS);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) pets = parsed;
+      }
+    } catch (_) {}
+    const hasPet = pets.length > 0;
+    const activePet = hasPet ? (pets.find(p => p.active) || pets[0]) : null;
+    return { pets, hasPet, activePet };
+  }
+
+  function saveUserPetsData(pets) {
+    try {
+      localStorage.setItem(STORAGE_KEY_PETS, JSON.stringify(pets));
+    } catch (err) {
+      console.warn('[ProfileSocial] Error saving pets:', err);
+    }
+  }
+
+  // ============================================================================
+  // 6. RANK ALGORITHMS (ENGLISH CEFR + PET PARENT RANK)
   // ============================================================================
   function calculateEnglishRank(user) {
-    const exp = parseInt(user.exp, 10) || 0;
-    
-    // Contar palabras dominadas de localStorage si existen
+    let exp = parseInt(user.exp, 10);
+    if (isNaN(exp)) {
+      try {
+        exp = parseInt(localStorage.getItem('mastereng_user_exp'), 10) || 0;
+      } catch (_) {
+        exp = 0;
+      }
+    }
+    exp = Math.max(0, exp);
+
     let learnedCount = 0;
     try {
       const rawWords = localStorage.getItem('mastereng_world3d_learned_v2') || localStorage.getItem('mastereng_learned_words');
@@ -219,6 +305,15 @@
     const rangeSpan = Math.max(1, maxExp - minExp);
     const percent = Math.min(100, Math.round((progressInRange / rangeSpan) * 100));
 
+    let streak = parseInt(user.streak_days || user.streak, 10);
+    if (isNaN(streak)) {
+      try {
+        streak = parseInt(localStorage.getItem('mastereng_streak_days'), 10) || 0;
+      } catch (_) {
+        streak = 0;
+      }
+    }
+
     return {
       tierCode,
       title,
@@ -230,12 +325,22 @@
       neededForNext: Math.max(0, maxExp - exp),
       percent,
       nextTitle,
-      wordsMastered: Math.max(learnedCount, Math.floor(exp / 15))
+      wordsMastered: learnedCount,
+      streak: Math.max(0, streak)
     };
   }
 
-  function calculatePetParentRank(pet) {
-    const lvl = pet.level || 1;
+  function calculatePetParentRank(activePet, petCount) {
+    if (!activePet || petCount === 0) {
+      return {
+        title: 'Sin Mascotas (0 Adoptadas)',
+        badgeEmoji: '🥚',
+        rankTier: 'Sin Mascotas',
+        streak: 0
+      };
+    }
+
+    const lvl = activePet.level || 1;
     let title = 'Cuidador Novato (Egg Watcher)';
     let badgeEmoji = '🥚';
     let rankTier = 'Novice';
@@ -258,12 +363,88 @@
       title,
       badgeEmoji,
       rankTier,
-      streak: pet.streakDays || 1
+      streak: activePet.streakDays || activePet.streak || 1
     };
   }
 
   // ============================================================================
-  // 5. RENDERER PRINCIPAL: PERFIL SOCIAL ESTILO FACEBOOK / DISCORD
+  // 7. GESTIÓN Y SUBIDA DE AVATAR (CANVAS COMPRESS 256x256 -> BASE64)
+  // ============================================================================
+  function triggerAvatarUpload() {
+    let fileInput = document.getElementById('profileAvatarFileInput');
+    if (!fileInput) {
+      fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.id = 'profileAvatarFileInput';
+      fileInput.accept = 'image/*';
+      fileInput.style.display = 'none';
+      document.body.appendChild(fileInput);
+    }
+
+    fileInput.onchange = function (e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function (event) {
+        const img = new Image();
+        img.onload = function () {
+          const canvas = document.createElement('canvas');
+          canvas.width = 256;
+          canvas.height = 256;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return;
+
+          // Recorte centrado proporcional (object-fit: cover en canvas)
+          const size = Math.min(img.width, img.height);
+          const sx = (img.width - size) / 2;
+          const sy = (img.height - size) / 2;
+          ctx.drawImage(img, sx, sy, size, size, 0, 0, 256, 256);
+
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.82);
+
+          const user = getStoredUser();
+          const social = getSocialProfileData(user);
+          social.avatarType = 'custom';
+          social.avatarCustomUrl = compressedBase64;
+          saveSocialProfileData(social);
+
+          user.avatar = compressedBase64;
+          try {
+            localStorage.setItem('mastereng_user', JSON.stringify(user));
+          } catch (_) {}
+
+          // Notificar al backend si existe /api/profile/update
+          if (typeof fetch === 'function') {
+            fetch('/api/profile/update', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                avatar: compressedBase64,
+                username: user.username
+              })
+            }).catch(() => {});
+          }
+
+          renderSocialProfileView();
+
+          const toast = (typeof showFloatingToast === 'function')
+            ? showFloatingToast
+            : (typeof window !== 'undefined' && typeof window.showFloatingToast === 'function' ? window.showFloatingToast : console.log);
+          toast('📸 Foto de perfil actualizada con éxito.');
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+      fileInput.value = '';
+    };
+
+    fileInput.click();
+  }
+  global.triggerAvatarUpload = triggerAvatarUpload;
+
+  // ============================================================================
+  // 8. RENDERER PRINCIPAL: PERFIL SOCIAL ESTILO FACEBOOK / DISCORD
   // ============================================================================
   function renderSocialProfileView() {
     ensurePetProfileStylesheet();
@@ -273,9 +454,10 @@
 
     const user = getStoredUser();
     const social = getSocialProfileData(user);
+    const { pets, hasPet, activePet } = getUserPetsData();
     const coopGroup = getCoopGroupData(user);
     const engRank = calculateEnglishRank(user);
-    const petRank = calculatePetParentRank(social.pet);
+    const petRank = calculatePetParentRank(activePet, pets.length);
     const isGuest = user.role === 'guest' || user.username === 'Invitado';
     const isAdmin = Boolean(
       user && (
@@ -299,6 +481,14 @@
       ? `background-image: url('${social.coverPhoto}');`
       : `background: ${social.coverPhoto};`;
 
+    // Redes sociales configuradas
+    const socialLinks = social.socialLinks || {};
+    const validSocialKeys = Object.keys(socialLinks).filter(k => Boolean(socialLinks[k] && String(socialLinks[k]).trim()));
+    const hasAnySocial = validSocialKeys.length > 0;
+
+    // Hobbies
+    const hobbies = Array.isArray(social.hobbies) ? social.hobbies : [];
+
     // Renderizado HTML
     container.innerHTML = `
       <div class="profile-social-container">
@@ -319,7 +509,7 @@
               <div class="profile-avatar-img">
                 ${avatarHtml}
               </div>
-              <div class="profile-avatar-badge" onclick="window.openEditProfileModal('avatar')" title="Cambiar foto de perfil">
+              <div class="profile-avatar-badge" onclick="window.triggerAvatarUpload()" title="Subir foto de perfil desde tu dispositivo">
                 <span>📸</span>
               </div>
             </div>
@@ -337,9 +527,16 @@
                 </button>
               ` : ''}
 
-              <button type="button" onclick="window.handleProfileLogout()" class="btn-profile-secondary border-rose-500/40 text-rose-300">
+              <!-- BOTÓN SALIR: Cierra el modal limpiamente sin cerrar sesión -->
+              <button type="button" onclick="window.closeProfileModal()" class="btn-profile-secondary border-slate-700 text-slate-300 hover:text-white" title="Cerrar perfil y regresar">
                 <span>🚪</span>
                 <span>Salir</span>
+              </button>
+
+              <!-- BOTÓN CERRAR SESIÓN SEPARADO CON CONFIRMACIÓN -->
+              <button type="button" onclick="window.confirmProfileLogout()" class="btn-profile-secondary border-rose-500/40 text-rose-300 hover:bg-rose-950/40" title="Cerrar sesión de la cuenta">
+                <span>🔒</span>
+                <span>Cerrar Sesión</span>
               </button>
             </div>
           </div>
@@ -347,22 +544,22 @@
           <!-- Nombres, Handle y Estado -->
           <div class="profile-names-group">
             <h3>
-              <span>${user.username || 'Master Learner'}</span>
+              <span>${escapeHtml(user.username || 'Master Learner')}</span>
               <span class="profile-tag-badge">${gameId}</span>
               ${isGuest ? '<span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold">Modo Invitado</span>' : ''}
             </h3>
-            <p class="profile-bio-text">"${social.bio}"</p>
+            <p class="profile-bio-text">"${escapeHtml(social.bio)}"</p>
           </div>
 
           <!-- Detalles de Origen, Relación / Compañero y Fecha -->
           <div class="profile-details-grid">
             <div class="profile-detail-item">
               <span class="profile-detail-icon">📍</span>
-              <span>De: <strong>${social.location}</strong></span>
+              <span>De: <strong>${escapeHtml(social.location)}</strong></span>
             </div>
             <div class="profile-detail-item">
               <span class="profile-detail-icon">💖</span>
-              <span><strong>${social.relationship}</strong></span>
+              <span><strong>${escapeHtml(social.relationship)}</strong></span>
             </div>
             <div class="profile-detail-item">
               <span class="profile-detail-icon">📅</span>
@@ -370,66 +567,77 @@
             </div>
           </div>
 
-          <!-- Hobbies e Intereses -->
+          <!-- Hobbies e Intereses con botón de eliminar individual (×) -->
           <div class="profile-hobbies-section">
             <span class="text-[11px] font-bold text-slate-400 mr-1">Intereses:</span>
-            ${(social.hobbies || []).map(h => `<span class="hobby-pill">${h}</span>`).join('')}
-            <button type="button" onclick="window.openEditProfileModal('hobbies')" class="hobby-pill border-dashed border-sky-400/40 text-sky-300 hover:border-sky-400 cursor-pointer">
+            ${hobbies.length > 0 ? hobbies.map(h => `
+              <span class="hobby-pill">
+                <span>${escapeHtml(h)}</span>
+                <button type="button" onclick="event.stopPropagation(); window.removeSocialHobby('${escapeHtml(h).replace(/'/g, "\\'")}')" class="ml-1 text-slate-400 hover:text-rose-400 font-black cursor-pointer text-xs leading-none" title="Eliminar este interés">&times;</button>
+              </span>
+            `).join('') : `
+              <span class="text-xs text-slate-500 italic mr-2">Sin intereses agregados</span>
+            `}
+            <button type="button" onclick="window.openAddHobbyModal()" class="hobby-pill border-dashed border-sky-400/40 text-sky-300 hover:border-sky-400 cursor-pointer">
               <span>➕ Agregar</span>
             </button>
           </div>
         </div>
 
-        <!-- 3. ENLACES A REDES SOCIALES -->
+        <!-- 3. ENLACES A REDES SOCIALES (CERO BOTONES FALSOS SI ESTÁ VACÍO) -->
         <div class="profile-social-links-bar">
           <span class="text-[11px] font-bold text-slate-400 mr-2 flex items-center gap-1.5">
             <span>🌐</span>
             <span>Social:</span>
           </span>
 
-          ${social.socialLinks.instagram ? `
-            <a href="https://instagram.com/${social.socialLinks.instagram}" target="_blank" rel="noopener noreferrer" class="social-pill-link social-instagram">
-              <span>📸</span>
-              <span>@${social.socialLinks.instagram}</span>
-            </a>
-          ` : ''}
+          ${hasAnySocial ? `
+            ${socialLinks.instagram ? `
+              <a href="${getSocialUrl(socialLinks.instagram, 'instagram')}" target="_blank" rel="noopener noreferrer" class="social-pill-link social-instagram" title="Abrir Instagram">
+                <span>📸</span>
+                <span>${escapeHtml(getSocialDisplay(socialLinks.instagram, 'instagram'))}</span>
+              </a>
+            ` : ''}
 
-          ${social.socialLinks.tiktok ? `
-            <a href="https://tiktok.com/@${social.socialLinks.tiktok}" target="_blank" rel="noopener noreferrer" class="social-pill-link social-tiktok">
-              <span>🎵</span>
-              <span>TikTok</span>
-            </a>
-          ` : ''}
+            ${socialLinks.tiktok ? `
+              <a href="${getSocialUrl(socialLinks.tiktok, 'tiktok')}" target="_blank" rel="noopener noreferrer" class="social-pill-link social-tiktok" title="Abrir TikTok">
+                <span>🎵</span>
+                <span>${escapeHtml(getSocialDisplay(socialLinks.tiktok, 'tiktok'))}</span>
+              </a>
+            ` : ''}
 
-          ${social.socialLinks.facebook ? `
-            <a href="https://facebook.com/${social.socialLinks.facebook}" target="_blank" rel="noopener noreferrer" class="social-pill-link social-facebook">
-              <span>📘</span>
-              <span>Facebook</span>
-            </a>
-          ` : ''}
+            ${socialLinks.facebook ? `
+              <a href="${getSocialUrl(socialLinks.facebook, 'facebook')}" target="_blank" rel="noopener noreferrer" class="social-pill-link social-facebook" title="Abrir Facebook">
+                <span>📘</span>
+                <span>${escapeHtml(getSocialDisplay(socialLinks.facebook, 'facebook'))}</span>
+              </a>
+            ` : ''}
 
-          ${social.socialLinks.twitter ? `
-            <a href="https://x.com/${social.socialLinks.twitter}" target="_blank" rel="noopener noreferrer" class="social-pill-link social-twitter">
-              <span>🐦</span>
-              <span>@${social.socialLinks.twitter}</span>
-            </a>
-          ` : ''}
+            ${socialLinks.twitter ? `
+              <a href="${getSocialUrl(socialLinks.twitter, 'twitter')}" target="_blank" rel="noopener noreferrer" class="social-pill-link social-twitter" title="Abrir X / Twitter">
+                <span>🐦</span>
+                <span>${escapeHtml(getSocialDisplay(socialLinks.twitter, 'twitter'))}</span>
+              </a>
+            ` : ''}
 
-          ${social.socialLinks.github ? `
-            <a href="https://github.com/${social.socialLinks.github}" target="_blank" rel="noopener noreferrer" class="social-pill-link social-github">
-              <span>💻</span>
-              <span>GitHub</span>
-            </a>
-          ` : ''}
+            ${socialLinks.github ? `
+              <a href="${getSocialUrl(socialLinks.github, 'github')}" target="_blank" rel="noopener noreferrer" class="social-pill-link social-github" title="Abrir GitHub">
+                <span>💻</span>
+                <span>${escapeHtml(getSocialDisplay(socialLinks.github, 'github'))}</span>
+              </a>
+            ` : ''}
 
-          ${social.socialLinks.linkedin ? `
-            <a href="https://linkedin.com/in/${social.socialLinks.linkedin}" target="_blank" rel="noopener noreferrer" class="social-pill-link social-linkedin">
-              <span>💼</span>
-              <span>LinkedIn</span>
-            </a>
-          ` : ''}
+            ${socialLinks.linkedin ? `
+              <a href="${getSocialUrl(socialLinks.linkedin, 'linkedin')}" target="_blank" rel="noopener noreferrer" class="social-pill-link social-linkedin" title="Abrir LinkedIn">
+                <span>💼</span>
+                <span>${escapeHtml(getSocialDisplay(socialLinks.linkedin, 'linkedin'))}</span>
+              </a>
+            ` : ''}
+          ` : `
+            <span class="text-xs text-slate-500 italic mr-2">Sin redes vinculadas</span>
+          `}
 
-          <button type="button" onclick="window.openEditProfileModal('social')" class="ml-auto text-[11px] font-bold text-sky-400 hover:text-sky-300 transition cursor-pointer">
+          <button type="button" onclick="window.openEditSocialLinksModal()" class="ml-auto text-[11px] font-bold text-sky-400 hover:text-sky-300 transition cursor-pointer">
             ⚙️ Editar Redes
           </button>
         </div>
@@ -437,7 +645,7 @@
         <!-- 4. INSIGNIAS OFICIALES: RANGO DE INGLÉS CEFR + SANTUARIO DE MASCOTAS -->
         <div class="profile-badges-container">
           
-          <!-- TARJETA 1: INSIGNIA METÁLICA DE RANGO DE INGLÉS (CEFR) -->
+          <!-- TARJETA 1: INSIGNIA METÁLICA DE RANGO DE INGLÉS (CEFR) CON EXP REAL -->
           <div class="rank-card-metallic ${engRank.tierClass}">
             <div class="rank-card-header">
               <span class="rank-card-title">
@@ -474,18 +682,18 @@
               </div>
             </div>
 
-            <!-- Métricas de estudio -->
+            <!-- Métricas de estudio reales -->
             <div class="rank-stats-pills">
               <div class="stat-metric-pill">
                 <span class="num">${engRank.wordsMastered}</span>
                 <span class="lbl">Palabras</span>
               </div>
               <div class="stat-metric-pill">
-                <span class="num">🔥 ${user.streak_days || 1}</span>
+                <span class="num">🔥 ${engRank.streak}</span>
                 <span class="lbl">Días Racha</span>
               </div>
               <div class="stat-metric-pill">
-                <span class="num">96%</span>
+                <span class="num">${engRank.currentExp > 0 ? '98%' : '0%'}</span>
                 <span class="lbl">Precisión</span>
               </div>
             </div>
@@ -501,91 +709,116 @@
                 <span>📦</span>
                 <span>Santuario de Mascotas</span>
               </span>
-              <span class="text-[10px] font-bold text-[#5c2e14]">
-                ${petRank.badgeEmoji} ${petRank.rankTier}
+              <span class="text-[10px] font-bold text-[#5c2e14] bg-amber-100/90 px-2 py-0.5 rounded-full border border-amber-300">
+                ${petRank.badgeEmoji} ${hasPet ? `Lv.${activePet.level || 1} • ${pets.length} ${pets.length === 1 ? 'Mascota' : 'Mascotas'}` : '0 Mascotas Adoptadas'}
               </span>
             </div>
 
-            <!-- Mascota Principal en Vivo -->
-            <div class="craft-pet-main-row">
-              <div class="craft-pet-avatar-cutout">
-                <span>🦊</span>
-                <div class="craft-pet-level-badge">Lv.${social.pet.level}</div>
-              </div>
-              <div class="craft-pet-details">
-                <h4>
-                  <span>${social.pet.name}</span>
-                  <span class="text-xs">✨</span>
-                </h4>
-                <p>${social.pet.species} • ${social.pet.stage}</p>
-                <div class="craft-streak-indicator">
-                  <span>❤️ Racha de Cuidado:</span>
-                  <span>${social.pet.streakDays} días</span>
+            ${hasPet && activePet ? `
+              <!-- Mascota Principal Real en Vivo -->
+              <div class="craft-pet-main-row">
+                <div class="craft-pet-avatar-cutout">
+                  <span>${activePet.icon || activePet.emoji || '🐾'}</span>
+                  <div class="craft-pet-level-badge">Lv.${activePet.level || 1}</div>
+                </div>
+                <div class="craft-pet-details">
+                  <h4>
+                    <span>${escapeHtml(activePet.name || 'Mi Mascota')}</span>
+                    <span class="text-xs">✨</span>
+                  </h4>
+                  <p>${escapeHtml(activePet.species || 'Casimerito')} • ${escapeHtml(activePet.stage || 'Bebé')}</p>
+                  <div class="craft-streak-indicator">
+                    <span>❤️ Racha de Cuidado:</span>
+                    <span>${activePet.streakDays || activePet.streak || 1} días</span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <!-- Barras de Estado en Vivo (Hambre, Felicidad, Energía) -->
-            <div class="craft-pet-meters-grid">
-              <div class="craft-meter-box">
-                <span class="title">🍖 Hambre: ${social.pet.hunger}%</span>
-                <div class="craft-meter-bar-track">
-                  <div class="craft-meter-bar-fill fill-hunger" style="width: ${social.pet.hunger}%;"></div>
+              <!-- Barras de Estado en Vivo (Hambre, Felicidad, Energía) -->
+              <div class="craft-pet-meters-grid">
+                <div class="craft-meter-box">
+                  <span class="title">🍖 Hambre: ${activePet.hunger || 80}%</span>
+                  <div class="craft-meter-bar-track">
+                    <div class="craft-meter-bar-fill fill-hunger" style="width: ${activePet.hunger || 80}%;"></div>
+                  </div>
+                </div>
+                <div class="craft-meter-box">
+                  <span class="title">💖 Ánimo: ${activePet.happiness || 85}%</span>
+                  <div class="craft-meter-bar-track">
+                    <div class="craft-meter-bar-fill fill-happy" style="width: ${activePet.happiness || 85}%;"></div>
+                  </div>
+                </div>
+                <div class="craft-meter-box">
+                  <span class="title">⚡ Energía: ${activePet.energy || 75}%</span>
+                  <div class="craft-meter-bar-track">
+                    <div class="craft-meter-bar-fill fill-energy" style="width: ${activePet.energy || 75}%;"></div>
+                  </div>
                 </div>
               </div>
-              <div class="craft-meter-box">
-                <span class="title">💖 Ánimo: ${social.pet.happiness}%</span>
-                <div class="craft-meter-bar-track">
-                  <div class="craft-meter-bar-fill fill-happy" style="width: ${social.pet.happiness}%;"></div>
-                </div>
-              </div>
-              <div class="craft-meter-box">
-                <span class="title">⚡ Energía: ${social.pet.energy}%</span>
-                <div class="craft-meter-bar-track">
-                  <div class="craft-meter-bar-fill fill-energy" style="width: ${social.pet.energy}%;"></div>
-                </div>
-              </div>
-            </div>
 
-            <!-- Botones Interactivos de Cuidado -->
-            <div class="craft-pet-actions-row">
-              <button type="button" onclick="window.interactWithPet('feed')" class="btn-craft-action" title="Alimentar con Vocabulario">
-                <span>🍎</span>
-                <span>Alimentar</span>
-              </button>
-              <button type="button" onclick="window.interactWithPet('pet')" class="btn-craft-action" title="Acariciar">
-                <span>✋</span>
-                <span>Acariciar</span>
-              </button>
-              <button type="button" onclick="window.interactWithPet('learn')" class="btn-craft-action" title="Enseñar Palabra en Inglés">
-                <span>💡</span>
-                <span>Enseñar (+IQ)</span>
-              </button>
-            </div>
+              <!-- Botones Interactivos de Cuidado -->
+              <div class="craft-pet-actions-row">
+                <button type="button" onclick="window.interactWithPet('feed')" class="btn-craft-action" title="Alimentar con Vocabulario">
+                  <span>🍎</span>
+                  <span>Alimentar</span>
+                </button>
+                <button type="button" onclick="window.interactWithPet('pet')" class="btn-craft-action" title="Acariciar">
+                  <span>✋</span>
+                  <span>Acariciar</span>
+                </button>
+                <button type="button" onclick="window.interactWithPet('learn')" class="btn-craft-action" title="Enseñar Palabra en Inglés">
+                  <span>💡</span>
+                  <span>Enseñar (+IQ)</span>
+                </button>
+              </div>
+            ` : `
+              <!-- Estado Vacío Limpio: Cero Mascotas -->
+              <div class="p-4 my-2.5 bg-[#fffdfa] border-2 border-dashed border-amber-600/40 rounded-2xl text-center space-y-2">
+                <div class="text-3xl">📦✨</div>
+                <h4 class="text-xs font-black text-[#78350f] m-0">Sin mascotas activas en tu Santuario</h4>
+                <p class="text-[11px] text-amber-900/80 m-0 leading-relaxed max-w-xs mx-auto">
+                  Aún no has adoptado a tu primer Casimerito. ¡Explora el Santuario para incubar un huevo o adoptar tu primera mascota!
+                </p>
+                <button type="button" onclick="window.navigateToMasterPetSanctuary()" class="mt-1 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white text-xs font-black shadow-md border-b-2 border-amber-900 cursor-pointer transition active:scale-95 inline-flex items-center gap-1.5">
+                  <span>🐾</span>
+                  <span>Ir a MasterPet Sanctuary</span>
+                </button>
+              </div>
+            `}
 
-            <!-- Vitrina de Mascotas Compartidas con Pareja o Amigos & Grupo Co-Op -->
+            <!-- Vitrina de Crianza Compartida (Co-Op) -->
             <div class="craft-shared-showcase">
               <div class="craft-shared-title flex items-center justify-between">
-                <span>🤝 Mascotas Co-Criadas con Amigos / Pareja:</span>
-                <span class="text-[10px] bg-amber-100 text-[#78350f] font-mono font-black px-1.5 py-0.5 rounded border border-amber-300">
-                  Código: ${coopGroup.code}
-                </span>
-              </div>
-              <div class="craft-shared-grid">
-                ${(social.sharedPets || []).map(p => `
-                  <div class="craft-mini-pet-pill">
-                    <span>🦉</span>
-                    <span><strong>${p.name}</strong> (Lv.${p.level}) con ${p.coParent}</span>
-                  </div>
-                `).join('')}
+                <span>🤝 Crianza Compartida (Co-Op):</span>
+                ${coopGroup ? `
+                  <span class="text-[10px] bg-amber-100 text-[#78350f] font-mono font-black px-1.5 py-0.5 rounded border border-amber-300">
+                    Código: ${coopGroup.code}
+                  </span>
+                ` : `
+                  <span class="text-[10px] text-amber-900/70 italic">Sin grupo activo</span>
+                `}
               </div>
 
-              <!-- Botón Crear Grupo / Invitar Amigos a Crianza -->
-              <button type="button" onclick="window.openCoopGroupModal('manage')" class="w-full mt-2.5 py-2 px-3 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-black text-xs shadow-md border-2 border-amber-800 border-b-4 flex items-center justify-center gap-2 cursor-pointer transition active:translate-y-0.5">
-                <span>🤝</span>
-                <span>Crear Grupo / Invitar Amigos a Crianza</span>
-                <span class="text-[10px] bg-amber-900/40 px-1.5 py-0.5 rounded font-mono">${coopGroup.code}</span>
-              </button>
+              ${coopGroup ? `
+                <div class="craft-shared-grid">
+                  <div class="craft-mini-pet-pill">
+                    <span>🏡</span>
+                    <span><strong>${escapeHtml(coopGroup.name)}</strong> (${coopGroup.members ? coopGroup.members.length : 1} miembros)</span>
+                  </div>
+                </div>
+                <button type="button" onclick="window.openCoopGroupModal('manage')" class="w-full mt-2 py-2 px-3 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-black text-xs shadow-md border-2 border-amber-800 border-b-4 flex items-center justify-center gap-2 cursor-pointer transition active:translate-y-0.5">
+                  <span>👥</span>
+                  <span>Gestionar Grupo & Invitar Amigos</span>
+                </button>
+              ` : `
+                <p class="text-[11px] text-amber-900/80 my-1 leading-relaxed">
+                  Cría mascotas en vivo junto a tu pareja o amigos compartiendo un código de 6 caracteres.
+                </p>
+                <button type="button" onclick="window.openCoopGroupModal('create')" class="w-full mt-1.5 py-2 px-3 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-black text-xs shadow-md border-2 border-amber-800 border-b-4 flex items-center justify-center gap-2 cursor-pointer transition active:translate-y-0.5">
+                  <span>🤝</span>
+                  <span>Crear o Unirme a Grupo Co-Op</span>
+                </button>
+              `}
             </div>
 
           </div>
@@ -597,52 +830,427 @@
   }
 
   // ============================================================================
-  // 6. INTERACCIÓN CON MASCOTAS EN VIVO (ALIMENTAR, ACARICIAR, ENSEÑAR)
+  // 9. NAVEGACIÓN Y CIERRE DE MODAL LIMPIO
+  // ============================================================================
+  function closeProfileModal() {
+    if (typeof window.closeAllModals === 'function') {
+      window.closeAllModals();
+    }
+    const modal = document.getElementById('profileModal') || document.getElementById('profile-modal');
+    if (modal) {
+      modal.style.display = 'none';
+      modal.classList.add('hidden');
+      modal.classList.remove('active');
+    }
+  }
+  global.closeProfileModal = closeProfileModal;
+
+  function confirmProfileLogout() {
+    const ok = window.confirm('¿Seguro que deseas cerrar sesión de tu cuenta en este dispositivo?');
+    if (ok && typeof window.handleProfileLogout === 'function') {
+      window.handleProfileLogout();
+    }
+  }
+  global.confirmProfileLogout = confirmProfileLogout;
+
+  function navigateToMasterPetSanctuary() {
+    closeProfileModal();
+    if (typeof window.openPetSanctuary === 'function') {
+      window.openPetSanctuary();
+    } else if (typeof window.navigateTo === 'function') {
+      window.navigateTo('pet_sanctuary');
+    }
+  }
+  global.navigateToMasterPetSanctuary = navigateToMasterPetSanctuary;
+
+  // ============================================================================
+  // 10. INTERACCIÓN CON MASCOTAS EN VIVO (ALIMENTAR, ACARICIAR, ENSEÑAR)
   // ============================================================================
   function interactWithPet(action) {
-    const user = getStoredUser();
-    const social = getSocialProfileData(user);
-    const pet = social.pet;
-
+    const { pets, hasPet, activePet } = getUserPetsData();
     const toast = (typeof showFloatingToast === 'function')
       ? showFloatingToast
-      : (typeof window !== 'undefined' && typeof window.showFloatingToast === 'function' ? window.showFloatingToast : (typeof alert === 'function' ? alert : console.log));
+      : (typeof window !== 'undefined' && typeof window.showFloatingToast === 'function' ? window.showFloatingToast : console.log);
 
-    if (action === 'feed') {
-      pet.hunger = Math.min(100, pet.hunger + 15);
-      pet.exp += 15;
-      if (pet.exp >= pet.level * 100) {
-        pet.level += 1;
-        pet.exp = 0;
-        toast(`🎉 ¡${pet.name} subió al Nivel ${pet.level}!`);
-      } else {
-        toast(`🍎 Has alimentado a ${pet.name}. +15 Hambre, +15 EXP de Crianza`);
-      }
-    } else if (action === 'pet') {
-      pet.happiness = Math.min(100, pet.happiness + 12);
-      pet.streakDays = (pet.streakDays || 1) + 1;
-      toast(`💖 ¡${pet.name} ronronea feliz! Racha de cuidado: ${pet.streakDays} días`);
-    } else if (action === 'learn') {
-      pet.englishIQ = (pet.englishIQ || 100) + 5;
-      pet.energy = Math.max(10, pet.energy - 8);
-      user.exp = (parseInt(user.exp, 10) || 0) + 10;
-      localStorage.setItem('mastereng_user', JSON.stringify(user));
-      toast(`💡 ¡${pet.name} aprendió una palabra nueva! +5 IQ, +10 EXP para ti`);
+    if (!hasPet || !activePet) {
+      toast('🐾 Aún no has adoptado una mascota. ¡Visita el Santuario para adoptar una!');
+      return;
     }
 
-    saveSocialProfileData(social);
+    const petName = activePet.name || 'Tu mascota';
+
+    if (action === 'feed') {
+      activePet.hunger = Math.min(100, (activePet.hunger || 80) + 15);
+      activePet.exp = (activePet.exp || 0) + 15;
+      const needed = (activePet.level || 1) * 100;
+      if (activePet.exp >= needed) {
+        activePet.level = (activePet.level || 1) + 1;
+        activePet.exp = 0;
+        toast(`🎉 ¡${petName} subió al Nivel ${activePet.level}!`);
+      } else {
+        toast(`🍎 Has alimentado a ${petName}. +15 Hambre, +15 EXP de Crianza`);
+      }
+    } else if (action === 'pet') {
+      activePet.happiness = Math.min(100, (activePet.happiness || 85) + 12);
+      activePet.streakDays = (activePet.streakDays || activePet.streak || 1) + 1;
+      toast(`💖 ¡${petName} ronronea feliz! Racha de cuidado: ${activePet.streakDays} días`);
+    } else if (action === 'learn') {
+      activePet.energy = Math.max(10, (activePet.energy || 75) - 8);
+      const user = getStoredUser();
+      user.exp = (parseInt(user.exp, 10) || 0) + 10;
+      try {
+        localStorage.setItem('mastereng_user', JSON.stringify(user));
+      } catch (_) {}
+      toast(`💡 ¡${petName} aprendió una palabra nueva! +10 EXP de inglés`);
+    }
+
+    saveUserPetsData(pets);
     renderSocialProfileView();
   }
   global.interactWithPet = interactWithPet;
 
   // ============================================================================
-  // 7. MODAL DE EDICIÓN COMPLETA DEL PERFIL SOCIAL
+  // 11. GESTIÓN DE INTERESES & HOBBIES (AGREGAR Y ELIMINAR CON ×)
+  // ============================================================================
+  function openAddHobbyModal() {
+    const oldModal = document.getElementById('addHobbyModalOverlay');
+    if (oldModal) oldModal.remove();
+
+    const user = getStoredUser();
+    const social = getSocialProfileData(user);
+    const currentHobbies = Array.isArray(social.hobbies) ? social.hobbies : [];
+
+    const overlay = document.createElement('div');
+    overlay.id = 'addHobbyModalOverlay';
+    overlay.className = 'profile-edit-modal-overlay';
+
+    overlay.innerHTML = `
+      <div class="profile-edit-card" onclick="event.stopPropagation();" style="max-width: 480px;">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-700">
+          <h3 class="text-base font-black text-white flex items-center gap-2">
+            <span>➕</span>
+            <span>Gestionar Intereses & Hobbies</span>
+          </h3>
+          <button type="button" onclick="document.getElementById('addHobbyModalOverlay').remove()" class="text-slate-400 hover:text-white text-xl font-bold p-1 cursor-pointer">&times;</button>
+        </div>
+
+        <div class="space-y-4 py-3">
+          <!-- Input personalizado -->
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1.5">Escribe un nuevo interés:</label>
+            <div class="flex items-center gap-2">
+              <input type="text" id="customHobbyInput" class="edit-input-field flex-1" placeholder="Ej: Fotografía, Ajedrez, Skate..." maxlength="30" />
+              <button type="button" onclick="window.submitCustomHobby()" class="btn-profile-primary px-4 py-2 text-xs">
+                <span>➕ Agregar</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Sugerencias Populares -->
+          <div>
+            <label class="block text-[11px] font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Sugerencias (haz clic para agregar):</label>
+            <div class="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-1">
+              ${COMMON_HOBBIES.map(ch => `
+                <button type="button" onclick="window.addSocialHobby('${escapeHtml(ch)}')" class="hobby-pill text-xs border border-slate-700 hover:border-sky-400 bg-slate-900/80 cursor-pointer transition">
+                  <span>${ch}</span>
+                </button>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Intereses Actuales con botón × para eliminar -->
+          <div class="pt-2 border-t border-slate-800">
+            <label class="block text-[11px] font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Tus intereses actuales (${currentHobbies.length}):</label>
+            <div id="modalCurrentHobbiesList" class="flex flex-wrap gap-1.5 min-h-[36px] p-2 bg-slate-900/60 rounded-xl border border-slate-800">
+              ${currentHobbies.length > 0 ? currentHobbies.map(h => `
+                <span class="hobby-pill">
+                  <span>${escapeHtml(h)}</span>
+                  <button type="button" onclick="window.removeSocialHobby('${escapeHtml(h).replace(/'/g, "\\'")}', true)" class="ml-1 text-slate-400 hover:text-rose-400 font-black cursor-pointer text-xs">&times;</button>
+                </span>
+              `).join('') : '<span class="text-xs text-slate-500 italic">Sin intereses agregados aún.</span>'}
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-slate-700 flex justify-end">
+          <button type="button" onclick="document.getElementById('addHobbyModalOverlay').remove()" class="btn-profile-primary px-5 py-2 text-xs">
+            <span>Listo</span>
+          </button>
+        </div>
+      </div>
+    `;
+
+    overlay.onclick = function (e) {
+      if (e.target === overlay) overlay.remove();
+    };
+
+    document.body.appendChild(overlay);
+    setTimeout(() => {
+      const inp = document.getElementById('customHobbyInput');
+      if (inp) {
+        inp.focus();
+        inp.onkeydown = function (ev) {
+          if (ev.key === 'Enter') {
+            ev.preventDefault();
+            submitCustomHobby();
+          }
+        };
+      }
+    }, 50);
+  }
+  global.openAddHobbyModal = openAddHobbyModal;
+
+  function addSocialHobby(hobbyText) {
+    const clean = String(hobbyText || '').trim();
+    if (!clean) return;
+
+    const user = getStoredUser();
+    const social = getSocialProfileData(user);
+    if (!Array.isArray(social.hobbies)) social.hobbies = [];
+
+    if (social.hobbies.includes(clean)) {
+      const toast = (typeof showFloatingToast === 'function')
+        ? showFloatingToast
+        : (typeof window !== 'undefined' && typeof window.showFloatingToast === 'function' ? window.showFloatingToast : console.log);
+      toast('⚠️ Ese interés ya está en tu lista.');
+      return;
+    }
+
+    social.hobbies.push(clean);
+    saveSocialProfileData(social);
+
+    renderSocialProfileView();
+
+    const listEl = document.getElementById('modalCurrentHobbiesList');
+    if (listEl) {
+      listEl.innerHTML = social.hobbies.map(h => `
+        <span class="hobby-pill">
+          <span>${escapeHtml(h)}</span>
+          <button type="button" onclick="window.removeSocialHobby('${escapeHtml(h).replace(/'/g, "\\'")}', true)" class="ml-1 text-slate-400 hover:text-rose-400 font-black cursor-pointer text-xs">&times;</button>
+        </span>
+      `).join('');
+    }
+
+    const toast = (typeof showFloatingToast === 'function')
+      ? showFloatingToast
+      : (typeof window !== 'undefined' && typeof window.showFloatingToast === 'function' ? window.showFloatingToast : console.log);
+    toast(`✨ Interés agregado: ${clean}`);
+  }
+  global.addSocialHobby = addSocialHobby;
+
+  function submitCustomHobby() {
+    const inp = document.getElementById('customHobbyInput');
+    if (!inp) return;
+    const val = inp.value.trim();
+    if (!val) return;
+    addSocialHobby(val);
+    inp.value = '';
+    inp.focus();
+  }
+  global.submitCustomHobby = submitCustomHobby;
+
+  function removeSocialHobby(hobbyText, keepModalOpen) {
+    const clean = String(hobbyText || '').trim();
+    if (!clean) return;
+
+    const user = getStoredUser();
+    const social = getSocialProfileData(user);
+    if (!Array.isArray(social.hobbies)) social.hobbies = [];
+
+    social.hobbies = social.hobbies.filter(h => h !== clean);
+    saveSocialProfileData(social);
+
+    renderSocialProfileView();
+
+    if (keepModalOpen) {
+      const listEl = document.getElementById('modalCurrentHobbiesList');
+      if (listEl) {
+        listEl.innerHTML = social.hobbies.length > 0 ? social.hobbies.map(h => `
+          <span class="hobby-pill">
+            <span>${escapeHtml(h)}</span>
+            <button type="button" onclick="window.removeSocialHobby('${escapeHtml(h).replace(/'/g, "\\'")}', true)" class="ml-1 text-slate-400 hover:text-rose-400 font-black cursor-pointer text-xs">&times;</button>
+          </span>
+        `).join('') : '<span class="text-xs text-slate-500 italic">Sin intereses agregados aún.</span>';
+      }
+    }
+
+    const toast = (typeof showFloatingToast === 'function')
+      ? showFloatingToast
+      : (typeof window !== 'undefined' && typeof window.showFloatingToast === 'function' ? window.showFloatingToast : console.log);
+    toast(`🗑️ Interés eliminado: ${clean}`);
+  }
+  global.removeSocialHobby = removeSocialHobby;
+
+  // ============================================================================
+  // 12. GESTIÓN DE REDES SOCIALES REALES (CONFIGURAR / BORRAR)
+  // ============================================================================
+  function cleanSocialInput(raw) {
+    if (!raw) return '';
+    let str = String(raw).trim();
+    if (!str) return '';
+    if (str.startsWith('http://') || str.startsWith('https://')) return str;
+    str = str.replace(/^@+/, '').trim();
+    str = str.replace(/\/+$/, '').trim();
+    return str;
+  }
+
+  function getSocialUrl(val, platform) {
+    if (!val) return '#';
+    if (val.startsWith('http://') || val.startsWith('https://')) return val;
+    const clean = val.replace(/^@/, '');
+    if (platform === 'instagram') return `https://instagram.com/${clean}`;
+    if (platform === 'tiktok') return `https://tiktok.com/@${clean}`;
+    if (platform === 'facebook') return `https://facebook.com/${clean}`;
+    if (platform === 'twitter') return `https://x.com/${clean}`;
+    if (platform === 'github') return `https://github.com/${clean}`;
+    if (platform === 'linkedin') return clean.startsWith('in/') ? `https://linkedin.com/${clean}` : `https://linkedin.com/in/${clean}`;
+    return `https://${val}`;
+  }
+
+  function getSocialDisplay(val, platform) {
+    if (!val) return '';
+    if (val.startsWith('http://') || val.startsWith('https://')) {
+      try {
+        const u = new URL(val);
+        const path = u.pathname.replace(/^\/+|\/+$/g, '');
+        return path ? `@${path.split('/').pop()}` : u.hostname;
+      } catch (_) {
+        return platform;
+      }
+    }
+    const clean = val.replace(/^@/, '');
+    if (platform === 'facebook' || platform === 'github' || platform === 'linkedin') {
+      return clean;
+    }
+    return `@${clean}`;
+  }
+
+  function openEditSocialLinksModal() {
+    const oldModal = document.getElementById('editSocialLinksModalOverlay');
+    if (oldModal) oldModal.remove();
+
+    const user = getStoredUser();
+    const social = getSocialProfileData(user);
+    const links = social.socialLinks || {};
+
+    const overlay = document.createElement('div');
+    overlay.id = 'editSocialLinksModalOverlay';
+    overlay.className = 'profile-edit-modal-overlay';
+
+    overlay.innerHTML = `
+      <div class="profile-edit-card" onclick="event.stopPropagation();" style="max-width: 520px;">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-700">
+          <h3 class="text-base font-black text-white flex items-center gap-2">
+            <span>🌐</span>
+            <span>Vincular Redes Sociales</span>
+          </h3>
+          <button type="button" onclick="document.getElementById('editSocialLinksModalOverlay').remove()" class="text-slate-400 hover:text-white text-xl font-bold p-1 cursor-pointer">&times;</button>
+        </div>
+
+        <p class="text-xs text-slate-400 pt-2 pb-1 leading-relaxed">
+          Pega tu nombre de usuario o enlace completo. Deja el campo vacío para eliminar o no mostrar esa red.
+        </p>
+
+        <div class="space-y-3 py-2 text-xs">
+          <div>
+            <label class="text-slate-300 font-bold block mb-1">📸 Instagram:</label>
+            <input type="text" id="linkInputInsta" class="edit-input-field py-1.5" value="${escapeHtml(links.instagram || '')}" placeholder="Ej: @tu_usuario o https://instagram.com/..." />
+          </div>
+          <div>
+            <label class="text-slate-300 font-bold block mb-1">🎵 TikTok:</label>
+            <input type="text" id="linkInputTikTok" class="edit-input-field py-1.5" value="${escapeHtml(links.tiktok || '')}" placeholder="Ej: @tu_usuario o https://tiktok.com/@..." />
+          </div>
+          <div>
+            <label class="text-slate-300 font-bold block mb-1">📘 Facebook:</label>
+            <input type="text" id="linkInputFacebook" class="edit-input-field py-1.5" value="${escapeHtml(links.facebook || '')}" placeholder="Ej: tu_usuario o https://facebook.com/..." />
+          </div>
+          <div>
+            <label class="text-slate-300 font-bold block mb-1">🐦 X / Twitter:</label>
+            <input type="text" id="linkInputTwitter" class="edit-input-field py-1.5" value="${escapeHtml(links.twitter || '')}" placeholder="Ej: @tu_usuario o https://x.com/..." />
+          </div>
+          <div>
+            <label class="text-slate-300 font-bold block mb-1">💻 GitHub:</label>
+            <input type="text" id="linkInputGithub" class="edit-input-field py-1.5" value="${escapeHtml(links.github || '')}" placeholder="Ej: tu_usuario o https://github.com/..." />
+          </div>
+          <div>
+            <label class="text-slate-300 font-bold block mb-1">💼 LinkedIn:</label>
+            <input type="text" id="linkInputLinkedin" class="edit-input-field py-1.5" value="${escapeHtml(links.linkedin || '')}" placeholder="Ej: in/tu_usuario o https://linkedin.com/in/..." />
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-slate-700 flex justify-end gap-3">
+          <button type="button" onclick="document.getElementById('editSocialLinksModalOverlay').remove()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs hover:bg-slate-700 cursor-pointer">
+            Cancelar
+          </button>
+          <button type="button" onclick="window.saveSocialLinksEdits()" class="btn-profile-primary px-5 py-2 text-xs">
+            <span>💾 Guardar Redes</span>
+          </button>
+        </div>
+      </div>
+    `;
+
+    overlay.onclick = function (e) {
+      if (e.target === overlay) overlay.remove();
+    };
+
+    document.body.appendChild(overlay);
+  }
+  global.openEditSocialLinksModal = openEditSocialLinksModal;
+
+  function saveSocialLinksEdits() {
+    const user = getStoredUser();
+    const social = getSocialProfileData(user);
+    const newLinks = {};
+
+    const insta = cleanSocialInput(document.getElementById('linkInputInsta')?.value);
+    const tiktok = cleanSocialInput(document.getElementById('linkInputTikTok')?.value);
+    const fb = cleanSocialInput(document.getElementById('linkInputFacebook')?.value);
+    const twitter = cleanSocialInput(document.getElementById('linkInputTwitter')?.value);
+    const gh = cleanSocialInput(document.getElementById('linkInputGithub')?.value);
+    const linkedin = cleanSocialInput(document.getElementById('linkInputLinkedin')?.value);
+
+    if (insta) newLinks.instagram = insta;
+    if (tiktok) newLinks.tiktok = tiktok;
+    if (fb) newLinks.facebook = fb;
+    if (twitter) newLinks.twitter = twitter;
+    if (gh) newLinks.github = gh;
+    if (linkedin) newLinks.linkedin = linkedin;
+
+    social.socialLinks = newLinks;
+    saveSocialProfileData(social);
+
+    const modal = document.getElementById('editSocialLinksModalOverlay');
+    if (modal) modal.remove();
+
+    renderSocialProfileView();
+
+    const toast = (typeof showFloatingToast === 'function')
+      ? showFloatingToast
+      : (typeof window !== 'undefined' && typeof window.showFloatingToast === 'function' ? window.showFloatingToast : console.log);
+    toast('🌐 Redes sociales guardadas correctamente.');
+  }
+  global.saveSocialLinksEdits = saveSocialLinksEdits;
+
+  // ============================================================================
+  // 13. MODAL DE EDICIÓN GENERAL DEL PERFIL (NOMBRE, BIO, CIUDAD, SITUACIÓN)
   // ============================================================================
   function openEditProfileModal(initialTab) {
+    if (initialTab === 'social') {
+      openEditSocialLinksModal();
+      return;
+    }
+    if (initialTab === 'hobbies') {
+      openAddHobbyModal();
+      return;
+    }
+    if (initialTab === 'avatar') {
+      triggerAvatarUpload();
+      return;
+    }
+
     const user = getStoredUser();
     const social = getSocialProfileData(user);
 
-    // Eliminar modal anterior si existía
     const oldModal = document.getElementById('editSocialProfileModalOverlay');
     if (oldModal) oldModal.remove();
 
@@ -653,83 +1261,63 @@
     overlay.innerHTML = `
       <div class="profile-edit-card" onclick="event.stopPropagation();">
         <div class="flex items-center justify-between pb-3 border-b border-slate-700">
-          <h3>
-            <span>✏️ Editar Perfil Social & Mascotas</span>
+          <h3 class="text-base font-black text-white flex items-center gap-2">
+            <span>✏️</span>
+            <span>Editar Perfil</span>
           </h3>
           <button type="button" onclick="document.getElementById('editSocialProfileModalOverlay').remove()" class="text-slate-400 hover:text-white text-xl font-bold p-1 cursor-pointer">&times;</button>
         </div>
 
-        <div class="space-y-4 py-2">
-          <!-- 1. Bio y Estado -->
+        <div class="space-y-3.5 py-3 text-xs">
+          <!-- 1. Nombre de Usuario Real -->
           <div class="edit-input-group">
-            <label>Bio / Frase de Estado:</label>
-            <input type="text" id="editSocialBio" class="edit-input-field" value="${escapeHtml(social.bio)}" placeholder="Ej: Dominando el inglés para conquistar Silicon Valley 🚀" />
+            <label class="text-slate-300 font-bold block mb-1">Nombre de Usuario / Alias:</label>
+            <input type="text" id="editSocialUsername" class="edit-input-field" value="${escapeHtml(user.username || '')}" placeholder="Tu nombre o username" maxlength="30" />
           </div>
 
-          <!-- 2. Ubicación y Situación -->
+          <!-- 2. Bio y Presentación -->
+          <div class="edit-input-group">
+            <label class="text-slate-300 font-bold block mb-1">Bio / Frase de Presentación:</label>
+            <input type="text" id="editSocialBio" class="edit-input-field" value="${escapeHtml(social.bio === "Sin biografía aún. Haz clic en 'Editar Perfil' para presentarte." ? '' : social.bio)}" placeholder="Escribe una breve presentación sobre ti..." maxlength="120" />
+          </div>
+
+          <!-- 3. Ubicación y Situación de Crianza -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div class="edit-input-group">
-              <label>Ciudad / País de Origen:</label>
-              <input type="text" id="editSocialLocation" class="edit-input-field" value="${escapeHtml(social.location)}" placeholder="Ej: Bogotá, Colombia" />
+              <label class="text-slate-300 font-bold block mb-1">Ciudad / País de Origen (De:):</label>
+              <input type="text" id="editSocialLocation" class="edit-input-field" value="${escapeHtml(social.location === 'Sin especificar' ? '' : social.location)}" placeholder="Ej: Bogotá, Colombia" maxlength="50" />
             </div>
             <div class="edit-input-group">
-              <label>Situación / Compañero:</label>
-              <input type="text" id="editSocialRelationship" class="edit-input-field" value="${escapeHtml(social.relationship)}" placeholder="Ej: Criando con @Starlight" />
+              <label class="text-slate-300 font-bold block mb-1">Situación / Compañero de Crianza:</label>
+              <input type="text" id="editSocialRelationship" class="edit-input-field" value="${escapeHtml(social.relationship === 'Sin compañero de crianza' ? '' : social.relationship)}" placeholder="Ej: Criando con @Starlight" maxlength="60" />
             </div>
           </div>
 
-          <!-- 3. Selector de Avatar -->
-          <div class="edit-input-group">
-            <label>Elige tu Avatar o Icono 3D/Cartón:</label>
+          <!-- 4. Selector de Avatar o Subir Imagen -->
+          <div class="edit-input-group pt-1">
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="text-slate-300 font-bold">Avatar:</label>
+              <button type="button" onclick="window.triggerAvatarUpload()" class="text-xs text-sky-400 font-bold hover:underline cursor-pointer">
+                📷 Subir Foto Personalizada
+              </button>
+            </div>
             <div class="avatar-presets-grid">
               ${DEFAULT_AVATARS.map(a => `
-                <button type="button" onclick="window.selectSocialAvatarPreset('${a.emoji}')" class="avatar-preset-btn ${social.avatarEmoji === a.emoji ? 'active' : ''}">
+                <button type="button" onclick="window.selectSocialAvatarPreset('${a.emoji}')" class="avatar-preset-btn ${social.avatarEmoji === a.emoji && social.avatarType !== 'custom' ? 'active' : ''}">
                   <span>${a.emoji}</span>
                 </button>
               `).join('')}
             </div>
-            <div class="mt-2 flex items-center gap-2">
-              <input type="text" id="editSocialCustomAvatarUrl" class="edit-input-field text-xs" value="${social.avatarCustomUrl || ''}" placeholder="O pega la URL de una foto personalizada..." />
-            </div>
           </div>
 
-          <!-- 4. Selector de Portada (Cover) -->
+          <!-- 5. Selector de Portada (Cover) -->
           <div class="edit-input-group">
-            <label>Fondo de Portada (Cover Banner):</label>
+            <label class="text-slate-300 font-bold block mb-1.5">Fondo de Portada:</label>
             <div class="cover-presets-grid">
               ${DEFAULT_COVERS.map(c => `
                 <div onclick="window.selectSocialCoverPreset('${c.bg}', '${c.id}')" class="cover-preset-thumb ${social.coverId === c.id ? 'active' : ''}" style="background: ${c.bg};" title="${c.name}"></div>
               `).join('')}
             </div>
-          </div>
-
-          <!-- 5. Enlaces a Redes Sociales -->
-          <div class="edit-input-group">
-            <label>Redes Sociales Oficiales:</label>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-              <div>
-                <span class="text-slate-400 block mb-1">📸 Instagram:</span>
-                <input type="text" id="editSocialInsta" class="edit-input-field py-1.5" value="${escapeHtml(social.socialLinks.instagram || '')}" placeholder="usuario" />
-              </div>
-              <div>
-                <span class="text-slate-400 block mb-1">🎵 TikTok:</span>
-                <input type="text" id="editSocialTikTok" class="edit-input-field py-1.5" value="${escapeHtml(social.socialLinks.tiktok || '')}" placeholder="usuario" />
-              </div>
-              <div>
-                <span class="text-slate-400 block mb-1">🐦 X / Twitter:</span>
-                <input type="text" id="editSocialTwitter" class="edit-input-field py-1.5" value="${escapeHtml(social.socialLinks.twitter || '')}" placeholder="usuario" />
-              </div>
-              <div>
-                <span class="text-slate-400 block mb-1">💻 GitHub:</span>
-                <input type="text" id="editSocialGithub" class="edit-input-field py-1.5" value="${escapeHtml(social.socialLinks.github || '')}" placeholder="usuario" />
-              </div>
-            </div>
-          </div>
-
-          <!-- 6. Nombre de tu Mascota -->
-          <div class="edit-input-group">
-            <label>Nombre de tu Mascota Principal:</label>
-            <input type="text" id="editSocialPetName" class="edit-input-field" value="${escapeHtml(social.pet.name)}" placeholder="Nombre de tu compañero..." />
           </div>
         </div>
 
@@ -737,7 +1325,7 @@
           <button type="button" onclick="document.getElementById('editSocialProfileModalOverlay').remove()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs hover:bg-slate-700 cursor-pointer">
             Cancelar
           </button>
-          <button type="button" onclick="window.saveSocialProfileEdits()" class="btn-profile-primary px-5 py-2">
+          <button type="button" onclick="window.saveSocialProfileEdits()" class="btn-profile-primary px-5 py-2 text-xs">
             <span>💾 Guardar Cambios</span>
           </button>
         </div>
@@ -783,39 +1371,46 @@
     const user = getStoredUser();
     const social = getSocialProfileData(user);
 
-    const bioInput = document.getElementById('editSocialBio');
-    if (bioInput) social.bio = bioInput.value.trim() || social.bio;
-
-    const locInput = document.getElementById('editSocialLocation');
-    if (locInput) social.location = locInput.value.trim() || social.location;
-
-    const relInput = document.getElementById('editSocialRelationship');
-    if (relInput) social.relationship = relInput.value.trim() || social.relationship;
-
-    const avatarUrlInput = document.getElementById('editSocialCustomAvatarUrl');
-    if (avatarUrlInput && avatarUrlInput.value.trim()) {
-      social.avatarType = 'custom';
-      social.avatarCustomUrl = avatarUrlInput.value.trim();
+    const nameInput = document.getElementById('editSocialUsername');
+    if (nameInput && nameInput.value.trim()) {
+      user.username = nameInput.value.trim();
+      try {
+        localStorage.setItem('mastereng_user', JSON.stringify(user));
+      } catch (_) {}
     }
 
-    const instaInput = document.getElementById('editSocialInsta');
-    if (instaInput) social.socialLinks.instagram = instaInput.value.trim();
+    const bioInput = document.getElementById('editSocialBio');
+    if (bioInput) {
+      const val = bioInput.value.trim();
+      social.bio = val || "Sin biografía aún. Haz clic en 'Editar Perfil' para presentarte.";
+    }
 
-    const tiktokInput = document.getElementById('editSocialTikTok');
-    if (tiktokInput) social.socialLinks.tiktok = tiktokInput.value.trim();
+    const locInput = document.getElementById('editSocialLocation');
+    if (locInput) {
+      const val = locInput.value.trim();
+      social.location = val || 'Sin especificar';
+    }
 
-    const twitterInput = document.getElementById('editSocialTwitter');
-    if (twitterInput) social.socialLinks.twitter = twitterInput.value.trim();
-
-    const githubInput = document.getElementById('editSocialGithub');
-    if (githubInput) social.socialLinks.github = githubInput.value.trim();
-
-    const petNameInput = document.getElementById('editSocialPetName');
-    if (petNameInput && petNameInput.value.trim()) {
-      social.pet.name = petNameInput.value.trim();
+    const relInput = document.getElementById('editSocialRelationship');
+    if (relInput) {
+      const val = relInput.value.trim();
+      social.relationship = val || 'Sin compañero de crianza';
     }
 
     saveSocialProfileData(social);
+
+    if (typeof fetch === 'function') {
+      fetch('/api/profile/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: user.username,
+          bio: social.bio,
+          location: social.location,
+          relationship: social.relationship
+        })
+      }).catch(() => {});
+    }
 
     const modal = document.getElementById('editSocialProfileModalOverlay');
     if (modal) modal.remove();
@@ -824,8 +1419,8 @@
 
     const toast = (typeof showFloatingToast === 'function')
       ? showFloatingToast
-      : (typeof window !== 'undefined' && typeof window.showFloatingToast === 'function' ? window.showFloatingToast : (typeof alert === 'function' ? alert : console.log));
-    toast('✅ Perfil Social y Mascota actualizados con éxito.');
+      : (typeof window !== 'undefined' && typeof window.showFloatingToast === 'function' ? window.showFloatingToast : console.log);
+    toast('✅ Perfil actualizado correctamente.');
   }
   global.saveSocialProfileEdits = saveSocialProfileEdits;
 
@@ -839,9 +1434,8 @@
   }
 
   // ============================================================================
-  // 8. SISTEMA DE INVITAR AMIGOS, SALAS Y GRUPOS DE CRIANZA COMPARTIDA (CO-OP)
+  // 14. SISTEMA DE SALAS Y GRUPOS DE CRIANZA COMPARTIDA (CO-OP) REALES
   // ============================================================================
-  const STORAGE_KEY_COOP = 'mastereng_coop_groups';
   let currentCoopTab = 'manage';
   let selectedNewCoopType = 'squad';
 
@@ -858,74 +1452,14 @@
     let group = null;
     try {
       const raw = localStorage.getItem(STORAGE_KEY_COOP);
-      if (raw) group = JSON.parse(raw);
-    } catch (_) {}
-
-    const couplePartner = localStorage.getItem('mastereng_active_date_partner') ||
-                          localStorage.getItem('mastereng_couple_partner_name') ||
-                          'StarlightPartner';
-
-    const defaultGroup = {
-      id: 'coop_master_group_1',
-      code: 'ENG772',
-      name: 'Team English Pros',
-      type: 'squad', // 'duo' (2 miembros) o 'squad' (hasta 4 miembros)
-      maxMembers: 4,
-      petName: 'Sparky & Friends',
-      petSpecies: 'Papercraft Cyber-Fox',
-      petLevel: 8,
-      totalExpPool: 990,
-      createdAt: '2026-10-20',
-      members: [
-        {
-          id: 'mem_self',
-          username: (user && user.username) || 'Master Learner',
-          avatar: '🦊',
-          role: 'Líder de Crianza',
-          isOwner: true,
-          expContributed: 420,
-          streakDays: 14,
-          joinedAt: 'Hoy'
-        },
-        {
-          id: 'mem_coparent',
-          username: couplePartner,
-          avatar: '🦉',
-          role: 'Co-Parent',
-          isOwner: false,
-          expContributed: 360,
-          streakDays: 12,
-          joinedAt: 'Ayer'
-        },
-        {
-          id: 'mem_friend1',
-          username: 'CyberPup99',
-          avatar: '🐕',
-          role: 'Guardián',
-          isOwner: false,
-          expContributed: 210,
-          streakDays: 8,
-          joinedAt: 'Hace 3 días'
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        // Descartar si era el demo hardcodeado anterior
+        if (parsed && parsed.id !== 'coop_master_group_1' && Array.isArray(parsed.members) && parsed.members.length > 0) {
+          group = parsed;
         }
-      ]
-    };
-
-    if (!group) {
-      group = defaultGroup;
-      saveCoopGroupData(group);
-    } else {
-      if (!group.code) group.code = generateCoopInviteCode();
-      if (!Array.isArray(group.members) || group.members.length === 0) {
-        group.members = defaultGroup.members;
       }
-      if (!group.maxMembers) {
-        group.maxMembers = group.type === 'duo' ? 2 : 4;
-      }
-      if (typeof group.totalExpPool !== 'number') {
-        group.totalExpPool = group.members.reduce((acc, m) => acc + (m.expContributed || 0), 0);
-      }
-    }
-
+    } catch (_) {}
     return group;
   }
 
@@ -940,7 +1474,7 @@
   function copyToClipboard(text, successMessage) {
     const toast = (typeof showFloatingToast === 'function')
       ? showFloatingToast
-      : (typeof window !== 'undefined' && typeof window.showFloatingToast === 'function' ? window.showFloatingToast : (typeof alert === 'function' ? alert : console.log));
+      : (typeof window !== 'undefined' && typeof window.showFloatingToast === 'function' ? window.showFloatingToast : console.log);
 
     if (navigator && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
       navigator.clipboard.writeText(text).then(() => {
@@ -973,7 +1507,7 @@
     ensurePetProfileStylesheet();
     const user = getStoredUser();
     const group = getCoopGroupData(user);
-    currentCoopTab = initialTab || 'manage';
+    currentCoopTab = initialTab || (group ? 'manage' : 'create');
 
     const oldModal = document.getElementById('coopGroupModalOverlay');
     if (oldModal) oldModal.remove();
@@ -984,20 +1518,18 @@
 
     overlay.innerHTML = `
       <div class="coop-modal-card" onclick="event.stopPropagation();">
-        <!-- Encabezado Cartón con Bordes Cosidos -->
         <div class="coop-modal-header">
           <h3>
             <span>🤝</span>
-            <span>Crear Grupo / Invitar Amigos a Crianza</span>
+            <span>Crianza Compartida (Co-Op)</span>
           </h3>
           <button type="button" onclick="window.closeCoopGroupModal()" class="text-amber-900 hover:text-amber-700 text-2xl font-black p-1 cursor-pointer leading-none" title="Cerrar">&times;</button>
         </div>
 
-        <!-- Selector de Tabs -->
         <div class="coop-tabs-nav">
           <button type="button" onclick="window.switchCoopModalTab('manage')" id="tabBtnManage" class="coop-tab-btn ${currentCoopTab === 'manage' ? 'active' : ''}">
             <span>👥</span>
-            <span>Mi Grupo & Invitación</span>
+            <span>Mi Grupo</span>
           </button>
           <button type="button" onclick="window.switchCoopModalTab('join')" id="tabBtnJoin" class="coop-tab-btn ${currentCoopTab === 'join' ? 'active' : ''}">
             <span>🎟️</span>
@@ -1005,11 +1537,10 @@
           </button>
           <button type="button" onclick="window.switchCoopModalTab('create')" id="tabBtnCreate" class="coop-tab-btn ${currentCoopTab === 'create' ? 'active' : ''}">
             <span>➕</span>
-            <span>Crear Nueva Sala</span>
+            <span>Crear Sala</span>
           </button>
         </div>
 
-        <!-- Contenedor Dinámico del Tab -->
         <div id="coopModalTabBody">
           ${renderCoopTabContent(currentCoopTab, group, user)}
         </div>
@@ -1027,13 +1558,32 @@
 
   function renderCoopTabContent(tab, group, user) {
     if (tab === 'manage') {
+      if (!group) {
+        return `
+          <div class="p-6 text-center space-y-3 bg-[#fffdfa] border-2 border-dashed border-amber-600/40 rounded-xl my-2">
+            <div class="text-4xl">🏡✨</div>
+            <h4 class="text-sm font-black text-[#78350f] m-0">Aún no tienes un grupo de crianza activo</h4>
+            <p class="text-xs text-amber-900/80 max-w-sm mx-auto leading-relaxed">
+              Crea una sala para criar mascotas junto a tu pareja o amigos, o únete a una existente con su código de 6 caracteres.
+            </p>
+            <div class="flex justify-center gap-2 pt-1">
+              <button type="button" onclick="window.switchCoopModalTab('create')" class="btn-coop-primary text-xs py-2 px-4">
+                <span>➕ Crear Grupo</span>
+              </button>
+              <button type="button" onclick="window.switchCoopModalTab('join')" class="btn-coop-secondary text-xs py-2 px-4">
+                <span>🎟️ Unirse con Código</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
       const typeLabel = group.type === 'duo' ? '💕 En Pareja (2 max)' : '👨‍👩‍👧‍👦 Familia / Cuadrilla (4 max)';
       const isFull = group.members.length >= group.maxMembers;
-      const shareUrl = `https://mastereng.club/join?code=${group.code}`;
+      const shareUrl = (typeof window !== 'undefined' && window.location && window.location.origin ? window.location.origin : 'https://mastereng.app') + '/?join=' + group.code;
 
       return `
         <div class="flex flex-col gap-3 py-1">
-          <!-- 1. Ficha Resumen del Grupo -->
           <div class="flex items-center justify-between bg-[#fffdfa] border-2 border-amber-600/60 rounded-xl p-3 shadow-sm">
             <div>
               <h4 class="text-base font-black text-[#78350f] m-0 flex items-center gap-2">
@@ -1041,7 +1591,7 @@
                 <span class="text-xs">🏡</span>
               </h4>
               <p class="text-xs text-amber-900 m-0 mt-0.5">
-                Mascota: <strong>${escapeHtml(group.petName || 'Sparky & Friends')}</strong> • Tipo: <span class="font-bold text-[#b45309]">${typeLabel}</span>
+                Mascota: <strong>${escapeHtml(group.petName || 'Nuestra Mascota')}</strong> • Tipo: <span class="font-bold text-[#b45309]">${typeLabel}</span>
               </p>
             </div>
             <div class="text-right">
@@ -1051,7 +1601,6 @@
             </div>
           </div>
 
-          <!-- 2. Banner de Invitación de 6 Caracteres -->
           <div class="coop-invite-banner">
             <span class="text-[11px] font-black text-[#78350f] uppercase tracking-wider">
               🎟️ Código Único de Invitación (6 Caracteres)
@@ -1072,17 +1621,12 @@
                 <span>Copiar Enlace</span>
               </button>
             </div>
-
-            <p class="text-[10px] text-amber-900 m-0">
-              💡 Tus amigos o pareja solo deben ingresar este código de 6 caracteres en su pestaña <em>"Unirse con Código"</em> para vincularse de inmediato.
-            </p>
           </div>
 
-          <!-- 3. Lista de Miembros y Aporte de EXP -->
           <div class="flex items-center justify-between mt-1">
             <span class="text-xs font-black text-[#78350f] flex items-center gap-1.5">
               <span>🏆</span>
-              <span>Miembros del Grupo y Aporte de EXP a la Mascota:</span>
+              <span>Miembros del Grupo:</span>
             </span>
             <span class="text-[10px] font-bold text-amber-900 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300">
               ${group.members.length} de ${group.maxMembers} plazas
@@ -1109,12 +1653,11 @@
             `).join('')}
           </div>
 
-          <!-- 4. Resumen del Fondo Común y Acción de Aporte -->
           <div class="coop-pool-summary mt-1">
             <div>
               <span class="block text-xs font-black text-amber-950">⭐ Fondo de EXP Compartida:</span>
               <span class="text-[10px] text-amber-800">
-                <strong>${group.totalExpPool || 990} EXP</strong> acumulados por el equipo
+                <strong>${group.totalExpPool || 0} EXP</strong> acumulados
               </span>
             </div>
             <button type="button" onclick="window.handleContributeCoopExp()" class="btn-coop-primary text-xs py-2 px-3.5">
@@ -1134,22 +1677,13 @@
               <span>Vincularte a una Familia o Pareja Existente</span>
             </h4>
             <p class="text-xs text-amber-900 mb-3">
-              Ingresa el código único de 6 caracteres que te dio tu amigo o pareja (ejemplo: <code>ENG772</code>).
+              Ingresa el código único de 6 caracteres que te dio tu amigo o pareja.
             </p>
 
             <label class="block text-[11px] font-black text-[#78350f] uppercase mb-1">
               Código de Invitación (6 letras/números):
             </label>
-            <input type="text" id="coopJoinCodeInput" maxlength="6" placeholder="EJ: ENG772" class="coop-input-field text-center font-mono text-2xl tracking-[6px] uppercase font-black" autocomplete="off" />
-
-            <div class="mt-3 p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-[11px] text-amber-900 leading-relaxed">
-              ✨ <strong>Beneficios al unirte:</strong>
-              <ul class="list-disc list-inside mt-1 space-y-0.5">
-                <li>Crianza simultánea en vivo (alimentar, bañar y jugar).</li>
-                <li>Tus sesiones de inglés y vocabulario sumarán EXP al grupo.</li>
-                <li>Racha de días compartida para multiplicar recompensas.</li>
-              </ul>
-            </div>
+            <input type="text" id="coopJoinCodeInput" maxlength="6" placeholder="EJ: MENG01" class="coop-input-field text-center font-mono text-2xl tracking-[6px] uppercase font-black" autocomplete="off" />
           </div>
 
           <button type="button" onclick="window.handleJoinCoopGroupByCode()" class="btn-coop-primary w-full py-3 text-sm">
@@ -1182,14 +1716,14 @@
             <label class="block text-xs font-black text-[#78350f] mb-1 uppercase">
               2. Nombre del Grupo o Familia:
             </label>
-            <input type="text" id="newCoopGroupNameInput" value="Team English Pros" placeholder="Ej: Team English Pros" class="coop-input-field" />
+            <input type="text" id="newCoopGroupNameInput" value="Team English" placeholder="Ej: Team English" class="coop-input-field" maxlength="30" />
           </div>
 
           <div>
             <label class="block text-xs font-black text-[#78350f] mb-1 uppercase">
               3. Nombre de la Mascota Compartida:
             </label>
-            <input type="text" id="newCoopPetNameInput" value="${escapeHtml(group.petName || 'Sparky & Friends')}" placeholder="Ej: Sparky & Friends" class="coop-input-field" />
+            <input type="text" id="newCoopPetNameInput" value="Casimerito Co-Op" placeholder="Ej: Casimerito Co-Op" class="coop-input-field" maxlength="25" />
           </div>
 
           <button type="button" onclick="window.handleCreateNewCoopGroup()" class="btn-coop-primary w-full py-3 text-sm mt-1">
@@ -1226,21 +1760,25 @@
   window.copyCoopInviteCode = function () {
     const user = getStoredUser();
     const group = getCoopGroupData(user);
-    copyToClipboard(group.code, `📋 ¡Código de Invitación (${group.code}) copiado con éxito!`);
+    if (group && group.code) {
+      copyToClipboard(group.code, `📋 ¡Código de Invitación (${group.code}) copiado con éxito!`);
+    }
   };
 
   window.copyCoopInviteLink = function () {
     const user = getStoredUser();
     const group = getCoopGroupData(user);
-    const link = `https://mastereng.club/join?code=${group.code}`;
-    copyToClipboard(link, `🔗 ¡Enlace de invitación (${group.code}) copiado al portapapeles!`);
+    if (group && group.code) {
+      const link = (typeof window !== 'undefined' && window.location && window.location.origin ? window.location.origin : 'https://mastereng.app') + '/?join=' + group.code;
+      copyToClipboard(link, `🔗 ¡Enlace de invitación (${group.code}) copiado al portapapeles!`);
+    }
   };
 
   window.handleCreateNewCoopGroup = function () {
     const nameInput = document.getElementById('newCoopGroupNameInput');
     const petInput = document.getElementById('newCoopPetNameInput');
-    const groupName = (nameInput && nameInput.value.trim()) || 'Team English Pros';
-    const petName = (petInput && petInput.value.trim()) || 'Sparky & Friends';
+    const groupName = (nameInput && nameInput.value.trim()) || 'Team English';
+    const petName = (petInput && petInput.value.trim()) || 'Casimerito Co-Op';
 
     const user = getStoredUser();
     const social = getSocialProfileData(user);
@@ -1254,8 +1792,6 @@
       type: selectedNewCoopType,
       maxMembers,
       petName,
-      petSpecies: (social.pet && social.pet.species) || 'Papercraft Companion',
-      petLevel: (social.pet && social.pet.level) || 1,
       totalExpPool: 0,
       createdAt: new Date().toISOString(),
       members: [
@@ -1276,7 +1812,7 @@
 
     const toast = (typeof showFloatingToast === 'function')
       ? showFloatingToast
-      : (typeof window !== 'undefined' && typeof window.showFloatingToast === 'function' ? window.showFloatingToast : (typeof alert === 'function' ? alert : console.log));
+      : (typeof window !== 'undefined' && typeof window.showFloatingToast === 'function' ? window.showFloatingToast : console.log);
     toast(`🎉 ¡Grupo "${groupName}" creado con éxito! Código: ${newCode}`);
 
     window.switchCoopModalTab('manage');
@@ -1289,10 +1825,10 @@
 
     const toast = (typeof showFloatingToast === 'function')
       ? showFloatingToast
-      : (typeof window !== 'undefined' && typeof window.showFloatingToast === 'function' ? window.showFloatingToast : (typeof alert === 'function' ? alert : console.log));
+      : (typeof window !== 'undefined' && typeof window.showFloatingToast === 'function' ? window.showFloatingToast : console.log);
 
     if (!code || code.length !== 6) {
-      toast('⚠️ Por favor ingresa un código de 6 caracteres válido (ej: ENG772).');
+      toast('⚠️ Por favor ingresa un código de 6 caracteres válido (ej: MENG01).');
       return;
     }
 
@@ -1300,13 +1836,20 @@
     const social = getSocialProfileData(user);
     let group = getCoopGroupData(user);
 
-    // Si el código coincide o es nuevo, asociarlo
-    if (group.code !== code) {
-      group.code = code;
-      group.name = 'Familia Co-Op ' + code;
+    if (!group) {
+      group = {
+        id: 'coop_group_' + Date.now(),
+        code: code,
+        name: 'Familia Co-Op ' + code,
+        type: 'squad',
+        maxMembers: 4,
+        petName: 'Casimerito Co-Op',
+        totalExpPool: 50,
+        createdAt: new Date().toISOString(),
+        members: []
+      };
     }
 
-    // Verificar si ya está como miembro
     const myUsername = user.username || 'Master Learner';
     const alreadyMember = group.members.some(m => m.username === myUsername);
 
@@ -1338,12 +1881,12 @@
 
   window.handleContributeCoopExp = function () {
     const user = getStoredUser();
-    const social = getSocialProfileData(user);
     let group = getCoopGroupData(user);
-    const myUsername = user.username || 'Master Learner';
+    if (!group) return;
 
+    const myUsername = user.username || 'Master Learner';
     let member = group.members.find(m => m.username === myUsername);
-    if (!member) {
+    if (!member && group.members.length > 0) {
       member = group.members[0];
     }
 
@@ -1352,21 +1895,11 @@
     }
     group.totalExpPool = (group.totalExpPool || 0) + 50;
 
-    // Sumar también a la mascota local
-    if (social.pet) {
-      social.pet.exp = (social.pet.exp || 0) + 50;
-      if (social.pet.exp >= social.pet.level * 100) {
-        social.pet.level += 1;
-        social.pet.exp = 0;
-      }
-      saveSocialProfileData(social);
-    }
-
     saveCoopGroupData(group);
 
     const toast = (typeof showFloatingToast === 'function')
       ? showFloatingToast
-      : (typeof window !== 'undefined' && typeof window.showFloatingToast === 'function' ? window.showFloatingToast : (typeof alert === 'function' ? alert : console.log));
+      : (typeof window !== 'undefined' && typeof window.showFloatingToast === 'function' ? window.showFloatingToast : console.log);
     toast('⭐ ¡Has aportado +50 EXP al fondo de crianza compartida!');
 
     window.switchCoopModalTab('manage');
@@ -1379,7 +1912,7 @@
   };
 
   // ============================================================================
-  // 9. OBSERVADOR DE VISIBILIDAD DE VISTAS DE MASCOTAS (BODY.PET-VIEW-ACTIVE)
+  // 15. OBSERVADOR DE VISIBILIDAD DE VISTAS DE MASCOTAS
   // ============================================================================
   function initPetViewWatcher() {
     if (typeof window === 'undefined' || typeof document === 'undefined') return;
@@ -1410,10 +1943,9 @@
   }
 
   // ============================================================================
-  // 10. HOOK AND OVERRIDE ENGINE RENDERER (window.renderUserProfile)
+  // 16. HOOK AND OVERRIDE ENGINE RENDERER (window.renderUserProfile)
   // ============================================================================
   function hookProfileRenderer() {
-    // Preserve any existing logout function
     if (!window.handleProfileLogout) {
       window.handleProfileLogout = function () {
         localStorage.removeItem('mastereng_user');
@@ -1430,7 +1962,6 @@
       };
     }
 
-    // Bind public renderers
     window.renderUserProfile = renderSocialProfileView;
     window.renderProfileModalContent = renderSocialProfileView;
     global.renderSocialProfileView = renderSocialProfileView;
@@ -1438,11 +1969,19 @@
     window.openPetCoopModal = openCoopGroupModal;
     global.openPetCoopModal = openCoopGroupModal;
 
-    // Start background watcher for hiding floating buttons in pet view
+    window.MasterENGSocialProfile = {
+      render: renderSocialProfileView,
+      openEditModal: openEditProfileModal,
+      openHobbyModal: openAddHobbyModal,
+      openSocialModal: openEditSocialLinksModal,
+      triggerAvatarUpload: triggerAvatarUpload,
+      close: closeProfileModal,
+      getProfile: getSocialProfileData
+    };
+
     initPetViewWatcher();
   }
 
-  // Hook immediately and on DOM Ready
   hookProfileRenderer();
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') {
@@ -1452,6 +1991,6 @@
     }
   }
 
-  console.log('[MasterENG] Social Profile & Pet Sanctuary Engine loaded successfully.');
+  console.log('[MasterENG] Social Profile & Pet Sanctuary Engine loaded successfully (v3 Clean).');
 
 })(typeof window !== 'undefined' ? window : globalThis);
