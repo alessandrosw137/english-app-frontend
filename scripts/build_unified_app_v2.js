@@ -2575,11 +2575,9 @@ const htmlContent = `<!DOCTYPE html>
       container.innerHTML = filtered.map((track) => {
         const originalIdx = MUSIC_SESSION_TRACKS.findIndex(t => t.id === track.id);
         const isActive = originalIdx === currentMusicIndex;
-        return `
-          <button onclick="selectMusicTrack(${originalIdx})" class="px-3.5 py-1.5 rounded-xl whitespace-nowrap text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${isActive ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/30' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'}">
+        return '<button onclick="selectMusicTrack(' + originalIdx + ')' class="px-3.5 py-1.5 rounded-xl whitespace-nowrap text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${isActive ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/30' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'}">
             <span>${track.artist} - ${track.title}</span>
-          </button>
-        `;
+          </button>';
       }).join('');
     }
 

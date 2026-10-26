@@ -2192,6 +2192,9 @@
           } else if (key === 'dating') {
             buildDatingScene(sc);
           }
+          if (global.World3D && typeof global.World3D.normalizeSceneInteractiveMetadata === 'function') {
+            global.World3D.normalizeSceneInteractiveMetadata(sc, key);
+          }
         }, 50);
 
         return res;
@@ -2210,6 +2213,9 @@
               buildHotelScene(sc);
             } else if (key === 'dating') {
               buildDatingScene(sc);
+            }
+            if (global.World3D && typeof global.World3D.normalizeSceneInteractiveMetadata === 'function') {
+              global.World3D.normalizeSceneInteractiveMetadata(sc, key);
             }
           }
           return res;
@@ -2241,6 +2247,9 @@
       if (sc) {
         if (currentKey === 'hotel') buildHotelScene(sc);
         if (currentKey === 'dating') buildDatingScene(sc);
+        if (global.World3D && typeof global.World3D.normalizeSceneInteractiveMetadata === 'function') {
+          global.World3D.normalizeSceneInteractiveMetadata(sc, currentKey);
+        }
       }
     }
   }
@@ -2258,6 +2267,9 @@
             if (sc) {
               if (val === 'hotel') buildHotelScene(sc);
               if (val === 'dating') buildDatingScene(sc);
+              if (global.World3D && typeof global.World3D.normalizeSceneInteractiveMetadata === 'function') {
+                global.World3D.normalizeSceneInteractiveMetadata(sc, val);
+              }
             }
           }, 60);
         }

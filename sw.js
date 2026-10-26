@@ -1,9 +1,10 @@
-// mastereng-v1-pwa-v16-compat Service Worker Network-First with Auto-Cache Cleanup
-const CACHE_NAME = 'mastereng-pwa-v16-' + Date.now();
+// mastereng-v1-pwa-v17-compat Service Worker Network-First with Auto-Cache Cleanup
+const CACHE_NAME = 'mastereng-pwa-v17-' + Date.now();
 const CORE_ASSETS = [
   './',
   './index.html',
   './css/style.css',
+  './css/pet_profile.css',
   './js/app.js',
   './js/world3d.js',
   './js/world3d_nature_space.js',
@@ -12,6 +13,9 @@ const CORE_ASSETS = [
   './js/karaoke.js',
   './js/jest_game.js',
   './js/social_chat.js',
+  './js/pet_engine_2d.js',
+  './js/pet_sanctuary.js',
+  './js/profile_social.js',
   './manifest.json',
   './icon.png',
   './icon-512.png'

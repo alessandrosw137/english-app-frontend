@@ -148,6 +148,7 @@
   let spatialHotspots = [];
   let selectedObjectGroup = null;
   let selectedObjectData = null;
+  let activeLabelSprite = null;
   let highlightedMaterialsBackup = [];
   let highlightPulseTime = 0;
 
@@ -1337,6 +1338,9 @@ ensureOrbitControls();
     });
     const sprite = new THREE.Sprite(spriteMat);
     sprite.scale.set(0.15, 0.15, 0.15);
+    sprite.visible = false;
+    sprite.raycast = () => {};
+    sprite.userData = { isHotspotSprite: true, ignoreRaycast: true };
     hsGroup.add(sprite);
 
     const bbox = new THREE.Box3().setFromObject(group);
@@ -5604,26 +5608,55 @@ ensureOrbitControls();
         const spriteMat = new THREE.SpriteMaterial({ map: spriteTex, transparent: true, depthWrite: false });
         const sprite = new THREE.Sprite(spriteMat);
         sprite.scale.set(2.4, 0.825, 1.0);
-        sprite.position.set(0, 0, 0);
+        sprite.position.set(0, 0.65, 0);
+        sprite.visible = false;
+        sprite.raycast = () => {};
+        sprite.userData = { isLabelSprite: true, ignoreRaycast: true };
         pinGroup.add(sprite);
+        pinGroup.labelSprite = sprite;
       }
     }
 
-    const tetherGeo = new THREE.CylinderGeometry(0.012, 0.012, py, 8);
+    // Orbe/Pin Discreto Miniatura (esfera translúcida de radio 0.18 con aro sutil)
+    const PhysicalMat = THREE.MeshPhysicalMaterial || THREE.MeshStandardMaterial;
+    const matOrb = new PhysicalMat({
+      color: themeHex,
+      emissive: themeHex,
+      emissiveIntensity: 0.5,
+      roughness: 0.15,
+      metalness: 0.1,
+      transparent: true,
+      opacity: 0.85,
+      clearcoat: 0.8
+    });
+    const orb = new THREE.Mesh(new THREE.SphereGeometry(0.18, 20, 16), matOrb);
+    orb.name = 'ConceptOrb_' + (itemSpec.id || itemSpec.en);
+    pinGroup.add(orb);
+
+    const ringMeshGeo = new THREE.TorusGeometry(0.24, 0.015, 8, 28);
+    const ringMeshMat = new THREE.MeshBasicMaterial({ color: themeHex, transparent: true, opacity: 0.75 });
+    const ringMesh = new THREE.Mesh(ringMeshGeo, ringMeshMat);
+    ringMesh.rotation.x = Math.PI / 2;
+    pinGroup.add(ringMesh);
+    pinGroup.ring = ringMesh;
+    pinGroup.sphere = orb;
+    pinGroup.phase = Math.random() * Math.PI * 2;
+
+    const tetherGeo = new THREE.CylinderGeometry(0.006, 0.006, py, 8);
     const tetherMat = new THREE.MeshBasicMaterial({ color: themeHex, transparent: true, opacity: 0.55 });
     const tether = new THREE.Mesh(tetherGeo, tetherMat);
     tether.position.set(0, -py / 2, 0);
     pinGroup.add(tether);
 
-    const ringGeo = new THREE.RingGeometry(0.18, 0.26, 32);
-    const ringMat = new THREE.MeshBasicMaterial({ color: themeHex, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
-    const ring = new THREE.Mesh(ringGeo, ringMat);
-    ring.rotation.x = -Math.PI / 2;
-    ring.position.set(0, -py + 0.01, 0);
-    pinGroup.add(ring);
+    const groundRingGeo = new THREE.RingGeometry(0.12, 0.18, 24);
+    const groundRingMat = new THREE.MeshBasicMaterial({ color: themeHex, side: THREE.DoubleSide, transparent: true, opacity: 0.4 });
+    const groundRing = new THREE.Mesh(groundRingGeo, groundRingMat);
+    groundRing.rotation.x = -Math.PI / 2;
+    groundRing.position.set(0, -py + 0.01, 0);
+    pinGroup.add(groundRing);
 
-    const hitBox = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.9, 0.4), new THREE.MeshBasicMaterial({ visible: false }));
-    pinGroup.add(hitBox);
+
+
 
     const userData = {
       interactive: true,
@@ -5639,14 +5672,17 @@ ensureOrbitControls();
       phonetic: itemSpec.ipa,
       wordEs: itemSpec.es,
       focusPos: { x: px + (px >= 0 ? -1.8 : 1.8), y: Math.max(2.0, py + 0.8), z: pz + 2.6 },
-      lookAtPos: { x: px, y: py, z: pz }
+      lookAtPos: { x: px, y: py, z: pz },
+      labelSprite: pinGroup.labelSprite || null
     };
 
     WORLD3D_VOCAB_CATALOG[itemSpec.id] = userData;
     pinGroup.userData = Object.assign({}, userData);
     pinGroup.traverse(child => {
       if (child.isMesh) {
-        child.userData = Object.assign({}, userData, { parentGroup: pinGroup });
+        child.userData = Object.assign({}, userData, { parentGroup: pinGroup, interactive: true });
+      } else if (child.isSprite) {
+        child.raycast = () => {};
       }
     });
 
@@ -5656,6 +5692,8 @@ ensureOrbitControls();
     return pinGroup;
   }
   global.buildHolographicConceptNode = buildHolographicConceptNode;
+  global.World3D = global.World3D || {};
+  global.World3D.buildHolographicConceptNode = buildHolographicConceptNode;
 
 
   // ============================================================================
@@ -5943,6 +5981,8 @@ ensureOrbitControls();
     });
     const sprite = new THREE.Sprite(spriteMat);
     sprite.scale.set(1.65, 0.62, 1);
+    sprite.raycast = () => {};
+    sprite.userData = { isOverheadBubble: true, ignoreRaycast: true };
     sprite.renderOrder = 999;
 
     // Posicionar justo encima de la cabeza del hablante (y = 1.65 para sentados, y = 2.05 para el mesero)
@@ -6232,6 +6272,7 @@ ensureOrbitControls();
 
     updateProgressHudCounter();
     applyNormalMapToObjectHierarchy(scenarioDynamicRoot, key);
+    normalizeSceneInteractiveMetadata(activeScene, key);
 
     if (camera && scen.cameraPos && scen.cameraLookAt) {
       camera.position.set(scen.cameraPos.x, scen.cameraPos.y, scen.cameraPos.z);
@@ -6249,6 +6290,159 @@ ensureOrbitControls();
   }
 
   // ============================================================================
+  // ============================================================================
+  // NORMALIZACIÓN UNIVERSAL DE METADATA Y OBJETOS INTERACTIVOS (RAYCASTING FIX)
+  // ============================================================================
+  function normalizeSceneInteractiveMetadata(targetScene, scenarioKey) {
+    const activeScene = targetScene || scene;
+    if (!activeScene || typeof THREE === 'undefined') return;
+    const key = scenarioKey || currentScenarioKey || 'house';
+    const scen = WORLD_TOUR_SCENARIOS[key];
+    const catalogObjects = (scen && Array.isArray(scen.objects)) ? scen.objects : [];
+
+    if (activeLabelSprite) {
+      activeLabelSprite.visible = false;
+      activeLabelSprite = null;
+    }
+
+    const catalogById = new Map();
+    const catalogByEn = new Map();
+    const catalogByName = new Map();
+    const catalogByPrefix = new Map();
+
+    catalogObjects.forEach(item => {
+      if (item.id) {
+        catalogById.set(item.id, item);
+        const stripped = String(item.id).replace(/^(garden_|space_|hotel_|dating_|rest_|market_|house_)/i, '');
+        if (stripped) catalogByPrefix.set(stripped.toLowerCase(), item);
+      }
+      if (item.en) {
+        catalogByEn.set(String(item.en).toLowerCase().trim(), item);
+      }
+      if (item.id) {
+        catalogByName.set(String(item.id).toLowerCase().trim(), item);
+      }
+    });
+
+    function findItemSpec(obj) {
+      if (!obj) return null;
+      const u = obj.userData || {};
+      if (u.id && catalogById.has(u.id)) return catalogById.get(u.id);
+      if (u.id && catalogByPrefix.has(String(u.id).toLowerCase())) return catalogByPrefix.get(String(u.id).toLowerCase());
+      if (u.en && catalogByEn.has(String(u.en).toLowerCase().trim())) return catalogByEn.get(String(u.en).toLowerCase().trim());
+      if (u.wordEn && catalogByEn.has(String(u.wordEn).toLowerCase().trim())) return catalogByEn.get(String(u.wordEn).toLowerCase().trim());
+      if (obj.name && catalogById.has(obj.name)) return catalogById.get(obj.name);
+      if (obj.name && catalogByPrefix.has(String(obj.name).toLowerCase())) return catalogByPrefix.get(String(obj.name).toLowerCase());
+      if (obj.name && catalogByName.has(String(obj.name).toLowerCase().trim())) return catalogByName.get(String(obj.name).toLowerCase().trim());
+
+      const cleanName = String(obj.name || '').replace(/^(Object3D_|Group_|Mesh_|HoloBadge_|HoloPin_)/i, '').trim().toLowerCase();
+      if (cleanName) {
+        if (catalogById.has(cleanName)) return catalogById.get(cleanName);
+        if (catalogByPrefix.has(cleanName)) return catalogByPrefix.get(cleanName);
+        if (catalogByName.has(cleanName)) return catalogByName.get(cleanName);
+      }
+      return null;
+    }
+
+    const registeredInteractiveSet = new Set();
+    const identifiedRootGroups = new Set();
+
+    activeScene.traverse(obj => {
+      if (obj.isSprite) {
+        obj.raycast = () => {};
+        const isLabel = (obj.userData && obj.userData.isLabelSprite) || (obj.scale && obj.scale.x > 0.4);
+        if (isLabel) {
+          obj.visible = false;
+          obj.userData = obj.userData || {};
+          obj.userData.isLabelSprite = true;
+          obj.userData.ignoreRaycast = true;
+        }
+      }
+
+      const spec = findItemSpec(obj);
+      if (!obj.isSprite && (spec || (obj.userData && (obj.userData.interactive || obj.userData.isConceptNode || obj.userData.en || obj.userData.wordEn)))) {
+        const n = String(obj.name || '').toLowerCase();
+        if (!n.includes('spacedome') && !n.includes('skydome')) {
+          identifiedRootGroups.add(obj);
+        }
+      }
+    });
+
+    identifiedRootGroups.forEach(root => {
+      const spec = findItemSpec(root);
+      const existing = root.userData || {};
+
+      const id = (spec && spec.id) || existing.id || root.name || 'item';
+      const en = (spec && spec.en) || existing.en || existing.wordEn || root.name;
+      const ipa = (spec && spec.ipa) || existing.ipa || existing.phonetic || '';
+      const es = (spec && spec.es) || existing.es || existing.wordEs || '';
+      const category = (spec && spec.category) || existing.category || key;
+      const example = (spec && spec.example) || existing.example || '';
+      const type = (spec && spec.type) || existing.type || 'object';
+
+      root.userData = Object.assign(existing, {
+        interactive: true,
+        id,
+        en,
+        wordEn: en,
+        ipa,
+        phonetic: ipa,
+        es,
+        wordEs: es,
+        category,
+        example,
+        type
+      });
+
+      if (!root.userData.focusPos || !root.userData.lookAtPos) {
+        try {
+          const worldPos = new THREE.Vector3();
+          root.getWorldPosition(worldPos);
+          root.userData.lookAtPos = { x: worldPos.x, y: worldPos.y + 0.6, z: worldPos.z };
+          root.userData.focusPos = {
+            x: worldPos.x + (worldPos.x >= 0 ? -1.6 : 1.6),
+            y: Math.max(1.5, worldPos.y + 1.2),
+            z: worldPos.z + 2.4
+          };
+        } catch (_) {}
+      }
+
+      WORLD3D_VOCAB_CATALOG[id] = root.userData;
+      registeredInteractiveSet.add(root);
+
+      if (typeof root.traverse === 'function') {
+        root.traverse(child => {
+          if (child.isSprite) {
+            child.raycast = () => {};
+            if (child.userData?.isLabelSprite || (child.scale && child.scale.x > 0.4)) {
+              child.visible = false;
+              child.userData = Object.assign(child.userData || {}, { isLabelSprite: true, ignoreRaycast: true });
+              root.labelSprite = child;
+              root.userData.labelSprite = child;
+            }
+          } else if (child.isMesh) {
+            child.userData = Object.assign({}, root.userData, child.userData, {
+              parentGroup: root,
+              interactive: true
+            });
+            registeredInteractiveSet.add(child);
+          }
+        });
+      }
+    });
+
+    interactiveObjects = Array.from(registeredInteractiveSet);
+    global.World3D = global.World3D || {};
+    global.World3D.interactiveObjects = interactiveObjects;
+    global.World3D.normalizeSceneInteractiveMetadata = normalizeSceneInteractiveMetadata;
+    if (typeof window !== 'undefined') {
+      window.World3D = window.World3D || global.World3D;
+      window.World3D.interactiveObjects = interactiveObjects;
+      window.World3D.normalizeSceneInteractiveMetadata = normalizeSceneInteractiveMetadata;
+    }
+  }
+  global.normalizeSceneInteractiveMetadata = normalizeSceneInteractiveMetadata;
+
   // 7. ILUMINACIÓN CINEMÁTICA EQUILIBRADA Y CICLO DÍA / NOCHE
   // ============================================================================
   function setupCinematicLighting(targetScene) {
@@ -7945,6 +8139,10 @@ ensureOrbitControls();
       highlightedMaterialsBackup = [];
     }
     selectedObjectGroup = null;
+    if (activeLabelSprite) {
+      activeLabelSprite.visible = false;
+      activeLabelSprite = null;
+    }
   }
 
   function clearHoverHighlight() {
@@ -8007,6 +8205,99 @@ ensureOrbitControls();
     });
   }
 
+  // Constructor de Etiqueta Flotante 3D (THREE.Sprite) para cualquier objeto físico o concepto
+  function createFloatingVocabLabel(group, data) {
+    if (!group || !data || typeof THREE === 'undefined') return null;
+    if (group.labelSprite) return group.labelSprite;
+
+    const enText = String(data.wordEn || data.en || data.id || '');
+    const ipaText = String(data.phonetic || data.ipa || '');
+    const esText = String(data.wordEs || data.es || '');
+    const category = String(data.category || currentScenarioKey || 'Vocabulary');
+    const isConcept = data.type === 'concept' || data.type === 'phrase' || data.isConceptNode;
+
+    let themeColor = '#38bdf8';
+    if (currentScenarioKey === 'garden') themeColor = '#10b981';
+    else if (currentScenarioKey === 'dating') themeColor = '#f43f5e';
+    else if (currentScenarioKey === 'space') themeColor = '#38bdf8';
+    else if (currentScenarioKey === 'hotel') themeColor = '#eab308';
+    else if (currentScenarioKey === 'restaurant') themeColor = '#f59e0b';
+    else if (currentScenarioKey === 'supermarket') themeColor = '#0284c7';
+    else if (currentScenarioKey === 'house') themeColor = '#a855f7';
+
+    if (typeof document === 'undefined') return null;
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 180;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+
+    ctx.fillStyle = 'rgba(10, 15, 30, 0.92)';
+    if (typeof ctx.roundRect === 'function') {
+      ctx.beginPath();
+      ctx.roundRect(8, 8, 496, 164, 22);
+      ctx.fill();
+      ctx.strokeStyle = themeColor;
+      ctx.lineWidth = 4;
+      ctx.stroke();
+    } else {
+      ctx.fillRect(8, 8, 496, 164);
+      ctx.strokeStyle = themeColor;
+      ctx.lineWidth = 4;
+      ctx.strokeRect(8, 8, 496, 164);
+    }
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+    ctx.fillRect(24, 20, 180, 28);
+    ctx.font = 'bold 15px system-ui, -apple-system, sans-serif';
+    ctx.fillStyle = themeColor;
+    ctx.textAlign = 'left';
+    const icon = isConcept ? '💡' : '📦';
+    ctx.fillText(`${icon} ${category.toUpperCase().slice(0, 18)}`, 32, 40);
+
+    ctx.font = 'bold 30px system-ui, -apple-system, sans-serif';
+    ctx.fillStyle = '#ffffff';
+    let displayEn = enText;
+    if (displayEn.length > 24) displayEn = displayEn.slice(0, 22) + '...';
+    ctx.fillText(displayEn, 26, 88);
+
+    ctx.font = '19px system-ui, -apple-system, sans-serif';
+    ctx.fillStyle = '#38bdf8';
+    const ipaStr = ipaText ? `${ipaText}  •  ` : '';
+    ctx.fillText(ipaStr, 26, 130);
+
+    const ipaWidth = ctx.measureText(ipaStr).width;
+    ctx.font = '600 19px system-ui, -apple-system, sans-serif';
+    ctx.fillStyle = '#cbd5e1';
+    let displayEs = esText;
+    if (displayEs.length > 22) displayEs = displayEs.slice(0, 20) + '...';
+    ctx.fillText(displayEs, 26 + ipaWidth, 130);
+
+    const tex = new THREE.CanvasTexture(canvas);
+    const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
+    const sprite = new THREE.Sprite(mat);
+    sprite.scale.set(2.0, 0.72, 1.0);
+    sprite.visible = false;
+    sprite.raycast = () => {};
+    sprite.userData = { isLabelSprite: true, ignoreRaycast: true };
+
+    try {
+      const bbox = new THREE.Box3().setFromObject(group);
+      const groupWorldPos = new THREE.Vector3();
+      group.getWorldPosition(groupWorldPos);
+      const localTopY = (bbox.max.y - groupWorldPos.y);
+      const targetY = (isFinite(localTopY) && localTopY > 0) ? localTopY + 0.38 : 1.5;
+      sprite.position.set(0, targetY, 0);
+    } catch (_) {
+      sprite.position.set(0, 1.6, 0);
+    }
+
+    group.labelSprite = sprite;
+    group.userData.labelSprite = sprite;
+    group.add(sprite);
+    return sprite;
+  }
+
   function selectInteractive3DObject(group) {
     if (!group || !group.userData || !group.userData.interactive) return;
     const data = group.userData;
@@ -8043,10 +8334,20 @@ ensureOrbitControls();
       }
     }
 
-    // 2. Resaltar el objeto con brillo sutil / emissive boost
+    // 2. Resaltar el objeto con brillo sutil / emissive boost (limpia el resaltado previo)
     highlightSelectedObject(group);
 
-    // 3. Transición suave de cámara (Lerp) hacia el objeto
+    // 3. Mostrar ÚNICAMENTE la etiqueta flotante 3D del objeto recién seleccionado
+    let selectedSprite = group.labelSprite || (group.userData && group.userData.labelSprite);
+    if (!selectedSprite && (data.wordEn || data.en)) {
+      selectedSprite = createFloatingVocabLabel(group, data);
+    }
+    if (selectedSprite) {
+      selectedSprite.visible = true;
+      activeLabelSprite = selectedSprite;
+    }
+
+    // 4. Transición suave de cámara (Lerp) hacia el objeto
     if (data.focusPos && data.lookAtPos) {
       transitionCameraTo(data.focusPos, data.lookAtPos);
     }
@@ -8120,6 +8421,10 @@ ensureOrbitControls();
   }
 
   function closeWorld3DInspectCard() {
+    if (activeLabelSprite) {
+      activeLabelSprite.visible = false;
+      activeLabelSprite = null;
+    }
     clearSelectedHighlight();
     clearHoverHighlight();
     if (typeof document === 'undefined') return;
@@ -8199,6 +8504,57 @@ ensureOrbitControls();
     let downY = 0;
     let downTime = 0;
 
+    function resolveInteractiveHit(intersects) {
+      if (!Array.isArray(intersects) || intersects.length === 0) return null;
+      for (let i = 0; i < intersects.length; i++) {
+        const hit = intersects[i];
+        const obj = hit && hit.object;
+        if (!obj) continue;
+
+        // Filtrar sprites decorativos, burbujas y etiquetas de texto
+        if (obj.isSprite) {
+          if (obj.userData && (obj.userData.isLabelSprite || obj.userData.ignoreRaycast || obj.userData.isOverheadBubble)) {
+            continue;
+          }
+          if (obj.scale && obj.scale.x > 0.4) {
+            continue;
+          }
+        }
+
+        // Filtrar elementos de fondo (sky domes, star points, pisos y paredes estáticos sin metadata)
+        const name = String(obj.name || '').toLowerCase();
+        const parentName = String(obj.parent?.name || '').toLowerCase();
+        if (name.includes('spacedome') || parentName.includes('spacedome') || obj.isPoints) continue;
+        if (name.includes('skydome') || parentName.includes('skydome')) continue;
+        if ((name.includes('floor') || name.includes('ground') || name.includes('lawn') || name.includes('patio') || name.includes('runner')) && (!obj.userData || (!obj.userData.en && !obj.userData.wordEn && !obj.userData.interactive))) {
+          continue;
+        }
+        if ((name.includes('wall') || name.includes('ceiling') || name.includes('roof') || name.includes('hedge')) && (!obj.userData || (!obj.userData.en && !obj.userData.wordEn && !obj.userData.interactive))) {
+          continue;
+        }
+
+        // 1. Vinculación directa con parentGroup
+        let target = (obj.userData && (obj.userData.parentGroup || (obj.userData.isHotspot ? obj.userData.parentGroup : null))) || null;
+        if (target && target.userData && (target.userData.en || target.userData.wordEn)) {
+          return target;
+        }
+
+        // 2. Ascenso por la jerarquía hasta encontrar el grupo con metadata de vocabulario
+        let curr = obj;
+        while (curr && curr !== scene && curr !== scenarioDynamicRoot) {
+          if (curr.userData && (curr.userData.en || curr.userData.wordEn)) {
+            return curr.userData.parentGroup || curr;
+          }
+          curr = curr.parent;
+        }
+
+        if (obj.userData && obj.userData.interactive) {
+          return obj.userData.parentGroup || obj;
+        }
+      }
+      return null;
+    }
+
     function handlePointerMove(e) {
       const clientX = e.clientX !== undefined ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
       const clientY = e.clientY !== undefined ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
@@ -8211,23 +8567,12 @@ ensureOrbitControls();
 
       raycaster.setFromCamera(pointer, camera);
       const intersects = raycaster.intersectObjects(interactiveObjects, true);
+      const targetGroup = resolveInteractiveHit(intersects);
 
-      if (intersects.length > 0) {
-        let hitObj = intersects[0].object;
-        let targetGroup = (hitObj.userData && (hitObj.userData.parentGroup || (hitObj.userData.isHotspot ? hitObj.userData.parentGroup : null))) || null;
-        if (!targetGroup) {
-          while (hitObj.parent && (!hitObj.userData || !hitObj.userData.interactive) && hitObj.parent !== scene) {
-            hitObj = hitObj.parent;
-          }
-          if (hitObj && hitObj.userData && hitObj.userData.interactive) {
-            targetGroup = hitObj;
-          }
-        }
-        if (targetGroup) {
-          domElement.style.cursor = 'pointer';
-          setHoverHighlight(targetGroup);
-          return;
-        }
+      if (targetGroup) {
+        domElement.style.cursor = 'pointer';
+        setHoverHighlight(targetGroup);
+        return;
       }
 
       domElement.style.cursor = 'grab';
@@ -8260,26 +8605,17 @@ ensureOrbitControls();
 
       raycaster.setFromCamera(pointer, camera);
       const intersects = raycaster.intersectObjects(interactiveObjects, true);
+      const targetGroup = resolveInteractiveHit(intersects);
 
-      if (intersects.length > 0) {
-        let hitObj = intersects[0].object;
-        let targetGroup = (hitObj.userData && (hitObj.userData.parentGroup || (hitObj.userData.isHotspot ? hitObj.userData.parentGroup : null))) || null;
-        if (!targetGroup) {
-          while (hitObj.parent && (!hitObj.userData || !hitObj.userData.interactive) && hitObj.parent !== scene) {
-            hitObj = hitObj.parent;
-          }
-          if (hitObj && hitObj.userData && hitObj.userData.interactive) {
-            targetGroup = hitObj;
-          }
-        }
-        if (targetGroup) {
-          try {
-            localStorage.setItem('mastereng_3d_tutorial_done', 'true');
-          } catch (err) {}
-          const tutorialHandEl = typeof document !== 'undefined' ? document.getElementById('world3dTutorialHand') : null;
-          if (tutorialHandEl) tutorialHandEl.remove();
-          selectInteractive3DObject(targetGroup);
-        }
+      if (targetGroup) {
+        try {
+          localStorage.setItem('mastereng_3d_tutorial_done', 'true');
+        } catch (err) {}
+        const tutorialHandEl = typeof document !== 'undefined' ? document.getElementById('world3dTutorialHand') : null;
+        if (tutorialHandEl) tutorialHandEl.remove();
+        selectInteractive3DObject(targetGroup);
+      } else {
+        closeWorld3DInspectCard();
       }
     }
     global.onThreeCanvasClick = onThreeCanvasClick;
@@ -9222,6 +9558,8 @@ ensureOrbitControls();
   global.closeWorld3DInspectCard = closeWorld3DInspectCard;
   global.close3DInspectCard = closeWorld3DInspectCard;
   global.speakCurrent3DObj = speakWorld3DObject;
+  global.selectInteractive3DObject = selectInteractive3DObject;
+  global.createFloatingVocabLabel = createFloatingVocabLabel;
 
   if (typeof window !== 'undefined') {
     window.World3D = window.World3D || global.World3D;
@@ -9282,6 +9620,8 @@ ensureOrbitControls();
     resetWorld3DCamera,
     deduplicateWorld3DBars: deduplicateWorld3DBarsGlobal,
     closeWorld3DInspectCard,
+    selectInteractive3DObject,
+    createFloatingVocabLabel,
     onWindowResize,
     buildCompound3DObject,
     buildScenarioWorld,

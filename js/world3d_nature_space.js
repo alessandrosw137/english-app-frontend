@@ -633,58 +633,91 @@
 
     const matRingCyan = new THREE.MeshBasicMaterial({ color: 0x38bdf8, wireframe: true });
     const matRingViolet = new THREE.MeshBasicMaterial({ color: 0xa855f7, wireframe: true });
-    const matCore = new THREE.MeshBasicMaterial({ color: 0x67e8f9 });
+    const PhysicalMat = THREE.MeshPhysicalMaterial || THREE.MeshStandardMaterial;
+    const matCore = PhysicalMat ? new PhysicalMat({
+      color: 0x38bdf8,
+      emissive: 0x38bdf8,
+      emissiveIntensity: 0.5,
+      roughness: 0.15,
+      metalness: 0.1,
+      transparent: true,
+      opacity: 0.85,
+      clearcoat: 0.8
+    }) : new THREE.MeshBasicMaterial({ color: 0x67e8f9 });
 
-    // Anillos de Cardán (Gimbal Rings) concéntricos giratorios
-    const outerRing = new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.015, 8, 36), matRingCyan);
-    const innerRing = new THREE.Mesh(new THREE.TorusGeometry(0.36, 0.014, 8, 30), matRingViolet);
+    // Anillos de Cardán concéntricos miniatura
+    const outerRing = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.012, 8, 28), matRingCyan);
+    const innerRing = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.010, 8, 24), matRingViolet);
     innerRing.rotation.x = Math.PI / 2.4;
 
-    // Núcleo talismán luminoso
-    const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.16, 0), matCore);
+    // Núcleo talismán luminoso (orbe discreto de radio 0.18)
+    const core = new THREE.Mesh(new THREE.SphereGeometry(0.18, 18, 16), matCore);
+    core.name = 'ConceptOrb_' + (item.id || item.en);
 
-    // Haz láser vertical guía
+    // Haz láser vertical guía fino
     const beamMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.35 });
-    const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.05, 1.8, 8), beamMat);
+    const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 1.8, 8), beamMat);
     beam.position.y = -0.55;
 
-    // Cartel Holográfico con Tipografía legible en Canvas
+    let labelSprite = null;
+    // Cartel Holográfico THREE.Sprite oculto por defecto
     if (typeof document !== 'undefined') {
       const labelCanvas = document.createElement('canvas');
       labelCanvas.width = 512;
       labelCanvas.height = 192;
       const ctx = labelCanvas.getContext('2d');
       if (ctx) {
-        // Fondo translúcido azul espacial con borde neón
-        ctx.fillStyle = 'rgba(2, 6, 23, 0.82)';
+        ctx.fillStyle = 'rgba(2, 6, 23, 0.88)';
         ctx.fillRect(8, 8, 496, 176);
         ctx.strokeStyle = '#38bdf8';
-        ctx.lineWidth = 6;
+        ctx.lineWidth = 4;
         ctx.strokeRect(8, 8, 496, 176);
 
-        // Texto en Inglés destacado
         ctx.fillStyle = '#f8fafc';
         ctx.font = 'bold 36px "Segoe UI", system-ui, sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText(item.en || 'Space Concept', 256, 56);
 
-        // Fonética IPA en cian
         ctx.fillStyle = '#38bdf8';
         ctx.font = '24px "Segoe UI", monospace';
-        ctx.fillText(item.ipa || '/?spe?s/', 256, 102);
+        ctx.fillText(item.ipa || '/spes/', 256, 102);
 
-        // Traducción al Español
         ctx.fillStyle = '#facc15';
         ctx.font = '26px "Segoe UI", system-ui, sans-serif';
-        ctx.fillText(item.es || 'Concepto Astrofísico', 256, 150);
+        ctx.fillText(item.es || 'Concepto', 256, 150);
 
         const labelTex = new THREE.CanvasTexture(labelCanvas);
-        const labelMat = new THREE.MeshBasicMaterial({ map: labelTex, transparent: true, side: THREE.DoubleSide });
-        const labelPlane = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.52), labelMat);
-        labelPlane.position.set(0, 0.65, 0);
-        g.add(labelPlane);
+        const spriteMat = new THREE.SpriteMaterial({ map: labelTex, transparent: true, depthWrite: false });
+        labelSprite = new THREE.Sprite(spriteMat);
+        labelSprite.scale.set(2.0, 0.75, 1.0);
+        labelSprite.position.set(0, 0.65, 0);
+        labelSprite.visible = false;
+        labelSprite.raycast = () => {};
+        labelSprite.userData = { isLabelSprite: true, ignoreRaycast: true };
+        g.add(labelSprite);
       }
     }
+
+    g.labelSprite = labelSprite;
+    g.userData = {
+      interactive: true,
+      isConceptNode: true,
+      id: item.id,
+      en: item.en,
+      ipa: item.ipa,
+      es: item.es,
+      category: item.category || 'space',
+      example: item.example,
+      type: item.type || 'concept',
+      wordEn: item.en,
+      phonetic: item.ipa,
+      wordEs: item.es,
+      labelSprite: labelSprite
+    };
+
+    core.userData = Object.assign({}, g.userData, { parentGroup: g, interactive: true });
+    outerRing.userData = Object.assign({}, g.userData, { parentGroup: g, interactive: true });
+    innerRing.userData = Object.assign({}, g.userData, { parentGroup: g, interactive: true });
 
     g.add(outerRing, innerRing, core, beam);
     return g;
@@ -1882,6 +1915,9 @@
               buildSpaceScene(dynamicRoot);
             } else if (scenarioKey === 'garden') {
               buildGardenScene(dynamicRoot);
+            }
+            if (w3d && typeof w3d.normalizeSceneInteractiveMetadata === 'function') {
+              w3d.normalizeSceneInteractiveMetadata(activeScene, scenarioKey);
             }
           }
         } catch (err) {

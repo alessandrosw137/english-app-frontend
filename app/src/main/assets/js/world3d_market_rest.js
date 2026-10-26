@@ -1958,6 +1958,10 @@
       buildSupermarketScene(dynamicRoot);
     }
 
+    if (w3d && typeof w3d.normalizeSceneInteractiveMetadata === 'function') {
+      w3d.normalizeSceneInteractiveMetadata(activeScene || dynamicRoot, key);
+    }
+
     // 3. Trigger render update if available
     if (w3d && w3d.renderer && w3d.camera && activeScene) {
       try {

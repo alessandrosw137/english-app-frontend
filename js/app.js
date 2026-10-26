@@ -1642,6 +1642,13 @@ window.isCurrentUserAdmin = function() {
     }
 
     window.navigateTo = function(viewId) {
+      if (viewId === 'pets' || viewId === 'sanctuary' || viewId === 'masterpet') {
+        if (typeof window.openPetSanctuary === 'function') {
+          window.openPetSanctuary();
+          return;
+        }
+      }
+  
       const views = ['login-view', 'hub-view', 'learning-path-view', 'world3d-view', 'music-view', 'admin-view', 'view-jest-game', 'view-community'];
       views.forEach(v => {
         const el = document.getElementById(v);
@@ -2291,7 +2298,7 @@ window.logout = function() {
 
     function handleCoverCardClick(index) {
       if (index === window.currentPortal) {
-        const modules = ['path', 'worldtour', 'music', 'ai-tutor', 'stories', 'jest', 'social'];
+        const modules = ['path', 'worldtour', 'music', 'ai-tutor', 'stories', 'jest', 'social', 'pets'];
         if (modules[index] === 'ai-tutor' && typeof window.isUserRegistered === 'function' && !window.isUserRegistered()) {
           if (typeof showFloatingToast === 'function') {
             showFloatingToast('🔒 Inicia sesión con tu cuenta para acceder al Tutor IA.', '🔒');
@@ -2317,7 +2324,7 @@ window.logout = function() {
     window.handleCoverCardClick = handleCoverCardClick;
 
     window.openPortalModules = function(targetPortal) {
-      const portalModules = ['path', 'worldtour', 'music', 'ai-tutor', 'stories', 'jest', 'social'];
+      const portalModules = ['path', 'worldtour', 'music', 'ai-tutor', 'stories', 'jest', 'social', 'pets'];
       const activeIdx = (typeof window.currentPortal === 'number')
         ? ((window.currentPortal % portalModules.length + portalModules.length) % portalModules.length)
         : 0;
@@ -2406,6 +2413,10 @@ window.logout = function() {
           window.navigateTo('social');
         } else if (typeof window.openCommunityHubView === 'function') {
           window.openCommunityHubView();
+        }
+      } else if (portal === 'pets' || portal === 'sanctuary' || portal === 'masterpet') {
+        if (typeof window.openPetSanctuary === 'function') {
+          window.openPetSanctuary();
         }
       } else if (typeof openPortalWithLoader === 'function') {
         openPortalWithLoader(portal);
