@@ -103,6 +103,7 @@ const criticalFiles = [
   'css/pet_profile.css',
   'js/app.js',
   'js/world3d.js',
+  'js/pet_minigames_2d.js',
   'js/pet_engine_2d.js',
   'js/pet_sanctuary.js',
   'js/profile_social.js',

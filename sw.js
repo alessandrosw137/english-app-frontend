@@ -1,5 +1,5 @@
 // mastereng-v1-pwa-v17-compat Service Worker Network-First with Auto-Cache Cleanup
-const CACHE_NAME = 'mastereng-pwa-v17-' + Date.now();
+const CACHE_NAME = 'mastereng-pwa-v18-' + Date.now();
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -13,6 +13,7 @@ const CORE_ASSETS = [
   './js/karaoke.js',
   './js/jest_game.js',
   './js/social_chat.js',
+  './js/pet_minigames_2d.js',
   './js/pet_engine_2d.js',
   './js/pet_sanctuary.js',
   './js/profile_social.js',

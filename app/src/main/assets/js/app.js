@@ -1647,6 +1647,14 @@ window.isCurrentUserAdmin = function() {
           window.openPetSanctuary();
           return;
         }
+      } else {
+        const petSanctuary = document.getElementById('view-pet-sanctuary');
+        if (petSanctuary && petSanctuary.style.display !== 'none') {
+          petSanctuary.style.display = 'none';
+        }
+        if (typeof window.removeFloatingPetButtons === 'function') {
+          window.removeFloatingPetButtons();
+        }
       }
   
       const views = ['login-view', 'hub-view', 'learning-path-view', 'world3d-view', 'music-view', 'admin-view', 'view-jest-game', 'view-community'];

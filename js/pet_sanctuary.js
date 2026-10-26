@@ -211,6 +211,9 @@
     if (typeof global.isUserLoggedIn === 'function') {
       try { if (global.isUserLoggedIn()) return true; } catch (_) {}
     }
+    if (typeof global.isUserRegistered === 'function') {
+      try { if (global.isUserRegistered()) return true; } catch (_) {}
+    }
     return false;
   }
 
@@ -231,83 +234,67 @@
   function isUserVip() {
     try {
       if (localStorage.getItem('mastereng_is_vip') === 'true') return true;
-      if (localStorage.getItem('user_role') === 'admin' || localStorage.getItem('user_role') === 'vip') return true;
+      if (localStorage.getItem('user_role') === 'admin' || localStorage.getItem('user_role') === 'vip' || localStorage.getItem('user_role') === 'premium') return true;
+      const user = getCurrentUserMeta();
+      if (user && (user.isVip || user.role === 'admin' || user.role === 'vip' || user.role === 'premium' || user.isPremium)) return true;
       if (typeof global.isCurrentUserAdmin === 'function' && global.isCurrentUserAdmin()) return true;
+      if (typeof global.isUserPremium === 'function' && global.isUserPremium()) return true;
     } catch (_) {}
     return false;
+  }
+
+  // Claves de persistencia y control de migración limpia v2
+  const STORAGE_KEY_PETS = 'mastereng_pets';
+  const STORAGE_KEY_V2_MIGRATION = 'masterpet_v2_clean';
+
+  // Migración automática a v2 limpia: purga mascotas demo y garantiza 0 mascotas por defecto
+  function migrateMasterPetStorage() {
+    try {
+      const migrationDone = localStorage.getItem(STORAGE_KEY_V2_MIGRATION);
+      if (migrationDone !== 'true') {
+        const raw = localStorage.getItem(STORAGE_KEY_PETS);
+        if (raw) {
+          let pets = JSON.parse(raw);
+          if (Array.isArray(pets)) {
+            // Purgar cualquier mascota demo precargada (Crocody, Coco, pet_demo_1, pet_starter_, pet_coop_demo_)
+            const cleaned = pets.filter(p => {
+              if (!p) return false;
+              if (p.id === 'pet_demo_1' || p.id === 'pet_demo_2') return false;
+              if (typeof p.id === 'string' && (p.id.startsWith('pet_starter_') || p.id.startsWith('pet_coop_demo_') || p.id.startsWith('pet_demo_'))) return false;
+              if (p.name === 'Crocody' || p.name === 'Coco') return false;
+              return true;
+            });
+            localStorage.setItem(STORAGE_KEY_PETS, JSON.stringify(cleaned));
+          }
+        }
+        localStorage.setItem(STORAGE_KEY_V2_MIGRATION, 'true');
+      }
+    } catch (e) {
+      console.warn('[MasterPet] Error during v2 clean migration:', e);
+    }
   }
 
   // ==========================================================================
   // 4. PERSISTENCIA EN LOCALSTORAGE Y CÁLCULO BIOLÓGICO POR TIMESTAMPS
   // ==========================================================================
   function loadStoredPets() {
+    migrateMasterPetStorage();
     let pets = [];
     try {
-      const raw = localStorage.getItem('mastereng_pets');
+      const raw = localStorage.getItem(STORAGE_KEY_PETS);
       if (raw) pets = JSON.parse(raw);
     } catch (_) {}
 
-    // Si el usuario no tiene mascotas, crear una de bienvenida
-    if (!Array.isArray(pets) || pets.length === 0) {
-      const now = Date.now();
-      const starterPet = {
-        id: 'pet_starter_' + now,
-        speciesId: 'crocodile',
-        name: 'Crocody',
-        createdAt: now - (86400000 * 3.5), // 3.5 días de edad
-        lastFedAt: now - (3600000 * 2.5),
-        lastCleanedAt: now - (3600000 * 4),
-        lastPlayedAt: now - (3600000 * 3),
-        lastSleptAt: now - (3600000 * 8),
-        hunger: 72,
-        hygiene: 80,
-        energy: 85,
-        happiness: 88,
-        exp: 35,
-        level: 2,
-        isShared: false,
-        coParents: ['Tú'],
-        hat: null,
-        glasses: null,
-        neck: null,
-        activityLog: [
-          { text: '¡Bienvenido al Santuario! Crocody eclosionó de su huevo de papel.', time: now - (86400000 * 3.5) }
-        ]
-      };
-
-      const starterCoopPet = {
-        id: 'pet_coop_demo_' + now,
-        speciesId: 'puppy',
-        name: 'Coco',
-        createdAt: now - (86400000 * 6.2), // 6 días de edad
-        lastFedAt: now - (3600000 * 1.5),
-        lastCleanedAt: now - (3600000 * 3),
-        lastPlayedAt: now - (3600000 * 2),
-        lastSleptAt: now - (3600000 * 6),
-        hunger: 82,
-        hygiene: 88,
-        energy: 78,
-        happiness: 94,
-        exp: 65,
-        level: 4,
-        isShared: true,
-        coopCode: 'COOP-PUPPY-7782',
-        coParents: ['Tú', 'Sofía (Pareja)'],
-        hat: 'hat_aviator',
-        glasses: null,
-        neck: null,
-        activityLog: [
-          { text: 'Sofía alimentó a Coco hace 2 horas (+15 EXP)', time: now - (3600000 * 2) },
-          { text: 'Tú bañaste a Coco ayer (+20 EXP)', time: now - (86400000 * 1) },
-          { text: 'Vínculo Co-Parenting creado con éxito.', time: now - (86400000 * 6.2) }
-        ]
-      };
-
-      pets = [starterPet, starterCoopPet];
-      saveStoredPets(pets);
+    if (!Array.isArray(pets)) {
+      pets = [];
     }
 
-    // Actualizar decaimiento biológico de todas las mascotas según tiempo real
+    // Regla estricta: 0 mascotas por defecto. El usuario nuevo inicia con santuario vacío.
+    if (pets.length === 0) {
+      return [];
+    }
+
+    // Actualizar decaimiento biológico de las mascotas existentes según tiempo real
     pets = pets.map(updatePetDecayAndVitals);
     saveStoredPets(pets);
     return pets;
@@ -315,7 +302,7 @@
 
   function saveStoredPets(pets) {
     try {
-      localStorage.setItem('mastereng_pets', JSON.stringify(pets));
+      localStorage.setItem(STORAGE_KEY_PETS, JSON.stringify(pets));
     } catch (_) {}
   }
 
@@ -413,9 +400,11 @@
       #view-pet-sanctuary {
         position: fixed;
         inset: 0;
-        z-index: 10000;
+        z-index: 55;
         display: flex;
         flex-direction: column;
+        padding-top: 80px !important;
+        box-sizing: border-box;
         background: #2a1b12;
         background-image: radial-gradient(#3f271d 15%, transparent 16%), radial-gradient(#3f271d 15%, transparent 16%);
         background-size: 24px 24px;
@@ -547,7 +536,7 @@
         to { opacity: 1; transform: translate(-50%, 0); }
       }
     `;
-    document.head.appendChild(style);
+    (document.head || document.body).appendChild(style);
   }
 
   function showPetPaperToast(msg) {
@@ -708,6 +697,8 @@
       container.style.display = 'none';
       document.body.appendChild(container);
     }
+    container.style.paddingTop = '80px';
+    container.style.boxSizing = 'border-box';
     return container;
   }
 
@@ -720,6 +711,8 @@
       renderAuthLockModal();
       return;
     }
+
+    removeFloatingPetButtons();
 
     const container = ensureSanctuaryDOM();
     container.style.display = 'flex';
@@ -741,9 +734,32 @@
 
   function closePetSanctuary() {
     const container = document.getElementById('view-pet-sanctuary');
-    if (container) container.style.display = 'none';
+    if (container) {
+      container.style.display = 'none';
+    }
     sanctuaryState.isOpen = false;
     sanctuaryState.selectedPetId = null;
+
+    // Limpieza de modales residuales
+    ['masterpet-adopt-modal', 'masterpet-coop-modal', 'masterpet-vip-limit-modal', 'masterpet-invite-modal', 'masterpet-shop-modal', 'masterpet-auth-lock-modal'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.remove();
+    });
+
+    const viewGame = document.getElementById('view-pet-game');
+    if (viewGame) {
+      viewGame.style.display = 'none';
+      viewGame.classList.add('hidden');
+    }
+
+    removeFloatingPetButtons();
+
+    // Restaurar flujo hacia el menú principal de Portales Arcanos
+    if (typeof global.navigateTo === 'function') {
+      global.navigateTo('home');
+    } else if (typeof global.showView === 'function') {
+      global.showView('view-home');
+    }
   }
 
   // Modal de bloqueo si el usuario no tiene sesión iniciada
@@ -810,6 +826,8 @@
     const pets = loadStoredPets();
     const coins = getStoredCoins();
     const user = getCurrentUserMeta();
+    const userIsVip = isUserVip();
+    const slotBadge = userIsVip ? `Mascotas: ${pets.length} (Ilimitadas VIP)` : `Mascotas: ${pets.length}/1 Free`;
 
     const filteredPets = pets.filter(p => {
       if (sanctuaryState.activeTab === 'mine') return !p.isShared;
@@ -818,98 +836,171 @@
     });
 
     container.innerHTML = `
-      <!-- BARRA SUPERIOR DEL HUB -->
-      <header class="w-full bg-[#1e130c] border-b-4 border-[#b45309] px-4 py-3 flex items-center justify-between shadow-lg sticky top-0 z-50">
+      <!-- BARRA DE NAVEGACIÓN SUPERIOR FIJA DEL SANTUARIO -->
+      <header class="w-full bg-[#1e130c]/95 backdrop-blur-md border-b-4 border-[#b45309] px-3 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 shadow-xl sticky top-0 z-40">
+        <!-- IZQUIERDA: BOTÓN VOLVER A PORTALES -->
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-amber-500/20 border-2 border-amber-500 flex items-center justify-center text-2xl">
-            🐾
-          </div>
-          <div>
-            <h1 class="text-lg sm:text-xl font-black text-amber-300 tracking-wide flex items-center gap-2">
-              MasterPet Sanctuary
-              <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">Teatro Papercraft</span>
-            </h1>
-            <p class="text-xs text-amber-200/70">Refugio de Casimeritos & Co-Parenting en Vivo</p>
-          </div>
+          <button type="button" onclick="window.closePetSanctuary()" class="paper-btn-secondary px-3.5 py-2 text-xs font-black flex items-center gap-2 shadow-md hover:scale-105 active:scale-95 transition cursor-pointer" title="Regresar al Menú de Portales Arcanos">
+            <span class="text-sm">⬅</span>
+            <span>Volver a Portales</span>
+          </button>
         </div>
 
-        <div class="flex items-center gap-3">
-          <div class="bg-[#2d1b10] border-2 border-amber-500/50 rounded-xl px-3 py-1.5 flex items-center gap-2 shadow-inner">
-            <span class="text-lg">🪙</span>
-            <span class="text-sm font-extrabold text-amber-400" id="petHubCoinsDisplay">${coins}</span>
+        <!-- CENTRO: TÍTULO Y CONTADOR DE RANURAS -->
+        <div class="flex flex-col sm:flex-row items-center gap-1.5 sm:gap-3 text-center">
+          <div class="flex items-center gap-2">
+            <span class="text-2xl">🐾</span>
+            <h1 class="text-base sm:text-lg font-black text-amber-300 tracking-wide">
+              MasterPet Sanctuary
+            </h1>
+          </div>
+          <span class="text-[11px] font-black px-2.5 py-0.5 rounded-full border shadow-sm ${userIsVip ? 'bg-amber-500/20 text-amber-300 border-amber-400' : 'bg-emerald-500/20 text-emerald-300 border-emerald-400'}">
+            ${slotBadge}
+          </span>
+        </div>
+
+        <!-- DERECHA: BOTONES DE ACCIÓN RÁPIDA Y MONEDAS -->
+        <div class="flex items-center gap-2 flex-wrap justify-end">
+          <div class="bg-[#2d1b10] border-2 border-amber-500/50 rounded-xl px-2.5 py-1 flex items-center gap-1.5 shadow-inner" title="Monedas del Santuario">
+            <span class="text-sm">🪙</span>
+            <span class="text-xs font-black text-amber-400" id="petHubCoinsDisplay">${coins}</span>
           </div>
 
-          <button type="button" onclick="window.closePetSanctuary()" class="w-9 h-9 rounded-xl bg-red-950/80 hover:bg-red-900 border-2 border-red-700 text-red-200 flex items-center justify-center font-black text-lg transition" title="Salir al Portal">
-            ✕
+          <button type="button" onclick="window.openPetAdoptModal()" class="paper-btn-primary px-3 py-1.5 text-xs font-black flex items-center gap-1.5 shadow active:scale-95 transition" title="Adoptar un nuevo Casimerito">
+            <span>➕</span>
+            <span class="hidden md:inline">Adoptar Mascota</span>
+            <span class="md:hidden">Adoptar</span>
+          </button>
+
+          <button type="button" onclick="window.openPetCoopModal()" class="paper-btn-secondary px-3 py-1.5 text-xs font-black flex items-center gap-1.5 shadow active:scale-95 transition" title="Crear o unirse a grupo Co-Parenting">
+            <span>🤝</span>
+            <span class="hidden lg:inline">Crear / Unirse Co-Op</span>
+            <span class="lg:hidden">Co-Op</span>
+          </button>
+
+          <button type="button" onclick="window.openPetInviteModal()" class="paper-btn-secondary px-3 py-1.5 text-xs font-black flex items-center gap-1.5 shadow active:scale-95 transition" title="Invitar amigos al Santuario">
+            <span>👥</span>
+            <span class="hidden lg:inline">Invitar Amigos</span>
+            <span class="lg:hidden">Invitar</span>
           </button>
         </div>
       </header>
 
       <!-- CONTENEDOR CENTRAL ESTILO TEATRO -->
       <main class="max-w-6xl w-full mx-auto p-4 sm:p-6 flex-1 flex flex-col gap-6">
-        <!-- BANNER DE BIENVENIDA Y ACCIONES RÁPIDAS -->
-        <div class="paper-cardboard-panel p-5 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div class="flex items-center gap-4">
-            <div class="w-16 h-16 rounded-2xl bg-amber-400/30 border-2 border-amber-600 flex items-center justify-center text-4xl shadow-inner">
-              🎪
+        ${pets.length === 0 ? `
+          <!-- BIENVENIDA ESTILO PAPERCRAFT (0 MASCOTAS POR DEFECTO) -->
+          <div class="paper-cardboard-panel paper-stitches max-w-2xl w-full mx-auto my-6 p-8 text-center animate-bounce-short border-4 border-amber-600 shadow-2xl">
+            <div class="w-24 h-24 mx-auto mb-4 rounded-3xl bg-amber-400/30 border-3 border-amber-600 flex items-center justify-center text-6xl shadow-inner">
+              🐣🎪
             </div>
-            <div>
-              <h2 class="text-xl font-black text-[#78350f]">Bienvenido, ${user.name || 'Cuidador'}</h2>
-              <p class="text-xs sm:text-sm text-[#451a03] font-medium max-w-xl">
-                Tus mascotas crecen en <strong>días reales</strong>. Aliméntalas, báñalas con jabón burbujeante y practica inglés en minijuegos para hacerlas evolucionar hasta la etapa <strong>Master Adult</strong>.
-              </p>
-            </div>
-          </div>
-
-          <div class="flex items-center gap-3 w-full md:w-auto">
-            <button type="button" onclick="window.openPetAdoptModal()" class="paper-btn-primary py-2.5 px-4 text-sm flex-1 md:flex-initial flex items-center justify-center gap-2">
-              <span>✨</span>
-              <span>+ Adoptar Mascota</span>
-            </button>
-            <button type="button" onclick="window.openPetCoopModal()" class="paper-btn-secondary py-2.5 px-4 text-sm flex-1 md:flex-initial flex items-center justify-center gap-2">
-              <span>🤝</span>
-              <span>Vincular Co-Op</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- FILTROS DE PESTAÑAS (TODAS / INDIVIDUALES / COMPARTIDAS) -->
-        <div class="flex items-center justify-between border-b-2 border-amber-900/60 pb-2">
-          <div class="flex items-center gap-2">
-            <button type="button" onclick="window.setPetHubTab('all')" class="px-4 py-1.5 rounded-xl font-extrabold text-xs transition ${sanctuaryState.activeTab === 'all' ? 'bg-amber-500 text-slate-950 shadow' : 'bg-[#3e271d] text-amber-200/80 hover:bg-[#4d3226]'}">
-              🎪 Todas (${pets.length})
-            </button>
-            <button type="button" onclick="window.setPetHubTab('mine')" class="px-4 py-1.5 rounded-xl font-extrabold text-xs transition ${sanctuaryState.activeTab === 'mine' ? 'bg-amber-500 text-slate-950 shadow' : 'bg-[#3e271d] text-amber-200/80 hover:bg-[#4d3226]'}">
-              👤 Mis Mascotas (${pets.filter(p => !p.isShared).length})
-            </button>
-            <button type="button" onclick="window.setPetHubTab('shared')" class="px-4 py-1.5 rounded-xl font-extrabold text-xs transition ${sanctuaryState.activeTab === 'shared' ? 'bg-amber-500 text-slate-950 shadow' : 'bg-[#3e271d] text-amber-200/80 hover:bg-[#4d3226]'}">
-              🤝 Compartidas Co-Op (${pets.filter(p => p.isShared).length})
-            </button>
-          </div>
-
-          <span class="text-xs text-amber-300/80 font-bold hidden sm:inline">
-            Hora Real del Santuario: ${new Date().toLocaleDateString()}
-          </span>
-        </div>
-
-        <!-- REJILLA DE TARJETAS SUB-PORTALES (TEATRO DE CARTÓN) -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          ${filteredPets.map(renderPetHubCard).join('')}
-
-          <!-- TARJETA VACÍA PARA ADOPTAR NUEVA -->
-          <div onclick="window.openPetAdoptModal()" class="paper-pet-stage-card border-dashed border-4 border-amber-600/70 p-6 flex flex-col items-center justify-center text-center min-h-[320px] bg-amber-950/20 hover:bg-amber-950/40 cursor-pointer">
-            <div class="w-16 h-16 rounded-full bg-amber-500/20 border-2 border-amber-500 text-amber-400 flex items-center justify-center text-3xl mb-3 shadow">
-              +
-            </div>
-            <h3 class="text-lg font-black text-amber-400 mb-1">Adoptar Nuevo Casimerito</h3>
-            <p class="text-xs text-amber-200/70 max-w-xs mb-4">
-              Elige entre Cocodrilos, Cachorros, Gatitos o especies místicas VIP de Season Pass.
+            <h2 class="text-2xl sm:text-3xl font-black text-[#78350f] mb-2">
+              ¡Bienvenido a MasterPet Sanctuary!
+            </h2>
+            <p class="text-sm sm:text-base text-[#451a03] font-semibold max-w-lg mx-auto mb-6 leading-relaxed">
+              Aún no tienes ningún <strong>Casimerito</strong> en adopción. ¡Comienza criando tu primera mascota o únete a una sala co-op con amigos!
             </p>
-            <span class="paper-btn-primary py-2 px-4 text-xs">
-              Explorar Catálogo
+
+            <div class="flex flex-col sm:flex-row gap-3.5 justify-center items-center max-w-md mx-auto mb-6">
+              <button type="button" onclick="window.openPetAdoptModal()" class="paper-btn-primary w-full sm:w-auto py-3.5 px-6 text-sm font-black flex items-center justify-center gap-2 shadow-lg hover:scale-102 active:scale-95 transition">
+                <span class="text-lg">➕</span>
+                <span>Adoptar mi Primer Casimerito (Bebé)</span>
+              </button>
+              <button type="button" onclick="window.openPetCoopModal()" class="paper-btn-secondary w-full sm:w-auto py-3.5 px-6 text-sm font-black flex items-center justify-center gap-2 shadow hover:scale-102 active:scale-95 transition">
+                <span class="text-lg">🤝</span>
+                <span>Unirme con Código de Amigo / Grupo</span>
+              </button>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left bg-amber-100/70 p-4 rounded-2xl border border-amber-300">
+              <div class="flex items-center gap-2.5">
+                <span class="text-2xl">🍖</span>
+                <div class="text-xs">
+                  <strong class="text-amber-950 block">Tiempo Real</strong>
+                  <span class="text-amber-800">Crecen en días reales.</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2.5">
+                <span class="text-2xl">🎓</span>
+                <div class="text-xs">
+                  <strong class="text-amber-950 block">Aprende Inglés</strong>
+                  <span class="text-amber-800">Minijuegos y vocabulario.</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2.5">
+                <span class="text-2xl">👥</span>
+                <div class="text-xs">
+                  <strong class="text-amber-950 block">Co-Parenting</strong>
+                  <span class="text-amber-800">Cría mascotas en pareja.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ` : `
+          <!-- BANNER DE BIENVENIDA Y ACCIONES RÁPIDAS -->
+          <div class="paper-cardboard-panel p-5 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+              <div class="w-16 h-16 rounded-2xl bg-amber-400/30 border-2 border-amber-600 flex items-center justify-center text-4xl shadow-inner">
+                🎪
+              </div>
+              <div>
+                <h2 class="text-xl font-black text-[#78350f]">Bienvenido, ${user.name || 'Cuidador'}</h2>
+                <p class="text-xs sm:text-sm text-[#451a03] font-medium max-w-xl">
+                  Tus mascotas crecen en <strong>días reales</strong>. Aliméntalas, báñalas con jabón burbujeante y practica inglés en minijuegos para hacerlas evolucionar hasta la etapa <strong>Master Adult</strong>.
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-3 w-full md:w-auto">
+              <button type="button" onclick="window.openPetAdoptModal()" class="paper-btn-primary py-2.5 px-4 text-sm flex-1 md:flex-initial flex items-center justify-center gap-2">
+                <span>✨</span>
+                <span>+ Adoptar Mascota</span>
+              </button>
+              <button type="button" onclick="window.openPetCoopModal()" class="paper-btn-secondary py-2.5 px-4 text-sm flex-1 md:flex-initial flex items-center justify-center gap-2">
+                <span>🤝</span>
+                <span>Vincular Co-Op</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- FILTROS DE PESTAÑAS (TODAS / INDIVIDUALES / COMPARTIDAS) -->
+          <div class="flex items-center justify-between border-b-2 border-amber-900/60 pb-2">
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="window.setPetHubTab('all')" class="px-4 py-1.5 rounded-xl font-extrabold text-xs transition ${sanctuaryState.activeTab === 'all' ? 'bg-amber-500 text-slate-950 shadow' : 'bg-[#3e271d] text-amber-200/80 hover:bg-[#4d3226]'}">
+                🎪 Todas (${pets.length})
+              </button>
+              <button type="button" onclick="window.setPetHubTab('mine')" class="px-4 py-1.5 rounded-xl font-extrabold text-xs transition ${sanctuaryState.activeTab === 'mine' ? 'bg-amber-500 text-slate-950 shadow' : 'bg-[#3e271d] text-amber-200/80 hover:bg-[#4d3226]'}">
+                👤 Mis Mascotas (${pets.filter(p => !p.isShared).length})
+              </button>
+              <button type="button" onclick="window.setPetHubTab('shared')" class="px-4 py-1.5 rounded-xl font-extrabold text-xs transition ${sanctuaryState.activeTab === 'shared' ? 'bg-amber-500 text-slate-950 shadow' : 'bg-[#3e271d] text-amber-200/80 hover:bg-[#4d3226]'}">
+                🤝 Compartidas Co-Op (${pets.filter(p => p.isShared).length})
+              </button>
+            </div>
+
+            <span class="text-xs text-amber-300/80 font-bold hidden sm:inline">
+              Hora Real del Santuario: ${new Date().toLocaleDateString()}
             </span>
           </div>
-        </div>
+
+          <!-- REJILLA DE TARJETAS SUB-PORTALES (TEATRO DE CARTÓN) -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            ${filteredPets.map(renderPetHubCard).join('')}
+
+            <!-- TARJETA VACÍA PARA ADOPTAR NUEVA -->
+            <div onclick="window.openPetAdoptModal()" class="paper-pet-stage-card border-dashed border-4 border-amber-600/70 p-6 flex flex-col items-center justify-center text-center min-h-[320px] bg-amber-950/20 hover:bg-amber-950/40 cursor-pointer">
+              <div class="w-16 h-16 rounded-full bg-amber-500/20 border-2 border-amber-500 text-amber-400 flex items-center justify-center text-3xl mb-3 shadow">
+                +
+              </div>
+              <h3 class="text-lg font-black text-amber-400 mb-1">Adoptar Nuevo Casimerito</h3>
+              <p class="text-xs text-amber-200/70 max-w-xs mb-4">
+                ${!userIsVip && pets.length >= 1 ? 'Límite Free alcanzado (1/1). Desbloquea VIP para más espacios.' : 'Elige entre Cocodrilos, Cachorros, Gatitos o especies místicas VIP de Season Pass.'}
+              </p>
+              <span class="paper-btn-primary py-2 px-4 text-xs font-black">
+                ${!userIsVip && pets.length >= 1 ? '⭐ Desbloquear VIP' : 'Explorar Catálogo'}
+              </span>
+            </div>
+          </div>
+        `}
       </main>
     `;
   }
@@ -1042,32 +1133,48 @@
     const coins = getStoredCoins();
 
     container.innerHTML = `
-      <!-- BARRA SUPERIOR DE LA HABITACIÓN -->
-      <header class="w-full bg-[#1e130c] border-b-4 border-[#b45309] px-4 py-2.5 flex items-center justify-between shadow-lg sticky top-0 z-50">
-        <div class="flex items-center gap-3">
-          <button type="button" onclick="window.renderSanctuaryHub()" class="paper-btn-secondary px-3 py-1 text-xs font-black flex items-center gap-1">
-            <span>←</span>
-            <span>Volver al Hub</span>
+      <!-- BARRA SUPERIOR FIJA DE LA HABITACIÓN -->
+      <header class="w-full bg-[#1e130c]/95 backdrop-blur-md border-b-4 border-[#b45309] px-3 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 shadow-xl sticky top-0 z-40">
+        <!-- IZQUIERDA: BOTONES VOLVER A PORTALES Y HUB -->
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="window.closePetSanctuary()" class="paper-btn-secondary px-3 py-1.5 text-xs font-black flex items-center gap-1 shadow hover:scale-105 active:scale-95 transition cursor-pointer" title="Regresar al Menú de Portales Arcanos">
+            <span>⬅</span>
+            <span>Volver a Portales</span>
           </button>
-          <div>
-            <h2 class="text-base sm:text-lg font-black text-amber-300 flex items-center gap-2">
-              ${pet.name}
-              <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                ${pet.stageBadge}
-              </span>
-            </h2>
-          </div>
+          <button type="button" onclick="window.renderSanctuaryHub()" class="paper-btn-secondary px-3 py-1.5 text-xs font-black flex items-center gap-1 shadow hover:scale-105 active:scale-95 transition cursor-pointer" title="Volver a la selección de mascotas">
+            <span>🏠</span>
+            <span class="hidden sm:inline">Hub</span>
+          </button>
         </div>
 
-        <div class="flex items-center gap-3">
-          <div class="bg-[#2d1b10] border-2 border-amber-500/50 rounded-xl px-3 py-1 flex items-center gap-1.5 shadow-inner">
-            <span class="text-base">🪙</span>
-            <span class="text-sm font-black text-amber-400" id="roomCoinDisplay">${coins}</span>
+        <!-- CENTRO: NOMBRE DE LA MASCOTA Y ESTADO -->
+        <div class="flex items-center gap-2 text-center">
+          <span class="text-xl">${spec.icon}</span>
+          <h2 class="text-base sm:text-lg font-black text-amber-300">
+            ${pet.name}
+          </h2>
+          <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+            ${pet.stageBadge || '🐣 Baby'}
+          </span>
+          <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${isUserVip() ? 'bg-amber-500/20 text-amber-300 border-amber-400' : 'bg-emerald-500/20 text-emerald-300 border-emerald-400'}">
+            ${isUserVip() ? `Mascotas: ${loadStoredPets().length} (VIP)` : `Mascotas: ${loadStoredPets().length}/1 Free`}
+          </span>
+        </div>
+
+        <!-- DERECHA: MONEDAS, TIENDA E INVITAR -->
+        <div class="flex items-center gap-2">
+          <div class="bg-[#2d1b10] border-2 border-amber-500/50 rounded-xl px-2.5 py-1 flex items-center gap-1.5 shadow-inner" title="Monedas del Santuario">
+            <span class="text-sm">🪙</span>
+            <span class="text-xs font-black text-amber-400" id="roomCoinDisplay">${coins}</span>
           </div>
 
-          <button type="button" onclick="window.openPetShopModal()" class="paper-btn-primary px-3 py-1.5 text-xs flex items-center gap-1">
+          <button type="button" onclick="window.openPetShopModal()" class="paper-btn-primary px-3 py-1.5 text-xs font-black flex items-center gap-1 shadow active:scale-95 transition">
             <span>🛍️</span>
             <span>Boutique</span>
+          </button>
+
+          <button type="button" onclick="window.openPetInviteModal()" class="paper-btn-secondary px-2.5 py-1.5 text-xs font-black flex items-center gap-1 shadow active:scale-95 transition" title="Invitar amigos al Santuario">
+            <span>👥</span>
           </button>
         </div>
       </header>
@@ -1386,6 +1493,12 @@
   // 12. MINIJUEGO DE VOCABULARIO EN INGLÉS (PAPER BALLOONS POP)
   // ==========================================================================
   global.openPetMinigame = function (petId) {
+    if (typeof window !== 'undefined' && typeof window.openPetArcadeModal === 'function') {
+      const pets = loadStoredPets();
+      const pet = pets.find(p => p.id === petId);
+      window.openPetArcadeModal(pet || { id: petId });
+      return;
+    }
     const pets = loadStoredPets();
     const pet = pets.find(p => p.id === petId);
     if (!pet) return;
@@ -1590,6 +1703,12 @@
   // ==========================================================================
   global.openPetAdoptModal = function () {
     ensureSanctuaryStyles();
+    const pets = loadStoredPets();
+    if (!isUserVip() && pets.length >= 1) {
+      renderVipPetLimitModal();
+      return;
+    }
+
     let modal = document.getElementById('masterpet-adopt-modal');
     if (modal) modal.remove();
 
@@ -1696,6 +1815,14 @@
     const spec = PET_SPECIES[speciesId];
     if (!spec) return;
 
+    const pets = loadStoredPets();
+    if (!isUserVip() && pets.length >= 1) {
+      const modal = document.getElementById('masterpet-adopt-modal');
+      if (modal) modal.remove();
+      renderVipPetLimitModal();
+      return;
+    }
+
     const nameInput = document.getElementById('newPetNameInput');
     const petName = (nameInput && nameInput.value.trim()) || spec.defaultName;
     const modeEl = document.querySelector('input[name="petAdoptMode"]:checked');
@@ -1728,7 +1855,6 @@
       ]
     };
 
-    const pets = loadStoredPets();
     pets.unshift(newPet);
     saveStoredPets(pets);
 
@@ -1746,6 +1872,12 @@
   // ==========================================================================
   global.openPetCoopModal = function () {
     ensureSanctuaryStyles();
+    const pets = loadStoredPets();
+    if (!isUserVip() && pets.length >= 1) {
+      renderVipPetLimitModal();
+      return;
+    }
+
     let modal = document.getElementById('masterpet-coop-modal');
     if (modal) modal.remove();
 
@@ -1785,14 +1917,20 @@
   };
 
   global.linkCoopCodeNow = function () {
+    const pets = loadStoredPets();
+    if (!isUserVip() && pets.length >= 1) {
+      const modal = document.getElementById('masterpet-coop-modal');
+      if (modal) modal.remove();
+      renderVipPetLimitModal();
+      return;
+    }
+
     const input = document.getElementById('coopCodeInput');
     const code = (input && input.value.trim().toUpperCase()) || '';
     if (!code) {
       showPetPaperToast('Por favor escribe un código de vínculo válido.');
       return;
     }
-
-    const pets = loadStoredPets();
     // Verificar si ya la tiene
     const existing = pets.find(p => p.coopCode === code);
     if (existing) {
@@ -1842,43 +1980,158 @@
   };
 
   // ==========================================================================
-  // 16. BOTÓN FLOTANTE DISCRETO EN LA UI PRINCIPAL (LAUNCHER AUTOMÁTICO)
+  // 16. MODAL DE BENEFICIOS VIP / LÍMITE DE MASCOTAS FREE (1/1)
   // ==========================================================================
-  function ensurePetSanctuaryLauncher() {
-    if (document.getElementById('masterpet-launcher-fab')) return;
-    const btn = document.createElement('button');
-    btn.id = 'masterpet-launcher-fab';
-    btn.type = 'button';
-    btn.onclick = function () { window.openPetSanctuary(); };
-    btn.title = 'Abrir MasterPet Sanctuary (Mascotas Virtuales & Casimeritos)';
-    btn.style.cssText = `
-      position: fixed;
-      bottom: 84px;
-      left: 18px;
-      z-index: 999;
-      background: linear-gradient(135deg, #f59e0b, #d97706);
-      border: 3px solid #78350f;
-      border-radius: 9999px;
-      color: #fff;
-      font-weight: 800;
-      font-size: 13px;
-      padding: 10px 18px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      box-shadow: 0 10px 25px rgba(217, 119, 6, 0.45);
-      cursor: pointer;
-      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-      user-select: none;
+  function renderVipPetLimitModal() {
+    ensureSanctuaryStyles();
+    let modal = document.getElementById('masterpet-vip-limit-modal');
+    if (modal) modal.remove();
+
+    modal = document.createElement('div');
+    modal.id = 'masterpet-vip-limit-modal';
+    modal.style.cssText = `position: fixed; inset: 0; z-index: 10020; background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 16px;`;
+
+    modal.innerHTML = `
+      <div class="paper-cardboard-panel paper-stitches max-w-md w-full p-6 text-center animate-bounce-short border-4 border-amber-500 shadow-2xl">
+        <div class="w-16 h-16 mx-auto mb-3 rounded-2xl bg-amber-500/20 border-2 border-amber-500 flex items-center justify-center text-4xl shadow-inner">
+          ⭐👑
+        </div>
+        <span class="text-xs font-black uppercase tracking-wider px-3 py-1 rounded-full bg-amber-500 text-slate-950 inline-block mb-2 shadow">
+          Límite de Mascotas Free (1/1)
+        </span>
+        <h2 class="text-xl sm:text-2xl font-black text-[#78350f] mb-2 leading-tight">
+          ¡Ranura de Mascota Activa Ocupada!
+        </h2>
+        <p class="text-xs sm:text-sm text-[#451a03] font-medium mb-4 leading-relaxed text-left bg-amber-100/90 p-3.5 rounded-xl border border-amber-300">
+          Como usuario <strong>Gratuito (Free)</strong> puedes cuidar y criar <strong>1 Casimerito activo</strong> en tu santuario con ciclo biológico en tiempo real.<br><br>
+          ✨ <strong>Beneficios Exclusivos MasterENG VIP / Premium:</strong><br>
+          • 🐾 <strong>Mascotas Simultáneas Ilimitadas</strong> en tu santuario.<br>
+          • 🦄 Especies Legendarias (Ajolote de Xochimilco, Panda Rojo Celestial, Rinoceronte Dorado).<br>
+          • 🤝 Salas Co-Parenting Ilimitadas con tus amigos y pareja.<br>
+          • 🎨 Boutique de Accesorios y Pociones Mágicas exclusivas.
+        </p>
+        <div class="flex flex-col gap-2.5">
+          <button type="button" onclick="window.unlockPetVipDemo()" class="paper-btn-primary py-3 px-4 text-sm font-black flex items-center justify-center gap-2 shadow">
+            <span>💎</span>
+            <span>Conocer Beneficios VIP / Activar</span>
+          </button>
+          <button type="button" onclick="document.getElementById('masterpet-vip-limit-modal').remove()" class="paper-btn-secondary py-2.5 px-4 text-xs font-bold">
+            Entendido, volver a mi Mascota
+          </button>
+        </div>
+      </div>
     `;
-    btn.innerHTML = `<span style="font-size: 18px;">🐾</span> <span>MasterPet</span>`;
-    btn.onmouseenter = function () { btn.style.transform = 'scale(1.08) translateY(-2px)'; };
-    btn.onmouseleave = function () { btn.style.transform = 'scale(1) translateY(0)'; };
-    document.body.appendChild(btn);
+
+    document.body.appendChild(modal);
   }
+  global.renderVipPetLimitModal = renderVipPetLimitModal;
+
+  global.unlockPetVipDemo = function () {
+    const modal = document.getElementById('masterpet-vip-limit-modal');
+    if (modal) modal.remove();
+    if (typeof global.openPricingModal === 'function') {
+      global.openPricingModal();
+    } else if (typeof global.openSubscriptionModal === 'function') {
+      global.openSubscriptionModal();
+    } else {
+      localStorage.setItem('mastereng_is_vip', 'true');
+      showPetPaperToast('⭐ ¡Has activado el Pase VIP de Demostración! Ya tienes ranuras ilimitadas.');
+      renderSanctuaryHub();
+    }
+  };
 
   // ==========================================================================
-  // 17. EXPORTACIÓN GLOBAL DE LA API
+  // 17. MODAL DE INVITAR AMIGOS AL SANTUARIO
+  // ==========================================================================
+  global.openPetInviteModal = function () {
+    ensureSanctuaryStyles();
+    let modal = document.getElementById('masterpet-invite-modal');
+    if (modal) modal.remove();
+
+    const inviteUrl = (typeof window !== 'undefined' && window.location) ? (window.location.origin + window.location.pathname) : 'https://mastereng.app';
+
+    modal = document.createElement('div');
+    modal.id = 'masterpet-invite-modal';
+    modal.style.cssText = `position: fixed; inset: 0; z-index: 10020; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; padding: 16px;`;
+
+    modal.innerHTML = `
+      <div class="paper-cardboard-panel paper-stitches max-w-md w-full p-6 text-center animate-bounce-short border-4 border-amber-600 shadow-2xl">
+        <div class="text-5xl mb-2">👥💌</div>
+        <h2 class="text-xl font-black text-[#78350f] mb-1">Invitar Amigos al Santuario</h2>
+        <p class="text-xs text-[#451a03] mb-4">
+          Comparte MasterENG con tus amigos o tu pareja para criar Casimeritos juntos en tiempo real y practicar inglés diariamente.
+        </p>
+
+        <div class="bg-amber-100 border border-amber-300 rounded-xl p-3 text-left mb-4">
+          <label class="block text-xs font-black text-amber-950 mb-1">Enlace de Invitación:</label>
+          <div class="flex gap-2">
+            <input type="text" id="petInviteLinkInput" readonly value="${inviteUrl}" class="flex-1 bg-white border-2 border-amber-600 rounded-lg px-3 py-1.5 text-xs font-bold text-amber-950 outline-none select-all" />
+            <button type="button" onclick="window.copyPetInviteLink()" class="paper-btn-primary px-3 py-1.5 text-xs font-black">
+              Copiar
+            </button>
+          </div>
+        </div>
+
+        <div class="flex gap-2">
+          ${typeof navigator !== 'undefined' && navigator.share ? `
+            <button type="button" onclick="window.sharePetInviteNative()" class="paper-btn-primary flex-1 py-2 text-xs font-black">
+              📲 Compartir por WhatsApp / Redes
+            </button>
+          ` : ''}
+          <button type="button" onclick="document.getElementById('masterpet-invite-modal').remove()" class="paper-btn-secondary ${typeof navigator !== 'undefined' && navigator.share ? 'px-4' : 'w-full'} py-2 text-xs">
+            Cerrar
+          </button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+  };
+
+  global.copyPetInviteLink = function () {
+    const input = document.getElementById('petInviteLinkInput');
+    if (input) {
+      input.select();
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        navigator.clipboard.writeText(input.value);
+      }
+      showPetPaperToast('📋 ¡Enlace de invitación copiado al portapapeles!');
+    }
+  };
+
+  global.sharePetInviteNative = function () {
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      navigator.share({
+        title: 'MasterPet Sanctuary en MasterENG',
+        text: '¡Únete conmigo a MasterPet Sanctuary para criar Casimeritos virtuales y practicar inglés juntos!',
+        url: window.location.origin + window.location.pathname
+      }).catch(() => {});
+    }
+  };
+
+  // ==========================================================================
+  // 18. LIMPIEZA TOTAL DE BOTONES FLOTANTES Y BARRAS INTRUSIVAS
+  // ==========================================================================
+  function removeFloatingPetButtons() {
+    if (typeof document === 'undefined') return;
+    ['masterpet-launcher-fab', 'masterpet-fab', 'floatingPetButton'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.remove();
+    });
+    const rogueBtn = document.querySelector('button[title*="MasterPet"], button[title*="Mascota 2D"]');
+    if (rogueBtn && rogueBtn.id !== 'headerGlobalBackBtn') {
+      rogueBtn.remove();
+    }
+    const viewGame = document.getElementById('view-pet-game');
+    if (viewGame && !sanctuaryState.isOpen) {
+      viewGame.style.display = 'none';
+      viewGame.classList.add('hidden');
+    }
+  }
+  global.removeFloatingPetButtons = removeFloatingPetButtons;
+
+  // ==========================================================================
+  // 19. EXPORTACIÓN GLOBAL DE LA API
   // ==========================================================================
   global.openPetSanctuary = openPetSanctuary;
   global.closePetSanctuary = closePetSanctuary;
@@ -1886,6 +2139,7 @@
   global.openPetRoom = openPetRoom;
   global.loadStoredPets = loadStoredPets;
   global.speakEnglishVocab = speakEnglishVocab;
+  global.renderVipPetLimitModal = renderVipPetLimitModal;
 
   global.MasterPet = {
     open: openPetSanctuary,
@@ -1894,15 +2148,17 @@
     getCoins: getStoredCoins,
     addCoins: addStoredCoins,
     species: PET_SPECIES,
-    foods: PET_FOODS
+    foods: PET_FOODS,
+    cleanButtons: removeFloatingPetButtons
   };
 
-  // Inicializar botón en DOMContentLoaded o inmediato
+  // Limpieza proactiva de cualquier botón flotante o vista residual
   if (typeof document !== 'undefined') {
+    removeFloatingPetButtons();
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', ensurePetSanctuaryLauncher);
+      document.addEventListener('DOMContentLoaded', removeFloatingPetButtons);
     } else {
-      setTimeout(ensurePetSanctuaryLauncher, 250);
+      setTimeout(removeFloatingPetButtons, 100);
     }
   }
 

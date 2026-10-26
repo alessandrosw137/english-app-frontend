@@ -437,54 +437,110 @@
   };
 
   // ============================================================================
-  // 3. ETAPAS DE MADUREZ (4 LIFE STAGES)
+  // 3. ETAPAS DE MADUREZ (4 LIFE STAGES - DE CASIMERITO A ADULTO)
   // ============================================================================
 
   const LIFE_STAGES = [
     {
       stage: 1,
-      name: 'Newborn Casimerito',
-      es: 'Recién Nacido',
+      name: 'Newborn Baby',
+      es: 'Bebé Recién Nacido',
+      levelMin: 1,
+      levelMax: 3,
       minXp: 0,
-      scale: 0.72,
-      headScale: 1.25,
-      accessory: 'Diaper with Safety Pin',
+      scale: 0.65,
+      headScale: 1.28,
+      voicePitch: 1.6,
+      accessory: 'Baby Pacifier & Diaper',
+      needs: 'Baby Bottle, Porridge & Swaddle',
       desc: 'Bebé diminuto con pañal de papel, chupón y ojitos gigantes llenos de curiosidad.'
     },
     {
       stage: 2,
       name: 'Curious Toddler',
-      es: 'Pequeño Travieso',
-      minXp: 280,
-      scale: 0.88,
-      headScale: 1.12,
-      accessory: 'Paper Embroidered Bib',
+      es: 'Pequeño Curioso',
+      levelMin: 4,
+      levelMax: 7,
+      minXp: 300,
+      scale: 0.85,
+      headScale: 1.15,
+      voicePitch: 1.3,
+      accessory: 'Embroidered Bib & Ball',
+      needs: 'First Words & Playtime',
       desc: 'Peques juguetones que gatean con su babero puesto y balbucean palabras en inglés.'
     },
     {
       stage: 3,
-      name: 'Junior Explorer',
+      name: 'Teen Explorer',
       es: 'Joven Explorador',
-      minXp: 850,
-      scale: 1.05,
+      levelMin: 8,
+      levelMax: 12,
+      minXp: 700,
+      scale: 1.0,
       headScale: 1.0,
-      accessory: 'Scout Bandana & Compass',
-      desc: 'Joven enérgico con su pañuelo de explorador listo para aventuras al aire libre.'
+      voicePitch: 1.0,
+      accessory: 'Headphones & Varsity Scarf',
+      needs: 'Complex English & Outdoor Sports',
+      desc: 'Joven enérgico listo para aventuras, con audífonos y preguntas de vocabulario avanzadas.'
     },
     {
       stage: 4,
-      name: 'Wise Adult Master',
+      name: 'Master Adult',
       es: 'Adulto Sabio',
-      minXp: 1950,
-      scale: 1.22,
+      levelMin: 13,
+      levelMax: 99,
+      minXp: 1200,
+      scale: 1.18,
       headScale: 0.92,
+      voicePitch: 0.85,
       accessory: 'Golden Cardboard Crown',
-      desc: 'Mascota majestuosa con corona dorada de cartón, vocabulario fluido y porte orgulloso.'
+      needs: 'Advanced Mastery & Wisdom',
+      desc: 'Mascota majestuosa con corona dorada de cartón, vocabulario fluido y porte sabio.'
     }
   ];
 
   // ============================================================================
-  // 4. TIENDA DE CARTÓN: ALIMENTOS, POCIONES Y DISFRACES
+  // 4. CLOSET Y TIENDA DE OUTFITS ESTILO POU (PAPERCRAFT CLOSET)
+  // ============================================================================
+
+  const CLOSET_CATALOG = {
+    hats: [
+      { id: 'none', name: 'Sin Sombrero', es: 'Sin accesorio', icon: '❌', price: 0 },
+      { id: 'hat_baseball', name: 'Baseball Cap', es: 'Gorra deportiva roja/azul', icon: '🧢', price: 25 },
+      { id: 'hat_bonnet', name: 'Baby Bonnet', es: 'Gorrito tierno de recién nacido', icon: '👶', price: 20 },
+      { id: 'hat_top', name: 'Top Hat', es: 'Sombrero de copa británico', icon: '🎩', price: 40 },
+      { id: 'hat_crown', name: 'Royal Crown', es: 'Corona real dorada (VIP)', icon: '👑', price: 80, isVip: true },
+      { id: 'hat_helmet', name: 'Space Helmet', es: 'Casco espacial astronauta (VIP)', icon: '🪖', price: 100, isVip: true }
+    ],
+    glasses: [
+      { id: 'none', name: 'Sin Lentes', es: 'Sin gafas', icon: '❌', price: 0 },
+      { id: 'glasses_reading', name: 'Reading Glasses', es: 'Lentes redondos de estudio', icon: '👓', price: 25 },
+      { id: 'glasses_cool', name: 'Cool Sunglasses', es: 'Gafas de sol oscuras retro', icon: '🕶️', price: 35 },
+      { id: 'glasses_monocle', name: 'Aristocratic Monocle', es: 'Monóculo dorado con cadenita', icon: '🧐', price: 50 }
+    ],
+    outfits: [
+      { id: 'none', name: 'Kraft Natural', es: 'Al natural (cartón kraft puro)', icon: '📦', price: 0 },
+      { id: 'outfit_diaper', name: 'Baby Diaper', es: 'Pañal blanco con alfiler de seguridad', icon: '🧷', price: 15 },
+      { id: 'outfit_bib', name: 'Baby Bib', es: 'Babero infantil bordado con huella', icon: '🍼', price: 20 },
+      { id: 'outfit_scarf', name: 'Red Knit Scarf', es: 'Bufanda tejida roja abrigada', icon: '🧣', price: 30 },
+      { id: 'outfit_bowtie', name: 'Black Bow Tie', es: 'Corbatín negro de gala', icon: '👔', price: 35 },
+      { id: 'outfit_jacket', name: 'Varsity Jacket', es: 'Chaqueta universitaria deportiva', icon: '🧥', price: 60 },
+      { id: 'outfit_cape', name: 'Hero Cape', es: 'Capa de superhéroe ondeante (VIP)', icon: '🦸', price: 75, isVip: true }
+    ],
+    skinColors: [
+      { id: 'kraft', name: 'Kraft Natural', hex: '#caa778', price: 0, es: 'Cartón kraft tradicional' },
+      { id: 'mint', name: 'Menta Pastel', hex: '#a7f3d0', price: 30, es: 'Tono menta suave y refrescante' },
+      { id: 'pink', name: 'Rosa Bebé', hex: '#fbcfe8', price: 30, es: 'Rosa tierno estilo algodón' },
+      { id: 'sky', name: 'Azul Cielo', hex: '#bae6fd', price: 30, es: 'Azul pastel brillante' },
+      { id: 'lavender', name: 'Lavanda', hex: '#ddd6fe', price: 30, es: 'Púrpura suave relajante' },
+      { id: 'cream', name: 'Crema Vainilla', hex: '#fef08a', price: 30, es: 'Tono pastel cálido' },
+      { id: 'terracotta', name: 'Terracota', hex: '#fdba74', price: 30, es: 'Arcilla cálida y viva' },
+      { id: 'emerald', name: 'Esmeralda', hex: '#65a30d', price: 30, es: 'Verde bosque vibrante' }
+    ]
+  };
+
+  // ============================================================================
+  // 5. TIENDA DE CARTÓN: ALIMENTOS Y POCIONES
   // ============================================================================
 
   const SHOP_CATALOG = {
@@ -700,7 +756,7 @@
   class CardboardRenderer {
     constructor(canvas) {
       this.canvas = canvas;
-      this.ctx = canvas.getContext('2d');
+      this.ctx = canvas && typeof canvas.getContext === 'function' ? canvas.getContext('2d') : null;
       this.time = 0;
       this.particles = [];
       this.soapBubbles = [];
@@ -997,8 +1053,24 @@
       }
     }
 
+    getLighterColor(hex, percent = 25) {
+      if (!hex || typeof hex !== 'string' || !hex.startsWith('#')) return '#fef3c7';
+      try {
+        let num = parseInt(hex.slice(1), 16);
+        let r = (num >> 16) + Math.round(255 * (percent / 100));
+        let g = ((num >> 8) & 0x00FF) + Math.round(255 * (percent / 100));
+        let b = (num & 0x0000FF) + Math.round(255 * (percent / 100));
+        r = Math.min(255, r);
+        g = Math.min(255, g);
+        b = Math.min(255, b);
+        return `rgb(${r},${g},${b})`;
+      } catch (_) {
+        return hex;
+      }
+    }
+
     // --------------------------------------------------------------------------
-    // DIBUJO ARTICULADO DE LAS MASCOTAS EN CARTÓN
+    // DIBUJO ARTICULADO DE LAS MASCOTAS EN CARTÓN (PAPERCRAFT POU ARCHITECTURE)
     // --------------------------------------------------------------------------
 
     drawPet(petState, mousePos = { x: 0, y: 0 }) {
@@ -1008,12 +1080,17 @@
       const t = this.time;
 
       const spec = SPECIES_DATA[petState.species] || SPECIES_DATA.crocodile;
-      const stageIdx = Math.min(3, Math.max(0, petState.stage - 1));
+      const stageIdx = Math.min(3, Math.max(0, (petState.stage || 1) - 1));
       const stage = LIFE_STAGES[stageIdx] || LIFE_STAGES[0];
+
+      // Colores de piel de cartón personalizados o naturales
+      const baseColor = petState.customSkinColor || spec.baseColor;
+      const accentColor = petState.customSkinColor ? petState.customSkinColor : spec.accentColor;
+      const bellyColor = petState.customSkinColor ? this.getLighterColor(petState.customSkinColor, 26) : spec.bellyColor;
 
       const centerX = w * 0.5;
       const floorY = h * 0.72;
-      const petScale = stage.scale;
+      const petScale = stage.scale; // 0.65 (Baby), 0.85 (Toddler), 1.0 (Teen), 1.18 (Adult)
 
       // Respiración sutil y rebote orgánico
       const breathing = Math.sin(t * 3.2) * 4;
@@ -1029,24 +1106,42 @@
       const isEating = petState.eatingTimer > 0;
       const isSleeping = petState.isSleeping;
 
+      // 0. CAPA DE SUPERHÉROE POR DETRÁS DEL CUERPO (LAYER 0)
+      if (petState.equippedOutfit === 'outfit_cape') {
+        const capeWave = Math.sin(t * 3.5) * 6;
+        this.drawStitchedCardboard((c) => {
+          c.moveTo(-32, -18);
+          c.lineTo(32, -18);
+          c.quadraticCurveTo(52 + capeWave, 35, 42 + capeWave * 1.5, 75);
+          c.quadraticCurveTo(0, 68, -42 + capeWave * 1.5, 75);
+          c.quadraticCurveTo(-52 + capeWave, 35, -32, -18);
+          c.closePath();
+        }, '#dc2626', '#fef08a', 3);
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(-38 + capeWave * 1.5, 71);
+        ctx.quadraticCurveTo(0, 64, 38 + capeWave * 1.5, 71);
+        ctx.stroke();
+      }
+
       // 1. Patitas traseras / Base
       [-42, 42].forEach((px) => {
         this.drawStitchedCardboard((c) => {
           c.ellipse(px, 48, 22, 14, 0, 0, Math.PI * 2);
-        }, spec.accentColor, '#ffffff', 3);
+        }, accentColor, '#ffffff', 3);
       });
 
       // 2. Pancita / Cuerpo de Cartón
-      // La barriga se ensancha visiblemente si está bien alimentado
       const bellyBonus = (petState.hunger / 100) * 16;
       this.drawStitchedCardboard((c) => {
         c.ellipse(0, 15, 52 + bellyBonus * 0.5, 48, 0, 0, Math.PI * 2);
-      }, spec.baseColor, '#ffffff', 5);
+      }, baseColor, '#ffffff', 5);
 
       // Parche ventral de color claro (Belly plate)
       this.drawStitchedCardboard((c) => {
         c.ellipse(0, 18, 32 + bellyBonus * 0.35, 34, 0, 0, Math.PI * 2);
-      }, spec.bellyColor, 'rgba(0,0,0,0.15)', 1);
+      }, bellyColor, 'rgba(0,0,0,0.15)', 1);
 
       // Manchas de lodo visibles si hygiene < 40
       if (petState.hygiene < 40) {
@@ -1067,31 +1162,114 @@
 
       // 3. Cola articulada según especie
       if (spec.id === 'crocodile') {
-        // Cola dentada con crestas de cartón
         this.drawStitchedCardboard((c) => {
           c.moveTo(45, 20);
           c.lineTo(95 + Math.sin(t * 4) * 8, 30);
           c.lineTo(85, 45);
           c.lineTo(40, 35);
           c.closePath();
-        }, spec.baseColor, '#ffffff', 2);
+        }, baseColor, '#ffffff', 2);
       } else if (spec.id === 'dog' || spec.id === 'cat') {
-        // Colita que se menea alegremente si está feliz
         const tailWag = Math.sin(t * (isHappy ? 12 : 3)) * 18;
         this.drawStitchedCardboard((c) => {
           c.moveTo(42, 25);
           c.quadraticCurveTo(75 + tailWag, 0, 80 + tailWag, -25);
           c.quadraticCurveTo(65 + tailWag, -25, 42, 35);
           c.closePath();
-        }, spec.accentColor, '#ffffff', 2);
+        }, accentColor, '#ffffff', 2);
       } else if (spec.id === 'red_panda') {
-        // Gran cola anillada de cartón
         this.drawStitchedCardboard((c) => {
           c.ellipse(65, 20, 36, 18, 0.35, 0, Math.PI * 2);
-        }, spec.accentColor, '#fde68a', 3);
+        }, accentColor, '#fde68a', 3);
       }
 
-      // 4. Cabeza articulada de cartón (escala por etapa)
+      // 4. ROPA Y PRENDAS DE CUERPO (LAYER 2)
+      const currentOutfit = petState.equippedOutfit || (stage.stage === 1 ? 'outfit_diaper' : (stage.stage === 2 ? 'outfit_bib' : 'none'));
+
+      if (currentOutfit === 'outfit_diaper') {
+        // Pañal de bebé blanco de papel texturizado con alfiler de seguridad
+        this.drawStitchedCardboard((c) => {
+          c.moveTo(-38, 14);
+          c.lineTo(38, 14);
+          c.lineTo(26, 48);
+          c.lineTo(-26, 48);
+          c.closePath();
+        }, '#f8fafc', '#94a3b8', 2);
+        // Alfiler de gancho dorado
+        ctx.fillStyle = '#f59e0b';
+        ctx.strokeStyle = '#78350f';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(16, 26, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(16, 30);
+        ctx.lineTo(16, 40);
+        ctx.stroke();
+      } else if (currentOutfit === 'outfit_bib') {
+        // Babero infantil de papel con huellita bordada
+        this.drawStitchedCardboard((c) => {
+          c.moveTo(-24, -12);
+          c.quadraticCurveTo(0, 32, 24, -12);
+          c.quadraticCurveTo(0, 14, -24, -12);
+          c.closePath();
+        }, '#fef08a', '#e11d48', 2);
+        ctx.fillStyle = '#e11d48';
+        ctx.font = 'bold 11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('🐾', 0, 16);
+      } else if (currentOutfit === 'outfit_jacket') {
+        // Chaqueta universitaria deportiva con botones dorados
+        this.drawStitchedCardboard((c) => {
+          c.ellipse(0, 14, 42, 30, 0, 0, Math.PI * 2);
+        }, '#1d4ed8', '#ffffff', 3);
+        ctx.fillStyle = '#fbbf24';
+        [-2, 10, 22].forEach((by) => {
+          ctx.beginPath();
+          ctx.arc(0, by, 3, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(0, -10, 22, 0.2, Math.PI - 0.2);
+        ctx.stroke();
+      } else if (currentOutfit === 'outfit_scarf') {
+        // Bufanda tejida roja abrigada con flecos
+        this.drawStitchedCardboard((c) => {
+          c.ellipse(0, -16, 30, 10, 0, 0, Math.PI * 2);
+        }, '#dc2626', '#ffffff', 2);
+        this.drawStitchedCardboard((c) => {
+          c.rect(10, -16, 14, 26);
+        }, '#b91c1c', '#ffffff', 2);
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        for (let fx = 12; fx <= 22; fx += 3) {
+          ctx.beginPath();
+          ctx.moveTo(fx, 10);
+          ctx.lineTo(fx, 15);
+          ctx.stroke();
+        }
+      } else if (currentOutfit === 'outfit_bowtie') {
+        // Corbatín negro de gala
+        this.drawStitchedCardboard((c) => {
+          c.moveTo(-16, -22);
+          c.lineTo(0, -16);
+          c.lineTo(-16, -10);
+          c.closePath();
+          c.moveTo(16, -22);
+          c.lineTo(0, -16);
+          c.lineTo(16, -10);
+          c.closePath();
+        }, '#1e293b', '#ffffff', 1.5);
+        ctx.fillStyle = '#dc2626';
+        ctx.beginPath();
+        ctx.arc(0, -16, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 5. CABEZA ARTICULADA DE CARTÓN (ESCALA POR ETAPA: 1.28 EN BEBÉ)
       const headScale = stage.headScale;
       ctx.save();
       ctx.translate(0, -38);
@@ -1099,17 +1277,15 @@
 
       // Orejas / Branquias según especie
       if (spec.id === 'cat' || spec.id === 'dog') {
-        // Orejitas puntiagudas o caídas
         [-38, 38].forEach((ox, idx) => {
           this.drawStitchedCardboard((c) => {
             c.moveTo(ox, -22);
             c.lineTo(ox + (idx === 0 ? -18 : 18), -62);
             c.lineTo(ox + (idx === 0 ? 12 : -12), -38);
             c.closePath();
-          }, spec.accentColor, '#ffffff', 2);
+          }, accentColor, '#ffffff', 2);
         });
       } else if (spec.id === 'axolotl') {
-        // Branquias rosadas ramificadas de cartón
         [-48, 48].forEach((bx, idx) => {
           [-14, 0, 14].forEach((by) => {
             this.drawStitchedCardboard((c) => {
@@ -1118,7 +1294,6 @@
           });
         });
       } else if (spec.id === 'rhinoceros') {
-        // Cuerno de cartón en el hocico
         this.drawStitchedCardboard((c) => {
           c.moveTo(0, -8);
           c.lineTo(-8, -42);
@@ -1130,14 +1305,13 @@
       // Base de la cabeza
       this.drawStitchedCardboard((c) => {
         c.ellipse(0, 0, 48, 40, 0, 0, Math.PI * 2);
-      }, spec.baseColor, '#ffffff', 5);
+      }, baseColor, '#ffffff', 5);
 
       // Hocico extendido para cocodrilo
       if (spec.id === 'crocodile') {
         this.drawStitchedCardboard((c) => {
           c.ellipse(0, 14, 38, 20, 0, 0, Math.PI * 2);
-        }, spec.baseColor, '#ffffff', 2);
-        // Dientes de papel blanco
+        }, baseColor, '#ffffff', 2);
         ctx.fillStyle = '#ffffff';
         [-20, -10, 0, 10, 20].forEach((tx) => {
           ctx.beginPath();
@@ -1153,7 +1327,6 @@
       const eyeY = -8;
       const eyeRadius = stage.stage === 1 ? 14 : 11;
 
-      // Cálculo de seguimiento del cursor
       const globalHeadX = centerX;
       const globalHeadY = baseY + (petState.isSleeping ? 0 : breathing) - 38 * petScale;
       const angleToMouse = Math.atan2(mousePos.y - globalHeadY, mousePos.x - globalHeadX);
@@ -1161,36 +1334,30 @@
       const px = Math.cos(angleToMouse) * pupilOffsetDist;
       const py = Math.sin(angleToMouse) * pupilOffsetDist;
 
-      // Parpadeo espontáneo
       const isBlinking = petState.blinkTimer > 0;
 
       [-eyeSpacing, eyeSpacing].forEach((ex) => {
         if (isSleeping || isBlinking) {
-          // Ojos cerrados durmiendo o parpadeando
           ctx.strokeStyle = '#1e1b4b';
           ctx.lineWidth = 3;
           ctx.beginPath();
           ctx.arc(ex, eyeY, 9, 0.1, Math.PI - 0.1);
           ctx.stroke();
         } else {
-          // Globo ocular de papel blanco
           this.drawStitchedCardboard((c) => {
             c.arc(ex, eyeY, eyeRadius, 0, Math.PI * 2);
           }, '#ffffff', 'rgba(0,0,0,0.15)', 2);
 
-          // Iris de color
           ctx.fillStyle = spec.eyeColor;
           ctx.beginPath();
           ctx.arc(ex + px, eyeY + py, eyeRadius * 0.65, 0, Math.PI * 2);
           ctx.fill();
 
-          // Pupila negra profunda
           ctx.fillStyle = '#0f172a';
           ctx.beginPath();
           ctx.arc(ex + px, eyeY + py, eyeRadius * 0.45, 0, Math.PI * 2);
           ctx.fill();
 
-          // Brillo de recorte de papel blanco
           ctx.fillStyle = '#ffffff';
           ctx.beginPath();
           ctx.arc(ex + px - 3, eyeY + py - 3, eyeRadius * 0.22, 0, Math.PI * 2);
@@ -1202,7 +1369,6 @@
       ctx.strokeStyle = '#451a03';
       ctx.lineWidth = 2.5;
       if (isSad) {
-        // Cejas caídas de tristeza o desánimo
         ctx.beginPath();
         ctx.moveTo(-32, -22);
         ctx.lineTo(-14, -26);
@@ -1210,7 +1376,6 @@
         ctx.lineTo(14, -26);
         ctx.stroke();
       } else {
-        // Cejas alegres
         ctx.beginPath();
         ctx.moveTo(-30, -26);
         ctx.lineTo(-14, -24);
@@ -1228,32 +1393,30 @@
         ctx.fill();
       }
 
-      // Boca expresiva (abierta al comer, sonriente o triste)
+      // Boca expresiva
       ctx.fillStyle = '#be123c';
       ctx.strokeStyle = '#451a03';
       ctx.lineWidth = 2.5;
 
       if (isEating) {
-        // Boca abierta masticando alegremente
         const mouthOpen = (Math.sin(t * 18) + 1) * 6 + 6;
         ctx.beginPath();
         ctx.ellipse(0, 16, 12, mouthOpen, 0, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
       } else if (isSad) {
-        // Boca curvada hacia abajo
         ctx.beginPath();
         ctx.arc(0, 24, 11, Math.PI * 1.2, Math.PI * 1.8);
         ctx.stroke();
       } else {
-        // Sonrisa feliz
         ctx.beginPath();
         ctx.arc(0, 10, 12, 0.2, Math.PI - 0.2);
         ctx.stroke();
       }
 
-      // Chupón / Pacifier si está en Etapa 1 (Newborn)
-      if (stage.stage === 1 && !isEating) {
+      // Chupón / Pacifier si está en Etapa 1 (Newborn Baby) y no está comiendo ni con casco espacial
+      const equippedHat = petState.equippedHat || (stage.stage === 4 ? 'hat_crown' : 'none');
+      if (stage.stage === 1 && !isEating && equippedHat !== 'hat_helmet') {
         this.drawStitchedCardboard((c) => {
           c.arc(0, 18, 11, 0, Math.PI * 2);
         }, '#38bdf8', '#ffffff', 2);
@@ -1262,65 +1425,152 @@
         }, '#fef08a', '#ffffff', 1);
       }
 
-      // Disfraces / Sombreros equipados
-      if (petState.equippedHead) {
-        if (petState.equippedHead === 'hat_crown' || stage.stage === 4) {
-          // Corona dorada de cartón
+      // 6. GAFAS Y LENTES EQUIPADOS (LAYER 4)
+      const equippedGlasses = petState.equippedGlasses || 'none';
+      if (equippedGlasses === 'glasses_reading') {
+        [-eyeSpacing, eyeSpacing].forEach((gx) => {
+          ctx.strokeStyle = '#78350f';
+          ctx.lineWidth = 3.5;
+          ctx.beginPath();
+          ctx.arc(gx, eyeY, eyeRadius + 3, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.fillStyle = 'rgba(186, 230, 253, 0.25)';
+          ctx.beginPath();
+          ctx.arc(gx, eyeY, eyeRadius + 1, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.strokeStyle = '#78350f';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(-eyeSpacing + eyeRadius + 2, eyeY);
+        ctx.quadraticCurveTo(0, eyeY - 4, eyeSpacing - eyeRadius - 2, eyeY);
+        ctx.stroke();
+      } else if (equippedGlasses === 'glasses_cool') {
+        [-eyeSpacing, eyeSpacing].forEach((gx) => {
           this.drawStitchedCardboard((c) => {
-            c.moveTo(-28, -38);
-            c.lineTo(-32, -68);
-            c.lineTo(-14, -52);
-            c.lineTo(0, -74);
-            c.lineTo(14, -52);
-            c.lineTo(32, -68);
-            c.lineTo(28, -38);
-            c.closePath();
-          }, '#f59e0b', '#fef08a', 4);
-        } else if (petState.equippedHead === 'hat_detective') {
-          // Gorra Sherlock
-          this.drawStitchedCardboard((c) => {
-            c.ellipse(0, -42, 38, 14, 0, 0, Math.PI * 2);
-          }, '#78716c', '#ffffff', 3);
-        } else if (petState.equippedHead === 'hat_aviator') {
-          // Gafas aviador
-          [-16, 16].forEach((gx) => {
-            this.drawStitchedCardboard((c) => {
-              c.rect(gx - 12, -22, 24, 18);
-            }, '#0284c7', '#d97706', 2);
-          });
+            if (c.roundRect) {
+              c.roundRect(gx - eyeRadius - 3, eyeY - eyeRadius - 1, (eyeRadius + 3) * 2, (eyeRadius + 2) * 2, 6);
+            } else {
+              c.rect(gx - eyeRadius - 3, eyeY - eyeRadius - 1, (eyeRadius + 3) * 2, (eyeRadius + 2) * 2);
+            }
+          }, '#0f172a', '#38bdf8', 1.5);
+          ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(gx - 4, eyeY - eyeRadius + 2);
+          ctx.lineTo(gx + 6, eyeY + eyeRadius - 2);
+          ctx.stroke();
+        });
+        ctx.strokeStyle = '#0f172a';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(-eyeSpacing + eyeRadius + 2, eyeY - 2);
+        ctx.lineTo(eyeSpacing - eyeRadius - 2, eyeY - 2);
+        ctx.stroke();
+      } else if (equippedGlasses === 'glasses_monocle') {
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(eyeSpacing, eyeY, eyeRadius + 4, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([2, 3]);
+        ctx.strokeStyle = '#d97706';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(eyeSpacing + eyeRadius + 4, eyeY);
+        ctx.quadraticCurveTo(eyeSpacing + 16, eyeY + 24, eyeSpacing + 8, eyeY + 45);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      // 7. SOMBREROS Y ACCESORIOS DE CABEZA (LAYER 5)
+      const finalHat = equippedHat !== 'none' ? equippedHat : (stage.stage === 4 ? 'hat_crown' : 'none');
+
+      if (finalHat === 'hat_crown') {
+        // Corona dorada de cartón real
+        this.drawStitchedCardboard((c) => {
+          c.moveTo(-28, -36);
+          c.lineTo(-34, -68);
+          c.lineTo(-16, -52);
+          c.lineTo(0, -76);
+          c.lineTo(16, -52);
+          c.lineTo(34, -68);
+          c.lineTo(28, -36);
+          c.closePath();
+        }, '#f59e0b', '#fef08a', 4);
+        [-18, 0, 18].forEach((jx, idx) => {
+          ctx.fillStyle = idx === 1 ? '#dc2626' : '#10b981';
+          ctx.beginPath();
+          ctx.arc(jx, -46, 3.5, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      } else if (finalHat === 'hat_bonnet') {
+        // Gorrito tierno de bebé con encaje
+        this.drawStitchedCardboard((c) => {
+          c.arc(0, -22, 38, Math.PI * 0.9, Math.PI * 2.1);
+        }, '#fbcfe8', '#ffffff', 3);
+        ctx.fillStyle = '#ffffff';
+        for (let a = Math.PI * 0.9; a <= Math.PI * 2.1; a += 0.22) {
+          const rx = Math.cos(a) * 40;
+          const ry = -22 + Math.sin(a) * 40;
+          ctx.beginPath();
+          ctx.arc(rx, ry, 3.5, 0, Math.PI * 2);
+          ctx.fill();
         }
+        ctx.strokeStyle = '#f472b6';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(-32, -6);
+        ctx.quadraticCurveTo(0, 16, 32, -6);
+        ctx.stroke();
+      } else if (finalHat === 'hat_baseball') {
+        // Gorra deportiva roja/azul
+        this.drawStitchedCardboard((c) => {
+          c.arc(0, -34, 32, Math.PI * 1.05, Math.PI * 1.95);
+          c.closePath();
+        }, '#dc2626', '#ffffff', 2);
+        this.drawStitchedCardboard((c) => {
+          c.ellipse(14, -32, 28, 8, 0.15, 0, Math.PI * 2);
+        }, '#2563eb', '#ffffff', 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(0, -48, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (finalHat === 'hat_top') {
+        // Sombrero de copa británico
+        this.drawStitchedCardboard((c) => {
+          c.ellipse(0, -36, 42, 10, 0, 0, Math.PI * 2);
+        }, '#1e293b', '#64748b', 2);
+        this.drawStitchedCardboard((c) => {
+          c.rect(-22, -80, 44, 46);
+        }, '#0f172a', '#475569', 2);
+        this.drawStitchedCardboard((c) => {
+          c.rect(-22, -45, 44, 9);
+        }, '#dc2626', '#fef08a', 1);
+      } else if (finalHat === 'hat_helmet') {
+        // Casco espacial de astronauta con visera reflectante
+        this.drawStitchedCardboard((c) => {
+          c.arc(0, -22, 46, 0, Math.PI * 2);
+        }, 'rgba(255,255,255,0.88)', '#94a3b8', 3);
+        this.drawStitchedCardboard((c) => {
+          c.ellipse(0, -14, 30, 20, 0, 0, Math.PI * 2);
+        }, '#f59e0b', '#fef08a', 2);
+        ctx.strokeStyle = '#64748b';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, -68);
+        ctx.lineTo(0, -82);
+        ctx.stroke();
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath();
+        ctx.arc(0, -84, 4, 0, Math.PI * 2);
+        ctx.fill();
       }
 
       ctx.restore(); // Fin de la cabeza
-
-      // Pañal de papel en Etapa 1 (Newborn)
-      if (stage.stage === 1) {
-        this.drawStitchedCardboard((c) => {
-          c.moveTo(-36, 18);
-          c.lineTo(36, 18);
-          c.lineTo(24, 52);
-          c.lineTo(-24, 52);
-          c.closePath();
-        }, '#ffffff', '#cbd5e1', 3);
-        // Alfiler de gancho de papel
-        this.drawStitchedCardboard((c) => {
-          c.arc(14, 32, 4, 0, Math.PI * 2);
-        }, '#f59e0b', '#ffffff', 1);
-      }
-
-      // Babero de papel en Etapa 2 (Toddler)
-      if (stage.stage === 2) {
-        this.drawStitchedCardboard((c) => {
-          c.moveTo(-22, -10);
-          c.quadraticCurveTo(0, 32, 22, -10);
-          c.quadraticCurveTo(0, 15, -22, -10);
-          c.closePath();
-        }, '#fef08a', '#e11d48', 2);
-      }
-
       ctx.restore(); // Fin del dibujo de la mascota
 
-      // 5. Partículas activas (Corazones, estrellas, burbujas de jabón)
+      // 8. Partículas activas (Corazones, estrellas, burbujas de jabón)
       this.renderParticles();
     }
 
@@ -1459,20 +1709,27 @@
       this.isLightsOff = false;
       this.mousePos = { x: 0, y: 0 };
 
+      this._toastTimer = null;
+
       // Estado persistente
       this.state = {
+        petId: null,
         species: 'crocodile',
-        nickname: 'Chomp Chomp',
+        nickname: 'Baby Chomp',
         stage: 1,
-        xp: 60,
-        coins: 150,
-        hunger: 80,
-        energy: 85,
-        hygiene: 70,
-        happiness: 90,
+        level: 1,
+        xp: 45,
+        coins: 180,
+        hunger: 85,
+        energy: 90,
+        hygiene: 80,
+        happiness: 95,
         health: 100,
-        equippedHead: 'hat_crown',
-        equippedBack: null,
+        equippedHat: 'none',
+        equippedGlasses: 'none',
+        equippedOutfit: 'outfit_diaper',
+        customSkinColor: null,
+        unlockedCloset: ['none', 'outfit_diaper', 'hat_bonnet'],
         inventory: ['baby_formula', 'apple_puree'],
         masteredVocabulary: ['verb_swaddle', 'verb_feed'],
         lastUpdated: Date.now(),
@@ -1493,7 +1750,6 @@
         if (saved) {
           const parsed = JSON.parse(saved);
           Object.assign(this.state, parsed);
-          // Calcular degradación suave según el tiempo transcurrido
           const elapsedMin = (Date.now() - (this.state.lastUpdated || Date.now())) / 60000;
           if (elapsedMin > 5) {
             const decay = Math.min(30, Math.floor(elapsedMin / 20));
@@ -1503,6 +1759,11 @@
             this.state.happiness = Math.max(15, this.state.happiness - decay);
           }
         }
+        const globalCoins = localStorage.getItem('mastereng_pet_coins');
+        if (globalCoins !== null) {
+          this.state.coins = parseInt(globalCoins, 10);
+        }
+        this.computeStageFromLevel();
       } catch (e) {
         console.warn('Error loading pet state:', e);
       }
@@ -1512,8 +1773,106 @@
       try {
         this.state.lastUpdated = Date.now();
         localStorage.setItem('mastereng_pet_state', JSON.stringify(this.state));
+        localStorage.setItem('mastereng_pet_coins', String(this.state.coins || 0));
       } catch (e) {
         console.warn('Error saving pet state:', e);
+      }
+    }
+
+    loadPetById(petId) {
+      if (!petId) return;
+      try {
+        const raw = localStorage.getItem('mastereng_pets');
+        if (raw) {
+          const pets = JSON.parse(raw);
+          if (Array.isArray(pets)) {
+            const pet = pets.find((p) => p && p.id === petId);
+            if (pet) {
+              this.state.petId = pet.id;
+              this.state.nickname = pet.name || 'Pet';
+              const specMap = {
+                croco: 'crocodile',
+                crocodile: 'crocodile',
+                rhino: 'rhinoceros',
+                rhinoceros: 'rhinoceros',
+                puppy: 'dog',
+                dog: 'dog',
+                kitten: 'cat',
+                cat: 'cat',
+                axolotl: 'axolotl',
+                redpanda: 'red_panda',
+                red_panda: 'red_panda'
+              };
+              this.state.species = specMap[pet.speciesId] || 'crocodile';
+              this.state.hunger = pet.hunger !== undefined ? pet.hunger : 85;
+              this.state.energy = pet.energy !== undefined ? pet.energy : 90;
+              this.state.hygiene = pet.hygiene !== undefined ? pet.hygiene : 80;
+              this.state.happiness = pet.happiness !== undefined ? pet.happiness : 95;
+              this.state.xp = pet.exp !== undefined ? pet.exp : (pet.xp || 45);
+              this.state.level = pet.level || Math.max(1, Math.floor(this.state.xp / 100) + 1);
+              this.computeStageFromLevel();
+              this.state.equippedHat = pet.equippedHat || pet.hat || (this.state.stage === 1 ? 'hat_bonnet' : 'none');
+              this.state.equippedGlasses = pet.equippedGlasses || pet.glasses || 'none';
+              this.state.equippedOutfit = pet.equippedOutfit || pet.neck || (this.state.stage === 1 ? 'outfit_diaper' : 'none');
+              this.state.customSkinColor = pet.skinColor || null;
+              this.saveState();
+              this.updateHUD();
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('Error loading pet by id:', e);
+      }
+    }
+
+    syncWithStoredPets() {
+      try {
+        const raw = localStorage.getItem('mastereng_pets');
+        if (raw) {
+          let pets = JSON.parse(raw);
+          if (Array.isArray(pets) && pets.length > 0) {
+            let matched = false;
+            pets = pets.map((p) => {
+              if (p && (p.id === this.state.petId || (!this.state.petId && p.name === this.state.nickname))) {
+                matched = true;
+                p.name = this.state.nickname;
+                p.hunger = this.state.hunger;
+                p.energy = this.state.energy;
+                p.hygiene = this.state.hygiene;
+                p.happiness = this.state.happiness;
+                p.level = this.state.level || 1;
+                p.exp = this.state.xp || 0;
+                p.equippedHat = this.state.equippedHat;
+                p.hat = this.state.equippedHat;
+                p.equippedGlasses = this.state.equippedGlasses;
+                p.glasses = this.state.equippedGlasses;
+                p.equippedOutfit = this.state.equippedOutfit;
+                p.neck = this.state.equippedOutfit;
+                p.skinColor = this.state.customSkinColor;
+              }
+              return p;
+            });
+            if (matched) {
+              localStorage.setItem('mastereng_pets', JSON.stringify(pets));
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('Error syncing with mastereng_pets:', e);
+      }
+    }
+
+    computeStageFromLevel() {
+      const lvl = this.state.level || Math.max(1, Math.floor((this.state.xp || 0) / 100) + 1);
+      this.state.level = lvl;
+      if (lvl <= 3) {
+        this.state.stage = 1;
+      } else if (lvl <= 7) {
+        this.state.stage = 2;
+      } else if (lvl <= 12) {
+        this.state.stage = 3;
+      } else {
+        this.state.stage = 4;
       }
     }
 
@@ -1532,6 +1891,7 @@
         this.isLightsOff = false;
         this.state.isSleeping = false;
       }
+      this.updateRoomTools();
       this.updateHUD();
     }
 
@@ -1540,7 +1900,24 @@
         this.state.species = speciesKey;
         this.sfx.playPaperRustle();
         this.saveState();
+        this.syncWithStoredPets();
         this.updateHUD();
+      }
+    }
+
+    speakPetBabyVoice(text) {
+      if (typeof window === 'undefined' || !window.speechSynthesis) return;
+      try {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-US';
+        const stageIdx = Math.min(3, Math.max(0, (this.state.stage || 1) - 1));
+        const stage = LIFE_STAGES[stageIdx] || LIFE_STAGES[0];
+        utterance.pitch = stage.voicePitch || 1.6;
+        utterance.rate = stage.stage === 1 ? 1.15 : 1.0;
+        window.speechSynthesis.speak(utterance);
+      } catch (e) {
+        console.warn('[PetTTS] Error:', e);
       }
     }
 
@@ -1548,30 +1925,55 @@
       this.state.xp += amount;
       this.state.coins += Math.floor(amount * 0.4);
 
-      // Evaluar si sube de etapa
-      const oldStage = this.state.stage;
-      for (let i = LIFE_STAGES.length - 1; i >= 0; i--) {
-        if (this.state.xp >= LIFE_STAGES[i].minXp) {
-          this.state.stage = LIFE_STAGES[i].stage;
-          break;
+      const oldLevel = this.state.level || 1;
+      const oldStage = this.state.stage || 1;
+      this.computeStageFromLevel();
+
+      if (this.state.level > oldLevel) {
+        this.sfx.playChime();
+        if (this.renderer) {
+          this.renderer.spawnConfetti(this.renderer.width * 0.5, this.renderer.height * 0.4, 30);
         }
+        this.showToast(`⭐ ¡Subiste al Nivel ${this.state.level}!`);
+        this.speakPetBabyVoice(`Awesome! Level ${this.state.level}!`);
       }
 
       if (this.state.stage > oldStage) {
         this.sfx.playChime();
         if (this.renderer) {
-          this.renderer.spawnConfetti(this.renderer.width * 0.5, this.renderer.height * 0.4, 40);
+          this.renderer.spawnConfetti(this.renderer.width * 0.5, this.renderer.height * 0.4, 60);
         }
-        this.showToast(`🎉 ¡Tu mascota evolucionó a la Etapa ${this.state.stage}: ${LIFE_STAGES[this.state.stage - 1].name}!`);
+        const stageInfo = LIFE_STAGES[this.state.stage - 1];
+        this.showToast(`🎉 ¡Tu mascota evolucionó a la Etapa ${this.state.stage}: ${stageInfo.name}!`);
+        this.speakPetBabyVoice(`I am growing up! I am now a ${stageInfo.name}!`);
       }
 
       this.saveState();
+      this.syncWithStoredPets();
       this.updateHUD();
     }
 
     // --------------------------------------------------------------------------
     // ACCIONES DE CUIDADO Y APRENDIZAJE
     // --------------------------------------------------------------------------
+
+    swaddleBaby() {
+      this.sfx.playChime();
+      if (this.renderer) {
+        this.renderer.spawnHearts(this.renderer.width * 0.5, this.renderer.height * 0.65, 8);
+      }
+      this.state.happiness = Math.min(100, this.state.happiness + 20);
+      this.state.energy = Math.min(100, this.state.energy + 10);
+      this.addExp(25);
+      this.showToast('🤱 ¡Arropaste tiernamente a tu bebé con una manta suave! (To swaddle)');
+      this.speakPetBabyVoice('Swaddle me warm!');
+      setTimeout(() => {
+        this.triggerCareQuiz('verb_swaddle');
+      }, 1200);
+      this.saveState();
+      this.syncWithStoredPets();
+      this.updateHUD();
+    }
 
     feed(foodId) {
       const food = SHOP_CATALOG.food.find((f) => f.id === foodId) || SHOP_CATALOG.food[0];
@@ -1771,31 +2173,46 @@
 
     updateHUD() {
       const nameEl = document.getElementById('petHudName');
-      const speciesEl = document.getElementById('petHudSpecies');
       const stageEl = document.getElementById('petHudStage');
-      const xpEl = document.getElementById('petHudXp');
-      const coinsEl = document.getElementById('petHudCoins');
-      const stage = LIFE_STAGES[Math.min(3, Math.max(0, this.state.stage - 1))];
+      const levelEl = document.getElementById('petHudLevel');
+      const expBar = document.getElementById('petBarExp');
+      const expText = document.getElementById('petHudExpText');
+      const coinsNum = document.getElementById('petHudCoinsNum');
 
-      if (nameEl) nameEl.innerText = this.state.nickname;
-      if (speciesEl) speciesEl.innerText = SPECIES_DATA[this.state.species]?.name || 'Crocodile';
-      if (stageEl) stageEl.innerText = `Etapa ${this.state.stage}: ${stage.name}`;
-      if (xpEl) xpEl.innerText = `${this.state.xp} XP`;
-      if (coinsEl) coinsEl.innerText = `${this.state.coins} 🪙`;
+      this.computeStageFromLevel();
+      const stageIdx = Math.min(3, Math.max(0, (this.state.stage || 1) - 1));
+      const stage = LIFE_STAGES[stageIdx] || LIFE_STAGES[0];
+      const lvl = this.state.level || 1;
 
-      // Barras de progreso de necesidades
-      const updateBar = (id, val) => {
-        const el = document.getElementById(id);
-        if (el) el.style.width = `${Math.min(100, Math.max(0, val))}%`;
+      if (nameEl) nameEl.innerText = this.state.nickname || 'Baby Pet';
+      if (stageEl) {
+        const stageIcons = ['🍼', '🧸', '🎒', '👑'];
+        stageEl.innerText = `${stageIcons[stageIdx]} ${stage.name}`;
+      }
+      if (levelEl) levelEl.innerText = `Lv. ${lvl}`;
+
+      const currentLevelXp = (this.state.xp || 0) % 100;
+      if (expBar) expBar.style.width = `${currentLevelXp}%`;
+      if (expText) expText.innerText = `XP: ${currentLevelXp}/100`;
+      if (coinsNum) coinsNum.innerText = String(this.state.coins || 0);
+
+      // Barras de progreso y porcentajes numéricos de necesidades (100% visibles)
+      const updateNeed = (barId, valId, val) => {
+        const clamped = Math.min(100, Math.max(0, Math.round(val)));
+        const bar = document.getElementById(barId);
+        const text = document.getElementById(valId);
+        if (bar) bar.style.width = `${clamped}%`;
+        if (text) text.innerText = `${clamped}%`;
       };
-      updateBar('petBarHunger', this.state.hunger);
-      updateBar('petBarEnergy', this.state.energy);
-      updateBar('petBarHygiene', this.state.hygiene);
-      updateBar('petBarHappiness', this.state.happiness);
+
+      updateNeed('petBarHunger', 'petValHunger', this.state.hunger);
+      updateNeed('petBarEnergy', 'petValEnergy', this.state.energy);
+      updateNeed('petBarHygiene', 'petValHygiene', this.state.hygiene);
+      updateNeed('petBarHappiness', 'petValHappiness', this.state.happiness);
     }
 
     // --------------------------------------------------------------------------
-    // MONTAJE DEL DOM Y VISTA INTEGRADA
+    // MONTAJE DEL DOM Y VISTA INTEGRADA (SIN COLISIÓN CON HEADER)
     // --------------------------------------------------------------------------
 
     ensureDOM() {
@@ -1803,83 +2220,130 @@
       if (!viewEl) {
         viewEl = document.createElement('div');
         viewEl.id = 'view-pet-game';
-        viewEl.className = 'fixed inset-0 z-40 bg-[#1e293b] flex flex-col hidden select-none overflow-hidden';
+        viewEl.className = 'fixed inset-x-0 bottom-0 z-40 bg-[#1e293b] flex flex-col hidden select-none overflow-hidden';
+        viewEl.style.cssText = 'margin-top: 72px; height: calc(100vh - 72px); max-height: calc(100vh - 85px); overflow-y: auto; display: none;';
         viewEl.innerHTML = `
-          <!-- CABECERA DE CARTÓN -->
-          <div class="h-16 bg-[#caa778] border-b-4 border-[#78350f] flex items-center justify-between px-4 shadow-lg relative z-10"
+          <!-- CABECERA DE CARTÓN SUPERIOR Y CONTROL DEL HÁBITAT -->
+          <div class="min-h-[56px] py-2 bg-[#caa778] border-b-4 border-[#78350f] flex flex-wrap items-center justify-between px-3 sm:px-5 shadow-lg relative z-20 shrink-0"
                style="background-image: radial-gradient(#b45309 1px, transparent 1px); background-size: 14px 14px;">
             
-            <!-- Info Mascota -->
-            <div class="flex items-center gap-3">
-              <button onclick="window.PetEngine2D.openSpeciesModal()"
-                      class="w-10 h-10 rounded-full bg-[#fef3c7] border-2 border-[#b45309] flex items-center justify-center text-xl shadow active:scale-95 transition"
-                      title="Cambiar Especie">
-                🐾
+            <!-- Botones de Salida y Navegación -->
+            <div class="flex items-center gap-2">
+              <button onclick="window.PetEngine2D.returnToSanctuary()"
+                      class="px-2.5 sm:px-3 py-1.5 bg-[#fef3c7] hover:bg-[#fde68a] text-[#78350f] font-black text-xs rounded-xl border-2 border-[#b45309] shadow active:scale-95 transition flex items-center gap-1.5"
+                      title="Volver al Santuario de Mascotas">
+                <span>⬅</span>
+                <span class="hidden sm:inline">Volver a Mis Mascotas (Santuario)</span>
+                <span class="sm:hidden">Santuario</span>
               </button>
-              <div>
-                <div class="flex items-center gap-2">
-                  <h2 id="petHudName" class="text-base font-black text-[#451a03]">Crocodile</h2>
-                  <span id="petHudStage" class="text-[10px] font-bold bg-[#fef3c7] text-[#92400e] px-2 py-0.5 rounded-full border border-[#f59e0b]">
-                    Etapa 1: Newborn
-                  </span>
-                </div>
-                <p id="petHudSpecies" class="text-xs text-slate-700 font-semibold">Crocodile del Pantano</p>
-              </div>
+              <button onclick="window.PetEngine2D.returnToPortals()"
+                      class="px-2.5 py-1.5 bg-[#e0f2fe] hover:bg-[#bae6fd] text-[#0369a1] font-black text-xs rounded-xl border-2 border-[#0284c7] shadow active:scale-95 transition flex items-center gap-1"
+                      title="Volver a los Portales">
+                <span>🏠</span>
+                <span>Portales</span>
+              </button>
             </div>
 
-            <!-- Monedas y Nivel -->
-            <div class="flex items-center gap-3">
-              <span id="petHudCoins" class="bg-[#fef3c7] text-[#78350f] px-3 py-1 rounded-full text-xs font-black border-2 border-[#b45309] shadow-sm">
-                150 🪙
-              </span>
-              <span id="petHudXp" class="bg-[#ecfdf5] text-[#065f46] px-3 py-1 rounded-full text-xs font-black border-2 border-[#10b981] shadow-sm">
-                60 XP
-              </span>
-              
-              <!-- Botón Tienda -->
-              <button onclick="window.PetEngine2D.openShopModal()"
-                      class="px-3 py-1.5 bg-[#f59e0b] hover:bg-[#d97706] text-white text-xs font-black rounded-xl border-2 border-[#78350f] shadow active:translate-y-0.5">
-                🛒 Tienda
-              </button>
+            <!-- Identidad de Mascota, Renombrar, Etapa y Nivel -->
+            <div class="flex flex-col items-center justify-center my-1 sm:my-0">
+              <div class="flex items-center gap-2">
+                <h2 id="petHudName" class="text-base sm:text-lg font-black text-[#451a03]">Baby Chomp</h2>
+                <button onclick="window.PetEngine2D.openRenameModal()"
+                        class="px-2 py-0.5 bg-white/90 hover:bg-white text-[10px] font-black text-[#92400e] rounded-lg border border-[#b45309] shadow-sm flex items-center gap-1 active:scale-95 transition"
+                        title="Cambiar nombre de la mascota">
+                  <span>✏️</span>
+                  <span class="hidden sm:inline">Renombrar</span>
+                </button>
+                <span id="petHudStage" class="text-[10px] sm:text-xs font-black bg-[#fef3c7] text-[#92400e] px-2.5 py-0.5 rounded-full border border-[#f59e0b] shadow-sm">
+                  🍼 Newborn Baby
+                </span>
+                <span id="petHudLevel" class="text-[10px] sm:text-xs font-black bg-[#ecfdf5] text-[#065f46] px-2 py-0.5 rounded-full border border-[#10b981] shadow-sm">
+                  Lv. 1
+                </span>
+              </div>
+              <!-- Barra de EXP -->
+              <div class="w-40 sm:w-52 h-2.5 bg-amber-950/20 rounded-full border border-[#92400e]/30 overflow-hidden mt-1 flex items-center">
+                <div id="petBarExp" class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all" style="width: 45%;"></div>
+              </div>
+              <span id="petHudExpText" class="text-[9px] font-extrabold text-[#78350f]">XP: 45/100</span>
+            </div>
 
-              <!-- Botón Salir -->
-              <button onclick="window.PetEngine2D.closeView()"
-                      class="w-9 h-9 bg-[#ef4444] hover:bg-[#dc2626] text-white rounded-xl font-black text-sm border-2 border-[#78350f] shadow active:translate-y-0.5 flex items-center justify-center">
-                ✕
+            <!-- Monedas, Closet y Tienda -->
+            <div class="flex items-center gap-2">
+              <span id="petHudCoins" class="bg-[#fef3c7] text-[#78350f] px-3 py-1 rounded-full text-xs font-black border-2 border-[#b45309] shadow-sm flex items-center gap-1">
+                <span>🪙</span>
+                <span id="petHudCoinsNum">180</span>
+              </span>
+              <button onclick="window.PetEngine2D.openClosetModal()"
+                      class="px-3 py-1.5 bg-[#f472b6] hover:bg-[#ec4899] text-white text-xs font-black rounded-xl border-2 border-[#be185d] shadow active:scale-95 transition flex items-center gap-1"
+                      title="Guardarropa y Outfits estilo Pou">
+                <span>👗</span>
+                <span class="hidden sm:inline">Closet & Outfits</span>
+                <span class="sm:hidden">Closet</span>
+              </button>
+              <button onclick="window.PetEngine2D.openShopModal()"
+                      class="px-3 py-1.5 bg-[#f59e0b] hover:bg-[#d97706] text-white text-xs font-black rounded-xl border-2 border-[#78350f] shadow active:scale-95 transition flex items-center gap-1"
+                      title="Tienda de Alimentos">
+                <span>🛒</span>
+                <span class="hidden sm:inline">Tienda</span>
               </button>
             </div>
           </div>
 
-          <!-- BARRAS DE ESTADO SUPERIORES -->
-          <div class="bg-[#e6d5b8] px-4 py-1.5 border-b-2 border-[#b45309] flex items-center justify-around gap-2 text-[11px] font-bold text-slate-800">
-            <div class="flex items-center gap-1.5 flex-1 max-w-[120px]">
-              <span>🍖</span>
-              <div class="flex-1 h-3 bg-white/70 rounded-full overflow-hidden border border-[#b45309]">
-                <div id="petBarHunger" class="h-full bg-amber-500 rounded-full transition-all" style="width: 80%;"></div>
+          <!-- BARRAS DE ESTADO SUPERIORES (100% VISIBLES) -->
+          <div class="bg-[#f2e7d3] px-3 sm:px-6 py-2 border-b-2 border-[#b45309] flex flex-wrap items-center justify-around gap-2 text-xs font-black text-[#451a03] shadow-sm relative z-10 shrink-0">
+            <div class="flex items-center gap-1.5 min-w-[100px] sm:min-w-[120px] flex-1 max-w-[160px]">
+              <span class="text-base">🍖</span>
+              <div class="flex-1">
+                <div class="flex justify-between text-[10px] text-amber-950 font-black mb-0.5">
+                  <span>Hambre</span>
+                  <span id="petValHunger">85%</span>
+                </div>
+                <div class="w-full h-2.5 bg-amber-950/20 rounded-full overflow-hidden border border-[#b45309]/50">
+                  <div id="petBarHunger" class="h-full bg-amber-500 rounded-full transition-all" style="width: 85%;"></div>
+                </div>
               </div>
             </div>
-            <div class="flex items-center gap-1.5 flex-1 max-w-[120px]">
-              <span>⚡</span>
-              <div class="flex-1 h-3 bg-white/70 rounded-full overflow-hidden border border-[#b45309]">
-                <div id="petBarEnergy" class="h-full bg-sky-500 rounded-full transition-all" style="width: 85%;"></div>
+            <div class="flex items-center gap-1.5 min-w-[100px] sm:min-w-[120px] flex-1 max-w-[160px]">
+              <span class="text-base">⚡</span>
+              <div class="flex-1">
+                <div class="flex justify-between text-[10px] text-amber-950 font-black mb-0.5">
+                  <span>Energía</span>
+                  <span id="petValEnergy">90%</span>
+                </div>
+                <div class="w-full h-2.5 bg-amber-950/20 rounded-full overflow-hidden border border-[#b45309]/50">
+                  <div id="petBarEnergy" class="h-full bg-sky-500 rounded-full transition-all" style="width: 90%;"></div>
+                </div>
               </div>
             </div>
-            <div class="flex items-center gap-1.5 flex-1 max-w-[120px]">
-              <span>🧼</span>
-              <div class="flex-1 h-3 bg-white/70 rounded-full overflow-hidden border border-[#b45309]">
-                <div id="petBarHygiene" class="h-full bg-emerald-500 rounded-full transition-all" style="width: 70%;"></div>
+            <div class="flex items-center gap-1.5 min-w-[100px] sm:min-w-[120px] flex-1 max-w-[160px]">
+              <span class="text-base">🧼</span>
+              <div class="flex-1">
+                <div class="flex justify-between text-[10px] text-amber-950 font-black mb-0.5">
+                  <span>Higiene</span>
+                  <span id="petValHygiene">75%</span>
+                </div>
+                <div class="w-full h-2.5 bg-amber-950/20 rounded-full overflow-hidden border border-[#b45309]/50">
+                  <div id="petBarHygiene" class="h-full bg-emerald-500 rounded-full transition-all" style="width: 75%;"></div>
+                </div>
               </div>
             </div>
-            <div class="flex items-center gap-1.5 flex-1 max-w-[120px]">
-              <span>❤️</span>
-              <div class="flex-1 h-3 bg-white/70 rounded-full overflow-hidden border border-[#b45309]">
-                <div id="petBarHappiness" class="h-full bg-rose-500 rounded-full transition-all" style="width: 90%;"></div>
+            <div class="flex items-center gap-1.5 min-w-[100px] sm:min-w-[120px] flex-1 max-w-[160px]">
+              <span class="text-base">❤️</span>
+              <div class="flex-1">
+                <div class="flex justify-between text-[10px] text-amber-950 font-black mb-0.5">
+                  <span>Felicidad</span>
+                  <span id="petValHappiness">95%</span>
+                </div>
+                <div class="w-full h-2.5 bg-amber-950/20 rounded-full overflow-hidden border border-[#b45309]/50">
+                  <div id="petBarHappiness" class="h-full bg-rose-500 rounded-full transition-all" style="width: 95%;"></div>
+                </div>
               </div>
             </div>
           </div>
 
           <!-- LIENZO PRINCIPAL DEL JUEGO -->
-          <div class="flex-1 relative overflow-hidden flex items-center justify-center">
+          <div class="flex-1 relative overflow-hidden flex items-center justify-center min-h-[300px]">
             <canvas id="petGameCanvas" class="w-full h-full block cursor-pointer"></canvas>
 
             <!-- Paleta lateral de herramientas según habitación -->
@@ -1889,7 +2353,7 @@
           </div>
 
           <!-- BARRA INFERIOR DE HABITACIONES -->
-          <div class="h-16 bg-[#caa778] border-t-4 border-[#78350f] flex items-center justify-around px-2 z-10 shadow-2xl">
+          <div class="h-16 bg-[#caa778] border-t-4 border-[#78350f] flex items-center justify-around px-2 z-10 shadow-2xl shrink-0">
             <button onclick="window.PetEngine2D.setRoom('nursery')"
                     class="pet-room-btn flex flex-col items-center justify-center text-xs font-black text-[#451a03] p-1 rounded-xl hover:bg-[#b45309]/20 transition"
                     data-room="nursery">
@@ -1920,13 +2384,25 @@
               <span class="text-xl">🎮</span>
               <span class="text-[10px]">Play</span>
             </button>
+            <button onclick="window.PetEngine2D.openClosetModal()"
+                    class="pet-room-btn flex flex-col items-center justify-center text-xs font-black text-[#be185d] p-1 rounded-xl hover:bg-[#f472b6]/20 transition"
+                    title="Closet & Outfits">
+              <span class="text-xl">👗</span>
+              <span class="text-[10px]">Closet</span>
+            </button>
           </div>
+
+          <!-- MODAL DE RENOMBRAR MASCOTA -->
+          <div id="petRenameModal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 hidden"></div>
 
           <!-- MODAL DE QUIZ PEDAGÓGICO -->
           <div id="petQuizModal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 hidden"></div>
 
-          <!-- MODAL DE TIENDA Y DISFRACES -->
+          <!-- MODAL DE TIENDA Y ALIMENTOS -->
           <div id="petShopModal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 hidden"></div>
+
+          <!-- MODAL DE CLOSET Y GUARDARROPA -->
+          <div id="petClosetModal" class="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 hidden"></div>
 
           <!-- MODAL DE SELECTOR DE ESPECIE -->
           <div id="petSpeciesModal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 hidden"></div>
@@ -1937,51 +2413,71 @@
 
       this.container = viewEl;
       this.canvas = document.getElementById('petGameCanvas');
-      this.renderer = new CardboardRenderer(this.canvas);
+      if (this.canvas) {
+        this.renderer = new CardboardRenderer(this.canvas);
+      }
 
       this.bindEvents();
       this.updateRoomTools();
     }
 
     bindEvents() {
-      // Redimensionamiento
       const updateSize = () => {
         if (this.canvas && this.container) {
-          const rect = this.canvas.parentElement.getBoundingClientRect();
-          this.renderer.resize(rect.width, rect.height);
+          const parent = this.canvas.parentElement;
+          if (parent) {
+            const rect = parent.getBoundingClientRect();
+            if (rect.width > 0 && rect.height > 0 && this.renderer) {
+              this.renderer.resize(rect.width, rect.height);
+            }
+          }
         }
       };
-      window.addEventListener('resize', updateSize);
-      setTimeout(updateSize, 100);
+      if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+        window.addEventListener('resize', updateSize);
+      }
+      setTimeout(updateSize, 60);
 
-      // Movimiento del cursor y caricias
-      this.canvas.addEventListener('mousemove', (e) => {
-        const rect = this.canvas.getBoundingClientRect();
-        this.mousePos.x = e.clientX - rect.left;
-        this.mousePos.y = e.clientY - rect.top;
-      });
+      if (this.canvas) {
+        this.canvas.addEventListener('mousemove', (e) => {
+          const rect = this.canvas.getBoundingClientRect();
+          this.mousePos.x = e.clientX - rect.left;
+          this.mousePos.y = e.clientY - rect.top;
+        });
 
-      this.canvas.addEventListener('click', (e) => {
-        const rect = this.canvas.getBoundingClientRect();
-        const clickX = e.clientX - rect.left;
-        const clickY = e.clientY - rect.top;
+        this.canvas.addEventListener('click', (e) => {
+          const rect = this.canvas.getBoundingClientRect();
+          const clickX = e.clientX - rect.left;
+          const clickY = e.clientY - rect.top;
 
-        // Comprobar si tocó la mascota para acariciarla
-        const petCenterX = this.renderer.width * 0.5;
-        const petCenterY = this.renderer.height * 0.72 - 60;
-        const dist = Math.hypot(clickX - petCenterX, clickY - petCenterY);
+          const petCenterX = (this.renderer ? this.renderer.width : 400) * 0.5;
+          const petCenterY = (this.renderer ? this.renderer.height : 400) * 0.72 - 60;
+          const dist = Math.hypot(clickX - petCenterX, clickY - petCenterY);
 
-        if (dist < 90) {
-          this.petAnimal(e.clientX, e.clientY);
-        }
-      });
+          if (dist < 90) {
+            this.petAnimal(e.clientX, e.clientY);
+          }
+        });
+      }
     }
 
     updateRoomTools() {
       const toolBox = document.getElementById('petRoomTools');
       if (!toolBox) return;
 
-      if (this.activeRoom === 'kitchen') {
+      if (this.activeRoom === 'nursery') {
+        toolBox.innerHTML = `
+          <button onclick="window.PetEngine2D.feed('baby_formula')"
+                  class="w-12 h-12 bg-[#fef3c7] hover:bg-[#fde68a] border-2 border-[#b45309] rounded-2xl flex items-center justify-center text-2xl shadow active:scale-95 transition"
+                  title="Biberón (Baby Bottle Formula Milk)">🍼</button>
+          <button onclick="window.PetEngine2D.feed('apple_puree')"
+                  class="w-12 h-12 bg-[#fef3c7] hover:bg-[#fde68a] border-2 border-[#b45309] rounded-2xl flex items-center justify-center text-2xl shadow active:scale-95 transition"
+                  title="Papilla de Manzana (Porridge / Puree)">🥣</button>
+          <button onclick="window.PetEngine2D.swaddleBaby()"
+                  class="w-12 h-12 bg-[#fbcfe8] hover:bg-[#f472b6] border-2 border-[#db2777] rounded-2xl flex items-center justify-center text-2xl shadow active:scale-95 transition"
+                  title="Arropar con Manta (To Swaddle)">🤱</button>
+        `;
+      } else if (this.activeRoom === 'kitchen') {
         toolBox.innerHTML = `
           <button onclick="window.PetEngine2D.feed('baby_formula')"
                   class="w-12 h-12 bg-[#fef3c7] hover:bg-[#fde68a] border-2 border-[#b45309] rounded-2xl flex items-center justify-center text-2xl shadow active:scale-95 transition"
@@ -1997,7 +2493,7 @@
         toolBox.innerHTML = `
           <button onclick="window.PetEngine2D.bathScrub()"
                   class="w-12 h-12 bg-[#e0f2fe] hover:bg-[#bae6fd] border-2 border-[#0284c7] rounded-2xl flex items-center justify-center text-2xl shadow active:scale-95 transition"
-                  title="Tallar con Esponja">🧽</button>
+                  title="Tallar con Esponja (To scrub)">🧽</button>
           <button onclick="window.PetEngine2D.triggerCareQuiz('verb_scrub')"
                   class="w-12 h-12 bg-[#ecfdf5] hover:bg-[#a7f3d0] border-2 border-[#059669] rounded-2xl flex items-center justify-center text-2xl shadow active:scale-95 transition"
                   title="Aprender Verbos de Baño">🧼</button>
@@ -2006,19 +2502,22 @@
         toolBox.innerHTML = `
           <button onclick="window.PetEngine2D.toggleBedtime()"
                   class="w-12 h-12 bg-[#fef3c7] hover:bg-[#fde68a] border-2 border-[#b45309] rounded-2xl flex items-center justify-center text-2xl shadow active:scale-95 transition"
-                  title="Interruptor de Luz / Nana">💡</button>
+                  title="Interruptor de Luz / Dormir">💡</button>
           <button onclick="window.PetEngine2D.triggerCareQuiz('verb_tuck_in')"
                   class="w-12 h-12 bg-[#f3e8ff] hover:bg-[#e9d5ff] border-2 border-[#7e22ce] rounded-2xl flex items-center justify-center text-2xl shadow active:scale-95 transition"
-                  title="Arropar en la Cama">🛌</button>
+                  title="Arropar en la Cama (To tuck in)">🛌</button>
         `;
       } else if (this.activeRoom === 'playground') {
         toolBox.innerHTML = `
-          <button onclick="window.PetEngine2D.playBall()"
+          <button onclick="window.PetEngine2D.openMinigames()"
                   class="w-12 h-12 bg-[#fee2e2] hover:bg-[#fecaca] border-2 border-[#dc2626] rounded-2xl flex items-center justify-center text-2xl shadow active:scale-95 transition"
+                  title="🎮 Jugar / Minijuegos Arcade (Basketball, Volleyball, Food Catch)">🎮</button>
+          <button onclick="window.PetEngine2D.playBall()"
+                  class="w-12 h-12 bg-[#fef08a] hover:bg-[#fde047] border-2 border-[#ca8a04] rounded-2xl flex items-center justify-center text-2xl shadow active:scale-95 transition"
                   title="Lanzar Pelota de Cartón">⚽</button>
-          <button onclick="window.PetEngine2D.openShopModal()"
-                  class="w-12 h-12 bg-[#fef3c7] hover:bg-[#fde68a] border-2 border-[#b45309] rounded-2xl flex items-center justify-center text-2xl shadow active:scale-95 transition"
-                  title="Guardarropa y Disfraces">👗</button>
+          <button onclick="window.PetEngine2D.openClosetModal()"
+                  class="w-12 h-12 bg-[#fbcfe8] hover:bg-[#f9a8d4] border-2 border-[#db2777] rounded-2xl flex items-center justify-center text-2xl shadow active:scale-95 transition"
+                  title="Guardarropa y Outfits">👗</button>
         `;
       } else {
         toolBox.innerHTML = `
@@ -2032,7 +2531,28 @@
       }
     }
 
+    
+    openMinigames() {
+      if (typeof window !== 'undefined' && typeof window.openPetArcadeModal === 'function') {
+        window.openPetArcadeModal(this.state);
+        return;
+      }
+      if (typeof global !== 'undefined' && typeof global.openPetArcadeModal === 'function') {
+        global.openPetArcadeModal(this.state);
+        return;
+      }
+      this.playBall();
+    }
+  
     playBall() {
+      if (typeof window !== 'undefined' && typeof window.openPetArcadeModal === 'function') {
+        window.openPetArcadeModal(this.state);
+        return;
+      }
+      if (typeof global !== 'undefined' && typeof global.openPetArcadeModal === 'function') {
+        global.openPetArcadeModal(this.state);
+        return;
+      }
       this.sfx.playPop();
       if (this.renderer) {
         this.renderer.spawnConfetti(this.renderer.width * 0.5, this.renderer.height * 0.6, 15);
@@ -2040,7 +2560,270 @@
       this.state.happiness = Math.min(100, this.state.happiness + 15);
       this.state.energy = Math.max(10, this.state.energy - 8);
       this.addExp(20);
+      this.speakPetBabyVoice('Goal! We are playing!');
       this.showToast('⚽ ¡Golazo! Jugando con la pelota de cartón.');
+      this.saveState();
+      this.syncWithStoredPets();
+      this.updateHUD();
+    }
+
+    // --------------------------------------------------------------------------
+    // RENOMBRAR MASCOTA
+    // --------------------------------------------------------------------------
+
+    openRenameModal() {
+      const modal = document.getElementById('petRenameModal') || document.getElementById('petQuizModal');
+      if (!modal) return;
+      this.sfx.playPaperRustle();
+      modal.innerHTML = `
+        <div class="relative max-w-sm w-full bg-[#fbf7ee] text-slate-800 p-6 rounded-3xl border-4 border-[#c29b68] shadow-2xl">
+          <div class="flex items-center justify-between pb-3 border-b-2 border-dashed border-[#b45309]">
+            <h3 class="text-lg font-black text-[#78350f] flex items-center gap-2">
+              <span>✏️</span>
+              <span>Renombrar Mascota</span>
+            </h3>
+            <button onclick="this.closest('.fixed').classList.add('hidden')"
+                    class="text-slate-400 hover:text-slate-700 font-bold text-xl px-2">✕</button>
+          </div>
+          <p class="text-xs text-slate-600 mt-3 mb-2 font-medium">Elige un nombre tierno para tu compañero de cartón:</p>
+          <input type="text" id="renamePetInput" value="${this.state.nickname || ''}" maxlength="24"
+                 class="w-full px-3 py-2 text-sm font-bold border-2 border-[#b45309] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#f59e0b] bg-white text-slate-800 shadow-inner"
+                 placeholder="Ej: Crocky, Fluffy, Max...">
+          <div class="flex justify-end gap-2 mt-4">
+            <button onclick="this.closest('.fixed').classList.add('hidden')"
+                    class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-black rounded-xl">
+              Cancelar
+            </button>
+            <button onclick="window.PetEngine2D.confirmRename()"
+                    class="px-4 py-1.5 bg-[#f59e0b] hover:bg-[#d97706] text-white text-xs font-black rounded-xl shadow active:scale-95 transition">
+              Guardar Nombre
+            </button>
+          </div>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        const input = document.getElementById('renamePetInput');
+        if (input) input.focus();
+      }, 100);
+    }
+
+    confirmRename() {
+      const input = document.getElementById('renamePetInput');
+      if (input && input.value.trim()) {
+        const newName = input.value.trim();
+        this.state.nickname = newName;
+        this.sfx.playChime();
+        this.showToast(`✨ ¡Nombre actualizado a "${newName}"!`);
+        this.speakPetBabyVoice(`My name is ${newName}!`);
+        this.saveState();
+        this.syncWithStoredPets();
+        this.updateHUD();
+      }
+      const modal = document.getElementById('petRenameModal') || document.getElementById('petQuizModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    // --------------------------------------------------------------------------
+    // CLOSET Y GUARDARROPA ESTILO POU (PAPERCRAFT DRESS-UP)
+    // --------------------------------------------------------------------------
+
+    openClosetModal(activeTab = 'hats') {
+      const modal = document.getElementById('petClosetModal');
+      if (!modal) return;
+      this.sfx.playPaperRustle();
+
+      const tabs = [
+        { id: 'hats', label: '👒 Sombreros', count: CLOSET_CATALOG.hats.length },
+        { id: 'glasses', label: '👓 Gafas', count: CLOSET_CATALOG.glasses.length },
+        { id: 'outfits', label: '👕 Ropa', count: CLOSET_CATALOG.outfits.length },
+        { id: 'skinColors', label: '🎨 Piel Kraft', count: CLOSET_CATALOG.skinColors.length }
+      ];
+
+      const currentItems = CLOSET_CATALOG[activeTab] || CLOSET_CATALOG.hats;
+
+      modal.innerHTML = `
+        <div class="relative max-w-xl w-full bg-[#fbf7ee] text-slate-800 p-5 sm:p-6 rounded-3xl border-4 border-[#c29b68] shadow-2xl max-h-[88vh] flex flex-col">
+          
+          <!-- Encabezado del Closet -->
+          <div class="flex items-center justify-between pb-3 border-b-2 border-dashed border-[#b45309]">
+            <div class="flex items-center gap-2">
+              <span class="text-2xl">👗</span>
+              <div>
+                <h3 class="text-lg sm:text-xl font-black text-[#78350f]">Closet & Guardarropa Papercraft</h3>
+                <p class="text-[11px] text-slate-600 font-medium">Personaliza a tu mascota con estilo Pou en tiempo real</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="bg-[#fef3c7] text-[#78350f] px-3 py-1 rounded-full text-xs font-black border-2 border-[#b45309] shadow-sm flex items-center gap-1">
+                <span>🪙</span>
+                <span>${this.state.coins || 0}</span>
+              </span>
+              <button onclick="document.getElementById('petClosetModal').classList.add('hidden')"
+                      class="text-slate-400 hover:text-slate-700 font-bold text-2xl px-1">✕</button>
+            </div>
+          </div>
+
+          <!-- Selector de Categorías / Tabs -->
+          <div class="flex gap-1.5 sm:gap-2 my-3 overflow-x-auto pb-1 shrink-0">
+            ${tabs
+              .map(
+                (tab) => `
+              <button onclick="window.PetEngine2D.openClosetModal('${tab.id}')"
+                      class="px-3 py-1.5 rounded-xl text-xs font-black transition border-2 ${
+                        activeTab === tab.id
+                          ? 'bg-[#b45309] text-white border-[#78350f] shadow'
+                          : 'bg-white text-slate-700 border-[#e2d5bd] hover:bg-[#fef3c7]'
+                      }">
+                ${tab.label}
+              </button>
+            `
+              )
+              .join('')}
+          </div>
+
+          <!-- Grid de Ítems -->
+          <div class="flex-1 overflow-y-auto pr-1 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            ${currentItems
+              .map((item) => {
+                let isEquipped = false;
+                if (activeTab === 'hats') {
+                  isEquipped = (this.state.equippedHat || 'none') === item.id;
+                } else if (activeTab === 'glasses') {
+                  isEquipped = (this.state.equippedGlasses || 'none') === item.id;
+                } else if (activeTab === 'outfits') {
+                  isEquipped = (this.state.equippedOutfit || 'none') === item.id;
+                } else if (activeTab === 'skinColors') {
+                  isEquipped = (item.id === 'kraft' && !this.state.customSkinColor) || this.state.customSkinColor === item.hex;
+                }
+
+                const isUnlocked = item.price === 0 || (this.state.unlockedCloset && this.state.unlockedCloset.includes(item.id));
+
+                return `
+                  <div class="bg-white p-3 rounded-2xl border-2 ${isEquipped ? 'border-[#10b981] bg-[#ecfdf5]/40 ring-2 ring-[#10b981]/30' : 'border-[#e2d5bd]'} flex items-center justify-between shadow-sm">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                      ${
+                        activeTab === 'skinColors'
+                          ? `<div class="w-10 h-10 rounded-full border-2 border-[#78350f] shadow-md shrink-0 flex items-center justify-center font-black" style="background-color: ${item.hex};">
+                              ${isEquipped ? '✓' : ''}
+                            </div>`
+                          : `<span class="text-3xl shrink-0">${item.icon}</span>`
+                      }
+                      <div class="min-w-0">
+                        <p class="text-xs font-black text-slate-800 truncate">${item.name}</p>
+                        <p class="text-[10px] text-slate-500 truncate">${item.es}</p>
+                        ${item.isVip ? '<span class="text-[9px] bg-purple-100 text-purple-700 font-black px-1.5 py-0.2 rounded">VIP</span>' : ''}
+                      </div>
+                    </div>
+
+                    <div class="shrink-0 ml-2">
+                      ${
+                        isEquipped
+                          ? `<span class="px-2.5 py-1 bg-emerald-600 text-white font-black text-[11px] rounded-xl shadow-inner flex items-center gap-1">
+                               <span>Puesto</span> <span>✅</span>
+                             </span>`
+                          : isUnlocked
+                          ? `<button onclick="window.PetEngine2D.equipClosetItem('${activeTab}', '${item.id}')"
+                                     class="px-3 py-1.5 bg-[#f59e0b] hover:bg-[#d97706] text-white font-black text-xs rounded-xl shadow active:scale-95 transition">
+                               Equipar
+                             </button>`
+                          : `<button onclick="window.PetEngine2D.buyClosetItem('${activeTab}', '${item.id}')"
+                                     class="px-3 py-1.5 bg-[#10b981] hover:bg-[#059669] text-white font-black text-xs rounded-xl shadow active:scale-95 transition flex items-center gap-1">
+                               <span>${item.price}</span> <span>🪙</span>
+                             </button>`
+                      }
+                    </div>
+                  </div>
+                `;
+              })
+              .join('')}
+          </div>
+
+          <div class="pt-3 border-t border-[#e2d5bd] mt-2 flex justify-between items-center text-xs text-slate-500">
+            <span>💡 Las prendas equipadas se reflejan al instante en tu mascota de cartón.</span>
+            <button onclick="document.getElementById('petClosetModal').classList.add('hidden')"
+                    class="px-4 py-1.5 bg-[#78350f] text-white font-black rounded-xl">
+              Listo
+            </button>
+          </div>
+        </div>
+      `;
+
+      modal.classList.remove('hidden');
+    }
+
+    buyClosetItem(tab, itemId) {
+      const item = CLOSET_CATALOG[tab]?.find((i) => i.id === itemId);
+      if (!item) return;
+
+      if ((this.state.coins || 0) >= item.price) {
+        this.state.coins -= item.price;
+        if (!this.state.unlockedCloset) this.state.unlockedCloset = ['none'];
+        if (!this.state.unlockedCloset.includes(itemId)) {
+          this.state.unlockedCloset.push(itemId);
+        }
+        try {
+          localStorage.setItem('mastereng_pet_coins', String(this.state.coins));
+        } catch (_) {}
+        this.sfx.playChime();
+        this.showToast(`✨ ¡Comprado: ${item.name}!`);
+        this.equipClosetItem(tab, itemId);
+      } else {
+        this.sfx.playSqueak();
+        this.showToast(`🪙 Necesitas ${item.price} PetCoins. ¡Juega y aprende inglés para ganar más!`);
+      }
+    }
+
+    equipClosetItem(tab, itemId) {
+      const item = CLOSET_CATALOG[tab]?.find((i) => i.id === itemId);
+      if (!item) return;
+
+      if (tab === 'hats') {
+        this.state.equippedHat = itemId;
+      } else if (tab === 'glasses') {
+        this.state.equippedGlasses = itemId;
+      } else if (tab === 'outfits') {
+        this.state.equippedOutfit = itemId;
+      } else if (tab === 'skinColors') {
+        this.state.customSkinColor = itemId === 'kraft' ? null : item.hex;
+      }
+
+      this.sfx.playPaperRustle();
+      this.showToast(`👗 ¡Equipado: ${item.name}!`);
+      this.saveState();
+      this.syncWithStoredPets();
+      this.openClosetModal(tab);
+    }
+
+    // --------------------------------------------------------------------------
+    // NAVEGACIÓN Y SALIDA
+    // --------------------------------------------------------------------------
+
+    returnToSanctuary() {
+      this.saveState();
+      this.syncWithStoredPets();
+      this.closeView();
+      if (typeof window.openPetSanctuary === 'function') {
+        window.openPetSanctuary();
+      } else if (typeof window.renderSanctuaryHub === 'function') {
+        const sanctuaryView = document.getElementById('view-pet-sanctuary');
+        if (sanctuaryView) {
+          sanctuaryView.classList.remove('hidden');
+          sanctuaryView.style.display = 'block';
+        }
+        window.renderSanctuaryHub();
+      }
+    }
+
+    returnToPortals() {
+      this.saveState();
+      this.syncWithStoredPets();
+      this.closeView();
+      if (typeof window.navigateTo === 'function') {
+        window.navigateTo('portals');
+      } else if (typeof window.navigateToView === 'function') {
+        window.navigateToView('portals');
+      }
     }
 
     // --------------------------------------------------------------------------
@@ -2060,7 +2843,6 @@
                     class="text-slate-400 hover:text-slate-700 font-bold text-xl px-2">✕</button>
           </div>
 
-          <!-- Sección Alimentos -->
           <h4 class="text-xs font-black text-[#9a3412] uppercase tracking-wider mt-4 mb-2">Comida Nutritiva</h4>
           <div class="grid grid-cols-2 gap-2.5">
             ${SHOP_CATALOG.food
@@ -2084,10 +2866,9 @@
               .join('')}
           </div>
 
-          <!-- Sección Disfraces y Accesorios VIP -->
-          <h4 class="text-xs font-black text-[#9a3412] uppercase tracking-wider mt-6 mb-2">Disfraces & Coronas</h4>
+          <h4 class="text-xs font-black text-[#9a3412] uppercase tracking-wider mt-6 mb-2">Pociones & Elixires</h4>
           <div class="grid grid-cols-2 gap-2.5">
-            ${SHOP_CATALOG.dressup
+            ${SHOP_CATALOG.potions
               .map(
                 (item) => `
               <div class="bg-white p-3 rounded-2xl border border-[#e2d5bd] flex items-center justify-between shadow-sm">
@@ -2095,12 +2876,12 @@
                   <span class="text-2xl">${item.icon}</span>
                   <div>
                     <p class="text-xs font-bold text-slate-800">${item.name}</p>
-                    ${item.isVip ? '<span class="text-[9px] bg-purple-100 text-purple-700 font-black px-1.5 py-0.5 rounded">VIP</span>' : '<span class="text-[9px] text-slate-400">Gratis / Básico</span>'}
+                    <p class="text-[10px] text-sky-600 font-semibold">${item.es}</p>
                   </div>
                 </div>
-                <button onclick="window.PetEngine2D.equipItem('${item.id}')"
-                        class="px-2.5 py-1 bg-[#10b981] hover:bg-[#059669] text-white text-xs font-black rounded-lg shadow">
-                  Equipar
+                <button onclick="window.PetEngine2D.buyPotion('${item.id}', ${item.price})"
+                        class="px-2.5 py-1 bg-[#8b5cf6] hover:bg-[#7c3aed] text-white text-xs font-black rounded-lg shadow">
+                  ${item.price} 🪙
                 </button>
               </div>
             `
@@ -2113,7 +2894,7 @@
     }
 
     buyFood(foodId, price) {
-      if (this.state.coins >= price) {
+      if ((this.state.coins || 0) >= price) {
         this.state.coins -= price;
         this.feed(foodId);
         this.showToast('¡Compra exitosa! Mascota alimentada.');
@@ -2122,13 +2903,29 @@
       }
     }
 
-    equipItem(itemId) {
-      const item = SHOP_CATALOG.dressup.find((d) => d.id === itemId);
-      if (item) {
-        this.state.equippedHead = itemId;
-        this.sfx.playPaperRustle();
-        this.showToast(`¡Equipado: ${item.name}!`);
+    buyPotion(potionId, price) {
+      if ((this.state.coins || 0) >= price) {
+        this.state.coins -= price;
+        if (potionId === 'growth_elixir') {
+          this.addExp(150);
+          this.showToast('🧪 ¡Elixir de Crecimiento activado! +150 EXP');
+        } else if (potionId === 'instant_cleanse') {
+          this.state.hygiene = 100;
+          this.showToast('🧼 ¡Bomba de Espuma! Higiene al 100%');
+        } else if (potionId === 'energy_tonic') {
+          this.state.energy = 100;
+          this.showToast('⚡ ¡Tónico de Energía! Energía al 100%');
+        } else if (potionId === 'sweet_dreams') {
+          this.state.energy = 100;
+          this.state.happiness = 100;
+          this.showToast('🌙 ¡Poción de Dulces Sueños! Descanso y felicidad al máximo.');
+        }
+        this.sfx.playChime();
         this.saveState();
+        this.syncWithStoredPets();
+        this.updateHUD();
+      } else {
+        this.showToast('🪙 Monedas insuficientes.');
       }
     }
 
@@ -2170,35 +2967,62 @@
     startLoop() {
       if (this.animId) return;
 
-      const loop = (now) => {
-        this.animId = requestAnimationFrame(loop);
-        if (this.renderer) {
-          this.renderer.time = now * 0.001;
+      const raf = (typeof window !== 'undefined' && window.requestAnimationFrame) || (typeof globalThis !== 'undefined' && globalThis.requestAnimationFrame) || ((cb) => setTimeout(cb, 16));
 
-          // Decrementar temporizadores
+      const loop = (now) => {
+        this.animId = raf(loop);
+        if (this.renderer) {
+          this.renderer.time = (now || Date.now()) * 0.001;
+
           if (this.state.blinkTimer > 0) this.state.blinkTimer--;
           if (this.state.pettingTimer > 0) this.state.pettingTimer--;
           if (this.state.eatingTimer > 0) this.state.eatingTimer--;
 
-          // Renderizar fondo y mascota
           this.renderer.renderRoomBackground(this.activeRoom, this.state.species, this.isLightsOff);
           this.renderer.drawPet(this.state, this.mousePos);
         }
       };
 
-      this.animId = requestAnimationFrame(loop);
+      this.animId = raf(loop);
     }
 
     stopLoop() {
       if (this.animId) {
-        cancelAnimationFrame(this.animId);
+        const caf = (typeof window !== 'undefined' && window.cancelAnimationFrame) || (typeof globalThis !== 'undefined' && globalThis.cancelAnimationFrame) || clearTimeout;
+        caf(this.animId);
         this.animId = null;
       }
     }
 
-    openView() {
+    openView(petId) {
+      if (petId) {
+        this.loadPetById(petId);
+      } else {
+        try {
+          const raw = localStorage.getItem('mastereng_pets');
+          if (raw) {
+            const pets = JSON.parse(raw);
+            if (Array.isArray(pets) && pets.length > 0) {
+              const selectedId = localStorage.getItem('mastereng_selected_pet_id');
+              const pet = pets.find((p) => p && p.id === selectedId) || pets[0];
+              if (pet) {
+                this.loadPetById(pet.id);
+              }
+            }
+          }
+        } catch (_) {}
+      }
+
+      // Ocultar Santuario si estaba activo para que el 2D Habitat tome control
+      const sanctuaryView = document.getElementById('view-pet-sanctuary');
+      if (sanctuaryView) {
+        sanctuaryView.classList.add('hidden');
+        sanctuaryView.style.display = 'none';
+      }
+
       this.ensureDOM();
       this.container.classList.remove('hidden');
+      this.container.style.display = 'flex';
       this.startLoop();
       this.updateHUD();
       this.sfx.playPaperRustle();
@@ -2207,9 +3031,11 @@
     closeView() {
       if (this.container) {
         this.container.classList.add('hidden');
+        this.container.style.display = 'none';
       }
       this.stopLoop();
       this.saveState();
+      this.syncWithStoredPets();
     }
   }
 
@@ -2221,15 +3047,39 @@
   global.PetEngine2D = instance;
 
   // Atajos globales
-  global.openPetGameView = () => instance.openView();
+  global.openPetGameView = (petId) => instance.openView(petId);
   global.closePetGameView = () => instance.closeView();
-  global.togglePetGameView = () => {
+  global.togglePetGameView = (petId) => {
     if (instance.container && !instance.container.classList.contains('hidden')) {
       instance.closeView();
     } else {
-      instance.openView();
+      instance.openView(petId);
     }
   };
+
+  // Enlazar ventana window.openPetRoom para abrir siempre el hábitat 2D de alta interactividad
+  let _roomHandler = function (petId) {
+    instance.openView(petId);
+  };
+
+  try {
+    Object.defineProperty(global, 'openPetRoom', {
+      configurable: true,
+      enumerable: true,
+      get() {
+        return _roomHandler;
+      },
+      set(fn) {
+        _roomHandler = function (petId) {
+          instance.openView(petId);
+        };
+      }
+    });
+  } catch (_) {
+    global.openPetRoom = function (petId) {
+      instance.openView(petId);
+    };
+  }
 
   // Envolver navigateTo para soportar 'pet' y 'mascota'
   if (typeof global.navigateTo === 'function') {
@@ -2243,26 +3093,19 @@
     };
   }
 
-  // Inyectar botón flotante en el Hub principal para acceso rápido
+  // Eliminación estricta de botón flotante intrusivo en el Menú Principal
   function ensureFloatingPetTrigger() {
     if (typeof document === 'undefined') return;
-    if (document.getElementById('floatingPetButton')) return;
-
-    const btn = document.createElement('button');
-    btn.id = 'floatingPetButton';
-    btn.className = 'fixed bottom-5 left-5 z-30 bg-[#f59e0b] hover:bg-[#d97706] text-white px-4 py-2.5 rounded-full font-black text-xs shadow-2xl border-2 border-[#78350f] flex items-center gap-2 active:scale-95 transition';
-    btn.style.boxShadow = '3px 4px 0px rgba(78, 52, 32, 0.45)';
-    btn.innerHTML = '<span>🐾</span> <span>Mascota 2D</span>';
-    btn.onclick = () => instance.openView();
-
-    document.body.appendChild(btn);
+    const btn = document.getElementById('floatingPetButton');
+    if (btn) btn.remove();
+    const rogue = document.getElementById('masterpet-launcher-fab');
+    if (rogue) rogue.remove();
   }
 
   if (typeof document !== 'undefined') {
+    ensureFloatingPetTrigger();
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', ensureFloatingPetTrigger);
-    } else {
-      ensureFloatingPetTrigger();
     }
   }
 
