@@ -28,40 +28,65 @@
     CHAT_MESSAGES: 'mastereng_chat_messages'
   };
 
-  // Lista negra estricta de bots de prueba que jamás deben aparecer
+  // Lista negra estricta de bots y contactos demo que jamás deben aparecer (Sofia, Alex, Emma, etc.)
   const BANNED_BOT_IDS = new Set([
     'contact_sophia',
-    'contact_liam',
+    'contact_sofia',
+    'contact_alex',
     'contact_emma',
+    'contact_liam',
     'contact_noah',
     'group_legends'
   ]);
 
   const BANNED_BOT_NAMES = [
-    'sophia valentine',
-    'liam carter',
-    'emma rodriguez',
-    'noah sterling',
-    'english legends club'
+    'sophia',
+    'sofia',
+    'alex',
+    'emma',
+    'liam',
+    'noah',
+    'english legends club',
+    'estudiante demo',
+    'demo user',
+    'bot'
   ];
 
   function isBannedFakeBot(contactOrUser) {
     if (!contactOrUser || typeof contactOrUser !== 'object') return true;
     const id = String(contactOrUser.id || '').trim().toLowerCase();
-    const name = String(contactOrUser.name || contactOrUser.username || '').trim().toLowerCase();
+    const name = String(contactOrUser.name || contactOrUser.username || contactOrUser.displayName || '').trim().toLowerCase();
     const email = String(contactOrUser.email || '').trim().toLowerCase();
-    if (BANNED_BOT_IDS.has(id)) return true;
-    for (const botName of BANNED_BOT_NAMES) {
-      if (name.includes(botName)) return true;
-    }
+    const friendCode = String(contactOrUser.friendCode || contactOrUser.gameId || contactOrUser.code || '').trim().toLowerCase();
+
+    if (BANNED_BOT_IDS.has(id) || BANNED_BOT_IDS.has(friendCode)) return true;
+
+    // Prefijos o nombres en ID
     if (
-      email === 'sophia@mastereng.academy' ||
-      email === 'liam@mastereng.academy' ||
-      email === 'emma@mastereng.academy' ||
-      email === 'noah@mastereng.academy'
+      id.includes('sophia') || id.includes('sofia') ||
+      id.includes('alex') || id.includes('emma') ||
+      id.includes('liam') || id.includes('noah')
     ) {
       return true;
     }
+
+    // Comprobación de palabras clave de nombres de bots/contactos demo
+    for (const botName of BANNED_BOT_NAMES) {
+      if (name.includes(botName)) return true;
+    }
+
+    // Comprobación de correos electrónicos de prueba/demo
+    if (
+      email.includes('sophia@') || email.includes('sofia@') || email.includes('sofia.') ||
+      email.includes('alex@') || email.includes('alex.') ||
+      email.includes('emma@') || email.includes('emma.') ||
+      email.includes('liam@') || email.includes('noah@') ||
+      email.includes('estudiante@') ||
+      email.endsWith('@mastereng.academy')
+    ) {
+      return true;
+    }
+
     return false;
   }
 
@@ -441,17 +466,52 @@
     state.contacts = state.contacts.filter(c => {
       if (isBannedFakeBot(c)) {
         if (c && c.id) removedIds.push(c.id);
+        if (c && c.friendCode) removedIds.push(c.friendCode);
         return false;
       }
+      if (!c || (!c.name && !c.username)) return false;
       return true;
     });
 
     // Purgar cualquier llave de bot en bonds y messages
     const allBanIds = Array.from(BANNED_BOT_IDS).concat(removedIds);
     allBanIds.forEach(botId => {
-      if (state.bonds && state.bonds[botId]) delete state.bonds[botId];
-      if (state.messages && state.messages[botId]) delete state.messages[botId];
+      const lower = String(botId).toLowerCase();
+      if (state.bonds) {
+        delete state.bonds[botId];
+        delete state.bonds[lower];
+      }
+      if (state.messages) {
+        delete state.messages[botId];
+        delete state.messages[lower];
+      }
     });
+
+    // Purgar también de localStorage['mastereng_inbox_invites'] si contenía bots
+    try {
+      const rawInvites = localStorage.getItem(STORAGE_KEYS.INBOX_INVITES);
+      if (rawInvites) {
+        const parsed = JSON.parse(rawInvites);
+        if (Array.isArray(parsed)) {
+          const cleanInvites = parsed.filter(inv => {
+            if (!inv) return false;
+            const fromName = String(inv.fromName || '').toLowerCase();
+            const fromId = String(inv.fromId || '').toLowerCase();
+            const fCode = String(inv.friendCode || '').toLowerCase();
+            return !isBannedFakeBot({ id: fromId, name: fromName, friendCode: fCode });
+          });
+          localStorage.setItem(STORAGE_KEYS.INBOX_INVITES, JSON.stringify(cleanInvites));
+        }
+      }
+    } catch (_) {}
+
+    // Sincronizar inmediatamente en localStorage para mantenerlo limpio (0 amigos)
+    try {
+      localStorage.setItem(STORAGE_KEYS.CONTACTS, JSON.stringify(state.contacts));
+      localStorage.setItem(STORAGE_KEYS.BONDS, JSON.stringify(state.bonds));
+      localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(state.messages));
+      localStorage.setItem(STORAGE_KEYS.CHAT_MESSAGES, JSON.stringify(state.messages));
+    } catch (_) {}
   }
 
   function loadSocialState() {
@@ -1639,7 +1699,7 @@
             <input
               id="waNewFriendIdentifier"
               type="text"
-              placeholder="Ej: MENG-7492, Sofia Morales, carlos@mastereng.com..."
+              placeholder="Ej: MENG-7492, Elena Rostova, carlos@mastereng.com..."
               oninput="window.SocialChat.filterFriendSearchResults(this.value)"
               class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white"
             />
@@ -2348,6 +2408,12 @@
     const toIdOrName = String(payload.toIdOrName || '').trim();
     if (!toIdOrName) return null;
 
+    // Bloquear si el destinatario es un bot demo prohibido (ej: Sofia, Alex, Emma)
+    if (isBannedFakeBot({ name: toIdOrName, id: toIdOrName })) {
+      console.warn('[SocialChat] Intento de invitar bot falso bloqueado:', toIdOrName);
+      return null;
+    }
+
     const inviteType = payload.type === 'dating_3d' ? 'dating_3d' : 'jest_duel';
     const partnerGender = payload.partnerGender || 'unspecified';
     const cleanTo = toIdOrName.toLowerCase();
@@ -2821,6 +2887,7 @@
 
   const SocialChatAPI = {
     initSocialChat,
+    purgeDemoBots: purgeFakeBotsFromState,
     openCommunityHubView,
     renderCommunityHub,
     ensureUserUniqueGameId,

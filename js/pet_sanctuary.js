@@ -155,7 +155,8 @@
     selectedPetId: null,
     activeTab: 'all',   // 'all', 'mine', 'shared'
     minigameState: null,
-    coopChannel: null
+    coopChannel: null,
+    hiddenElements: []
   };
 
   // Inicializar BroadcastChannel para sincronización Co-Parenting
@@ -397,23 +398,66 @@
     style.id = 'masterpet-sanctuary-styles';
     style.textContent = `
       /* ESTILOS MAESTROS PAPERCRAFT - MASTERPET SANCTUARY */
-      #view-pet-sanctuary {
-        position: fixed;
-        inset: 0;
-        z-index: 55;
+      #view-pet-sanctuary,
+      #pet-sanctuary-root {
+        position: fixed !important;
+        top: 64px !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100vw !important;
+        height: calc(100vh - 64px) !important;
+        z-index: 9500 !important;
         display: flex;
         flex-direction: column;
-        padding-top: 80px !important;
-        box-sizing: border-box;
-        background: #2a1b12;
-        background-image: radial-gradient(#3f271d 15%, transparent 16%), radial-gradient(#3f271d 15%, transparent 16%);
-        background-size: 24px 24px;
-        background-position: 0 0, 12px 12px;
+        padding-top: 0 !important;
+        box-sizing: border-box !important;
+        background: #2b1d12 !important;
+        background-image: radial-gradient(#3f271d 15%, transparent 16%), radial-gradient(#3f271d 15%, transparent 16%) !important;
+        background-size: 24px 24px !important;
+        background-position: 0 0, 12px 12px !important;
         color: #fdfbf7;
         font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-        overflow-y: auto;
-        overflow-x: hidden;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
         user-select: none;
+      }
+
+      /* SUPRESIÓN ESTRICTA DEL CARRUSEL DE PORTALES ARCANOS CUANDO EL SANTUARIO ESTÁ ACTIVO */
+      body.pet-sanctuary-active #coverFlowViewport,
+      body.pet-sanctuary-active .coverflow-viewport,
+      body.pet-sanctuary-active .hub-carousel,
+      body.pet-sanctuary-active .carousel-viewport,
+      body.pet-sanctuary-active .carousel-nav-btn,
+      body.pet-sanctuary-active .carousel-btn,
+      body.pet-sanctuary-active .nav-arrow,
+      body.pet-sanctuary-active .portal-card,
+      body.pet-sanctuary-active #portalStarsCanvas,
+      body.pet-sanctuary-active #view-home,
+      body.pet-sanctuary-active #viewHome,
+      body.pet-sanctuary-active #portalHub,
+      body.pet-sanctuary-active .portals-section,
+      body.pet-sanctuary-active .arcane-portals-container,
+      body.pet-sanctuary-active .carousel-container,
+      body:has(#view-pet-sanctuary:not(.hidden):not([style*="display: none"])) #coverFlowViewport,
+      body:has(#view-pet-sanctuary:not(.hidden):not([style*="display: none"])) .coverflow-viewport,
+      body:has(#view-pet-sanctuary:not(.hidden):not([style*="display: none"])) .hub-carousel,
+      body:has(#view-pet-sanctuary:not(.hidden):not([style*="display: none"])) .carousel-viewport,
+      body:has(#view-pet-sanctuary:not(.hidden):not([style*="display: none"])) .carousel-nav-btn,
+      body:has(#view-pet-sanctuary:not(.hidden):not([style*="display: none"])) .carousel-btn,
+      body:has(#view-pet-sanctuary:not(.hidden):not([style*="display: none"])) .nav-arrow,
+      body:has(#view-pet-sanctuary:not(.hidden):not([style*="display: none"])) .portal-card,
+      body:has(#view-pet-sanctuary:not(.hidden):not([style*="display: none"])) #portalStarsCanvas,
+      body:has(#view-pet-sanctuary:not(.hidden):not([style*="display: none"])) #view-home,
+      body:has(#view-pet-sanctuary:not(.hidden):not([style*="display: none"])) #viewHome,
+      body:has(#view-pet-sanctuary:not(.hidden):not([style*="display: none"])) #portalHub,
+      body:has(#view-pet-sanctuary:not(.hidden):not([style*="display: none"])) .portals-section,
+      body:has(#view-pet-sanctuary:not(.hidden):not([style*="display: none"])) .arcane-portals-container,
+      body:has(#view-pet-sanctuary:not(.hidden):not([style*="display: none"])) .carousel-container {
+        display: none !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+        opacity: 0 !important;
       }
 
       .paper-cardboard-panel {
@@ -686,7 +730,7 @@
   }
 
   // ==========================================================================
-  // 7. MONTAJE DEL DOM PRINCIPAL: VISTA DE SANTUARIO
+  // 7. MONTAJE DEL DOM PRINCIPAL: VISTA DE SANTUARIO (FULLSCREEN OVERLAY)
   // ==========================================================================
   function ensureSanctuaryDOM() {
     ensureSanctuaryStyles();
@@ -697,9 +741,127 @@
       container.style.display = 'none';
       document.body.appendChild(container);
     }
-    container.style.paddingTop = '80px';
+    container.style.position = 'fixed';
+    container.style.top = '64px';
+    container.style.left = '0';
+    container.style.right = '0';
+    container.style.bottom = '0';
+    container.style.width = '100vw';
+    container.style.height = 'calc(100vh - 64px)';
+    container.style.zIndex = '9500';
+    container.style.overflowY = 'auto';
+    container.style.overflowX = 'hidden';
+    container.style.background = '#2b1d12';
+    container.style.paddingTop = '0';
     container.style.boxSizing = 'border-box';
     return container;
+  }
+
+  // ==========================================================================
+  // 7.1 GESTIÓN DE CAPAS Y SUPRESIÓN DEL CARRUSEL DE PORTALES ARCANOS
+  // ==========================================================================
+  function hidePortalViewsAndSaveState() {
+    if (!Array.isArray(sanctuaryState.hiddenElements)) {
+      sanctuaryState.hiddenElements = [];
+    }
+
+    // Si ya tenemos guardados los elementos previos, solo reforzamos su ocultamiento
+    if (sanctuaryState.hiddenElements.length > 0) {
+      sanctuaryState.hiddenElements.forEach(item => {
+        if (item && item.element) {
+          item.element.style.display = 'none';
+          item.element.style.visibility = 'hidden';
+          item.element.classList.add('hidden');
+        }
+      });
+      return;
+    }
+
+    const sanctuaryView = document.getElementById('view-pet-sanctuary');
+    const habitatView = document.getElementById('view-pet-game');
+    const targetSet = new Set();
+
+    // Selectores explícitos de portales y carrusel
+    const selectors = [
+      '#viewHome',
+      '#view-home',
+      '#portalHub',
+      '.portals-section',
+      '.arcane-portals-container',
+      '.carousel-container',
+      '#coverFlowViewport',
+      '.coverflow-viewport',
+      '.hub-carousel',
+      '.carousel-viewport'
+    ];
+
+    selectors.forEach(sel => {
+      try {
+        document.querySelectorAll(sel).forEach(el => {
+          if (el && el !== sanctuaryView && el !== habitatView) {
+            targetSet.add(el);
+          }
+        });
+      } catch (_) {}
+    });
+
+    // Secciones principales activas en el DOM
+    try {
+      document.querySelectorAll('main > section, .view-section, [data-view]').forEach(el => {
+        if (el && el !== sanctuaryView && el !== habitatView) {
+          const comp = typeof window !== 'undefined' && typeof window.getComputedStyle === 'function' ? window.getComputedStyle(el) : null;
+          const isVisible = comp ? comp.display !== 'none' : el.style.display !== 'none';
+          if (isVisible && !el.classList.contains('hidden')) {
+            targetSet.add(el);
+          }
+        }
+      });
+    } catch (_) {}
+
+    targetSet.forEach(el => {
+      sanctuaryState.hiddenElements.push({
+        element: el,
+        previousDisplay: el.style.display,
+        previousVisibility: el.style.visibility,
+        hadHiddenClass: el.classList.contains('hidden')
+      });
+      el.style.display = 'none';
+      el.style.visibility = 'hidden';
+      el.classList.add('hidden');
+    });
+  }
+
+  function restorePortalViewsState() {
+    let restoredCount = 0;
+    if (Array.isArray(sanctuaryState.hiddenElements) && sanctuaryState.hiddenElements.length > 0) {
+      sanctuaryState.hiddenElements.forEach(item => {
+        if (item && item.element) {
+          item.element.style.display = item.previousDisplay || '';
+          item.element.style.visibility = item.previousVisibility || '';
+          if (!item.hadHiddenClass) {
+            item.element.classList.remove('hidden');
+          }
+          restoredCount++;
+        }
+      });
+      sanctuaryState.hiddenElements = [];
+    }
+
+    // Asegurar visualización del menú de Portales Arcanos si no se restauró nada
+    if (restoredCount === 0) {
+      const viewHome = document.getElementById('view-home') || document.getElementById('viewHome');
+      if (viewHome) {
+        viewHome.classList.remove('hidden');
+        viewHome.style.display = '';
+        viewHome.style.visibility = '';
+      }
+      const coverFlow = document.getElementById('coverFlowViewport');
+      if (coverFlow) {
+        coverFlow.classList.remove('hidden');
+        coverFlow.style.display = '';
+        coverFlow.style.visibility = '';
+      }
+    }
   }
 
   // ==========================================================================
@@ -714,7 +876,15 @@
 
     removeFloatingPetButtons();
 
+    // 2. Guardar estado y ocultar carrusel y portales de fondo
+    hidePortalViewsAndSaveState();
+
+    if (typeof document !== 'undefined' && document.body) {
+      document.body.classList.add('pet-sanctuary-active');
+    }
+
     const container = ensureSanctuaryDOM();
+    container.classList.remove('hidden');
     container.style.display = 'flex';
     sanctuaryState.isOpen = true;
 
@@ -736,9 +906,14 @@
     const container = document.getElementById('view-pet-sanctuary');
     if (container) {
       container.style.display = 'none';
+      container.classList.add('hidden');
     }
     sanctuaryState.isOpen = false;
     sanctuaryState.selectedPetId = null;
+
+    if (typeof document !== 'undefined' && document.body) {
+      document.body.classList.remove('pet-sanctuary-active');
+    }
 
     // Limpieza de modales residuales
     ['masterpet-adopt-modal', 'masterpet-coop-modal', 'masterpet-vip-limit-modal', 'masterpet-invite-modal', 'masterpet-shop-modal', 'masterpet-auth-lock-modal'].forEach(id => {
@@ -754,11 +929,18 @@
 
     removeFloatingPetButtons();
 
+    // Restaurar con precisión el estado de visualización previo del carrusel de Portales Arcanos
+    restorePortalViewsState();
+
     // Restaurar flujo hacia el menú principal de Portales Arcanos
-    if (typeof global.navigateTo === 'function') {
-      global.navigateTo('home');
+    if (typeof global.goToHomePortals === 'function') {
+      try { global.goToHomePortals(); } catch (e) { console.warn(e); }
+    } else if (typeof global.returnToMainPortals === 'function') {
+      try { global.returnToMainPortals(); } catch (e) { console.warn(e); }
+    } else if (typeof global.navigateTo === 'function') {
+      try { global.navigateTo('hub'); } catch (e) { console.warn(e); }
     } else if (typeof global.showView === 'function') {
-      global.showView('view-home');
+      try { global.showView('view-home'); } catch (e) { console.warn(e); }
     }
   }
 
@@ -822,7 +1004,14 @@
   // ==========================================================================
   function renderSanctuaryHub() {
     sanctuaryState.currentView = 'hub';
+    hidePortalViewsAndSaveState();
+    if (typeof document !== 'undefined' && document.body) {
+      document.body.classList.add('pet-sanctuary-active');
+    }
     const container = ensureSanctuaryDOM();
+    container.classList.remove('hidden');
+    container.style.display = 'flex';
+    sanctuaryState.isOpen = true;
     const pets = loadStoredPets();
     const coins = getStoredCoins();
     const user = getCurrentUserMeta();
@@ -1128,7 +1317,14 @@
   }
 
   function renderPetRoom(pet) {
+    hidePortalViewsAndSaveState();
+    if (typeof document !== 'undefined' && document.body) {
+      document.body.classList.add('pet-sanctuary-active');
+    }
     const container = ensureSanctuaryDOM();
+    container.classList.remove('hidden');
+    container.style.display = 'flex';
+    sanctuaryState.isOpen = true;
     const spec = PET_SPECIES[pet.speciesId] || PET_SPECIES.puppy;
     const coins = getStoredCoins();
 
@@ -2135,6 +2331,7 @@
   // ==========================================================================
   global.openPetSanctuary = openPetSanctuary;
   global.closePetSanctuary = closePetSanctuary;
+  global.returnToPortals = closePetSanctuary;
   global.renderSanctuaryHub = renderSanctuaryHub;
   global.openPetRoom = openPetRoom;
   global.loadStoredPets = loadStoredPets;
@@ -2144,12 +2341,14 @@
   global.MasterPet = {
     open: openPetSanctuary,
     close: closePetSanctuary,
+    returnToPortals: closePetSanctuary,
     loadPets: loadStoredPets,
     getCoins: getStoredCoins,
     addCoins: addStoredCoins,
     species: PET_SPECIES,
     foods: PET_FOODS,
-    cleanButtons: removeFloatingPetButtons
+    cleanButtons: removeFloatingPetButtons,
+    state: sanctuaryState
   };
 
   // Limpieza proactiva de cualquier botón flotante o vista residual

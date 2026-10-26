@@ -1,5 +1,5 @@
-// mastereng-v1-pwa-v17-compat Service Worker Network-First with Auto-Cache Cleanup
-const CACHE_NAME = 'mastereng-pwa-v18-' + Date.now();
+// mastereng-v1-pwa-v19-compat Service Worker Network-First with Auto-Cache Cleanup
+const CACHE_NAME = 'mastereng-pwa-v19-' + Date.now();
 const CORE_ASSETS = [
   './',
   './index.html',

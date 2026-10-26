@@ -152,6 +152,27 @@
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, width, height);
 
+    // Cielo nocturno estrellado limpio y romántico
+    const numStars = 180;
+    for (let s = 0; s < numStars; s++) {
+      const sx = Math.random() * width;
+      const sy = Math.random() * (height * 0.62);
+      const sRadius = Math.random() * 1.3 + 0.4;
+      const sAlpha = Math.random() * 0.7 + 0.3;
+      const sColor = Math.random() > 0.82 ? '#fef08a' : (Math.random() > 0.5 ? '#e0f2fe' : '#ffffff');
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(sx, sy, sRadius, 0, Math.PI * 2);
+      ctx.fillStyle = sColor;
+      ctx.globalAlpha = sAlpha;
+      if (sRadius > 1.1) {
+        ctx.shadowColor = sColor;
+        ctx.shadowBlur = 4;
+      }
+      ctx.fill();
+      ctx.restore();
+    }
+
     const numBuildings = 38;
     const bWidth = width / numBuildings;
     for (let i = 0; i < numBuildings; i++) {
@@ -1184,6 +1205,29 @@
     rugCenter.receiveShadow = true;
     sceneContainer.add(rugTrim, rugCenter);
 
+    // Cielo nocturno estrellado sobre la terraza (THREE.Points sutiles)
+    const starGeo = new THREE.BufferGeometry();
+    const starCount3D = 240;
+    const starPos = new Float32Array(starCount3D * 3);
+    for (let i = 0; i < starCount3D; i++) {
+      const radius = 15 + Math.random() * 12;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = 0.15 + Math.random() * 0.72;
+      starPos[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+      starPos[i * 3 + 1] = radius * Math.cos(phi) + 2.5;
+      starPos[i * 3 + 2] = radius * Math.sin(phi) * Math.sin(theta);
+    }
+    starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+    const starMat = new THREE.PointsMaterial({
+      color: 0xffffff,
+      size: 0.12,
+      transparent: true,
+      opacity: 0.85
+    });
+    const starPoints = new THREE.Points(starGeo, starMat);
+    starPoints.name = 'DatingTerraceStars';
+    sceneContainer.add(starPoints);
+
     // Barandilla de balcón con volutas
     const balconyMeta = getMeta('dating_city_balcony');
     const balconyGroup = new THREE.Group();
@@ -1412,10 +1456,21 @@
     const flameMesh = new THREE.Mesh(flameGeo, M.candleFlame);
     flameMesh.position.set(0, 0.37, 0);
 
-    const flameLight = new THREE.PointLight(0xffa200, 1.8, 4.5, 1.4);
-    flameLight.position.set(0, 0.39, 0);
+    // Luz cálida puntual (PointLight dorada suave) saliendo de la vela central de la mesa
+    const flameLight = new THREE.PointLight(0xffb84d, 2.7, 7.8, 1.2);
+    flameLight.position.set(0, 0.42, 0);
+    flameLight.castShadow = true;
+    if (flameLight.shadow) {
+      flameLight.shadow.bias = -0.001;
+      flameLight.shadow.mapSize.width = 512;
+      flameLight.shadow.mapSize.height = 512;
+    }
 
-    candleGroup.add(candBase, candStem, waxCandle, flameMesh, flameLight);
+    // Luz suave de relleno cálido para iluminar nítidamente las copas, platos y rostros de la pareja
+    const tableFillLight = new THREE.PointLight(0xffedd5, 0.85, 4.5, 1.5);
+    tableFillLight.position.set(0, 0.65, 0);
+
+    candleGroup.add(candBase, candStem, waxCandle, flameMesh, flameLight, tableFillLight);
     candleGroup.position.set(0, 0.98, 0);
 
     localAnimationState.candleMeshes.push(flameMesh);
@@ -2138,7 +2193,7 @@
       const t = now * 0.001;
 
       if (localAnimationState.candleLights.length > 0) {
-        const flicker = 1.7 + Math.sin(t * 11.2) * 0.18 + Math.cos(t * 19.5) * 0.12;
+        const flicker = 2.6 + Math.sin(t * 11.2) * 0.22 + Math.cos(t * 19.5) * 0.15;
         localAnimationState.candleLights.forEach((light) => {
           if (light && light.parent) light.intensity = flicker;
         });

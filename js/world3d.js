@@ -46,7 +46,7 @@
   let animatedConceptNodes = [];
 
   // Posiciones clave del Mesero IA (NUNCA en x: ±1.25, z: 0 donde están las sillas)
-  const WAITER_STATION_POS = { x: 2.8, y: 0, z: -2.4 };
+  const WAITER_STATION_POS = { x: 3.45, y: 0, z: -2.4 };
   const WAITER_TABLE_POS = { x: 0.0, y: 0, z: -1.45 };
   let waiterGroup = null;
   let waiterNpcGroup = null;
@@ -5527,139 +5527,14 @@ ensureOrbitControls();
 
   // Constructor de Pin Flotante de Interfaz 3D estilo Videojuego AAA (THREE.Sprite + Anclaje + Baliza)
   function buildHolographicConceptNode(itemSpec, scenarioKey) {
-    if (typeof THREE === 'undefined' || !itemSpec) return null;
+    if (!itemSpec) return null;
     const px = itemSpec.pos ? itemSpec.pos[0] : 0;
     const rawPy = itemSpec.pos ? itemSpec.pos[1] : 1.8;
     const pz = itemSpec.pos ? itemSpec.pos[2] : 0;
     const py = Math.max(1.6, rawPy);
 
-    const pinGroup = new THREE.Group();
-    pinGroup.name = itemSpec.en || itemSpec.id;
-    pinGroup.position.set(px, py, pz);
-
-    const isPhrase = itemSpec.type === 'phrase';
-
-    let icon = isPhrase ? '💬' : '💡';
-    let themeColor = isPhrase ? '#a855f7' : '#06b6d4';
-    let themeHex = isPhrase ? 0xa855f7 : 0x06b6d4;
-
-    if (scenarioKey === 'space') {
-      icon = '🌌'; themeColor = '#38bdf8'; themeHex = 0x38bdf8;
-    } else if (scenarioKey === 'garden') {
-      icon = '🌿'; themeColor = '#10b981'; themeHex = 0x10b981;
-    } else if (scenarioKey === 'dating') {
-      icon = isPhrase ? '🍷' : '💖'; themeColor = '#f43f5e'; themeHex = 0xf43f5e;
-    } else if (scenarioKey === 'restaurant') {
-      icon = '🍽️'; themeColor = '#f59e0b'; themeHex = 0xf59e0b;
-    } else if (scenarioKey === 'hotel') {
-      icon = '🛎️'; themeColor = '#eab308'; themeHex = 0xeab308;
-    } else if (scenarioKey === 'supermarket') {
-      icon = '🛒'; themeColor = '#0284c7'; themeHex = 0x0284c7;
-    } else if (scenarioKey === 'house') {
-      icon = isPhrase ? '💬' : '🏠'; themeColor = '#38bdf8'; themeHex = 0x38bdf8;
-    }
-
-    if (typeof document !== 'undefined') {
-      const canvas = document.createElement('canvas');
-      canvas.width = 640; canvas.height = 220;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.fillStyle = 'rgba(10, 15, 30, 0.90)';
-        if (typeof ctx.roundRect === 'function') {
-          ctx.beginPath();
-          ctx.roundRect(10, 10, 620, 200, 28);
-          ctx.fill();
-          ctx.strokeStyle = themeColor;
-          ctx.lineWidth = 5;
-          ctx.stroke();
-        } else {
-          ctx.fillRect(10, 10, 620, 200);
-          ctx.strokeStyle = themeColor;
-          ctx.lineWidth = 5;
-          ctx.strokeRect(10, 10, 620, 200);
-        }
-
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
-        ctx.fillRect(32, 24, 210, 36);
-        ctx.font = 'bold 20px system-ui, -apple-system, sans-serif';
-        ctx.fillStyle = themeColor;
-        ctx.textAlign = 'left';
-        ctx.fillText(`${icon} ${isPhrase ? 'INTERACTIVE PHRASE' : 'CORE CONCEPT'}`, 44, 49);
-
-        ctx.font = 'bold 34px system-ui, -apple-system, sans-serif';
-        ctx.fillStyle = '#ffffff';
-        let enText = itemSpec.en || itemSpec.id;
-        if (enText.length > 28) enText = enText.slice(0, 26) + '...';
-        ctx.fillText(enText, 34, 110);
-
-        ctx.font = '22px system-ui, -apple-system, sans-serif';
-        ctx.fillStyle = '#38bdf8';
-        const ipaText = itemSpec.ipa ? `${itemSpec.ipa}  •  ` : '';
-        ctx.fillText(ipaText, 34, 155);
-
-        const ipaWidth = ctx.measureText(ipaText).width;
-        ctx.font = '600 22px system-ui, -apple-system, sans-serif';
-        ctx.fillStyle = '#cbd5e1';
-        let esText = itemSpec.es || '';
-        if (esText.length > 24) esText = esText.slice(0, 22) + '...';
-        ctx.fillText(esText, 34 + ipaWidth, 155);
-
-        const spriteTex = new THREE.CanvasTexture(canvas);
-        const spriteMat = new THREE.SpriteMaterial({ map: spriteTex, transparent: true, depthWrite: false });
-        const sprite = new THREE.Sprite(spriteMat);
-        sprite.scale.set(2.4, 0.825, 1.0);
-        sprite.position.set(0, 0.65, 0);
-        sprite.visible = false;
-        sprite.raycast = () => {};
-        sprite.userData = { isLabelSprite: true, ignoreRaycast: true };
-        pinGroup.add(sprite);
-        pinGroup.labelSprite = sprite;
-      }
-    }
-
-    // Orbe/Pin Discreto Miniatura (esfera translúcida de radio 0.18 con aro sutil)
-    const PhysicalMat = THREE.MeshPhysicalMaterial || THREE.MeshStandardMaterial;
-    const matOrb = new PhysicalMat({
-      color: themeHex,
-      emissive: themeHex,
-      emissiveIntensity: 0.5,
-      roughness: 0.15,
-      metalness: 0.1,
-      transparent: true,
-      opacity: 0.85,
-      clearcoat: 0.8
-    });
-    const orb = new THREE.Mesh(new THREE.SphereGeometry(0.18, 20, 16), matOrb);
-    orb.name = 'ConceptOrb_' + (itemSpec.id || itemSpec.en);
-    pinGroup.add(orb);
-
-    const ringMeshGeo = new THREE.TorusGeometry(0.24, 0.015, 8, 28);
-    const ringMeshMat = new THREE.MeshBasicMaterial({ color: themeHex, transparent: true, opacity: 0.75 });
-    const ringMesh = new THREE.Mesh(ringMeshGeo, ringMeshMat);
-    ringMesh.rotation.x = Math.PI / 2;
-    pinGroup.add(ringMesh);
-    pinGroup.ring = ringMesh;
-    pinGroup.sphere = orb;
-    pinGroup.phase = Math.random() * Math.PI * 2;
-
-    const tetherGeo = new THREE.CylinderGeometry(0.006, 0.006, py, 8);
-    const tetherMat = new THREE.MeshBasicMaterial({ color: themeHex, transparent: true, opacity: 0.55 });
-    const tether = new THREE.Mesh(tetherGeo, tetherMat);
-    tether.position.set(0, -py / 2, 0);
-    pinGroup.add(tether);
-
-    const groundRingGeo = new THREE.RingGeometry(0.12, 0.18, 24);
-    const groundRingMat = new THREE.MeshBasicMaterial({ color: themeHex, side: THREE.DoubleSide, transparent: true, opacity: 0.4 });
-    const groundRing = new THREE.Mesh(groundRingGeo, groundRingMat);
-    groundRing.rotation.x = -Math.PI / 2;
-    groundRing.position.set(0, -py + 0.01, 0);
-    pinGroup.add(groundRing);
-
-
-
-
     const userData = {
-      interactive: true,
+      interactive: false,
       isConceptNode: true,
       id: itemSpec.id,
       en: itemSpec.en,
@@ -5673,23 +5548,16 @@ ensureOrbitControls();
       wordEs: itemSpec.es,
       focusPos: { x: px + (px >= 0 ? -1.8 : 1.8), y: Math.max(2.0, py + 0.8), z: pz + 2.6 },
       lookAtPos: { x: px, y: py, z: pz },
-      labelSprite: pinGroup.labelSprite || null
+      labelSprite: null
     };
 
-    WORLD3D_VOCAB_CATALOG[itemSpec.id] = userData;
-    pinGroup.userData = Object.assign({}, userData);
-    pinGroup.traverse(child => {
-      if (child.isMesh) {
-        child.userData = Object.assign({}, userData, { parentGroup: pinGroup, interactive: true });
-      } else if (child.isSprite) {
-        child.raycast = () => {};
-      }
-    });
+    if (itemSpec.id) {
+      WORLD3D_VOCAB_CATALOG[itemSpec.id] = userData;
+    }
 
-    interactiveObjects.push(pinGroup);
-    createSpatialHotspotForObject(pinGroup, itemSpec.id);
-    animatedConceptNodes.push(pinGroup);
-    return pinGroup;
+    // No se generan esferas, globos, aros ni postes flotantes en el aire.
+    // Los conceptos y frases se consultan limpiamente desde el catálogo del HUD.
+    return null;
   }
   global.buildHolographicConceptNode = buildHolographicConceptNode;
   global.World3D = global.World3D || {};
@@ -6088,7 +5956,7 @@ ensureOrbitControls();
       B.buildDatingScene(scenarioDynamicRoot);
       rebuildDatingSeatedAvatars();
       if (typeof global.setWaiterState === 'function') {
-        global.setWaiterState('approaching', { silent: true });
+        global.setWaiterState('station', { silent: true });
       }
     } else if (key === 'garden') {
       createSpaceDome(scenarioDynamicRoot);
@@ -6265,7 +6133,7 @@ ensureOrbitControls();
       if (key === 'dating') {
         rebuildDatingSeatedAvatars();
         if (typeof global.setWaiterState === 'function') {
-          global.setWaiterState('approaching', { silent: true });
+          global.setWaiterState('station', { silent: true });
         }
       }
     }
@@ -7071,7 +6939,7 @@ ensureOrbitControls();
   function getStoredFriendsListForDating() {
     const list = [];
     try {
-      const keys = ['mastereng_friends_list', 'english_app_friends', 'mastereng_contacts'];
+      const keys = ['mastereng_friends', 'mastereng_friends_list', 'english_app_friends', 'mastereng_contacts'];
       keys.forEach(k => {
         const raw = localStorage.getItem(k);
         if (raw) {
@@ -7090,13 +6958,6 @@ ensureOrbitControls();
         }
       });
     } catch (e) {}
-    if (list.length === 0) {
-      list.push(
-        { id: 'MENG-2048', name: 'Sofia (Pareja / BFF)', gender: 'female' },
-        { id: 'MENG-5190', name: 'Alex (Study Partner)', gender: 'male' },
-        { id: 'MENG-8831', name: 'Emma (C1 Tutor Friend)', gender: 'female' }
-      );
-    }
     return list;
   }
 
@@ -7123,20 +6984,29 @@ ensureOrbitControls();
 
         <div class="space-y-1.5">
           <div class="text-[11px] font-extrabold uppercase tracking-wider text-rose-200">👥 Tus Contactos Agregados</div>
-          <div class="space-y-1.5 max-h-40 overflow-y-auto pr-1">
-            ${friends.map(f => `
-              <div class="flex items-center justify-between p-2.5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-rose-500/50 transition">
-                <div>
-                  <div class="text-xs font-extrabold text-white">${f.name}</div>
-                  <div class="text-[10px] font-mono text-sky-400">ID: ${f.id}</div>
+          ${friends.length > 0 ? `
+            <div class="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+              ${friends.map(f => `
+                <div class="flex items-center justify-between p-2.5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-rose-500/50 transition">
+                  <div>
+                    <div class="text-xs font-extrabold text-white">${f.name}</div>
+                    <div class="text-[10px] font-mono text-sky-400">ID: ${f.id}</div>
+                  </div>
+                  <button type="button" onclick="window.confirmDatingPartnerInvite('${f.id}', '${f.name.replace(/'/g, '')}', '${f.gender || 'female'}')"
+                    class="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-extrabold shadow cursor-pointer">
+                    💌 Invitar y Sentar
+                  </button>
                 </div>
-                <button type="button" onclick="window.confirmDatingPartnerInvite('${f.id}', '${f.name.replace(/'/g, '')}', '${f.gender || 'female'}')"
-                  class="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-extrabold shadow cursor-pointer">
-                  💌 Invitar y Sentar
-                </button>
-              </div>
-            `).join('')}
-          </div>
+              `).join('')}
+            </div>
+          ` : `
+            <div class="p-3.5 rounded-2xl bg-slate-900/80 border border-dashed border-rose-500/30 text-center space-y-1">
+              <div class="text-rose-400 text-sm">📭</div>
+              <p class="text-[11px] text-slate-300 leading-relaxed">
+                Aún no tienes amigos agregados en tu lista de contactos. Ingresa el ID Único (MENG-XXXX) de tu amigo o pareja abajo para invitarlo a tu mesa.
+              </p>
+            </div>
+          `}
         </div>
 
         <div class="space-y-2 pt-2 border-t border-slate-800">

@@ -1642,15 +1642,28 @@ window.isCurrentUserAdmin = function() {
     }
 
     window.navigateTo = function(viewId) {
-      if (viewId === 'pets' || viewId === 'sanctuary' || viewId === 'masterpet') {
+      if (viewId === 'pets' || viewId === 'sanctuary' || viewId === 'pet_sanctuary' || viewId === 'masterpet' || viewId === 'view-pet-sanctuary' || viewId === 'pet') {
+        const hubViews = ['view-home', 'hub-view', 'view-auth', 'login-view', 'view-path', 'view-stories', 'view-music', 'view-worldtour', 'ai-tutor-view', 'view-jest-game', 'view-community'];
+        hubViews.forEach(vid => {
+          const el = document.getElementById(vid);
+          if (el) {
+            el.classList.add('hidden');
+            el.style.setProperty('display', 'none', 'important');
+            el.style.setProperty('pointer-events', 'none', 'important');
+            el.style.setProperty('visibility', 'hidden', 'important');
+          }
+        });
         if (typeof window.openPetSanctuary === 'function') {
           window.openPetSanctuary();
           return;
         }
       } else {
         const petSanctuary = document.getElementById('view-pet-sanctuary');
-        if (petSanctuary && petSanctuary.style.display !== 'none') {
-          petSanctuary.style.display = 'none';
+        if (petSanctuary) {
+          petSanctuary.classList.add('hidden');
+          petSanctuary.style.setProperty('display', 'none', 'important');
+          petSanctuary.style.setProperty('pointer-events', 'none', 'important');
+          petSanctuary.style.setProperty('visibility', 'hidden', 'important');
         }
         if (typeof window.removeFloatingPetButtons === 'function') {
           window.removeFloatingPetButtons();
@@ -1722,7 +1735,14 @@ window.isCurrentUserAdmin = function() {
         'social': 'view-community',
         'chat': 'view-community',
         'community': 'view-community',
-        'view-community': 'view-community'
+        'view-community': 'view-community',
+        'pets': 'view-pet-sanctuary',
+        'pet_sanctuary': 'view-pet-sanctuary',
+        'pet-sanctuary': 'view-pet-sanctuary',
+        'sanctuary': 'view-pet-sanctuary',
+        'masterpet': 'view-pet-sanctuary',
+        'view-pet-sanctuary': 'view-pet-sanctuary',
+        'pet': 'view-pet-sanctuary'
       };
       const cleanRaw = (viewId || '').toString().trim();
       const targetId = viewMap[cleanRaw] || viewMap[cleanRaw.replace(/[-_]view$/, '')] || cleanRaw;
@@ -1760,7 +1780,7 @@ window.isCurrentUserAdmin = function() {
         if (typeof window.initAiTutorChat === 'function') window.initAiTutorChat();
       }
 
-      ['view-auth', 'view-home', 'view-path', 'view-stories', 'view-music', 'view-worldtour', 'ai-tutor-view', 'view-jest-game', 'view-community'].forEach(v => {
+      ['view-auth', 'view-home', 'view-path', 'view-stories', 'view-music', 'view-worldtour', 'ai-tutor-view', 'view-jest-game', 'view-community', 'view-pet-sanctuary'].forEach(v => {
         const el = document.getElementById(v);
         if (el) {
           if (v === targetId) {
@@ -1997,6 +2017,24 @@ window.logout = function() {
         wt.classList.add('hidden');
         wt.style.setProperty('display', 'none', 'important');
       }
+      const petSanctuary = document.getElementById('view-pet-sanctuary');
+      if (petSanctuary) {
+        petSanctuary.classList.add('hidden');
+        petSanctuary.style.setProperty('display', 'none', 'important');
+        petSanctuary.style.setProperty('pointer-events', 'none', 'important');
+        petSanctuary.style.setProperty('visibility', 'hidden', 'important');
+      }
+      const petGame = document.getElementById('view-pet-game');
+      if (petGame) {
+        petGame.classList.add('hidden');
+        petGame.style.setProperty('display', 'none', 'important');
+      }
+      if (typeof window.closePetSanctuary === 'function') {
+        try { window.closePetSanctuary(); } catch (_) {}
+      }
+      if (typeof window.removeFloatingPetButtons === 'function') {
+        try { window.removeFloatingPetButtons(); } catch (_) {}
+      }
       if (document.body && document.body.classList) { document.body.classList.remove('view-worldtour-active', 'portal-3d-fallback-active'); }
       if (window.AndroidBridge && typeof window.AndroidBridge.setScreenOrientation === 'function') {
         try { window.AndroidBridge.setScreenOrientation('sensor'); } catch (e) {}
@@ -2042,7 +2080,10 @@ window.logout = function() {
         path: { title: 'Learning Path', sub: 'Cargando módulos de vocabulario y misiones...', glow: 'rgba(245, 158, 11, 0.4)', icon: '🌌', view: 'view-path' },
         stories: { title: 'Cuentos Clásicos', sub: 'Sincronizando 6 obras ilustradas y Speaking Coach...', glow: 'rgba(16, 185, 129, 0.4)', icon: '🌲', view: 'view-stories' },
         music: { title: 'Music Session', sub: 'Conectando reproductor interactivo y karaoke...', glow: 'rgba(6, 182, 212, 0.4)', icon: '⚡', view: 'view-music' },
-        worldtour: { title: 'World Tour 3D', sub: 'Instanciando casa 3D realista y objetos interactivos...', glow: 'rgba(168, 85, 247, 0.4)', icon: '🪐', view: 'view-worldtour' }
+        worldtour: { title: 'World Tour 3D', sub: 'Instanciando casa 3D realista y objetos interactivos...', glow: 'rgba(168, 85, 247, 0.4)', icon: '🪐', view: 'view-worldtour' },
+        pets: { title: 'MasterPet Sanctuary', sub: 'Cargando santuario de mascotas y hábitats 2D...', glow: 'rgba(16, 185, 129, 0.4)', icon: '🐾', view: 'view-pet-sanctuary' },
+        pet_sanctuary: { title: 'MasterPet Sanctuary', sub: 'Cargando santuario de mascotas y hábitats 2D...', glow: 'rgba(16, 185, 129, 0.4)', icon: '🐾', view: 'view-pet-sanctuary' },
+        masterpet: { title: 'MasterPet Sanctuary', sub: 'Cargando santuario de mascotas y hábitats 2D...', glow: 'rgba(16, 185, 129, 0.4)', icon: '🐾', view: 'view-pet-sanctuary' }
       }[targetModule] || { title: 'Módulo', sub: 'Cargando...', glow: 'rgba(56, 189, 248, 0.4)', icon: '🚀', view: 'view-path' };
 
       if (subtitleEl) subtitleEl.textContent = meta.sub;
@@ -2331,6 +2372,9 @@ window.logout = function() {
     }
     window.handleCoverCardClick = handleCoverCardClick;
 
+    window.openPortal = function(targetPortal) {
+      return window.openPortalModules(targetPortal);
+    };
     window.openPortalModules = function(targetPortal) {
       const portalModules = ['path', 'worldtour', 'music', 'ai-tutor', 'stories', 'jest', 'social', 'pets'];
       const activeIdx = (typeof window.currentPortal === 'number')
@@ -2422,7 +2466,23 @@ window.logout = function() {
         } else if (typeof window.openCommunityHubView === 'function') {
           window.openCommunityHubView();
         }
-      } else if (portal === 'pets' || portal === 'sanctuary' || portal === 'masterpet') {
+      } else if (portal === 'pets' || portal === 'sanctuary' || portal === 'pet_sanctuary' || portal === 'masterpet' || portal === 'pet' || portal === 'view-pet-sanctuary') {
+        // Ocultar primero la vista del hub de portales igual que al abrir Mundo 3D o Karaoke, evitando que queden dos vistas activas al mismo tiempo
+        const hubViews = ['view-home', 'hub-view', 'view-auth', 'login-view', 'view-path', 'view-stories', 'view-music', 'view-worldtour', 'ai-tutor-view', 'view-jest-game', 'view-community'];
+        hubViews.forEach(vid => {
+          const el = document.getElementById(vid);
+          if (el) {
+            el.classList.add('hidden');
+            el.style.setProperty('display', 'none', 'important');
+            el.style.setProperty('pointer-events', 'none', 'important');
+            el.style.setProperty('visibility', 'hidden', 'important');
+          }
+        });
+        if (typeof window.navigateToView === 'function') {
+          window.navigateToView('view-pet-sanctuary');
+        } else if (typeof showView === 'function') {
+          showView('view-pet-sanctuary');
+        }
         if (typeof window.openPetSanctuary === 'function') {
           window.openPetSanctuary();
         }
@@ -8948,6 +9008,7 @@ window.logout = function() {
   window.showView = showView;
   window.goToHomePortals = goToHomePortals;
   window.openPortalWithLoader = openPortalWithLoader;
+  window.openPortal = openPortalModules;
   window.getStoredUser = getStoredUser;
   window.saveStoredUser = saveStoredAuthUser;
   window.saveStoredAuthUser = saveStoredAuthUser;
