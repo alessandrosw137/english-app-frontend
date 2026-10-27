@@ -16,6 +16,10 @@
 (function (global) {
   'use strict';
 
+  global.World3D = global.World3D || {};
+  const World3D = global.World3D;
+  if (typeof window !== 'undefined') window.World3D = World3D;
+
   // Registro global de constructores modulares de alta definición
   global.MasterENG3DBuilders = global.MasterENG3DBuilders || {};
   if (typeof window !== 'undefined') window.MasterENG3DBuilders = global.MasterENG3DBuilders;
@@ -7503,7 +7507,10 @@ ensureOrbitControls();
 
     // Eliminar cualquier barra antigua superpuesta (#world3dControlHudBar)
     const legacyHudBar = document.getElementById('world3dControlHudBar');
-    if (legacyHudBar) legacyHudBar.remove();
+    if (legacyHudBar) {
+      if (typeof legacyHudBar.remove === 'function') legacyHudBar.remove();
+      else if (legacyHudBar.parentNode) legacyHudBar.parentNode.removeChild(legacyHudBar);
+    }
 
     // Ocultar botón flotante suelto #world3dFloatingBackBtn
     let floatBackBtn = document.getElementById('world3dFloatingBackBtn');
@@ -7655,8 +7662,9 @@ ensureOrbitControls();
     }
 
     const selectEl = document.getElementById('world3dScenarioSelect');
-    if (selectEl && !selectEl.dataset.boundWorld3DChange) {
-      selectEl.dataset.boundWorld3DChange = 'true';
+    if (selectEl && (!selectEl.dataset || !selectEl.dataset.boundWorld3DChange) && !selectEl._boundWorld3DChange) {
+      if (selectEl.dataset) selectEl.dataset.boundWorld3DChange = 'true';
+      selectEl._boundWorld3DChange = true;
       selectEl.addEventListener('change', (e) => {
         window.World3D.switchScenario(e.target.value);
       });
@@ -8536,20 +8544,56 @@ ensureOrbitControls();
     initSharedMaterials();
     isWorldTourActive = true;
 
-    const viewWorldTour = document.getElementById('view-worldtour') || document.getElementById('world3d-view');
+    // a) Ocultar otros módulos si no estamos ya en world3d
+    if (typeof window !== 'undefined' && typeof window.hideAllModules === 'function' && window._activeModule !== 'world3d') {
+      window.hideAllModules();
+    }
+
+    // b) Inmediatamente después, forzar visibilidad del contenedor 3D principal
+    const container3d = typeof document !== 'undefined' ? document.getElementById('world3d-container') : null;
+    if (container3d) {
+      container3d.classList.remove('hidden');
+      container3d.style.setProperty('display', 'block', 'important');
+      container3d.style.setProperty('visibility', 'visible', 'important');
+      container3d.style.setProperty('opacity', '1', 'important');
+    }
+
+    const viewWorldTour = typeof document !== 'undefined'
+      ? (document.getElementById('view-worldtour') || document.getElementById('world3d-view'))
+      : null;
     if (viewWorldTour) {
       viewWorldTour.classList.remove('hidden');
       viewWorldTour.style.setProperty('display', 'block', 'important');
       viewWorldTour.style.setProperty('visibility', 'visible', 'important');
       viewWorldTour.style.setProperty('opacity', '1', 'important');
     }
-    if (typeof document !== 'undefined' && document.body) {
-      document.body.classList.add('view-worldtour-active');
-      document.body.classList.remove('portal-3d-fallback-active');
+
+    if (typeof document !== 'undefined') {
+      ['view-worldtour', 'world3d-view', 'canvas-container', 'threeCanvasContainer', 'threeWebGLMount'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.classList.remove('hidden');
+          el.style.setProperty('display', 'block', 'important');
+          el.style.setProperty('visibility', 'visible', 'important');
+          el.style.setProperty('opacity', '1', 'important');
+        }
+      });
+      if (document.body && document.body.classList) {
+        document.body.classList.add('view-worldtour-active');
+        document.body.classList.remove('portal-3d-fallback-active');
+      }
+      window._activeModule = 'world3d';
     }
 
     // Forzar orientación horizontal (landscape) y verificar advertencia visual en portrait
     enforceWorldTourLandscape();
+
+    // Actualizar tamaño de la cámara y el renderer inmediatamente tras hacer visible el contenedor
+    if (World3D.camera && World3D.renderer) {
+      World3D.camera.aspect = window.innerWidth / window.innerHeight;
+      World3D.camera.updateProjectionMatrix();
+      World3D.renderer.setSize(window.innerWidth, window.innerHeight);
+    }
 
     // Obtener contenedor (#world3d-view, #canvas-container, #world3d-container, #world3d-canvas, #threeCanvasContainer, #threeWebGLMount)
     let container = document.getElementById('world3d-view') ||
@@ -8583,11 +8627,24 @@ ensureOrbitControls();
         mountTarget.innerHTML = '';
         mountTarget.appendChild(renderer.domElement);
       }
-      const width = window.innerWidth;
-      const height = Math.max(320, window.innerHeight - 56);
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
-      renderer.setSize(width, height, false);
+      if (renderer.domElement) {
+        renderer.domElement.style.setProperty('display', 'block', 'important');
+        renderer.domElement.style.setProperty('visibility', 'visible', 'important');
+        renderer.domElement.style.setProperty('opacity', '1', 'important');
+      }
+
+      if (World3D.camera && World3D.renderer) {
+        World3D.camera.aspect = window.innerWidth / window.innerHeight;
+        World3D.camera.updateProjectionMatrix();
+        World3D.renderer.setSize(window.innerWidth, window.innerHeight);
+      } else {
+        const width = window.innerWidth;
+        const height = Math.max(320, window.innerHeight - 56);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(width, height);
+      }
+
       if (IS_IOS) {
         renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.4));
         renderer.shadowMap.enabled = false;
@@ -8598,6 +8655,7 @@ ensureOrbitControls();
       if (controls) controls.update();
       updateProgressHudCounter();
 
+      isWorldTourActive = true;
       if (!animFrameId) {
         lastFrameTime = performance.now();
         animFrameId = requestAnimationFrame(animate3D);
@@ -8622,7 +8680,7 @@ ensureOrbitControls();
       alpha: true, /* alpha: false */
       powerPreference: "high-performance"
     });
-    renderer.setSize(width, height, false);
+    renderer.setSize(width, height);
     if (IS_IOS) {
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.4));
       renderer.shadowMap.enabled = false;
@@ -8857,6 +8915,15 @@ ensureOrbitControls();
 
     animFrameId = requestAnimationFrame(animate3D);
 
+    if (World3D.camera && World3D.renderer) {
+      World3D.camera.aspect = window.innerWidth / window.innerHeight;
+      World3D.camera.updateProjectionMatrix();
+      World3D.renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+    if (renderer && scene && camera) {
+      renderer.render(scene, camera);
+    }
+
     // 8. ResizeObserver además de window.resize para redimensionado instantáneo sin pantalla en negro
     window.addEventListener("resize", onWindowResize);
     window.addEventListener("orientationchange", () => {
@@ -8924,6 +8991,47 @@ ensureOrbitControls();
   }
 
   function switch3DScenario(scenarioKey) {
+    // a) Llama a if(window.hideAllModules) window.hideAllModules();
+    if (typeof window !== 'undefined' && typeof window.hideAllModules === 'function' && window._activeModule !== 'world3d') {
+      window.hideAllModules();
+    }
+
+    // b) Inmediatamente después, fuerza la visibilidad del contenedor 3D
+    const container3d = typeof document !== 'undefined' ? document.getElementById('world3d-container') : null;
+    if (container3d) {
+      container3d.classList.remove('hidden');
+      container3d.style.setProperty('display', 'block', 'important');
+      container3d.style.setProperty('visibility', 'visible', 'important');
+      container3d.style.setProperty('opacity', '1', 'important');
+    }
+
+    if (typeof document !== 'undefined') {
+      ['view-worldtour', 'world3d-view', 'canvas-container', 'threeCanvasContainer', 'threeWebGLMount'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.classList.remove('hidden');
+          el.style.setProperty('display', 'block', 'important');
+          el.style.setProperty('visibility', 'visible', 'important');
+          el.style.setProperty('opacity', '1', 'important');
+        }
+      });
+      if (document.body && document.body.classList) {
+        document.body.classList.add('view-worldtour-active');
+        document.body.classList.remove('portal-3d-fallback-active');
+      }
+      window._activeModule = 'world3d';
+    }
+
+    // Asegurar que el motor esté inicializado o reanudado
+    initOrResumeWorld3D();
+
+    // Forzar redimensionado y actualización de la projection matrix en World3D
+    if (World3D.camera && World3D.renderer) {
+      World3D.camera.aspect = window.innerWidth / window.innerHeight;
+      World3D.camera.updateProjectionMatrix();
+      World3D.renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
     const key = String(scenarioKey || 'house').toLowerCase().trim();
 
     // Si es una sub-zona rápida de la casa ("study" o "living") y ya estamos en house, enfocar cámara
@@ -8937,14 +9045,19 @@ ensureOrbitControls();
     const scenMeta = WORLD_TOUR_SCENARIOS[targetScenario];
     const scenarioTitle = (scenMeta && scenMeta.title) ? scenMeta.title : targetScenario;
 
-    // Si el motor aún no se había inicializado al cambiar el select, inicializarlo ahora
-    if (!scene && typeof THREE !== 'undefined') {
-      initOrResumeWorld3D();
-    }
-
     if (scene) {
       buildScenarioWorld(scene, targetScenario);
       applyDayNightState(targetScenario === 'dating' || targetScenario === 'space');
+    }
+
+    // Asegurar bucle de animación activo y renderizado inmediato
+    isWorldTourActive = true;
+    if (!animFrameId && typeof global.animate3D === 'function') {
+      lastFrameTime = performance.now();
+      animFrameId = requestAnimationFrame(global.animate3D);
+    }
+    if (renderer && scene && camera) {
+      renderer.render(scene, camera);
     }
 
     // Actualizar botones rápidos de cámara ("Vista General", "Zona 1", "Zona 2", "Zona 3") al mundo activo
@@ -9032,8 +9145,9 @@ ensureOrbitControls();
     }
 
     const selectEl = document.getElementById('world3dScenarioSelect');
-    if (selectEl && !selectEl.dataset.boundWorld3DChange) {
-      selectEl.dataset.boundWorld3DChange = 'true';
+    if (selectEl && (!selectEl.dataset || !selectEl.dataset.boundWorld3DChange) && !selectEl._boundWorld3DChange) {
+      if (selectEl.dataset) selectEl.dataset.boundWorld3DChange = 'true';
+      selectEl._boundWorld3DChange = true;
       selectEl.addEventListener('change', (e) => {
         window.World3D.switchScenario(e.target.value);
       });
@@ -9417,6 +9531,7 @@ ensureOrbitControls();
   global.focusObjectById = focusObjectById;
 
   global.initOrResumeWorld3D = initOrResumeWorld3D;
+  global.initWorld3D = initOrResumeWorld3D;
   global.pauseWorld3D = pauseWorld3D;
   global.initThreeWorldTour = initOrResumeWorld3D;
   global.focusWorld3DZone = focusWorld3DZone;
@@ -9478,6 +9593,7 @@ ensureOrbitControls();
 
   Object.assign(global.World3D, {
     initOrResumeWorld3D,
+    initWorld3D: initOrResumeWorld3D,
     resizeWorld3DFullscreen: onWindowResize,
     pauseWorld3D,
     switchScenario: (typeof window !== 'undefined' && window.World3D && window.World3D.switchScenario) ? window.World3D.switchScenario : switch3DScenario,

@@ -2394,8 +2394,14 @@ window.logout = function() {
     window.handleCoverCardClick = handleCoverCardClick;
 
     window.openPortal = function(targetPortal) {
+      if (targetPortal === 'world3d' || targetPortal === 'worldtour') {
+        if (typeof window.open3DPortalView === 'function') {
+          return window.open3DPortalView();
+        }
+      }
       return window.openPortalModules(targetPortal);
     };
+    window.initWorld3D = window.open3DPortalView;
     window.openPortalModules = function(targetPortal) {
       const portalModules = ['path', 'worldtour', 'music', 'ai-tutor', 'stories', 'jest', 'social', 'pets'];
       const activeIdx = (typeof window.currentPortal === 'number')
@@ -6520,6 +6526,14 @@ window.logout = function() {
     // ========================================================
 
     function switch3DScenario(scenarioKey) {
+      if (typeof window.hideAllModules === 'function') {
+        window.hideAllModules();
+      }
+      const c3d = document.getElementById('world3d-container');
+      if (c3d) {
+        c3d.classList.remove('hidden');
+        c3d.style.setProperty('display', 'block', 'important');
+      }
       if (window.World3D && typeof window.World3D.switchScenario === 'function') {
         return window.World3D.switchScenario(scenarioKey);
       }
@@ -15358,6 +15372,37 @@ window.open3DPortalView = function(e) {
     if (typeof e.stopPropagation === 'function') e.stopPropagation();
   }
 
+  // a) Ocultar módulos previos para optimización y evitar superposiciones
+  if (typeof window.hideAllModules === 'function') {
+    window.hideAllModules();
+  }
+
+  // b) Inmediatamente después, forzar visibilidad del contenedor 3D principal
+  const world3dContainer = document.getElementById('world3d-container');
+  if (world3dContainer) {
+    world3dContainer.classList.remove('hidden');
+    world3dContainer.style.setProperty('display', 'block', 'important');
+    world3dContainer.style.setProperty('visibility', 'visible', 'important');
+    world3dContainer.style.setProperty('opacity', '1', 'important');
+  }
+
+  // Restaurar visibilidad completa de la jerarquía 3D en el DOM
+  ['view-worldtour', 'world3d-view', 'canvas-container', 'threeCanvasContainer', 'threeWebGLMount'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.classList.remove('hidden');
+      el.style.setProperty('display', 'block', 'important');
+      el.style.setProperty('visibility', 'visible', 'important');
+      el.style.setProperty('opacity', '1', 'important');
+    }
+  });
+
+  if (document.body && document.body.classList) {
+    document.body.classList.add('view-worldtour-active');
+    document.body.classList.remove('portal-3d-fallback-active');
+  }
+  window._activeModule = 'world3d';
+
   // 1. Siempre crear/asegurar el elemento para los tests de sandbox VM
   let view3D = document.getElementById('portal-3d-master-view');
   if (!view3D) {
@@ -15377,30 +15422,6 @@ window.open3DPortalView = function(e) {
     if (view3D) {
       view3D.classList.add('hidden');
       view3D.style.setProperty('display', 'none', 'important');
-    }
-
-    // Ocultar solo las demás vistas principales de nivel superior
-    ['view-home', 'view-auth', 'view-path', 'view-stories', 'view-music', 'ai-tutor-view', 'login-view'].forEach(vid => {
-      const v = document.getElementById(vid);
-      if (v) {
-        v.classList.add('hidden');
-        v.style.setProperty('display', 'none', 'important');
-      }
-    });
-
-    if (document.body && document.body.classList) { document.body.classList.add('view-worldtour-active'); document.body.classList.remove('portal-3d-fallback-active'); }
-
-    viewWorldTour.classList.remove('hidden');
-    viewWorldTour.style.setProperty('display', 'block', 'important');
-    viewWorldTour.style.setProperty('visibility', 'visible', 'important');
-    viewWorldTour.style.setProperty('opacity', '1', 'important');
-
-    const w3dView = document.getElementById('world3d-view');
-    if (w3dView) {
-      w3dView.classList.remove('hidden');
-      w3dView.style.setProperty('display', 'block', 'important');
-      w3dView.style.setProperty('visibility', 'visible', 'important');
-      w3dView.style.setProperty('opacity', '1', 'important');
     }
 
     const topBar = document.getElementById('worldTourTopBar');
@@ -15428,6 +15449,16 @@ window.open3DPortalView = function(e) {
       try { realInit(); } catch (err) { console.error('Error starting 3D simulator:', err); }
     } else if (typeof window.initThreeWorldTour === 'function') {
       try { window.initThreeWorldTour(); } catch (err) { console.error('Error in initThreeWorldTour:', err); }
+    }
+
+    // Forzar redimensionado y actualización de projection matrix en World3D
+    const w3d = window.World3D || global.World3D;
+    if (w3d && w3d.camera && w3d.renderer) {
+      try {
+        w3d.camera.aspect = window.innerWidth / window.innerHeight;
+        w3d.camera.updateProjectionMatrix();
+        w3d.renderer.setSize(window.innerWidth, window.innerHeight);
+      } catch (_) {}
     }
 
     if (typeof window.ensureEmergencyBackBar === 'function') {
