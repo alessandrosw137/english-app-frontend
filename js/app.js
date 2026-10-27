@@ -1898,7 +1898,11 @@ window.isCurrentUserAdmin = function() {
           } catch (err) { console.error(err); }
         }, 60);
       }
-      if (targetId === 'view-music') {
+      if (targetId === 'view-music' && typeof window.openMusicPortal === 'function') {
+        // Apertura centralizada: hideAllModules() + #view-music + #music-search-subview
+        window.openMusicPortal();
+      } else if (targetId === 'view-music') {
+        if (typeof window.hideAllModules === 'function') window.hideAllModules();
         const vm = document.getElementById('view-music');
         const ms = document.getElementById('music-search-subview');
         const mp = document.getElementById('music-player-subview');
@@ -2134,6 +2138,7 @@ window.logout = function() {
         if (progressBar) progressBar.style.width = '100%';
         if (percentEl) percentEl.textContent = '100%';
 
+        if (targetModule === 'music' && typeof window.hideAllModules === 'function') window.hideAllModules();
         showView(meta.view);
         if (targetModule === 'stories') renderStorySelector();
         if (targetModule === 'music') {
@@ -2421,6 +2426,10 @@ window.logout = function() {
           showView('view-worldtour');
         }
       } else if (portal === 'music') {
+        if (typeof window.openMusicPortal === 'function') {
+          window.openMusicPortal();
+          return;
+        }
         if (typeof window.navigateToView === 'function') {
           window.navigateToView('view-music');
         } else if (typeof showView === 'function') {
@@ -14391,6 +14400,79 @@ window.parseLrcUniversal = function(lrcString, totalSongDuration = 210) {
   return parsed;
 };
 
+// --- ROUTER SPA: LIMPIEZA UNIVERSAL DE MÓDULOS (hideAllModules) ---
+// Oculta TODOS los contenedores principales de portales y overlays activos, y pausa
+// la reproducción multimedia / render 3D en segundo plano. Debe invocarse ANTES de
+// mostrar cualquier portal para evitar superposiciones (p. ej. el buscador del Karaoke
+// visible encima de MasterPet Sanctuary) y para no dejar módulos pesados corriendo.
+window.hideAllModules = function hideAllModules() {
+  if (typeof document === 'undefined') return;
+
+  const moduleSelectors = [
+    // Menú principal / Hub de Portales Arcanos
+    '#viewHome', '#view-home', '#portalHub', '.portals-section',
+    // Música / Karaoke
+    '#karaoke-container', '#searchSub', '#music-search-subview', '#music-player-subview',
+    '#musicSearchSuggestions', '#viewMusic', '#view-music',
+    // MasterPet Sanctuary y hábitat 2D
+    '#pet-sanctuary-root', '#view-pet-sanctuary', '#view-pet-game',
+    // Mundo 3D
+    '#world3d-container', '#world3d-view', '#view-worldtour', '#portal-3d-master-view',
+    '#world3dFloatingBackBtn', '#worldTourTopBar',
+    // Resto de portales
+    '#view-path', '#view-stories', '#ai-tutor-view', '#view-jest-game', '#view-community',
+    // Overlays activos residuales
+    '#crash-recovery-overlay', '#emergency-nav-bar'
+  ];
+
+  const processed = new Set();
+  moduleSelectors.forEach(sel => {
+    let nodes;
+    try { nodes = document.querySelectorAll(sel); } catch (_) { return; }
+    nodes.forEach(el => {
+      if (!el || processed.has(el)) return;
+      processed.add(el);
+      el.classList.add('hidden');
+      el.style.setProperty('display', 'none', 'important');
+    });
+  });
+
+  // Pausar cualquier reproductor de YouTube activo
+  if (window.player && typeof window.player.pauseVideo === 'function') {
+    try { window.player.pauseVideo(); } catch (_) {}
+  }
+  [window.ytPlayer, window._holoYtPlayer, window.ytMusicPlayer].forEach(p => {
+    if (p && p !== window.player && typeof p.pauseVideo === 'function') {
+      try { p.pauseVideo(); } catch (_) {}
+    }
+  });
+  const audioEl = document.getElementById('mastereng-audio');
+  if (audioEl && !audioEl.paused) {
+    try { audioEl.pause(); } catch (_) {}
+  }
+
+  // Detener timers de sincronización del Karaoke
+  if (window._karaokePlaybackTimer) {
+    clearInterval(window._karaokePlaybackTimer);
+    window._karaokePlaybackTimer = null;
+  }
+  if (window.KaraokeSyncEngine && typeof window.KaraokeSyncEngine.stop === 'function') {
+    try { window.KaraokeSyncEngine.stop(); } catch (_) {}
+  }
+
+  // Pausar el loop de render 3D para liberar GPU/CPU
+  if (typeof window.pauseWorld3D === 'function') {
+    try { window.pauseWorld3D(); } catch (_) {}
+  } else if (window.World3D && typeof window.World3D.pauseWorld3D === 'function') {
+    try { window.World3D.pauseWorld3D(); } catch (_) {}
+  }
+
+  if (document.body && document.body.classList) {
+    document.body.classList.remove('view-worldtour-active', 'portal-3d-fallback-active', 'pet-sanctuary-active', 'pet-view-active');
+  }
+  window._activeModule = null;
+};
+
 // --- MOTOR UNIVERSAL DE EVENTOS Y CLICS ---
 (function() {
   window.returnToMainPortals = function(e) {
@@ -14408,6 +14490,11 @@ window.parseLrcUniversal = function(lrcString, totalSongDuration = 210) {
     }
     if (typeof window.removeFloatingPetButtons === 'function') {
       try { window.removeFloatingPetButtons(); } catch (_) {}
+    }
+
+    // 0b. Limpieza universal: ocultar TODOS los módulos y pausar multimedia/3D
+    if (typeof window.hideAllModules === 'function') {
+      try { window.hideAllModules(); } catch (_) {}
     }
 
     // 1. Detener cualquier audio, narración o video en reproducción
@@ -14493,6 +14580,17 @@ window.parseLrcUniversal = function(lrcString, totalSongDuration = 210) {
     const homeEl = document.getElementById('view-home');
     const authEl = document.getElementById('view-auth') || document.getElementById('login-view');
     if (hasUser && homeEl) {
+      // Mostrar ÚNICAMENTE el menú principal de Portales Arcanos
+      ['#viewHome', '#portalHub', '.portals-section', '#coverFlowViewport'].forEach(sel => {
+        try {
+          document.querySelectorAll(sel).forEach(el => {
+            el.classList.remove('hidden');
+            el.style.removeProperty('display');
+            el.style.removeProperty('visibility');
+            el.style.removeProperty('pointer-events');
+          });
+        } catch (_) {}
+      });
       homeEl.classList.remove('hidden');
       homeEl.style.setProperty('display', 'flex', 'important');
       homeEl.style.setProperty('pointer-events', 'auto', 'important');
@@ -14524,6 +14622,8 @@ window.parseLrcUniversal = function(lrcString, totalSongDuration = 210) {
     setTimeout(() => { window._isReturningToPortals = false; }, 80);
   }
 };
+// "⬅ Volver a Portales": hideAllModules() + mostrar únicamente #view-home / #portalHub
+window.backToPortals = window.returnToMainPortals;
 
 // Vincular switchMasterView('hub') a esta función infalible
 window.switchMasterView = function(targetMode) {

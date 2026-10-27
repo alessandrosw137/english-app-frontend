@@ -372,18 +372,11 @@
     }
 
     function renderMusicTracksList(filter = '') {
-      const viewMusic = document.getElementById('view-music');
-      const searchSub = document.getElementById('music-search-subview');
-      if (viewMusic) {
-        viewMusic.classList.remove('hidden');
-        viewMusic.style.setProperty('display', 'block', 'important');
-      }
-      if (searchSub) {
-        searchSub.classList.remove('hidden');
-        searchSub.style.setProperty('display', 'block', 'important');
-        searchSub.style.setProperty('visibility', 'visible', 'important');
-        searchSub.style.setProperty('opacity', '1', 'important');
-      }
+      // perf(router): esta función SOLO renderiza la lista de pistas. Ya no fuerza la
+      // visibilidad de #view-music / #music-search-subview, porque al invocarse en el
+      // arranque o en segundo plano dejaba el buscador del Karaoke encima de otros
+      // portales (p. ej. MasterPet Sanctuary). La apertura visible del portal se
+      // centraliza en window.openMusicPortal().
       const container = document.getElementById('musicTrackButtonsContainer');
       if (!container) return;
 
@@ -1088,6 +1081,47 @@
       }
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+
+    // Apertura del portal de Música / Karaoke (vista de búsqueda)
+    function openMusicPortal() {
+      // Limpieza universal ANTES de mostrar el buscador: evita superposición con otros portales
+      if (typeof window.hideAllModules === 'function') window.hideAllModules();
+
+      const viewMusic = document.getElementById('view-music');
+      const searchSub = document.getElementById('music-search-subview');
+      const playerSub = document.getElementById('music-player-subview');
+      if (playerSub) {
+        playerSub.classList.add('hidden');
+        playerSub.style.setProperty('display', 'none', 'important');
+      }
+      if (viewMusic) {
+        viewMusic.classList.remove('hidden', 'offline-locked');
+        viewMusic.style.setProperty('display', 'block', 'important');
+        viewMusic.style.setProperty('visibility', 'visible', 'important');
+        viewMusic.style.setProperty('opacity', '1', 'important');
+        viewMusic.style.setProperty('pointer-events', 'auto', 'important');
+      }
+      if (searchSub) {
+        searchSub.classList.remove('hidden', 'offline-locked');
+        searchSub.style.setProperty('display', 'block', 'important');
+        searchSub.style.setProperty('visibility', 'visible', 'important');
+        searchSub.style.setProperty('opacity', '1', 'important');
+        searchSub.style.setProperty('pointer-events', 'auto', 'important');
+      }
+      window._activeModule = 'music';
+
+      renderMusicTracksList('');
+      if (typeof window.clearMusicSearchInput === 'function') {
+        try { window.clearMusicSearchInput(); } catch (_) {}
+      }
+      if (typeof window.renderTrendingTracksCarousel === 'function') {
+        try { window.renderTrendingTracksCarousel(); } catch (_) {}
+      }
+      if (typeof window.scrollTo === 'function') {
+        try { window.scrollTo({ top: 0, behavior: 'instant' }); } catch (_) {}
+      }
+    }
+    window.openMusicPortal = openMusicPortal;
 
     window.openMusicPlayerStage = function() {
       // 1. Garantizar que todas las demás vistas raíz estén ocultas EXCEPTO #view-music
