@@ -900,25 +900,43 @@
   // 8. CONTROL DE ENTRADA: WINDOW.OPENPETSANCTUARY()
   // ==========================================================================
   function openPetSanctuary(petId = null) {
+    if (global.hideAllModules) global.hideAllModules();
+
     // 1. Verificación estricta de login
     if (!isUserLoggedIn()) {
+      // Mantener visible el menú de Portales detrás del modal de bloqueo
+      const homeEl = document.getElementById('view-home') || document.getElementById('viewHome');
+      if (homeEl) {
+        homeEl.classList.remove('hidden');
+        homeEl.style.setProperty('display', 'flex', 'important');
+      }
       renderAuthLockModal();
       return;
     }
 
     removeFloatingPetButtons();
 
-    // 2. Guardar estado y ocultar carrusel y portales de fondo
+    // 2. Guardar estado y ocultar cualquier sección residual de fondo
     hidePortalViewsAndSaveState();
 
     if (typeof document !== 'undefined' && document.body) {
       document.body.classList.add('pet-sanctuary-active');
     }
 
+    // 3. Mostrar ÚNICAMENTE el contenedor de mascotas
+    const petRoot = document.getElementById('pet-sanctuary-root');
+    if (petRoot) {
+      petRoot.classList.remove('hidden');
+      petRoot.style.display = 'block';
+      petRoot.style.setProperty('display', 'block', 'important');
+    }
     const container = ensureSanctuaryDOM();
     container.classList.remove('hidden');
-    container.style.display = 'flex';
+    container.style.setProperty('display', 'flex', 'important');
+    container.style.setProperty('visibility', 'visible', 'important');
+    container.style.setProperty('pointer-events', 'auto', 'important');
     sanctuaryState.isOpen = true;
+    global._activeModule = 'pets';
 
     if (petId) {
       const pets = loadStoredPets();
@@ -935,6 +953,23 @@
   }
 
   function closePetSanctuary() {
+    // Guardia de reentrada: closePetSanctuary -> goToHomePortals -> closePetSanctuary
+    // generaba una recursión profunda (hasta desbordar la pila) en cada cambio de portal.
+    if (sanctuaryState._isClosing) return;
+    sanctuaryState._isClosing = true;
+    try {
+      closePetSanctuaryInternal();
+    } finally {
+      sanctuaryState._isClosing = false;
+    }
+  }
+
+  function closePetSanctuaryInternal() {
+    const rootView = document.getElementById('view-pet-sanctuary');
+    const wasOpen = Boolean(sanctuaryState.isOpen) || Boolean(
+      rootView && !rootView.classList.contains('hidden') && rootView.style.display !== 'none'
+    );
+
     const petSelectors = [
       '#view-pet-sanctuary',
       '#pet-sanctuary-root',
@@ -1007,6 +1042,13 @@
     }
 
     removeFloatingPetButtons();
+
+    if (global._activeModule === 'pets') global._activeModule = null;
+
+    // Si el santuario no estaba abierto (p. ej. limpieza preventiva al abrir otro portal),
+    // no restauramos el Hub ni redirigimos: evita que #view-home reaparezca debajo del
+    // portal que se está abriendo y ahorra trabajo de layout innecesario.
+    if (!wasOpen) return;
 
     // Restaurar con precisión el estado de visualización previo del carrusel de Portales Arcanos
     restorePortalViewsState();

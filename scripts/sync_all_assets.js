@@ -100,9 +100,12 @@ if (fs.existsSync(path.join(root, 'scripts'))) {
 const criticalFiles = [
   'index.html',
   'sw.js',
+  'css/style.css',
+  'css/styles.css',
   'css/pet_profile.css',
   'js/app.js',
   'js/world3d.js',
+  'js/karaoke.js',
   'js/pet_minigames_2d.js',
   'js/pet_engine_2d.js',
   'js/pet_sanctuary.js',
