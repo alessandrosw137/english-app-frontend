@@ -2403,6 +2403,11 @@ window.logout = function() {
       if (typeof document !== 'undefined' && document.body && document.body.classList) {
         document.body.classList.add('in-immersive-portal');
       }
+      if (targetPortal === 'music' || targetPortal === 'karaoke') {
+        if (typeof window.openMusicPortal === 'function') {
+          return window.openMusicPortal();
+        }
+      }
       if (targetPortal === 'world3d' || targetPortal === 'worldtour') {
         if (typeof window.open3DPortalView === 'function') {
           return window.open3DPortalView();

@@ -18,6 +18,7 @@
 
   global.World3D = global.World3D || {};
   const World3D = global.World3D;
+  World3D._rafId = World3D._rafId || null;
   if (typeof window !== 'undefined') window.World3D = World3D;
 
   // Registro global de constructores modulares de alta definición
@@ -42,6 +43,18 @@
   let resizeObserver = null;
   let lastFrameTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
   let clock = typeof THREE !== 'undefined' ? new THREE.Clock() : null;
+
+  // Singleton estricto para cancelación de bucles requestAnimationFrame apilados
+  function cancelRunningLoop() {
+    if (World3D._rafId) {
+      cancelAnimationFrame(World3D._rafId);
+      World3D._rafId = null;
+    }
+    if (animFrameId) {
+      cancelAnimationFrame(animFrameId);
+      animFrameId = null;
+    }
+  }
 
   // Estado del escenario activo (7 mundos 3D) y memoria de geometrías dinámicas
   let currentScenarioKey = 'house';
@@ -1310,7 +1323,7 @@ ensureOrbitControls();
     ctx.globalAlpha = 1.0;
 
     const tex = new THREE.CanvasTexture(canvas);
-    const domeGeo = new THREE.SphereGeometry(75, 32, 24);
+    const domeGeo = new THREE.SphereGeometry(75, 24, 16);
     const domeMat = new THREE.MeshBasicMaterial({
       map: tex,
       side: THREE.BackSide,
@@ -1963,7 +1976,7 @@ ensureOrbitControls();
 
     floorLampPointLight = new THREE.PointLight(0xffaa44, 2.4, 12.0);
     floorLampPointLight.position.set(0, 1.90, 0);
-    floorLampPointLight.castShadow = true;
+    floorLampPointLight.castShadow = false;
     floorLampPointLight.shadow.bias = -0.001;
 
     lampGroup.add(flBase, flPole, flShade, flBulb, floorLampPointLight);
@@ -2221,7 +2234,7 @@ ensureOrbitControls();
     const spot = new THREE.SpotLight(0xffedd5, 3.0, 15.0, Math.PI / 3.2, 0.55, 1.2);
     spot.position.set(0, 3.28, 0);
     spot.target.position.set(-0.8, 0, 0.5);
-    spot.castShadow = true;
+    spot.castShadow = false;
     spot.shadow.mapSize.width = 512;
     spot.shadow.mapSize.height = 512;
     streetLanternSpotLight = spot;
@@ -3505,13 +3518,13 @@ ensureOrbitControls();
     // --- MUNDO SPACE (OUTER SPACE & ASTRONOMY) ---
     else if (id === 'space_sun') {
       const sunMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xf97316, emissiveIntensity: 2.2, roughness: 0.2 });
-      const core = new THREE.Mesh(new THREE.SphereGeometry(1.45, 32, 32), sunMat);
+      const core = new THREE.Mesh(new THREE.SphereGeometry(1.45, 16, 16), sunMat);
       const halo = new THREE.Mesh(new THREE.RingGeometry(1.6, 2.1, 32), new THREE.MeshBasicMaterial({ color: 0xfbbf24, side: THREE.DoubleSide, transparent: true, opacity: 0.45 }));
       const sunLight = new THREE.PointLight(0xffedd5, 3.2, 45);
       group.add(core, halo, sunLight);
     } else if (id === 'space_earth' || id === 'space_axial_rotation') {
       const earthMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, emissive: 0x0369a1, emissiveIntensity: 0.35, roughness: 0.4 });
-      const globe = new THREE.Mesh(new THREE.SphereGeometry(0.72, 28, 28), earthMat);
+      const globe = new THREE.Mesh(new THREE.SphereGeometry(0.72, 16, 16), earthMat);
       const cont = new THREE.Mesh(new THREE.DodecahedronGeometry(0.74, 1), M.leafGreen3);
       cont.scale.set(0.85, 0.65, 0.9);
       group.add(globe, cont);
@@ -3541,7 +3554,7 @@ ensureOrbitControls();
       group.add(mars, iceCap);
     } else if (id === 'space_saturn') {
       const satMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, emissive: 0xb45309, emissiveIntensity: 0.25, roughness: 0.45 });
-      const planet = new THREE.Mesh(new THREE.SphereGeometry(0.85, 28, 28), satMat);
+      const planet = new THREE.Mesh(new THREE.SphereGeometry(0.85, 16, 16), satMat);
       const torusRing1 = new THREE.Mesh(new THREE.TorusGeometry(1.38, 0.14, 16, 48), new THREE.MeshStandardMaterial({ color: 0xfde68a, roughness: 0.45, metalness: 0.15 }));
       torusRing1.rotation.x = Math.PI / 2.35;
       torusRing1.scale.z = 0.18;
@@ -3550,7 +3563,7 @@ ensureOrbitControls();
       torusRing2.scale.z = 0.18;
       group.add(planet, torusRing1, torusRing2);
     } else if (id === 'space_black_hole') {
-      const eventHorizon = new THREE.Mesh(new THREE.SphereGeometry(0.68, 28, 28), new THREE.MeshBasicMaterial({ color: 0x000000 }));
+      const eventHorizon = new THREE.Mesh(new THREE.SphereGeometry(0.68, 16, 16), new THREE.MeshBasicMaterial({ color: 0x000000 }));
       const accretionInner = new THREE.Mesh(new THREE.TorusGeometry(1.12, 0.16, 16, 48), new THREE.MeshStandardMaterial({ color: 0xf97316, emissive: 0xea580c, emissiveIntensity: 2.2, roughness: 0.2 }));
       accretionInner.rotation.x = Math.PI / 2.6;
       accretionInner.scale.z = 0.22;
@@ -4537,7 +4550,7 @@ ensureOrbitControls();
         space_neptune: { r: 0.68, col: 0x2563eb, em: 0x1d4ed8 }
       }[id];
       const sphere = new THREE.Mesh(
-        new THREE.SphereGeometry(pMap.r, 28, 28),
+        new THREE.SphereGeometry(pMap.r, 16, 16),
         new THREE.MeshStandardMaterial({ color: pMap.col, emissive: pMap.em, emissiveIntensity: 0.32, roughness: 0.45 })
       );
       group.add(sphere);
@@ -6145,6 +6158,7 @@ ensureOrbitControls();
     updateProgressHudCounter();
     applyNormalMapToObjectHierarchy(scenarioDynamicRoot, key);
     normalizeSceneInteractiveMetadata(activeScene, key);
+    optimizeSceneFor60FPS(activeScene);
 
     if (camera && scen.cameraPos && scen.cameraLookAt) {
       camera.position.set(scen.cameraPos.x, scen.cameraPos.y, scen.cameraPos.z);
@@ -6156,9 +6170,6 @@ ensureOrbitControls();
       }
     }
     transitionCameraTo(scen.cameraPos, scen.cameraLookAt);
-    if (renderer && camera) {
-      renderer.render(activeScene, camera);
-    }
   }
 
   // ============================================================================
@@ -6315,6 +6326,98 @@ ensureOrbitControls();
   }
   global.normalizeSceneInteractiveMetadata = normalizeSceneInteractiveMetadata;
 
+  // ============================================================================
+  // PASE DE OPTIMIZACIÓN WEBGL 60 FPS: LÍMITE DE LUCES Y SOMBRAS DINÁMICAS
+  // ============================================================================
+  function optimizeSceneFor60FPS(targetScene) {
+    const activeScene = targetScene || scene;
+    if (!activeScene || typeof THREE === 'undefined') return;
+
+    const ambientHemiLights = [];
+    const dirLights = [];
+    const pointSpotLights = [];
+
+    // Desactivar sombras dinámicas costosas en todas las mallas para 60 FPS fijos
+    activeScene.traverse(obj => {
+      if (!obj) return;
+
+      if (obj.isAmbientLight || obj.isHemisphereLight) {
+        ambientHemiLights.push(obj);
+      } else if (obj.isDirectionalLight) {
+        dirLights.push(obj);
+      } else if (obj.isPointLight || obj.isSpotLight) {
+        pointSpotLights.push(obj);
+      } else if (obj.isMesh) {
+        obj.castShadow = false;
+        obj.receiveShadow = false;
+      }
+    });
+
+    // 1. Permitir un máximo de 1 AmbientLight / HemisphereLight
+    if (ambientHemiLights.length > 1) {
+      const keptLight = ambientHemiLights.find(l => l.isHemisphereLight) || ambientHemiLights[0];
+      ambientHemiLights.forEach(light => {
+        if (light !== keptLight && light.parent) {
+          light.parent.remove(light);
+        }
+      });
+    }
+
+    // 2. Máximo 1 DirectionalLight principal (única con castShadow = true si se usaran sombras, mapa 1024x1024)
+    if (dirLights.length > 0) {
+      const mainDir = dirLights[0];
+      if (mainDir.shadow && mainDir.shadow.mapSize) {
+        mainDir.shadow.mapSize.width = 1024;
+        mainDir.shadow.mapSize.height = 1024;
+      }
+      mainDir.castShadow = false;
+      for (let i = 1; i < dirLights.length; i++) {
+        if (dirLights[i].parent) {
+          dirLights[i].parent.remove(dirLights[i]);
+        }
+      }
+    }
+
+    // 3. Máximo 2 PointLight secundarias en toda la escena. castShadow = false obligatorio en todas las PointLight y SpotLight
+    pointSpotLights.forEach(light => {
+      light.castShadow = false;
+    });
+
+    if (pointSpotLights.length > 2) {
+      const keptLights = new Set();
+      let keptCount = 0;
+
+      // Priorizar la luz de la vela en dating si existe
+      if (candleFlameLight && pointSpotLights.includes(candleFlameLight)) {
+        keptLights.add(candleFlameLight);
+        keptCount++;
+      }
+      // Priorizar studyPointLight en house si existe
+      if (studyPointLight && pointSpotLights.includes(studyPointLight) && keptCount < 2) {
+        keptLights.add(studyPointLight);
+        keptCount++;
+      }
+
+      // Completar hasta 2 PointLights
+      for (let i = 0; i < pointSpotLights.length && keptCount < 2; i++) {
+        const pl = pointSpotLights[i];
+        if (pl.isPointLight && !keptLights.has(pl)) {
+          keptLights.add(pl);
+          keptCount++;
+        }
+      }
+
+      // Remover luces excedentes (especialmente SpotLights y PointLights sobrantes)
+      pointSpotLights.forEach(light => {
+        if (!keptLights.has(light) && light.parent) {
+          light.parent.remove(light);
+        }
+      });
+    }
+  }
+  World3D.optimizeSceneFor60FPS = optimizeSceneFor60FPS;
+  global.optimizeSceneFor60FPS = optimizeSceneFor60FPS;
+
   // 7. ILUMINACIÓN CINEMÁTICA EQUILIBRADA Y CICLO DÍA / NOCHE
   // ============================================================================
   function setupCinematicLighting(targetScene) {
@@ -6347,7 +6450,7 @@ ensureOrbitControls();
     // 4. Luz cálida puntual (PointLight) en el interior de la casa para simular lámparas de estudio
     const studyLight = new THREE.PointLight(0xffaa44, 2.0, 15.0);
     studyLight.position.set(3.5, 2.5, -3.2);
-    studyLight.castShadow = true;
+    studyLight.castShadow = false;
     studyLight.shadow.bias = -0.001;
     targetScene.add(studyLight);
     studyPointLight = studyLight;
@@ -8433,7 +8536,29 @@ ensureOrbitControls();
       return null;
     }
 
+    let isPointerDown = false;
+    let isDraggingCamera = false;
+    let lastHoverRaycastTime = 0;
+
+    if (controls && typeof controls.addEventListener === 'function') {
+      controls.addEventListener('start', () => { isDraggingCamera = true; });
+      controls.addEventListener('end', () => { isDraggingCamera = false; });
+    }
+
     function handlePointerMove(e) {
+      // 1. PROHIBIDO ejecutar raycasting si la cámara se está arrastrando o rotando
+      if (isPointerDown || isDraggingCamera) {
+        domElement.style.cursor = 'grabbing';
+        return;
+      }
+
+      // 2. Throttle estricto: máximo 1 vez cada 150ms para detección de hover
+      const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+      if (now - lastHoverRaycastTime < 150) {
+        return;
+      }
+      lastHoverRaycastTime = now;
+
       const clientX = e.clientX !== undefined ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
       const clientY = e.clientY !== undefined ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
 
@@ -8458,6 +8583,7 @@ ensureOrbitControls();
     }
 
     function handlePointerDown(e) {
+      isPointerDown = true;
       const clientX = e.clientX !== undefined ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
       const clientY = e.clientY !== undefined ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
       downX = clientX;
@@ -8465,7 +8591,14 @@ ensureOrbitControls();
       downTime = Date.now();
     }
 
+    function handlePointerUpGlobal() {
+      isPointerDown = false;
+      isDraggingCamera = false;
+    }
+
     function onThreeCanvasClick(e) {
+      isPointerDown = false;
+      isDraggingCamera = false;
       const clientX = e.clientX !== undefined ? e.clientX : (e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientX : downX);
       const clientY = e.clientY !== undefined ? e.clientY : (e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientY : downY);
 
@@ -8501,6 +8634,9 @@ ensureOrbitControls();
     domElement.addEventListener('pointermove', handlePointerMove, { passive: true });
     domElement.addEventListener('pointerdown', handlePointerDown, { passive: true });
     domElement.addEventListener('pointerup', onThreeCanvasClick, { passive: true });
+    if (typeof window !== 'undefined') {
+      window.addEventListener('pointerup', handlePointerUpGlobal, { passive: true });
+    }
   }
 
   // ============================================================================
@@ -8532,10 +8668,7 @@ ensureOrbitControls();
     isWorldTourActive = false;
     if (global.World3D) global.World3D.isPaused = true;
     if (typeof window !== 'undefined' && window.World3D) window.World3D.isPaused = true;
-    if (animFrameId) {
-      cancelAnimationFrame(animFrameId);
-      animFrameId = null;
-    }
+    cancelRunningLoop();
     const overlay = typeof document !== 'undefined' ? document.getElementById('world3dPortraitWarningOverlay') : null;
     if (overlay) overlay.style.display = 'none';
   }
@@ -8551,9 +8684,11 @@ ensureOrbitControls();
       container3d.classList.remove('hidden');
       container3d.style.setProperty('display', 'block', 'important');
     }
-    if (!animFrameId && renderer && scene && camera && typeof global.animate3D === 'function') {
+    cancelRunningLoop();
+    if (renderer && scene && camera && typeof global.animate3D === 'function') {
       lastFrameTime = performance.now();
-      animFrameId = requestAnimationFrame(global.animate3D);
+      World3D._rafId = requestAnimationFrame(global.animate3D);
+      animFrameId = World3D._rafId;
     }
   }
 
@@ -8668,23 +8803,20 @@ ensureOrbitControls();
         renderer.setSize(width, height);
       }
 
-      const maxDPR = window.innerWidth < 768 ? 1.25 : 1.75;
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxDPR));
-      if (IS_IOS) {
-        renderer.shadowMap.enabled = false;
-      } else {
-        renderer.shadowMap.enabled = true;
-      }
+      const maxDPR = 1.5;
+      renderer.setPixelRatio(Math.min((typeof window !== 'undefined' && window.devicePixelRatio) || 1, maxDPR));
+      renderer.shadowMap.enabled = false;
 
       if (controls) controls.update();
       updateProgressHudCounter();
 
       isWorldTourActive = true;
-      if (!animFrameId) {
+      cancelRunningLoop();
+      if (typeof global.animate3D === 'function') {
         lastFrameTime = performance.now();
-        animFrameId = requestAnimationFrame(animate3D);
+        World3D._rafId = requestAnimationFrame(global.animate3D);
+        animFrameId = World3D._rafId;
       }
-      renderer.render(scene, camera);
       return;
     }
 
@@ -8698,21 +8830,16 @@ ensureOrbitControls();
     camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 250);
     camera.position.set(CAMERA_ZONES.overview.pos.x, CAMERA_ZONES.overview.pos.y, CAMERA_ZONES.overview.pos.z);
 
-    // 3. THREE.WebGLRenderer con antialias: true, alpha: false, powerPreference: "high-performance" y optimización iOS Safari
+    // 3. THREE.WebGLRenderer con antialias, powerPreference: "high-performance", stencil: false y shadowMap desactivado
     renderer = new THREE.WebGLRenderer({
-      antialias: !IS_IOS, /* antialias: true */
-      alpha: true, /* alpha: false */
-      powerPreference: "high-performance"
+      antialias: ((typeof window !== 'undefined' ? window.devicePixelRatio : 1) <= 1.5),
+      powerPreference: 'high-performance',
+      stencil: false,
+      depth: true
     });
     renderer.setSize(width, height);
-    const maxDPR = window.innerWidth < 768 ? 1.25 : 1.75;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxDPR));
-    if (IS_IOS) {
-      renderer.shadowMap.enabled = false;
-    } else {
-      renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    }
+    renderer.setPixelRatio(Math.min((typeof window !== 'undefined' && window.devicePixelRatio) || 1, 1.5));
+    renderer.shadowMap.enabled = false; // Desactivar shadowMap costoso para garantizar 60 FPS clavados en los 7 mundos
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.1;
 
@@ -8760,13 +8887,12 @@ ensureOrbitControls();
         : null;
       const isHidden = container3d && (container3d.classList.contains('hidden') || container3d.style.display === 'none');
       if (!isWorldTourActive || (global.World3D && global.World3D.isPaused) || isHidden) {
-        if (animFrameId) {
-          cancelAnimationFrame(animFrameId);
-          animFrameId = null;
-        }
+        cancelRunningLoop();
         return;
       }
-      animFrameId = requestAnimationFrame(animate3D);
+      cancelRunningLoop();
+      World3D._rafId = requestAnimationFrame(animate3D);
+      animFrameId = World3D._rafId;
 
       const delta = Math.min(((now || performance.now()) - lastFrameTime) / 1000, 0.1);
       lastFrameTime = now || performance.now();
@@ -8947,15 +9073,15 @@ ensureOrbitControls();
     const animate = animate3D;
     global.animate3D = animate3D;
 
-    animFrameId = requestAnimationFrame(animate3D);
+    cancelRunningLoop();
+    lastFrameTime = performance.now();
+    World3D._rafId = requestAnimationFrame(animate3D);
+    animFrameId = World3D._rafId;
 
     if (World3D.camera && World3D.renderer) {
       World3D.camera.aspect = window.innerWidth / window.innerHeight;
       World3D.camera.updateProjectionMatrix();
       World3D.renderer.setSize(window.innerWidth, window.innerHeight);
-    }
-    if (renderer && scene && camera) {
-      renderer.render(scene, camera);
     }
 
     // 8. ResizeObserver además de window.resize para redimensionado instantáneo sin pantalla en negro
@@ -8985,14 +9111,13 @@ ensureOrbitControls();
     // 9. Pausa automática en segundo plano para ahorro de recursos
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
-        if (animFrameId) {
-          cancelAnimationFrame(animFrameId);
-          animFrameId = null;
-        }
+        cancelRunningLoop();
       } else {
-        if (isWorldTourActive && !animFrameId) {
+        if (isWorldTourActive && typeof global.animate3D === 'function') {
+          cancelRunningLoop();
           lastFrameTime = performance.now();
-          animFrameId = requestAnimationFrame(animate3D);
+          World3D._rafId = requestAnimationFrame(global.animate3D);
+          animFrameId = World3D._rafId;
         }
       }
     });
@@ -9011,8 +9136,7 @@ ensureOrbitControls();
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
       renderer.setSize(width, height, false);
-      const maxDPR = window.innerWidth < 768 ? 1.25 : 1.75;
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxDPR));
+      renderer.setPixelRatio(Math.min((typeof window !== 'undefined' && window.devicePixelRatio) || 1, 1.5));
 
       const container = typeof document !== 'undefined'
         ? (document.getElementById('canvas-container') || document.getElementById('threeCanvasContainer') || document.getElementById('world3d-view') || document.getElementById('view-worldtour'))
@@ -9022,7 +9146,9 @@ ensureOrbitControls();
         container.style.minHeight = `${height}px`;
       }
 
-      if (scene) renderer.render(scene, camera);
+      if (scene && (!isWorldTourActive || (global.World3D && global.World3D.isPaused))) {
+        renderer.render(scene, camera);
+      }
     }
   }
 
@@ -9086,14 +9212,13 @@ ensureOrbitControls();
       applyDayNightState(targetScenario === 'dating' || targetScenario === 'space');
     }
 
-    // Asegurar bucle de animación activo y renderizado inmediato
+    // Asegurar bucle de animación activo (singleton) y un solo render por frame
     isWorldTourActive = true;
-    if (!animFrameId && typeof global.animate3D === 'function') {
+    cancelRunningLoop();
+    if (typeof global.animate3D === 'function') {
       lastFrameTime = performance.now();
-      animFrameId = requestAnimationFrame(global.animate3D);
-    }
-    if (renderer && scene && camera) {
-      renderer.render(scene, camera);
+      World3D._rafId = requestAnimationFrame(global.animate3D);
+      animFrameId = World3D._rafId;
     }
 
     // Actualizar botones rápidos de cámara ("Vista General", "Zona 1", "Zona 2", "Zona 3") al mundo activo

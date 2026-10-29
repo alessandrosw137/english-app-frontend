@@ -215,6 +215,23 @@
       }
     },
 
+    setExactOffset(val, songId) {
+      const sId = songId || this.currentSongId;
+      this.offsetSec = Math.round(val * 10) / 10;
+      window.lyricsOffset = this.offsetSec;
+      if (sId) {
+        try {
+          localStorage.setItem('k_offset_' + sId, String(this.offsetSec));
+          localStorage.setItem('karaoke_offset_' + sId, String(this.offsetSec));
+        } catch (_) {}
+      }
+      this.updateOffsetBadgeUI();
+      if (typeof showFloatingToast === 'function') {
+        const sign = this.offsetSec >= 0 ? '+' : '';
+        showFloatingToast(`🎯 Sincronía ajustada al verso: ${sign}${this.offsetSec.toFixed(1)}s`, '🎯');
+      }
+    },
+
     updateOffsetBadgeUI() {
       const sign = (typeof this.offsetSec === 'number' && this.offsetSec > 0) ? '+' : '';
       const text = typeof this.offsetSec === 'number' ? (sign + this.offsetSec.toFixed(1) + 's') : '0.0s';
@@ -274,25 +291,30 @@
   function ensureKaraokeOffsetControls() {
     if (typeof document === 'undefined') return;
     let ctrl = document.getElementById('karaokeOffsetControls');
-    if (!ctrl) {
-      const container = document.getElementById('karaoke-lyrics-container') || document.getElementById('musicLyricsContainer');
-      if (container && container.parentNode) {
-        ctrl = document.createElement('div');
-        ctrl.id = 'karaokeOffsetControls';
-        ctrl.className = 'karaoke-sync-floating-bar flex items-center justify-between gap-2 px-3 py-1.5 mb-2.5 bg-slate-950/90 border border-cyan-500/40 rounded-xl text-xs font-mono text-slate-300 shadow-lg backdrop-blur-md sticky top-0 z-20';
-        ctrl.innerHTML = `
+    const container = document.getElementById('karaoke-lyrics-container') || document.getElementById('musicLyricsContainer');
+    if (!ctrl && container && container.parentNode) {
+      ctrl = document.createElement('div');
+      ctrl.id = 'karaokeOffsetControls';
+      ctrl.className = 'karaoke-sync-floating-bar bg-slate-950/95 border border-cyan-500/40 rounded-2xl p-2.5 mb-3 text-xs shadow-xl backdrop-blur-md sticky top-0 z-20';
+      ctrl.innerHTML = `
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
           <div class="flex items-center gap-1.5">
             <span class="text-cyan-400 font-bold text-[11px] flex items-center gap-1">⏱️ Sincronía:</span>
-            <span id="karaokeOffsetBadge" class="px-2 py-0.5 rounded-md bg-cyan-950 border border-cyan-500/50 text-cyan-300 font-bold text-[11px]">0.0s</span>
+            <span id="karaokeOffsetBadge" class="px-2 py-0.5 rounded-md bg-cyan-950 border border-cyan-500/50 text-cyan-300 font-mono font-bold text-[11px]">0.0s</span>
           </div>
           <div class="flex items-center gap-1">
-            <button type="button" onclick="window.KaraokeSyncEngine.adjustOffset(-0.5)" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-cyan-950/80 active:scale-95 text-slate-200 hover:text-cyan-300 text-[10px] font-bold transition cursor-pointer border border-slate-700 hover:border-cyan-500/50" title="Adelantar letra 0.5s">[-0.5s]</button>
-            <button type="button" onclick="window.KaraokeSyncEngine.setOffset(0)" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 hover:text-cyan-300 text-[10px] font-bold transition cursor-pointer border border-slate-700" title="Reiniciar sincronía a 0.0s">[0.0s]</button>
-            <button type="button" onclick="window.KaraokeSyncEngine.adjustOffset(0.5)" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-cyan-950/80 active:scale-95 text-slate-200 hover:text-cyan-300 text-[10px] font-bold transition cursor-pointer border border-slate-700 hover:border-cyan-500/50" title="Retrasar letra 0.5s">[+0.5s]</button>
+            <button type="button" onclick="window.KaraokeSyncEngine.adjustOffset(-1.0)" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-cyan-950 active:scale-95 text-slate-200 hover:text-cyan-300 text-[10px] font-mono font-bold transition cursor-pointer border border-slate-700 hover:border-cyan-500/50" title="Adelantar letra 1.0s">[-1.0s]</button>
+            <button type="button" onclick="window.KaraokeSyncEngine.adjustOffset(-0.2)" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-cyan-950 active:scale-95 text-slate-200 hover:text-cyan-300 text-[10px] font-mono font-bold transition cursor-pointer border border-slate-700 hover:border-cyan-500/50" title="Adelantar letra 0.2s">[-0.2s]</button>
+            <button type="button" onclick="window.KaraokeSyncEngine.setOffset(0)" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 hover:text-white text-[10px] font-mono font-bold transition cursor-pointer border border-slate-700" title="Reiniciar sincronía a 0.0s">[Reset]</button>
+            <button type="button" onclick="window.KaraokeSyncEngine.adjustOffset(0.2)" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-cyan-950 active:scale-95 text-slate-200 hover:text-cyan-300 text-[10px] font-mono font-bold transition cursor-pointer border border-slate-700 hover:border-cyan-500/50" title="Retrasar letra 0.2s">[+0.2s]</button>
+            <button type="button" onclick="window.KaraokeSyncEngine.adjustOffset(1.0)" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-cyan-950 active:scale-95 text-slate-200 hover:text-cyan-300 text-[10px] font-mono font-bold transition cursor-pointer border border-slate-700 hover:border-cyan-500/50" title="Retrasar letra 1.0s">[+1.0s]</button>
           </div>
-        `;
-        container.parentNode.insertBefore(ctrl, container);
-      }
+        </div>
+        <p class="text-[11px] text-cyan-300/90 leading-tight">
+          💡 <strong>Tip:</strong> Haz clic en el verso que esté cantando ahora mismo para sincronizar toda la canción al instante
+        </p>
+      `;
+      container.parentNode.insertBefore(ctrl, container);
     }
   }
   window.ensureKaraokeOffsetControls = ensureKaraokeOffsetControls;
@@ -314,39 +336,43 @@
       {
         id: "losing_my_religion",
         title: "Losing My Religion",
-        defaultOffset: -0.5,
         artist: "R.E.M.",
         genre: "Alternative Rock",
+        level: "B1",
+        levelBadgeClass: "bg-amber-500/20 text-amber-300 border-amber-500/40",
         youtubeId: "xwtdhWltSIg",
         duration: "4:28",
+        defaultOffset: 0.0,
         lyrics: [
-          { time: 8, text: "Oh life is bigger, it's bigger than you", es: "Oh, la vida es más grande, es más grande que tú" },
-          { time: 13, text: "And you are not me, the lengths that I will go to", es: "Y tú no eres yo, los extremos a los que llegaré" },
-          { time: 18, text: "The distance in your eyes", es: "La distancia en tus ojos" },
-          { time: 24, text: "Oh no, I've said too much, I set it up", es: "Oh no, he dicho demasiado, lo he provocado" },
-          { time: 30, text: "That's me in the corner, that's me in the spotlight", es: "Ese soy yo en la esquina, ese soy yo bajo el reflector" },
-          { time: 36, text: "Losing my religion", es: "Perdiendo el control y mi paciencia" },
-          { time: 41, text: "Trying to keep up with you, and I don't know if I can do it", es: "Tratando de mantener tu ritmo, y no sé si podré lograrlo" },
-          { time: 47, text: "Oh no, I've said too much, I haven't said enough", es: "Oh no, he dicho demasiado, no he dicho lo suficiente" },
-          { time: 54, text: "I thought that I heard you laughing", es: "Creí haberte escuchado reír" },
-          { time: 58, text: "I thought that I heard you sing", es: "Creí haberte escuchado cantar" },
-          { time: 63, text: "I think I thought I saw you try", es: "Creo que creí verte intentarlo" },
-          { time: 70, text: "Every whisper, of every waking hour", es: "Cada susurro, de cada hora despierto" },
-          { time: 76, text: "I'm choosing my confessions, trying to keep an eye on you", es: "Elijo mis confesiones, intentando no perderte de vista" },
-          { time: 82, text: "Like a hurt, lost and blinded fool, fool", es: "Como un tonto herido, perdido y cegado" }
+          { time: 18, text: "Oh life is bigger, it's bigger than you", es: "Oh, la vida es más grande, es más grande que tú" },
+          { time: 23, text: "And you are not me, the lengths that I will go to", es: "Y tú no eres yo, los extremos a los que llegaré" },
+          { time: 28, text: "The distance in your eyes", es: "La distancia en tus ojos" },
+          { time: 34, text: "Oh no, I've said too much, I set it up", es: "Oh no, he dicho demasiado, lo he provocado" },
+          { time: 40, text: "That's me in the corner, that's me in the spotlight", es: "Ese soy yo en la esquina, ese soy yo bajo el reflector" },
+          { time: 46, text: "Losing my religion", es: "Perdiendo el control y mi paciencia" },
+          { time: 51, text: "Trying to keep up with you, and I don't know if I can do it", es: "Tratando de mantener tu ritmo, y no sé si podré lograrlo" },
+          { time: 57, text: "Oh no, I've said too much, I haven't said enough", es: "Oh no, he dicho demasiado, no he dicho lo suficiente" },
+          { time: 64, text: "I thought that I heard you laughing", es: "Creí haberte escuchado reír" },
+          { time: 68, text: "I thought that I heard you sing", es: "Creí haberte escuchado cantar" },
+          { time: 73, text: "I think I thought I saw you try", es: "Creo que creí verte intentarlo" },
+          { time: 80, text: "Every whisper, of every waking hour", es: "Cada susurro, de cada hora despierto" },
+          { time: 86, text: "I'm choosing my confessions, trying to keep an eye on you", es: "Elijo mis confesiones, intentando no perderte de vista" },
+          { time: 92, text: "Like a hurt, lost and blinded fool, fool", es: "Como un tonto herido, perdido y cegado" }
         ]
       },
       {
         id: "rolling_in_the_deep",
         title: "Rolling in the Deep",
-        defaultOffset: -0.4,
         artist: "Adele",
         genre: "Pop Soul",
+        level: "B2",
+        levelBadgeClass: "bg-purple-500/20 text-purple-300 border-purple-500/40",
         youtubeId: "rYEDA3JcQqw",
         duration: "3:48",
+        defaultOffset: 0.0,
         lyrics: [
           { time: 8, text: "There's a fire starting in my heart", es: "Hay un fuego encendiéndose en mi corazón" },
-          { time: 13, text: "Reaching a fever pitch, it's bringing me out the dark", es: "Alcanzando su punto álgido, me saca de la oscuridad" },
+          { time: 12, text: "Reaching a fever pitch, it's bringing me out the dark", es: "Alcanzando su punto álgido, me saca de la oscuridad" },
           { time: 17, text: "Finally I can see you crystal clear", es: "Por fin puedo verte con total claridad" },
           { time: 21, text: "Go 'head and sell me out and I'll lay your ship bare", es: "Adelante, traicióname y dejaré tu barco al descubierto" },
           { time: 26, text: "See how I'll leave with every piece of you", es: "Mira cómo me iré con cada pedazo de ti" },
@@ -354,24 +380,27 @@
           { time: 43, text: "The scars of your love remind me of us", es: "Las cicatrices de tu amor me recuerdan a nosotros" },
           { time: 47, text: "They keep me thinking that we almost had it all", es: "Me hacen seguir pensando que casi lo tuvimos todo" },
           { time: 60, text: "We could have had it all... Rolling in the deep!", es: "Pudimos haberlo tenido todo... ¡Rodando en lo más profundo!" },
-          { time: 69, text: "You had my heart inside of your hand", es: "Tenías mi corazón dentro de tu mano" }
+          { time: 69, text: "You had my heart inside of your hand, and you played it to the beat", es: "Tenías mi corazón dentro de tu mano, y jugaste con él al compás" }
         ]
       },
       {
         id: "viva_la_vida",
         title: "Viva La Vida",
-        defaultOffset: -0.6,
         artist: "Coldplay",
         genre: "Alt Rock",
+        level: "B1",
+        levelBadgeClass: "bg-amber-500/20 text-amber-300 border-amber-500/40",
         youtubeId: "dvgZkm1xWPE",
         duration: "4:02",
+        defaultOffset: 0.0,
         lyrics: [
-          { time: 12, text: "I used to rule the world", es: "Solía gobernar el mundo" },
-          { time: 16, text: "Seas would rise when I gave the word", es: "Los mares se elevaban cuando daba la orden" },
-          { time: 20, text: "Now in the morning I sleep alone", es: "Ahora por la mañana duermo en soledad" },
+          { time: 13, text: "I used to rule the world", es: "Solía gobernar el mundo" },
+          { time: 17, text: "Seas would rise when I gave the word", es: "Los mares se elevaban cuando daba la orden" },
+          { time: 21, text: "Now in the morning I sleep alone", es: "Ahora por la mañana duermo en soledad" },
           { time: 25, text: "Sweep the streets I used to own", es: "Barro las calles que solían ser mías" },
           { time: 30, text: "I used to roll the dice", es: "Solía tirar los dados" },
           { time: 34, text: "Feel the fear in my enemy's eyes", es: "Sentir el temor en los ojos de mis enemigos" },
+          { time: 38, text: "Listen as the crowd would sing", es: "Escuchar cómo cantaba la multitud" },
           { time: 42, text: "Now the old king is dead, long live the king!", es: "Ahora el viejo rey ha muerto, ¡larga vida al rey!" },
           { time: 51, text: "One minute I held the key", es: "Un minuto tenía la llave" },
           { time: 55, text: "Next the walls were closed on me", es: "Al siguiente las paredes se cerraron sobre mí" },
@@ -382,11 +411,13 @@
       {
         id: "dont_stop_me_now",
         title: "Don't Stop Me Now",
-        defaultOffset: -0.5,
         artist: "Queen",
         genre: "Classic Rock",
+        level: "B1",
+        levelBadgeClass: "bg-amber-500/20 text-amber-300 border-amber-500/40",
         youtubeId: "HgzGwKwLmgM",
         duration: "3:30",
+        defaultOffset: 0.0,
         lyrics: [
           { time: 7, text: "Tonight I'm gonna have myself a real good time", es: "Esta noche me la voy a pasar realmente bien" },
           { time: 13, text: "I feel alive and the world I'll turn it inside out, yeah", es: "Me siento vivo y pondré el mundo de cabeza, sí" },
@@ -394,20 +425,25 @@
           { time: 33, text: "I'm a shooting star leaping through the sky like a tiger", es: "Soy una estrella fugaz saltando por el cielo como un tigre" },
           { time: 40, text: "Defying the laws of gravity", es: "Desafiando las leyes de la gravedad" },
           { time: 43, text: "I'm a racing car passing by like Lady Godiva", es: "Soy un auto de carreras pasando como Lady Godiva" },
-          { time: 47, text: "I'm gonna go, go, go, there's no stopping me!", es: "¡Voy a avanzar y avanzar, no hay quien me detenga!" }
+          { time: 47, text: "I'm gonna go, go, go, there's no stopping me!", es: "¡Voy a avanzar y avanzar, no hay quien me detenga!" },
+          { time: 55, text: "That's why they call me Mister Fahrenheit", es: "Por eso me llaman Señor Fahrenheit" },
+          { time: 59, text: "I'm traveling at the speed of light", es: "Estoy viajando a la velocidad de la luz" }
         ]
       },
       {
         id: "believer",
         title: "Believer",
-        defaultOffset: -0.4,
         artist: "Imagine Dragons",
         genre: "Indie Rock",
+        level: "B1",
+        levelBadgeClass: "bg-amber-500/20 text-amber-300 border-amber-500/40",
         youtubeId: "7wtfhZwyrcc",
         duration: "3:24",
+        defaultOffset: 0.0,
         lyrics: [
           { time: 8, text: "First things first: I'ma say all the words inside my head", es: "Lo primero es lo primero: diré todo lo que llevo en mi cabeza" },
           { time: 13, text: "I'm fired up and tired of the way that things have been", es: "Estoy encendido y cansado de cómo han sido las cosas" },
+          { time: 22, text: "Second thing second: don't you tell me what you think that I could be", es: "Lo segundo: no me digas lo que crees que debería ser" },
           { time: 26, text: "I'm the one at the sail, I'm the master of my sea", es: "Soy quien lleva las velas, soy el dueño de mi destino" },
           { time: 33, text: "I was broken from a young age", es: "Estuve roto desde temprana edad" },
           { time: 36, text: "Taking my sulking to the masses", es: "Llevando mis lamentos ante las multitudes" },
@@ -417,16 +453,20 @@
       {
         id: "shape_of_you",
         title: "Shape of You",
-        defaultOffset: -0.5,
         artist: "Ed Sheeran",
         genre: "Pop Hit",
+        level: "A2",
+        levelBadgeClass: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40",
         youtubeId: "JGwWNGJdvx8",
         duration: "3:53",
+        defaultOffset: 0.0,
         lyrics: [
           { time: 9, text: "The club isn't the best place to find a lover", es: "El club no es el mejor sitio para encontrar un amor" },
           { time: 13, text: "So the bar is where I go", es: "Así que voy directo al bar" },
-          { time: 23, text: "Come over and start up a conversation with just me", es: "Acércate e inicia una conversación a solas conmigo" },
-          { time: 27, text: "And trust me I'll give it a chance now", es: "Y créeme, le daré una oportunidad ahora" },
+          { time: 18, text: "Come over and start up a conversation with just me", es: "Acércate e inicia una conversación a solas conmigo" },
+          { time: 22, text: "And trust me I'll give it a chance now", es: "Y créeme, le daré una oportunidad ahora" },
+          { time: 30, text: "Girl, you know I want your love", es: "Chica, sabes que deseo tu amor" },
+          { time: 34, text: "Your love was handmade for somebody like me", es: "Tu amor fue hecho a la medida para alguien como yo" },
           { time: 49, text: "I'm in love with the shape of you", es: "Estoy enamorado de tu silueta" },
           { time: 54, text: "We push and pull like a magnet do", es: "Nos atraemos y empujamos como un imán" }
         ]
@@ -434,44 +474,32 @@
       {
         id: "in_the_end",
         title: "In the End",
-        defaultOffset: -0.6,
         artist: "Linkin Park",
         genre: "Alternative Rock",
+        level: "B1",
+        levelBadgeClass: "bg-amber-500/20 text-amber-300 border-amber-500/40",
         youtubeId: "eVTXPUF4Oz4",
         duration: "3:36",
+        defaultOffset: 0.0,
         lyrics: [
-          { time: 9, text: "It starts with one, one thing, I don't know why", es: "Comienza con una cosa, no sé por qué razón" },
+          { time: 10, text: "It starts with one, one thing, I don't know why", es: "Comienza con una cosa, no sé por qué razón" },
           { time: 14, text: "It doesn't even matter how hard you try", es: "Ni siquiera importa qué tan duro lo intentes" },
-          { time: 26, text: "All I know, time is a valuable thing", es: "Todo lo que sé es que el tiempo es un bien invaluable" },
-          { time: 30, text: "Watch it fly by as the pendulum swings", es: "Míralo pasar volando mientras oscila el péndulo" },
+          { time: 20, text: "Time is a valuable thing", es: "El tiempo es un bien invaluable" },
+          { time: 24, text: "Watch it fly by as the pendulum swings", es: "Míralo pasar volando mientras oscila el péndulo" },
           { time: 44, text: "I tried so hard and got so far", es: "Me esforcé tanto y llegué tan lejos" },
           { time: 48, text: "But in the end, it doesn't even matter", es: "Pero al final, ni siquiera importa" }
         ]
       },
       {
-        id: "bohemian_rhapsody",
-        title: "Bohemian Rhapsody",
-        defaultOffset: -0.3,
-        artist: "Queen",
-        genre: "Classic Rock",
-        youtubeId: "fJ9rUzIMcZQ",
-        duration: "5:55",
-        lyrics: [
-          { time: 4, text: "Is this the real life? Is this just fantasy?", es: "¿Es esta la vida real? ¿Es solo fantasía?" },
-          { time: 11, text: "Caught in a landslide, no escape from reality", es: "Atrapado en un derrumbe, sin escape de la realidad" },
-          { time: 18, text: "Open your eyes, look up to the skies and see", es: "Abre tus ojos, mira hacia los cielos y observa" },
-          { time: 27, text: "I'm just a poor boy, I need no sympathy", es: "Solo soy un muchacho pobre, no necesito compasión" },
-          { time: 33, text: "Because I'm easy come, easy go, little high, little low", es: "Porque lo que fácil viene, fácil se va, un poco arriba, un poco abajo" }
-        ]
-      },
-      {
         id: "yellow",
         title: "Yellow",
-        defaultOffset: -0.6,
         artist: "Coldplay",
         genre: "Alternative Rock",
+        level: "A2",
+        levelBadgeClass: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40",
         youtubeId: "yKNxeF4KMsY",
         duration: "4:29",
+        defaultOffset: 0.0,
         lyrics: [
           { time: 16, text: "Look at the stars, look how they shine for you", es: "Mira las estrellas, mira cómo brillan para ti" },
           { time: 24, text: "And everything you do, yeah they were all yellow", es: "Y todo lo que haces, sí, todas eran amarillas" },
@@ -483,11 +511,13 @@
       {
         id: "radioactive",
         title: "Radioactive",
-        defaultOffset: -0.5,
         artist: "Imagine Dragons",
         genre: "Alternative Rock",
+        level: "B1",
+        levelBadgeClass: "bg-amber-500/20 text-amber-300 border-amber-500/40",
         youtubeId: "ktvTqknDobU",
         duration: "3:06",
+        defaultOffset: 0.0,
         lyrics: [
           { time: 14, text: "I'm waking up to ash and dust", es: "Me estoy despertando entre cenizas y polvo" },
           { time: 18, text: "I wipe my brow and I sweat my rust", es: "Me limpio la frente y sudo todo mi óxido" },
@@ -497,6 +527,74 @@
           { time: 42, text: "I'm waking up, I feel it in my bones", es: "Me estoy despertando, lo siento en mis huesos" },
           { time: 49, text: "Welcome to the new age, to the new age", es: "Bienvenido a la nueva era, a la nueva era" },
           { time: 56, text: "Whoa, oh, oh, oh, I'm radioactive, radioactive", es: "Whoa, oh, oh, oh, soy radiactivo, radiactivo" }
+        ]
+      },
+      {
+        id: "bohemian_rhapsody",
+        title: "Bohemian Rhapsody",
+        artist: "Queen",
+        genre: "Classic Rock",
+        level: "B2",
+        levelBadgeClass: "bg-purple-500/20 text-purple-300 border-purple-500/40",
+        youtubeId: "fJ9rUzIMcZQ",
+        duration: "5:55",
+        defaultOffset: 0.0,
+        lyrics: [
+          { time: 3, text: "Is this the real life? Is this just fantasy?", es: "¿Es esta la vida real? ¿Es solo fantasía?" },
+          { time: 10, text: "Caught in a landslide, no escape from reality", es: "Atrapado en un derrumbe, sin escape de la realidad" },
+          { time: 17, text: "Open your eyes, look up to the skies and see", es: "Abre tus ojos, mira hacia los cielos y observa" },
+          { time: 26, text: "I'm just a poor boy, I need no sympathy", es: "Solo soy un muchacho pobre, no necesito compasión" },
+          { time: 32, text: "Because I'm easy come, easy go, little high, little low", es: "Porque lo que fácil viene, fácil se va, un poco arriba, un poco abajo" },
+          { time: 53, text: "Mama, just killed a man", es: "Mamá, acabo de matar a un hombre" },
+          { time: 59, text: "Put a gun against his head, pulled my trigger, now he's dead", es: "Puse un arma en su cabeza, apreté el gatillo, ahora está muerto" }
+        ]
+      },
+      {
+        id: "count_on_me",
+        title: "Count on Me",
+        artist: "Bruno Mars",
+        genre: "Pop / Acoustic",
+        level: "A2",
+        levelBadgeClass: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40",
+        youtubeId: "4JNtAtGGNRU",
+        duration: "3:17",
+        defaultOffset: 0.0,
+        lyrics: [
+          { time: 8, text: "If you ever find yourself stuck in the middle of the sea", es: "Si alguna vez te encuentras atrapado en medio del mar" },
+          { time: 14, text: "I'll sail the world to find you", es: "Navegaré por el mundo para encontrarte" },
+          { time: 19, text: "If you ever find yourself lost in the dark and you can't see", es: "Si alguna vez te encuentras perdido en la oscuridad y no puedes ver" },
+          { time: 25, text: "I'll be the light to guide you", es: "Seré la luz que te guíe" },
+          { time: 31, text: "We find out what we're made of", es: "Descubrimos de qué estamos hechos" },
+          { time: 36, text: "When we are called to help our friends in need", es: "Cuando nos llaman para ayudar a los amigos que lo necesitan" },
+          { time: 41, text: "You can count on me like one, two, three, I'll be there", es: "Puedes contar conmigo como uno, dos, tres, allí estaré" },
+          { time: 50, text: "And I know when I need it I can count on you like four, three, two", es: "Y sé que cuando lo necesite podré contar contigo como cuatro, tres, dos" },
+          { time: 56, text: "And you'll be there", es: "Y allí estarás" },
+          { time: 59, text: "'Cause that's what friends are supposed to do, oh yeah", es: "Porque eso es lo que se supone que hacen los amigos, oh sí" }
+        ]
+      },
+      {
+        id: "someone_like_you",
+        title: "Someone Like You",
+        artist: "Adele",
+        genre: "Soul Ballad",
+        level: "B1",
+        levelBadgeClass: "bg-amber-500/20 text-amber-300 border-amber-500/40",
+        youtubeId: "NA4c_X9v8YQ",
+        duration: "4:45",
+        defaultOffset: 0.0,
+        lyrics: [
+          { time: 14, text: "I heard that you're settled down", es: "Escuché que ya sentaste cabeza" },
+          { time: 19, text: "That you found a girl and you're married now", es: "Que encontraste a una chica y ahora estás casado" },
+          { time: 24, text: "I heard that your dreams came true", es: "Escuché que tus sueños se hicieron realidad" },
+          { time: 29, text: "Guess she gave you things I didn't give to you", es: "Supongo que ella te dio cosas que yo no te di" },
+          { time: 35, text: "Old friend, why are you so shy?", es: "Viejo amigo, ¿por qué eres tan tímido?" },
+          { time: 39, text: "Ain't like you to hold back or hide from the light", es: "No es propio de ti reprimirte o esconderte de la luz" },
+          { time: 45, text: "I hate to turn up out of the blue, uninvited", es: "Odio aparecer de la nada, sin invitación" },
+          { time: 49, text: "But I couldn't stay away, I couldn't fight it", es: "Pero no pude mantenerme alejada, no pude luchar contra ello" },
+          { time: 53, text: "I had hoped you'd see my face and that you'd be reminded", es: "Tenía la esperanza de que vieras mi rostro y recordaras" },
+          { time: 57, text: "That for me, it isn't over", es: "Que para mí, esto aún no termina" },
+          { time: 61, text: "Never mind, I'll find someone like you", es: "No importa, encontraré a alguien como tú" },
+          { time: 69, text: "I wish nothing but the best for you too", es: "No te deseo nada más que lo mejor a ti también" }
         ]
       }
     ];
@@ -678,6 +776,37 @@
       KaraokeSyncEngine.currentLyricIndex = -1;
       ensureKaraokeOffsetControls();
       KaraokeSyncEngine.updateOffsetBadgeUI();
+
+      // REQUERIMIENTO: SINCRONIZACIÓN CON UN CLIC ("TAP LINE TO SYNC")
+      KaraokeSyncEngine.lyricNodes.forEach((lineEl, i) => {
+        lineEl.addEventListener('click', (e) => {
+          if (e.target.closest('button') || e.target.closest('.k-word')) return;
+
+          const yt = ytMusicPlayer || window._holoYtPlayer || window.ytPlayer;
+          let currentVideoTime = 0;
+          if (yt && typeof yt.getCurrentTime === 'function') {
+            try { currentVideoTime = yt.getCurrentTime(); } catch (_) {}
+          } else if (ytMasterState && typeof ytMasterState.currentTime === 'number') {
+            currentVideoTime = ytMasterState.currentTime;
+          }
+
+          if (currentVideoTime > 0.5 && lyrics[i]) {
+            const lineOriginalTime = (typeof lyrics[i].time === 'number')
+              ? lyrics[i].time
+              : (typeof lyrics[i].startTime === 'number' ? lyrics[i].startTime : 0);
+            // Ajustar offset global para que toda la canción quede 100% sincronizada desde este punto
+            const exactOffset = lineOriginalTime - currentVideoTime;
+            KaraokeSyncEngine.setExactOffset(exactOffset, KaraokeSyncEngine.currentSongId);
+          } else if (lyrics[i]) {
+            const lineTime = (typeof lyrics[i].time === 'number')
+              ? lyrics[i].time
+              : (typeof lyrics[i].startTime === 'number' ? lyrics[i].startTime : 0);
+            if (typeof window.seekToStanza === 'function') {
+              window.seekToStanza(lineTime, i);
+            }
+          }
+        });
+      });
     }
 
     function escapeMusicHtml(str) {
@@ -1362,14 +1491,107 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // Apertura del portal de Música / Karaoke (vista de búsqueda)
+    // Renderizador de Cuadrícula de 12 Canciones Recomendadas
+    function renderRecommendedSongsGrid(filter = '') {
+      let target = document.getElementById('recommendedSongsGrid');
+      let containerSec = document.getElementById('karaoke-recommendations');
+
+      if (!target) {
+        const parent = document.getElementById('musicTrendingSection') || document.getElementById('music-search-subview');
+        if (parent) {
+          parent.innerHTML = `
+            <section id="karaoke-recommendations" class="w-full mt-4">
+              <div class="flex items-center justify-between mb-4 px-1">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-xl">🎧</span>
+                  <div>
+                    <h3 class="text-sm sm:text-base font-black text-white tracking-wide">
+                      Recomendadas para tu Nivel (Sincronización Verificada)
+                    </h3>
+                    <p class="text-[11px] text-slate-400">Canciones optimizadas con letras iluminadas palabra por palabra y audio de estudio.</p>
+                  </div>
+                </div>
+                <span class="text-[10px] font-mono font-bold text-cyan-300 bg-cyan-950/80 border border-cyan-500/40 px-2.5 py-1 rounded-full">
+                  ${MUSIC_SESSION_TRACKS.length} Canciones
+                </span>
+              </div>
+              <div id="recommendedSongsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+            </section>
+          `;
+          target = document.getElementById('recommendedSongsGrid');
+          containerSec = document.getElementById('karaoke-recommendations');
+        }
+      }
+
+      if (!target) return;
+
+      target.style.setProperty('display', 'grid', 'important');
+      target.classList.remove('hidden');
+      if (containerSec) {
+        containerSec.style.setProperty('display', 'block', 'important');
+        containerSec.classList.remove('hidden');
+      }
+
+      const lower = (filter || '').toLowerCase().trim();
+      const tracksToRender = MUSIC_SESSION_TRACKS.filter(t =>
+        !lower ||
+        t.title.toLowerCase().includes(lower) ||
+        t.artist.toLowerCase().includes(lower) ||
+        (t.genre && t.genre.toLowerCase().includes(lower))
+      );
+
+      target.innerHTML = tracksToRender.map((track) => {
+        const origIdx = MUSIC_SESSION_TRACKS.findIndex(t => t.id === track.id);
+        const badgeColor = track.levelBadgeClass || 'bg-amber-500/20 text-amber-300 border-amber-500/40';
+        const levelLabel = track.level || 'B1';
+
+        return `
+          <div class="karaoke-song-card group bg-slate-900/90 border border-slate-800 hover:border-cyan-500/50 rounded-2xl p-3.5 shadow-xl transition-all duration-300 flex flex-col justify-between hover:shadow-cyan-500/10 hover:-translate-y-1">
+            <div>
+              <div class="relative w-full rounded-xl overflow-hidden mb-3 bg-slate-950 border border-slate-800 cursor-pointer shadow-inner aspect-video" onclick="selectMusicTrack(${origIdx})">
+                <img src="https://img.youtube.com/vi/${track.youtubeId}/hqdefault.jpg" alt="${escapeMusicHtml(track.title)}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" onerror="this.onerror=null; this.src='https://img.youtube.com/vi/${track.youtubeId}/mqdefault.jpg';">
+                <span class="absolute top-2 left-2 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border backdrop-blur-md ${badgeColor}">
+                  ${levelLabel}
+                </span>
+                <span class="absolute bottom-2 right-2 px-2 py-0.5 rounded-md bg-slate-950/85 text-[10px] font-mono font-bold text-cyan-300 border border-cyan-500/40 backdrop-blur-md">
+                  ${track.duration}
+                </span>
+                <div class="absolute inset-0 bg-black/20 group-hover:bg-black/0 flex items-center justify-center transition">
+                  <span class="w-10 h-10 rounded-full bg-cyan-500/90 text-slate-950 flex items-center justify-center text-sm font-bold shadow-lg group-hover:scale-110 transition">▶</span>
+                </div>
+              </div>
+              <h4 class="text-sm font-extrabold text-white truncate" title="${escapeMusicHtml(track.title)}">${escapeMusicHtml(track.title)}</h4>
+              <p class="text-xs text-cyan-400 font-bold truncate mb-1">${escapeMusicHtml(track.artist)}</p>
+              <p class="text-[11px] text-slate-400 line-clamp-1">${escapeMusicHtml(track.genre || 'Hit')} &bull; Audio Oficial Sincronizado</p>
+            </div>
+            <div class="mt-3 pt-3 border-t border-slate-800/80">
+              <button type="button" onclick="selectMusicTrack(${origIdx})"
+                class="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-black text-xs transition cursor-pointer flex items-center justify-center gap-1.5 shadow-md shadow-cyan-600/30 active:scale-95">
+                <span>🎤 Cantar Ahora</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+    window.renderRecommendedSongsGrid = renderRecommendedSongsGrid;
+
+    // Apertura del portal de Música / Karaoke (vista de búsqueda y catálogo)
     function openMusicPortal() {
-      // Limpieza universal ANTES de mostrar el buscador: evita superposición con otros portales
+      // Limpieza universal ANTES de mostrar el buscador
       if (typeof window.hideAllModules === 'function') window.hideAllModules();
 
       const viewMusic = document.getElementById('view-music');
       const searchSub = document.getElementById('music-search-subview');
       const playerSub = document.getElementById('music-player-subview');
+      const trendingSec = document.getElementById('musicTrendingSection');
+      const recGrid = document.getElementById('recommendedSongsGrid');
+      const karoCont = document.getElementById('karaoke-container');
+
+      if (karoCont) {
+        karoCont.classList.remove('hidden');
+        karoCont.style.setProperty('display', 'block', 'important');
+      }
       if (playerSub) {
         playerSub.classList.add('hidden');
         playerSub.style.setProperty('display', 'none', 'important');
@@ -1388,14 +1610,21 @@
         searchSub.style.setProperty('opacity', '1', 'important');
         searchSub.style.setProperty('pointer-events', 'auto', 'important');
       }
+      if (trendingSec) {
+        trendingSec.classList.remove('hidden');
+        trendingSec.style.setProperty('display', 'block', 'important');
+      }
+      if (recGrid) {
+        recGrid.classList.remove('hidden');
+        recGrid.style.setProperty('display', 'grid', 'important');
+      }
       window._activeModule = 'music';
 
       renderMusicTracksList('');
+      renderRecommendedSongsGrid('');
+
       if (typeof window.clearMusicSearchInput === 'function') {
         try { window.clearMusicSearchInput(); } catch (_) {}
-      }
-      if (typeof window.renderTrendingTracksCarousel === 'function') {
-        try { window.renderTrendingTracksCarousel(); } catch (_) {}
       }
       if (typeof window.scrollTo === 'function') {
         try { window.scrollTo({ top: 0, behavior: 'instant' }); } catch (_) {}
@@ -1404,7 +1633,6 @@
     window.openMusicPortal = openMusicPortal;
 
     window.openMusicPlayerStage = function() {
-      // 1. Garantizar que todas las demás vistas raíz estén ocultas EXCEPTO #view-music
       ['view-auth', 'view-home', 'view-path', 'view-stories', 'view-worldtour', 'ai-tutor-view', 'portal-3d-master-view', 'portalLoadingScreen'].forEach(function(id) {
         const el = document.getElementById(id);
         if (el) {
@@ -1413,21 +1641,18 @@
         }
       });
 
-      // 2. Garantizar que el contenedor padre #view-music esté 100% visible
       const viewMusic = document.getElementById('view-music');
       if (viewMusic) {
         viewMusic.classList.remove('hidden', 'offline-locked');
         viewMusic.style.cssText = 'display: block !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; position: relative !important; z-index: 35 !important; width: 100% !important; max-width: 68rem !important; margin: 0 auto !important; padding: 1rem !important;';
       }
 
-      // 3. Ocultar el buscador (#music-search-subview)
       const searchSub = document.getElementById('music-search-subview');
       if (searchSub) {
         searchSub.classList.add('hidden');
         searchSub.style.setProperty('display', 'none', 'important');
       }
 
-      // 4. Mostrar el reproductor (#music-player-subview) quitando .hidden y forzando display: block !important
       const playerSub = document.getElementById('music-player-subview');
       if (playerSub) {
         playerSub.classList.remove('hidden', 'offline-locked');
@@ -1435,7 +1660,6 @@
         playerSub.style.cssText = 'display: block !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; width: 100% !important;';
       }
 
-      // 5. Asegurar que las columnas internas del reproductor (video/escenario a la izquierda y letra sincronizada a la derecha) sean visibles
       const grid = document.getElementById('musicStageColumnsGrid');
       if (grid) {
         grid.classList.remove('hidden');
@@ -1454,61 +1678,61 @@
 
       window.scrollTo({ top: 0, behavior: 'smooth' });
     };
-  
+
     function selectMusicTrack(idx) {
       if (typeof window.openMusicPlayerStage === 'function') {
         window.openMusicPlayerStage();
       }
       window._userInitiatedMusicPlayback = true;
       window.currentSongSessionId = Date.now();
-      const thisSessionId = window.currentSongSessionId;
-      if (typeof window.resetSongPlayerSession === 'function') {
-        window.resetSongPlayerSession();
-      } else if (typeof window.stopAllMedia === 'function') {
-        window.stopAllMedia();
-      }
 
-      // Forzar enrutamiento a la vista del estudio musical (#music-player-subview)
       const searchSub = document.getElementById('music-search-subview');
       const playerSub = document.getElementById('music-player-subview');
       if (searchSub) {
-        searchSub.style.display = 'none';
+        searchSub.style.setProperty('display', 'none', 'important');
         searchSub.classList.add('hidden');
       }
       if (playerSub) {
-        playerSub.style.display = 'block';
-        playerSub.classList.remove('hidden');
         playerSub.style.setProperty('display', 'block', 'important');
+        playerSub.classList.remove('hidden');
       }
-      if (typeof window !== 'undefined' && typeof window.scrollTo === 'function') {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
+
+      // Asegurar que el reproductor de YouTube esté visible y el holográfico oculto
       const holoStage = document.getElementById('musicHolographicStage');
       if (holoStage) holoStage.style.display = 'none';
+      const origVideoWrapper = document.getElementById('musicOriginalVideoWrapper');
+      if (origVideoWrapper) {
+        origVideoWrapper.style.setProperty('display', 'block', 'important');
+        origVideoWrapper.classList.remove('hidden');
+      }
+      const origMetaWrapper = document.getElementById('musicOriginalMetaWrapper');
+      if (origMetaWrapper) {
+        origMetaWrapper.style.setProperty('display', 'flex', 'important');
+        origMetaWrapper.classList.remove('hidden');
+      }
       const ytIframe = document.getElementById('musicYouTubeIframe');
-      if (ytIframe) ytIframe.style.display = 'block';
+      if (ytIframe) {
+        ytIframe.style.setProperty('display', 'block', 'important');
+        ytIframe.classList.remove('hidden');
+      }
+
       currentMusicIndex = idx;
       currentKaraokeStanzaIndex = 0;
 
       const track = MUSIC_SESSION_TRACKS[idx];
       if (!track) return;
 
-      if (typeof window.loadSongToKaraoke === 'function') {
-        const durSec = (track.duration && track.duration.includes(':'))
-          ? (parseInt(track.duration.split(':')[0], 10) * 60 + parseInt(track.duration.split(':')[1], 10))
-          : 225;
-        window.loadSongToKaraoke(track.title, track.artist, track.previewUrl || '', track.artwork || '', durSec);
-        return;
-      }
-
       stopMusicKaraokeSync();
 
       const titleEl = document.getElementById('activeMusicTitle');
       const artistEl = document.getElementById('activeMusicArtist');
-      const iframe = document.getElementById('musicYouTubeIframe');
-
       if (titleEl) titleEl.textContent = track.title;
       if (artistEl) artistEl.textContent = `${track.artist} ${track.genre ? '• ' + track.genre : ''}`;
+
+      activeLyricsList = track.lyrics || [];
+      window.activeLyricsList = activeLyricsList;
+      renderLyricsFromList(activeLyricsList);
+      renderMusicTracksList();
 
       if (track.youtubeId) {
         if (ytMusicPlayer && typeof ytMusicPlayer.loadVideoById === 'function') {
@@ -1518,41 +1742,27 @@
             ytMusicPlayer.setVolume(100);
             ytMusicPlayer.playVideo();
           } catch (_) {
-            if (iframe) iframe.src = `https://www.youtube-nocookie.com/embed/${track.youtubeId}?enablejsapi=1&autoplay=1`;
+            if (ytIframe) ytIframe.src = `https://www.youtube-nocookie.com/embed/${track.youtubeId}?enablejsapi=1&autoplay=1`;
           }
         } else {
-          if (iframe) {
-            iframe.src = `https://www.youtube-nocookie.com/embed/${track.youtubeId}?enablejsapi=1&autoplay=1`;
+          if (ytIframe) {
+            ytIframe.src = `https://www.youtube-nocookie.com/embed/${track.youtubeId}?enablejsapi=1&autoplay=1`;
           }
           initYouTubePlayer();
         }
       }
+
+      KaraokeSyncEngine.start(ytMusicPlayer, activeLyricsList, track.id);
+      window.lyricsOffset = KaraokeSyncEngine.offsetSec;
+
       if (typeof window.logAudioDiagnosticStatus === 'function') {
         window.logAudioDiagnosticStatus('YouTube', 'Playing', 100);
       }
-
-      activeLyricsList = track.lyrics || [];
-      renderLyricsFromList(activeLyricsList);
-      renderMusicTracksList();
-
-      let trackDurationSec = 220;
-      if (track.duration) {
-        const parts = String(track.duration).split(':');
-        if (parts.length === 2) {
-          trackDurationSec = (parseInt(parts[0], 10) || 0) * 60 + (parseInt(parts[1], 10) || 0);
-        }
-      }
-
-      if (typeof window.fetchLrclibSyncedLyrics === 'function') {
-        window.fetchLrclibSyncedLyrics(track.artist, track.title, trackDurationSec).then(res => {
-          if (res && res.lyrics && res.lyrics.length > 0 && currentMusicIndex === idx) {
-            activeLyricsList = res.lyrics;
-            window._isCurrentSongLrcSynced = !!res.isLrc;
-            renderLyricsFromList(activeLyricsList);
-          }
-        }).catch(() => {});
+      if (typeof window.scrollTo === 'function') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     }
+    window.selectMusicTrack = selectMusicTrack;
 
     function renderLyrics(track) {
       if (track && track.lyrics) {
@@ -1671,6 +1881,9 @@
           </div>
         `;
       }
+
+      // Controles y aviso superior interactivo
+      ensureKaraokeOffsetControls();
 
       container.innerHTML = introBanner + lyrics.map((stanza, lIdx) => {
         const lineTime = typeof stanza.startTime === 'number' ? stanza.startTime : (typeof stanza.time === 'number' ? stanza.time : 0);
@@ -2346,7 +2559,16 @@
             let autoIntroOffset = 0;
             if (targetDuration > 30 && candidateDuration > 30) {
               const dIntro = targetDuration - candidateDuration;
-              if (dIntro >= 3 && dIntro <= 45) {
+              if (dIntro > 0 && dIntro <= 25) {
+                autoIntroOffset = Math.round(dIntro * 10) / 10;
+                // Auto-ajuste de calibración para compensar la intro
+                if (window.KaraokeSyncEngine) {
+                  window.KaraokeSyncEngine.setExactOffset(-autoIntroOffset);
+                }
+                if (typeof showFloatingToast === 'function') {
+                  showFloatingToast(`⚡ Sincronización auto-ajustada al video (+${autoIntroOffset}s intro)`, '⚡');
+                }
+              } else if (dIntro >= 3 && dIntro <= 45) {
                 autoIntroOffset = Math.round(dIntro * 10) / 10;
               }
             }
@@ -2400,7 +2622,15 @@
             let autoIntroOffset = 0;
             if (targetDuration > 30 && lrcDuration > 30) {
               const dIntro = targetDuration - lrcDuration;
-              if (dIntro >= 3 && dIntro <= 45) {
+              if (dIntro > 0 && dIntro <= 25) {
+                autoIntroOffset = Math.round(dIntro * 10) / 10;
+                if (window.KaraokeSyncEngine) {
+                  window.KaraokeSyncEngine.setExactOffset(-autoIntroOffset);
+                }
+                if (typeof showFloatingToast === 'function') {
+                  showFloatingToast(`⚡ Sincronización auto-ajustada al video (+${autoIntroOffset}s intro)`, '⚡');
+                }
+              } else if (dIntro >= 3 && dIntro <= 45) {
                 autoIntroOffset = Math.round(dIntro * 10) / 10;
               }
             }

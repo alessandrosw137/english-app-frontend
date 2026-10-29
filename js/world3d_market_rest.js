@@ -305,8 +305,8 @@
 
     group.traverse(child => {
       if (child.isMesh) {
-        child.castShadow = true;
-        child.receiveShadow = true;
+        child.castShadow = false;
+        child.receiveShadow = false;
         child.userData = Object.assign({}, data, { parentGroup: group });
       }
     });
@@ -359,7 +359,7 @@
       : M.walnutDark;
     const floor = new THREE.Mesh(floorGeo, floorMat);
     floor.position.set(0, -0.12, -0.5);
-    floor.receiveShadow = true;
+    floor.receiveShadow = false;
     zoneRoot.add(floor);
 
     // Alfombra persa borgoña bajo el comedor central
@@ -368,7 +368,7 @@
       M.velvetBurgundy
     );
     rug.position.set(0, 0.01, 1.2);
-    rug.receiveShadow = true;
+    rug.receiveShadow = false;
     zoneRoot.add(rug);
 
     // Pared trasera decorativa con boiserie
@@ -378,7 +378,7 @@
       : new THREE.MeshStandardMaterial({ color: 0x1f0e17, roughness: 0.5 });
     const backWall = new THREE.Mesh(new THREE.BoxGeometry(20, 5.2, 0.3), backWallMat);
     backWall.position.set(0, 2.6, -9.0);
-    backWall.receiveShadow = true;
+    backWall.receiveShadow = false;
     zoneRoot.add(backWall);
 
     // Paredes laterales
@@ -402,6 +402,7 @@
         chandelier.add(rod, ring, bulb);
 
         const pointLight = new THREE.PointLight(0xffb74d, 1.2, 8);
+        pointLight.castShadow = false;
         pointLight.position.set(lx, 3.5, lz);
         chandelier.add(pointLight);
 
@@ -418,16 +419,16 @@
       tableGroup.position.set(posX, 0, posZ);
 
       // Base pedestal de latón y columna
-      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.52, 0.06, 24), M.brassGold);
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.52, 0.06, 16), M.brassGold);
       base.position.y = 0.03;
       const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.92, 16), M.brassGold);
       pole.position.y = 0.49;
-      const topWood = new THREE.Mesh(new THREE.CylinderGeometry(1.02, 1.02, 0.04, 32), M.walnutDark);
+      const topWood = new THREE.Mesh(new THREE.CylinderGeometry(1.02, 1.02, 0.04, 16), M.walnutDark);
       topWood.position.y = 0.95;
 
       // Mantel drapeado blanco
       const cloth = new THREE.Mesh(
-        new THREE.CylinderGeometry(1.04, 1.10, 0.22, 32),
+        new THREE.CylinderGeometry(1.04, 1.10, 0.22, 16),
         isVIP ? M.velvetBurgundy : M.clothWhite
       );
       cloth.position.y = 0.88;
@@ -460,7 +461,7 @@
         const placeSetting = new THREE.Group();
 
         // Plato de cerámica
-        const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.14, 0.02, 24), M.ceramicWhite);
+        const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.14, 0.02, 14), M.ceramicWhite);
         plate.position.y = 0.96;
 
         // Comida 3D: Corte de filete o salmón + puré + guarnición
@@ -674,7 +675,7 @@
       const cloche = new THREE.Mesh(new THREE.SphereGeometry(0.16, 16, 16, 0, Math.PI * 2, 0, Math.PI * 0.5), M.chromeHighPolish);
       cloche.position.set(-0.25, 0.87, 0);
 
-      const cake = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.12, 24), M.walnutDark);
+      const cake = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.12, 14), M.walnutDark);
       cake.position.set(0.22, 0.93, 0);
 
       // Macarons de colores en el estante inferior
@@ -733,17 +734,18 @@
         bulb.position.set(lx, 1.62, 0);
 
         const heatLight = new THREE.PointLight(0xff6600, 1.4, 3.5);
+        heatLight.castShadow = false;
         heatLight.position.set(lx, 1.5, 0);
 
         pass.add(hanger, lampCone, bulb, heatLight);
       });
 
       // Bandejas ovaladas de mesero (Oval Service Trays)
-      const tray1 = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.22, 0.015, 24), M.stainlessSteel);
+      const tray1 = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.22, 0.015, 14), M.stainlessSteel);
       tray1.scale.set(1.4, 1, 0.9);
       tray1.position.set(-2.2, 1.12, 0);
 
-      const tray2 = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.22, 0.015, 24), M.stainlessSteel);
+      const tray2 = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.22, 0.015, 14), M.stainlessSteel);
       tray2.scale.set(1.4, 1, 0.9);
       tray2.position.set(-2.2, 1.14, 0);
 
@@ -1000,6 +1002,7 @@
       const tube = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.03, 13.8), M.ledStripWhite);
       tube.position.set(lx, 4.35, -0.5);
       const light = new THREE.PointLight(0xffffff, 1.6, 12);
+      light.castShadow = false;
       light.position.set(lx, 4.1, -0.5);
       zoneRoot.add(fixture, tube, light);
     });
@@ -1514,9 +1517,9 @@
     if (!THREE) return null;
     const M = createMaterialPalette(THREE);
     const g = new THREE.Group();
-    const top = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.05, 24), M.walnutDark);
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.05, 16), M.walnutDark);
     top.position.y = 0.94;
-    const cloth = new THREE.Mesh(new THREE.CylinderGeometry(0.97, 1.04, 0.16, 24), M.clothWhite);
+    const cloth = new THREE.Mesh(new THREE.CylinderGeometry(0.97, 1.04, 0.16, 16), M.clothWhite);
     cloth.position.y = 0.90;
     const base = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.5, 0.08, 20), M.brassGold);
     base.position.y = 0.04;

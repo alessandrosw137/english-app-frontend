@@ -594,7 +594,7 @@
     dcmBox.position.set(0, 0.98, 0.19);
 
     // Casco esférico con visera dorada curva reflectante
-    const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.24, 20, 16), matSuit);
+    const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.24, 14, 14), matSuit);
     helmet.position.y = 1.38;
 
     const goldVisor = new THREE.Mesh(new THREE.SphereGeometry(0.19, 18, 14, 0, Math.PI * 1.05), matVisor);
@@ -651,7 +651,7 @@
     innerRing.rotation.x = Math.PI / 2.4;
 
     // Núcleo talismán luminoso (orbe discreto de radio 0.18)
-    const core = new THREE.Mesh(new THREE.SphereGeometry(0.18, 18, 16), matCore);
+    const core = new THREE.Mesh(new THREE.SphereGeometry(0.18, 14, 14), matCore);
     core.name = 'ConceptOrb_' + (item.id || item.en);
 
     // Haz láser vertical guía fino
@@ -832,7 +832,7 @@
     const matWoodShelf = getMat(P, 'woodPine', 0xb47b38, 0.45, 0.05);
 
     // Tambor horizontal ahumador
-    const drum = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 1.1, 24), matSmokerBlack);
+    const drum = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 1.1, 16), matSmokerBlack);
     drum.rotation.z = Math.PI / 2;
     drum.position.y = 0.88;
 
@@ -1010,9 +1010,9 @@
     });
 
     // Cuenca inferior amplia
-    const baseBowl = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.80, 0.35, 24), matStone);
+    const baseBowl = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.80, 0.35, 16), matStone);
     baseBowl.position.y = 0.22;
-    const baseWater = new THREE.Mesh(new THREE.CylinderGeometry(0.88, 0.88, 0.05, 24), matWater);
+    const baseWater = new THREE.Mesh(new THREE.CylinderGeometry(0.88, 0.88, 0.05, 16), matWater);
     baseWater.position.y = 0.36;
 
     // Pedestal central
@@ -1020,9 +1020,9 @@
     pillar.position.y = 0.72;
 
     // Cuenca superior más pequeña
-    const topBowl = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.42, 0.25, 20), matStone);
+    const topBowl = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.42, 0.25, 16), matStone);
     topBowl.position.y = 1.18;
-    const topWater = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.48, 0.04, 20), matWater);
+    const topWater = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.48, 0.04, 16), matWater);
     topWater.position.y = 1.28;
 
     // Cascada de agua translúcida cayendo entre niveles
@@ -1044,10 +1044,10 @@
     const baseCol = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, 0.82, 16), matStone);
     baseCol.position.y = 0.41;
 
-    const dish = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.32, 0.16, 20), matStone);
+    const dish = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.32, 0.16, 16), matStone);
     dish.position.y = 0.88;
 
-    const water = new THREE.Mesh(new THREE.CylinderGeometry(0.44, 0.44, 0.03, 20), matWater);
+    const water = new THREE.Mesh(new THREE.CylinderGeometry(0.44, 0.44, 0.03, 16), matWater);
     water.position.y = 0.94;
 
     // Pájaro posado en el borde
@@ -1326,29 +1326,30 @@
           emissiveIntensity: 1.5,
           roughness: 0.3
         });
-        const sunMesh = new THREE.Mesh(new THREE.SphereGeometry(1.65, 36, 28), matSun);
+        const sunMesh = new THREE.Mesh(new THREE.SphereGeometry(1.65, 16, 16), matSun);
         // Corona volumétrica
         const coronaMat = new THREE.MeshBasicMaterial({ color: 0xf97316, transparent: true, opacity: 0.30, side: THREE.BackSide });
-        const corona = new THREE.Mesh(new THREE.SphereGeometry(2.15, 24, 20), coronaMat);
+        const corona = new THREE.Mesh(new THREE.SphereGeometry(2.15, 16, 16), coronaMat);
         const sunLight = new THREE.PointLight(0xfff7ed, 2.5, 60);
+        sunLight.castShadow = false;
         g.add(sunMesh, corona, sunLight);
       } else if (id === 'space_earth' || en === 'earth') {
         const matEarth = new THREE.MeshStandardMaterial({ map: earthTex, roughness: 0.45, metalness: 0.1 });
-        const earthMesh = new THREE.Mesh(new THREE.SphereGeometry(0.85, 32, 28), matEarth);
+        const earthMesh = new THREE.Mesh(new THREE.SphereGeometry(0.85, 16, 16), matEarth);
         const matCloud = new THREE.MeshStandardMaterial({ map: cloudTex, transparent: true, opacity: 0.42, roughness: 0.6 });
-        const cloudMesh = new THREE.Mesh(new THREE.SphereGeometry(0.88, 28, 24), matCloud);
+        const cloudMesh = new THREE.Mesh(new THREE.SphereGeometry(0.88, 16, 16), matCloud);
         g.add(earthMesh, cloudMesh);
       } else if (id === 'space_mars' || en === 'mars') {
         const matMars = new THREE.MeshStandardMaterial({ map: marsTex, roughness: 0.72, metalness: 0.05 });
-        const marsMesh = new THREE.Mesh(new THREE.SphereGeometry(0.58, 28, 24), matMars);
+        const marsMesh = new THREE.Mesh(new THREE.SphereGeometry(0.58, 14, 14), matMars);
         g.add(marsMesh);
       } else if (id === 'space_jupiter' || en.includes('jupiter')) {
         const matJup = new THREE.MeshStandardMaterial({ map: jupiterTex, roughness: 0.45 });
-        const jupMesh = new THREE.Mesh(new THREE.SphereGeometry(1.35, 36, 28), matJup);
+        const jupMesh = new THREE.Mesh(new THREE.SphereGeometry(1.35, 16, 16), matJup);
         g.add(jupMesh);
       } else if (id === 'space_saturn' || en.includes('saturn')) {
         const matSat = new THREE.MeshStandardMaterial({ map: saturnTex, roughness: 0.4 });
-        const satMesh = new THREE.Mesh(new THREE.SphereGeometry(0.95, 30, 26), matSat);
+        const satMesh = new THREE.Mesh(new THREE.SphereGeometry(0.95, 16, 16), matSat);
         const ringMat = new THREE.MeshStandardMaterial({
           map: saturnRingTex,
           side: THREE.DoubleSide,
@@ -1361,7 +1362,7 @@
         g.add(satMesh, rings);
       } else if (id === 'space_black_hole' || en.includes('black hole')) {
         const coreMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
-        const core = new THREE.Mesh(new THREE.SphereGeometry(0.68, 32, 28), coreMat);
+        const core = new THREE.Mesh(new THREE.SphereGeometry(0.68, 16, 16), coreMat);
         const diskMat = new THREE.MeshBasicMaterial({
           map: blackHoleAccretionTex,
           side: THREE.DoubleSide,
@@ -1464,14 +1465,14 @@
     const lawn = new THREE.Mesh(new THREE.PlaneGeometry(32, 32), matGrass);
     lawn.rotation.x = -Math.PI / 2;
     lawn.position.set(0, -0.01, 10);
-    lawn.receiveShadow = true;
+    lawn.receiveShadow = false;
     root.add(lawn);
 
     // Terraza de losetas de piedra bajo la zona de asador y banca
     const matPatio = getMat(P, 'stonePaver', 0x78716c, 0.65, 0.05);
     const patio = new THREE.Mesh(new THREE.BoxGeometry(9.5, 0.04, 6.5), matPatio);
     patio.position.set(3.5, 0.02, 9.2);
-    patio.receiveShadow = true;
+    patio.receiveShadow = false;
     root.add(patio);
 
     // Setos perimetrales altos
@@ -1564,8 +1565,8 @@
       g.userData = Object.assign({}, meta);
       g.traverse(ch => {
         if (ch.isMesh) {
-          ch.castShadow = true;
-          ch.receiveShadow = true;
+          ch.castShadow = false;
+          ch.receiveShadow = false;
           ch.userData = Object.assign({}, meta, { parentGroup: g });
         }
       });
@@ -1757,7 +1758,7 @@
   // --- Space extra builders ---
   B['space_moon'] = function(item, scen, P) {
     const g = new THREE.Group();
-    const moon = new THREE.Mesh(new THREE.SphereGeometry(0.35, 18, 16), getMat(P, 'stoneGray', 0x94a3b8));
+    const moon = new THREE.Mesh(new THREE.SphereGeometry(0.35, 14, 14), getMat(P, 'stoneGray', 0x94a3b8));
     g.add(moon);
     return g;
   };
@@ -1777,7 +1778,7 @@
   };
   B['space_black_hole'] = function(item, scen, P) {
     const g = new THREE.Group();
-    const core = new THREE.Mesh(new THREE.SphereGeometry(0.6, 24, 20), new THREE.MeshBasicMaterial({ color: 0x000000 }));
+    const core = new THREE.Mesh(new THREE.SphereGeometry(0.6, 16, 16), new THREE.MeshBasicMaterial({ color: 0x000000 }));
     const disk = new THREE.Mesh(new THREE.RingGeometry(0.7, 1.5, 32), new THREE.MeshBasicMaterial({ color: 0xec4899, side: THREE.DoubleSide, transparent: true, opacity: 0.75 }));
     disk.rotation.x = Math.PI / 2.3;
     g.add(core, disk);
@@ -1800,23 +1801,23 @@
   };
   B['space_venus'] = function(item, scen, P) {
     const g = new THREE.Group();
-    g.add(new THREE.Mesh(new THREE.SphereGeometry(0.72, 22, 18), getMat(P, 'fabricGold', 0xf59e0b)));
+    g.add(new THREE.Mesh(new THREE.SphereGeometry(0.72, 16, 16), getMat(P, 'fabricGold', 0xf59e0b)));
     return g;
   };
   B['space_uranus'] = function(item, scen, P) {
     const g = new THREE.Group();
-    const p = new THREE.Mesh(new THREE.SphereGeometry(0.7, 22, 18), getMat(P, 'emissiveScreen', 0x38bdf8));
+    const p = new THREE.Mesh(new THREE.SphereGeometry(0.7, 16, 16), getMat(P, 'emissiveScreen', 0x38bdf8));
     g.add(p);
     return g;
   };
   B['space_neptune'] = function(item, scen, P) {
     const g = new THREE.Group();
-    g.add(new THREE.Mesh(new THREE.SphereGeometry(0.68, 22, 18), getMat(P, 'fabricBlue', 0x1d4ed8)));
+    g.add(new THREE.Mesh(new THREE.SphereGeometry(0.68, 16, 16), getMat(P, 'fabricBlue', 0x1d4ed8)));
     return g;
   };
   B['space_neutron_star'] = function(item, scen, P) {
     const g = new THREE.Group();
-    g.add(new THREE.Mesh(new THREE.SphereGeometry(0.24, 20, 20), new THREE.MeshBasicMaterial({ color: 0x38bdf8 })));
+    g.add(new THREE.Mesh(new THREE.SphereGeometry(0.24, 14, 14), new THREE.MeshBasicMaterial({ color: 0x38bdf8 })));
     return g;
   };
   B['space_supernova'] = function(item, scen, P) {

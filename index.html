@@ -1701,7 +1701,25 @@ Fábula Clásica
 <div id="musicTrackButtonsContainer" class="flex gap-2 overflow-x-auto py-1 flex-1"></div>
 </div>
 </div>
-<div id="musicTrendingSection" class="w-full mt-4"></div>
+<div id="musicTrendingSection" class="w-full mt-4">
+<section id="karaoke-recommendations" class="w-full">
+  <div class="flex items-center justify-between mb-4 px-1">
+    <div class="flex items-center gap-2.5">
+      <span class="text-xl">🎧</span>
+      <div>
+        <h3 class="text-sm sm:text-base font-black text-white tracking-wide">
+          Recomendadas para tu Nivel (Sincronización Verificada)
+        </h3>
+        <p class="text-[11px] text-slate-400">Canciones optimizadas con letras iluminadas palabra por palabra y audio de estudio.</p>
+      </div>
+    </div>
+    <span class="text-[10px] font-mono font-bold text-cyan-300 bg-cyan-950/80 border border-cyan-500/40 px-2.5 py-1 rounded-full">
+      12 Canciones
+    </span>
+  </div>
+  <div id="recommendedSongsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+</section>
+</div>
 </div>
 <div id="music-player-subview" class="w-full hidden" style="display: none;">
 <div class="flex items-center justify-between mb-4">
@@ -2581,12 +2599,16 @@ window.dispatchEvent(new Event('resize'));
 },40);
 }
 if(targetId==='view-music'){
-var vm=document.getElementById('view-music'),ms=document.getElementById('music-search-subview'),mp=document.getElementById('music-player-subview');
-if(vm){vm.classList.remove('hidden','offline-locked');vm.style.setProperty('display','block','important');vm.style.setProperty('visibility','visible','important');vm.style.setProperty('opacity','1','important');vm.style.setProperty('pointer-events','auto','important');}
-if(ms){ms.classList.remove('hidden','offline-locked');ms.style.setProperty('display','block','important');ms.style.setProperty('visibility','visible','important');ms.style.setProperty('opacity','1','important');ms.style.setProperty('pointer-events','auto','important');}
-if(mp){mp.classList.add('hidden');mp.style.setProperty('display','none','important');}
-if(typeof window.renderMusicTracksList==='function')window.renderMusicTracksList();
-if(typeof window.renderTrendingTracksCarousel==='function')window.renderTrendingTracksCarousel();
+if(typeof window.openMusicPortal==='function'){
+  window.openMusicPortal();
+} else {
+  var vm=document.getElementById('view-music'),ms=document.getElementById('music-search-subview'),mp=document.getElementById('music-player-subview');
+  if(vm){vm.classList.remove('hidden','offline-locked');vm.style.setProperty('display','block','important');vm.style.setProperty('visibility','visible','important');vm.style.setProperty('opacity','1','important');vm.style.setProperty('pointer-events','auto','important');}
+  if(ms){ms.classList.remove('hidden','offline-locked');ms.style.setProperty('display','block','important');ms.style.setProperty('visibility','visible','important');ms.style.setProperty('opacity','1','important');ms.style.setProperty('pointer-events','auto','important');}
+  if(mp){mp.classList.add('hidden');mp.style.setProperty('display','none','important');}
+  if(typeof window.renderMusicTracksList==='function')window.renderMusicTracksList();
+  if(typeof window.renderRecommendedSongsGrid==='function')window.renderRecommendedSongsGrid();
+}
 }
 if(targetId==='view-stories'&&typeof window.renderStorySelector==='function')window.renderStorySelector();
 if(targetId==='view-jest-game'&&typeof window.openJestGameView==='function')window.openJestGameView();

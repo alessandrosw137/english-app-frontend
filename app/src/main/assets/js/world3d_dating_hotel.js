@@ -441,8 +441,8 @@
     group.traverse((child) => {
       if (child.isMesh) {
         child.userData = Object.assign({}, userData, { parentGroup: group });
-        child.castShadow = true;
-        child.receiveShadow = true;
+        child.castShadow = false;
+        child.receiveShadow = false;
       }
     });
 
@@ -492,13 +492,13 @@
     const floorGeo = new THREE.BoxGeometry(22, 0.3, 18);
     const floorMesh = new THREE.Mesh(floorGeo, M.marbleBlack);
     floorMesh.position.set(0, -0.15, -0.5);
-    floorMesh.receiveShadow = true;
+    floorMesh.receiveShadow = false;
     sceneContainer.add(floorMesh);
 
     const runnerGeo = new THREE.BoxGeometry(3.6, 0.02, 13.5);
     const runnerMesh = new THREE.Mesh(runnerGeo, M.velvetBurgundy);
     runnerMesh.position.set(0, 0.01, -0.5);
-    runnerMesh.receiveShadow = true;
+    runnerMesh.receiveShadow = false;
     sceneContainer.add(runnerMesh);
 
     [-1.85, 1.85].forEach((rx) => {
@@ -513,15 +513,15 @@
 
     const backWall = new THREE.Mesh(new THREE.BoxGeometry(22, 5.2, 0.35), wallMat);
     backWall.position.set(0, 2.6, -9.2);
-    backWall.receiveShadow = true;
+    backWall.receiveShadow = false;
 
     const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.35, 5.2, 18), wallMat);
     leftWall.position.set(-11.0, 2.6, -0.5);
-    leftWall.receiveShadow = true;
+    leftWall.receiveShadow = false;
 
     const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.35, 5.2, 18), wallMat);
     rightWall.position.set(11.0, 2.6, -0.5);
-    rightWall.receiveShadow = true;
+    rightWall.receiveShadow = false;
 
     const corniceBack = new THREE.Mesh(new THREE.BoxGeometry(22, 0.18, 0.22), M.metalBrass);
     corniceBack.position.set(0, 5.1, -9.05);
@@ -536,10 +536,10 @@
       [7.5, 3.5]
     ].forEach(([cx, cz]) => {
       const colGroup = new THREE.Group();
-      const colShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.36, 4.8, 24), M.marbleWhite);
+      const colShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.36, 4.8, 16), M.marbleWhite);
       colShaft.position.y = 2.4;
-      colShaft.castShadow = true;
-      colShaft.receiveShadow = true;
+      colShaft.castShadow = false;
+      colShaft.receiveShadow = false;
 
       const colBase = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.25, 0.9), M.metalBrass);
       colBase.position.y = 0.125;
@@ -602,7 +602,7 @@
 
     const bellBase = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.09, 0.02, 20), M.metalBrass);
     bellBase.position.y = 0.01;
-    const bellDome = new THREE.Mesh(new THREE.SphereGeometry(0.065, 20, 16, 0, Math.PI * 2, 0, Math.PI * 0.55), M.metalBrass);
+    const bellDome = new THREE.Mesh(new THREE.SphereGeometry(0.065, 12, 10, 0, Math.PI * 2, 0, Math.PI * 0.55), M.metalBrass);
     bellDome.position.y = 0.03;
     const bellPin = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.035, 10), M.metalChrome);
     bellPin.position.y = 0.085;
@@ -786,7 +786,7 @@
 
     const rugMesh = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.02, 3.8), M.rugPersian);
     rugMesh.position.set(-3.8, 0.015, 1.0);
-    rugMesh.receiveShadow = true;
+    rugMesh.receiveShadow = false;
     loungeGroup.add(rugMesh);
 
     function buildChesterfield() {
@@ -897,6 +897,7 @@
     });
 
     const chandLight = new THREE.PointLight(0xffedd5, 2.2, 18, 1.2);
+    chandLight.castShadow = false;
     chandLight.position.set(0, -0.3, 0);
     chandGroup.add(rod, chandLight);
 
@@ -963,6 +964,7 @@
     });
 
     const barLight = new THREE.PointLight(0x38bdf8, 1.2, 2.5);
+    barLight.castShadow = false;
     barLight.position.set(0, 0.65, 0.1);
 
     barGroup.add(barBody, barDoor, barLight);
@@ -1030,7 +1032,7 @@
 
     const clochePlate = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.015, 20), M.metalChrome);
     clochePlate.position.set(0, 0.91, 0);
-    const clocheDome = new THREE.Mesh(new THREE.SphereGeometry(0.14, 20, 14, 0, Math.PI * 2, 0, Math.PI * 0.5), M.metalChrome);
+    const clocheDome = new THREE.Mesh(new THREE.SphereGeometry(0.14, 14, 12, 0, Math.PI * 2, 0, Math.PI * 0.5), M.metalChrome);
     clocheDome.position.set(0, 0.92, 0);
     const clocheKnob = new THREE.Mesh(new THREE.SphereGeometry(0.025, 12, 12), M.metalChrome);
     clocheKnob.position.set(0, 1.07, 0);
@@ -1188,21 +1190,21 @@
     localAnimationState.stringLightBulbs = [];
 
     // A. Terraza de granito oscuro y alfombra circular
-    const terraceGeo = new THREE.CylinderGeometry(11.5, 12.0, 0.35, 48);
+    const terraceGeo = new THREE.CylinderGeometry(11.5, 12.0, 0.35, 18);
     const terraceMesh = new THREE.Mesh(
       terraceGeo,
       new THREE.MeshStandardMaterial({ color: 0x181824, roughness: 0.35, metalness: 0.15 })
     );
     terraceMesh.position.set(0, -0.175, -0.5);
-    terraceMesh.receiveShadow = true;
+    terraceMesh.receiveShadow = false;
     sceneContainer.add(terraceMesh);
 
-    const rugTrim = new THREE.Mesh(new THREE.CylinderGeometry(3.18, 3.18, 0.02, 40), M.metalBrass);
+    const rugTrim = new THREE.Mesh(new THREE.CylinderGeometry(3.18, 3.18, 0.02, 18), M.metalBrass);
     rugTrim.position.set(0, 0.01, 0);
 
-    const rugCenter = new THREE.Mesh(new THREE.CylinderGeometry(3.05, 3.05, 0.03, 40), M.velvetBurgundy);
+    const rugCenter = new THREE.Mesh(new THREE.CylinderGeometry(3.05, 3.05, 0.03, 18), M.velvetBurgundy);
     rugCenter.position.set(0, 0.015, 0);
-    rugCenter.receiveShadow = true;
+    rugCenter.receiveShadow = false;
     sceneContainer.add(rugTrim, rugCenter);
 
     // Cielo nocturno estrellado sobre la terraza (THREE.Points sutiles)
@@ -1359,25 +1361,25 @@
     const tableGroup = new THREE.Group();
     tableGroup.name = 'IntimateTableForTwo';
 
-    const tableBase = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.48, 0.08, 24), M.wroughtIron);
+    const tableBase = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.48, 0.08, 16), M.wroughtIron);
     tableBase.position.y = 0.04;
     const tablePole = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.075, 0.9, 16), M.wroughtIron);
     tablePole.position.y = 0.48;
 
-    const tableTop = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.04, 32), M.woodMahogany);
+    const tableTop = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.04, 16), M.woodMahogany);
     tableTop.position.y = 0.93;
 
-    const clothWhite = new THREE.Mesh(new THREE.CylinderGeometry(0.96, 1.08, 0.62, 32), M.linenWhite);
+    const clothWhite = new THREE.Mesh(new THREE.CylinderGeometry(0.96, 1.08, 0.62, 16), M.linenWhite);
     clothWhite.position.y = 0.62;
 
-    const topCloth = new THREE.Mesh(new THREE.CylinderGeometry(0.98, 1.04, 0.12, 32), M.velvetBurgundy);
+    const topCloth = new THREE.Mesh(new THREE.CylinderGeometry(0.98, 1.04, 0.12, 16), M.velvetBurgundy);
     topCloth.position.y = 0.92;
 
     tableGroup.add(tableBase, tablePole, tableTop, clothWhite, topCloth);
 
     function buildBistroChair() {
       const chair = new THREE.Group();
-      const seat = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.06, 24), M.velvetBurgundy);
+      const seat = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.06, 16), M.velvetBurgundy);
       seat.position.y = 0.48;
 
       const backCurve = new THREE.Mesh(new THREE.TorusGeometry(0.26, 0.02, 10, 20, Math.PI), M.wroughtIron);
@@ -1416,7 +1418,7 @@
 
     [-0.45, 0.45].forEach((px, idx) => {
       const plateGroup = new THREE.Group();
-      const dinnerPlate = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.16, 0.02, 24), M.marbleWhite);
+      const dinnerPlate = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.16, 0.02, 16), M.marbleWhite);
       dinnerPlate.position.y = 0.01;
 
       const protein = new THREE.Mesh(
@@ -1459,7 +1461,7 @@
     // Luz cálida puntual (PointLight dorada suave) saliendo de la vela central de la mesa
     const flameLight = new THREE.PointLight(0xffb84d, 2.7, 7.8, 1.2);
     flameLight.position.set(0, 0.42, 0);
-    flameLight.castShadow = true;
+    flameLight.castShadow = false;
     if (flameLight.shadow) {
       flameLight.shadow.bias = -0.001;
       flameLight.shadow.mapSize.width = 512;
@@ -1470,7 +1472,7 @@
     const tableFillLight = new THREE.PointLight(0xffedd5, 0.85, 4.5, 1.5);
     tableFillLight.position.set(0, 0.65, 0);
 
-    candleGroup.add(candBase, candStem, waxCandle, flameMesh, flameLight, tableFillLight);
+    candleGroup.add(candBase, candStem, waxCandle, flameMesh, flameLight);
     candleGroup.position.set(0, 0.98, 0);
 
     localAnimationState.candleMeshes.push(flameMesh);
@@ -1704,7 +1706,7 @@
     const g = new THREE.Group();
     const base = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.09, 0.02, 20), M.metalBrass);
     base.position.y = 0.01;
-    const dome = new THREE.Mesh(new THREE.SphereGeometry(0.065, 20, 16, 0, Math.PI * 2, 0, Math.PI * 0.55), M.metalBrass);
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(0.065, 12, 10, 0, Math.PI * 2, 0, Math.PI * 0.55), M.metalBrass);
     dome.position.y = 0.03;
     const pin = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.035, 10), M.metalChrome);
     pin.position.y = 0.085;
@@ -1795,9 +1797,9 @@
   B['dating_table_for_two'] = function(item, scen, P) {
     const M = createSharedPBRMaterials(THREE);
     const g = new THREE.Group();
-    const top = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.04, 32), M.velvetBurgundy);
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.04, 16), M.velvetBurgundy);
     top.position.y = 0.93;
-    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.48, 0.08, 24), M.wroughtIron);
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.48, 0.08, 16), M.wroughtIron);
     base.position.y = 0.04;
     g.add(top, base);
     return g;
