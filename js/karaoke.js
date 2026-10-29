@@ -36,6 +36,8 @@
     rafId: null,
     syncRafId: null,
     syncTimer: null,
+    player: null,
+    playerState: -1,
     lastYtTime: 0,
     lastPerfTime: 0,
     currentIndex: -1,
@@ -46,9 +48,43 @@
     offsetSec: 0,
     currentSongId: null,
 
+    bindPlayer(player, lyrics, songId) {
+      this.player = player || window.activeYtPlayer;
+      window.activeYtPlayer = this.player;
+      window.ytMusicPlayer = this.player;
+      window.player = this.player;
+      if (lyrics && Array.isArray(lyrics) && lyrics.length > 0) {
+        this.lyricsData = lyrics;
+        this.stanzas = lyrics;
+      }
+      this.start(this.player, this.lyricsData, songId || this.currentSongId);
+    },
+
+    onPlayerStateChange(state) {
+      this.playerState = state;
+      // YT.PlayerState: ENDED = 0, PLAYING = 1, PAUSED = 2, BUFFERING = 3, CUED = 5
+      const curTime = (this.player && typeof this.player.getCurrentTime === 'function')
+        ? this.player.getCurrentTime()
+        : (this.lastYtTime || 0);
+
+      if (state === 1) { // PLAYING: reloj en vivo
+        this.updateLiveSyncBadge(curTime, true, state);
+        if (!this.rafId) {
+          this.start(this.player, this.lyricsData, this.currentSongId);
+        }
+      } else { // PAUSADO, BUFFERING, FINALIZADO: congelar avance de letras
+        this.updateLiveSyncBadge(curTime, false, state);
+      }
+
+      if (typeof handlePlayerStateChange === 'function') {
+        try { handlePlayerStateChange(state); } catch (_) {}
+      }
+    },
+
     start(player, lyrics, songId) {
       this.stop();
-      this.lyricsData = lyrics || [];
+      this.player = player || window.activeYtPlayer || ytMusicPlayer || window._holoYtPlayer;
+      this.lyricsData = lyrics || activeLyricsList || [];
       this.stanzas = this.lyricsData;
       this.currentIndex = -1;
       this.currentLyricIndex = -1;
@@ -83,48 +119,66 @@
       // Cachear en memoria las referencias a los nodos del DOM una sola vez
       const container = document.getElementById('karaoke-lyrics-container') || document.getElementById('musicLyricsContainer');
       this.lyricNodes = (container && typeof container.querySelectorAll === 'function')
-        ? Array.from(container.querySelectorAll('.karaoke-lyric-line, .lyric-line'))
-        : (typeof document.querySelectorAll === 'function' ? Array.from(document.querySelectorAll('.karaoke-lyric-line, .lyric-line')) : []);
+        ? Array.from(container.querySelectorAll('.karaoke-lyric-line, .lyric-line, .stanza-card'))
+        : (typeof document.querySelectorAll === 'function' ? Array.from(document.querySelectorAll('.karaoke-lyric-line, .lyric-line, .stanza-card')) : []);
 
       ensureKaraokeOffsetControls();
       this.updateOffsetBadgeUI();
 
       this.lastYtTime = 0;
-      this.lastPerfTime = performance.now();
+      this.lastPerfTime = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
 
       const tick = () => {
-        const p = player || window._holoYtPlayer || ytMusicPlayer || window.ytMusicPlayer;
-        if (p) {
+        const p = window.activeYtPlayer || this.player || ytMusicPlayer || window._holoYtPlayer;
+        if (p && typeof p.getCurrentTime === 'function') {
           let pState = -1;
           if (typeof p.getPlayerState === 'function') {
             try { pState = p.getPlayerState(); } catch (_) {}
-          } else if (window.ytMasterState && typeof window.ytMasterState.playerState === 'number') {
-            pState = window.ytMasterState.playerState;
+          } else if (typeof this.playerState === 'number') {
+            pState = this.playerState;
           }
 
-          if (pState === 1) { // PLAYING
+          if (pState === 1) { // PLAYING: Sincronización en vivo
             let rawTime = 0;
-            if (typeof p.getCurrentTime === 'function') {
-              try { rawTime = p.getCurrentTime(); } catch (_) {}
-            } else if (window.ytMasterState && typeof window.ytMasterState.currentTime === 'number') {
-              rawTime = window.ytMasterState.currentTime;
-            }
-
-            const now = performance.now();
-            if (Math.abs(rawTime - this.lastYtTime) > 0.05) {
+            try { rawTime = p.getCurrentTime(); } catch (_) {}
+            if (typeof rawTime === 'number' && !isNaN(rawTime) && rawTime >= 0) {
               this.lastYtTime = rawTime;
-              this.lastPerfTime = now;
+              const smoothTime = rawTime + this.offsetSec;
+              this.updateActiveLine(smoothTime);
+              this.updateLiveSyncBadge(rawTime, true, pState);
+              this.updateSeekBarUI(rawTime);
             }
-            const smoothTime = this.lastYtTime + ((now - this.lastPerfTime) / 1000) + this.offsetSec;
-            this.updateActiveLine(smoothTime);
+          } else { // PAUSADO O BUFFERING O FINALIZADO: DETENER INMEDIATAMENTE AVANCE DE LETRAS
+            this.updateLiveSyncBadge(this.lastYtTime || 0, false, pState);
           }
         }
+
         this.rafId = requestAnimationFrame(tick);
         this.syncRafId = this.rafId;
       };
 
       this.rafId = requestAnimationFrame(tick);
       this.syncRafId = this.rafId;
+    },
+
+    updateLiveSyncBadge(curTime, isPlaying, state) {
+      const badge = document.getElementById('karaokeLiveStatusBadge');
+      if (!badge) return;
+
+      if (isPlaying && state === 1) {
+        const mins = Math.floor(curTime / 60);
+        const secs = String(Math.floor(curTime % 60)).padStart(2, '0');
+        const secVal = curTime.toFixed(1);
+        badge.textContent = `🟢 Sincronizado en vivo — Minuto ${mins}:${secs} (${secVal}s)`;
+        badge.className = 'text-[11px] font-mono font-bold text-emerald-300 bg-emerald-950/80 border border-emerald-500/40 px-2.5 py-0.5 rounded-full flex items-center gap-1.5 shadow-sm';
+      } else {
+        let pauseText = '⏸ Video en pausa';
+        if (state === 3) pauseText = '⌛ Buffering...';
+        else if (state === 0) pauseText = '⏹ Video finalizado';
+        else if (state === 5) pauseText = '🎬 Video listo';
+        badge.textContent = pauseText;
+        badge.className = 'text-[11px] font-mono font-bold text-amber-300 bg-amber-950/80 border border-amber-500/40 px-2.5 py-0.5 rounded-full flex items-center gap-1.5 shadow-sm';
+      }
     },
 
     updateActiveLine(currentTime) {
@@ -178,6 +232,36 @@
         if (badge) {
           badge.textContent = `Estrofa ${idx + 1} de ${len}`;
         }
+      }
+    },
+
+    highlightIndex(idx) {
+      if (idx < 0 || !this.lyricNodes || !this.lyricNodes[idx]) return;
+
+      if (this.currentIndex >= 0 && this.lyricNodes[this.currentIndex]) {
+        const prevNode = this.lyricNodes[this.currentIndex];
+        prevNode.classList.remove('active', 'lyric-active', 'scale-[1.02]', 'border-cyan-400', 'bg-cyan-950/80', 'text-white');
+        if (!prevNode.classList.contains('lyric-inactive')) {
+          prevNode.classList.add('lyric-inactive');
+        }
+      }
+
+      this.currentIndex = idx;
+      this.currentLyricIndex = idx;
+
+      const node = this.lyricNodes[idx];
+      node.classList.remove('lyric-inactive');
+      node.classList.add('active', 'lyric-active', 'scale-[1.02]', 'border-cyan-400', 'bg-cyan-950/80', 'text-white');
+
+      const container = node.parentElement;
+      if (container) {
+        const scrollTarget = node.offsetTop - (container.clientHeight / 2) + (node.clientHeight / 2);
+        container.scrollTo({ top: Math.max(0, scrollTarget), behavior: 'smooth' });
+      }
+
+      const badge = document.getElementById('karaokeTimeBadge');
+      if (badge) {
+        badge.textContent = `Estrofa ${idx + 1} de ${this.lyricsData.length}`;
       }
     },
 
@@ -265,7 +349,7 @@
       this.currentLyricIndex = -1;
       const container = document.getElementById('karaoke-lyrics-container') || document.getElementById('musicLyricsContainer');
       if (container) {
-        this.lyricNodes = Array.from(container.querySelectorAll('.karaoke-lyric-line, .lyric-line'));
+        this.lyricNodes = Array.from(container.querySelectorAll('.karaoke-lyric-line, .lyric-line, .stanza-card'));
       }
     },
 
@@ -302,22 +386,58 @@
             <span class="text-cyan-400 font-bold text-[11px] flex items-center gap-1">⏱️ Sincronía:</span>
             <span id="karaokeOffsetBadge" class="px-2 py-0.5 rounded-md bg-cyan-950 border border-cyan-500/50 text-cyan-300 font-mono font-bold text-[11px]">0.0s</span>
           </div>
-          <div class="flex items-center gap-1">
+          <div class="flex flex-wrap items-center gap-1">
             <button type="button" onclick="window.KaraokeSyncEngine.adjustOffset(-1.0)" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-cyan-950 active:scale-95 text-slate-200 hover:text-cyan-300 text-[10px] font-mono font-bold transition cursor-pointer border border-slate-700 hover:border-cyan-500/50" title="Adelantar letra 1.0s">[-1.0s]</button>
             <button type="button" onclick="window.KaraokeSyncEngine.adjustOffset(-0.2)" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-cyan-950 active:scale-95 text-slate-200 hover:text-cyan-300 text-[10px] font-mono font-bold transition cursor-pointer border border-slate-700 hover:border-cyan-500/50" title="Adelantar letra 0.2s">[-0.2s]</button>
             <button type="button" onclick="window.KaraokeSyncEngine.setOffset(0)" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 hover:text-white text-[10px] font-mono font-bold transition cursor-pointer border border-slate-700" title="Reiniciar sincronía a 0.0s">[Reset]</button>
             <button type="button" onclick="window.KaraokeSyncEngine.adjustOffset(0.2)" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-cyan-950 active:scale-95 text-slate-200 hover:text-cyan-300 text-[10px] font-mono font-bold transition cursor-pointer border border-slate-700 hover:border-cyan-500/50" title="Retrasar letra 0.2s">[+0.2s]</button>
             <button type="button" onclick="window.KaraokeSyncEngine.adjustOffset(1.0)" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-cyan-950 active:scale-95 text-slate-200 hover:text-cyan-300 text-[10px] font-mono font-bold transition cursor-pointer border border-slate-700 hover:border-cyan-500/50" title="Retrasar letra 1.0s">[+1.0s]</button>
+            <button type="button" onclick="window.syncCurrentPlayingStanza()" class="px-2.5 py-0.5 rounded bg-cyan-900/90 hover:bg-cyan-800 active:scale-95 text-cyan-200 text-[10px] font-bold transition cursor-pointer border border-cyan-500/50 flex items-center gap-1 shadow-sm" title="Alinear letra al segundo actual del video">
+              <span>🎯</span> <span>Alinear letra al segundo actual del video</span>
+            </button>
           </div>
         </div>
-        <p class="text-[11px] text-cyan-300/90 leading-tight">
-          💡 <strong>Tip:</strong> Haz clic en el verso que esté cantando ahora mismo para sincronizar toda la canción al instante
-        </p>
+        <div class="flex items-center justify-between gap-2 text-[11px] text-cyan-300/90 leading-tight">
+          <span>💡 <strong>Tip:</strong> Haz clic en el verso para saltar el video ahí, o en 🎯 para sincronizar con la voz.</span>
+          <button type="button" id="toggleCalibrateOnTapBtn" onclick="window.toggleCalibrateOnTap()" class="px-2 py-0.5 rounded bg-slate-800 text-cyan-300 font-bold text-[10px] border border-cyan-500/30 hover:border-cyan-400 active:scale-95 cursor-pointer whitespace-nowrap" title="Cambiar comportamiento al pulsar un verso">
+            🎵 Saltar al Tocar: ON
+          </button>
+        </div>
       `;
       container.parentNode.insertBefore(ctrl, container);
     }
   }
   window.ensureKaraokeOffsetControls = ensureKaraokeOffsetControls;
+
+  window.syncCurrentPlayingStanza = function() {
+    const player = window.activeYtPlayer || ytMusicPlayer || window._holoYtPlayer;
+    if (!player || typeof player.getCurrentTime !== 'function') return;
+    let curTime = 0;
+    try { curTime = player.getCurrentTime(); } catch (_) {}
+    const lyrics = (KaraokeSyncEngine && KaraokeSyncEngine.lyricsData) ? KaraokeSyncEngine.lyricsData : (activeLyricsList || []);
+    if (!lyrics || lyrics.length === 0) return;
+    const currentIdx = (KaraokeSyncEngine && KaraokeSyncEngine.currentIndex >= 0) ? KaraokeSyncEngine.currentIndex : 0;
+    const lineTime = typeof lyrics[currentIdx].time === 'number'
+      ? lyrics[currentIdx].time
+      : (typeof lyrics[currentIdx].startTime === 'number' ? lyrics[currentIdx].startTime : 0);
+    window.syncStanzaHere(lineTime, currentIdx);
+  };
+
+  window.toggleCalibrateOnTap = function() {
+    window._calibrateOffsetOnTap = !window._calibrateOffsetOnTap;
+    const btn = document.getElementById('toggleCalibrateOnTapBtn');
+    if (btn) {
+      if (window._calibrateOffsetOnTap) {
+        btn.className = 'px-2 py-0.5 rounded bg-amber-500 text-slate-950 font-bold text-[10px] border border-amber-400 active:scale-95 cursor-pointer';
+        btn.textContent = '🎯 Calibrar al Tocar: ON';
+        if (typeof showFloatingToast === 'function') showFloatingToast('Modo calibrar: Toca cualquier verso para calibrar el reloj', '🎯');
+      } else {
+        btn.className = 'px-2 py-0.5 rounded bg-slate-800 text-cyan-300 font-bold text-[10px] border border-cyan-500/30 hover:border-cyan-400 active:scale-95 cursor-pointer';
+        btn.textContent = '🎵 Saltar al Tocar: ON';
+        if (typeof showFloatingToast === 'function') showFloatingToast('Modo normal: Toca cualquier verso para saltar el video ahí', '🎵');
+      }
+    }
+  };
 
   function updateLyricsOffsetUI() {
     KaraokeSyncEngine.updateOffsetBadgeUI();
@@ -778,33 +898,154 @@
     // ========================================================
     // YOUTUBE IFRAME PLAYER API OFICIAL
     // ========================================================
-    function initYouTubePlayer() {
-      if (ytMusicPlayer) return;
-      const iframeEl = document.getElementById('musicYouTubeIframe');
-      if (!iframeEl) return;
+    function ensureYouTubeApiReady(callback) {
+      if (typeof window !== 'undefined' && window.YT && typeof window.YT.Player === 'function') {
+        return callback();
+      }
+      if (typeof document !== 'undefined' && !document.querySelector('script[src*="youtube.com/iframe_api"]')) {
+        const s = document.createElement('script');
+        s.src = 'https://www.youtube.com/iframe_api';
+        document.head.appendChild(s);
+      }
+      const prevReady = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = function() {
+        if (typeof prevReady === 'function') {
+          try { prevReady(); } catch (_) {}
+        }
+        callback();
+      };
+    }
+    window.ensureYouTubeApiReady = ensureYouTubeApiReady;
 
-      if (window.YT && window.YT.Player) {
+    window.loadYouTubeSong = function(videoId, lyrics, songId) {
+      if (!videoId) return;
+
+      const currentLyricsArray = lyrics || activeLyricsList || [];
+      const currentSongId = songId || (MUSIC_SESSION_TRACKS[currentMusicIndex] ? MUSIC_SESSION_TRACKS[currentMusicIndex].id : 'custom_song');
+
+      // Asegurar que los contenedores del reproductor estén visibles
+      const searchSub = document.getElementById('music-search-subview');
+      const playerSub = document.getElementById('music-player-subview');
+      if (searchSub) {
+        searchSub.style.setProperty('display', 'none', 'important');
+        searchSub.classList.add('hidden');
+      }
+      if (playerSub) {
+        playerSub.style.setProperty('display', 'block', 'important');
+        playerSub.classList.remove('hidden');
+      }
+
+      const origVideoWrapper = document.getElementById('musicOriginalVideoWrapper');
+      if (origVideoWrapper) {
+        origVideoWrapper.style.setProperty('display', 'block', 'important');
+        origVideoWrapper.classList.remove('hidden');
+      }
+      const origMetaWrapper = document.getElementById('musicOriginalMetaWrapper');
+      if (origMetaWrapper) {
+        origMetaWrapper.style.setProperty('display', 'flex', 'important');
+        origMetaWrapper.classList.remove('hidden');
+      }
+      const holoStage = document.getElementById('musicHolographicStage');
+      if (holoStage) {
+        holoStage.style.setProperty('display', 'none', 'important');
+        holoStage.classList.add('hidden');
+      }
+
+      // Pausar y mutear audio secundario
+      const audioEl = document.getElementById('mastereng-audio');
+      if (audioEl) {
         try {
-          ytMusicPlayer = new YT.Player('musicYouTubeIframe', {
+          audioEl.pause();
+          audioEl.currentTime = 0;
+          audioEl.muted = true;
+        } catch (_) {}
+      }
+
+      // 1. Si ya existe window.activeYtPlayer con .loadVideoById y mount válido, reutilizarla
+      const mountEl = document.getElementById('yt-karaoke-mount');
+      if (window.activeYtPlayer && typeof window.activeYtPlayer.loadVideoById === 'function' && mountEl) {
+        try {
+          console.log('🔄 [YOUTUBE-API] Reutilizando window.activeYtPlayer con videoId:', videoId);
+          window.activeYtPlayer.loadVideoById(videoId);
+          window.activeYtPlayer.unMute();
+          window.activeYtPlayer.setVolume(100);
+          window.activeYtPlayer.playVideo();
+          KaraokeSyncEngine.bindPlayer(window.activeYtPlayer, currentLyricsArray, currentSongId);
+          return;
+        } catch (e) {
+          console.warn('Error reutilizando activeYtPlayer, recreando:', e);
+          window.activeYtPlayer = null;
+        }
+      }
+
+      // 2. Si no existe o falló la reutilización, instanciar new YT.Player('yt-karaoke-mount')
+      ensureYouTubeApiReady(() => {
+        let currentMount = document.getElementById('yt-karaoke-mount');
+        if (!currentMount || currentMount.tagName === 'IFRAME') {
+          if (origVideoWrapper) {
+            origVideoWrapper.innerHTML = '<div id="yt-karaoke-mount" class="w-full h-full"></div><audio id="mastereng-audio" preload="auto" class="hidden" style="display:none;"></audio>';
+          }
+        }
+
+        try {
+          console.log('✨ [YOUTUBE-API] Instanciando new YT.Player en #yt-karaoke-mount con videoId:', videoId);
+          window.activeYtPlayer = new YT.Player('yt-karaoke-mount', {
+            videoId: videoId,
+            playerVars: {
+              autoplay: 1,
+              playsinline: 1,
+              rel: 0,
+              modestbranding: 1,
+              enablejsapi: 1,
+              origin: (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : ''
+            },
             events: {
-              'onReady': onYouTubePlayerReady,
-              'onStateChange': onYouTubePlayerStateChange,
-              'onError': function(ev) {
+              onReady: (e) => {
+                console.log('✅ [YOUTUBE-API] onReady fired');
+                try {
+                  e.target.unMute();
+                  e.target.setVolume(100);
+                  e.target.playVideo();
+                } catch (_) {}
+                KaraokeSyncEngine.bindPlayer(e.target, currentLyricsArray, currentSongId);
+              },
+              onStateChange: (e) => {
+                KaraokeSyncEngine.onPlayerStateChange(e.data);
+              },
+              onError: (e) => {
+                console.warn('[YOUTUBE-API] onError:', e.data);
                 if (typeof window.handleHoloPlayerError === 'function') {
-                  window.handleHoloPlayerError(ev.data);
+                  window.handleHoloPlayerError(e.data);
                 }
               }
             }
           });
-          isYtApiReady = true;
-        } catch (e) {
-          console.warn('Error inicializando YT.Player:', e);
+          window.ytMusicPlayer = window.activeYtPlayer;
+          ytMusicPlayer = window.activeYtPlayer;
+          window.player = window.activeYtPlayer;
+        } catch (err) {
+          console.error('Error instanciando new YT.Player:', err);
         }
+      });
+    };
+
+    function initYouTubePlayer() {
+      if (window.activeYtPlayer && typeof window.activeYtPlayer.loadVideoById === 'function') return;
+      const track = MUSIC_SESSION_TRACKS[currentMusicIndex] || MUSIC_SESSION_TRACKS[0];
+      if (track && track.youtubeId) {
+        window.loadYouTubeSong(track.youtubeId, track.lyrics, track.id);
       }
     }
 
     // Callback global requerido por la API oficial de YouTube
     window.onYouTubeIframeAPIReady = function() {
+      console.log('✅ [YOUTUBE-API] Global onYouTubeIframeAPIReady fired');
+      isYtApiReady = true;
+      initYouTubePlayer();
+    };
+
+    // Inicializar inmediatamente si la API ya estaba presente
+    if (typeof window !== 'undefined' && window.YT && window.YT.Player) {
       initYouTubePlayer();
     };
 
@@ -1316,23 +1557,7 @@
       if (titleEl) titleEl.textContent = title;
       if (artistEl) artistEl.textContent = artist;
 
-      // Cargar en el reproductor de YouTube
-      if (ytMusicPlayer && typeof ytMusicPlayer.loadVideoById === 'function') {
-        try {
-          ytMusicPlayer.loadVideoById(ytId);
-        } catch (_) {
-          const iframe = document.getElementById('musicYouTubeIframe');
-          if (iframe) iframe.src = `https://www.youtube-nocookie.com/embed/${ytId}?enablejsapi=1&autoplay=1`;
-        }
-      } else {
-        const iframe = document.getElementById('musicYouTubeIframe');
-        if (iframe) {
-          iframe.src = `https://www.youtube-nocookie.com/embed/${ytId}?enablejsapi=1&autoplay=1`;
-        }
-        initYouTubePlayer();
-      }
-
-      // Intentar obtener letra sincronizada desde /api/music/lyrics
+      // Intentar obtener letra sincronizada
       let lyrics = null;
       try {
         const lyricsUrl = `http://localhost:3000/api/music/lyrics?id=${encodeURIComponent(ytId)}&title=${encodeURIComponent(title)}&artist=${encodeURIComponent(artist)}`;
@@ -1343,9 +1568,7 @@
             lyrics = data;
           }
         }
-      } catch (err) {
-        console.warn('No se pudo obtener letra remota:', err);
-      }
+      } catch (err) {}
 
       if ((!lyrics || lyrics.length === 0) && typeof window.fetchLrclibSyncedLyrics === 'function') {
         try {
@@ -1370,12 +1593,73 @@
       activeLyricsList = lyrics;
       currentKaraokeStanzaIndex = 0;
       renderLyricsFromList(lyrics);
-      if (window.KaraokeSyncEngine && typeof window.KaraokeSyncEngine.initSong === 'function') {
-        window.KaraokeSyncEngine.initSong(lyrics);
-      }
-      startMusicKaraokeSync();
+
+      window.loadYouTubeSong(ytId, lyrics, 'yt_' + ytId);
       showFloatingToast(`Cargado: "${title}"`, '🎵');
     }
+
+    window.loadSongToKaraoke = async function(trackName, artistName, previewUrl, artworkUrl, durationSec) {
+      window._userInitiatedMusicPlayback = true;
+      if (typeof window.openMusicPlayerStage === 'function') {
+        window.openMusicPlayerStage();
+      }
+
+      const titleEl = document.getElementById('activeMusicTitle');
+      const artistEl = document.getElementById('activeMusicArtist');
+      if (titleEl) titleEl.textContent = trackName;
+      if (artistEl) artistEl.textContent = artistName;
+
+      // 1. Buscar en MUSIC_SESSION_TRACKS si coincide
+      const matchIdx = MUSIC_SESSION_TRACKS.findIndex(t =>
+        t.title.toLowerCase() === (trackName || '').toLowerCase() ||
+        ((trackName || '').toLowerCase().includes(t.title.toLowerCase()) && (artistName || '').toLowerCase().includes(t.artist.toLowerCase()))
+      );
+      if (matchIdx !== -1) {
+        selectMusicTrack(matchIdx);
+        return;
+      }
+
+      // 2. Si no es de la lista local, resolver su YouTube Video ID
+      let youtubeVideoId = null;
+      if (typeof window.resolveYouTubeVideoId === 'function') {
+        try {
+          youtubeVideoId = await window.resolveYouTubeVideoId(artistName, trackName);
+        } catch (e) {
+          console.warn('Error resolviendo videoId:', e);
+        }
+      }
+      const videoId = youtubeVideoId || 'xwtdhWltSIg';
+
+      // 3. Obtener o generar letras sincronizadas
+      let lyrics = null;
+      if (typeof window.fetchLrclibSyncedLyrics === 'function') {
+        try {
+          const lrcRes = await window.fetchLrclibSyncedLyrics(artistName, trackName, durationSec || 210);
+          if (lrcRes && Array.isArray(lrcRes.lyrics) && lrcRes.lyrics.length > 0) {
+            lyrics = lrcRes.lyrics;
+          }
+        } catch (_) {}
+      }
+
+      if (!lyrics || lyrics.length === 0) {
+        lyrics = [
+          { time: 5, startTime: 5, endTime: 18, text: `Listen carefully to the melody of ${trackName}`, es: `Escucha atentamente la melodía de ${trackName}` },
+          { time: 18, startTime: 18, endTime: 32, text: `Feel the rhythm and musical emotion by ${artistName}`, es: `Siente el ritmo y la emoción musical de ${artistName}` },
+          { time: 32, startTime: 32, endTime: 50, text: "Touch any word in the lyrics to inspect its phonetic pronunciation", es: "Toca cualquier palabra de la letra para ver su pronunciación fonética" },
+          { time: 50, startTime: 50, endTime: 75, text: "Sing along with the music to master spoken English fluency", es: "Canta con la música para dominar la fluidez en inglés hablado" },
+          { time: 75, startTime: 75, endTime: 105, text: "Every stanza boosts your listening comprehension and TOEFL vocabulary", es: "Cada estrofa potencia tu comprensión auditiva y vocabulario TOEFL" },
+          { time: 105, startTime: 105, endTime: 135, text: "Keep practicing daily with your favorite English songs and melodies", es: "Sigue practicando a diario con tus canciones y melodías favoritas en inglés" }
+        ];
+      }
+
+      activeLyricsList = lyrics;
+      window.activeLyricsList = lyrics;
+      renderLyricsFromList(lyrics);
+
+      const songId = (artistName + '_' + trackName).toLowerCase().replace(/[^a-z0-9_]/g, '_');
+      window.loadYouTubeSong(videoId, lyrics, songId);
+      showFloatingToast(`Reproduciendo "${trackName}"`, '🎵');
+    };
 
     function loadYouTubeVideoById(ytId, title = 'Video', artist = 'Artista', customLyrics = null) {
       if (customLyrics) {
@@ -1691,25 +1975,8 @@
       renderMusicTracksList();
 
       if (track.youtubeId) {
-        if (ytMusicPlayer && typeof ytMusicPlayer.loadVideoById === 'function') {
-          try {
-            ytMusicPlayer.loadVideoById(track.youtubeId);
-            ytMusicPlayer.unMute();
-            ytMusicPlayer.setVolume(100);
-            ytMusicPlayer.playVideo();
-          } catch (_) {
-            if (ytIframe) ytIframe.src = `https://www.youtube-nocookie.com/embed/${track.youtubeId}?enablejsapi=1&autoplay=1`;
-          }
-        } else {
-          if (ytIframe) {
-            ytIframe.src = `https://www.youtube-nocookie.com/embed/${track.youtubeId}?enablejsapi=1&autoplay=1`;
-          }
-          initYouTubePlayer();
-        }
+        window.loadYouTubeSong(track.youtubeId, activeLyricsList, track.id);
       }
-
-      KaraokeSyncEngine.start(ytMusicPlayer, activeLyricsList, track.id);
-      window.lyricsOffset = KaraokeSyncEngine.offsetSec;
 
       if (typeof window.logAudioDiagnosticStatus === 'function') {
         window.logAudioDiagnosticStatus('YouTube', 'Playing', 100);
@@ -1889,17 +2156,17 @@
 
         return `
           <div id="karaokeStanza-${lIdx}"
-            class="karaoke-lyric-line lyric-line stanza-card lyric-stanza-card music-stanza-row ${isCurrent ? 'active lyric-active scale-[1.02] border-cyan-400 bg-cyan-950/80 text-white' : 'lyric-inactive'}" data-sidx="${lIdx}"
+            class="karaoke-lyric-line lyric-line stanza-card lyric-stanza-card music-stanza-row ${isCurrent ? 'active lyric-active scale-[1.02] border-cyan-400 bg-cyan-950/80 text-white' : 'lyric-inactive'} cursor-pointer transition-all duration-200 border rounded-2xl p-3.5 mb-2.5 bg-slate-900/60 border-slate-800/80 hover:border-cyan-500/50 hover:bg-slate-850" data-sidx="${lIdx}"
             data-start="${lineTime}" data-end="${stanza.endTime}"
-            onclick="window.syncStanzaHere ? window.syncStanzaHere(${lineTime}, ${lIdx}, event) : (window.seekToStanza ? window.seekToStanza(${lineTime}, ${lIdx}) : seekYouTubePlayer(${lineTime}, ${lIdx}))">
+            onclick="window.handleStanzaClick(${lIdx}, ${lineTime}, event)">
             <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-slate-700/40">
               <span class="text-[10px] font-extrabold text-cyan-400 uppercase tracking-widest bg-cyan-500/15 px-2.5 py-0.5 rounded-full border border-cyan-500/25">
                 ESTROFA ${lIdx + 1} &bull; ${lineTime}S
               </span>
               <div class="flex items-center gap-1.5">
                 <button type="button" onclick="event.stopPropagation(); window.syncStanzaHere(${lineTime}, ${lIdx}, event)"
-                  class="p-1 px-2 rounded-lg bg-cyan-950/80 hover:bg-cyan-800/90 text-cyan-300 hover:text-cyan-100 text-xs transition cursor-pointer flex items-center gap-1 border border-cyan-500/40 shadow-sm active:scale-95 hover:border-cyan-400" title="Sincronizar esta estrofa con el audio actual">
-                  <span>🎯</span> <span class="text-[10px] font-bold">Sincronizar Aquí</span>
+                  class="p-1 px-2.5 rounded-lg bg-cyan-950/90 hover:bg-cyan-800 text-cyan-300 hover:text-white text-xs transition cursor-pointer flex items-center gap-1 border border-cyan-500/40 shadow-sm active:scale-95 hover:border-cyan-400" title="Alinear letra al segundo actual del video">
+                  <span>🎯</span> <span class="text-[10px] font-bold">Sincronizar voz aquí</span>
                 </button>
                 <button type="button" onclick="event.stopPropagation(); speakText('${safeFullText}')"
                   class="p-1 px-2.5 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-cyan-300 text-xs transition cursor-pointer flex items-center gap-1 border border-slate-700/60 shadow-sm active:scale-95" title="Pronunciación de la estrofa">
@@ -1923,44 +2190,13 @@
       }
 
       // Inicializar nodos en memoria y controles de offset
-      KaraokeSyncEngine.lyricNodes = Array.from(container.querySelectorAll('.karaoke-lyric-line, .lyric-line'));
+      KaraokeSyncEngine.lyricNodes = Array.from(container.querySelectorAll('.karaoke-lyric-line, .lyric-line, .stanza-card'));
       KaraokeSyncEngine.lyricsData = lyrics;
       KaraokeSyncEngine.stanzas = lyrics;
       KaraokeSyncEngine.currentIndex = -1;
       KaraokeSyncEngine.currentLyricIndex = -1;
       ensureKaraokeOffsetControls();
       KaraokeSyncEngine.updateOffsetBadgeUI();
-
-      // REQUERIMIENTO: SINCRONIZACIÓN CON UN CLIC ("TAP LINE TO SYNC")
-      KaraokeSyncEngine.lyricNodes.forEach((lineEl, i) => {
-        lineEl.addEventListener('click', (e) => {
-          if (e.target.closest('button') || e.target.closest('.k-word')) return;
-
-          const yt = ytMusicPlayer || window._holoYtPlayer || window.ytPlayer;
-          let currentVideoTime = 0;
-          if (yt && typeof yt.getCurrentTime === 'function') {
-            try { currentVideoTime = yt.getCurrentTime(); } catch (_) {}
-          } else if (ytMasterState && typeof ytMasterState.currentTime === 'number') {
-            currentVideoTime = ytMasterState.currentTime;
-          }
-
-          if (currentVideoTime > 0.5 && lyrics[i]) {
-            const lineOriginalTime = (typeof lyrics[i].time === 'number')
-              ? lyrics[i].time
-              : (typeof lyrics[i].startTime === 'number' ? lyrics[i].startTime : 0);
-            // Ajustar offset global para que toda la canción quede 100% sincronizada desde este punto
-            const exactOffset = lineOriginalTime - currentVideoTime;
-            KaraokeSyncEngine.setExactOffset(exactOffset, KaraokeSyncEngine.currentSongId);
-          } else if (lyrics[i]) {
-            const lineTime = (typeof lyrics[i].time === 'number')
-              ? lyrics[i].time
-              : (typeof lyrics[i].startTime === 'number' ? lyrics[i].startTime : 0);
-            if (typeof window.seekToStanza === 'function') {
-              window.seekToStanza(lineTime, i);
-            }
-          }
-        });
-      });
     }
 
     // Calibración de 1 clic para intro de video detectada
@@ -1992,25 +2228,85 @@
     };
 
     // Sincronización Interactiva de 1 Clic en Cualquier Estrofa ("Tap to Sync")
-    window.syncStanzaHere = function(stanzaTime, stanzaIdx, event) {
+    window.handleStanzaClick = function(stanzaIdx, lineTime, event) {
+      if (event && event.target && event.target.closest('button')) return;
+
+      const player = window.activeYtPlayer || ytMusicPlayer || window._holoYtPlayer;
+      const offset = (KaraokeSyncEngine && typeof KaraokeSyncEngine.offsetSec === 'number')
+        ? KaraokeSyncEngine.offsetSec
+        : (window.lyricsOffset || 0);
+
+      // Si el modo "Calibrar Offset al Tocar" está activo
+      if (window._calibrateOffsetOnTap && player && typeof player.getCurrentTime === 'function') {
+        try {
+          const curTime = player.getCurrentTime();
+          const exactOffset = Math.round((lineTime - curTime) * 10) / 10;
+          if (KaraokeSyncEngine && typeof KaraokeSyncEngine.setExactOffset === 'function') {
+            KaraokeSyncEngine.setExactOffset(exactOffset, KaraokeSyncEngine.currentSongId);
+          }
+        } catch (_) {}
+      } else {
+        // Salta el video de YouTube directamente a ese verso
+        const seekTarget = Math.max(0, lineTime - offset);
+        if (player && typeof player.seekTo === 'function') {
+          try {
+            player.seekTo(seekTarget, true);
+            if (typeof player.playVideo === 'function') {
+              player.playVideo();
+            }
+          } catch (_) {}
+        }
+        const ifr = document.getElementById('yt-karaoke-mount') || document.querySelector('#musicOriginalVideoWrapper iframe') || document.getElementById('musicHoloYoutubeIframe');
+        if (ifr && ifr.contentWindow) {
+          try {
+            ifr.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'seekTo', args: [seekTarget, true] }), '*');
+            ifr.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'playVideo', args: '' }), '*');
+          } catch (_) {}
+        }
+      }
+
+      // Iluminar inmediatamente la línea clicada (.active), quitar .active de las demás
+      if (KaraokeSyncEngine && typeof KaraokeSyncEngine.highlightIndex === 'function') {
+        KaraokeSyncEngine.highlightIndex(stanzaIdx);
+      } else if (typeof highlightKaraokeStanza === 'function') {
+        highlightKaraokeStanza(stanzaIdx, true);
+      }
+
+      if (typeof showFloatingToast === 'function') {
+        showFloatingToast(`Estrofa ${stanzaIdx + 1} (${lineTime}s) ▶`, '🎵');
+      }
+    };
+
+    // Sincronización Interactiva al pulsar botón "🎯 Sincronizar voz aquí"
+    window.syncStanzaHere = function(lineTime, stanzaIdx, event) {
       if (event) {
         if (typeof event.stopPropagation === 'function') event.stopPropagation();
         if (typeof event.preventDefault === 'function') event.preventDefault();
       }
-      const playerTime = getMasterPlaybackTime();
-      // calibratedTime = playerTime + lyricsOffset -> lyricsOffset = stanzaTime - playerTime
-      const targetOffset = Math.round((stanzaTime - playerTime) * 10) / 10;
-      window.lyricsOffset = targetOffset;
-      try {
-        if (typeof localStorage !== 'undefined') {
-          localStorage.setItem('mastereng_lyrics_offset', String(targetOffset));
-        }
-      } catch (_) {}
-      updateLyricsOffsetUI();
-      highlightKaraokeStanza(stanzaIdx, true);
+      const player = window.activeYtPlayer || ytMusicPlayer || window._holoYtPlayer;
+      let curTime = 0;
+      if (player && typeof player.getCurrentTime === 'function') {
+        try { curTime = player.getCurrentTime(); } catch (_) {}
+      } else if (window.ytMasterState && typeof window.ytMasterState.currentTime === 'number') {
+        curTime = window.ytMasterState.currentTime;
+      }
+
+      const exactOffset = Math.round((lineTime - curTime) * 10) / 10;
+      if (KaraokeSyncEngine && typeof KaraokeSyncEngine.setExactOffset === 'function') {
+        KaraokeSyncEngine.setExactOffset(exactOffset, KaraokeSyncEngine.currentSongId);
+      } else {
+        window.lyricsOffset = exactOffset;
+      }
+
+      if (KaraokeSyncEngine && typeof KaraokeSyncEngine.highlightIndex === 'function') {
+        KaraokeSyncEngine.highlightIndex(stanzaIdx);
+      } else if (typeof highlightKaraokeStanza === 'function') {
+        highlightKaraokeStanza(stanzaIdx, true);
+      }
+
       if (typeof showFloatingToast === 'function') {
-        const sign = targetOffset > 0 ? '+' : '';
-        showFloatingToast(`Sincronizado aquí: ${sign}${targetOffset.toFixed(1)}s`, '🎯');
+        const sign = exactOffset >= 0 ? '+' : '';
+        showFloatingToast(`🎯 Voz sincronizada aquí: ${sign}${exactOffset.toFixed(1)}s`, '🎯');
       }
     };
 
@@ -2358,6 +2654,9 @@
       }
 
       // 3. Pausar instancias de la API YT.Player
+      if (window.activeYtPlayer && typeof window.activeYtPlayer.pauseVideo === 'function') {
+        try { window.activeYtPlayer.pauseVideo(); } catch (_) {}
+      }
       if (ytMusicPlayer && typeof ytMusicPlayer.pauseVideo === 'function') {
         try { ytMusicPlayer.pauseVideo(); } catch (_) {}
       }
@@ -2406,100 +2705,16 @@
     // SALTO TEMPORAL Y SINCRONIZACIÓN DE ESTROFA
     // ========================================================
     function seekToStanza(seconds, stanzaIdx = null) {
-      window._isUserScrollingLyrics = false;
-      const targetSec = parseFloat(seconds);
-      if (isNaN(targetSec)) return;
-
-      // Compensar offset de intro o calibración para el reproductor de video
-      const seekTime = (typeof window.lyricsOffset === 'number' && !isNaN(window.lyricsOffset) && Math.abs(window.lyricsOffset) > 0.1)
-        ? Math.max(0, targetSec - window.lyricsOffset)
-        : targetSec;
-
-      ytMasterState.lastReportedTime = seekTime;
-      ytMasterState.lastReportedTimestamp = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-
-      // 1. Salto temporal en el reproductor de YouTube (player.seekTo(seekTime, true))
-      const ytTargetPlayer = (typeof ytMusicPlayer !== 'undefined' && ytMusicPlayer) || window.ytMusicPlayer || window._holoYtPlayer || window.ytPlayer;
-      if (ytTargetPlayer && typeof ytTargetPlayer.seekTo === 'function') {
-        try { ytTargetPlayer.seekTo(seekTime, true); } catch (_) {}
-      }
-      const iframe = document.getElementById('musicYouTubeIframe');
-      if (iframe && iframe.contentWindow) {
-        try {
-          iframe.contentWindow.postMessage(JSON.stringify({
-            event: 'command',
-            func: 'seekTo',
-            args: [seekTime, true]
-          }), '*');
-        } catch (_) {}
-      }
-      const holoIframe = document.getElementById('musicHoloYoutubeIframe');
-      if (holoIframe && holoIframe.contentWindow) {
-        try {
-          holoIframe.contentWindow.postMessage(JSON.stringify({
-            event: 'command',
-            func: 'seekTo',
-            args: [seekTime, true]
-          }), '*');
-        } catch (_) {}
-      }
-
-      // 2. Mantener #mastereng-audio pausado y muteado si YouTube está activo
-      const audioEl = document.getElementById('mastereng-audio');
-      if (audioEl) {
-        try {
-          audioEl.currentTime = 0;
-          audioEl.pause();
-          audioEl.muted = true;
-        } catch (_) {}
-      }
-      const syncAudio = document.getElementById('karaokeAudioSync') || document.getElementById('karaokeAudioTracker');
-      if (syncAudio) {
-        try {
-          syncAudio.currentTime = seekTime;
-          syncAudio.pause();
-          syncAudio.muted = true;
-        } catch (_) {}
-      }
-
-      // 3. Resolver índice de la estrofa seleccionada
-      let targetIdx = stanzaIdx;
-      const lyrics = activeLyricsList || window.activeLyricsList || [];
-      if ((targetIdx === null || targetIdx === undefined || targetIdx < 0) && lyrics.length > 0) {
-        targetIdx = lyrics.findIndex(s => Math.abs((s.time || 0) - targetSec) < 0.8);
-        if (targetIdx === -1) {
-          targetIdx = lyrics.findIndex((s, i) => {
-            const nextTime = lyrics[i + 1] ? (lyrics[i + 1].time || 9999) : 9999;
-            return targetSec >= (s.time || 0) && targetSec < nextTime;
-          });
-        }
-      }
-
-      // 4. Sincronizar automáticamente window.lyricsOffset para esa estrofa sin desfasar el resto
-      if (targetIdx !== -1 && targetIdx !== null && targetIdx !== undefined && lyrics[targetIdx]) {
-        if (typeof window.lyricsOffset !== 'number' || isNaN(window.lyricsOffset)) {
-          window.lyricsOffset = -0.6;
-        }
-        highlightKaraokeStanza(targetIdx, true);
-      }
-
-      if (window.KaraokeSyncEngine) {
-        window.KaraokeSyncEngine.lastStanzaIdx = targetIdx;
-        window.KaraokeSyncEngine.syncFrame(targetSec, true);
-        window.KaraokeSyncEngine.updateSeekBarUI(targetSec);
-      }
-      if (typeof handleKaraokeTimeUpdate === 'function') {
-        handleKaraokeTimeUpdate(targetSec);
-      }
+      const lineTime = parseFloat(seconds) || 0;
+      const sIdx = (stanzaIdx !== null && stanzaIdx !== undefined && stanzaIdx >= 0) ? stanzaIdx : 0;
+      window.handleStanzaClick(sIdx, lineTime);
     }
     window.seekToStanza = seekToStanza;
 
     function seekYouTubePlayer(seconds, stanzaIdx = null) {
-      if (typeof window.seekTrackToSeconds === 'function') {
-        window.seekTrackToSeconds(seconds);
-      }
       seekToStanza(seconds, stanzaIdx);
     }
+    window.seekYouTubePlayer = seekYouTubePlayer;
 
     // ========================================================
     // BÚSQUEDA Y FILTRADO LRCLIB (DESCARTA ACOUSTIC/LIVE Y BUSCA DURACIÓN MÁS CERCANA)
@@ -2783,7 +2998,7 @@
 
     function resumeYouTubePlayer() {
       closeMusicWordModal();
-      const activeYt = window._holoYtPlayer || ytMusicPlayer;
+      const activeYt = window.activeYtPlayer || ytMusicPlayer || window._holoYtPlayer;
       if (activeYt && typeof activeYt.playVideo === 'function') {
         try {
           activeYt.unMute();
@@ -2933,6 +3148,11 @@
   window.lyricsOffset = window.lyricsOffset !== undefined ? window.lyricsOffset : -0.6;
   window.adjustLyricsOffset = window.adjustLyricsOffset;
   window.syncStanzaHere = window.syncStanzaHere;
+  window.handleStanzaClick = window.handleStanzaClick;
+  window.loadYouTubeSong = window.loadYouTubeSong;
+  window.loadSongToKaraoke = window.loadSongToKaraoke;
+  window.syncCurrentPlayingStanza = window.syncCurrentPlayingStanza;
+  window.toggleCalibrateOnTap = window.toggleCalibrateOnTap;
   window.applyAutoIntroOffset = window.applyAutoIntroOffset;
   window.updateLyricsOffsetUI = window.updateLyricsOffsetUI;
   window.getMasterPlaybackTime = getMasterPlaybackTime;

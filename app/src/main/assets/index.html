@@ -1733,7 +1733,7 @@ Fábula Clásica
 <div id="musicStageColumnsGrid" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
 <div id="musicPlayerLeftCol" class="player-stage-column bg-slate-900/90 border border-slate-800 rounded-3xl p-4 shadow-xl flex flex-col justify-between">
 <div id="musicOriginalVideoWrapper" class="relative w-full rounded-2xl overflow-hidden aspect-video bg-black shadow-lg border border-slate-800/80">
-<iframe id="musicYouTubeIframe" class="w-full h-full" src="https://www.youtube-nocookie.com/embed/xwtdhWltSIg?enablejsapi=1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<div id="yt-karaoke-mount" class="w-full h-full"></div>
 <audio id="mastereng-audio" preload="auto" class="hidden" style="display:none;"></audio>
 </div>
 <div id="musicOriginalMetaWrapper" class="mt-4 flex flex-wrap items-center justify-between gap-2">
@@ -1776,9 +1776,10 @@ Fábula Clásica
 <span>🌐 Traducción al Español (Toda la Canción)</span>
 </button>
 </div>
-<span id="karaokeTimeBadge" class="text-[11px] font-mono font-bold text-cyan-400 bg-cyan-950/70 border border-cyan-500/30 px-2.5 py-0.5 rounded-full">
-Estrofa 1
-</span>
+<div class="flex items-center gap-2">
+<span id="karaokeLiveStatusBadge" class="text-[11px] font-mono font-bold text-slate-400 bg-slate-950/80 border border-slate-700 px-2.5 py-0.5 rounded-full flex items-center gap-1.5">⏸ Video en pausa</span>
+<span id="karaokeTimeBadge" class="text-[11px] font-mono font-bold text-cyan-400 bg-cyan-950/70 border border-cyan-500/30 px-2.5 py-0.5 rounded-full">Estrofa 1</span>
+</div>
 </div>
 <div id="karaoke-lyrics-container" class="flex-1 overflow-y-auto py-3 space-y-2.5 font-medium text-sm pr-1"></div>
 <div id="musicLyricsContainer" class="hidden" style="display: none;"></div>
@@ -2400,8 +2401,8 @@ Cerrar
 </div>
 <script src="master_data.js"></script>
 <script src="js/pdf-generator.js"></script>
-<script src="js/karaoke.js"></script>
 <script src="js/app.js"></script>
+<script src="js/karaoke.js"></script>
 <script src="js/jest_game.js"></script>
 <script src="js/social_chat.js"></script>
 <script src="js/pet_minigames_2d.js"></script>
