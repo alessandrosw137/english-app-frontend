@@ -20,15 +20,23 @@
   // ============================================================================
   // GESTIÓN DE MATERIALES SEGUROS PBR
   // ============================================================================
+  const _spaceMatCache = new Map();
   function getMat(P, name, fallbackColor, roughness, metalness) {
     if (P && P[name]) return P[name];
     if (typeof THREE !== 'undefined') {
+      const c = fallbackColor !== undefined ? fallbackColor : 0x64748b;
+      const r = roughness !== undefined ? roughness : 0.35;
+      const m = metalness !== undefined ? metalness : 0.1;
+      const key = `${c}_${r}_${m}`;
+      if (_spaceMatCache.has(key)) return _spaceMatCache.get(key);
       const M = THREE.MeshPhysicalMaterial || THREE.MeshStandardMaterial;
-      return new M({
-        color: fallbackColor !== undefined ? fallbackColor : 0x64748b,
-        roughness: roughness !== undefined ? roughness : 0.35,
-        metalness: metalness !== undefined ? metalness : 0.1
+      const mat = new M({
+        color: c,
+        roughness: r,
+        metalness: m
       });
+      _spaceMatCache.set(key, mat);
+      return mat;
     }
     return null;
   }
@@ -659,46 +667,9 @@
     const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 1.8, 8), beamMat);
     beam.position.y = -0.55;
 
-    let labelSprite = null;
-    // Cartel Holográfico THREE.Sprite oculto por defecto
-    if (typeof document !== 'undefined') {
-      const labelCanvas = document.createElement('canvas');
-      labelCanvas.width = 512;
-      labelCanvas.height = 192;
-      const ctx = labelCanvas.getContext('2d');
-      if (ctx) {
-        ctx.fillStyle = 'rgba(2, 6, 23, 0.88)';
-        ctx.fillRect(8, 8, 496, 176);
-        ctx.strokeStyle = '#38bdf8';
-        ctx.lineWidth = 4;
-        ctx.strokeRect(8, 8, 496, 176);
-
-        ctx.fillStyle = '#f8fafc';
-        ctx.font = 'bold 36px "Segoe UI", system-ui, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(item.en || 'Space Concept', 256, 56);
-
-        ctx.fillStyle = '#38bdf8';
-        ctx.font = '24px "Segoe UI", monospace';
-        ctx.fillText(item.ipa || '/spes/', 256, 102);
-
-        ctx.fillStyle = '#facc15';
-        ctx.font = '26px "Segoe UI", system-ui, sans-serif';
-        ctx.fillText(item.es || 'Concepto', 256, 150);
-
-        const labelTex = new THREE.CanvasTexture(labelCanvas);
-        const spriteMat = new THREE.SpriteMaterial({ map: labelTex, transparent: true, depthWrite: false });
-        labelSprite = new THREE.Sprite(spriteMat);
-        labelSprite.scale.set(2.0, 0.75, 1.0);
-        labelSprite.position.set(0, 0.65, 0);
-        labelSprite.visible = false;
-        labelSprite.raycast = () => {};
-        labelSprite.userData = { isLabelSprite: true, ignoreRaycast: true };
-        g.add(labelSprite);
-      }
-    }
-
-    g.labelSprite = labelSprite;
+    // Optimización 60 FPS: Cero sprites creados durante buildScenarioWorld.
+    // La etiqueta se muestra bajo demanda mediante el singleton World3D.sharedLabelSprite
+    g.labelSprite = null;
     g.userData = {
       interactive: true,
       isConceptNode: true,
@@ -712,7 +683,7 @@
       wordEn: item.en,
       phonetic: item.ipa,
       wordEs: item.es,
-      labelSprite: labelSprite
+      labelSprite: null
     };
 
     core.userData = Object.assign({}, g.userData, { parentGroup: g, interactive: true });

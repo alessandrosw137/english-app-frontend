@@ -15,15 +15,23 @@
   // Espacio de nombres global para constructores arquitectónicos de MasterENG 3D
   const B = global.MasterENG3DBuilders = global.MasterENG3DBuilders || {};
 
+  const _datingMatCache = new Map();
   function getMat(P, name, fallbackColor, roughness, metalness) {
     if (P && P[name]) return P[name];
     if (typeof THREE === 'undefined') return null;
+    const c = fallbackColor !== undefined ? fallbackColor : 0x94a3b8;
+    const r = roughness !== undefined ? roughness : 0.35;
+    const m = metalness !== undefined ? metalness : 0.15;
+    const key = `${c}_${r}_${m}`;
+    if (_datingMatCache.has(key)) return _datingMatCache.get(key);
     const PhysicalMat = THREE.MeshPhysicalMaterial || THREE.MeshStandardMaterial;
-    return new PhysicalMat({
-      color: fallbackColor !== undefined ? fallbackColor : 0x94a3b8,
-      roughness: roughness !== undefined ? roughness : 0.35,
-      metalness: metalness !== undefined ? metalness : 0.15
+    const mat = new PhysicalMat({
+      color: c,
+      roughness: r,
+      metalness: m
     });
+    _datingMatCache.set(key, mat);
+    return mat;
   }
 
   // Estado interno de animación para luces y efectos

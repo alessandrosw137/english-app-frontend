@@ -671,6 +671,34 @@ ensureOrbitControls();
   // 4. PALETA DE MATERIALES PBR (SHARED_MATERIALS) Y TEXTURAS EN MEMORIA
   // ============================================================================
   const SHARED_MATERIALS = {};
+  const GLOBAL_MATERIAL_CACHE = new Map();
+
+  function getSharedMaterial(params = {}) {
+    if (typeof THREE === 'undefined') return null;
+    const type = params.type || 'MeshStandardMaterial';
+    const colorHex = (params.color && typeof params.color.getHexString === 'function')
+      ? params.color.getHexString()
+      : (typeof params.color === 'number' ? params.color.toString(16) : (params.color || 'cccccc'));
+    const roughness = params.roughness !== undefined ? params.roughness : 0.4;
+    const metalness = params.metalness !== undefined ? params.metalness : 0.1;
+    const transparent = !!params.transparent;
+    const opacity = params.opacity !== undefined ? params.opacity : 1.0;
+    const emissiveHex = (params.emissive && typeof params.emissive.getHexString === 'function')
+      ? params.emissive.getHexString()
+      : (typeof params.emissive === 'number' ? params.emissive.toString(16) : (params.emissive || '000000'));
+    const key = `${type}_${colorHex}_${roughness}_${metalness}_${transparent}_${opacity}_${emissiveHex}`;
+
+    if (GLOBAL_MATERIAL_CACHE.has(key)) {
+      return GLOBAL_MATERIAL_CACHE.get(key);
+    }
+    const MatClass = THREE[type] || THREE.MeshStandardMaterial;
+    const mat = new MatClass(params);
+    GLOBAL_MATERIAL_CACHE.set(key, mat);
+    return mat;
+  }
+  World3D.getSharedMaterial = getSharedMaterial;
+  global.getSharedMaterial = getSharedMaterial;
+  if (typeof window !== 'undefined') window.getSharedMaterial = getSharedMaterial;
 
   // --- GENERADORES PROCEDURALES PBR DE ALTA RESOLUCIÓN ---
   let cachedPBRWoodTexture = null;
@@ -1336,6 +1364,9 @@ ensureOrbitControls();
   }
 
   function createSpatialHotspotForObject(group, vocabKey) {
+    // Optimización 60 FPS: Cero sprites creados durante buildScenarioWorld.
+    // La interactividad reside directamente en la jerarquía de mallas del objeto.
+    return;
     if (!group || typeof THREE === 'undefined') return;
     const meta = WORLD3D_VOCAB_CATALOG[vocabKey];
     if (!meta) return;
@@ -6183,6 +6214,12 @@ ensureOrbitControls();
     const scen = WORLD_TOUR_SCENARIOS[key];
     const catalogObjects = (scen && Array.isArray(scen.objects)) ? scen.objects : [];
 
+    if (World3D.sharedLabelSprite) {
+      World3D.sharedLabelSprite.visible = false;
+      if (World3D.sharedLabelSprite.parent) {
+        World3D.sharedLabelSprite.parent.remove(World3D.sharedLabelSprite);
+      }
+    }
     if (activeLabelSprite) {
       activeLabelSprite.visible = false;
       activeLabelSprite = null;
@@ -6332,6 +6369,22 @@ ensureOrbitControls();
   function optimizeSceneFor60FPS(targetScene) {
     const activeScene = targetScene || scene;
     if (!activeScene || typeof THREE === 'undefined') return;
+
+    // Deduplicación / fusión de materiales idénticos sin textura para reducir draw calls
+    const matCache = new Map();
+    activeScene.traverse((obj) => {
+      if (obj.isMesh && obj.material && !obj.material.map) {
+        const m = obj.material;
+        const colorHex = m.color?.getHexString ? m.color.getHexString() : '';
+        const emissiveHex = m.emissive?.getHexString ? m.emissive.getHexString() : '';
+        const key = `${m.type}_${colorHex}_${m.roughness}_${m.metalness}_${m.transparent}_${m.opacity}_${emissiveHex}`;
+        if (matCache.has(key)) {
+          obj.material = matCache.get(key);
+        } else {
+          matCache.set(key, m);
+        }
+      }
+    });
 
     const ambientHemiLights = [];
     const dirLights = [];
@@ -7074,7 +7127,7 @@ ensureOrbitControls();
     if (!modal) {
       modal = document.createElement('div');
       modal.id = 'datingInviteModal';
-      modal.style.cssText = 'position: fixed; inset: 0; z-index: 99999; background: rgba(2, 6, 23, 0.82); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 16px;';
+      modal.style.cssText = 'position: fixed; inset: 0; z-index: 99999; background: rgba(15, 18, 26, 0.94); backdrop-filter: none !important; -webkit-backdrop-filter: none !important; display: flex; align-items: center; justify-content: center; padding: 16px;';
       document.body.appendChild(modal);
     }
     const friends = getStoredFriendsListForDating();
@@ -7279,9 +7332,9 @@ ensureOrbitControls();
       'position: fixed',
       'inset: 0',
       'z-index: 99990',
-      'background: rgba(2, 6, 23, 0.92)',
-      'backdrop-filter: blur(12px)',
-      '-webkit-backdrop-filter: blur(12px)',
+      'background: rgba(15, 18, 26, 0.94)',
+      'backdrop-filter: none !important',
+      '-webkit-backdrop-filter: none !important',
       'display: none',
       'flex-direction: column',
       'align-items: center',
@@ -7674,7 +7727,7 @@ ensureOrbitControls();
       if (candidateBars.length >= 1) {
         const activeBar = candidateBars[0];
         activeBar.id = 'unified-world3d-cam-bar';
-        activeBar.style.cssText = 'position: absolute !important; top: 10px !important; left: 10px !important; right: 10px !important; max-width: calc(100vw - 20px) !important; z-index: 80 !important; display: flex !important; flex-wrap: nowrap !important; overflow-x: auto !important; align-items: center !important; gap: 6px !important; background: rgba(15, 23, 42, 0.88) !important; backdrop-filter: blur(10px) !important; padding: 6px 10px !important; border-radius: 14px !important; border: 1px solid rgba(148, 163, 184, 0.3) !important; pointer-events: auto !important;';
+        activeBar.style.cssText = 'position: absolute !important; top: 10px !important; left: 10px !important; right: 10px !important; max-width: calc(100vw - 20px) !important; z-index: 80 !important; display: flex !important; flex-wrap: nowrap !important; overflow-x: auto !important; align-items: center !important; gap: 6px !important; background: rgba(15, 18, 26, 0.92) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; padding: 6px 10px !important; border-radius: 14px !important; border: 1px solid rgba(148, 163, 184, 0.3) !important; pointer-events: auto !important;';
       }
     };
 
@@ -7787,7 +7840,7 @@ ensureOrbitControls();
       genderBar.className = 'hidden';
       genderBar.style.cssText = 'position: absolute; top: 64px; left: 12px; right: 12px; z-index: 82; pointer-events: auto; display: none; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px;';
       genderBar.innerHTML = `
-        <div class="flex flex-wrap items-center gap-2 bg-slate-950/92 backdrop-blur-md border border-rose-500/50 px-3 py-1.5 rounded-2xl shadow-xl text-white">
+        <div class="flex flex-wrap items-center gap-2 bg-slate-950/92 border border-rose-500/50 px-3 py-1.5 rounded-2xl shadow-xl text-white">
           <span class="text-[11px] font-extrabold text-sky-300">👤 Mi Avatar:</span>
           <button type="button" id="btnPlayerGenderMale" onclick="window.setPlayerAvatarGender('male')" class="px-2 py-0.5 rounded-lg bg-sky-600 text-white text-[10px] font-bold">♂️ Chico</button>
           <button type="button" id="btnPlayerGenderFemale" onclick="window.setPlayerAvatarGender('female')" class="px-2 py-0.5 rounded-lg bg-slate-800 text-slate-300 text-[10px] font-bold">♀️ Chica</button>
@@ -7830,7 +7883,7 @@ ensureOrbitControls();
     if (!orientBanner) {
       orientBanner = document.createElement('div');
       orientBanner.id = 'world3dOrientationPromptBanner';
-      orientBanner.style.cssText = 'position: absolute; top: 76px; left: 50%; transform: translateX(-50%); z-index: 95; background: rgba(15, 23, 42, 0.94); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1.5px solid rgba(168, 85, 247, 0.7); border-radius: 16px; padding: 6px 12px; display: none; align-items: center; gap: 8px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6); max-width: calc(100vw - 28px); pointer-events: auto;';
+      orientBanner.style.cssText = 'position: absolute; top: 76px; left: 50%; transform: translateX(-50%); z-index: 95; background: rgba(15, 18, 26, 0.92); backdrop-filter: none !important; -webkit-backdrop-filter: none !important; border: 1.5px solid rgba(168, 85, 247, 0.7); border-radius: 16px; padding: 6px 12px; display: none; align-items: center; gap: 8px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6); max-width: calc(100vw - 28px); pointer-events: auto;';
       orientBanner.innerHTML = `
         <span class="text-[11px] text-purple-200 font-bold">🔄 Para la mejor experiencia 3D, activa modo <b>Horizontal</b></span>
         <button type="button" onclick="window.toggleScreenOrientation()"
@@ -7853,7 +7906,7 @@ ensureOrbitControls();
       waiterChatPanel.className = 'hidden';
       waiterChatPanel.style.cssText = 'position: absolute; bottom: 64px; left: 16px; width: min(320px, calc(100vw - 32px)); max-height: calc(100vh - 160px); z-index: 90; pointer-events: auto; display: none;';
       waiterChatPanel.innerHTML = `
-        <div class="bg-slate-950/94 backdrop-blur-xl border-2 border-amber-500/65 rounded-3xl p-3 shadow-2xl text-white flex flex-col gap-2">
+        <div class="bg-slate-950/94 border-2 border-amber-500/65 rounded-3xl p-3 shadow-2xl text-white flex flex-col gap-2">
           <div class="flex items-center justify-between gap-1 border-b border-slate-800 pb-1.5">
             <div>
               <h4 class="text-xs font-black text-amber-300 flex items-center gap-1">🤵 Chat con el Mesero</h4>
@@ -7925,7 +7978,7 @@ ensureOrbitControls();
       partnerChatPanel.className = 'hidden';
       partnerChatPanel.style.cssText = 'position: absolute; bottom: 64px; right: 16px; width: min(320px, calc(100vw - 32px)); max-height: calc(100vh - 160px); z-index: 90; pointer-events: auto; display: none;';
       partnerChatPanel.innerHTML = `
-        <div class="bg-slate-950/94 backdrop-blur-xl border-2 border-rose-500/70 rounded-3xl p-3 shadow-2xl text-white flex flex-col gap-2">
+        <div class="bg-slate-950/94 border-2 border-rose-500/70 rounded-3xl p-3 shadow-2xl text-white flex flex-col gap-2">
           <div class="flex items-center justify-between gap-1 border-b border-slate-800 pb-1.5">
             <div>
               <h4 class="text-xs font-black text-rose-300 flex items-center gap-1">❤️ Chat con tu Cita</h4>
@@ -7988,7 +8041,7 @@ ensureOrbitControls();
       vocabCard.className = 'hidden';
       vocabCard.style.cssText = 'position: absolute; bottom: 16px; right: 16px; width: min(360px, calc(100% - 32px)); z-index: 9999; pointer-events: auto; display: none;';
       vocabCard.innerHTML = `
-        <div class="bg-slate-900/95 backdrop-blur-xl border-2 border-purple-500/70 rounded-3xl p-4 shadow-2xl text-white">
+        <div class="bg-slate-900/95 border-2 border-purple-500/70 rounded-3xl p-4 shadow-2xl text-white">
           <div class="flex items-center justify-between gap-2 mb-2">
             <div class="flex items-center gap-1.5">
               <span id="hudObjCategoryBadge" class="px-2.5 py-0.5 rounded-full bg-purple-500/20 border border-purple-400/40 text-[10px] font-black uppercase tracking-wider text-purple-300">
@@ -8186,10 +8239,47 @@ ensureOrbitControls();
     });
   }
 
-  // Constructor de Etiqueta Flotante 3D (THREE.Sprite) para cualquier objeto físico o concepto
-  function createFloatingVocabLabel(group, data) {
+  // ============================================================================
+  // UN SOLO SPRITE DE ETIQUETA BAJO DEMANDA (LAZY SINGLETON SPRITE)
+  // ============================================================================
+  let sharedLabelCanvas = null;
+  let sharedLabelContext = null;
+  let sharedLabelTexture = null;
+  let sharedLabelSprite = null;
+
+  function getSharedLabelSprite() {
+    if (World3D.sharedLabelSprite) return World3D.sharedLabelSprite;
+    if (typeof document === 'undefined' || typeof THREE === 'undefined') return null;
+
+    sharedLabelCanvas = document.createElement('canvas');
+    sharedLabelCanvas.width = 512;
+    sharedLabelCanvas.height = 180;
+    sharedLabelContext = sharedLabelCanvas.getContext('2d');
+    if (!sharedLabelContext) return null;
+
+    sharedLabelTexture = new THREE.CanvasTexture(sharedLabelCanvas);
+    const mat = new THREE.SpriteMaterial({
+      map: sharedLabelTexture,
+      transparent: true,
+      depthWrite: false,
+      depthTest: false
+    });
+    sharedLabelSprite = new THREE.Sprite(mat);
+    sharedLabelSprite.scale.set(2.0, 0.72, 1.0);
+    sharedLabelSprite.visible = false;
+    sharedLabelSprite.renderOrder = 999;
+    sharedLabelSprite.raycast = () => {};
+    sharedLabelSprite.userData = { isLabelSprite: true, ignoreRaycast: true };
+
+    World3D.sharedLabelSprite = sharedLabelSprite;
+    global.sharedLabelSprite = sharedLabelSprite;
+    return sharedLabelSprite;
+  }
+
+  function updateAndPositionSharedLabelSprite(group, data) {
     if (!group || !data || typeof THREE === 'undefined') return null;
-    if (group.labelSprite) return group.labelSprite;
+    const sprite = getSharedLabelSprite();
+    if (!sprite || !sharedLabelContext) return null;
 
     const enText = String(data.wordEn || data.en || data.id || '');
     const ipaText = String(data.phonetic || data.ipa || '');
@@ -8206,12 +8296,8 @@ ensureOrbitControls();
     else if (currentScenarioKey === 'supermarket') themeColor = '#0284c7';
     else if (currentScenarioKey === 'house') themeColor = '#a855f7';
 
-    if (typeof document === 'undefined') return null;
-    const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 180;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return null;
+    const ctx = sharedLabelContext;
+    ctx.clearRect(0, 0, 512, 180);
 
     ctx.fillStyle = 'rgba(10, 15, 30, 0.92)';
     if (typeof ctx.roundRect === 'function') {
@@ -8254,29 +8340,32 @@ ensureOrbitControls();
     if (displayEs.length > 22) displayEs = displayEs.slice(0, 20) + '...';
     ctx.fillText(displayEs, 26 + ipaWidth, 130);
 
-    const tex = new THREE.CanvasTexture(canvas);
-    const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
-    const sprite = new THREE.Sprite(mat);
-    sprite.scale.set(2.0, 0.72, 1.0);
-    sprite.visible = false;
-    sprite.raycast = () => {};
-    sprite.userData = { isLabelSprite: true, ignoreRaycast: true };
+    sharedLabelTexture.needsUpdate = true;
 
+    // Calcular posición Y sobre el objeto
+    let targetY = 1.6;
     try {
       const bbox = new THREE.Box3().setFromObject(group);
       const groupWorldPos = new THREE.Vector3();
       group.getWorldPosition(groupWorldPos);
       const localTopY = (bbox.max.y - groupWorldPos.y);
-      const targetY = (isFinite(localTopY) && localTopY > 0) ? localTopY + 0.38 : 1.5;
-      sprite.position.set(0, targetY, 0);
-    } catch (_) {
-      sprite.position.set(0, 1.6, 0);
-    }
+      if (isFinite(localTopY) && localTopY > 0) {
+        targetY = localTopY + 0.38;
+      }
+    } catch (_) {}
 
-    group.labelSprite = sprite;
-    group.userData.labelSprite = sprite;
+    if (sprite.parent && sprite.parent !== group) {
+      sprite.parent.remove(sprite);
+    }
+    sprite.position.set(0, targetY, 0);
     group.add(sprite);
+    sprite.visible = true;
+    activeLabelSprite = sprite;
     return sprite;
+  }
+
+  function createFloatingVocabLabel(group, data) {
+    return updateAndPositionSharedLabelSprite(group, data);
   }
 
   function selectInteractive3DObject(group) {
@@ -8318,15 +8407,8 @@ ensureOrbitControls();
     // 2. Resaltar el objeto con brillo sutil / emissive boost (limpia el resaltado previo)
     highlightSelectedObject(group);
 
-    // 3. Mostrar ÚNICAMENTE la etiqueta flotante 3D del objeto recién seleccionado
-    let selectedSprite = group.labelSprite || (group.userData && group.userData.labelSprite);
-    if (!selectedSprite && (data.wordEn || data.en)) {
-      selectedSprite = createFloatingVocabLabel(group, data);
-    }
-    if (selectedSprite) {
-      selectedSprite.visible = true;
-      activeLabelSprite = selectedSprite;
-    }
+    // 3. Mostrar ÚNICAMENTE el sprite global reutilizable sobre el objeto seleccionado
+    updateAndPositionSharedLabelSprite(group, data);
 
     // 4. Transición suave de cámara (Lerp) hacia el objeto
     if (data.focusPos && data.lookAtPos) {
@@ -8880,12 +8962,15 @@ ensureOrbitControls();
     // 6. Raycaster interactivo y Hotspots
     setupRaycasterInteraction(renderer.domElement);
 
-    // 7. Loop de renderizado animate3D con interpolación suave de cámara (Lerp), Tutorial de Mano y animaciones
+    // Pre-alocación fuera del loop para CERO Garbage Collection
+    let cachedContainer3d = null;
+
+    // 7. Loop de renderizado animate3D ultraliviano (60 FPS puros, CERO DOM / CERO Layout Thrashing)
     function animate3D(now) {
-      const container3d = typeof document !== 'undefined'
-        ? (document.getElementById('world3d-container') || document.getElementById('world3d-view') || document.getElementById('view-worldtour'))
-        : null;
-      const isHidden = container3d && (container3d.classList.contains('hidden') || container3d.style.display === 'none');
+      if (!cachedContainer3d && typeof document !== 'undefined') {
+        cachedContainer3d = document.getElementById('world3d-container') || document.getElementById('world3d-view') || document.getElementById('view-worldtour');
+      }
+      const isHidden = cachedContainer3d && (cachedContainer3d.classList.contains('hidden') || cachedContainer3d.style.display === 'none');
       if (!isWorldTourActive || (global.World3D && global.World3D.isPaused) || isHidden) {
         cancelRunningLoop();
         return;
@@ -8897,7 +8982,7 @@ ensureOrbitControls();
       const delta = Math.min(((now || performance.now()) - lastFrameTime) / 1000, 0.1);
       lastFrameTime = now || performance.now();
 
-      // Interpolación suave de cámara (Lerp) hacia el objetivo activo
+      // 1. Actualizar OrbitControls con amortiguación suave o interpolación de cámara Lerp
       if (cameraLerp.active && camera && controls) {
         camera.position.lerp(cameraLerp.targetPos, cameraLerp.speed);
         controls.target.lerp(cameraLerp.targetLookAt, cameraLerp.speed);
@@ -8916,156 +9001,22 @@ ensureOrbitControls();
         controls.update();
       }
 
-      // 2. Proyección 3D -> 2D del primer objeto interactivo para el Tutorial de Mano (#world3dTutorialHand)
-      const tutorialHand = typeof document !== 'undefined' ? document.getElementById('world3dTutorialHand') : null;
-      if (tutorialHand && camera && interactiveObjects.length > 0) {
-        const mesh = interactiveObjects.find(o => o && !o.userData?.isHotspot) || interactiveObjects[0];
-        if (mesh && mesh.position) {
-          const projected = mesh.position.clone().project(camera);
-          if (projected.z <= 1.0) {
-            const viewW = (renderer && renderer.domElement && renderer.domElement.clientWidth) || window.innerWidth || 1024;
-            const viewH = (renderer && renderer.domElement && renderer.domElement.clientHeight) || Math.max(320, (window.innerHeight || 640) - 56);
-            const screenX = Math.min(viewW - 130, Math.max(130, (projected.x * 0.5 + 0.5) * viewW));
-            const screenY = Math.min(viewH - 70, Math.max(135, (-(projected.y * 0.5) + 0.5) * viewH - 28));
-            tutorialHand.style.left = `${Math.round(screenX)}px`;
-            tutorialHand.style.top = `${Math.round(screenY)}px`;
-            tutorialHand.style.display = 'flex';
-          } else {
-            tutorialHand.style.display = 'none';
-          }
-        }
-      }
-
-            // Animación de Nodos Conceptuales Holográficos (rotación del anillo y oscilación vertical flotante)
-      if (animatedConceptNodes.length > 0) {
-        const timeSec = (now || performance.now()) * 0.0025;
-        animatedConceptNodes.forEach(item => {
-          if (item.ring) {
-            item.ring.rotation.z += delta * 0.85;
-          }
-          if (item.sphere) {
-            item.sphere.position.y = 0.5 + Math.sin(timeSec * 2.2 + item.phase) * 0.06;
-          }
-        });
-      }
-      // Animación orbital y rotación axial continua en el escenario "space"
+      // 2. Si estamos en el escenario "space", rotar únicamente el arreglo pre-guardado de planetas (máx 10 objetos)
       if (currentScenarioKey === 'space' && spaceOrbitalEntries.length > 0) {
-        spaceOrbitalEntries.forEach(entry => {
-          if (!entry.group) return;
-          entry.group.rotation.y += delta * (entry.rotSpeed || 0.6);
-          if (entry.orbitRadius > 0 && entry.orbitSpeed > 0) {
-            entry.orbitAngle += delta * entry.orbitSpeed;
-            entry.group.position.x = Math.cos(entry.orbitAngle) * entry.orbitRadius;
-            entry.group.position.z = Math.sin(entry.orbitAngle) * entry.orbitRadius;
-            if (entry.group.userData) {
-              const gx = entry.group.position.x;
-              const gy = entry.group.position.y;
-              const gz = entry.group.position.z;
-              entry.group.userData.lookAtPos = { x: gx, y: gy, z: gz };
-              entry.group.userData.focusPos = { x: gx + 2.2, y: gy + 1.8, z: gz + 3.2 };
+        for (let i = 0; i < spaceOrbitalEntries.length; i++) {
+          const entry = spaceOrbitalEntries[i];
+          if (entry && entry.group) {
+            entry.group.rotation.y += delta * (entry.rotSpeed || 0.6);
+            if (entry.orbitRadius > 0 && entry.orbitSpeed > 0) {
+              entry.orbitAngle += delta * entry.orbitSpeed;
+              entry.group.position.x = Math.cos(entry.orbitAngle) * entry.orbitRadius;
+              entry.group.position.z = Math.sin(entry.orbitAngle) * entry.orbitRadius;
             }
           }
-        });
-      }
-
-      // Animación del Mesero 3D (Waiter NPC), caminata hacia waiterTargetPos, Vela y Burbujas Roblox en "dating"
-      if (currentScenarioKey === 'dating') {
-        const tSec = (now || performance.now()) * 0.004;
-        if (candleFlameLight) {
-          candleFlameLight.intensity = 2.2 + Math.sin(tSec * 3.7) * 0.35 + Math.cos(tSec * 6.1) * 0.15;
-        }
-        if (candleFlameMesh) {
-          candleFlameMesh.scale.y = 1.0 + Math.sin(tSec * 4.5) * 0.14;
-        }
-        if (waiterGroup && waiterTargetPos) {
-          waiterLerp.targetPos.set(waiterTargetPos.x, waiterTargetPos.y, waiterTargetPos.z);
-          const distToTarget = waiterGroup.position.distanceTo(waiterLerp.targetPos);
-          if (distToTarget > 0.03) {
-            waiterGroup.position.lerp(waiterLerp.targetPos, 0.065);
-            const targetRot = waiterCurrentState === 'approaching' ? 0 : -0.45;
-            waiterGroup.rotation.y += (targetRot - waiterGroup.rotation.y) * 0.10;
-            // Ligero balanceo de brazos y pasos mientras camina
-            const walkCycle = (now || performance.now()) * 0.012;
-            if (waiterLeftLeg) waiterLeftLeg.rotation.x = Math.sin(walkCycle) * 0.32;
-            if (waiterRightLeg) waiterRightLeg.rotation.x = -Math.sin(walkCycle) * 0.32;
-            if (waiterLeftArm) waiterLeftArm.rotation.x = -Math.sin(walkCycle) * 0.22;
-            if (waiterRightArm) waiterRightArm.rotation.z = Math.sin(walkCycle) * 0.08;
-          } else {
-            waiterGroup.position.set(waiterTargetPos.x, waiterTargetPos.y, waiterTargetPos.z);
-            waiterGroup.rotation.y = waiterCurrentState === 'approaching' ? 0 : -0.45;
-            if (waiterLeftLeg) waiterLeftLeg.rotation.x = 0;
-            if (waiterRightLeg) waiterRightLeg.rotation.x = 0;
-            if (waiterLeftArm) waiterLeftArm.rotation.x = 0;
-            if (waiterRightArm) waiterRightArm.rotation.z = Math.sin(tSec * 2.0) * 0.03;
-            waiterLerp.active = false;
-          }
         }
       }
 
-      // Actualizar posición y fade-out de las Burbujas de Chat Estilo Roblox (duración 8 segundos)
-      const nowTimeMs = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-      ['player', 'partner', 'waiter'].forEach(whoKey => {
-        const bEntry = activeOverheadBubbles[whoKey];
-        if (!bEntry || !bEntry.sprite) return;
-        if (whoKey === 'waiter' && waiterGroup) {
-          bEntry.sprite.position.set(waiterGroup.position.x, 2.05, waiterGroup.position.z);
-        } else if (whoKey === 'partner') {
-          bEntry.sprite.position.set(1.25, 1.65, 0);
-        } else if (whoKey === 'player') {
-          bEntry.sprite.position.set(-1.25, 1.65, 0);
-        }
-        const ageMs = nowTimeMs - bEntry.createdAt;
-        if (ageMs >= bEntry.durationMs) {
-          if (bEntry.sprite.parent) bEntry.sprite.parent.remove(bEntry.sprite);
-          activeOverheadBubbles[whoKey] = null;
-        } else if (ageMs > bEntry.durationMs - 1500 && bEntry.sprite.material) {
-          bEntry.sprite.material.opacity = Math.max(0, (bEntry.durationMs - ageMs) / 1500);
-        }
-      });
-
-      // Micro-indicadores discretos (scale: 0.15, opacity: 0.35, más visibles al pasar cerca en hover)
-      const t = (now || performance.now()) * 0.003;
-      spatialHotspots.forEach((hs, idx) => {
-        const isHovered = hs.parentGroup && hs.parentGroup === hoveredObjectGroup;
-        const baseScale = isHovered ? 0.22 : 0.15;
-        hs.sprite.scale.set(baseScale, baseScale, baseScale);
-        if (hs.sprite.material) {
-          hs.sprite.material.opacity = isHovered ? 0.78 : 0.35;
-        }
-        hs.group.position.y = hs.baseY + Math.sin(t * 2.0 + idx * 0.8) * 0.03;
-      });
-
-      // Animación exterior de hojas/árboles en la ventana
-      animatedWindowLeaves.forEach((leaf, idx) => {
-        leaf.rotation.z = Math.sin((now || performance.now()) * 0.0025 + idx * 0.8) * 0.07;
-        leaf.position.y += Math.sin((now || performance.now()) * 0.003 + idx) * 0.001;
-      });
-
-      // Pulso emisivo sobre el objeto seleccionado
-      if (selectedObjectGroup && highlightedMaterialsBackup.length > 0) {
-        highlightPulseTime += delta * 4.0;
-        const pulseIntensity = 0.45 + Math.sin(highlightPulseTime) * 0.25;
-        highlightedMaterialsBackup.forEach(item => {
-          if (item.clonedMaterial && item.clonedMaterial.emissive) {
-            item.clonedMaterial.emissiveIntensity = pulseIntensity;
-          }
-        });
-      }
-
-      // Animaciones de ventilador, aspersor, vapor de café y reloj de pared
-      if (animatedFan) animatedFan.rotation.y += delta * 4.0;
-      if (animatedSprinkler) animatedSprinkler.rotation.y += delta * 6.0;
-      if (animatedClockMinuteHand) animatedClockMinuteHand.rotation.z -= delta * 0.08;
-      if (animatedClockHourHand) animatedClockHourHand.rotation.z -= delta * 0.006;
-
-      if (animatedSteamRings.length > 0) {
-        const elapsed = clock ? clock.getElapsedTime() : performance.now() * 0.001;
-        animatedSteamRings.forEach(ring => {
-          ring.position.y = ring.userData.baseY + Math.sin(elapsed * 2.5 + ring.userData.phase) * 0.025;
-          ring.rotation.z = elapsed * 0.8 + ring.userData.phase;
-        });
-      }
-
+      // 3. Llamar una sola vez a renderer.render(scene, camera)
       if (renderer && scene && camera) {
         renderer.render(scene, camera);
       }
@@ -9302,7 +9253,7 @@ ensureOrbitControls();
     if (candidateBars.length >= 1) {
       const activeBar = candidateBars[0];
       activeBar.id = 'unified-world3d-cam-bar';
-      activeBar.style.cssText = 'position: absolute !important; top: 96px !important; left: 16px !important; right: 16px !important; max-width: calc(100vw - 32px) !important; z-index: 80 !important; display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: 8px !important; background: rgba(15, 23, 42, 0.88) !important; backdrop-filter: blur(10px) !important; padding: 6px 10px !important; border-radius: 14px !important; border: 1px solid rgba(148, 163, 184, 0.3) !important; pointer-events: auto !important;';
+      activeBar.style.cssText = 'position: absolute !important; top: 96px !important; left: 16px !important; right: 16px !important; max-width: calc(100vw - 32px) !important; z-index: 80 !important; display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: 8px !important; background: rgba(15, 23, 42, 0.88) !important; backdrop-filter: none !important !important; padding: 6px 10px !important; border-radius: 14px !important; border: 1px solid rgba(148, 163, 184, 0.3) !important; pointer-events: auto !important;';
     }
 
     const selectEl = document.getElementById('world3dScenarioSelect');
@@ -9528,7 +9479,7 @@ ensureOrbitControls();
     if (!modal) {
       modal = document.createElement('div');
       modal.id = 'world3dCatalogModal';
-      modal.className = 'fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md';
+      modal.className = 'fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-6 bg-slate-950/95';
       document.body.appendChild(modal);
     }
 

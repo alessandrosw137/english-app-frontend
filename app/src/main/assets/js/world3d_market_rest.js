@@ -26,16 +26,24 @@
   }
 
   // Material fallback helper for individual modular builders
+  const _marketMatCache = new Map();
   function getMat(P, name, fallbackColor, roughness, metalness) {
     if (P && P[name]) return P[name];
     const THREE = getThree();
     if (THREE) {
+      const c = fallbackColor || 0x64748b;
+      const r = roughness !== undefined ? roughness : 0.35;
+      const m = metalness !== undefined ? metalness : 0.1;
+      const key = `${c}_${r}_${m}`;
+      if (_marketMatCache.has(key)) return _marketMatCache.get(key);
       const M = THREE.MeshPhysicalMaterial || THREE.MeshStandardMaterial;
-      return new M({
-        color: fallbackColor || 0x64748b,
-        roughness: roughness !== undefined ? roughness : 0.35,
-        metalness: metalness !== undefined ? metalness : 0.1
+      const mat = new M({
+        color: c,
+        roughness: r,
+        metalness: m
       });
+      _marketMatCache.set(key, mat);
+      return mat;
     }
     return null;
   }
