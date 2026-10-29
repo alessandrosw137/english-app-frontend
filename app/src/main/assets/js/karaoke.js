@@ -763,50 +763,6 @@
           </button>
         `;
       }).join('');
-      const altContainer = document.getElementById('musicLyricsContainer');
-      if (altContainer && altContainer !== container) {
-        altContainer.innerHTML = container.innerHTML;
-      }
-
-      // Inicializar nodos en memoria y controles de offset
-      KaraokeSyncEngine.lyricNodes = Array.from(container.querySelectorAll('.karaoke-lyric-line, .lyric-line'));
-      KaraokeSyncEngine.lyricsData = lyrics;
-      KaraokeSyncEngine.stanzas = lyrics;
-      KaraokeSyncEngine.currentIndex = -1;
-      KaraokeSyncEngine.currentLyricIndex = -1;
-      ensureKaraokeOffsetControls();
-      KaraokeSyncEngine.updateOffsetBadgeUI();
-
-      // REQUERIMIENTO: SINCRONIZACIÓN CON UN CLIC ("TAP LINE TO SYNC")
-      KaraokeSyncEngine.lyricNodes.forEach((lineEl, i) => {
-        lineEl.addEventListener('click', (e) => {
-          if (e.target.closest('button') || e.target.closest('.k-word')) return;
-
-          const yt = ytMusicPlayer || window._holoYtPlayer || window.ytPlayer;
-          let currentVideoTime = 0;
-          if (yt && typeof yt.getCurrentTime === 'function') {
-            try { currentVideoTime = yt.getCurrentTime(); } catch (_) {}
-          } else if (ytMasterState && typeof ytMasterState.currentTime === 'number') {
-            currentVideoTime = ytMasterState.currentTime;
-          }
-
-          if (currentVideoTime > 0.5 && lyrics[i]) {
-            const lineOriginalTime = (typeof lyrics[i].time === 'number')
-              ? lyrics[i].time
-              : (typeof lyrics[i].startTime === 'number' ? lyrics[i].startTime : 0);
-            // Ajustar offset global para que toda la canción quede 100% sincronizada desde este punto
-            const exactOffset = lineOriginalTime - currentVideoTime;
-            KaraokeSyncEngine.setExactOffset(exactOffset, KaraokeSyncEngine.currentSongId);
-          } else if (lyrics[i]) {
-            const lineTime = (typeof lyrics[i].time === 'number')
-              ? lyrics[i].time
-              : (typeof lyrics[i].startTime === 'number' ? lyrics[i].startTime : 0);
-            if (typeof window.seekToStanza === 'function') {
-              window.seekToStanza(lineTime, i);
-            }
-          }
-        });
-      });
     }
 
     function escapeMusicHtml(str) {
@@ -1935,7 +1891,7 @@
           <div id="karaokeStanza-${lIdx}"
             class="karaoke-lyric-line lyric-line stanza-card lyric-stanza-card music-stanza-row ${isCurrent ? 'active lyric-active scale-[1.02] border-cyan-400 bg-cyan-950/80 text-white' : 'lyric-inactive'}" data-sidx="${lIdx}"
             data-start="${lineTime}" data-end="${stanza.endTime}"
-            onclick="window.seekToStanza ? window.seekToStanza(${lineTime}, ${lIdx}) : seekYouTubePlayer(${lineTime}, ${lIdx})">
+            onclick="window.syncStanzaHere ? window.syncStanzaHere(${lineTime}, ${lIdx}, event) : (window.seekToStanza ? window.seekToStanza(${lineTime}, ${lIdx}) : seekYouTubePlayer(${lineTime}, ${lIdx}))">
             <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-slate-700/40">
               <span class="text-[10px] font-extrabold text-cyan-400 uppercase tracking-widest bg-cyan-500/15 px-2.5 py-0.5 rounded-full border border-cyan-500/25">
                 ESTROFA ${lIdx + 1} &bull; ${lineTime}S
@@ -1965,6 +1921,46 @@
       if (altContainer && altContainer !== container) {
         altContainer.innerHTML = container.innerHTML;
       }
+
+      // Inicializar nodos en memoria y controles de offset
+      KaraokeSyncEngine.lyricNodes = Array.from(container.querySelectorAll('.karaoke-lyric-line, .lyric-line'));
+      KaraokeSyncEngine.lyricsData = lyrics;
+      KaraokeSyncEngine.stanzas = lyrics;
+      KaraokeSyncEngine.currentIndex = -1;
+      KaraokeSyncEngine.currentLyricIndex = -1;
+      ensureKaraokeOffsetControls();
+      KaraokeSyncEngine.updateOffsetBadgeUI();
+
+      // REQUERIMIENTO: SINCRONIZACIÓN CON UN CLIC ("TAP LINE TO SYNC")
+      KaraokeSyncEngine.lyricNodes.forEach((lineEl, i) => {
+        lineEl.addEventListener('click', (e) => {
+          if (e.target.closest('button') || e.target.closest('.k-word')) return;
+
+          const yt = ytMusicPlayer || window._holoYtPlayer || window.ytPlayer;
+          let currentVideoTime = 0;
+          if (yt && typeof yt.getCurrentTime === 'function') {
+            try { currentVideoTime = yt.getCurrentTime(); } catch (_) {}
+          } else if (ytMasterState && typeof ytMasterState.currentTime === 'number') {
+            currentVideoTime = ytMasterState.currentTime;
+          }
+
+          if (currentVideoTime > 0.5 && lyrics[i]) {
+            const lineOriginalTime = (typeof lyrics[i].time === 'number')
+              ? lyrics[i].time
+              : (typeof lyrics[i].startTime === 'number' ? lyrics[i].startTime : 0);
+            // Ajustar offset global para que toda la canción quede 100% sincronizada desde este punto
+            const exactOffset = lineOriginalTime - currentVideoTime;
+            KaraokeSyncEngine.setExactOffset(exactOffset, KaraokeSyncEngine.currentSongId);
+          } else if (lyrics[i]) {
+            const lineTime = (typeof lyrics[i].time === 'number')
+              ? lyrics[i].time
+              : (typeof lyrics[i].startTime === 'number' ? lyrics[i].startTime : 0);
+            if (typeof window.seekToStanza === 'function') {
+              window.seekToStanza(lineTime, i);
+            }
+          }
+        });
+      });
     }
 
     // Calibración de 1 clic para intro de video detectada
