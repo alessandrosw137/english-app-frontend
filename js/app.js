@@ -2019,6 +2019,9 @@ window.logout = function() {
     }
 
     function goToHomePortals() {
+      if (typeof document !== 'undefined' && document.body && document.body.classList) {
+        document.body.classList.remove('in-immersive-portal');
+      }
       if (typeof window.closePetSanctuary === 'function') {
         try { window.closePetSanctuary(); } catch (_) {}
       }
@@ -2081,6 +2084,9 @@ window.logout = function() {
     window.goToHomePortals = goToHomePortals;
 
     function openPortalWithLoader(targetModule) {
+      if (typeof document !== 'undefined' && document.body && document.body.classList) {
+        document.body.classList.add('in-immersive-portal');
+      }
       window.isTransitioningView = true;
 
       const loader = document.getElementById('portalLoadingScreen');
@@ -2394,6 +2400,9 @@ window.logout = function() {
     window.handleCoverCardClick = handleCoverCardClick;
 
     window.openPortal = function(targetPortal) {
+      if (typeof document !== 'undefined' && document.body && document.body.classList) {
+        document.body.classList.add('in-immersive-portal');
+      }
       if (targetPortal === 'world3d' || targetPortal === 'worldtour') {
         if (typeof window.open3DPortalView === 'function') {
           return window.open3DPortalView();
@@ -2403,6 +2412,9 @@ window.logout = function() {
     };
     window.initWorld3D = window.open3DPortalView;
     window.openPortalModules = function(targetPortal) {
+      if (typeof document !== 'undefined' && document.body && document.body.classList) {
+        document.body.classList.add('in-immersive-portal');
+      }
       const portalModules = ['path', 'worldtour', 'music', 'ai-tutor', 'stories', 'jest', 'social', 'pets'];
       const activeIdx = (typeof window.currentPortal === 'number')
         ? ((window.currentPortal % portalModules.length + portalModules.length) % portalModules.length)
@@ -14474,15 +14486,35 @@ window.hideAllModules = function hideAllModules() {
     try { window.KaraokeSyncEngine.stop(); } catch (_) {}
   }
 
-  // Pausar el loop de render 3D para liberar GPU/CPU
-  if (typeof window.pauseWorld3D === 'function') {
+  // Pausa el bucle de Karaoke
+  if (window.KaraokeSyncEngine) {
+    try {
+      if (typeof window.KaraokeSyncEngine.stop === 'function') window.KaraokeSyncEngine.stop();
+      else if (typeof window.KaraokeSyncEngine.pause === 'function') window.KaraokeSyncEngine.pause();
+    } catch (_) {}
+  }
+
+  // Pausa el bucle 3D
+  if (window.World3D && typeof window.World3D.pauseLoop === 'function') {
+    try { window.World3D.pauseLoop(); } catch (_) {}
+  } else if (typeof window.pauseWorld3D === 'function') {
     try { window.pauseWorld3D(); } catch (_) {}
   } else if (window.World3D && typeof window.World3D.pauseWorld3D === 'function') {
     try { window.World3D.pauseWorld3D(); } catch (_) {}
   }
 
+  // Pausa el bucle de Mascota 2D
+  if (window.PetEngine2D && typeof window.PetEngine2D.pauseLoop === 'function') {
+    try { window.PetEngine2D.pauseLoop(); } catch (_) {}
+  }
+
+  // Pausa el bucle de Minijuegos
+  if (window.PetMinigames2D && typeof window.PetMinigames2D.stopGame === 'function') {
+    try { window.PetMinigames2D.stopGame(); } catch (_) {}
+  }
+
   if (document.body && document.body.classList) {
-    document.body.classList.remove('view-worldtour-active', 'portal-3d-fallback-active', 'pet-sanctuary-active', 'pet-view-active');
+    document.body.classList.remove('view-worldtour-active', 'portal-3d-fallback-active', 'pet-sanctuary-active', 'pet-view-active', 'in-immersive-portal');
   }
   window._activeModule = null;
 };
@@ -14637,7 +14669,12 @@ window.hideAllModules = function hideAllModules() {
   }
 };
 // "⬅ Volver a Portales": hideAllModules() + mostrar únicamente #view-home / #portalHub
-window.backToPortals = window.returnToMainPortals;
+window.backToPortals = function(e) {
+  if (typeof document !== 'undefined' && document.body && document.body.classList) {
+    document.body.classList.remove('in-immersive-portal');
+  }
+  return window.returnToMainPortals(e);
+};
 
 // Vincular switchMasterView('hub') a esta función infalible
 window.switchMasterView = function(targetMode) {

@@ -1898,7 +1898,11 @@ window.isCurrentUserAdmin = function() {
           } catch (err) { console.error(err); }
         }, 60);
       }
-      if (targetId === 'view-music') {
+      if (targetId === 'view-music' && typeof window.openMusicPortal === 'function') {
+        // Apertura centralizada: hideAllModules() + #view-music + #music-search-subview
+        window.openMusicPortal();
+      } else if (targetId === 'view-music') {
+        if (typeof window.hideAllModules === 'function') window.hideAllModules();
         const vm = document.getElementById('view-music');
         const ms = document.getElementById('music-search-subview');
         const mp = document.getElementById('music-player-subview');
@@ -2015,6 +2019,9 @@ window.logout = function() {
     }
 
     function goToHomePortals() {
+      if (typeof document !== 'undefined' && document.body && document.body.classList) {
+        document.body.classList.remove('in-immersive-portal');
+      }
       if (typeof window.closePetSanctuary === 'function') {
         try { window.closePetSanctuary(); } catch (_) {}
       }
@@ -2077,6 +2084,9 @@ window.logout = function() {
     window.goToHomePortals = goToHomePortals;
 
     function openPortalWithLoader(targetModule) {
+      if (typeof document !== 'undefined' && document.body && document.body.classList) {
+        document.body.classList.add('in-immersive-portal');
+      }
       window.isTransitioningView = true;
 
       const loader = document.getElementById('portalLoadingScreen');
@@ -2134,6 +2144,7 @@ window.logout = function() {
         if (progressBar) progressBar.style.width = '100%';
         if (percentEl) percentEl.textContent = '100%';
 
+        if (targetModule === 'music' && typeof window.hideAllModules === 'function') window.hideAllModules();
         showView(meta.view);
         if (targetModule === 'stories') renderStorySelector();
         if (targetModule === 'music') {
@@ -2389,9 +2400,21 @@ window.logout = function() {
     window.handleCoverCardClick = handleCoverCardClick;
 
     window.openPortal = function(targetPortal) {
+      if (typeof document !== 'undefined' && document.body && document.body.classList) {
+        document.body.classList.add('in-immersive-portal');
+      }
+      if (targetPortal === 'world3d' || targetPortal === 'worldtour') {
+        if (typeof window.open3DPortalView === 'function') {
+          return window.open3DPortalView();
+        }
+      }
       return window.openPortalModules(targetPortal);
     };
+    window.initWorld3D = window.open3DPortalView;
     window.openPortalModules = function(targetPortal) {
+      if (typeof document !== 'undefined' && document.body && document.body.classList) {
+        document.body.classList.add('in-immersive-portal');
+      }
       const portalModules = ['path', 'worldtour', 'music', 'ai-tutor', 'stories', 'jest', 'social', 'pets'];
       const activeIdx = (typeof window.currentPortal === 'number')
         ? ((window.currentPortal % portalModules.length + portalModules.length) % portalModules.length)
@@ -2421,6 +2444,10 @@ window.logout = function() {
           showView('view-worldtour');
         }
       } else if (portal === 'music') {
+        if (typeof window.openMusicPortal === 'function') {
+          window.openMusicPortal();
+          return;
+        }
         if (typeof window.navigateToView === 'function') {
           window.navigateToView('view-music');
         } else if (typeof showView === 'function') {
@@ -6511,6 +6538,14 @@ window.logout = function() {
     // ========================================================
 
     function switch3DScenario(scenarioKey) {
+      if (typeof window.hideAllModules === 'function') {
+        window.hideAllModules();
+      }
+      const c3d = document.getElementById('world3d-container');
+      if (c3d) {
+        c3d.classList.remove('hidden');
+        c3d.style.setProperty('display', 'block', 'important');
+      }
       if (window.World3D && typeof window.World3D.switchScenario === 'function') {
         return window.World3D.switchScenario(scenarioKey);
       }
@@ -14391,6 +14426,99 @@ window.parseLrcUniversal = function(lrcString, totalSongDuration = 210) {
   return parsed;
 };
 
+// --- ROUTER SPA: LIMPIEZA UNIVERSAL DE MÓDULOS (hideAllModules) ---
+// Oculta TODOS los contenedores principales de portales y overlays activos, y pausa
+// la reproducción multimedia / render 3D en segundo plano. Debe invocarse ANTES de
+// mostrar cualquier portal para evitar superposiciones (p. ej. el buscador del Karaoke
+// visible encima de MasterPet Sanctuary) y para no dejar módulos pesados corriendo.
+window.hideAllModules = function hideAllModules() {
+  if (typeof document === 'undefined') return;
+
+  const moduleSelectors = [
+    // Menú principal / Hub de Portales Arcanos
+    '#viewHome', '#view-home', '#portalHub', '.portals-section',
+    // Música / Karaoke
+    '#karaoke-container', '#searchSub', '#music-search-subview', '#music-player-subview',
+    '#musicSearchSuggestions', '#viewMusic', '#view-music',
+    // MasterPet Sanctuary y hábitat 2D
+    '#pet-sanctuary-root', '#view-pet-sanctuary', '#view-pet-game',
+    // Mundo 3D
+    '#world3d-container', '#world3d-view', '#view-worldtour', '#portal-3d-master-view',
+    '#world3dFloatingBackBtn', '#worldTourTopBar',
+    // Resto de portales
+    '#view-path', '#view-stories', '#ai-tutor-view', '#view-jest-game', '#view-community',
+    // Overlays activos residuales
+    '#crash-recovery-overlay', '#emergency-nav-bar'
+  ];
+
+  const processed = new Set();
+  moduleSelectors.forEach(sel => {
+    let nodes;
+    try { nodes = document.querySelectorAll(sel); } catch (_) { return; }
+    nodes.forEach(el => {
+      if (!el || processed.has(el)) return;
+      processed.add(el);
+      el.classList.add('hidden');
+      el.style.setProperty('display', 'none', 'important');
+    });
+  });
+
+  // Pausar cualquier reproductor de YouTube activo
+  if (window.player && typeof window.player.pauseVideo === 'function') {
+    try { window.player.pauseVideo(); } catch (_) {}
+  }
+  [window.ytPlayer, window._holoYtPlayer, window.ytMusicPlayer].forEach(p => {
+    if (p && p !== window.player && typeof p.pauseVideo === 'function') {
+      try { p.pauseVideo(); } catch (_) {}
+    }
+  });
+  const audioEl = document.getElementById('mastereng-audio');
+  if (audioEl && !audioEl.paused) {
+    try { audioEl.pause(); } catch (_) {}
+  }
+
+  // Detener timers de sincronización del Karaoke
+  if (window._karaokePlaybackTimer) {
+    clearInterval(window._karaokePlaybackTimer);
+    window._karaokePlaybackTimer = null;
+  }
+  if (window.KaraokeSyncEngine && typeof window.KaraokeSyncEngine.stop === 'function') {
+    try { window.KaraokeSyncEngine.stop(); } catch (_) {}
+  }
+
+  // Pausa el bucle de Karaoke
+  if (window.KaraokeSyncEngine) {
+    try {
+      if (typeof window.KaraokeSyncEngine.stop === 'function') window.KaraokeSyncEngine.stop();
+      else if (typeof window.KaraokeSyncEngine.pause === 'function') window.KaraokeSyncEngine.pause();
+    } catch (_) {}
+  }
+
+  // Pausa el bucle 3D
+  if (window.World3D && typeof window.World3D.pauseLoop === 'function') {
+    try { window.World3D.pauseLoop(); } catch (_) {}
+  } else if (typeof window.pauseWorld3D === 'function') {
+    try { window.pauseWorld3D(); } catch (_) {}
+  } else if (window.World3D && typeof window.World3D.pauseWorld3D === 'function') {
+    try { window.World3D.pauseWorld3D(); } catch (_) {}
+  }
+
+  // Pausa el bucle de Mascota 2D
+  if (window.PetEngine2D && typeof window.PetEngine2D.pauseLoop === 'function') {
+    try { window.PetEngine2D.pauseLoop(); } catch (_) {}
+  }
+
+  // Pausa el bucle de Minijuegos
+  if (window.PetMinigames2D && typeof window.PetMinigames2D.stopGame === 'function') {
+    try { window.PetMinigames2D.stopGame(); } catch (_) {}
+  }
+
+  if (document.body && document.body.classList) {
+    document.body.classList.remove('view-worldtour-active', 'portal-3d-fallback-active', 'pet-sanctuary-active', 'pet-view-active', 'in-immersive-portal');
+  }
+  window._activeModule = null;
+};
+
 // --- MOTOR UNIVERSAL DE EVENTOS Y CLICS ---
 (function() {
   window.returnToMainPortals = function(e) {
@@ -14408,6 +14536,11 @@ window.parseLrcUniversal = function(lrcString, totalSongDuration = 210) {
     }
     if (typeof window.removeFloatingPetButtons === 'function') {
       try { window.removeFloatingPetButtons(); } catch (_) {}
+    }
+
+    // 0b. Limpieza universal: ocultar TODOS los módulos y pausar multimedia/3D
+    if (typeof window.hideAllModules === 'function') {
+      try { window.hideAllModules(); } catch (_) {}
     }
 
     // 1. Detener cualquier audio, narración o video en reproducción
@@ -14493,6 +14626,17 @@ window.parseLrcUniversal = function(lrcString, totalSongDuration = 210) {
     const homeEl = document.getElementById('view-home');
     const authEl = document.getElementById('view-auth') || document.getElementById('login-view');
     if (hasUser && homeEl) {
+      // Mostrar ÚNICAMENTE el menú principal de Portales Arcanos
+      ['#viewHome', '#portalHub', '.portals-section', '#coverFlowViewport'].forEach(sel => {
+        try {
+          document.querySelectorAll(sel).forEach(el => {
+            el.classList.remove('hidden');
+            el.style.removeProperty('display');
+            el.style.removeProperty('visibility');
+            el.style.removeProperty('pointer-events');
+          });
+        } catch (_) {}
+      });
       homeEl.classList.remove('hidden');
       homeEl.style.setProperty('display', 'flex', 'important');
       homeEl.style.setProperty('pointer-events', 'auto', 'important');
@@ -14523,6 +14667,13 @@ window.parseLrcUniversal = function(lrcString, totalSongDuration = 210) {
   } finally {
     setTimeout(() => { window._isReturningToPortals = false; }, 80);
   }
+};
+// "⬅ Volver a Portales": hideAllModules() + mostrar únicamente #view-home / #portalHub
+window.backToPortals = function(e) {
+  if (typeof document !== 'undefined' && document.body && document.body.classList) {
+    document.body.classList.remove('in-immersive-portal');
+  }
+  return window.returnToMainPortals(e);
 };
 
 // Vincular switchMasterView('hub') a esta función infalible
@@ -15258,6 +15409,37 @@ window.open3DPortalView = function(e) {
     if (typeof e.stopPropagation === 'function') e.stopPropagation();
   }
 
+  // a) Ocultar módulos previos para optimización y evitar superposiciones
+  if (typeof window.hideAllModules === 'function') {
+    window.hideAllModules();
+  }
+
+  // b) Inmediatamente después, forzar visibilidad del contenedor 3D principal
+  const world3dContainer = document.getElementById('world3d-container');
+  if (world3dContainer) {
+    world3dContainer.classList.remove('hidden');
+    world3dContainer.style.setProperty('display', 'block', 'important');
+    world3dContainer.style.setProperty('visibility', 'visible', 'important');
+    world3dContainer.style.setProperty('opacity', '1', 'important');
+  }
+
+  // Restaurar visibilidad completa de la jerarquía 3D en el DOM
+  ['view-worldtour', 'world3d-view', 'canvas-container', 'threeCanvasContainer', 'threeWebGLMount'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.classList.remove('hidden');
+      el.style.setProperty('display', 'block', 'important');
+      el.style.setProperty('visibility', 'visible', 'important');
+      el.style.setProperty('opacity', '1', 'important');
+    }
+  });
+
+  if (document.body && document.body.classList) {
+    document.body.classList.add('view-worldtour-active');
+    document.body.classList.remove('portal-3d-fallback-active');
+  }
+  window._activeModule = 'world3d';
+
   // 1. Siempre crear/asegurar el elemento para los tests de sandbox VM
   let view3D = document.getElementById('portal-3d-master-view');
   if (!view3D) {
@@ -15277,30 +15459,6 @@ window.open3DPortalView = function(e) {
     if (view3D) {
       view3D.classList.add('hidden');
       view3D.style.setProperty('display', 'none', 'important');
-    }
-
-    // Ocultar solo las demás vistas principales de nivel superior
-    ['view-home', 'view-auth', 'view-path', 'view-stories', 'view-music', 'ai-tutor-view', 'login-view'].forEach(vid => {
-      const v = document.getElementById(vid);
-      if (v) {
-        v.classList.add('hidden');
-        v.style.setProperty('display', 'none', 'important');
-      }
-    });
-
-    if (document.body && document.body.classList) { document.body.classList.add('view-worldtour-active'); document.body.classList.remove('portal-3d-fallback-active'); }
-
-    viewWorldTour.classList.remove('hidden');
-    viewWorldTour.style.setProperty('display', 'block', 'important');
-    viewWorldTour.style.setProperty('visibility', 'visible', 'important');
-    viewWorldTour.style.setProperty('opacity', '1', 'important');
-
-    const w3dView = document.getElementById('world3d-view');
-    if (w3dView) {
-      w3dView.classList.remove('hidden');
-      w3dView.style.setProperty('display', 'block', 'important');
-      w3dView.style.setProperty('visibility', 'visible', 'important');
-      w3dView.style.setProperty('opacity', '1', 'important');
     }
 
     const topBar = document.getElementById('worldTourTopBar');
@@ -15328,6 +15486,16 @@ window.open3DPortalView = function(e) {
       try { realInit(); } catch (err) { console.error('Error starting 3D simulator:', err); }
     } else if (typeof window.initThreeWorldTour === 'function') {
       try { window.initThreeWorldTour(); } catch (err) { console.error('Error in initThreeWorldTour:', err); }
+    }
+
+    // Forzar redimensionado y actualización de projection matrix en World3D
+    const w3d = window.World3D || global.World3D;
+    if (w3d && w3d.camera && w3d.renderer) {
+      try {
+        w3d.camera.aspect = window.innerWidth / window.innerHeight;
+        w3d.camera.updateProjectionMatrix();
+        w3d.renderer.setSize(window.innerWidth, window.innerHeight);
+      } catch (_) {}
     }
 
     if (typeof window.ensureEmergencyBackBar === 'function') {

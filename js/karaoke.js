@@ -5,57 +5,316 @@
 (function() {
   'use strict';
 
-  // Sistema de compensación de latencia de audio (Audio Offset Calibrator)
+  // ==========================================================================
+  // DICCIONARIO DE OFFSETS PRE-CALIBRADOS POR CANCIÓN (COMPENSACIÓN DE INTRO DE YOUTUBE)
+  // ==========================================================================
+  const songOffsets = {
+    "losing_my_religion": -0.5,
+    "rolling_in_the_deep": -0.4,
+    "viva_la_vida": -0.6,
+    "dont_stop_me_now": -0.5,
+    "believer": -0.4,
+    "shape_of_you": -0.5,
+    "in_the_end": -0.6,
+    "bohemian_rhapsody": -0.3,
+    "yellow": -0.6,
+    "radioactive": -0.5
+  };
+  window.songOffsets = songOffsets;
+
   let lastActiveStanzaIndex = -1;
   let lastActiveWordIndex = -1;
   window._lastActiveStanzaIndex = -1;
   window._lastActiveWordIndex = -1;
-
-  const savedLyricsOffset = (typeof localStorage !== 'undefined' && localStorage.getItem('mastereng_lyrics_offset'))
-    ? parseFloat(localStorage.getItem('mastereng_lyrics_offset'))
-    : null;
-  window.lyricsOffset = (typeof savedLyricsOffset === 'number' && !isNaN(savedLyricsOffset))
-    ? savedLyricsOffset
-    : -0.6;
   window._isUserScrollingLyrics = false;
   let _userScrollLyricsTimer = null;
 
-  function updateLyricsOffsetUI() {
-    if (typeof document !== 'undefined') {
-      const badge = document.getElementById('lyricsOffsetBadge');
-      if (badge) {
-        const sign = (typeof window.lyricsOffset === 'number' && window.lyricsOffset > 0) ? '+' : '';
-        const val = typeof window.lyricsOffset === 'number' ? window.lyricsOffset.toFixed(1) : '-0.6';
-        badge.textContent = `Sync: ${sign}${val}s`;
+  // ==========================================================================
+  // MOTOR O(1) DE SINCRONIZACIÓN DE LETRAS SIN LAG CON RELOJ INTERPOLADO (16MS)
+  // ==========================================================================
+  const KaraokeSyncEngine = {
+    rafId: null,
+    syncRafId: null,
+    syncTimer: null,
+    lastYtTime: 0,
+    lastPerfTime: 0,
+    currentIndex: -1,
+    currentLyricIndex: -1,
+    lyricNodes: [],
+    lyricsData: [],
+    stanzas: [],
+    offsetSec: 0,
+    currentSongId: null,
+
+    start(player, lyrics, songId) {
+      this.stop();
+      this.lyricsData = lyrics || [];
+      this.stanzas = this.lyricsData;
+      this.currentIndex = -1;
+      this.currentLyricIndex = -1;
+
+      // Identificar ID de la canción
+      let sId = 'custom_song';
+      if (typeof songId === 'string') {
+        sId = songId;
+      } else if (songId && songId.id) {
+        sId = songId.id;
+      } else if (typeof currentMusicIndex === 'number' && MUSIC_SESSION_TRACKS[currentMusicIndex]) {
+        sId = MUSIC_SESSION_TRACKS[currentMusicIndex].id;
+      }
+      this.currentSongId = sId;
+
+      // Recuperar offset guardado en localStorage o valor pre-calibrado
+      let savedOffset = null;
+      try {
+        const s1 = localStorage.getItem('k_offset_' + sId);
+        const s2 = localStorage.getItem('karaoke_offset_' + sId);
+        if (s1 !== null && !isNaN(parseFloat(s1))) savedOffset = parseFloat(s1);
+        else if (s2 !== null && !isNaN(parseFloat(s2))) savedOffset = parseFloat(s2);
+      } catch (_) {}
+
+      const defaultOffset = (songOffsets && songOffsets[sId] !== undefined)
+        ? songOffsets[sId]
+        : ((typeof songId === 'object' && typeof songId.defaultOffset === 'number') ? songId.defaultOffset : 0);
+
+      this.offsetSec = savedOffset !== null ? savedOffset : defaultOffset;
+      window.lyricsOffset = this.offsetSec;
+
+      // Cachear en memoria las referencias a los nodos del DOM una sola vez
+      const container = document.getElementById('karaoke-lyrics-container') || document.getElementById('musicLyricsContainer');
+      this.lyricNodes = (container && typeof container.querySelectorAll === 'function')
+        ? Array.from(container.querySelectorAll('.karaoke-lyric-line, .lyric-line'))
+        : (typeof document.querySelectorAll === 'function' ? Array.from(document.querySelectorAll('.karaoke-lyric-line, .lyric-line')) : []);
+
+      ensureKaraokeOffsetControls();
+      this.updateOffsetBadgeUI();
+
+      this.lastYtTime = 0;
+      this.lastPerfTime = performance.now();
+
+      const tick = () => {
+        const p = player || window._holoYtPlayer || ytMusicPlayer || window.ytMusicPlayer;
+        if (p) {
+          let pState = -1;
+          if (typeof p.getPlayerState === 'function') {
+            try { pState = p.getPlayerState(); } catch (_) {}
+          } else if (window.ytMasterState && typeof window.ytMasterState.playerState === 'number') {
+            pState = window.ytMasterState.playerState;
+          }
+
+          if (pState === 1) { // PLAYING
+            let rawTime = 0;
+            if (typeof p.getCurrentTime === 'function') {
+              try { rawTime = p.getCurrentTime(); } catch (_) {}
+            } else if (window.ytMasterState && typeof window.ytMasterState.currentTime === 'number') {
+              rawTime = window.ytMasterState.currentTime;
+            }
+
+            const now = performance.now();
+            if (Math.abs(rawTime - this.lastYtTime) > 0.05) {
+              this.lastYtTime = rawTime;
+              this.lastPerfTime = now;
+            }
+            const smoothTime = this.lastYtTime + ((now - this.lastPerfTime) / 1000) + this.offsetSec;
+            this.updateActiveLine(smoothTime);
+          }
+        }
+        this.rafId = requestAnimationFrame(tick);
+        this.syncRafId = this.rafId;
+      };
+
+      this.rafId = requestAnimationFrame(tick);
+      this.syncRafId = this.rafId;
+    },
+
+    updateActiveLine(currentTime) {
+      let idx = -1;
+      const data = this.lyricsData;
+      const len = data.length;
+
+      // Búsqueda binaria O(log N) para máximo rendimiento
+      if (len > 0) {
+        let low = 0;
+        let high = len - 1;
+        while (low <= high) {
+          const mid = (low + high) >> 1;
+          const midTime = typeof data[mid].time === 'number'
+            ? data[mid].time
+            : (typeof data[mid].startTime === 'number' ? data[mid].startTime : 0);
+          if (midTime <= currentTime) {
+            idx = mid;
+            low = mid + 1;
+          } else {
+            high = mid - 1;
+          }
+        }
+      }
+
+      // REGLA DE ORO ANTI-LAG: Si el índice no ha cambiado, no tocar el DOM ni hacer scroll
+      if (idx === this.currentIndex) return;
+
+      // Actualizar solo las clases de la línea anterior y la nueva
+      if (this.currentIndex >= 0 && this.lyricNodes[this.currentIndex]) {
+        const prevNode = this.lyricNodes[this.currentIndex];
+        prevNode.classList.remove('active', 'lyric-active', 'scale-[1.02]', 'border-cyan-400', 'bg-cyan-950/80', 'text-white');
+        if (!prevNode.classList.contains('lyric-inactive')) {
+          prevNode.classList.add('lyric-inactive');
+        }
+      }
+
+      this.currentIndex = idx;
+      this.currentLyricIndex = idx;
+
+      if (idx >= 0 && this.lyricNodes[idx]) {
+        const node = this.lyricNodes[idx];
+        node.classList.remove('lyric-inactive');
+        node.classList.add('active', 'lyric-active', 'scale-[1.02]', 'border-cyan-400', 'bg-cyan-950/80', 'text-white');
+        const container = node.parentElement;
+        if (container && !window._isUserScrollingLyrics) {
+          const scrollTarget = node.offsetTop - (container.clientHeight / 2) + (node.clientHeight / 2);
+          container.scrollTo({ top: Math.max(0, scrollTarget), behavior: 'smooth' });
+        }
+        const badge = document.getElementById('karaokeTimeBadge');
+        if (badge) {
+          badge.textContent = `Estrofa ${idx + 1} de ${len}`;
+        }
+      }
+    },
+
+    adjustOffset(delta, songId) {
+      const sId = songId || this.currentSongId;
+      this.offsetSec = Math.round((this.offsetSec + delta) * 10) / 10;
+      window.lyricsOffset = this.offsetSec;
+      if (sId) {
+        try {
+          localStorage.setItem('k_offset_' + sId, String(this.offsetSec));
+          localStorage.setItem('karaoke_offset_' + sId, String(this.offsetSec));
+        } catch (_) {}
+      }
+      this.updateOffsetBadgeUI();
+      if (typeof showFloatingToast === 'function') {
+        const sign = this.offsetSec >= 0 ? '+' : '';
+        showFloatingToast(`Sincronía: ${sign}${this.offsetSec.toFixed(1)}s`, '⏱️');
+      }
+    },
+
+    setOffset(val, songId) {
+      const sId = songId || this.currentSongId;
+      this.offsetSec = Math.round(val * 10) / 10;
+      window.lyricsOffset = this.offsetSec;
+      if (sId) {
+        try {
+          localStorage.setItem('k_offset_' + sId, String(this.offsetSec));
+          localStorage.setItem('karaoke_offset_' + sId, String(this.offsetSec));
+        } catch (_) {}
+      }
+      this.updateOffsetBadgeUI();
+      if (typeof showFloatingToast === 'function') {
+        const sign = this.offsetSec >= 0 ? '+' : '';
+        showFloatingToast(`Sincronía restablecida: ${sign}${this.offsetSec.toFixed(1)}s`, '⏱️');
+      }
+    },
+
+    updateOffsetBadgeUI() {
+      const sign = (typeof this.offsetSec === 'number' && this.offsetSec > 0) ? '+' : '';
+      const text = typeof this.offsetSec === 'number' ? (sign + this.offsetSec.toFixed(1) + 's') : '0.0s';
+      const badge1 = document.getElementById('karaokeOffsetBadge');
+      if (badge1) badge1.textContent = text;
+      const badge2 = document.getElementById('lyricsOffsetBadge');
+      if (badge2) badge2.textContent = `Sync: ${text}`;
+    },
+
+    stop() {
+      if (this.rafId) {
+        cancelAnimationFrame(this.rafId);
+        this.rafId = null;
+      }
+      if (this.syncRafId) {
+        cancelAnimationFrame(this.syncRafId);
+        this.syncRafId = null;
+      }
+      if (this.syncTimer) {
+        clearInterval(this.syncTimer);
+        this.syncTimer = null;
+      }
+      this.currentIndex = -1;
+      this.currentLyricIndex = -1;
+    },
+
+    initSong(lyrics) {
+      this.lyricsData = lyrics || [];
+      this.stanzas = this.lyricsData;
+      this.currentIndex = -1;
+      this.currentLyricIndex = -1;
+      const container = document.getElementById('karaoke-lyrics-container') || document.getElementById('musicLyricsContainer');
+      if (container) {
+        this.lyricNodes = Array.from(container.querySelectorAll('.karaoke-lyric-line, .lyric-line'));
+      }
+    },
+
+    syncFrame(time, force) {
+      this.updateActiveLine(time);
+    },
+
+    updateSeekBarUI(time) {
+      const bar = document.getElementById('musicProgressBar') || document.getElementById('karaokeProgressBar');
+      if (bar && window._currentTrackTotalDuration && window._currentTrackTotalDuration > 0) {
+        const pct = Math.min(100, Math.max(0, (time / window._currentTrackTotalDuration) * 100));
+        bar.style.width = pct + '%';
+      }
+    },
+
+    getCurrentPlaybackTime() {
+      return (typeof getMasterPlaybackTime === 'function') ? getMasterPlaybackTime() : 0;
+    }
+  };
+
+  window.KaraokeSyncEngine = KaraokeSyncEngine;
+
+  function ensureKaraokeOffsetControls() {
+    if (typeof document === 'undefined') return;
+    let ctrl = document.getElementById('karaokeOffsetControls');
+    if (!ctrl) {
+      const container = document.getElementById('karaoke-lyrics-container') || document.getElementById('musicLyricsContainer');
+      if (container && container.parentNode) {
+        ctrl = document.createElement('div');
+        ctrl.id = 'karaokeOffsetControls';
+        ctrl.className = 'karaoke-sync-floating-bar flex items-center justify-between gap-2 px-3 py-1.5 mb-2.5 bg-slate-950/90 border border-cyan-500/40 rounded-xl text-xs font-mono text-slate-300 shadow-lg backdrop-blur-md sticky top-0 z-20';
+        ctrl.innerHTML = `
+          <div class="flex items-center gap-1.5">
+            <span class="text-cyan-400 font-bold text-[11px] flex items-center gap-1">⏱️ Sincronía:</span>
+            <span id="karaokeOffsetBadge" class="px-2 py-0.5 rounded-md bg-cyan-950 border border-cyan-500/50 text-cyan-300 font-bold text-[11px]">0.0s</span>
+          </div>
+          <div class="flex items-center gap-1">
+            <button type="button" onclick="window.KaraokeSyncEngine.adjustOffset(-0.5)" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-cyan-950/80 active:scale-95 text-slate-200 hover:text-cyan-300 text-[10px] font-bold transition cursor-pointer border border-slate-700 hover:border-cyan-500/50" title="Adelantar letra 0.5s">[-0.5s]</button>
+            <button type="button" onclick="window.KaraokeSyncEngine.setOffset(0)" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 hover:text-cyan-300 text-[10px] font-bold transition cursor-pointer border border-slate-700" title="Reiniciar sincronía a 0.0s">[0.0s]</button>
+            <button type="button" onclick="window.KaraokeSyncEngine.adjustOffset(0.5)" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-cyan-950/80 active:scale-95 text-slate-200 hover:text-cyan-300 text-[10px] font-bold transition cursor-pointer border border-slate-700 hover:border-cyan-500/50" title="Retrasar letra 0.5s">[+0.5s]</button>
+          </div>
+        `;
+        container.parentNode.insertBefore(ctrl, container);
       }
     }
+  }
+  window.ensureKaraokeOffsetControls = ensureKaraokeOffsetControls;
+
+  function updateLyricsOffsetUI() {
+    KaraokeSyncEngine.updateOffsetBadgeUI();
   }
   window.updateLyricsOffsetUI = updateLyricsOffsetUI;
 
   window.adjustLyricsOffset = function(delta) {
-    let curr = (typeof window.lyricsOffset === 'number' && !isNaN(window.lyricsOffset)) ? window.lyricsOffset : -0.6;
-    let next = Math.round((curr + delta) * 10) / 10;
-    next = Math.max(-5.0, Math.min(5.0, next));
-    window.lyricsOffset = next;
-    try {
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem('mastereng_lyrics_offset', String(next));
-      }
-    } catch (_) {}
-    updateLyricsOffsetUI();
-    if (typeof window.handleKaraokeTimeUpdate === 'function') {
-      window.handleKaraokeTimeUpdate();
-    }
-    if (typeof showFloatingToast === 'function') {
-      const sign = window.lyricsOffset > 0 ? '+' : '';
-      showFloatingToast(`Calibración de audio: ${sign}${window.lyricsOffset.toFixed(1)}s`, '⏱️');
-    }
+    KaraokeSyncEngine.adjustOffset(delta);
+  };
+
+  window.setLyricsOffset = function(val) {
+    KaraokeSyncEngine.setOffset(val);
   };
 
   const MUSIC_SESSION_TRACKS = [
       {
         id: "losing_my_religion",
         title: "Losing My Religion",
+        defaultOffset: -0.5,
         artist: "R.E.M.",
         genre: "Alternative Rock",
         youtubeId: "xwtdhWltSIg",
@@ -80,6 +339,7 @@
       {
         id: "rolling_in_the_deep",
         title: "Rolling in the Deep",
+        defaultOffset: -0.4,
         artist: "Adele",
         genre: "Pop Soul",
         youtubeId: "rYEDA3JcQqw",
@@ -100,6 +360,7 @@
       {
         id: "viva_la_vida",
         title: "Viva La Vida",
+        defaultOffset: -0.6,
         artist: "Coldplay",
         genre: "Alt Rock",
         youtubeId: "dvgZkm1xWPE",
@@ -121,6 +382,7 @@
       {
         id: "dont_stop_me_now",
         title: "Don't Stop Me Now",
+        defaultOffset: -0.5,
         artist: "Queen",
         genre: "Classic Rock",
         youtubeId: "HgzGwKwLmgM",
@@ -138,6 +400,7 @@
       {
         id: "believer",
         title: "Believer",
+        defaultOffset: -0.4,
         artist: "Imagine Dragons",
         genre: "Indie Rock",
         youtubeId: "7wtfhZwyrcc",
@@ -154,6 +417,7 @@
       {
         id: "shape_of_you",
         title: "Shape of You",
+        defaultOffset: -0.5,
         artist: "Ed Sheeran",
         genre: "Pop Hit",
         youtubeId: "JGwWNGJdvx8",
@@ -170,6 +434,7 @@
       {
         id: "in_the_end",
         title: "In the End",
+        defaultOffset: -0.6,
         artist: "Linkin Park",
         genre: "Alternative Rock",
         youtubeId: "eVTXPUF4Oz4",
@@ -186,6 +451,7 @@
       {
         id: "bohemian_rhapsody",
         title: "Bohemian Rhapsody",
+        defaultOffset: -0.3,
         artist: "Queen",
         genre: "Classic Rock",
         youtubeId: "fJ9rUzIMcZQ",
@@ -201,6 +467,7 @@
       {
         id: "yellow",
         title: "Yellow",
+        defaultOffset: -0.6,
         artist: "Coldplay",
         genre: "Alternative Rock",
         youtubeId: "yKNxeF4KMsY",
@@ -216,6 +483,7 @@
       {
         id: "radioactive",
         title: "Radioactive",
+        defaultOffset: -0.5,
         artist: "Imagine Dragons",
         genre: "Alternative Rock",
         youtubeId: "ktvTqknDobU",
@@ -401,6 +669,15 @@
       if (altContainer && altContainer !== container) {
         altContainer.innerHTML = container.innerHTML;
       }
+
+      // Inicializar nodos en memoria y controles de offset
+      KaraokeSyncEngine.lyricNodes = Array.from(container.querySelectorAll('.karaoke-lyric-line, .lyric-line'));
+      KaraokeSyncEngine.lyricsData = lyrics;
+      KaraokeSyncEngine.stanzas = lyrics;
+      KaraokeSyncEngine.currentIndex = -1;
+      KaraokeSyncEngine.currentLyricIndex = -1;
+      ensureKaraokeOffsetControls();
+      KaraokeSyncEngine.updateOffsetBadgeUI();
     }
 
     function escapeMusicHtml(str) {
@@ -1027,6 +1304,9 @@
     
     function returnToMusicSearch(stopMedia = true) {
       window._userInitiatedMusicPlayback = false;
+      if (KaraokeSyncEngine && typeof KaraokeSyncEngine.stop === 'function') {
+        try { KaraokeSyncEngine.stop(); } catch (_) {}
+      }
       if (stopMedia && typeof window.stopAllMedia === 'function') {
         try { window.stopAllMedia(); } catch (e) {}
       } else if (stopMedia && typeof window.stopAllAudioAndTimers === 'function') {
@@ -1440,7 +1720,7 @@
 
         return `
           <div id="karaokeStanza-${lIdx}"
-            class="lyric-line stanza-card lyric-stanza-card music-stanza-row ${isCurrent ? 'active lyric-active scale-[1.02] border-cyan-400 bg-cyan-950/80 text-white' : 'lyric-inactive'}" data-sidx="${lIdx}"
+            class="karaoke-lyric-line lyric-line stanza-card lyric-stanza-card music-stanza-row ${isCurrent ? 'active lyric-active scale-[1.02] border-cyan-400 bg-cyan-950/80 text-white' : 'lyric-inactive'}" data-sidx="${lIdx}"
             data-start="${lineTime}" data-end="${stanza.endTime}"
             onclick="window.seekToStanza ? window.seekToStanza(${lineTime}, ${lIdx}) : seekYouTubePlayer(${lineTime}, ${lIdx})">
             <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-slate-700/40">
@@ -2241,37 +2521,21 @@
       if (icon) icon.textContent = '⏸️';
       if (text) text.textContent = 'Pausar Karaoke';
 
-      // Sincronización inmediata y ping al iframe
       pingYouTubeIframeListening();
-      syncKaraokeToTime();
 
-      // Si KaraokeSyncEngine ya está activo con su propio bucle rAF, evitar bucles conflictivos
-      if (window.KaraokeSyncEngine && window.KaraokeSyncEngine.stanzas && window.KaraokeSyncEngine.stanzas.length > 0) {
-        return;
-      }
-
-      // Ping periódico cada 100ms para asegurar flujo continuo de infoDelivery desde YouTube
-      musicKaraokeInterval = setInterval(() => {
-        if (!isKaraokeSyncRunning) return;
-        pingYouTubeIframeListening();
-      }, 100);
-
-      // Bucle a 60Hz con requestAnimationFrame para interpolación ultra-suave de milisegundos
-      function masterClockLoop() {
-        if (!isKaraokeSyncRunning) {
-          masterRafId = null;
-          return;
-        }
-        syncKaraokeToTime();
-        masterRafId = requestAnimationFrame(masterClockLoop);
-      }
-      masterRafId = requestAnimationFrame(masterClockLoop);
+      // Arrancar motor O(1) de alta precisión con interpolación a 60Hz
+      const activePlayer = window._holoYtPlayer || ytMusicPlayer || window.ytMusicPlayer;
+      const currentTrack = MUSIC_SESSION_TRACKS[currentMusicIndex] || { id: 'custom_song', defaultOffset: 0 };
+      KaraokeSyncEngine.start(activePlayer, activeLyricsList, currentTrack);
     }
 
     function stopMusicKaraokeSync() {
       isKaraokeSyncRunning = false;
       ytMasterState.isPlaying = false;
       if (ytMasterState.playerState === 1) ytMasterState.playerState = 2;
+
+      // Pausa estricta del loop para 0% uso de CPU
+      KaraokeSyncEngine.stop();
 
       if (masterRafId) {
         cancelAnimationFrame(masterRafId);
@@ -2285,7 +2549,6 @@
       const text = document.getElementById('karaokeSyncToggleText');
       if (icon) icon.textContent = '▶️';
       if (text) text.textContent = 'Sincronizar Karaoke';
-      // NOTA: No reinicia ni avanza currentKaraokeStanzaIndex; se detiene de inmediato en la estrofa actual
     }
 
     function pauseYouTubePlayer() {
@@ -2449,12 +2712,44 @@
   window.getMasterPlaybackTime = getMasterPlaybackTime;
   window.pingYouTubeIframeListening = pingYouTubeIframeListening;
   window.ytMasterState = ytMasterState;
+
+  // Vigilancia estricta del portal de música: al salir o cerrar, pausar loops y liberar 100% de CPU
+  if (typeof document !== 'undefined') {
+    const attachMusicViewObserver = () => {
+      const musicView = document.getElementById('view-music');
+      if (musicView && typeof MutationObserver !== 'undefined' && !musicView._hasKaraokeObserver) {
+        musicView._hasKaraokeObserver = true;
+        const observer = new MutationObserver(() => {
+          const isHidden = musicView.classList.contains('hidden') ||
+            musicView.style.display === 'none' ||
+            musicView.style.visibility === 'hidden';
+          if (isHidden) {
+            if (KaraokeSyncEngine && typeof KaraokeSyncEngine.stop === 'function') {
+              KaraokeSyncEngine.stop();
+            }
+            if (typeof stopMusicKaraokeSync === 'function') {
+              stopMusicKaraokeSync();
+            }
+          }
+        });
+        observer.observe(musicView, { attributes: true, attributeFilter: ['class', 'style'] });
+      }
+    };
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', attachMusicViewObserver);
+    } else {
+      attachMusicViewObserver();
+    }
+  }
 })();
 
 // Función unificada de parada en window (Pausa Instantánea 0ms y Cero Audio Residual)
 window.stopAllAudioAndTimers = function() {
   window._isHoloStagePlaying = false;
   window._userInitiatedMusicPlayback = false;
+  if (window.KaraokeSyncEngine && typeof window.KaraokeSyncEngine.stop === 'function') {
+    try { window.KaraokeSyncEngine.stop(); } catch (_) {}
+  }
   if (typeof window.syncPauseAllMusicPlayers === 'function') {
     try { window.syncPauseAllMusicPlayers(); } catch(e){}
   }

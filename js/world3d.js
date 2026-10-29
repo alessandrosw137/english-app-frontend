@@ -8528,14 +8528,37 @@ ensureOrbitControls();
     return { width, height };
   }
 
-  function pauseWorld3D() {
+  function pauseLoop() {
     isWorldTourActive = false;
+    if (global.World3D) global.World3D.isPaused = true;
+    if (typeof window !== 'undefined' && window.World3D) window.World3D.isPaused = true;
     if (animFrameId) {
       cancelAnimationFrame(animFrameId);
       animFrameId = null;
     }
     const overlay = typeof document !== 'undefined' ? document.getElementById('world3dPortraitWarningOverlay') : null;
     if (overlay) overlay.style.display = 'none';
+  }
+
+  function resumeLoop() {
+    isWorldTourActive = true;
+    if (global.World3D) global.World3D.isPaused = false;
+    if (typeof window !== 'undefined' && window.World3D) window.World3D.isPaused = false;
+    const container3d = typeof document !== 'undefined'
+      ? (document.getElementById('world3d-container') || document.getElementById('world3d-view') || document.getElementById('view-worldtour'))
+      : null;
+    if (container3d) {
+      container3d.classList.remove('hidden');
+      container3d.style.setProperty('display', 'block', 'important');
+    }
+    if (!animFrameId && renderer && scene && camera && typeof global.animate3D === 'function') {
+      lastFrameTime = performance.now();
+      animFrameId = requestAnimationFrame(global.animate3D);
+    }
+  }
+
+  function pauseWorld3D() {
+    pauseLoop();
   }
 
   function initOrResumeWorld3D() {
@@ -8645,11 +8668,12 @@ ensureOrbitControls();
         renderer.setSize(width, height);
       }
 
+      const maxDPR = window.innerWidth < 768 ? 1.25 : 1.75;
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxDPR));
       if (IS_IOS) {
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.4));
         renderer.shadowMap.enabled = false;
       } else {
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.shadowMap.enabled = true;
       }
 
       if (controls) controls.update();
@@ -8681,11 +8705,11 @@ ensureOrbitControls();
       powerPreference: "high-performance"
     });
     renderer.setSize(width, height);
+    const maxDPR = window.innerWidth < 768 ? 1.25 : 1.75;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxDPR));
     if (IS_IOS) {
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.4));
       renderer.shadowMap.enabled = false;
     } else {
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     }
@@ -8731,7 +8755,17 @@ ensureOrbitControls();
 
     // 7. Loop de renderizado animate3D con interpolación suave de cámara (Lerp), Tutorial de Mano y animaciones
     function animate3D(now) {
-      if (!isWorldTourActive) return;
+      const container3d = typeof document !== 'undefined'
+        ? (document.getElementById('world3d-container') || document.getElementById('world3d-view') || document.getElementById('view-worldtour'))
+        : null;
+      const isHidden = container3d && (container3d.classList.contains('hidden') || container3d.style.display === 'none');
+      if (!isWorldTourActive || (global.World3D && global.World3D.isPaused) || isHidden) {
+        if (animFrameId) {
+          cancelAnimationFrame(animFrameId);
+          animFrameId = null;
+        }
+        return;
+      }
       animFrameId = requestAnimationFrame(animate3D);
 
       const delta = Math.min(((now || performance.now()) - lastFrameTime) / 1000, 0.1);
@@ -8977,6 +9011,8 @@ ensureOrbitControls();
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
       renderer.setSize(width, height, false);
+      const maxDPR = window.innerWidth < 768 ? 1.25 : 1.75;
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxDPR));
 
       const container = typeof document !== 'undefined'
         ? (document.getElementById('canvas-container') || document.getElementById('threeCanvasContainer') || document.getElementById('world3d-view') || document.getElementById('view-worldtour'))
@@ -9591,7 +9627,17 @@ ensureOrbitControls();
     global.switch3DScenario = switch3DScenario;
   }
 
+  global.World3D.isPaused = false;
+  global.World3D.pauseLoop = pauseLoop;
+  global.World3D.resumeLoop = resumeLoop;
+  if (typeof window !== 'undefined') {
+    window.World3D = window.World3D || global.World3D;
+    window.World3D.pauseLoop = pauseLoop;
+    window.World3D.resumeLoop = resumeLoop;
+  }
   Object.assign(global.World3D, {
+    pauseLoop,
+    resumeLoop,
     initOrResumeWorld3D,
     initWorld3D: initOrResumeWorld3D,
     resizeWorld3DFullscreen: onWindowResize,

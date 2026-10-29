@@ -2970,10 +2970,28 @@
 
     startLoop() {
       if (this.animId) return;
+      this.isPaused = false;
 
       const raf = (typeof window !== 'undefined' && window.requestAnimationFrame) || (typeof globalThis !== 'undefined' && globalThis.requestAnimationFrame) || ((cb) => setTimeout(cb, 16));
 
       const loop = (now) => {
+        // Optimización GPU / CPU: Verificación estricta de visibilidad antes de dibujar
+        if (!document.getElementById('pet-sanctuary-root') || document.getElementById('pet-sanctuary-root').style.display === 'none') {
+          const petGameView = typeof document !== 'undefined' ? document.getElementById('view-pet-game') : null;
+          const petSanctuaryView = typeof document !== 'undefined' ? document.getElementById('view-pet-sanctuary') : null;
+          const isGameVisible = petGameView && petGameView.style.display !== 'none' && !petGameView.classList.contains('hidden');
+          const isSanctuaryVisible = petSanctuaryView && petSanctuaryView.style.display !== 'none' && !petSanctuaryView.classList.contains('hidden');
+          if (!isGameVisible && !isSanctuaryVisible) {
+            this.stopLoop();
+            return;
+          }
+        }
+
+        if (this.isPaused) {
+          this.stopLoop();
+          return;
+        }
+
         this.animId = raf(loop);
         if (this.renderer) {
           this.renderer.time = (now || Date.now()) * 0.001;
@@ -2998,7 +3016,18 @@
       }
     }
 
+    pauseLoop() {
+      this.isPaused = true;
+      this.stopLoop();
+    }
+
+    resumeLoop() {
+      this.isPaused = false;
+      this.startLoop();
+    }
+
     openView(petId) {
+      this.resumeLoop();
       if (petId) {
         this.loadPetById(petId);
       } else {
@@ -3101,6 +3130,10 @@
       instance.openView(petId);
     };
   }
+
+  global.PetEngine2D = instance;
+  global.PetEngine2D.pauseLoop = function () { instance.pauseLoop(); };
+  global.PetEngine2D.resumeLoop = function () { instance.resumeLoop(); };
 
   // Envolver navigateTo para soportar 'pet' y 'mascota'
   if (typeof global.navigateTo === 'function') {

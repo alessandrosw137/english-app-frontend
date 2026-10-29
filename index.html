@@ -38,9 +38,9 @@ window.FALLBACK_PORTAL_STORIES = 'images/portal_stories.svg';
 window.FALLBACK_PORTAL_MUSIC = 'images/portal_music.svg';
 window.FALLBACK_PORTAL_WORLDTOUR = 'images/portal_worldtour.svg';
 </script>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script>
-tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['"Plus Jakarta Sans"','Inter','sans-serif'],mono:['"JetBrains Mono"','monospace']},colors:{appbg:'#0f172a',appcard:'#1e293b'}}}}
+tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['"Plus Jakarta Sans"','Inter','-apple-system','sans-serif'],mono:['"JetBrains Mono"','monospace']},colors:{appbg:'#0E1015',appcard:'#161922',appsrf:'#1E222D'}}}}
 </script>
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/pet_profile.css">
@@ -214,15 +214,16 @@ button, [role="button"], .cursor-pointer { touch-action: manipulation; }
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 </head>
-<body class="bg-[#0f172a] text-slate-100 min-h-screen flex flex-col">
+<body class="bg-[#0E1015] text-[#F8FAFC] min-h-screen flex flex-col font-sans">
 <div id="offline-badge">⚠️ Estás usando la app sin conexión. Algunas funciones están limitadas.</div>
-<header id="mainHeader" class="navbar top-bar fixed top-0 left-0 right-0 z-50 bg-[#0f172a]/95 backdrop-blur-md border-b border-slate-800/80 h-14 flex items-center justify-between px-3 sm:px-6">
-<div class="flex items-center gap-3">
-<button id="headerGlobalBackBtn" type="button" onclick="window.navigateTo('home')" class="hidden flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition shadow-sm border border-white/20 cursor-pointer" title="Volver al Hub">
-<span>← Portales</span>
+<header id="mainHeader" class="main-header navbar top-bar fixed top-0 left-0 right-0 z-50 bg-[#111318] border-b border-white/[0.08] h-14 flex items-center justify-between px-2.5 sm:px-6 flex-nowrap overflow-hidden">
+<div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+<button id="headerGlobalBackBtn" type="button" onclick="window.navigateTo('home')" class="hidden flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition shadow-sm border border-white/20 cursor-pointer flex-shrink-0" title="Volver a Portales">
+<span class="inline sm:hidden text-xs">← Salir</span>
+<span class="hidden sm:inline">← Portales</span>
 </button>
-<div onclick="handleLogoClick()" class="flex items-center gap-2.5 cursor-pointer group">
-<div class="w-9 h-9 rounded-xl overflow-hidden border border-sky-400/60 shadow-lg shadow-sky-500/30 group-hover:scale-105 transition bg-slate-900">
+<div id="headerLogoWrapper" onclick="handleLogoClick()" class="flex items-center gap-2 sm:gap-2.5 cursor-pointer group flex-shrink-0">
+<div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl overflow-hidden border border-sky-400/60 shadow-lg shadow-sky-500/30 group-hover:scale-105 transition bg-slate-900 flex-shrink-0">
 <img src="images/app_hero_logo.jpg" alt="English App Logo" class="w-full h-full object-cover" onerror="this.onerror=null; this.src=window.FALLBACK_LOGO || 'images/app_hero_logo.svg';">
 </div>
 <div>
@@ -231,36 +232,73 @@ button, [role="button"], .cursor-pointer { touch-action: manipulation; }
 </div>
 </div>
 </div>
-<div class="flex items-center gap-2 sm:gap-3">
+<div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
 <div id="headerConnStatus" class="flex items-center gap-1.5 px-2 py-1 rounded-full bg-slate-800/80 border border-slate-700/60 text-[10px] text-slate-300 font-mono">
 <span id="headerConnDot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
 <span id="headerConnText" class="hidden sm:inline">Online</span>
 </div>
-<div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-800/90 border border-amber-500/30 text-xs font-bold text-amber-300 shadow-sm">
-<span id="userRankMedal">🥉</span>
-<span id="headerUserRank">Bronce</span>
-<span class="text-slate-500 font-normal">|</span>
+<div id="headerUserProgressPill" class="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-full bg-slate-800/90 border border-amber-500/30 text-xs font-bold text-amber-300 shadow-sm flex-shrink-0">
+<span id="userRankMedal" class="hidden sm:inline">🥉</span>
+<span id="headerUserRank" class="hidden sm:inline">Bronce</span>
+<span id="headerUserRankSep" class="text-slate-500 font-normal hidden sm:inline">|</span>
 <span id="headerUserExp" class="text-amber-400">0 EXP</span>
 </div>
-<button id="headerChatRachasBtn" type="button" onclick="window.navigateTo('social')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold text-xs transition shadow-md shadow-emerald-600/30 cursor-pointer active:scale-95" title="Chat, Amigos & Rachas">
-<span>💬 Chat & Rachas</span>
+<button id="headerChatRachasBtn" type="button" onclick="window.navigateTo('social')" class="flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold text-xs transition shadow-md shadow-emerald-600/30 cursor-pointer active:scale-95 flex-shrink-0" title="Chat, Amigos & Rachas">
+<svg class="w-4 h-4 text-white flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+</svg>
+<span class="hidden sm:inline">Chat & Rachas</span>
 </button>
 <button id="headerInboxBtn" type="button" onclick="if(typeof window.openInboxInvitesModal==='function') window.openInboxInvitesModal();" class="relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-rose-500/40 text-rose-300 font-bold text-xs transition shadow-md cursor-pointer active:scale-95" title="Bandeja de Invitaciones">
-  <span>📥 Bandeja</span>
+  <span>📬 Bandeja</span>
   <span id="headerInboxBadge" class="px-1.5 py-0.2 rounded-full bg-rose-500 text-white font-black text-[10px] hidden">0</span>
 </button>
 <button id="headerAdminBtn" onclick="openAdminDashboardModal()" style="display: none;" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-purple-600 to-indigo-600 hover:from-amber-400 hover:via-purple-500 hover:to-indigo-500 text-white font-bold text-xs transition shadow-lg shadow-purple-600/40 cursor-pointer active:scale-95 border border-amber-300/50 hidden" data-action="open-admin">
 <span>⚙️ Panel Admin</span>
 </button>
-<button id="headerProfileBtn" data-action="open-profile" onclick="window.renderUserProfile(); toggleModal('profile-modal');" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-semibold text-xs transition shadow-md shadow-sky-600/30 cursor-pointer active:scale-95" data-action="openProfileModal">
-<span id="headerAvatarText" class="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px]">👤</span>
-<span class="hidden sm:inline">👤 Mi Perfil Social</span>
+<button id="headerProfileBtn" data-action="open-profile" onclick="window.renderUserProfile(); toggleModal('profile-modal');" class="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-semibold text-xs transition shadow-md shadow-sky-600/30 cursor-pointer active:scale-95 flex-shrink-0" data-action="openProfileModal" title="Mi Perfil Social">
+<span id="headerAvatarText" class="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px] font-bold">👤</span>
+<span class="hidden sm:inline">Mi Perfil Social</span>
 </button>
-<button id="headerSettingsBtn" data-action="open-settings" onclick="toggleModal('settings-modal'); openSettingsModal();" class="flex items-center justify-center w-8 h-8 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700/80 text-slate-200 hover:text-white font-bold text-sm transition shadow-md cursor-pointer active:scale-95" title="Ajustes y Configuración">
-<span>⚙️</span>
+<button id="headerSettingsBtn" data-action="open-settings" type="button" onclick="toggleHeaderMobileMenu(event);" class="flex items-center justify-center w-8 h-8 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700/80 text-slate-200 hover:text-white font-bold text-sm transition shadow-md cursor-pointer active:scale-95 flex-shrink-0" title="Menú y Configuración">
+<span class="inline sm:hidden text-sm">☰</span>
+<span class="hidden sm:inline text-sm">⚙️</span>
 </button>
 </div>
 </header>
+<!-- Menú Desplegable Móvil: Agrupa opciones secundarias (Instalar App, Modo Online, Bandeja, Ajustes) -->
+<div id="headerMobileDropdown" class="hidden fixed top-[54px] right-2 sm:right-6 w-64 bg-[#141824] border border-white/10 rounded-2xl shadow-2xl p-2 z-[25000] backdrop-blur-xl flex flex-col gap-1 text-xs" style="display: none;">
+  <button type="button" onclick="closeHeaderMobileDropdown(); var b=document.getElementById('btn-install-share-app'); if(b) b.click(); else if(typeof window.initInstallShareButton==='function') { window.initInstallShareButton(); var b2=document.getElementById('btn-install-share-app'); if(b2) b2.click(); }" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-white/10 text-sky-400 font-semibold transition text-left cursor-pointer">
+    <span class="text-base">📲</span>
+    <div class="flex flex-col">
+      <span class="font-bold text-white">Instalar App / Compartir</span>
+      <span class="text-[10px] text-slate-400">Acceso rápido y PWA</span>
+    </div>
+  </button>
+  <div class="flex items-center justify-between px-3 py-2 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+    <div class="flex items-center gap-2">
+      <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+      <span class="text-slate-300 font-medium">Modo Online</span>
+    </div>
+    <span id="headerDropdownConnState" class="text-[10px] font-mono text-emerald-400 font-bold">Conectado</span>
+  </div>
+  <button type="button" onclick="closeHeaderMobileDropdown(); if(typeof window.openInboxInvitesModal==='function') window.openInboxInvitesModal();" class="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-white/10 text-rose-300 font-semibold transition text-left cursor-pointer">
+    <div class="flex items-center gap-2.5">
+      <span class="text-base">📬</span>
+      <span class="text-slate-200 font-medium">Bandeja de Invitaciones</span>
+    </div>
+    <span id="headerDropdownInboxBadge" class="px-1.5 py-0.2 rounded-full bg-rose-500 text-white font-black text-[10px]" style="display: none;">0</span>
+  </button>
+  <div class="h-px bg-white/10 my-0.5"></div>
+  <button type="button" onclick="closeHeaderMobileDropdown(); if(typeof window.toggleModal==='function') window.toggleModal('settings-modal'); if(typeof window.openSettingsModal==='function') window.openSettingsModal();" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-white/10 text-slate-200 font-semibold transition text-left cursor-pointer">
+    <span class="text-base">⚙️</span>
+    <span class="text-slate-200 font-medium">Ajustes y Configuración</span>
+  </button>
+  <button id="headerDropdownAdminBtn" type="button" onclick="closeHeaderMobileDropdown(); if(typeof window.openAdminDashboardModal==='function') window.openAdminDashboardModal();" class="hidden flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-white/10 text-amber-400 font-semibold transition text-left cursor-pointer" style="display: none;">
+    <span class="text-base">🛡️</span>
+    <span class="text-amber-300 font-medium">Panel Admin</span>
+  </button>
+</div>
 <img src="images/ai_tutor_mascot.svg" alt="AI Tutor Mascot" class="hidden" style="display: none;" onerror="this.onerror=null; this.src=window.FALLBACK_MASCOT;" />
 <div class="h-14"></div>
 <div class="bottom-widgets">
@@ -339,12 +377,12 @@ Plataforma inmersiva de inglés &bull; MasterENG &bull; Wilberth Alessandro Moli
 </div>
 <div id="google-login-button-container" class="requires-network mb-5 w-full flex justify-center min-h-[44px]">
 <button type="button" id="btn-google-custom" class="btn-google-auth w-full py-2.5 px-4 rounded-xl bg-white hover:bg-slate-100 text-slate-800 font-semibold text-xs sm:text-sm transition-all duration-200 flex items-center justify-center gap-3 shadow-md hover:shadow-lg border border-slate-200 active:scale-[0.99] cursor-pointer" onclick="window.openGoogleAccountSelector(event)">
-  🌐 Continuar con Google (Gmail)
+  Continuar con Google
 </button>
 </div>
 <div class="auth-divider my-4" style="display: flex; align-items: center; gap: 1rem; white-space: nowrap; width: 100%;">
 <div class="auth-divider-line border-t border-slate-700/80 flex-1"></div>
-<span class="auth-divider-text bg-[#0f172a] px-3 text-[11px] text-slate-400 uppercase tracking-widest font-semibold whitespace-nowrap shrink-0">O CONTINUAR CON CUENTA</span>
+<span class="auth-divider-text bg-[#0f172a] px-3 text-[11px] text-slate-400 font-medium font-semibold whitespace-nowrap shrink-0">o continuar con correo</span>
 <div class="auth-divider-line border-t border-slate-700/80 flex-1"></div>
 </div>
 <div class="flex rounded-2xl bg-slate-800/80 p-1 mb-5 border border-slate-700/60">
@@ -395,7 +433,7 @@ Entrar a mi Cuenta
 </form>
 <div class="mt-5 pt-4 border-t border-slate-800 text-center">
 <button type="button" onclick="localStorage.setItem('mastereng_user', JSON.stringify({role:'guest', username:'Invitado'})); window.navigateTo('hub'); if(typeof window.continueAsGuest==='function') window.continueAsGuest(event);" style="position: relative; z-index: 10001 !important; pointer-events: auto !important;" class="text-xs font-bold text-slate-400 hover:text-sky-300 transition cursor-pointer py-1.5 px-3 rounded-lg hover:bg-slate-800/50">
-⚡ Continuar como Invitado (Acceso Rápido)
+Continuar como Invitado
 </button>
 </div>
 </div>
@@ -407,23 +445,19 @@ Entrar a mi Cuenta
 <div class="absolute top-1/2 -left-40 -translate-y-1/2 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
 <div class="absolute top-1/2 -right-40 -translate-y-1/2 w-80 h-80 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-<div class="relative z-10 w-full max-w-xl text-center mb-2">
-  <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900/80 border border-slate-700/60 mb-2 shadow-inner">
-    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-    <span class="text-[10px] font-bold tracking-widest text-slate-300 uppercase">SISTEMA DE MÓDULOS ACTIVOS</span>
+<div class="relative z-10 w-full max-w-xl text-center mb-4">
+  <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-[#161922] border border-white/10 mb-2 shadow-sm">
+    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+    <span class="text-[11px] font-medium text-slate-400">Inicio</span>
   </div>
-  <h2 class="text-xl sm:text-2xl font-black bg-gradient-to-r from-amber-300 via-sky-300 to-purple-400 bg-clip-text text-transparent">
-    TEMAS DE APRENDIZAJE
+  <h2 class="text-2xl sm:text-3xl font-extrabold text-[#F8FAFC] tracking-tight" style="letter-spacing: -0.02em;">
+    ¿Qué quieres practicar hoy?
   </h2>
-  <div class="flex items-center justify-center gap-2 mt-1">
-    <span class="h-[1px] w-12 bg-gradient-to-r from-transparent to-amber-400/50"></span>
-    <span class="text-[10px] font-bold tracking-[0.2em] text-slate-400 uppercase">PORTALES ARCANOS</span>
-    <span class="h-[1px] w-12 bg-gradient-to-l from-transparent to-purple-400/50"></span>
-  </div>
+  <p class="text-xs text-slate-400 mt-1">Elige una modalidad y avanza a tu propio ritmo</p>
 </div>
 
 <div id="coverFlowViewport" class="coverflow-viewport hub-carousel carousel-viewport w-full max-w-xl flex items-center justify-center my-1 z-10">
-<button type="button" onclick="window.prevPortal()" class="carousel-nav-btn prev carousel-btn carousel-prev nav-arrow absolute left-0 sm:-left-3 z-40 w-12 h-12 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-white flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition cursor-pointer" style="cursor: pointer !important; pointer-events: auto !important; z-index: 1000 !important;" data-action="prev" title="Portal Anterior">
+<button type="button" onclick="window.prevPortal()" class="carousel-nav-btn prev carousel-btn carousel-prev nav-arrow absolute left-0 sm:-left-3 z-40 w-10 h-10 rounded-full bg-[#161922] hover:bg-[#1E222D] border border-white/10 text-slate-300 flex items-center justify-center shadow-md transition cursor-pointer" style="cursor: pointer !important; pointer-events: auto !important; z-index: 1000 !important;" data-action="prev" title="Portal Anterior">
 <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"> <path d="M15 19l-7-7 7-7" /> </svg>
 </button>
 <div id="coverFlowTrack" class="coverflow-track carousel-track">
@@ -435,7 +469,7 @@ Entrar a mi Cuenta
 <div>
 <div class="flex items-center justify-between mb-1.5">
 <span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-[10px] font-bold text-amber-300 uppercase tracking-widest">
-PORTAL 01 &bull; CURRÍCULO
+Lecciones
 </span>
 <span class="text-xs font-bold text-amber-400">+20 EXP / nivel</span>
 </div>
@@ -558,7 +592,7 @@ Módulos de vocabulario y gramática en inglés.
     </span>
   </div>
 </div>
-<button type="button" onclick="event.stopPropagation(); window.openPortalModules('path'); window.openLearningPath();" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-amber-500/30 cursor-pointer" data-action="enter-portal" data-portal="path">ENTRAR AL PORTAL</button>
+<button type="button" onclick="event.stopPropagation(); window.openPortalModules('path'); window.openLearningPath();" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-[#F59E0B] hover:bg-[#D97706] text-[#0E1015] font-bold text-xs transition shadow-md cursor-pointer" data-action="enter-portal" data-portal="path">Comenzar lección</button>
 </div>
 </div>
 
@@ -569,7 +603,7 @@ Módulos de vocabulario y gramática en inglés.
 <div>
 <div class="flex items-center justify-between mb-1.5">
 <span class="px-2.5 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/40 text-[10px] font-bold text-purple-300 uppercase tracking-widest">
-PORTAL 02 &bull; INMERSIVO 3D
+Mundo 3D
 </span>
 <span class="text-xs font-bold text-purple-400">15 Objetos 3D</span>
 </div>
@@ -692,7 +726,7 @@ Explora y aprende palabras interactuando en 3D.
     </span>
   </div>
 </div>
-<button type="button" onclick="event.stopPropagation(); window.openPortalModules('worldtour'); openPortalWithLoader('worldtour'); if (typeof window.initOrResumeWorld3D === 'function') window.initOrResumeWorld3D();" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-purple-500 to-fuchsia-500 hover:from-purple-400 hover:to-fuchsia-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-purple-500/30 cursor-pointer" data-action="enter-portal" data-portal="worldtour">ENTRAR AL PORTAL</button>
+<button type="button" onclick="event.stopPropagation(); window.openPortalModules('worldtour'); openPortalWithLoader('worldtour'); if (typeof window.initOrResumeWorld3D === 'function') window.initOrResumeWorld3D();" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-[#F59E0B] hover:bg-[#D97706] text-[#0E1015] font-bold text-xs transition shadow-md cursor-pointer" data-action="enter-portal" data-portal="worldtour">Explorar en 3D</button>
 </div>
 </div>
 
@@ -703,7 +737,7 @@ Explora y aprende palabras interactuando en 3D.
 <div>
 <div class="flex items-center justify-between mb-1.5">
 <span class="px-2.5 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-500/40 text-[10px] font-bold text-cyan-300 uppercase tracking-widest">
-PORTAL 03 &bull; MÚSICA & RITMO
+Música & Karaoke
 </span>
 <span class="text-xs font-bold text-cyan-400">+30 EXP / reto</span>
 </div>
@@ -828,7 +862,7 @@ Aprende vocabulario cantando tus canciones favoritas.
     </span>
   </div>
 </div>
-<button type="button" onclick="event.stopPropagation(); window.openPortalModules('music');" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-cyan-500/30 cursor-pointer" data-action="enter-portal" data-portal="music">ENTRAR AL PORTAL</button>
+<button type="button" onclick="event.stopPropagation(); window.openPortalModules('music');" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-[#F59E0B] hover:bg-[#D97706] text-[#0E1015] font-bold text-xs transition shadow-md cursor-pointer" data-action="enter-portal" data-portal="music">Cantar y practicar</button>
 </div>
 </div>
 
@@ -839,7 +873,7 @@ Aprende vocabulario cantando tus canciones favoritas.
 <div>
 <div class="flex items-center justify-between mb-1.5">
 <span class="px-2.5 py-0.5 rounded-full bg-blue-500/20 border border-blue-500/40 text-[10px] font-bold text-blue-300 uppercase tracking-widest">
-PORTAL 04 &bull; INTELIGENCIA ARTIFICIAL
+Tutor Personal
 </span>
 <span class="text-xs font-bold text-blue-400">+50 EXP / chat</span>
 </div>
@@ -968,7 +1002,7 @@ Practica tu inglés conversando por texto o voz.
     </span>
   </div>
 </div>
-<button type="button" onclick="event.stopPropagation(); window.openPortalModules('ai-tutor');" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-400 hover:to-indigo-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-blue-500/30 cursor-pointer" data-action="enter-portal" data-portal="ai-tutor">ENTRAR AL PORTAL</button>
+<button type="button" onclick="event.stopPropagation(); window.openPortalModules('ai-tutor');" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-[#F59E0B] hover:bg-[#D97706] text-[#0E1015] font-bold text-xs transition shadow-md cursor-pointer" data-action="enter-portal" data-portal="ai-tutor">Conversar con tutor</button>
 </div>
 </div>
 
@@ -979,7 +1013,7 @@ Practica tu inglés conversando por texto o voz.
 <div>
 <div class="flex items-center justify-between mb-1.5">
 <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-[10px] font-bold text-emerald-300 uppercase tracking-widest">
-PORTAL 05 &bull; CUENTOS & LECTURAS
+Lecturas
 </span>
 <span class="text-xs font-bold text-emerald-400">+50 EXP / cuento</span>
 </div>
@@ -1095,7 +1129,7 @@ Lecturas clásicas ilustradas con audio y práctica de voz.
     </span>
   </div>
 </div>
-<button type="button" onclick="event.stopPropagation(); window.openPortalModules('stories');" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-500/30 cursor-pointer" data-action="enter-portal" data-portal="stories">ENTRAR AL PORTAL</button>
+<button type="button" onclick="event.stopPropagation(); window.openPortalModules('stories');" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-[#F59E0B] hover:bg-[#D97706] text-[#0E1015] font-bold text-xs transition shadow-md cursor-pointer" data-action="enter-portal" data-portal="stories">Leer historias</button>
 </div>
 </div>
 
@@ -1106,7 +1140,7 @@ Lecturas clásicas ilustradas con audio y práctica de voz.
 <div>
 <div class="flex items-center justify-between mb-1.5">
 <span class="px-2.5 py-0.5 rounded-full bg-red-500/20 border border-red-500/40 text-[10px] font-bold text-red-300 uppercase tracking-widest">
-PORTAL 06 &bull; JUEGO 1 VS 1 3D
+Minijuegos
 </span>
 <span class="text-xs font-bold text-red-400">Headbanz IA</span>
 </div>
@@ -1227,7 +1261,7 @@ Adivina tu carta en la frente en una mesa 3D con Juez IA y voz editable
     </span>
   </div>
 </div>
-<button type="button" onclick="event.stopPropagation(); window.navigateTo('jest');" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-red-500 to-amber-500 hover:from-red-400 hover:to-amber-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-red-500/30 cursor-pointer" data-action="enter-portal" data-portal="jest">ENTRAR AL PORTAL</button>
+<button type="button" onclick="event.stopPropagation(); window.navigateTo('jest');" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-[#F59E0B] hover:bg-[#D97706] text-[#0E1015] font-bold text-xs transition shadow-md cursor-pointer" data-action="enter-portal" data-portal="jest">Jugar ahora</button>
 </div>
 </div>
 
@@ -1238,7 +1272,7 @@ Adivina tu carta en la frente en una mesa 3D con Juez IA y voz editable
 <div>
 <div class="flex items-center justify-between mb-1.5">
 <span class="px-2.5 py-0.5 rounded-full bg-sky-500/20 border border-sky-500/40 text-[10px] font-bold text-sky-300 uppercase tracking-widest">
-PORTAL 07 &bull; SOCIAL & PAREJAS
+Comunidad
 </span>
 <span class="text-xs font-bold text-sky-400">Sala Multijugador</span>
 </div>
@@ -1365,7 +1399,7 @@ Chatea estilo moderno, sube de rango con tu pareja o amigos e invítalos a citas
     </span>
   </div>
 </div>
-<button type="button" onclick="event.stopPropagation(); window.navigateTo('social');" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 hover:from-sky-400 hover:to-indigo-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-sky-500/30 cursor-pointer" data-action="enter-portal" data-portal="social">ENTRAR AL PORTAL</button>
+<button type="button" onclick="event.stopPropagation(); window.navigateTo('social');" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-[#F59E0B] hover:bg-[#D97706] text-[#0E1015] font-bold text-xs transition shadow-md cursor-pointer" data-action="enter-portal" data-portal="social">Abrir comunidad</button>
 </div>
 </div>
 
@@ -1376,17 +1410,17 @@ Chatea estilo moderno, sube de rango con tu pareja o amigos e invítalos a citas
 <div>
 <div class="flex items-center justify-between mb-1.5">
 <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-[10px] font-bold text-emerald-300 uppercase tracking-widest">
-PORTAL 08 &bull; CRIANZA 2D
+Mascotas
 </span>
 <span class="px-2 py-0.5 rounded-full bg-rose-500/20 border border-rose-500/40 text-[10px] font-black text-rose-300 uppercase tracking-wider">
 Solo Usuarios Registrados
 </span>
 </div>
 <h3 class="text-lg font-black text-emerald-300 group-hover:text-emerald-200 transition">
-🐾 MasterPet Sanctuary (Crianza 2D & Co-Op)
+Mascotas
 </h3>
 <p class="text-[11px] text-slate-300 mt-1 leading-snug">
-Adopta, alimenta y entrena a tu compañero de papel interactivo en 2D con físicas reales, minijuegos y crianza compartida.
+Cuida a tu mascota y practica vocabulario diario.
 </p>
 </div>
 <div class="my-2.5 relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden border border-emerald-500/50 shadow-xl bg-slate-950 flex items-center justify-center shrink-0">
@@ -1445,13 +1479,13 @@ Adopta, alimenta y entrena a tu compañero de papel interactivo en 2D con físic
     </span>
   </div>
 </div>
-<button type="button" onclick="event.stopPropagation(); window.openPetSanctuary();" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-500/30 cursor-pointer" data-action="enter-portal" data-portal="pets">ENTRAR AL SANTUARIO</button>
+<button type="button" onclick="event.stopPropagation(); window.openPetSanctuary();" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-[#F59E0B] hover:bg-[#D97706] text-[#0E1015] font-bold text-xs transition shadow-md cursor-pointer" data-action="enter-portal" data-portal="pets">Cuidar mi mascota</button>
 </div>
 </div>
 
 
 </div>
-<button type="button" onclick="window.nextPortal()" class="carousel-nav-btn next carousel-btn carousel-next nav-arrow absolute right-0 sm:-right-3 z-40 w-12 h-12 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-white flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition cursor-pointer" style="cursor: pointer !important; pointer-events: auto !important; z-index: 1000 !important;" data-action="next" title="Portal Siguiente">
+<button type="button" onclick="window.nextPortal()" class="carousel-nav-btn next carousel-btn carousel-next nav-arrow absolute right-0 sm:-right-3 z-40 w-10 h-10 rounded-full bg-[#161922] hover:bg-[#1E222D] border border-white/10 text-slate-300 flex items-center justify-center shadow-md transition cursor-pointer" style="cursor: pointer !important; pointer-events: auto !important; z-index: 1000 !important;" data-action="next" title="Portal Siguiente">
 <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"> <path d="M9 5l7 7-7 7" /> </svg>
 </button>
 </div>
@@ -1473,14 +1507,14 @@ Adopta, alimenta y entrena a tu compañero de papel interactivo en 2D con físic
 <span>← Volver a Portales</span>
 </button>
 <span class="text-xs font-bold text-amber-400 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/30">
-🌟 Learning Path Activo
+Ruta de Aprendizaje Activa
 </span>
 </div>
 <div class="mb-6 relative rounded-3xl overflow-hidden border border-amber-500/40 bg-slate-900/90 shadow-2xl">
 <img src="images/portal_learning_path.jpg" alt="Academia de Aprendizaje" class="w-full h-36 sm:h-44 object-cover opacity-45" onerror="this.onerror=null; this.src=window.FALLBACK_PORTAL_LEARNING || 'images/portal_learning_path.svg';">
 <div class="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-900/75 to-slate-950/90 flex items-center justify-between px-6">
 <div>
-<span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/40 text-[10px] font-bold text-amber-300 uppercase tracking-widest">
+<span class="px-2.5 py-0.5 rounded-md bg-[#1E222D] border border-white/10 text-[11px] font-semibold text-amber-400">
 Currículo Oficial TOEFL & Fluidez
 </span>
 <h2 class="text-xl sm:text-2xl font-black text-white mt-1">Academia de Aprendizaje</h2>
@@ -1495,8 +1529,8 @@ Currículo Oficial TOEFL & Fluidez
 <h3 style="color: #fff; margin: 0.5rem 0;">PHRASAL VERBS / VERBOS COMPUESTOS</h3>
 <p style="color: #a0aec0; font-size: 0.85rem;">100 verbos compuestos nativos estructurados con significado y pronunciación.</p>
 <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-<button type="button" class="btn-mission" data-module="1" onclick="window.openModuleMission(1)">🎯 Misión</button>
-<button type="button" class="btn-glossary" data-module="1" onclick="window.openModuleGlossary(1)">📖 Glosario</button>
+<button type="button" class="btn-mission" data-module="1" onclick="window.openModuleMission(1)">Misión</button>
+<button type="button" class="btn-glossary" data-module="1" onclick="window.openModuleGlossary(1)">Glosario</button>
 </div>
 </div>
 <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
@@ -1504,8 +1538,8 @@ Currículo Oficial TOEFL & Fluidez
 <h3 style="color: #fff; margin: 0.5rem 0;">VERBOS / VERBS</h3>
 <p style="color: #a0aec0; font-size: 0.85rem;">100 verbos clave, irregulares y de alta frecuencia para comunicación fluida.</p>
 <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-<button type="button" class="btn-mission" data-module="2" onclick="window.openModuleMission(2)">🎯 Misión</button>
-<button type="button" class="btn-glossary" data-module="2" onclick="window.openModuleGlossary(2)">📖 Glosario</button>
+<button type="button" class="btn-mission" data-module="2" onclick="window.openModuleMission(2)">Misión</button>
+<button type="button" class="btn-glossary" data-module="2" onclick="window.openModuleGlossary(2)">Glosario</button>
 </div>
 </div>
 <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
@@ -1513,8 +1547,8 @@ Currículo Oficial TOEFL & Fluidez
 <h3 style="color: #fff; margin: 0.5rem 0;">ADJETIVOS / ADJECTIVES</h3>
 <p style="color: #a0aec0; font-size: 0.85rem;">100 adjetivos de alto impacto para descripciones precisas y elocuentes.</p>
 <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-<button type="button" class="btn-mission" data-module="3" onclick="window.openModuleMission(3)">🎯 Misión</button>
-<button type="button" class="btn-glossary" data-module="3" onclick="window.openModuleGlossary(3)">📖 Glosario</button>
+<button type="button" class="btn-mission" data-module="3" onclick="window.openModuleMission(3)">Misión</button>
+<button type="button" class="btn-glossary" data-module="3" onclick="window.openModuleGlossary(3)">Glosario</button>
 </div>
 </div>
 <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
@@ -1522,8 +1556,8 @@ Currículo Oficial TOEFL & Fluidez
 <h3 style="color: #fff; margin: 0.5rem 0;">MODISMOS Y SLANG / IDIOMS & SLANG</h3>
 <p style="color: #a0aec0; font-size: 0.85rem;">100 modismos, expresiones idiomáticas y expresiones coloquiales auténticas.</p>
 <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-<button type="button" class="btn-mission" data-module="4" onclick="window.openModuleMission(4)">🎯 Misión</button>
-<button type="button" class="btn-glossary" data-module="4" onclick="window.openModuleGlossary(4)">📖 Glosario</button>
+<button type="button" class="btn-mission" data-module="4" onclick="window.openModuleMission(4)">Misión</button>
+<button type="button" class="btn-glossary" data-module="4" onclick="window.openModuleGlossary(4)">Glosario</button>
 </div>
 </div>
 <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
@@ -1531,8 +1565,8 @@ Currículo Oficial TOEFL & Fluidez
 <h3 style="color: #fff; margin: 0.5rem 0;">CONECTORES / CONNECTORS</h3>
 <p style="color: #a0aec0; font-size: 0.85rem;">100 conectores discursivos para estructurar argumentos, ensayos y debates.</p>
 <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-<button type="button" class="btn-mission" data-module="5" onclick="window.openModuleMission(5)">🎯 Misión</button>
-<button type="button" class="btn-glossary" data-module="5" onclick="window.openModuleGlossary(5)">📖 Glosario</button>
+<button type="button" class="btn-mission" data-module="5" onclick="window.openModuleMission(5)">Misión</button>
+<button type="button" class="btn-glossary" data-module="5" onclick="window.openModuleGlossary(5)">Glosario</button>
 </div>
 </div>
 <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
@@ -1540,8 +1574,8 @@ Currículo Oficial TOEFL & Fluidez
 <h3 style="color: #fff; margin: 0.5rem 0;">CONFUSOS Y EXPRESIONES / CONFUSING WORDS</h3>
 <p style="color: #a0aec0; font-size: 0.85rem;">100 falsos amigos y parejas confusas entre inglés y español explicadas.</p>
 <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-<button type="button" class="btn-mission" data-module="6" onclick="window.openModuleMission(6)">🎯 Misión</button>
-<button type="button" class="btn-glossary" data-module="6" onclick="window.openModuleGlossary(6)">📖 Glosario</button>
+<button type="button" class="btn-mission" data-module="6" onclick="window.openModuleMission(6)">Misión</button>
+<button type="button" class="btn-glossary" data-module="6" onclick="window.openModuleGlossary(6)">Glosario</button>
 </div>
 </div>
 <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
@@ -1549,8 +1583,8 @@ Currículo Oficial TOEFL & Fluidez
 <h3 style="color: #fff; margin: 0.5rem 0;">FRASES COTIDIANAS / EVERYDAY PHRASES</h3>
 <p style="color: #a0aec0; font-size: 0.85rem;">100 frases preposicionales y colocaciones fijas usadas por nativos.</p>
 <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-<button type="button" class="btn-mission" data-module="7" onclick="window.openModuleMission(7)">🎯 Misión</button>
-<button type="button" class="btn-glossary" data-module="7" onclick="window.openModuleGlossary(7)">📖 Glosario</button>
+<button type="button" class="btn-mission" data-module="7" onclick="window.openModuleMission(7)">Misión</button>
+<button type="button" class="btn-glossary" data-module="7" onclick="window.openModuleGlossary(7)">Glosario</button>
 </div>
 </div>
 <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
@@ -1558,8 +1592,8 @@ Currículo Oficial TOEFL & Fluidez
 <h3 style="color: #fff; margin: 0.5rem 0;">TRABAJO Y TECNOLOGÍA / WORK & TECH</h3>
 <p style="color: #a0aec0; font-size: 0.85rem;">100 términos técnicos, de ingeniería de software y negocios globales.</p>
 <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-<button type="button" class="btn-mission" data-module="8" onclick="window.openModuleMission(8)">🎯 Misión</button>
-<button type="button" class="btn-glossary" data-module="8" onclick="window.openModuleGlossary(8)">📖 Glosario</button>
+<button type="button" class="btn-mission" data-module="8" onclick="window.openModuleMission(8)">Misión</button>
+<button type="button" class="btn-glossary" data-module="8" onclick="window.openModuleGlossary(8)">Glosario</button>
 </div>
 </div>
 <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
@@ -1567,8 +1601,8 @@ Currículo Oficial TOEFL & Fluidez
 <h3 style="color: #fff; margin: 0.5rem 0;">CLIMA, NATURALEZA Y VIAJES / WEATHER & TRAVEL</h3>
 <p style="color: #a0aec0; font-size: 0.85rem;">100 términos esenciales de supervivencia en aeropuertos, viajes y hoteles.</p>
 <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-<button type="button" class="btn-mission" data-module="9" onclick="window.openModuleMission(9)">🎯 Misión</button>
-<button type="button" class="btn-glossary" data-module="9" onclick="window.openModuleGlossary(9)">📖 Glosario</button>
+<button type="button" class="btn-mission" data-module="9" onclick="window.openModuleMission(9)">Misión</button>
+<button type="button" class="btn-glossary" data-module="9" onclick="window.openModuleGlossary(9)">Glosario</button>
 </div>
 </div>
 <div class="module-card" style="background: rgba(13,20,36,0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem;">
@@ -1576,8 +1610,8 @@ Currículo Oficial TOEFL & Fluidez
 <h3 style="color: #fff; margin: 0.5rem 0;">VOCABULARIO AVANZADO / ADVANCED VOCAB</h3>
 <p style="color: #a0aec0; font-size: 0.85rem;">100 palabras de vocabulario académico para máximo puntaje en TOEFL.</p>
 <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-<button type="button" class="btn-mission" data-module="10" onclick="window.openModuleMission(10)">🎯 Misión</button>
-<button type="button" class="btn-glossary" data-module="10" onclick="window.openModuleGlossary(10)">📖 Glosario</button>
+<button type="button" class="btn-mission" data-module="10" onclick="window.openModuleMission(10)">Misión</button>
+<button type="button" class="btn-glossary" data-module="10" onclick="window.openModuleGlossary(10)">Glosario</button>
 </div>
 </div>
 </div>
@@ -2378,12 +2412,125 @@ var cleanId=id.replace(/[-_]view$/,'');
 var map={'login':'view-auth','auth':'view-auth','view-auth':'view-auth','login-view':'view-auth','hub':'view-home','home':'view-home','portals':'view-home','view-home':'view-home','hub-view':'view-home','path':'view-path','learning-path':'view-path','learning-path-view':'view-path','view-path':'view-path','worldtour':'view-worldtour','world3d':'view-worldtour','world3d-view':'view-worldtour','view-worldtour':'view-worldtour','music':'view-music','music-view':'view-music','view-music':'view-music','stories':'view-stories','stories-view':'view-stories','view-stories':'view-stories','ai-tutor':'ai-tutor-view','tutor':'ai-tutor-view','ai-tutor-view':'ai-tutor-view','view-ai-tutor':'ai-tutor-view','admin':'adminDashboardModal','admin-view':'adminDashboardModal','jest':'view-jest-game','jarz':'view-jest-game','view-jest-game':'view-jest-game','jest-view':'view-jest-game','social':'view-community','chat':'view-community','community':'view-community','view-community':'view-community','community-view':'view-community'};
 return map[id]||map[cleanId]||(window.MASTER_ROOT_VIEWS.indexOf(id)!==-1?id:(window.MASTER_ROOT_VIEWS.indexOf('view-'+id)!==-1?'view-'+id:'view-home'));
 };
-window.syncTopBackBtnVisibility=function(t){
-var b=document.getElementById('headerGlobalBackBtn');if(!b)return;
-var h=(t==='view-home'||t==='view-auth'||t==='home'||t==='login');
-b.classList.toggle('hidden',h);b.style.setProperty('display',h?'none':'inline-flex','important');
+window.syncImmersivePortalState=function(targetId){
+if(!document.body)return;
+var tid=targetId||'';
+if(!tid&&typeof window.resolveMasterViewId==='function'&&window.currentViewId){
+tid=window.resolveMasterViewId(window.currentViewId);
+}
+var isImmersive=false;
+if(tid==='view-worldtour'||tid==='view-music'||tid==='view-pet-sanctuary'){
+isImmersive=true;
+}
+if(document.body.classList.contains('pet-sanctuary-active')||document.body.classList.contains('view-worldtour-active')){
+isImmersive=true;
+}
+var petRoot=document.getElementById('pet-sanctuary-root');
+if(petRoot&&petRoot.style.display!=='none'&&!petRoot.classList.contains('hidden')){
+isImmersive=true;
+}
+var w3d=document.getElementById('view-worldtour');
+if(w3d&&w3d.style.display!=='none'&&!w3d.classList.contains('hidden')){
+isImmersive=true;
+}
+var karoCont=document.getElementById('karaoke-container');
+if(karoCont&&karoCont.style.display!=='none'&&!karoCont.classList.contains('hidden')){
+isImmersive=true;
+}
+if(tid==='view-home'||tid==='view-auth'||tid==='home'||tid==='login'){
+isImmersive=false;
+}
+document.body.classList.toggle('in-immersive-portal',isImmersive);
 };
+
+window.syncTopBackBtnVisibility=function(t){
+var b=document.getElementById('headerGlobalBackBtn');
+var lw=document.getElementById('headerLogoWrapper');
+var mh=document.getElementById('mainHeader')||document.querySelector('header');
+var h=(t==='view-home'||t==='view-auth'||t==='home'||t==='login');
+if(b){
+b.classList.toggle('hidden',h);
+b.style.setProperty('display',h?'none':'inline-flex','important');
+}
+if(mh)mh.classList.toggle('in-subview',!h);
+if(lw&&window.innerWidth<=768){
+lw.style.setProperty('display',h?'flex':'none','important');
+}
+window.syncImmersivePortalState(t);
+};
+
+window.toggleHeaderMobileMenu=function(e){
+if(e){try{e.preventDefault();e.stopPropagation();}catch(_){}}
+var dropdown=document.getElementById('headerMobileDropdown');
+if(!dropdown)return;
+var isHidden=dropdown.classList.contains('hidden')||dropdown.style.display==='none';
+if(isHidden){
+var badge=document.getElementById('headerInboxBadge');
+var dropBadge=document.getElementById('headerDropdownInboxBadge');
+if(badge&&dropBadge){
+dropBadge.textContent=badge.textContent||'0';
+var showB=(badge.style.display!=='none'&&!badge.classList.contains('hidden')&&badge.textContent!=='0');
+dropBadge.style.display=showB?'inline-block':'none';
+}
+var dropConn=document.getElementById('headerDropdownConnState');
+if(dropConn){
+var isOnline=navigator.onLine!==false;
+dropConn.textContent=isOnline?'Conectado':'Sin conexión';
+dropConn.className=isOnline?'text-[10px] font-mono text-emerald-400 font-bold':'text-[10px] font-mono text-amber-400 font-bold';
+}
+var adminBtn=document.getElementById('headerAdminBtn');
+var dropAdmin=document.getElementById('headerDropdownAdminBtn');
+if(dropAdmin){
+var isAdmin=adminBtn&&adminBtn.style.display!=='none'&&!adminBtn.classList.contains('hidden');
+dropAdmin.classList.toggle('hidden',!isAdmin);
+dropAdmin.style.display=isAdmin?'flex':'none';
+}
+dropdown.classList.remove('hidden');
+dropdown.style.display='flex';
+}else{
+dropdown.classList.add('hidden');
+dropdown.style.display='none';
+}
+};
+
+window.closeHeaderMobileDropdown=function(){
+var dropdown=document.getElementById('headerMobileDropdown');
+if(dropdown){
+dropdown.classList.add('hidden');
+dropdown.style.display='none';
+}
+};
+
+if(typeof document!=='undefined'){
+document.addEventListener('click',function(e){
+var dropdown=document.getElementById('headerMobileDropdown');
+var settingsBtn=document.getElementById('headerSettingsBtn');
+if(!dropdown||dropdown.classList.contains('hidden')||dropdown.style.display==='none')return;
+if(!dropdown.contains(e.target)&&(!settingsBtn||!settingsBtn.contains(e.target))){
+window.closeHeaderMobileDropdown();
+}
+});
+if(typeof MutationObserver!=='undefined'&&document.body){
+var _immObserver=new MutationObserver(function(){
+window.syncImmersivePortalState();
+});
+_immObserver.observe(document.body,{attributes:true,attributeFilter:['class']});
+}
+window.addEventListener('resize',function(){
+var b=document.getElementById('headerGlobalBackBtn');
+var lw=document.getElementById('headerLogoWrapper');
+if(lw&&b){
+var isBackVisible=!b.classList.contains('hidden')&&b.style.display!=='none';
+if(window.innerWidth<=768&&isBackVisible){
+lw.style.setProperty('display','none','important');
+}else if(window.innerWidth>768){
+lw.style.removeProperty('display');
+}
+}
+});
+}
 window.navigateTo=function(viewId){
+if(typeof window.closeHeaderMobileDropdown==='function')window.closeHeaderMobileDropdown();
 var targetId=window.resolveMasterViewId(viewId);
 if(targetId==='adminDashboardModal'){if(typeof window.openAdminDashboardModal==='function')window.openAdminDashboardModal();return;}
 if(targetId==='ai-tutor-view'){

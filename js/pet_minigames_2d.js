@@ -608,6 +608,7 @@
 
     destroy() {
       this.running = false;
+      if (this.animId) { cancelAnimationFrame(this.animId); this.animId = null; }
       this.canvas.removeEventListener('mousedown', this._onDown);
       window.removeEventListener('mousemove', this._onMove);
       window.removeEventListener('mouseup', this._onUp);
@@ -1060,9 +1061,16 @@
 
     loop() {
       if (!this.running) return;
+      if (!document.getElementById('pet-sanctuary-root') || document.getElementById('pet-sanctuary-root').style.display === 'none') {
+        const modal = typeof document !== 'undefined' ? document.getElementById('petArcadeModal') : null;
+        if (!modal || modal.classList.contains('hidden') || modal.style.display === 'none') {
+          this.destroy();
+          return;
+        }
+      }
       this.update();
       this.draw();
-      requestAnimationFrame(() => this.loop());
+      this.animId = requestAnimationFrame(() => this.loop());
     }
 
     finishGame() {
@@ -1167,6 +1175,7 @@
 
     destroy() {
       this.running = false;
+      if (this.animId) { cancelAnimationFrame(this.animId); this.animId = null; }
       window.removeEventListener('keydown', this._onKeyDown);
       window.removeEventListener('keyup', this._onKeyUp);
     }
@@ -1531,9 +1540,16 @@
 
     loop() {
       if (!this.running) return;
+      if (!document.getElementById('pet-sanctuary-root') || document.getElementById('pet-sanctuary-root').style.display === 'none') {
+        const modal = typeof document !== 'undefined' ? document.getElementById('petArcadeModal') : null;
+        if (!modal || modal.classList.contains('hidden') || modal.style.display === 'none') {
+          this.destroy();
+          return;
+        }
+      }
       this.update();
       this.draw();
-      requestAnimationFrame(() => this.loop());
+      this.animId = requestAnimationFrame(() => this.loop());
     }
 
     finishGame() {
@@ -1634,6 +1650,7 @@
 
     destroy() {
       this.running = false;
+      if (this.animId) { cancelAnimationFrame(this.animId); this.animId = null; }
       window.removeEventListener('keydown', this._onKeyDown);
       window.removeEventListener('keyup', this._onKeyUp);
       this.canvas.removeEventListener('mousemove', this._onMouseMove);
@@ -1843,9 +1860,16 @@
 
     loop() {
       if (!this.running) return;
+      if (!document.getElementById('pet-sanctuary-root') || document.getElementById('pet-sanctuary-root').style.display === 'none') {
+        const modal = typeof document !== 'undefined' ? document.getElementById('petArcadeModal') : null;
+        if (!modal || modal.classList.contains('hidden') || modal.style.display === 'none') {
+          this.destroy();
+          return;
+        }
+      }
       this.update();
       this.draw();
-      requestAnimationFrame(() => this.loop());
+      this.animId = requestAnimationFrame(() => this.loop());
     }
 
     finishGame() {
@@ -2071,6 +2095,14 @@
     }
 
     close() {
+      this.stopGame();
+      // Actualizar PetEngine2D si existe
+      if (global.PetEngine2D) {
+        global.PetEngine2D.updateHUD();
+      }
+    }
+
+    stopGame() {
       if (this.activeGame) {
         this.activeGame.destroy();
         this.activeGame = null;
@@ -2078,10 +2110,10 @@
       if (this.modal) {
         this.modal.classList.add('hidden');
       }
-      // Actualizar PetEngine2D si existe
-      if (global.PetEngine2D) {
-        global.PetEngine2D.updateHUD();
-      }
+    }
+
+    pauseLoop() {
+      this.stopGame();
     }
 
     showHub() {
@@ -2201,6 +2233,12 @@
   global.openPetArcadeModal = (petState) => arcadeManager.open(petState);
   global.closePetArcadeModal = () => arcadeManager.close();
   global.startArcadeGame = (gameId) => arcadeManager.launchGame(gameId);
+
+  // Global PetMinigames2D API para congelación de loops en hideAllModules
+  global.PetMinigames2D = global.PetMinigames2D || {};
+  global.PetMinigames2D.stopGame = function() { arcadeManager.stopGame(); };
+  global.PetMinigames2D.pauseLoop = function() { arcadeManager.pauseLoop(); };
+  global.PetMinigames2D.manager = arcadeManager;
 
   // Enganchar en PetEngine2D.playBall si ya está presente o al cargar
   function hookIntoPetEngine() {

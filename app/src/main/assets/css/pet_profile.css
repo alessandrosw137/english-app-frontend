@@ -354,9 +354,10 @@ html body #profileModal.active button {
   overflow-y: auto !important;
   padding: 0 !important;
   border-radius: 28px !important;
-  background: #090d16 !important;
-  border: 1px solid rgba(56, 189, 248, 0.25) !important;
-  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.9), 0 0 40px rgba(56, 189, 248, 0.15) !important;
+  background: #161922 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.8) !important;
+  border-radius: 16px !important;
 }
 
 #profileModal .profile-body {
@@ -397,8 +398,8 @@ html body #profileModal.active button {
   flex-direction: column;
   width: 100%;
   color: #f1f5f9;
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  background: radial-gradient(circle at 50% 0%, rgba(30, 41, 59, 0.7) 0%, rgba(9, 13, 22, 0.95) 100%);
+  font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif;
+  background: #161922;
 }
 
 /* Cover Photo Banner */
@@ -473,8 +474,9 @@ html body #profileModal.active button {
   height: 108px;
   border-radius: 26px;
   padding: 4px;
-  background: linear-gradient(135deg, #38bdf8, #818cf8, #c084fc);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.7), 0 0 20px rgba(56, 189, 248, 0.3);
+  background: #1E222D;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.5);
   flex-shrink: 0;
 }
 
@@ -528,12 +530,13 @@ html body #profileModal.active button {
   gap: 6px;
   padding: 8px 16px;
   border-radius: 14px;
-  background: linear-gradient(135deg, #0284c7, #2563eb);
-  color: #ffffff;
+  background: #F59E0B;
+  color: #0E1015;
   font-size: 12px;
   font-weight: 700;
-  border: 1px solid rgba(56, 189, 248, 0.4);
-  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.25);
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -550,12 +553,12 @@ html body #profileModal.active button {
   gap: 6px;
   padding: 8px 14px;
   border-radius: 14px;
-  background: rgba(30, 41, 59, 0.7);
-  backdrop-filter: blur(8px);
-  color: #cbd5e1;
+  background: #1E222D;
+  color: #E2E8F0;
   font-size: 12px;
-  font-weight: 700;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-weight: 500;
+  border: 1px solid #2E3440;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -805,8 +808,8 @@ html body #profileModal.active button {
 }
 
 @keyframes cosmicShimmer {
-  0% { box-shadow: 0 0 10px #ec4899, inset 0 2px 4px #ffffff; }
-  100% { box-shadow: 0 0 22px #3b82f6, inset 0 2px 8px #ffffff; }
+  0% { box-shadow: 0 0 4px rgba(255, 255, 255, 0.2); }
+  100% { box-shadow: 0 0 10px rgba(245, 158, 11, 0.3); }
 }
 
 .rank-info-text h4 {
