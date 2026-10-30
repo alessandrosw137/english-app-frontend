@@ -2374,7 +2374,7 @@ window.logout = function() {
 
     function handleCoverCardClick(index) {
       if (index === window.currentPortal) {
-        const modules = ['path', 'worldtour', 'music', 'ai-tutor', 'stories', 'jest', 'social', 'pets'];
+        const modules = ['path', 'worldtour', 'music', 'ai-tutor', 'stories', 'jest', 'social', 'pets', 'soccer'];
         if (modules[index] === 'ai-tutor' && typeof window.isUserRegistered === 'function' && !window.isUserRegistered()) {
           if (typeof showFloatingToast === 'function') {
             showFloatingToast('🔒 Inicia sesión con tu cuenta para acceder al Tutor IA.', '🔒');
@@ -2420,7 +2420,7 @@ window.logout = function() {
       if (typeof document !== 'undefined' && document.body && document.body.classList) {
         document.body.classList.add('in-immersive-portal');
       }
-      const portalModules = ['path', 'worldtour', 'music', 'ai-tutor', 'stories', 'jest', 'social', 'pets'];
+      const portalModules = ['path', 'worldtour', 'music', 'ai-tutor', 'stories', 'jest', 'social', 'pets', 'soccer'];
       const activeIdx = (typeof window.currentPortal === 'number')
         ? ((window.currentPortal % portalModules.length + portalModules.length) % portalModules.length)
         : 0;
@@ -2440,7 +2440,10 @@ window.logout = function() {
           window.renderOfficialLearningModules();
         }
       } else if (portal === 'worldtour' || portal === 'world3d') {
-        if (typeof window.open3DPortalView === 'function') {
+        if (typeof window.openWorld3DLobby === 'function') {
+          window.openWorld3DLobby();
+          return;
+        } else if (typeof window.open3DPortalView === 'function') {
           window.open3DPortalView();
           return;
         } else if (typeof window.navigateToView === 'function') {
@@ -2536,6 +2539,22 @@ window.logout = function() {
         }
         if (typeof window.checkAndLinkPendingCoop === 'function') {
           setTimeout(window.checkAndLinkPendingCoop, 450);
+        }
+      } else if (portal === 'soccer' || portal === 'soccer3d' || portal === 'mastergoal' || portal === 'view-soccer-3d') {
+        if (typeof window.hideAllModules === 'function') {
+          window.hideAllModules();
+        }
+        const soccerEl = document.getElementById('view-soccer-3d');
+        if (soccerEl) {
+          soccerEl.classList.remove('hidden');
+          soccerEl.style.setProperty('display', 'block', 'important');
+          soccerEl.style.setProperty('visibility', 'visible', 'important');
+          soccerEl.style.setProperty('pointer-events', 'auto', 'important');
+        }
+        if (window.SoccerTactics3D && typeof window.SoccerTactics3D.openPortal === 'function') {
+          window.SoccerTactics3D.openPortal();
+        } else if (typeof window.navigateTo === 'function') {
+          window.navigateTo('view-soccer-3d');
         }
       } else if (typeof openPortalWithLoader === 'function') {
         openPortalWithLoader(portal);
@@ -14449,7 +14468,9 @@ window.hideAllModules = function hideAllModules() {
     '#pet-sanctuary-root', '#view-pet-sanctuary', '#view-pet-game',
     // Mundo 3D
     '#world3d-container', '#world3d-view', '#view-worldtour', '#portal-3d-master-view',
-    '#world3dFloatingBackBtn', '#worldTourTopBar',
+    '#world3dFloatingBackBtn', '#worldTourTopBar', '#world3d-selection-hub', '#world3d-loading-screen',
+    // MasterGoal 3D: Tactical Soccer
+    '#view-soccer-3d',
     // Resto de portales
     '#view-path', '#view-stories', '#ai-tutor-view', '#view-jest-game', '#view-community',
     // Overlays activos residuales
@@ -14506,6 +14527,11 @@ window.hideAllModules = function hideAllModules() {
     try { window.pauseWorld3D(); } catch (_) {}
   } else if (window.World3D && typeof window.World3D.pauseWorld3D === 'function') {
     try { window.World3D.pauseWorld3D(); } catch (_) {}
+  }
+
+  // Pausa el bucle de MasterGoal 3D (Fútbol Táctico)
+  if (window.SoccerTactics3D && typeof window.SoccerTactics3D.pauseLoop === 'function') {
+    try { window.SoccerTactics3D.pauseLoop(); } catch (_) {}
   }
 
   // Pausa el bucle de Mascota 2D

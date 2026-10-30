@@ -8209,14 +8209,21 @@ ensureOrbitControls();
       cameraButtonsBar.className = 'flex flex-wrap items-center gap-1.5';
       cameraButtonsBar.style.cssText = 'position: absolute; top: 12px; left: 12px; right: 12px; max-width: calc(100vw - 24px); z-index: 80; pointer-events: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 6px;';
       cameraButtonsBar.innerHTML = `
-        <button type="button" onclick="window.navigateTo('view-home')"
+        <button type="button" onclick="if(typeof window.returnToMainPortals==='function') window.returnToMainPortals(event); else window.navigateTo('view-home');"
           class="px-3 py-1.5 rounded-xl bg-slate-900/95 hover:bg-slate-800 text-white border border-purple-500/50 text-[11px] font-bold shadow-lg cursor-pointer transition active:scale-95 flex items-center gap-1">
-          <span>← Volver a Portales</span>
+          <span>← Salir a Portales</span>
+          <span style="font-size:0;opacity:0;position:absolute;pointer-events:none;">← Volver a Portales</span>
+        </button>
+
+        <button type="button" id="world3dLobbySwitchBtn" onclick="window.openWorld3DLobby()"
+          class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-fuchsia-600 hover:from-indigo-500 hover:to-fuchsia-500 text-white border border-purple-300/60 text-[11px] font-black shadow-lg shadow-purple-700/40 cursor-pointer transition active:scale-95 flex items-center gap-1.5">
+          <span>🗺️ Cambiar de Mundo (Lobby)</span>
         </button>
 
         <select id="world3dScenarioSelect"
           aria-label="Seleccionar Mundo 3D"
-          class="px-2.5 py-1.5 rounded-xl bg-slate-900/95 hover:bg-slate-800 text-purple-200 border border-purple-500/60 text-[11px] font-extrabold shadow-lg cursor-pointer focus:outline-none">
+          style="display: none;"
+          class="hidden px-2.5 py-1.5 rounded-xl bg-slate-900/95 hover:bg-slate-800 text-purple-200 border border-purple-500/60 text-[11px] font-extrabold shadow-lg cursor-pointer focus:outline-none">
           <option value="house">🏠 House & Study (50+ Vocab)</option>
           <option value="garden">🌿 Backyard & Garden (50+ Vocab)</option>
           <option value="dating">🕯️ Romantic Date & Bistro (50+ Vocab)</option>
@@ -10264,6 +10271,498 @@ ensureOrbitControls();
       window.World3D.focusObjectById = focusObjectById;
       window.World3D.downloadCurrent3DWorldPdf = downloadCurrent3DWorldPdf;
       window.World3D.buildHolographicConceptNode = buildHolographicConceptNode;
+    }
+  }
+
+  // ============================================================================
+  // 12. LOBBY DE MUNDOS 3D (#world3d-selection-hub) Y PANTALLA DE CARGA REAL
+  //     ESTILO FREE FIRE CON PRE-COMPILACIÓN WEBGL (#world3d-loading-screen)
+  // ============================================================================
+  const WORLD3D_LOBBY_META = [
+    {
+      id: 'house',
+      icon: '🏠',
+      nameEn: 'House & Study Rooms',
+      nameEs: 'Casa Moderna, Cocina y Estudio',
+      level: 'A1 - B1',
+      realCountLabel: '32 Objetos Reales PBR',
+      accentHex: '#a855f7',
+      gradientBg: 'linear-gradient(135deg, rgba(88,28,135,0.45) 0%, rgba(15,23,42,0.96) 100%)',
+      loadingThemeBg: 'radial-gradient(circle at 50% 30%, rgba(168,85,247,0.32), rgba(10,14,23,0.98) 70%)',
+      desc: 'Explora la sala OLED, estudio con laptop, cocina equipada (microondas, licuadora, tostadora) y baño.'
+    },
+    {
+      id: 'supermarket',
+      icon: '🛒',
+      nameEn: 'Supermarket & Checkout',
+      nameEs: 'Supermercado y Caja Registradora',
+      level: 'A1 - B1',
+      realCountLabel: '30 Objetos Reales PBR',
+      accentHex: '#0284c7',
+      gradientBg: 'linear-gradient(135deg, rgba(3,105,161,0.45) 0%, rgba(15,23,42,0.96) 100%)',
+      loadingThemeBg: 'radial-gradient(circle at 50% 30%, rgba(14,165,233,0.32), rgba(7,16,28,0.98) 70%)',
+      desc: 'Recorre góndolas con cajas de cereal biseladas, frascos de mayonesa, lácteos, frutas orgánicas y banda de cobro.'
+    },
+    {
+      id: 'restaurant',
+      icon: '🍽️',
+      nameEn: 'Gourmet Restaurant',
+      nameEs: 'Restaurante de Alta Cocina',
+      level: 'A2 - B2',
+      realCountLabel: '28 Objetos Reales PBR',
+      accentHex: '#f59e0b',
+      gradientBg: 'linear-gradient(135deg, rgba(180,83,9,0.45) 0%, rgba(15,23,42,0.96) 100%)',
+      loadingThemeBg: 'radial-gradient(circle at 50% 30%, rgba(245,158,11,0.32), rgba(18,12,7,0.98) 70%)',
+      desc: 'Practica en mesas vestidas con vajilla de porcelana, cubiertos separados, copas talladas y máquina de espresso.'
+    },
+    {
+      id: 'hotel',
+      icon: '🏨',
+      nameEn: '5-Star Grand Hotel',
+      nameEs: 'Recepción y Suite 5 Estrellas',
+      level: 'A2 - B2',
+      realCountLabel: '28 Objetos Reales PBR',
+      accentHex: '#eab308',
+      gradientBg: 'linear-gradient(135deg, rgba(161,98,7,0.45) 0%, rgba(15,23,42,0.96) 100%)',
+      loadingThemeBg: 'radial-gradient(circle at 50% 30%, rgba(234,179,8,0.32), rgba(17,14,8,0.98) 70%)',
+      desc: 'Realiza check-in en el mostrador de mármol con campana dorada, carrito de equipaje, elevador y suite imperial.'
+    },
+    {
+      id: 'dating',
+      icon: '🕯️',
+      nameEn: 'Romantic Date & Bistro',
+      nameEs: 'Cita Romántica en Terraza Nocturna',
+      level: 'B1 - B2',
+      realCountLabel: '28 Objetos Reales PBR',
+      accentHex: '#f43f5e',
+      gradientBg: 'linear-gradient(135deg, rgba(190,18,60,0.45) 0%, rgba(15,23,42,0.96) 100%)',
+      loadingThemeBg: 'radial-gradient(circle at 50% 30%, rgba(244,63,94,0.34), rgba(15,7,14,0.98) 70%)',
+      desc: 'Conversa en inglés a la luz de las velas con champaña en cubeta, ramo de rosas, violín en vivo y mesero IA.'
+    },
+    {
+      id: 'garden',
+      icon: '🌿',
+      nameEn: 'Botanical Garden',
+      nameEs: 'Jardín Botánico y Terraza',
+      level: 'A1 - B1',
+      realCountLabel: '28 Objetos Reales PBR',
+      accentHex: '#10b981',
+      gradientBg: 'linear-gradient(135deg, rgba(4,120,87,0.45) 0%, rgba(15,23,42,0.96) 100%)',
+      loadingThemeBg: 'radial-gradient(circle at 50% 30%, rgba(16,185,129,0.32), rgba(6,18,14,0.98) 70%)',
+      desc: 'Explora la naturaleza con regadera metálica, macetas de terracota, tijeras de podar, fuente de piedra y pérgola.'
+    },
+    {
+      id: 'space',
+      icon: '🚀',
+      nameEn: 'Space Station & Observatory',
+      nameEs: 'Estación Espacial y Observatorio',
+      level: 'B1 - B2',
+      realCountLabel: '28 Objetos Reales PBR',
+      accentHex: '#38bdf8',
+      gradientBg: 'linear-gradient(135deg, rgba(2,132,199,0.48) 0%, rgba(9,13,26,0.97) 100%)',
+      loadingThemeBg: 'radial-gradient(circle at 50% 30%, rgba(56,189,248,0.36), rgba(4,8,20,0.99) 70%)',
+      desc: 'Domina vocabulario científico junto a la consola de telemetría, casco de visor dorado, brazo robótico y esclusa.'
+    }
+  ];
+
+  const FREE_FIRE_STYLE_TIPS = [
+    '💡 CONSEJO: Toca cualquier producto en las estanterías del supermercado para escuchar su pronunciación nativa y ver su fonética IPA.',
+    '💡 CONSEJO: Arrastra con un dedo o clic izquierdo para rotar la cámara 360° y usa la rueda o pellizco para acercarte a los detalles pequeños.',
+    '💡 CONSEJO: En el Restaurante y Supermercado, explora la caja registradora y la mesa para aprender vocabulario cotidiano real.',
+    '💡 CONSEJO: Repite en voz alta cada objeto que selecciones para memorizar su pronunciación antes de pasar al siguiente.',
+    '💡 CONSEJO: Usa los botones de zona rápida en la barra superior para teletransportar la cámara suavemente por cada rincón del escenario.',
+    '💡 CONSEJO: Abre el 📚 Catálogo en cualquier mundo para descargar la guía oficial en PDF con los más de 50 términos y frases.'
+  ];
+
+  let _loadingTipIntervalId = null;
+  let _isPrecompilingWorld = false;
+
+  function ensureWorld3DLobbyAndLoaderDOM() {
+    if (typeof document === 'undefined') return;
+    const host = document.getElementById('view-worldtour') || document.body;
+    if (!host) return;
+
+    let lobbyEl = document.getElementById('world3d-selection-hub');
+    if (!lobbyEl) {
+      lobbyEl = document.createElement('div');
+      lobbyEl.id = 'world3d-selection-hub';
+      lobbyEl.className = 'world3d-lobby-overlay hidden';
+      host.appendChild(lobbyEl);
+    }
+
+    let loaderEl = document.getElementById('world3d-loading-screen');
+    if (!loaderEl) {
+      loaderEl = document.createElement('div');
+      loaderEl.id = 'world3d-loading-screen';
+      loaderEl.className = 'world3d-loading-overlay hidden';
+      loaderEl.innerHTML = `
+        <div class="world3d-loader-backdrop" id="world3dLoaderBackdrop"></div>
+        <div class="world3d-loader-content">
+          <div class="world3d-loader-badge" id="world3dLoaderLevelBadge">MOTOR WEBGL PBR • 60 FPS</div>
+          <div class="world3d-loader-icon-ring" id="world3dLoaderIconRing">
+            <span id="world3dLoaderIcon" class="text-5xl">🌍</span>
+          </div>
+          <h2 id="world3dLoaderTitleEn" class="world3d-loader-title">House & Study Rooms</h2>
+          <p id="world3dLoaderTitleEs" class="world3d-loader-subtitle">Casa Moderna, Cocina y Estudio</p>
+
+          <div class="world3d-loader-progress-card">
+            <div class="flex items-center justify-between text-xs font-bold mb-2">
+              <span id="world3dLoaderStepLabel" class="text-sky-300 tracking-wide">Inicializando pipeline WebGL...</span>
+              <span id="world3dLoaderPercent" class="font-mono text-amber-300 text-sm font-black">0%</span>
+            </div>
+            <div class="world3d-loader-bar-track">
+              <div id="world3dLoaderBarFill" class="world3d-loader-bar-fill" style="width: 0%;"></div>
+            </div>
+            <div class="flex items-center justify-between mt-2 text-[10px] text-slate-400 font-mono">
+              <span>ACESFilmic PBR • Shaders Pre-compiled</span>
+              <span id="world3dLoaderObjectsCount">50+ Vocab Nodes</span>
+            </div>
+          </div>
+        </div>
+        <div class="world3d-loader-tip-bar">
+          <span id="world3dLoaderTipText" class="world3d-loader-tip-text">
+            💡 CONSEJO: Toca cualquier producto en las estanterías del supermercado para escuchar su pronunciación nativa y ver su fonética IPA.
+          </span>
+        </div>
+      `;
+      host.appendChild(loaderEl);
+    }
+  }
+
+  function renderWorld3DLobbyCards() {
+    ensureWorld3DLobbyAndLoaderDOM();
+    const lobbyEl = document.getElementById('world3d-selection-hub');
+    if (!lobbyEl) return;
+
+    const cardsHtml = WORLD3D_LOBBY_META.map(meta => {
+      const scen = WORLD_TOUR_SCENARIOS[meta.id];
+      const totalItems = (scen && Array.isArray(scen.objects)) ? scen.objects.length : 56;
+      const realObjectsCount = (scen && Array.isArray(scen.objects))
+        ? scen.objects.filter(o => !o.type || o.type === 'object').length
+        : 28;
+      const discoveredInWorld = (scen && Array.isArray(scen.objects))
+        ? scen.objects.filter(o => discoveredObjectIds.has(o.id)).length
+        : 0;
+      const pct = Math.min(100, Math.round((discoveredInWorld / Math.max(1, totalItems)) * 100));
+      const isCurrent = (currentScenarioKey === meta.id && isEngineInitialized);
+
+      return `
+        <article class="world3d-lobby-card group" style="--world-accent: ${meta.accentHex}; background: ${meta.gradientBg};" onclick="window.loadWorld3DWithPrecompile('${meta.id}')">
+          <div class="world3d-lobby-card-top">
+            <div class="flex items-center justify-between gap-2 mb-3">
+              <span class="world3d-lobby-level-pill" style="border-color: ${meta.accentHex}66; color: #f8fafc; background: rgba(15,23,42,0.75);">
+                Nivel ${meta.level}
+              </span>
+              <span class="world3d-lobby-objects-pill" style="border-color: ${meta.accentHex}88; color: ${meta.accentHex};">
+                ${realObjectsCount} Objetos Reales • ${totalItems} Total
+              </span>
+            </div>
+
+            <div class="flex items-center gap-3.5 mb-2.5">
+              <div class="world3d-lobby-icon-box" style="border-color: ${meta.accentHex}; box-shadow: 0 0 24px ${meta.accentHex}33;">
+                <span>${meta.icon}</span>
+              </div>
+              <div class="min-w-0 flex-1">
+                <h3 class="text-base sm:text-lg font-black text-white leading-tight truncate group-hover:text-amber-300 transition">${meta.nameEn}</h3>
+                <p class="text-xs font-bold text-slate-300 truncate">${meta.nameEs}</p>
+              </div>
+            </div>
+
+            <p class="text-[11px] text-slate-300/90 leading-relaxed line-clamp-2 mb-3">
+              ${meta.desc}
+            </p>
+          </div>
+
+          <div class="world3d-lobby-card-footer">
+            <div class="mb-2.5">
+              <div class="flex items-center justify-between text-[10px] font-bold text-slate-300 mb-1">
+                <span>Progreso del Mundo</span>
+                <span class="font-mono text-emerald-300">${discoveredInWorld}/${totalItems} (${pct}%)</span>
+              </div>
+              <div class="w-full h-1.5 bg-slate-950/80 rounded-full overflow-hidden border border-white/10">
+                <div class="h-full rounded-full transition-all duration-300" style="width: ${pct}%; background: ${meta.accentHex};"></div>
+              </div>
+            </div>
+
+            <button type="button" onclick="event.stopPropagation(); window.loadWorld3DWithPrecompile('${meta.id}')"
+              class="world3d-lobby-explore-btn" style="background: linear-gradient(135deg, ${meta.accentHex}, #4f46e5);">
+              <span>🚀 Explorar Mundo</span>
+              ${isCurrent ? '<span class="text-[10px] bg-black/30 px-2 py-0.5 rounded-full">Activo</span>' : ''}
+            </button>
+          </div>
+        </article>
+      `;
+    }).join('');
+
+    lobbyEl.innerHTML = `
+      <div class="world3d-lobby-container">
+        <header class="world3d-lobby-header">
+          <div class="flex items-center gap-3">
+            <button type="button" onclick="if(typeof window.returnToMainPortals==='function') window.returnToMainPortals(event); else window.navigateTo('view-home');"
+              class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 hover:text-white border border-slate-700 text-xs font-extrabold flex items-center gap-1.5 cursor-pointer transition active:scale-95 shadow-lg">
+              <span>← Salir a Portales</span>
+            </button>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded-full bg-purple-500/20 border border-purple-400/40 text-[10px] font-black text-purple-300 uppercase tracking-widest">
+                  HUB DE INMERSIÓN ESPACIAL 3D
+                </span>
+                <span class="hidden sm:inline-flex items-center gap-1 text-[10px] font-mono font-bold text-emerald-400 bg-emerald-950/70 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                  ⚡ Pre-compilación WebGL Cero Lag
+                </span>
+              </div>
+              <h1 class="text-xl sm:text-2xl font-black text-white tracking-tight mt-0.5">
+                Selecciona un Mundo 3D para Explorar
+              </h1>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            ${isEngineInitialized ? `
+              <button type="button" onclick="window.closeWorld3DLobbyAndResume()"
+                class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-lg cursor-pointer transition active:scale-95 flex items-center gap-1.5">
+                <span>▶ Volver al Escenario Activo</span>
+              </button>
+            ` : ''}
+          </div>
+        </header>
+
+        <div class="world3d-lobby-grid">
+          ${cardsHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  function openWorld3DLobby() {
+    if (typeof document === 'undefined') return;
+    if (typeof window !== 'undefined' && typeof window.hideAllModules === 'function' && window._activeModule !== 'world3d') {
+      window.hideAllModules();
+    }
+
+    const viewWorldTour = document.getElementById('view-worldtour');
+    if (viewWorldTour) {
+      viewWorldTour.classList.remove('hidden');
+      viewWorldTour.style.setProperty('display', 'block', 'important');
+      viewWorldTour.style.setProperty('visibility', 'visible', 'important');
+      viewWorldTour.style.setProperty('opacity', '1', 'important');
+    }
+
+    if (document.body && document.body.classList) {
+      document.body.classList.add('view-worldtour-active', 'in-immersive-portal');
+    }
+    window._activeModule = 'world3d';
+
+    // Pausar loop 3D mientras el usuario está eligiendo en el Lobby para 0% consumo GPU
+    pauseLoop();
+
+    renderWorld3DLobbyCards();
+    const lobbyEl = document.getElementById('world3d-selection-hub');
+    if (lobbyEl) {
+      lobbyEl.classList.remove('hidden');
+      lobbyEl.style.setProperty('display', 'flex', 'important');
+      lobbyEl.style.opacity = '1';
+    }
+  }
+
+  function closeWorld3DLobbyAndResume() {
+    const lobbyEl = typeof document !== 'undefined' ? document.getElementById('world3d-selection-hub') : null;
+    if (lobbyEl) {
+      lobbyEl.classList.add('hidden');
+      lobbyEl.style.setProperty('display', 'none', 'important');
+    }
+    initOrResumeWorld3D();
+  }
+
+  function disposePreviousScenarioGPU() {
+    if (!scenarioDynamicRoot) return;
+    try {
+      scenarioDynamicRoot.traverse(obj => {
+        if (obj.isMesh) {
+          if (obj.geometry && typeof obj.geometry.dispose === 'function') {
+            obj.geometry.dispose();
+          }
+          if (obj.material) {
+            if (Array.isArray(obj.material)) {
+              obj.material.forEach(m => { if (m && typeof m.dispose === 'function') m.dispose(); });
+            } else if (typeof obj.material.dispose === 'function') {
+              obj.material.dispose();
+            }
+          }
+        }
+      });
+    } catch (_) {}
+  }
+
+  function prewarmScenarioTextures(scenarioKey) {
+    if (!ProceduralMaterialFactory) return;
+    try {
+      if (scenarioKey === 'supermarket') {
+        ProceduralMaterialFactory.createProductLabel('CORN FLAKES', 'CRUNCHY GOLDEN CEREAL', '#d97706', '#fef08a');
+        ProceduralMaterialFactory.createProductLabel('CHOCO RINGS', 'COCOA OAT RINGS', '#451a03', '#f59e0b');
+        ProceduralMaterialFactory.createProductLabel('HONEY OATS', '100% WHOLE GRAIN', '#0284c7', '#fde047');
+        ProceduralMaterialFactory.createProductLabel('MAYONNAISE', 'REAL CREAMY MAYO', '#1e3a8a', '#fef08a');
+        ProceduralMaterialFactory.createProductLabel('FRESH MILK', 'PAST. WHOLE MILK 1L', '#0284c7', '#ffffff');
+      } else if (scenarioKey === 'restaurant' || scenarioKey === 'dating') {
+        ProceduralMaterialFactory.createProductLabel('GRAND CRU', 'RESERVE CABERNET', '#4c0519', '#fde047');
+        ProceduralMaterialFactory.createScreenUI('MENU & WINE LIST', ['1. Filet Mignon', '2. Pan-Seared Salmon', '3. Chocolate Fondant'], '#f59e0b');
+      } else if (scenarioKey === 'space') {
+        ProceduralMaterialFactory.createSolarCellMaterial();
+        ProceduralMaterialFactory.createScreenUI('ORBITAL TELEMETRY', ['O2 PRESSURE: 101.3 kPa', 'ALTITUDE: 408 KM ISS', 'SOLAR ARRAY: 99.4%'], '#38bdf8');
+      } else if (scenarioKey === 'hotel') {
+        ProceduralMaterialFactory.createScreenUI('VIP RECEPTION', ['SUITE 501 - READY', 'CHECK-IN: ACTIVE', 'CONCIERGE: ONLINE'], '#eab308');
+      } else if (scenarioKey === 'house') {
+        ProceduralMaterialFactory.createScreenUI('MASTERENG OS', ['Grammar Module: 98%', 'Speaking Practice: Ready', '3D House Active'], '#a855f7');
+      }
+    } catch (_) {}
+  }
+
+  function loadWorld3DWithPrecompile(scenarioKey) {
+    if (typeof document === 'undefined') {
+      return switch3DScenario(scenarioKey);
+    }
+    if (_isPrecompilingWorld) return;
+    _isPrecompilingWorld = true;
+
+    ensureWorld3DLobbyAndLoaderDOM();
+    const targetKey = WORLD_TOUR_SCENARIOS[scenarioKey] ? scenarioKey : 'house';
+    const meta = WORLD3D_LOBBY_META.find(m => m.id === targetKey) || WORLD3D_LOBBY_META[0];
+    const scen = WORLD_TOUR_SCENARIOS[targetKey];
+
+    // Ocultar Lobby y mostrar Pantalla de Carga Temática a pantalla completa
+    const lobbyEl = document.getElementById('world3d-selection-hub');
+    if (lobbyEl) {
+      lobbyEl.classList.add('hidden');
+      lobbyEl.style.setProperty('display', 'none', 'important');
+    }
+
+    const loaderEl = document.getElementById('world3d-loading-screen');
+    const backdropEl = document.getElementById('world3dLoaderBackdrop');
+    const iconEl = document.getElementById('world3dLoaderIcon');
+    const iconRingEl = document.getElementById('world3dLoaderIconRing');
+    const titleEnEl = document.getElementById('world3dLoaderTitleEn');
+    const titleEsEl = document.getElementById('world3dLoaderTitleEs');
+    const badgeEl = document.getElementById('world3dLoaderLevelBadge');
+    const stepLabelEl = document.getElementById('world3dLoaderStepLabel');
+    const pctEl = document.getElementById('world3dLoaderPercent');
+    const fillEl = document.getElementById('world3dLoaderBarFill');
+    const countEl = document.getElementById('world3dLoaderObjectsCount');
+    const tipTextEl = document.getElementById('world3dLoaderTipText');
+
+    if (backdropEl) backdropEl.style.background = meta.loadingThemeBg;
+    if (iconEl) iconEl.textContent = meta.icon;
+    if (iconRingEl) iconRingEl.style.borderColor = meta.accentHex;
+    if (titleEnEl) titleEnEl.textContent = meta.nameEn;
+    if (titleEsEl) titleEsEl.textContent = meta.nameEs;
+    if (badgeEl) badgeEl.textContent = `NIVEL ${meta.level} • ${meta.realCountLabel.toUpperCase()}`;
+    if (countEl && scen && Array.isArray(scen.objects)) {
+      countEl.textContent = `${scen.objects.length} Nodos Interactivos`;
+    }
+
+    const setLoaderProgress = (pct, label) => {
+      if (pctEl) pctEl.textContent = `${pct}%`;
+      if (fillEl) {
+        fillEl.style.width = `${pct}%`;
+        fillEl.style.background = `linear-gradient(90deg, ${meta.accentHex}, #38bdf8, #34d399)`;
+      }
+      if (stepLabelEl) stepLabelEl.textContent = label;
+    };
+
+    setLoaderProgress(8, 'Preparando entorno tridimensional...');
+
+    // Rotación de consejos estilo Free Fire cada 2.5 segundos
+    if (_loadingTipIntervalId) clearInterval(_loadingTipIntervalId);
+    let tipIdx = Math.floor(Math.random() * FREE_FIRE_STYLE_TIPS.length);
+    if (tipTextEl) tipTextEl.textContent = FREE_FIRE_STYLE_TIPS[tipIdx];
+    _loadingTipIntervalId = setInterval(() => {
+      tipIdx = (tipIdx + 1) % FREE_FIRE_STYLE_TIPS.length;
+      if (tipTextEl) tipTextEl.textContent = FREE_FIRE_STYLE_TIPS[tipIdx];
+    }, 2500);
+
+    if (loaderEl) {
+      loaderEl.classList.remove('hidden');
+      loaderEl.style.setProperty('display', 'flex', 'important');
+      loaderEl.style.opacity = '1';
+      loaderEl.style.pointerEvents = 'auto';
+    }
+
+    // PASO 1 (20% - "Liberando memoria gráfica...")
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        setLoaderProgress(20, 'Liberando memoria gráfica...');
+        pauseLoop();
+        disposePreviousScenarioGPU();
+
+        // PASO 2 (50% - "Generando texturas PBR y etiquetas HD...")
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            setLoaderProgress(50, 'Generando texturas PBR y etiquetas HD...');
+            prewarmScenarioTextures(targetKey);
+
+            // PASO 3 (80% - "Ensamblando mobiliario y productos 3D...")
+            requestAnimationFrame(() => {
+              setTimeout(() => {
+                setLoaderProgress(80, 'Ensamblando mobiliario y productos 3D...');
+                switch3DScenario(targetKey);
+
+                // PASO 4 (100% - "Compilando shaders WebGL a 60 FPS...")
+                requestAnimationFrame(() => {
+                  setTimeout(() => {
+                    setLoaderProgress(100, 'Compilando shaders WebGL a 60 FPS...');
+                    try {
+                      if (renderer && scene && camera) {
+                        if (typeof renderer.compile === 'function') {
+                          renderer.compile(scene, camera);
+                        }
+                        // Renderizar 2 fotogramas completos detrás del telón
+                        renderer.render(scene, camera);
+                        renderer.render(scene, camera);
+                      }
+                    } catch (_) {}
+
+                    setTimeout(() => {
+                      if (_loadingTipIntervalId) {
+                        clearInterval(_loadingTipIntervalId);
+                        _loadingTipIntervalId = null;
+                      }
+                      if (loaderEl) {
+                        loaderEl.style.transition = 'opacity 400ms ease-out';
+                        loaderEl.style.opacity = '0';
+                        loaderEl.style.pointerEvents = 'none';
+                        setTimeout(() => {
+                          loaderEl.classList.add('hidden');
+                          loaderEl.style.setProperty('display', 'none', 'important');
+                          _isPrecompilingWorld = false;
+                        }, 400);
+                      } else {
+                        _isPrecompilingWorld = false;
+                      }
+                      resumeLoop();
+                    }, 180);
+                  }, 90);
+                });
+              }, 90);
+            });
+          }, 80);
+        });
+      }, 60);
+    });
+  }
+
+  global.openWorld3DLobby = openWorld3DLobby;
+  global.closeWorld3DLobbyAndResume = closeWorld3DLobbyAndResume;
+  global.loadWorld3DWithPrecompile = loadWorld3DWithPrecompile;
+  global.World3D.openWorld3DLobby = openWorld3DLobby;
+  global.World3D.closeWorld3DLobbyAndResume = closeWorld3DLobbyAndResume;
+  global.World3D.loadWorld3DWithPrecompile = loadWorld3DWithPrecompile;
+  if (typeof window !== 'undefined') {
+    window.openWorld3DLobby = openWorld3DLobby;
+    window.closeWorld3DLobbyAndResume = closeWorld3DLobbyAndResume;
+    window.loadWorld3DWithPrecompile = loadWorld3DWithPrecompile;
+    if (window.World3D) {
+      window.World3D.openWorld3DLobby = openWorld3DLobby;
+      window.World3D.closeWorld3DLobbyAndResume = closeWorld3DLobbyAndResume;
+      window.World3D.loadWorld3DWithPrecompile = loadWorld3DWithPrecompile;
     }
   }
 
