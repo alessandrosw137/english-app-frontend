@@ -186,6 +186,21 @@ def join_objects(final_name, objs, location=None):
     return join_as_named_object(objs, final_name, location)
 
 # --- Architectural Isometric Diorama Base Helper ---
+def add_bounds_anchor(radius=12.0):
+    """
+    Creates an invisible symmetric bounding anchor centered at (0, 0) with base at Z=0.
+    In glTF (+Y Up), Blender (X, Y, Z) becomes Three.js (X, Z, -Y).
+    This forces Three.js Box3 to compute:
+      centerX = (-radius + radius) / 2 = 0
+      centerZ = (-radius + radius) / 2 = 0
+      min.y = 0
+    guaranteeing glbScene.position stays at (0, 0, 0) without any coordinate drift.
+    """
+    mat_inv = get_material("Invisible_Anchor", base_color=(0, 0, 0, 0), roughness=1.0, alpha=0.0)
+    b1 = create_box("Anchor_Min", (-radius, radius, 0.0005), (0.001, 0.001, 0.001), mat_inv, bevel=0.0)
+    b2 = create_box("Anchor_Max", (radius, -radius, 0.0005), (0.001, 0.001, 0.001), mat_inv, bevel=0.0)
+    return join_as_named_object([b1, b2], "World_Bounds_Anchor")
+
 def build_diorama_room(base_name, floor_size=(8.0, 8.0), wall_height=3.2, 
                        floor_mat=None, wall_mat=None, baseboard_mat=None, 
                        has_window=True, window_wall='back'):

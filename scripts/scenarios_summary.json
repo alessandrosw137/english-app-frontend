@@ -1,0 +1,2275 @@
+{
+  "house": [
+    {
+      "id": "desk",
+      "en": "Desk",
+      "pos": [
+        3.5,
+        0.22,
+        -3.5
+      ]
+    },
+    {
+      "id": "computer_monitor",
+      "en": "Computer Monitor",
+      "pos": [
+        3.45,
+        1.22,
+        -3.72
+      ]
+    },
+    {
+      "id": "office_chair",
+      "en": "Office Chair",
+      "pos": [
+        3.5,
+        0.22,
+        -2.05
+      ]
+    },
+    {
+      "id": "bookshelf",
+      "en": "Bookshelf",
+      "pos": [
+        6.7,
+        0.22,
+        -3.5
+      ]
+    },
+    {
+      "id": "house_bed",
+      "en": "Double Bed",
+      "pos": [
+        1.8,
+        0.22,
+        1.2
+      ]
+    },
+    {
+      "id": "house_refrigerator",
+      "en": "Refrigerator",
+      "pos": [
+        -1.4,
+        0.22,
+        -5.8
+      ]
+    },
+    {
+      "id": "window",
+      "en": "Panoramic Window",
+      "pos": [
+        -6.95,
+        1.15,
+        -1.75
+      ]
+    },
+    {
+      "id": "sofa",
+      "en": "Sofa / Couch",
+      "pos": [
+        -3.6,
+        0.22,
+        -4.1
+      ]
+    },
+    {
+      "id": "armchair",
+      "en": "Reading Armchair",
+      "pos": [
+        -5.6,
+        0.22,
+        -0.8
+      ]
+    },
+    {
+      "id": "coffee_table",
+      "en": "Coffee Table",
+      "pos": [
+        -3.6,
+        0.22,
+        -2
+      ]
+    },
+    {
+      "id": "floor_lamp",
+      "en": "Floor Lamp",
+      "pos": [
+        -5.8,
+        0.22,
+        -4.5
+      ]
+    },
+    {
+      "id": "wall_clock",
+      "en": "Wall Clock",
+      "pos": [
+        -3.6,
+        2.65,
+        -6.84
+      ]
+    },
+    {
+      "id": "indoor_plant",
+      "en": "Indoor Plant",
+      "pos": [
+        -1.2,
+        0.22,
+        -4.2
+      ]
+    },
+    {
+      "id": "house_coffee_maker",
+      "en": "Coffee Maker",
+      "pos": [
+        -0.6,
+        0.95,
+        -5.5
+      ]
+    },
+    {
+      "id": "house_microwave",
+      "en": "Microwave Oven",
+      "pos": [
+        -2.2,
+        0.95,
+        -5.5
+      ]
+    },
+    {
+      "id": "house_toaster",
+      "en": "Bread Toaster",
+      "pos": [
+        -0.2,
+        0.95,
+        -5.5
+      ]
+    },
+    {
+      "id": "house_blender",
+      "en": "Blender",
+      "pos": [
+        -2.6,
+        0.95,
+        -5.2
+      ]
+    },
+    {
+      "id": "house_dishwasher",
+      "en": "Dishwasher",
+      "pos": [
+        -1.4,
+        0.22,
+        -4.2
+      ]
+    },
+    {
+      "id": "house_kitchen_counter",
+      "en": "Kitchen Counter",
+      "pos": [
+        -1.4,
+        0.22,
+        -5.2
+      ]
+    },
+    {
+      "id": "house_dining_table",
+      "en": "Dining Table",
+      "pos": [
+        1.2,
+        0.22,
+        -1.5
+      ]
+    },
+    {
+      "id": "house_dining_chair",
+      "en": "Dining Chair",
+      "pos": [
+        1.2,
+        0.22,
+        -0.6
+      ]
+    },
+    {
+      "id": "house_ceiling_fan",
+      "en": "Ceiling Fan",
+      "pos": [
+        -3.5,
+        3.4,
+        -3.5
+      ]
+    },
+    {
+      "id": "house_oled_tv",
+      "en": "OLED Smart TV",
+      "pos": [
+        -6.8,
+        1.6,
+        -4.5
+      ]
+    },
+    {
+      "id": "house_soundbar",
+      "en": "Soundbar",
+      "pos": [
+        -6.8,
+        1,
+        -4.5
+      ]
+    },
+    {
+      "id": "house_wardrobe",
+      "en": "Wardrobe Closet",
+      "pos": [
+        5.2,
+        0.22,
+        1.2
+      ]
+    },
+    {
+      "id": "house_full_mirror",
+      "en": "Full-length Mirror",
+      "pos": [
+        6.6,
+        0.22,
+        0.5
+      ]
+    },
+    {
+      "id": "house_nightstand",
+      "en": "Bedside Nightstand",
+      "pos": [
+        3.2,
+        0.22,
+        1.2
+      ]
+    },
+    {
+      "id": "house_bedside_lamp",
+      "en": "Bedside Lamp",
+      "pos": [
+        3.2,
+        0.72,
+        1.2
+      ]
+    },
+    {
+      "id": "house_washing_machine",
+      "en": "Washing Machine",
+      "pos": [
+        -6.2,
+        0.22,
+        1.2
+      ]
+    },
+    {
+      "id": "house_clothes_dryer",
+      "en": "Clothes Dryer",
+      "pos": [
+        -5,
+        0.22,
+        1.2
+      ]
+    },
+    {
+      "id": "house_curtains",
+      "en": "Velvet Curtains",
+      "pos": [
+        -6.9,
+        2,
+        -1.75
+      ]
+    },
+    {
+      "id": "house_area_rug",
+      "en": "Area Rug",
+      "pos": [
+        -3.6,
+        0.23,
+        -3
+      ]
+    },
+    {
+      "id": "house_power_outlet",
+      "en": "Power outlet",
+      "pos": [
+        5.2,
+        0.6,
+        -3.8
+      ]
+    },
+    {
+      "id": "house_wifi_router",
+      "en": "Wi-Fi router",
+      "pos": [
+        4.8,
+        1.1,
+        -3.6
+      ]
+    },
+    {
+      "id": "house_light_switch",
+      "en": "Light switch",
+      "pos": [
+        0.3,
+        1.4,
+        3.2
+      ]
+    },
+    {
+      "id": "house_doorknob",
+      "en": "Brass doorknob",
+      "pos": [
+        -0.2,
+        1.2,
+        3.2
+      ]
+    },
+    {
+      "id": "house_remote_control",
+      "en": "Remote Control",
+      "pos": [
+        -3.35,
+        0.68,
+        -1.95
+      ]
+    },
+    {
+      "id": "house_laptop",
+      "en": "Laptop Computer",
+      "pos": [
+        3.25,
+        0.98,
+        -3.42
+      ]
+    },
+    {
+      "id": "house_toothbrush",
+      "en": "Toothbrush",
+      "pos": [
+        -2.1,
+        1.14,
+        -3.85
+      ]
+    },
+    {
+      "id": "house_soap_dispenser",
+      "en": "Soap Dispenser",
+      "pos": [
+        -1.8,
+        1.14,
+        -3.85
+      ]
+    },
+    {
+      "id": "house_shampoo_bottle",
+      "en": "Shampoo Bottle",
+      "pos": [
+        -2.4,
+        1.14,
+        -3.85
+      ]
+    }
+  ],
+  "garden": [
+    {
+      "id": "oak_tree",
+      "en": "Oak Tree",
+      "pos": [
+        -8.5,
+        0,
+        7.5
+      ]
+    },
+    {
+      "id": "park_bench",
+      "en": "Park Bench",
+      "pos": [
+        -4.5,
+        0,
+        7.5
+      ]
+    },
+    {
+      "id": "garden_bbq_grill",
+      "en": "Barbecue Grill",
+      "pos": [
+        4.2,
+        0,
+        8.6
+      ]
+    },
+    {
+      "id": "garden_sprinkler",
+      "en": "Lawn Sprinkler",
+      "pos": [
+        -2,
+        0,
+        9.2
+      ]
+    },
+    {
+      "id": "street_lantern",
+      "en": "Street Lantern",
+      "pos": [
+        2.4,
+        0,
+        6.5
+      ]
+    },
+    {
+      "id": "garden_stone_path",
+      "en": "Stone Path",
+      "pos": [
+        0.2,
+        0.05,
+        8.2
+      ]
+    },
+    {
+      "id": "flower_bush",
+      "en": "Flower Bush",
+      "pos": [
+        5.8,
+        0,
+        5.8
+      ]
+    },
+    {
+      "id": "mailbox",
+      "en": "Mailbox",
+      "pos": [
+        2.1,
+        0,
+        11.8
+      ]
+    },
+    {
+      "id": "garden_picket_fence",
+      "en": "Picket Fence",
+      "pos": [
+        -4.5,
+        0,
+        14.5
+      ]
+    },
+    {
+      "id": "garden_birdhouse",
+      "en": "Birdhouse",
+      "pos": [
+        -6.8,
+        0,
+        10.2
+      ]
+    },
+    {
+      "id": "garden_watering_can",
+      "en": "Watering Can",
+      "pos": [
+        -3.2,
+        0,
+        11.4
+      ]
+    },
+    {
+      "id": "garden_fountain",
+      "en": "Garden Fountain",
+      "pos": [
+        6.4,
+        0,
+        11.2
+      ]
+    },
+    {
+      "id": "garden_lawn_mower",
+      "en": "Lawn Mower",
+      "pos": [
+        -1.2,
+        0,
+        13.2
+      ]
+    },
+    {
+      "id": "garden_wheelbarrow",
+      "en": "Wheelbarrow",
+      "pos": [
+        3.2,
+        0,
+        13.6
+      ]
+    },
+    {
+      "id": "garden_patio_umbrella",
+      "en": "Patio Umbrella",
+      "pos": [
+        4.6,
+        0,
+        6.2
+      ]
+    },
+    {
+      "id": "garden_terracotta_pot",
+      "en": "Flower Pot",
+      "pos": [
+        1.2,
+        0,
+        6.8
+      ]
+    },
+    {
+      "id": "garden_pruning_shears",
+      "en": "Pruning Shears",
+      "pos": [
+        1.8,
+        0,
+        7.2
+      ]
+    },
+    {
+      "id": "garden_trowel",
+      "en": "Garden Trowel",
+      "pos": [
+        0.6,
+        0,
+        7.2
+      ]
+    },
+    {
+      "id": "garden_picnic_basket",
+      "en": "Picnic Basket",
+      "pos": [
+        -3.8,
+        0,
+        8.2
+      ]
+    },
+    {
+      "id": "garden_lantern",
+      "en": "Garden Lantern",
+      "pos": [
+        2.8,
+        0,
+        7.6
+      ]
+    },
+    {
+      "id": "garden_hose",
+      "en": "Garden Hose",
+      "pos": [
+        -5.2,
+        0,
+        11.6
+      ]
+    },
+    {
+      "id": "garden_shovel",
+      "en": "Garden Shovel",
+      "pos": [
+        -7.2,
+        0,
+        8.8
+      ]
+    },
+    {
+      "id": "garden_rake",
+      "en": "Leaf Rake",
+      "pos": [
+        -7.8,
+        0,
+        9.6
+      ]
+    },
+    {
+      "id": "garden_hedge_trimmer",
+      "en": "Hedge Trimmer",
+      "pos": [
+        7.2,
+        0,
+        7.8
+      ]
+    },
+    {
+      "id": "garden_birdbath",
+      "en": "Stone Birdbath",
+      "pos": [
+        -3.6,
+        0,
+        6
+      ]
+    },
+    {
+      "id": "garden_hammock",
+      "en": "Garden Hammock",
+      "pos": [
+        -7.5,
+        0,
+        12.5
+      ]
+    },
+    {
+      "id": "garden_greenhouse",
+      "en": "Mini Greenhouse",
+      "pos": [
+        7.5,
+        0,
+        13.8
+      ]
+    },
+    {
+      "id": "garden_compost_bin",
+      "en": "Compost Bin",
+      "pos": [
+        6.8,
+        0,
+        15.2
+      ]
+    },
+    {
+      "id": "garden_stepping_stones",
+      "en": "Stepping Stones",
+      "pos": [
+        -1.5,
+        0.04,
+        10.5
+      ]
+    },
+    {
+      "id": "garden_patio_heater",
+      "en": "Patio Heater",
+      "pos": [
+        5.2,
+        0,
+        9.8
+      ]
+    },
+    {
+      "id": "garden_fire_pit",
+      "en": "Stone Fire Pit",
+      "pos": [
+        3.2,
+        0,
+        10.4
+      ]
+    },
+    {
+      "id": "garden_storage_shed",
+      "en": "Storage Shed",
+      "pos": [
+        -7.8,
+        0,
+        15.2
+      ]
+    },
+    {
+      "id": "garden_wind_chime",
+      "en": "Bamboo Wind Chime",
+      "pos": [
+        -4.2,
+        2.2,
+        7.5
+      ]
+    },
+    {
+      "id": "garden_sunbed",
+      "en": "Patio Sunbed",
+      "pos": [
+        5.8,
+        0,
+        7.2
+      ]
+    },
+    {
+      "id": "garden_pergola",
+      "en": "Cedar Pergola",
+      "pos": [
+        4,
+        0,
+        7.5
+      ]
+    },
+    {
+      "id": "garden_beehive_box",
+      "en": "Beehive Box",
+      "pos": [
+        7.8,
+        0,
+        9.2
+      ]
+    }
+  ],
+  "dating": [
+    {
+      "id": "dating_table_for_two",
+      "en": "Table for Two",
+      "pos": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "dating_candlelight",
+      "en": "Candle",
+      "pos": [
+        0,
+        0.99,
+        0
+      ]
+    },
+    {
+      "id": "dating_wine_glasses",
+      "en": "Wine Glasses",
+      "pos": [
+        0.26,
+        0.99,
+        0.26
+      ]
+    },
+    {
+      "id": "dating_menu",
+      "en": "Wine List",
+      "pos": [
+        -0.34,
+        0.99,
+        0.28
+      ]
+    },
+    {
+      "id": "dating_rose_bouquet",
+      "en": "Bouquet of Roses",
+      "pos": [
+        0,
+        0.99,
+        -0.32
+      ]
+    },
+    {
+      "id": "dating_violin",
+      "en": "Violin",
+      "pos": [
+        -3.4,
+        0,
+        -2.2
+      ]
+    },
+    {
+      "id": "dating_city_balcony",
+      "en": "City View Balcony",
+      "pos": [
+        0,
+        0,
+        -5.2
+      ]
+    },
+    {
+      "id": "dating_waiter_npc",
+      "en": "Waiter NPC",
+      "pos": [
+        2.8,
+        0,
+        -2.4
+      ]
+    },
+    {
+      "id": "dating_chocolate_dessert",
+      "en": "Chocolate Fondant",
+      "pos": [
+        0.24,
+        0.99,
+        -0.26
+      ]
+    },
+    {
+      "id": "dating_ring_box",
+      "en": "Ring Box",
+      "pos": [
+        -0.14,
+        0.99,
+        0.12
+      ]
+    },
+    {
+      "id": "dating_conversation_cards",
+      "en": "Conversation Cards",
+      "pos": [
+        -0.32,
+        0.99,
+        -0.26
+      ]
+    },
+    {
+      "id": "dating_ice_bucket",
+      "en": "Champagne Bottle & Ice Bucket",
+      "pos": [
+        -2.15,
+        0,
+        -1.25
+      ]
+    },
+    {
+      "id": "dating_string_lights",
+      "en": "String Lights",
+      "pos": [
+        3.6,
+        0,
+        -2.8
+      ]
+    },
+    {
+      "id": "dating_chandelier",
+      "en": "Crystal Chandelier",
+      "pos": [
+        0,
+        3.8,
+        -0.5
+      ]
+    },
+    {
+      "id": "dating_cloth_napkin",
+      "en": "Linen Cloth Napkin",
+      "pos": [
+        0.45,
+        0.99,
+        0.12
+      ]
+    },
+    {
+      "id": "dating_silver_cutlery",
+      "en": "Polished Silver Cutlery",
+      "pos": [
+        -0.45,
+        0.99,
+        0.12
+      ]
+    },
+    {
+      "id": "dating_champagne_flute",
+      "en": "Champagne Flute",
+      "pos": [
+        0.18,
+        0.99,
+        -0.18
+      ]
+    },
+    {
+      "id": "dating_reserved_sign",
+      "en": "Brass Reserved Sign",
+      "pos": [
+        -0.18,
+        0.99,
+        0.22
+      ]
+    },
+    {
+      "id": "dating_cocktail_shaker",
+      "en": "Cocktail Shaker",
+      "pos": [
+        3.4,
+        0.95,
+        -2.2
+      ]
+    },
+    {
+      "id": "dating_dessert_spoon",
+      "en": "Silver Dessert Spoon",
+      "pos": [
+        0.38,
+        0.99,
+        -0.22
+      ]
+    },
+    {
+      "id": "dating_bread_basket",
+      "en": "Warm Bread Basket",
+      "pos": [
+        -0.18,
+        0.99,
+        -0.16
+      ]
+    },
+    {
+      "id": "dating_olive_oil_cruet",
+      "en": "Olive Oil Cruet",
+      "pos": [
+        0.18,
+        0.99,
+        0.16
+      ]
+    },
+    {
+      "id": "dating_coat_rack",
+      "en": "Bistro Coat Rack",
+      "pos": [
+        4.2,
+        0,
+        -0.5
+      ]
+    },
+    {
+      "id": "dating_acoustic_guitar",
+      "en": "Spanish Acoustic Guitar",
+      "pos": [
+        -3.8,
+        0,
+        -3.2
+      ]
+    },
+    {
+      "id": "dating_velvet_drapes",
+      "en": "Velvet Terrace Drapes",
+      "pos": [
+        -4.2,
+        1.8,
+        -4.8
+      ]
+    },
+    {
+      "id": "dating_maitre_podium",
+      "en": "Maître D' Podium",
+      "pos": [
+        3.45,
+        0,
+        -2.4
+      ]
+    }
+  ],
+  "space": [
+    {
+      "id": "space_sun",
+      "en": "Sun",
+      "pos": [
+        0,
+        2.2,
+        0
+      ]
+    },
+    {
+      "id": "space_earth",
+      "en": "Earth",
+      "pos": [
+        4.2,
+        2.2,
+        0
+      ]
+    },
+    {
+      "id": "space_moon",
+      "en": "Moon",
+      "pos": [
+        5.4,
+        2.6,
+        1.2
+      ]
+    },
+    {
+      "id": "space_mars",
+      "en": "Mars",
+      "pos": [
+        -6.4,
+        2.2,
+        2
+      ]
+    },
+    {
+      "id": "space_saturn",
+      "en": "Saturn & Rings",
+      "pos": [
+        8.8,
+        2.4,
+        -3.5
+      ]
+    },
+    {
+      "id": "space_spacecraft",
+      "en": "Spacecraft",
+      "pos": [
+        -3.5,
+        3.6,
+        5.2
+      ]
+    },
+    {
+      "id": "space_telescope",
+      "en": "Space Telescope",
+      "pos": [
+        -7.5,
+        3.8,
+        -4.2
+      ]
+    },
+    {
+      "id": "space_astronaut",
+      "en": "Astronaut",
+      "pos": [
+        2.6,
+        3.4,
+        5.8
+      ]
+    },
+    {
+      "id": "space_control_console",
+      "en": "Control Console",
+      "pos": [
+        -1.5,
+        1.2,
+        6.2
+      ]
+    },
+    {
+      "id": "space_astronaut_helmet",
+      "en": "Astronaut Helmet",
+      "pos": [
+        1.5,
+        1.4,
+        6.2
+      ]
+    },
+    {
+      "id": "space_oxygen_tank",
+      "en": "Oxygen Tank",
+      "pos": [
+        -3.2,
+        1.2,
+        6.5
+      ]
+    },
+    {
+      "id": "space_robotic_arm",
+      "en": "Robotic Arm",
+      "pos": [
+        3.6,
+        2.8,
+        4.8
+      ]
+    },
+    {
+      "id": "space_hydroponic_pod",
+      "en": "Hydroponic Pod",
+      "pos": [
+        -4.8,
+        1.5,
+        3.2
+      ]
+    },
+    {
+      "id": "space_airlock_door",
+      "en": "Airlock Door",
+      "pos": [
+        0,
+        1.8,
+        7.8
+      ]
+    },
+    {
+      "id": "space_asteroid",
+      "en": "Asteroid",
+      "pos": [
+        7.2,
+        1.8,
+        5.2
+      ]
+    },
+    {
+      "id": "space_black_hole",
+      "en": "Black Hole",
+      "pos": [
+        6.8,
+        3.8,
+        -6.2
+      ]
+    },
+    {
+      "id": "space_satellite",
+      "en": "Satellite",
+      "pos": [
+        -4.8,
+        4,
+        -5
+      ]
+    },
+    {
+      "id": "space_mercury",
+      "en": "Mercury",
+      "pos": [
+        2.2,
+        2.2,
+        0.8
+      ]
+    },
+    {
+      "id": "space_venus",
+      "en": "Venus",
+      "pos": [
+        -3.2,
+        2.2,
+        -1.2
+      ]
+    },
+    {
+      "id": "space_jupiter",
+      "en": "Jupiter & Great Red Spot",
+      "pos": [
+        10.5,
+        2.5,
+        2.5
+      ]
+    },
+    {
+      "id": "space_uranus",
+      "en": "Uranus",
+      "pos": [
+        -11,
+        2.8,
+        -4.5
+      ]
+    },
+    {
+      "id": "space_neptune",
+      "en": "Neptune",
+      "pos": [
+        12.8,
+        2.6,
+        -6
+      ]
+    },
+    {
+      "id": "space_neutron_star",
+      "en": "Pulsing Neutron Star",
+      "pos": [
+        -9.5,
+        4.5,
+        7.5
+      ]
+    },
+    {
+      "id": "space_supernova",
+      "en": "Supernova Explosion",
+      "pos": [
+        11.5,
+        5.2,
+        8.5
+      ]
+    },
+    {
+      "id": "space_launch_rocket",
+      "en": "Heavy Launch Rocket",
+      "pos": [
+        -1.8,
+        4.2,
+        8.5
+      ]
+    },
+    {
+      "id": "space_space_station",
+      "en": "International Space Station",
+      "pos": [
+        5.2,
+        4,
+        3.8
+      ]
+    },
+    {
+      "id": "space_lunar_rover",
+      "en": "Lunar Exploration Rover",
+      "pos": [
+        5.6,
+        2.9,
+        1.5
+      ]
+    },
+    {
+      "id": "space_spacesuit",
+      "en": "Extravehicular Spacesuit",
+      "pos": [
+        2.9,
+        3.6,
+        6
+      ]
+    },
+    {
+      "id": "space_asteroid_belt",
+      "en": "Asteroid Belt Region",
+      "pos": [
+        -7.8,
+        2,
+        5.5
+      ]
+    },
+    {
+      "id": "space_halley_comet",
+      "en": "Halley's Icy Comet",
+      "pos": [
+        -6.8,
+        5.2,
+        -8.5
+      ]
+    },
+    {
+      "id": "space_meteorite",
+      "en": "Metallic Meteorite",
+      "pos": [
+        8.5,
+        3.2,
+        4
+      ]
+    },
+    {
+      "id": "space_orion_nebula",
+      "en": "Luminous Nebula Cloud",
+      "pos": [
+        -12.5,
+        6,
+        0
+      ]
+    },
+    {
+      "id": "space_milky_way",
+      "en": "Spiral Milky Way Galaxy",
+      "pos": [
+        0,
+        8.5,
+        -12
+      ]
+    },
+    {
+      "id": "space_solar_array",
+      "en": "Photovoltaic Solar Array",
+      "pos": [
+        4.8,
+        4.2,
+        3.6
+      ]
+    },
+    {
+      "id": "space_launchpad_tower",
+      "en": "Launchpad Service Tower",
+      "pos": [
+        -3.8,
+        0.5,
+        10.5
+      ]
+    },
+    {
+      "id": "space_deep_probe",
+      "en": "Deep Space Robotic Probe",
+      "pos": [
+        11.2,
+        3.8,
+        -10.5
+      ]
+    }
+  ],
+  "supermarket": [
+    {
+      "id": "market_shopping_cart",
+      "en": "Shopping Cart",
+      "pos": [
+        -2.8,
+        0,
+        3.2
+      ]
+    },
+    {
+      "id": "market_cash_register",
+      "en": "Cash Register",
+      "pos": [
+        3.2,
+        1.08,
+        2.8
+      ]
+    },
+    {
+      "id": "market_barcode_scanner",
+      "en": "Barcode Scanner",
+      "pos": [
+        2.1,
+        1.08,
+        3
+      ]
+    },
+    {
+      "id": "market_fresh_produce",
+      "en": "Fresh Produce Section",
+      "pos": [
+        -4.8,
+        0,
+        -1.2
+      ]
+    },
+    {
+      "id": "market_bakery",
+      "en": "Bakery Counter",
+      "pos": [
+        -1.6,
+        0,
+        -4.2
+      ]
+    },
+    {
+      "id": "market_dairy_section",
+      "en": "Dairy Section",
+      "pos": [
+        2,
+        0,
+        -4.2
+      ]
+    },
+    {
+      "id": "market_frozen_aisle",
+      "en": "Frozen Foods Aisle",
+      "pos": [
+        5.2,
+        0,
+        -1.2
+      ]
+    },
+    {
+      "id": "market_scale",
+      "en": "Produce Scale",
+      "pos": [
+        -2.4,
+        0,
+        -0.8
+      ]
+    },
+    {
+      "id": "market_shopping_basket",
+      "en": "Shopping Basket",
+      "pos": [
+        -0.8,
+        0,
+        3.8
+      ]
+    },
+    {
+      "id": "market_price_tag",
+      "en": "Yellow Price Tag",
+      "pos": [
+        -4.8,
+        1.65,
+        1.2
+      ]
+    },
+    {
+      "id": "market_receipt",
+      "en": "Printed Receipt",
+      "pos": [
+        4.1,
+        1.08,
+        3.1
+      ]
+    },
+    {
+      "id": "market_checkout",
+      "en": "Checkout Counter",
+      "pos": [
+        3,
+        0,
+        2.8
+      ]
+    },
+    {
+      "id": "market_conveyor_belt",
+      "en": "Conveyor Belt",
+      "pos": [
+        2.5,
+        0.95,
+        2.2
+      ]
+    },
+    {
+      "id": "market_deli_counter",
+      "en": "Gourmet Deli Counter",
+      "pos": [
+        -5.2,
+        0,
+        -4.2
+      ]
+    },
+    {
+      "id": "market_beverage_aisle",
+      "en": "Beverage & Juice Aisle",
+      "pos": [
+        4.8,
+        0,
+        -3.8
+      ]
+    },
+    {
+      "id": "market_canned_goods",
+      "en": "Canned Tuna",
+      "pos": [
+        -0.5,
+        0,
+        -2.5
+      ]
+    },
+    {
+      "id": "market_cereal_aisle",
+      "en": "Cereal Box",
+      "pos": [
+        1.8,
+        0,
+        -2.2
+      ]
+    },
+    {
+      "id": "market_mayonnaise",
+      "en": "Mayonnaise",
+      "pos": [
+        -0.2,
+        1.15,
+        -2.2
+      ]
+    },
+    {
+      "id": "market_table_cream",
+      "en": "Table Cream / Heavy Cream",
+      "pos": [
+        2.2,
+        1.15,
+        -4.1
+      ]
+    },
+    {
+      "id": "market_milk_carton",
+      "en": "Milk Carton",
+      "pos": [
+        1.7,
+        1.15,
+        -4.1
+      ]
+    },
+    {
+      "id": "market_egg_carton",
+      "en": "Egg Carton",
+      "pos": [
+        2.6,
+        1.15,
+        -4.1
+      ]
+    },
+    {
+      "id": "market_sliced_bread",
+      "en": "Sliced Bread",
+      "pos": [
+        -1.5,
+        1.08,
+        -3.9
+      ]
+    },
+    {
+      "id": "market_ketchup",
+      "en": "Ketchup",
+      "pos": [
+        0.3,
+        1.15,
+        -2.2
+      ]
+    },
+    {
+      "id": "market_mustard",
+      "en": "Mustard",
+      "pos": [
+        0.6,
+        1.15,
+        -2.2
+      ]
+    },
+    {
+      "id": "market_cooking_oil",
+      "en": "Cooking Oil",
+      "pos": [
+        0.9,
+        1.15,
+        -2.2
+      ]
+    },
+    {
+      "id": "market_strawberry_jam",
+      "en": "Strawberry Jam",
+      "pos": [
+        -0.8,
+        1.15,
+        -2.2
+      ]
+    },
+    {
+      "id": "market_peanut_butter",
+      "en": "Peanut Butter",
+      "pos": [
+        -1.1,
+        1.15,
+        -2.2
+      ]
+    },
+    {
+      "id": "market_bag_of_rice",
+      "en": "Bag of Rice",
+      "pos": [
+        1.2,
+        0.65,
+        -2.2
+      ]
+    },
+    {
+      "id": "market_soda_can",
+      "en": "Soda Can",
+      "pos": [
+        4.5,
+        1.15,
+        -3.6
+      ]
+    },
+    {
+      "id": "market_reusable_bag",
+      "en": "Eco Reusable Grocery Bag",
+      "pos": [
+        3.8,
+        0.8,
+        2.5
+      ]
+    },
+    {
+      "id": "market_card_terminal",
+      "en": "Card Reader",
+      "pos": [
+        3.4,
+        1.15,
+        2.4
+      ]
+    },
+    {
+      "id": "market_cooler_display",
+      "en": "Refrigerated Glass Cooler",
+      "pos": [
+        5.4,
+        0,
+        1.5
+      ]
+    },
+    {
+      "id": "market_produce_crate",
+      "en": "Rustic Produce Crate",
+      "pos": [
+        -3.8,
+        0.4,
+        -0.8
+      ]
+    },
+    {
+      "id": "market_trolley_bay",
+      "en": "Supermarket Trolley Bay",
+      "pos": [
+        -4.5,
+        0,
+        4.5
+      ]
+    },
+    {
+      "id": "market_aisle_sign",
+      "en": "Hanging Aisle Sign",
+      "pos": [
+        0,
+        3.2,
+        -1.5
+      ]
+    },
+    {
+      "id": "market_scanner_gun",
+      "en": "Handheld Barcode Gun",
+      "pos": [
+        2.4,
+        1.12,
+        3.2
+      ]
+    },
+    {
+      "id": "market_bread_rack",
+      "en": "Artisanal Bread Rack",
+      "pos": [
+        -1.2,
+        0.5,
+        -4.8
+      ]
+    },
+    {
+      "id": "market_dairy_fridge",
+      "en": "Glass Dairy Refrigerator",
+      "pos": [
+        2.5,
+        0,
+        -4.8
+      ]
+    },
+    {
+      "id": "market_bulk_dispenser",
+      "en": "Bulk Food Dispenser",
+      "pos": [
+        -3.4,
+        0.8,
+        -3.2
+      ]
+    },
+    {
+      "id": "market_plastic_divider",
+      "en": "Cashier Customer Divider",
+      "pos": [
+        2.6,
+        1,
+        2
+      ]
+    },
+    {
+      "id": "market_shelf_tag",
+      "en": "Electronic Shelf Tag",
+      "pos": [
+        -4.2,
+        1.2,
+        -1.8
+      ]
+    },
+    {
+      "id": "market_meat_counter",
+      "en": "Fresh Butcher Counter",
+      "pos": [
+        -3.8,
+        0,
+        -4.5
+      ]
+    },
+    {
+      "id": "market_seafood_ice",
+      "en": "Seafood Display on Ice",
+      "pos": [
+        0.8,
+        0,
+        -4.8
+      ]
+    },
+    {
+      "id": "market_cleaning_aisle",
+      "en": "Cleaning Supplies Shelf",
+      "pos": [
+        4.2,
+        0,
+        0.2
+      ]
+    }
+  ],
+  "hotel": [
+    {
+      "id": "hotel_receptionist_desk",
+      "en": "Receptionist Desk",
+      "pos": [
+        0,
+        0,
+        -3.5
+      ]
+    },
+    {
+      "id": "hotel_room_keycard",
+      "en": "Room Keycard",
+      "pos": [
+        -0.8,
+        1.12,
+        -3.1
+      ]
+    },
+    {
+      "id": "hotel_luggage_cart",
+      "en": "Luggage Cart",
+      "pos": [
+        3.8,
+        0,
+        1.2
+      ]
+    },
+    {
+      "id": "hotel_suitcase",
+      "en": "Suitcase",
+      "pos": [
+        2.5,
+        0,
+        2.4
+      ]
+    },
+    {
+      "id": "hotel_elevator",
+      "en": "Elevator",
+      "pos": [
+        5.2,
+        0,
+        -3.8
+      ]
+    },
+    {
+      "id": "hotel_bellhop_bell",
+      "en": "Bellhop Bell",
+      "pos": [
+        0.65,
+        1.12,
+        -3.1
+      ]
+    },
+    {
+      "id": "hotel_lobby_sofa",
+      "en": "Plush Lobby Sofa",
+      "pos": [
+        -4.2,
+        0,
+        1
+      ]
+    },
+    {
+      "id": "hotel_chandelier",
+      "en": "Crystal Chandelier",
+      "pos": [
+        0,
+        4.4,
+        -0.5
+      ]
+    },
+    {
+      "id": "hotel_checkin_terminal",
+      "en": "Express Check-in Terminal",
+      "pos": [
+        -3.8,
+        0,
+        -3.2
+      ]
+    },
+    {
+      "id": "hotel_concierge",
+      "en": "Concierge Desk",
+      "pos": [
+        3.6,
+        0,
+        -2.2
+      ]
+    },
+    {
+      "id": "hotel_safe_box",
+      "en": "Safe Box",
+      "pos": [
+        -5.2,
+        0,
+        -1.5
+      ]
+    },
+    {
+      "id": "hotel_passport",
+      "en": "Passport & Guestbook",
+      "pos": [
+        0.05,
+        1.12,
+        -3.05
+      ]
+    },
+    {
+      "id": "hotel_minibar",
+      "en": "Stocked Minibar Fridge",
+      "pos": [
+        -5,
+        0,
+        -3.8
+      ]
+    },
+    {
+      "id": "hotel_king_bed",
+      "en": "King-size Luxury Bed",
+      "pos": [
+        -4.8,
+        0,
+        3.5
+      ]
+    },
+    {
+      "id": "hotel_room_service_tray",
+      "en": "Silver Room Service Tray",
+      "pos": [
+        -1.2,
+        1.1,
+        -3.1
+      ]
+    },
+    {
+      "id": "hotel_do_not_disturb",
+      "en": "Do Not Disturb Door Sign",
+      "pos": [
+        -3.2,
+        1.2,
+        -3.8
+      ]
+    },
+    {
+      "id": "hotel_bathrobe",
+      "en": "Plush Cotton Bathrobe",
+      "pos": [
+        -4,
+        1.1,
+        3.2
+      ]
+    },
+    {
+      "id": "hotel_towel_rack",
+      "en": "Heated Towel Rack",
+      "pos": [
+        -5.8,
+        1.2,
+        3
+      ]
+    },
+    {
+      "id": "hotel_thermostat",
+      "en": "Digital Room Thermostat",
+      "pos": [
+        1.8,
+        1.4,
+        -3.8
+      ]
+    },
+    {
+      "id": "hotel_emergency_exit",
+      "en": "Illuminated Emergency Exit",
+      "pos": [
+        6.4,
+        0,
+        -2.5
+      ]
+    },
+    {
+      "id": "hotel_valet_podium",
+      "en": "Valet Parking Podium",
+      "pos": [
+        4.5,
+        0,
+        3.8
+      ]
+    },
+    {
+      "id": "hotel_pillow_menu",
+      "en": "Memory Foam Pillow Menu",
+      "pos": [
+        -4.2,
+        0.8,
+        3.8
+      ]
+    },
+    {
+      "id": "hotel_slippers",
+      "en": "Velvet Hotel Slippers",
+      "pos": [
+        -4.2,
+        0.1,
+        2.8
+      ]
+    },
+    {
+      "id": "hotel_key_drop",
+      "en": "Express Key Drop Box",
+      "pos": [
+        -1.4,
+        0.9,
+        -3.2
+      ]
+    },
+    {
+      "id": "hotel_coffee_station",
+      "en": "Nespresso Coffee Station",
+      "pos": [
+        -5.2,
+        0.9,
+        -2.5
+      ]
+    },
+    {
+      "id": "hotel_ironing_board",
+      "en": "Steam Iron & Board",
+      "pos": [
+        -5.5,
+        0,
+        0.5
+      ]
+    },
+    {
+      "id": "hotel_suit_hangers",
+      "en": "Polished Wooden Hangers",
+      "pos": [
+        -4.8,
+        1.4,
+        -1.2
+      ]
+    },
+    {
+      "id": "hotel_swimming_pool",
+      "en": "Infinity Swimming Pool",
+      "pos": [
+        5.8,
+        0,
+        4.5
+      ]
+    },
+    {
+      "id": "hotel_fitness_treadmill",
+      "en": "Gym Treadmill Station",
+      "pos": [
+        6.2,
+        0,
+        1.5
+      ]
+    },
+    {
+      "id": "hotel_shuttle_van",
+      "en": "Airport Shuttle Bus",
+      "pos": [
+        5.8,
+        0,
+        6.2
+      ]
+    },
+    {
+      "id": "hotel_revolving_door",
+      "en": "Brass Revolving Door",
+      "pos": [
+        0,
+        0,
+        6.8
+      ]
+    },
+    {
+      "id": "hotel_smoke_detector",
+      "en": "Ceiling Smoke Detector",
+      "pos": [
+        0,
+        4.2,
+        -2.5
+      ]
+    }
+  ],
+  "restaurant": [
+    {
+      "id": "rest_dining_table",
+      "en": "Dining Table",
+      "pos": [
+        0,
+        0,
+        0.8
+      ]
+    },
+    {
+      "id": "rest_chef_station",
+      "en": "Chef Station",
+      "pos": [
+        0,
+        0,
+        -4.5
+      ]
+    },
+    {
+      "id": "rest_menu",
+      "en": "Menu",
+      "pos": [
+        -0.55,
+        0.98,
+        1.15
+      ]
+    },
+    {
+      "id": "rest_main_course",
+      "en": "Main Course",
+      "pos": [
+        -0.4,
+        0.98,
+        0.65
+      ]
+    },
+    {
+      "id": "rest_appetizer",
+      "en": "Appetizer",
+      "pos": [
+        0.42,
+        0.98,
+        0.65
+      ]
+    },
+    {
+      "id": "rest_cutlery",
+      "en": "Fork, Knife & Spoon",
+      "pos": [
+        -0.75,
+        0.96,
+        0.85
+      ]
+    },
+    {
+      "id": "rest_fork",
+      "en": "Fork",
+      "pos": [
+        -0.82,
+        0.98,
+        0.85
+      ]
+    },
+    {
+      "id": "rest_spoon",
+      "en": "Spoon",
+      "pos": [
+        0.82,
+        0.98,
+        0.85
+      ]
+    },
+    {
+      "id": "rest_olive_oil",
+      "en": "Olive Oil",
+      "pos": [
+        0.22,
+        0.98,
+        0.82
+      ]
+    },
+    {
+      "id": "rest_espresso_machine",
+      "en": "Espresso Machine",
+      "pos": [
+        3.2,
+        0.95,
+        -3.8
+      ]
+    },
+    {
+      "id": "rest_bill_folder",
+      "en": "Bill Folder",
+      "pos": [
+        -0.2,
+        0.96,
+        1.25
+      ]
+    },
+    {
+      "id": "rest_kitchen_pass",
+      "en": "Kitchen Pass",
+      "pos": [
+        -3.8,
+        0,
+        -3.8
+      ]
+    },
+    {
+      "id": "rest_napkin",
+      "en": "Napkin",
+      "pos": [
+        0.75,
+        0.98,
+        0.85
+      ]
+    },
+    {
+      "id": "rest_beverage",
+      "en": "Wine Glass",
+      "pos": [
+        0.28,
+        1.02,
+        1.18
+      ]
+    },
+    {
+      "id": "rest_reserved_sign",
+      "en": "Reserved Sign",
+      "pos": [
+        -3.6,
+        0.96,
+        1.2
+      ]
+    },
+    {
+      "id": "rest_dessert_cart",
+      "en": "Dessert Cart",
+      "pos": [
+        3.6,
+        0,
+        1.4
+      ]
+    },
+    {
+      "id": "rest_padded_booth",
+      "en": "Padded Leather Booth",
+      "pos": [
+        -4.2,
+        0,
+        1
+      ]
+    },
+    {
+      "id": "rest_high_chair",
+      "en": "Toddler High Chair",
+      "pos": [
+        -2.2,
+        0,
+        1.8
+      ]
+    },
+    {
+      "id": "rest_executive_chef",
+      "en": "Executive Head Chef",
+      "pos": [
+        0,
+        0,
+        -3.8
+      ]
+    },
+    {
+      "id": "rest_gas_stove",
+      "en": "Commercial Gas Stove",
+      "pos": [
+        -1.8,
+        0,
+        -4.8
+      ]
+    },
+    {
+      "id": "rest_frying_pan",
+      "en": "Copper Sauté Frying Pan",
+      "pos": [
+        -1.8,
+        0.95,
+        -4.8
+      ]
+    },
+    {
+      "id": "rest_cutting_board",
+      "en": "Hardwood Cutting Board",
+      "pos": [
+        1.8,
+        0.95,
+        -4.8
+      ]
+    },
+    {
+      "id": "rest_wine_list_leather",
+      "en": "Sommelier Wine List",
+      "pos": [
+        -0.65,
+        0.98,
+        0.95
+      ]
+    },
+    {
+      "id": "rest_water_pitcher",
+      "en": "Chilled Water Pitcher",
+      "pos": [
+        0.65,
+        0.98,
+        1.1
+      ]
+    },
+    {
+      "id": "rest_salt_pepper",
+      "en": "Salt & Pepper Shakers",
+      "pos": [
+        0,
+        0.98,
+        0.95
+      ]
+    },
+    {
+      "id": "rest_toothpick_holder",
+      "en": "Bamboo Toothpick Dispenser",
+      "pos": [
+        -0.15,
+        0.98,
+        0.75
+      ]
+    },
+    {
+      "id": "rest_pos_terminal",
+      "en": "Handheld POS Terminal",
+      "pos": [
+        0.15,
+        0.98,
+        0.75
+      ]
+    },
+    {
+      "id": "rest_service_tray",
+      "en": "Serving Tray",
+      "pos": [
+        -2.8,
+        0.95,
+        -3.8
+      ]
+    },
+    {
+      "id": "rest_chef_uniform",
+      "en": "White Chef Jacket & Apron",
+      "pos": [
+        0.8,
+        0.95,
+        -4
+      ]
+    },
+    {
+      "id": "rest_steak_knife",
+      "en": "Knife",
+      "pos": [
+        -0.6,
+        0.98,
+        0.75
+      ]
+    },
+    {
+      "id": "rest_soup_tureen",
+      "en": "Porcelain Soup Tureen",
+      "pos": [
+        2.2,
+        0.95,
+        -4.5
+      ]
+    },
+    {
+      "id": "rest_bread_plate",
+      "en": "Butter & Sourdough Plate",
+      "pos": [
+        -0.65,
+        0.98,
+        0.65
+      ]
+    },
+    {
+      "id": "rest_sauce_boat",
+      "en": "Silver Gravy Sauce Boat",
+      "pos": [
+        0.65,
+        0.98,
+        0.65
+      ]
+    },
+    {
+      "id": "rest_espresso_demitasse",
+      "en": "Porcelain Espresso Demitasse",
+      "pos": [
+        0.45,
+        0.98,
+        1.25
+      ]
+    },
+    {
+      "id": "rest_condiment_caddy",
+      "en": "Table Condiment Caddy",
+      "pos": [
+        -0.45,
+        0.98,
+        1.25
+      ]
+    },
+    {
+      "id": "rest_coat_check_tag",
+      "en": "Brass Coat Check Tag",
+      "pos": [
+        3.2,
+        0.95,
+        2.5
+      ]
+    }
+  ]
+}
