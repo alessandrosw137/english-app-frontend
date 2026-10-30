@@ -117,10 +117,10 @@
       window.lyricsOffset = this.offsetSec;
 
       // Cachear en memoria las referencias a los nodos del DOM una sola vez
-      const container = document.getElementById('karaoke-lyrics-container') || document.getElementById('musicLyricsContainer');
+      const container = document.getElementById('karaoke-lyrics-container') || document.getElementById('karaoke-lyrics-viewport') || document.getElementById('musicLyricsContainer');
       this.lyricNodes = (container && typeof container.querySelectorAll === 'function')
-        ? Array.from(container.querySelectorAll('.karaoke-lyric-line, .lyric-line, .stanza-card'))
-        : (typeof document.querySelectorAll === 'function' ? Array.from(document.querySelectorAll('.karaoke-lyric-line, .lyric-line, .stanza-card')) : []);
+        ? Array.from(container.querySelectorAll('.karaoke-lyric-row, .karaoke-lyric-line, .lyric-line, .stanza-card'))
+        : (typeof document.querySelectorAll === 'function' ? Array.from(document.querySelectorAll('.karaoke-lyric-row, .karaoke-lyric-line, .lyric-line, .stanza-card')) : []);
 
       ensureKaraokeOffsetControls();
       this.updateOffsetBadgeUI();
@@ -131,49 +131,45 @@
 
       const tick = () => {
         const p = window.activeYtPlayer || this.player || ytMusicPlayer || window._holoYtPlayer;
+        let rawTime = -1;
+        let pState = this.playerState;
+
+        if (window.YouTubeBridge && window.YouTubeBridge.isPlaying && typeof window.YouTubeBridge.currentTime === 'number' && window.YouTubeBridge.currentTime > 0) {
+          const nowPerf = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+          const elapsed = Math.min(Math.max(0, (nowPerf - (window.YouTubeBridge._lastMsgPerf || nowPerf)) / 1000), 1.1);
+          rawTime = window.YouTubeBridge.currentTime + elapsed;
+          pState = 1;
+        }
+
         if (p && typeof p.getCurrentTime === 'function') {
-          let pState = -1;
           if (typeof p.getPlayerState === 'function') {
             try { pState = p.getPlayerState(); } catch (_) {}
-          } else if (typeof this.playerState === 'number') {
-            pState = this.playerState;
           }
-
-          if (pState === 1) { // PLAYING: Sincronización en vivo a 60Hz interpolado
-            let rawTime = 0;
-            try { rawTime = p.getCurrentTime(); } catch (_) {}
-            const nowPerf = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-            if (typeof rawTime === 'number' && !isNaN(rawTime) && rawTime >= 0) {
-              if (Math.abs(rawTime - this.lastYtTime) > 0.005) {
-                this.lastYtTime = rawTime;
-                this.lastPerfTime = nowPerf;
-              } else {
-                const elapsed = Math.min(Math.max(0, (nowPerf - this.lastPerfTime) / 1000), 0.35);
-                rawTime = this.lastYtTime + elapsed;
+          if (pState === 1) {
+            try {
+              const t = p.getCurrentTime();
+              if (typeof t === 'number' && !isNaN(t) && t >= 0) {
+                const nowPerf = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+                if (Math.abs(t - this.lastYtTime) > 0.005) {
+                  this.lastYtTime = t;
+                  this.lastPerfTime = nowPerf;
+                  rawTime = t;
+                } else {
+                  const elapsed = Math.min(Math.max(0, (nowPerf - this.lastPerfTime) / 1000), 0.35);
+                  rawTime = this.lastYtTime + elapsed;
+                }
               }
-
-              if (this._pendingLrcDuration && !this._hasAutoCalibratedYtDur && typeof p.getDuration === 'function') {
-                try {
-                  const ytDur = p.getDuration();
-                  const lrcDur = this._pendingLrcDuration;
-                  if (ytDur > 30 && lrcDur > 30) {
-                    this._hasAutoCalibratedYtDur = true;
-                    if (Math.abs(ytDur - lrcDur) > 1.5 && Math.abs(ytDur - lrcDur) < 45) {
-                      const introDiff = Math.round((ytDur - lrcDur) * 10) / 10;
-                      this.setExactOffset(-introDiff, this.currentSongId);
-                    }
-                  }
-                } catch (_) {}
-              }
-
-              const smoothTime = rawTime + this.offsetSec;
-              this.updateActiveLine(smoothTime);
-              this.updateLiveSyncBadge(rawTime, true, pState);
-              this.updateSeekBarUI(rawTime);
-            }
-          } else { // PAUSADO O BUFFERING O FINALIZADO: DETENER INMEDIATAMENTE AVANCE DE LETRAS
-            this.updateLiveSyncBadge(this.lastYtTime || 0, false, pState);
+            } catch (_) {}
           }
+        }
+
+        if (pState === 1 && rawTime >= 0) {
+          const smoothTime = rawTime + this.offsetSec;
+          this.updateActiveLine(smoothTime);
+          this.updateLiveSyncBadge(rawTime, true, pState);
+          this.updateSeekBarUI(rawTime);
+        } else {
+          this.updateLiveSyncBadge(this.lastYtTime || (window.YouTubeBridge ? window.YouTubeBridge.currentTime : 0) || 0, false, pState);
         }
 
         this.rafId = requestAnimationFrame(tick);
@@ -184,32 +180,36 @@
       this.syncRafId = this.rafId;
     },
 
+    onTimeUpdate(rawTime, forceScroll = false) {
+      if (typeof rawTime !== 'number' || isNaN(rawTime)) return;
+      this.lastYtTime = rawTime;
+      this.lastPerfTime = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+      const smoothTime = rawTime + (typeof this.offsetSec === 'number' ? this.offsetSec : 0);
+      this.updateActiveLine(smoothTime, forceScroll);
+      this.updateLiveSyncBadge(rawTime, true, 1);
+      this.updateSeekBarUI(rawTime);
+    },
+
     updateLiveSyncBadge(curTime, isPlaying, state) {
       const badge = document.getElementById('karaokeLiveStatusBadge');
       if (!badge) return;
 
+      const safeSec = Math.max(0, Number(curTime) || 0);
+      const mins = Math.floor(safeSec / 60);
+      const secs = String(Math.floor(safeSec % 60)).padStart(2, '0');
+      badge.textContent = `${mins}:${secs}`;
       if (isPlaying && state === 1) {
-        const mins = Math.floor(curTime / 60);
-        const secs = String(Math.floor(curTime % 60)).padStart(2, '0');
-        const secVal = curTime.toFixed(1);
-        badge.textContent = `🟢 Sincronizado en vivo — Minuto ${mins}:${secs} (${secVal}s)`;
-        badge.className = 'text-[11px] font-mono font-bold text-emerald-300 bg-emerald-950/80 border border-emerald-500/40 px-2.5 py-0.5 rounded-full flex items-center gap-1.5 shadow-sm';
+        badge.className = 'text-xs font-mono font-bold text-emerald-300 bg-emerald-950/90 border border-emerald-500/40 px-2.5 py-1 rounded-lg';
       } else {
-        let pauseText = '⏸ Video en pausa';
-        if (state === 3) pauseText = '⌛ Buffering...';
-        else if (state === 0) pauseText = '⏹ Video finalizado';
-        else if (state === 5) pauseText = '🎬 Video listo';
-        badge.textContent = pauseText;
-        badge.className = 'text-[11px] font-mono font-bold text-amber-300 bg-amber-950/80 border border-amber-500/40 px-2.5 py-0.5 rounded-full flex items-center gap-1.5 shadow-sm';
+        badge.className = 'text-xs font-mono font-bold text-cyan-300 bg-slate-950/90 border border-cyan-500/30 px-2.5 py-1 rounded-lg';
       }
     },
 
-    updateActiveLine(currentTime) {
+    updateActiveLine(currentTime, forceScroll = false) {
       let idx = -1;
       const data = this.lyricsData;
       const len = data.length;
 
-      // Búsqueda binaria O(log N) para máximo rendimiento
       if (len > 0) {
         let low = 0;
         let high = len - 1;
@@ -227,10 +227,8 @@
         }
       }
 
-      // REGLA DE ORO ANTI-LAG: Si el índice no ha cambiado, no tocar el DOM ni hacer scroll
-      if (idx === this.currentIndex) return;
+      if (idx === this.currentIndex && !forceScroll) return;
 
-      // Actualizar solo las clases de la línea anterior y la nueva
       if (this.currentIndex >= 0 && this.lyricNodes[this.currentIndex]) {
         const prevNode = this.lyricNodes[this.currentIndex];
         prevNode.classList.remove('active', 'lyric-active', 'scale-[1.02]', 'border-cyan-400', 'bg-cyan-950/80', 'text-white');
@@ -245,15 +243,17 @@
       if (idx >= 0 && this.lyricNodes[idx]) {
         const node = this.lyricNodes[idx];
         node.classList.remove('lyric-inactive');
-        node.classList.add('active', 'lyric-active', 'scale-[1.02]', 'border-cyan-400', 'bg-cyan-950/80', 'text-white');
-        const container = node.parentElement;
-        if (container && !window._isUserScrollingLyrics) {
-          const scrollTarget = node.offsetTop - (container.clientHeight / 2) + (node.clientHeight / 2);
-          container.scrollTo({ top: Math.max(0, scrollTarget), behavior: 'smooth' });
+        node.classList.add('active', 'lyric-active');
+        const viewport = document.getElementById('karaoke-lyrics-viewport') || node.parentElement;
+        if (viewport && (!window._isUserScrollingLyrics || forceScroll)) {
+          const scrollTarget = node.offsetTop - (viewport.clientHeight / 2) + (node.clientHeight / 2);
+          if (typeof viewport.scrollTo === 'function') {
+            viewport.scrollTo({ top: Math.max(0, scrollTarget), behavior: 'smooth' });
+          }
         }
         const badge = document.getElementById('karaokeTimeBadge');
         if (badge) {
-          badge.textContent = `Estrofa ${idx + 1} de ${len}`;
+          badge.textContent = `Verso ${idx + 1} de ${len}`;
         }
       }
     },
@@ -261,30 +261,24 @@
     highlightIndex(idx) {
       if (idx < 0 || !this.lyricNodes || !this.lyricNodes[idx]) return;
 
-      if (this.currentIndex >= 0 && this.lyricNodes[this.currentIndex]) {
-        const prevNode = this.lyricNodes[this.currentIndex];
-        prevNode.classList.remove('active', 'lyric-active', 'scale-[1.02]', 'border-cyan-400', 'bg-cyan-950/80', 'text-white');
-        if (!prevNode.classList.contains('lyric-inactive')) {
-          prevNode.classList.add('lyric-inactive');
+      this.lyricNodes.forEach((n, i) => {
+        if (i === idx) {
+          n.classList.remove('lyric-inactive');
+          n.classList.add('active', 'lyric-active');
+        } else {
+          n.classList.remove('active', 'lyric-active', 'scale-[1.02]', 'border-cyan-400', 'bg-cyan-950/80', 'text-white');
+          if (!n.classList.contains('lyric-inactive')) n.classList.add('lyric-inactive');
         }
-      }
+      });
 
       this.currentIndex = idx;
       this.currentLyricIndex = idx;
 
       const node = this.lyricNodes[idx];
-      node.classList.remove('lyric-inactive');
-      node.classList.add('active', 'lyric-active', 'scale-[1.02]', 'border-cyan-400', 'bg-cyan-950/80', 'text-white');
-
-      const container = node.parentElement;
-      if (container) {
-        const scrollTarget = node.offsetTop - (container.clientHeight / 2) + (node.clientHeight / 2);
-        container.scrollTo({ top: Math.max(0, scrollTarget), behavior: 'smooth' });
-      }
-
-      const badge = document.getElementById('karaokeTimeBadge');
-      if (badge) {
-        badge.textContent = `Estrofa ${idx + 1} de ${this.lyricsData.length}`;
+      const viewport = document.getElementById('karaoke-lyrics-viewport') || node.parentElement;
+      if (viewport && typeof viewport.scrollTo === 'function') {
+        const scrollTarget = node.offsetTop - (viewport.clientHeight / 2) + (node.clientHeight / 2);
+        viewport.scrollTo({ top: Math.max(0, scrollTarget), behavior: 'smooth' });
       }
     },
 
@@ -345,7 +339,7 @@
       const badge1 = document.getElementById('karaokeOffsetBadge');
       if (badge1) badge1.textContent = text;
       const badge2 = document.getElementById('lyricsOffsetBadge');
-      if (badge2) badge2.textContent = `Sync: ${text}`;
+      if (badge2) badge2.textContent = text;
     },
 
     stop() {
@@ -370,14 +364,14 @@
       this.stanzas = this.lyricsData;
       this.currentIndex = -1;
       this.currentLyricIndex = -1;
-      const container = document.getElementById('karaoke-lyrics-container') || document.getElementById('musicLyricsContainer');
+      const container = document.getElementById('karaoke-lyrics-container') || document.getElementById('karaoke-lyrics-viewport') || document.getElementById('musicLyricsContainer');
       if (container) {
-        this.lyricNodes = Array.from(container.querySelectorAll('.karaoke-lyric-line, .lyric-line, .stanza-card'));
+        this.lyricNodes = Array.from(container.querySelectorAll('.karaoke-lyric-row, .karaoke-lyric-line, .lyric-line, .stanza-card'));
       }
     },
 
     syncFrame(time, force) {
-      this.updateActiveLine(time);
+      this.updateActiveLine(time, force);
     },
 
     updateSeekBarUI(time) {
@@ -395,40 +389,104 @@
 
   window.KaraokeSyncEngine = KaraokeSyncEngine;
 
+  // ==========================================================================
+  // PUENTE HÍBRIDO NATIVO YOUTUBE POSTMESSAGE + YT.PLAYER (CERO DESCONEXIÓN)
+  // ==========================================================================
+  const YouTubeBridge = {
+    currentTime: 0,
+    duration: 0,
+    isPlaying: false,
+    iframe: null,
+    _lastMsgPerf: 0,
+    _handshakeTimer: null,
+    _listeningBound: false,
+
+    attach(iframeElement) {
+      this.iframe = iframeElement || document.querySelector('#musicOriginalVideoWrapper iframe') || document.getElementById('yt-karaoke-mount');
+
+      if (!this._listeningBound && typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+        this._listeningBound = true;
+        window.addEventListener('message', (event) => {
+          if (!event || !event.origin || !String(event.origin).includes('youtube')) return;
+          try {
+            const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+            if (!data) return;
+            if (data.event === 'infoDelivery' && data.info) {
+              this._lastMsgPerf = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+              if (typeof data.info.currentTime === 'number') {
+                this.currentTime = data.info.currentTime;
+                KaraokeSyncEngine.onTimeUpdate(this.currentTime);
+              }
+              if (typeof data.info.duration === 'number' && data.info.duration > 0) {
+                this.duration = data.info.duration;
+                window._currentTrackTotalDuration = data.info.duration;
+              }
+              if (typeof data.info.playerState === 'number') {
+                this.isPlaying = (data.info.playerState === 1);
+                KaraokeSyncEngine.onPlayerStateChange(data.info.playerState);
+              }
+            }
+          } catch (e) {}
+        });
+      }
+
+      if (this._handshakeTimer) clearInterval(this._handshakeTimer);
+      this._handshakeTimer = setInterval(() => {
+        const ifr = this.iframe || document.querySelector('#musicOriginalVideoWrapper iframe') || document.getElementById('yt-karaoke-mount');
+        if (ifr && ifr.contentWindow) {
+          try {
+            ifr.contentWindow.postMessage(JSON.stringify({ event: 'listening', id: 1, channel: 'widget' }), '*');
+            ifr.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'addEventListener', args: ['onStateChange'] }), '*');
+          } catch (e) {}
+        }
+      }, 1000);
+      if (this._handshakeTimer && typeof this._handshakeTimer.unref === 'function') {
+        this._handshakeTimer.unref();
+      }
+    },
+
+    seekTo(seconds) {
+      const targetSec = Math.max(0, Number(seconds) || 0);
+      this.currentTime = targetSec;
+      this._lastMsgPerf = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+
+      const ifr = this.iframe || document.querySelector('#musicOriginalVideoWrapper iframe') || document.getElementById('yt-karaoke-mount');
+      if (ifr && ifr.contentWindow) {
+        try {
+          ifr.contentWindow.postMessage(JSON.stringify({
+            event: 'command',
+            func: 'seekTo',
+            args: [targetSec, true]
+          }), '*');
+          ifr.contentWindow.postMessage(JSON.stringify({
+            event: 'command',
+            func: 'playVideo',
+            args: []
+          }), '*');
+        } catch (e) {}
+      }
+
+      const ytPlayer = window.activeYtPlayer || ytMusicPlayer || window._holoYtPlayer;
+      if (ytPlayer && typeof ytPlayer.seekTo === 'function') {
+        try {
+          ytPlayer.seekTo(targetSec, true);
+          if (typeof ytPlayer.playVideo === 'function') ytPlayer.playVideo();
+        } catch (e) {}
+      }
+
+      KaraokeSyncEngine.onTimeUpdate(targetSec, true);
+    }
+  };
+  window.YouTubeBridge = YouTubeBridge;
+
+  // Eliminar barras duplicadas: solo actualizar el indicador compacto superior
   function ensureKaraokeOffsetControls() {
     if (typeof document === 'undefined') return;
-    let ctrl = document.getElementById('karaokeOffsetControls');
-    const container = document.getElementById('karaoke-lyrics-container') || document.getElementById('musicLyricsContainer');
-    if (!ctrl && container && container.parentNode) {
-      ctrl = document.createElement('div');
-      ctrl.id = 'karaokeOffsetControls';
-      ctrl.className = 'karaoke-sync-floating-bar bg-slate-950/95 border border-cyan-500/40 rounded-2xl p-2.5 mb-3 text-xs shadow-xl backdrop-blur-md sticky top-0 z-20';
-      ctrl.innerHTML = `
-        <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
-          <div class="flex items-center gap-1.5">
-            <span class="text-cyan-400 font-bold text-[11px] flex items-center gap-1">⏱️ Sincronía:</span>
-            <span id="karaokeOffsetBadge" class="px-2 py-0.5 rounded-md bg-cyan-950 border border-cyan-500/50 text-cyan-300 font-mono font-bold text-[11px]">0.0s</span>
-          </div>
-          <div class="flex flex-wrap items-center gap-1">
-            <button type="button" onclick="window.KaraokeSyncEngine.adjustOffset(-1.0)" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-cyan-950 active:scale-95 text-slate-200 hover:text-cyan-300 text-[10px] font-mono font-bold transition cursor-pointer border border-slate-700 hover:border-cyan-500/50" title="Adelantar letra 1.0s">[-1.0s]</button>
-            <button type="button" onclick="window.KaraokeSyncEngine.adjustOffset(-0.2)" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-cyan-950 active:scale-95 text-slate-200 hover:text-cyan-300 text-[10px] font-mono font-bold transition cursor-pointer border border-slate-700 hover:border-cyan-500/50" title="Adelantar letra 0.2s">[-0.2s]</button>
-            <button type="button" onclick="window.KaraokeSyncEngine.setOffset(0)" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 hover:text-white text-[10px] font-mono font-bold transition cursor-pointer border border-slate-700" title="Reiniciar sincronía a 0.0s">[Reset]</button>
-            <button type="button" onclick="window.KaraokeSyncEngine.adjustOffset(0.2)" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-cyan-950 active:scale-95 text-slate-200 hover:text-cyan-300 text-[10px] font-mono font-bold transition cursor-pointer border border-slate-700 hover:border-cyan-500/50" title="Retrasar letra 0.2s">[+0.2s]</button>
-            <button type="button" onclick="window.KaraokeSyncEngine.adjustOffset(1.0)" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-cyan-950 active:scale-95 text-slate-200 hover:text-cyan-300 text-[10px] font-mono font-bold transition cursor-pointer border border-slate-700 hover:border-cyan-500/50" title="Retrasar letra 1.0s">[+1.0s]</button>
-            <button type="button" onclick="window.syncCurrentPlayingStanza()" class="px-2.5 py-0.5 rounded bg-cyan-900/90 hover:bg-cyan-800 active:scale-95 text-cyan-200 text-[10px] font-bold transition cursor-pointer border border-cyan-500/50 flex items-center gap-1 shadow-sm" title="Alinear letra al segundo actual del video">
-              <span>🎯</span> <span>Alinear letra al segundo actual del video</span>
-            </button>
-          </div>
-        </div>
-        <div class="flex items-center justify-between gap-2 text-[11px] text-cyan-300/90 leading-tight">
-          <span>💡 <strong>Tip:</strong> Haz clic en el verso para saltar el video ahí, o en 🎯 para sincronizar con la voz.</span>
-          <button type="button" id="toggleCalibrateOnTapBtn" onclick="window.toggleCalibrateOnTap()" class="px-2 py-0.5 rounded bg-slate-800 text-cyan-300 font-bold text-[10px] border border-cyan-500/30 hover:border-cyan-400 active:scale-95 cursor-pointer whitespace-nowrap" title="Cambiar comportamiento al pulsar un verso">
-            🎵 Saltar al Tocar: ON
-          </button>
-        </div>
-      `;
-      container.parentNode.insertBefore(ctrl, container);
+    const duplicateBar = document.getElementById('karaokeOffsetControls');
+    if (duplicateBar && duplicateBar.parentNode) {
+      duplicateBar.parentNode.removeChild(duplicateBar);
     }
+    KaraokeSyncEngine.updateOffsetBadgeUI();
   }
   window.ensureKaraokeOffsetControls = ensureKaraokeOffsetControls;
 
@@ -988,15 +1046,17 @@
       const mountEl = document.getElementById('yt-karaoke-mount');
       if (window.activeYtPlayer && typeof window.activeYtPlayer.loadVideoById === 'function' && mountEl) {
         try {
-          console.log('🔄 [YOUTUBE-API] Reutilizando window.activeYtPlayer con videoId:', videoId);
           window.activeYtPlayer.loadVideoById(videoId);
           window.activeYtPlayer.unMute();
           window.activeYtPlayer.setVolume(100);
           window.activeYtPlayer.playVideo();
+          const ifr = (typeof window.activeYtPlayer.getIframe === 'function')
+            ? window.activeYtPlayer.getIframe()
+            : document.querySelector('#musicOriginalVideoWrapper iframe');
+          YouTubeBridge.attach(ifr);
           KaraokeSyncEngine.bindPlayer(window.activeYtPlayer, currentLyricsArray, currentSongId);
           return;
         } catch (e) {
-          console.warn('Error reutilizando activeYtPlayer, recreando:', e);
           window.activeYtPlayer = null;
         }
       }
@@ -1011,7 +1071,7 @@
         }
 
         try {
-          console.log('✨ [YOUTUBE-API] Instanciando new YT.Player en #yt-karaoke-mount con videoId:', videoId);
+          const originStr = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : '';
           window.activeYtPlayer = new YT.Player('yt-karaoke-mount', {
             videoId: videoId,
             playerVars: {
@@ -1020,15 +1080,16 @@
               rel: 0,
               modestbranding: 1,
               enablejsapi: 1,
-              origin: (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : ''
+              origin: originStr
             },
             events: {
               onReady: (e) => {
-                console.log('✅ [YOUTUBE-API] onReady fired');
                 try {
                   e.target.unMute();
                   e.target.setVolume(100);
                   e.target.playVideo();
+                  const ifr = (typeof e.target.getIframe === 'function') ? e.target.getIframe() : document.querySelector('#musicOriginalVideoWrapper iframe');
+                  YouTubeBridge.attach(ifr);
                 } catch (_) {}
                 KaraokeSyncEngine.bindPlayer(e.target, currentLyricsArray, currentSongId);
               },
@@ -1036,7 +1097,6 @@
                 KaraokeSyncEngine.onPlayerStateChange(e.data);
               },
               onError: (e) => {
-                console.warn('[YOUTUBE-API] onError:', e.data);
                 if (typeof window.handleHoloPlayerError === 'function') {
                   window.handleHoloPlayerError(e.data);
                 }
@@ -1046,8 +1106,18 @@
           window.ytMusicPlayer = window.activeYtPlayer;
           ytMusicPlayer = window.activeYtPlayer;
           window.player = window.activeYtPlayer;
+          setTimeout(() => {
+            const ifr = document.querySelector('#musicOriginalVideoWrapper iframe') || document.getElementById('yt-karaoke-mount');
+            if (ifr) YouTubeBridge.attach(ifr);
+          }, 350);
         } catch (err) {
-          console.error('Error instanciando new YT.Player:', err);
+          // Fallback directo a iframe con enablejsapi=1&playsinline=1&rel=0&origin=...
+          if (origVideoWrapper) {
+            const safeOrigin = encodeURIComponent((window.location && window.location.origin) || '');
+            origVideoWrapper.innerHTML = `<iframe id="yt-karaoke-mount" class="w-full h-full border-0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen src="https://www.youtube.com/embed/${videoId}?enablejsapi=1&playsinline=1&autoplay=1&rel=0&origin=${safeOrigin}"></iframe><audio id="mastereng-audio" preload="auto" class="hidden" style="display:none;"></audio>`;
+            const fallbackIfr = document.getElementById('yt-karaoke-mount');
+            if (fallbackIfr) YouTubeBridge.attach(fallbackIfr);
+          }
         }
       });
     };
@@ -2026,44 +2096,49 @@
       if (btn) {
         if (isGlobalSpanishTranslationActive) {
           btn.className = 'px-2.5 py-1 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-400 text-[11px] font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm shadow-cyan-500/20 active:scale-95';
-          btn.innerHTML = '<span>✅ Traducción al Español (Activa)</span>';
-          showFloatingToast('Subtítulos en español visibles para toda la canción', '🌐');
+          btn.innerHTML = '<span>Traducción ES: ON</span>';
         } else {
           btn.className = 'px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-[11px] font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95';
-          btn.innerHTML = '<span>🌐 Traducción al Español (Toda la Canción)</span>';
-          showFloatingToast('Subtítulos en español ocultos', '🌐');
+          btn.innerHTML = '<span>Traducción ES</span>';
         }
       }
 
-      const translations = document.querySelectorAll('.music-stanza-translation');
+      const translations = document.querySelectorAll('.music-stanza-translation, .lyric-es');
       translations.forEach(el => {
         if (isGlobalSpanishTranslationActive) {
           el.classList.remove('hidden');
+          el.style.display = 'block';
         } else {
           el.classList.add('hidden');
+          el.style.display = 'none';
         }
       });
     }
 
     function initLyricsScrollDetection() {
       if (typeof document === 'undefined') return;
-      const container = document.getElementById('musicLyricsContainer');
-      if (!container || container._hasLyricsScrollListener) return;
-      container._hasLyricsScrollListener = true;
+      const targets = [
+        document.getElementById('karaoke-lyrics-viewport'),
+        document.getElementById('karaoke-lyrics-container'),
+        document.getElementById('musicLyricsContainer')
+      ].filter(Boolean);
 
       const onUserScroll = () => {
         window._isUserScrollingLyrics = true;
         if (_userScrollLyricsTimer) clearTimeout(_userScrollLyricsTimer);
         _userScrollLyricsTimer = setTimeout(() => {
           window._isUserScrollingLyrics = false;
-        }, 2500);
+        }, 3000);
       };
 
-      if (typeof container.addEventListener === 'function') {
-        container.addEventListener('wheel', onUserScroll, { passive: true });
-        container.addEventListener('touchmove', onUserScroll, { passive: true });
-        container.addEventListener('scroll', onUserScroll, { passive: true });
-      }
+      targets.forEach((el) => {
+        if (el._hasLyricsScrollListener) return;
+        el._hasLyricsScrollListener = true;
+        if (typeof el.addEventListener === 'function') {
+          el.addEventListener('wheel', onUserScroll, { passive: true });
+          el.addEventListener('touchmove', onUserScroll, { passive: true });
+        }
+      });
     }
 
     function renderLyricsFromList(lyrics) {
@@ -2079,72 +2154,32 @@
       window.lastActiveStanzaIdx = -1;
       window.lastActiveWordIdx = -1;
       initLyricsScrollDetection();
-      const container = document.getElementById('karaoke-lyrics-container') || document.getElementById('musicLyricsContainer');
+
+      const container = document.getElementById('karaoke-lyrics-container') || document.getElementById('karaoke-lyrics-viewport') || document.getElementById('musicLyricsContainer');
       const badge = document.getElementById('karaokeTimeBadge');
       if (!container || !lyrics) return;
 
       const firstVerseTime = (lyrics.length > 0 && typeof lyrics[0].time === 'number') ? lyrics[0].time : 0;
-      const isLrc = lyrics.some(item => item.isLrcSynced) || !!window._isCurrentSongLrcSynced;
-
-      // Distintivo sutil de sincronización: '⚡ Sincronizado LRC Oficial' vs '⏱ Sincronización aproximada'
-      let syncTypeBadge = document.getElementById('karaokeSyncTypeBadge');
-      if (!syncTypeBadge && badge && badge.parentNode) {
-        syncTypeBadge = document.createElement('span');
-        syncTypeBadge.id = 'karaokeSyncTypeBadge';
-        badge.parentNode.insertBefore(syncTypeBadge, badge);
-      }
-      if (syncTypeBadge) {
-        if (isLrc) {
-          syncTypeBadge.className = 'inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/15 px-2.5 py-0.5 rounded-full border border-emerald-500/30';
-          syncTypeBadge.innerHTML = '⚡ Sincronizado LRC Oficial';
-        } else {
-          syncTypeBadge.className = 'inline-flex items-center gap-1 text-[10px] font-bold text-amber-400 bg-amber-500/15 px-2.5 py-0.5 rounded-full border border-amber-500/30';
-          syncTypeBadge.innerHTML = '⏱ Sincronización aproximada';
-        }
-      }
-
       if (firstVerseTime > 1.5) {
         currentKaraokeStanzaIndex = -1;
-        if (badge) badge.textContent = '🎶 [Música Instrumental]';
       } else {
         currentKaraokeStanzaIndex = 0;
-        if (badge) badge.textContent = `Estrofa 1 de ${lyrics.length}`;
       }
 
-      let introBanner = '';
-      if (window._autoIntroOffset && window._autoIntroOffset >= 2) {
-        const introSec = window._autoIntroOffset;
-        introBanner = `
-          <div id="videoIntroAdjustBanner" class="mb-3 p-2.5 rounded-xl bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-amber-500/20 border border-amber-500/40 flex items-center justify-between gap-2 shadow-lg backdrop-blur-sm animate-fade-in">
-            <div class="flex items-center gap-2 text-amber-300 text-xs font-semibold">
-              <span class="text-base">🎬</span>
-              <span>Intro detectada en el video (+${introSec}s vs letra de estudio)</span>
-            </div>
-            <button type="button" onclick="event.stopPropagation(); window.applyAutoIntroOffset(${introSec})"
-              class="px-3 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-bold text-xs transition shadow-md flex items-center gap-1.5 whitespace-nowrap cursor-pointer" title="Calibrar desfase de la intro del video musical">
-              <span>⚡</span> <span>Ajustar Intro de Video (+${introSec}s)</span>
-            </button>
-          </div>
-        `;
-      }
-
-      // Controles y aviso superior interactivo
       ensureKaraokeOffsetControls();
+      const showEs = (typeof window.isSpanishTranslationActive !== 'undefined' ? window.isSpanishTranslationActive : isGlobalSpanishTranslationActive);
 
-      container.innerHTML = introBanner + lyrics.map((stanza, lIdx) => {
+      container.innerHTML = lyrics.map((stanza, lIdx) => {
         const lineTime = typeof stanza.startTime === 'number' ? stanza.startTime : (typeof stanza.time === 'number' ? stanza.time : 0);
         const nextStanzaObj = lIdx < lyrics.length - 1 ? lyrics[lIdx + 1] : null;
         const nextTime = nextStanzaObj
-          ? (typeof nextStanzaObj.startTime === 'number' ? nextStanzaObj.startTime : (typeof nextStanzaObj.time === 'number' ? nextStanzaObj.time : lineTime + 8))
-          : lineTime + 8;
-        const stanzaDuration = Math.max(2, (typeof stanza.endTime === 'number' && stanza.endTime > lineTime) ? (stanza.endTime - lineTime) : (nextTime - lineTime));
+          ? (typeof nextStanzaObj.startTime === 'number' ? nextStanzaObj.startTime : (typeof nextStanzaObj.time === 'number' ? nextStanzaObj.time : lineTime + 6))
+          : lineTime + 6;
+        const stanzaDuration = Math.max(1.5, (typeof stanza.endTime === 'number' && stanza.endTime > lineTime) ? (stanza.endTime - lineTime) : (nextTime - lineTime));
         stanza.startTime = lineTime;
         stanza.time = lineTime;
-        if (typeof stanza.endTime !== 'number' || stanza.endTime <= lineTime) {
-          stanza.endTime = lineTime + stanzaDuration;
-        }
+        stanza.endTime = lineTime + stanzaDuration;
 
-        // Soporta array de líneas o texto multilínea dividido por saltos de línea
         const verses = Array.isArray(stanza.lines) && stanza.lines.length > 0
           ? stanza.lines
           : (stanza.text || '').split(/\r?\n/).map(v => v.trim()).filter(Boolean);
@@ -2170,134 +2205,65 @@
             return `<span class="k-word lyric-word cursor-pointer inline-block transition-all duration-150" data-widx="${currentWordIdx}" data-word-idx="${currentWordIdx}" data-index="${currentWordIdx}" data-w-start="${wStart}" data-w-end="${wEnd}" onclick="event.stopPropagation(); inspectLyricsWord('${cleanWord}', event)" title="Ver fonética IPA">${safeEscaped} </span>`;
           }).join('');
 
-          return `<div class="lyric-verse-line block leading-relaxed text-base font-semibold mb-1.5">${renderedWords}</div>`;
+          return `<span class="lyric-verse-line block">${renderedWords}</span>`;
         }).join('');
 
-        const safeFullText = (verses.join(' ') || stanza.text || '').replace(/'/g, "\\'");
         const isCurrent = lIdx === currentKaraokeStanzaIndex;
-        const esText = stanza.es || '';
+        const esText = stanza.textEs || stanza.es || '';
 
         return `
           <div id="karaokeStanza-${lIdx}"
-            class="karaoke-lyric-line lyric-line stanza-card lyric-stanza-card music-stanza-row ${isCurrent ? 'active lyric-active scale-[1.02] border-cyan-400 bg-cyan-950/80 text-white' : 'lyric-inactive'} cursor-pointer transition-all duration-200 border rounded-2xl p-3.5 mb-2.5 bg-slate-900/60 border-slate-800/80 hover:border-cyan-500/50 hover:bg-slate-850" data-sidx="${lIdx}"
-            data-start="${lineTime}" data-end="${stanza.endTime}"
+            class="karaoke-lyric-row karaoke-lyric-line lyric-line stanza-card ${isCurrent ? 'active lyric-active' : 'lyric-inactive'}"
+            data-sidx="${lIdx}"
+            data-start="${lineTime}"
+            data-end="${stanza.endTime}"
             onclick="window.handleStanzaClick(${lIdx}, ${lineTime}, event)">
-            <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-slate-700/40">
-              <span class="text-[10px] font-extrabold text-cyan-400 uppercase tracking-widest bg-cyan-500/15 px-2.5 py-0.5 rounded-full border border-cyan-500/25">
-                ESTROFA ${lIdx + 1} &bull; ${lineTime}S
-              </span>
-              <div class="flex items-center gap-1.5">
-                <button type="button" onclick="event.stopPropagation(); window.syncStanzaHere(${lineTime}, ${lIdx}, event)"
-                  class="p-1 px-2.5 rounded-lg bg-cyan-950/90 hover:bg-cyan-800 text-cyan-300 hover:text-white text-xs transition cursor-pointer flex items-center gap-1 border border-cyan-500/40 shadow-sm active:scale-95 hover:border-cyan-400" title="Alinear letra al segundo actual del video">
-                  <span>🎯</span> <span class="text-[10px] font-bold">Sincronizar aquí</span>
-                </button>
-                <button type="button" onclick="event.stopPropagation(); speakText('${safeFullText}')"
-                  class="p-1 px-2.5 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-cyan-300 text-xs transition cursor-pointer flex items-center gap-1 border border-slate-700/60 shadow-sm active:scale-95" title="Pronunciación de la estrofa">
-                  <span>🔊</span> <span class="text-[10px] font-bold">Pronunciar</span>
-                </button>
-              </div>
+            <div class="lyric-en">${renderedVerses}</div>
+            <div class="lyric-es music-stanza-translation stanza-translation ${showEs ? '' : 'hidden'}" id="stanza-es-${lIdx}" style="display: ${showEs ? 'block' : 'none'};">
+              ${escapeMusicHtml(esText)}
             </div>
-            <div class="lyric-words-flow block space-y-1">
-              ${renderedVerses}
-            </div>
-            <div class="music-stanza-translation stanza-translation text-xs text-cyan-300/95 font-medium italic mt-2.5 pt-2 border-t border-cyan-500/20 flex items-center gap-1.5" id="stanza-es-${lIdx}" style="display: ${(typeof window.isSpanishTranslationActive !== 'undefined' ? window.isSpanishTranslationActive : isGlobalSpanishTranslationActive) ? 'flex' : 'none'};">
-                <span class="text-[10px] uppercase font-bold text-cyan-400 tracking-wider not-italic bg-cyan-500/15 px-1.5 py-0.5 rounded border border-cyan-500/25">ES</span>
-                <span>${escapeMusicHtml(stanza.textEs || esText || 'Traduciendo al español...')}</span>
-              </div>
           </div>
         `;
       }).join('');
+
       const altContainer = document.getElementById('musicLyricsContainer');
       if (altContainer && altContainer !== container) {
         altContainer.innerHTML = container.innerHTML;
       }
 
-      // Inicializar nodos en memoria y controles de offset
-      KaraokeSyncEngine.lyricNodes = Array.from(container.querySelectorAll('.karaoke-lyric-line, .lyric-line, .stanza-card'));
+      KaraokeSyncEngine.lyricNodes = Array.from(container.querySelectorAll('.karaoke-lyric-row, .karaoke-lyric-line, .lyric-line, .stanza-card'));
       KaraokeSyncEngine.lyricsData = lyrics;
       KaraokeSyncEngine.stanzas = lyrics;
       KaraokeSyncEngine.currentIndex = -1;
       KaraokeSyncEngine.currentLyricIndex = -1;
-      ensureKaraokeOffsetControls();
       KaraokeSyncEngine.updateOffsetBadgeUI();
     }
 
-    // Calibración de 1 clic para intro de video detectada
     window.applyAutoIntroOffset = function(introSec) {
       const offsetVal = -Math.abs(parseFloat(introSec) || 0);
       window.lyricsOffset = Math.round(offsetVal * 10) / 10;
-      try {
-        if (typeof localStorage !== 'undefined') {
-          localStorage.setItem('mastereng_lyrics_offset', String(window.lyricsOffset));
-        }
-      } catch (_) {}
-      updateLyricsOffsetUI();
-      const banner = document.getElementById('videoIntroAdjustBanner');
-      if (banner) {
-        banner.innerHTML = `
-          <div class="flex items-center gap-2 text-emerald-300 text-xs font-semibold">
-            <span class="text-base">✅</span>
-            <span>Intro de video calibrada (${window.lyricsOffset.toFixed(1)}s aplicado al karaoke)</span>
-          </div>
-        `;
-        setTimeout(() => { if (banner) banner.style.display = 'none'; }, 3500);
-      }
-      if (typeof showFloatingToast === 'function') {
-        showFloatingToast(`Intro calibrada: ${window.lyricsOffset.toFixed(1)}s`, '⚡');
-      }
-      if (typeof handleKaraokeTimeUpdate === 'function') {
-        handleKaraokeTimeUpdate();
+      if (KaraokeSyncEngine) {
+        KaraokeSyncEngine.setExactOffset(window.lyricsOffset, KaraokeSyncEngine.currentSongId);
       }
     };
 
-    // Sincronización Interactiva de 1 Clic en Cualquier Estrofa ("Tap to Sync")
+    // Al hacer clic en cualquier línea (.karaoke-lyric-row): saltar el video a ese verso e iluminarla de inmediato
     window.handleStanzaClick = function(stanzaIdx, lineTime, event) {
       if (event && event.target && event.target.closest('button')) return;
 
-      const player = window.activeYtPlayer || ytMusicPlayer || window._holoYtPlayer;
-      const offset = (KaraokeSyncEngine && typeof KaraokeSyncEngine.offsetSec === 'number')
+      const offsetSec = (KaraokeSyncEngine && typeof KaraokeSyncEngine.offsetSec === 'number')
         ? KaraokeSyncEngine.offsetSec
         : (window.lyricsOffset || 0);
+      const targetTime = Math.max(0, Number(lineTime) - offsetSec);
 
-      // Si el modo "Calibrar Offset al Tocar" está activo
-      if (window._calibrateOffsetOnTap && player && typeof player.getCurrentTime === 'function') {
-        try {
-          const curTime = player.getCurrentTime();
-          const exactOffset = Math.round((lineTime - curTime) * 10) / 10;
-          if (KaraokeSyncEngine && typeof KaraokeSyncEngine.setExactOffset === 'function') {
-            KaraokeSyncEngine.setExactOffset(exactOffset, KaraokeSyncEngine.currentSongId);
-          }
-        } catch (_) {}
-      } else {
-        // Salta el video de YouTube directamente a ese verso
-        const offsetSec = offset;
-        const seekTarget = Math.max(0, lineTime + offsetSec);
-        if (player && typeof player.seekTo === 'function') {
-          try {
-            player.seekTo(lineTime + offsetSec, true);
-            if (typeof player.playVideo === 'function') {
-              player.playVideo();
-            }
-          } catch (_) {}
-        }
-        const ifr = document.getElementById('yt-karaoke-mount') || document.querySelector('#musicOriginalVideoWrapper iframe') || document.getElementById('musicHoloYoutubeIframe');
-        if (ifr && ifr.contentWindow) {
-          try {
-            ifr.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'seekTo', args: [seekTarget, true] }), '*');
-            ifr.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'playVideo', args: '' }), '*');
-          } catch (_) {}
-        }
+      if (window.YouTubeBridge && typeof window.YouTubeBridge.seekTo === 'function') {
+        window.YouTubeBridge.seekTo(targetTime);
       }
 
-      // Iluminar inmediatamente la línea clicada (.active), quitar .active de las demás
       if (KaraokeSyncEngine && typeof KaraokeSyncEngine.highlightIndex === 'function') {
         KaraokeSyncEngine.highlightIndex(stanzaIdx);
       } else if (typeof highlightKaraokeStanza === 'function') {
         highlightKaraokeStanza(stanzaIdx, true);
-      }
-
-      if (typeof showFloatingToast === 'function') {
-        showFloatingToast(`Estrofa ${stanzaIdx + 1} (${lineTime}s) ▶`, '🎵');
       }
     };
 
@@ -2912,45 +2878,62 @@
     }
     window.fetchLrclibSyncedLyrics = fetchLrclibSyncedLyrics;
 
-    // Fallbacks auxiliares por si no están expuestos en window
+    // Parser exacto línea por línea de etiquetas [mm:ss.xx] para syncedLyrics
     function parseLrcFallback(lrcString) {
       if (!lrcString) return [];
       const lines = lrcString.split(/\r?\n/);
       const result = [];
-      const timeRegex = /\[(\d{2}):(\d{2})(?:\.(\d{2,3}))?\]/g;
-      for (const line of lines) {
-        timeRegex.lastIndex = 0;
-        const matches = [];
-        let match;
-        while ((match = timeRegex.exec(line)) !== null) {
-          const mins = parseInt(match[1], 10);
-          const secs = parseInt(match[2], 10);
-          const msStr = (match[3] || '0').padEnd(3, '0').slice(0, 3);
-          const ms = parseInt(msStr, 10);
-          matches.push(mins * 60 + secs + ms / 1000);
-        }
-        const text = line.replace(/\[\d{2}:\d{2}(?:\.\d{2,3})?\]/g, '').trim();
-        if (text && matches.length > 0) {
-          for (const time of matches) {
-            result.push({ time, text, isLrcSynced: true });
+      const lineRegex = /\[(\d{2}):(\d{2}(?:\.\d+)?)\](.*)/;
+      for (const rawLine of lines) {
+        const m = rawLine.match(lineRegex);
+        if (m) {
+          const mins = parseInt(m[1], 10);
+          const secs = parseFloat(m[2]);
+          const text = (m[3] || '').replace(/\[\d{2}:\d{2}(?:\.\d+)?\]/g, '').trim();
+          if (text) {
+            const exactTime = Math.round((mins * 60 + secs) * 100) / 100;
+            result.push({
+              time: exactTime,
+              startTime: exactTime,
+              text: text,
+              lines: [text],
+              words: text.split(/\s+/).filter(Boolean),
+              isLrcSynced: true
+            });
           }
         }
       }
       result.sort((a, b) => a.time - b.time);
+      for (let i = 0; i < result.length; i++) {
+        result[i].endTime = (i < result.length - 1) ? result[i + 1].time : (result[i].time + 5);
+      }
       return result;
     }
+    window.parseLrcToSyncedLyrics = parseLrcFallback;
 
+    // Distribución proporcional para plainLyrics empezando en el segundo 8
     function parseRawFallback(rawLyrics, totalDurationSec, approximate) {
       if (!rawLyrics) return [];
       const lines = rawLyrics.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
       if (lines.length === 0) return [];
-      const duration = totalDurationSec || 200;
-      const step = duration / lines.length;
-      return lines.map((line, idx) => ({
-        time: Math.round(idx * step * 10) / 10,
-        text: line,
-        isApproximated: !!approximate
-      }));
+      const realDur = (window.YouTubeBridge && window.YouTubeBridge.duration > 30)
+        ? window.YouTubeBridge.duration
+        : (totalDurationSec || 200);
+      const startSec = 8;
+      const usableSpan = Math.max(30, realDur - startSec - 6);
+      const step = usableSpan / Math.max(1, lines.length);
+      return lines.map((line, idx) => {
+        const t = Math.round((startSec + idx * step) * 10) / 10;
+        return {
+          time: t,
+          startTime: t,
+          endTime: Math.round((t + step) * 10) / 10,
+          text: line,
+          lines: [line],
+          words: line.split(/\s+/).filter(Boolean),
+          isApproximated: !!approximate
+        };
+      });
     }
 
     function toggleMusicKaraokeSync() {

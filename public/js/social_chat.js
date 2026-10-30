@@ -2634,6 +2634,7 @@
               const isPending = inv.status === 'pending';
               const isDate = inv.type === 'dating_3d';
               const isJest = inv.type === 'jest_duel';
+              const isSoccer = inv.type === 'soccer_duel';
               const isRole = inv.type === 'role_proposal';
 
               let badgeBg = 'bg-slate-800 text-slate-300 border-slate-700';
@@ -2644,6 +2645,9 @@
               } else if (isJest) {
                 badgeBg = 'bg-amber-500/20 text-amber-300 border-amber-500/30';
                 badgeLabel = '🃏 Duelo Jest 3D';
+              } else if (isSoccer) {
+                badgeBg = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
+                badgeLabel = '⚽ MasterGoal 3D';
               } else if (isRole) {
                 badgeBg = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
                 badgeLabel = '🤝 Vínculo Conjunto';
@@ -2685,6 +2689,13 @@
                           onclick="window.SocialChat.acceptJestDuelFromInbox('${escapeHtml(inv.id)}', '${escapeHtml(inv.fromId)}', '${escapeHtml(inv.fromName)}', '${escapeHtml(inv.roomCode || '')}')"
                           class="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-white text-xs font-black shadow-md cursor-pointer transition flex items-center justify-center gap-1.5 active:scale-95">
                           <span>⚔️ Aceptar Duelo 1vs1</span>
+                        </button>
+                      ` : ''}
+                      ${isSoccer ? `
+                        <button type="button"
+                          onclick="window.SocialChat.acceptSoccerDuelFromInbox('${escapeHtml(inv.id)}', '${escapeHtml(inv.fromId)}', '${escapeHtml(inv.fromName)}', '${escapeHtml(inv.roomCode || '')}')"
+                          class="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-black shadow-md cursor-pointer transition flex items-center justify-center gap-1.5 active:scale-95">
+                          <span>⚽ Aceptar Partido 1v1</span>
                         </button>
                       ` : ''}
                       ${isRole ? `
@@ -2763,6 +2774,34 @@
     updateInboxBadgeCount();
     closeModals();
     acceptJestDuel(contactId, friendName, roomCode);
+  }
+
+  function acceptSoccerDuelFromInbox(inviteId, contactId, friendName, roomCode = null) {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.INBOX_INVITES);
+      if (raw) {
+        const list = JSON.parse(raw);
+        if (Array.isArray(list)) {
+          const inv = list.find(i => i.id === inviteId);
+          if (inv) inv.status = 'accepted';
+          localStorage.setItem(STORAGE_KEYS.INBOX_INVITES, JSON.stringify(list));
+        }
+      }
+    } catch (_) {}
+
+    updateInboxBadgeCount();
+    closeModals();
+    if (typeof window.navigateTo === 'function') {
+      window.navigateTo('soccer');
+    }
+    if (window.SoccerTactics3D && typeof window.SoccerTactics3D.startMatch === 'function') {
+      window.SoccerTactics3D.ensureDOM();
+      window.SoccerTactics3D.startMatch('friend_duel', {
+        rivalName: friendName || 'Amigo',
+        rivalCode: contactId || 'MENG-1024',
+        roomCode: roomCode || 'GOAL-1024'
+      });
+    }
   }
 
   function dismissInboxInvite(inviteId) {
@@ -2930,6 +2969,7 @@
     updateInboxBadgeCount,
     accept3DDateFromInbox,
     acceptJestDuelFromInbox,
+    acceptSoccerDuelFromInbox,
     dismissInboxInvite,
     clearAllInboxInvites,
     getSocialBonds: () => state.bonds,

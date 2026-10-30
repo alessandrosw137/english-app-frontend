@@ -173,13 +173,15 @@
   let hoveredObjectGroup = null;
   let hoveredMaterialsBackup = [];
 
-  const STORAGE_KEY_DISCOVERED = 'mastereng_world3d_discovered_v2';
-  const STORAGE_KEY_LEARNED = 'mastereng_world3d_learned_v2';
+  const STORAGE_KEY_DISCOVERED = 'mastereng_world3d_discovered_v3';
+  const STORAGE_KEY_LEARNED = 'mastereng_world3d_learned_v3';
   let discoveredObjectIds = new Set();
   let learnedObjectIds = new Set();
 
   function loadProgressFromStorage() {
     try {
+      localStorage.removeItem('mastereng_world3d_discovered_v2');
+      localStorage.removeItem('mastereng_world3d_learned_v2');
       const rawDisc = localStorage.getItem(STORAGE_KEY_DISCOVERED);
       if (rawDisc) {
         JSON.parse(rawDisc).forEach(id => discoveredObjectIds.add(id));
@@ -10275,107 +10277,175 @@ ensureOrbitControls();
   }
 
   // ============================================================================
-  // 12. LOBBY DE MUNDOS 3D (#world3d-selection-hub) Y PANTALLA DE CARGA REAL
-  //     ESTILO FREE FIRE CON PRE-COMPILACIÓN WEBGL (#world3d-loading-screen)
+  // 12. GALERÍA DE PORTALES DIMENSIONALES (#world3d-selection-hub) Y PANTALLA DE
+  //     CARGA 100% OPACA CON BOTÓN DE CANCELAR/SALIR (#world3d-loading-screen)
   // ============================================================================
   const WORLD3D_LOBBY_META = [
     {
       id: 'house',
       icon: '🏠',
-      nameEn: 'House & Study Rooms',
-      nameEs: 'Casa Moderna, Cocina y Estudio',
+      titleEs: 'Casa y Jardín',
+      nameEn: 'House & Garden',
+      nameEs: 'Casa y Jardín',
       level: 'A1 - B1',
-      realCountLabel: '32 Objetos Reales PBR',
+      zoneTag: 'Sala • Cocina • Estudio',
       accentHex: '#a855f7',
-      gradientBg: 'linear-gradient(135deg, rgba(88,28,135,0.45) 0%, rgba(15,23,42,0.96) 100%)',
-      loadingThemeBg: 'radial-gradient(circle at 50% 30%, rgba(168,85,247,0.32), rgba(10,14,23,0.98) 70%)',
-      desc: 'Explora la sala OLED, estudio con laptop, cocina equipada (microondas, licuadora, tostadora) y baño.'
+      glowRgba: 'rgba(168, 85, 247, 0.42)',
+      gradientBg: 'radial-gradient(circle at 50% 24%, rgba(168,85,247,0.34) 0%, rgba(17,24,39,0.96) 65%, #070b14 100%)',
+      loadingThemeBg: 'radial-gradient(circle at center, #111827 0%, #06080f 100%)'
     },
     {
       id: 'supermarket',
       icon: '🛒',
-      nameEn: 'Supermarket & Checkout',
-      nameEs: 'Supermercado y Caja Registradora',
+      titleEs: 'Supermercado',
+      nameEn: 'Supermarket',
+      nameEs: 'Supermercado',
       level: 'A1 - B1',
-      realCountLabel: '30 Objetos Reales PBR',
-      accentHex: '#0284c7',
-      gradientBg: 'linear-gradient(135deg, rgba(3,105,161,0.45) 0%, rgba(15,23,42,0.96) 100%)',
-      loadingThemeBg: 'radial-gradient(circle at 50% 30%, rgba(14,165,233,0.32), rgba(7,16,28,0.98) 70%)',
-      desc: 'Recorre góndolas con cajas de cereal biseladas, frascos de mayonesa, lácteos, frutas orgánicas y banda de cobro.'
+      zoneTag: 'Pasillos • Frutas • Caja',
+      accentHex: '#0ea5e9',
+      glowRgba: 'rgba(14, 165, 233, 0.42)',
+      gradientBg: 'radial-gradient(circle at 50% 24%, rgba(14,165,233,0.34) 0%, rgba(17,24,39,0.96) 65%, #070b14 100%)',
+      loadingThemeBg: 'radial-gradient(circle at center, #111827 0%, #06080f 100%)'
     },
     {
       id: 'restaurant',
       icon: '🍽️',
-      nameEn: 'Gourmet Restaurant',
-      nameEs: 'Restaurante de Alta Cocina',
+      titleEs: 'Restaurante',
+      nameEn: 'Restaurant',
+      nameEs: 'Restaurante',
       level: 'A2 - B2',
-      realCountLabel: '28 Objetos Reales PBR',
+      zoneTag: 'Mesas • Menú • Cocina',
       accentHex: '#f59e0b',
-      gradientBg: 'linear-gradient(135deg, rgba(180,83,9,0.45) 0%, rgba(15,23,42,0.96) 100%)',
-      loadingThemeBg: 'radial-gradient(circle at 50% 30%, rgba(245,158,11,0.32), rgba(18,12,7,0.98) 70%)',
-      desc: 'Practica en mesas vestidas con vajilla de porcelana, cubiertos separados, copas talladas y máquina de espresso.'
+      glowRgba: 'rgba(245, 158, 11, 0.42)',
+      gradientBg: 'radial-gradient(circle at 50% 24%, rgba(245,158,11,0.34) 0%, rgba(17,24,39,0.96) 65%, #070b14 100%)',
+      loadingThemeBg: 'radial-gradient(circle at center, #111827 0%, #06080f 100%)'
     },
     {
       id: 'hotel',
       icon: '🏨',
-      nameEn: '5-Star Grand Hotel',
-      nameEs: 'Recepción y Suite 5 Estrellas',
+      titleEs: 'Hotel',
+      nameEn: 'Grand Hotel',
+      nameEs: 'Hotel',
       level: 'A2 - B2',
-      realCountLabel: '28 Objetos Reales PBR',
+      zoneTag: 'Recepción • Lobby • Suite',
       accentHex: '#eab308',
-      gradientBg: 'linear-gradient(135deg, rgba(161,98,7,0.45) 0%, rgba(15,23,42,0.96) 100%)',
-      loadingThemeBg: 'radial-gradient(circle at 50% 30%, rgba(234,179,8,0.32), rgba(17,14,8,0.98) 70%)',
-      desc: 'Realiza check-in en el mostrador de mármol con campana dorada, carrito de equipaje, elevador y suite imperial.'
+      glowRgba: 'rgba(234, 179, 8, 0.42)',
+      gradientBg: 'radial-gradient(circle at 50% 24%, rgba(234,179,8,0.34) 0%, rgba(17,24,39,0.96) 65%, #070b14 100%)',
+      loadingThemeBg: 'radial-gradient(circle at center, #111827 0%, #06080f 100%)'
     },
     {
       id: 'dating',
       icon: '🕯️',
-      nameEn: 'Romantic Date & Bistro',
-      nameEs: 'Cita Romántica en Terraza Nocturna',
+      titleEs: 'Cita Romántica',
+      nameEn: 'Romantic Date',
+      nameEs: 'Cita Romántica',
       level: 'B1 - B2',
-      realCountLabel: '28 Objetos Reales PBR',
+      zoneTag: 'Terraza • Conversación • Mesero',
       accentHex: '#f43f5e',
-      gradientBg: 'linear-gradient(135deg, rgba(190,18,60,0.45) 0%, rgba(15,23,42,0.96) 100%)',
-      loadingThemeBg: 'radial-gradient(circle at 50% 30%, rgba(244,63,94,0.34), rgba(15,7,14,0.98) 70%)',
-      desc: 'Conversa en inglés a la luz de las velas con champaña en cubeta, ramo de rosas, violín en vivo y mesero IA.'
+      glowRgba: 'rgba(244, 63, 94, 0.42)',
+      gradientBg: 'radial-gradient(circle at 50% 24%, rgba(244,63,94,0.34) 0%, rgba(17,24,39,0.96) 65%, #070b14 100%)',
+      loadingThemeBg: 'radial-gradient(circle at center, #111827 0%, #06080f 100%)'
     },
     {
       id: 'garden',
       icon: '🌿',
+      titleEs: 'Jardín Botánico',
       nameEn: 'Botanical Garden',
-      nameEs: 'Jardín Botánico y Terraza',
+      nameEs: 'Jardín Botánico',
       level: 'A1 - B1',
-      realCountLabel: '28 Objetos Reales PBR',
+      zoneTag: 'Flora • Invernadero • Fuente',
       accentHex: '#10b981',
-      gradientBg: 'linear-gradient(135deg, rgba(4,120,87,0.45) 0%, rgba(15,23,42,0.96) 100%)',
-      loadingThemeBg: 'radial-gradient(circle at 50% 30%, rgba(16,185,129,0.32), rgba(6,18,14,0.98) 70%)',
-      desc: 'Explora la naturaleza con regadera metálica, macetas de terracota, tijeras de podar, fuente de piedra y pérgola.'
+      glowRgba: 'rgba(16, 185, 129, 0.42)',
+      gradientBg: 'radial-gradient(circle at 50% 24%, rgba(16,185,129,0.34) 0%, rgba(17,24,39,0.96) 65%, #070b14 100%)',
+      loadingThemeBg: 'radial-gradient(circle at center, #111827 0%, #06080f 100%)'
     },
     {
       id: 'space',
       icon: '🚀',
-      nameEn: 'Space Station & Observatory',
-      nameEs: 'Estación Espacial y Observatorio',
+      titleEs: 'Estación Espacial',
+      nameEn: 'Space Station',
+      nameEs: 'Estación Espacial',
       level: 'B1 - B2',
-      realCountLabel: '28 Objetos Reales PBR',
+      zoneTag: 'Laboratorio • Esclusa • Órbita',
       accentHex: '#38bdf8',
-      gradientBg: 'linear-gradient(135deg, rgba(2,132,199,0.48) 0%, rgba(9,13,26,0.97) 100%)',
-      loadingThemeBg: 'radial-gradient(circle at 50% 30%, rgba(56,189,248,0.36), rgba(4,8,20,0.99) 70%)',
-      desc: 'Domina vocabulario científico junto a la consola de telemetría, casco de visor dorado, brazo robótico y esclusa.'
+      glowRgba: 'rgba(56, 189, 248, 0.45)',
+      gradientBg: 'radial-gradient(circle at 50% 24%, rgba(56,189,248,0.36) 0%, rgba(17,24,39,0.96) 65%, #070b14 100%)',
+      loadingThemeBg: 'radial-gradient(circle at center, #111827 0%, #06080f 100%)'
     }
   ];
 
   const FREE_FIRE_STYLE_TIPS = [
-    '💡 CONSEJO: Toca cualquier producto en las estanterías del supermercado para escuchar su pronunciación nativa y ver su fonética IPA.',
-    '💡 CONSEJO: Arrastra con un dedo o clic izquierdo para rotar la cámara 360° y usa la rueda o pellizco para acercarte a los detalles pequeños.',
-    '💡 CONSEJO: En el Restaurante y Supermercado, explora la caja registradora y la mesa para aprender vocabulario cotidiano real.',
-    '💡 CONSEJO: Repite en voz alta cada objeto que selecciones para memorizar su pronunciación antes de pasar al siguiente.',
-    '💡 CONSEJO: Usa los botones de zona rápida en la barra superior para teletransportar la cámara suavemente por cada rincón del escenario.',
-    '💡 CONSEJO: Abre el 📚 Catálogo en cualquier mundo para descargar la guía oficial en PDF con los más de 50 términos y frases.'
+    '💡 CONSEJO: Toca cualquier objeto dentro del escenario para escuchar su pronunciación nativa y ver su fonética.',
+    '💡 CONSEJO: Arrastra con un dedo o clic izquierdo para girar la cámara 360° y acércate con pellizco o rueda.',
+    '💡 CONSEJO: En el Supermercado y Restaurante, explora cada estante y mesa para descubrir vocabulario real.',
+    '💡 CONSEJO: Repite en voz alta cada palabra que selecciones para ganar puntos de experiencia.',
+    '💡 CONSEJO: Usa las vistas rápidas de la barra superior para moverte al instante entre zonas del mapa.',
+    '💡 CONSEJO: Abre el Catálogo en cualquier mundo para repasar todos los objetos y frases aprendidas.'
   ];
 
   let _loadingTipIntervalId = null;
   let _isPrecompilingWorld = false;
+  let _activeLoadToken = 0;
+  let _activeLoadTimers = [];
+
+  function clearActiveLoadTimers() {
+    while (_activeLoadTimers.length > 0) {
+      const id = _activeLoadTimers.pop();
+      try { clearTimeout(id); } catch (_) {}
+    }
+    if (_loadingTipIntervalId) {
+      clearInterval(_loadingTipIntervalId);
+      _loadingTipIntervalId = null;
+    }
+  }
+
+  function setWorld3DTopCamBarVisibility(visible) {
+    if (typeof document === 'undefined') return;
+    const camBar = document.getElementById('unified-world3d-cam-bar');
+    if (camBar) {
+      camBar.style.setProperty('display', visible ? 'flex' : 'none', 'important');
+      camBar.style.setProperty('visibility', visible ? 'visible' : 'hidden', 'important');
+    }
+  }
+
+  function cancelWorld3DLoad(event) {
+    if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
+    _activeLoadToken++;
+    _isPrecompilingWorld = false;
+    clearActiveLoadTimers();
+    pauseLoop();
+
+    if (typeof document !== 'undefined') {
+      const loaderEl = document.getElementById('world3d-loading-screen');
+      if (loaderEl) {
+        loaderEl.classList.add('hidden');
+        loaderEl.style.setProperty('display', 'none', 'important');
+        loaderEl.style.opacity = '0';
+        loaderEl.style.pointerEvents = 'none';
+      }
+      openWorld3DLobby();
+    }
+  }
+
+  function handlePortalCardParallax(event, cardEl) {
+    if (!event || !cardEl || typeof cardEl.getBoundingClientRect !== 'function') return;
+    const rect = cardEl.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const relX = ((event.clientX - rect.left) / rect.width) - 0.5;
+    const relY = ((event.clientY - rect.top) / rect.height) - 0.5;
+    cardEl.style.setProperty('--parallax-x', `${(relX * 14).toFixed(1)}px`);
+    cardEl.style.setProperty('--parallax-y', `${(relY * 14).toFixed(1)}px`);
+    cardEl.style.setProperty('--tilt-x', `${(-relY * 7).toFixed(2)}deg`);
+    cardEl.style.setProperty('--tilt-y', `${(relX * 7).toFixed(2)}deg`);
+  }
+
+  function resetPortalCardParallax(cardEl) {
+    if (!cardEl || !cardEl.style) return;
+    cardEl.style.setProperty('--parallax-x', '0px');
+    cardEl.style.setProperty('--parallax-y', '0px');
+    cardEl.style.setProperty('--tilt-x', '0deg');
+    cardEl.style.setProperty('--tilt-y', '0deg');
+  }
 
   function ensureWorld3DLobbyAndLoaderDOM() {
     if (typeof document === 'undefined') return;
@@ -10395,38 +10465,54 @@ ensureOrbitControls();
       loaderEl = document.createElement('div');
       loaderEl.id = 'world3d-loading-screen';
       loaderEl.className = 'world3d-loading-overlay hidden';
-      loaderEl.innerHTML = `
-        <div class="world3d-loader-backdrop" id="world3dLoaderBackdrop"></div>
-        <div class="world3d-loader-content">
-          <div class="world3d-loader-badge" id="world3dLoaderLevelBadge">MOTOR WEBGL PBR • 60 FPS</div>
-          <div class="world3d-loader-icon-ring" id="world3dLoaderIconRing">
-            <span id="world3dLoaderIcon" class="text-5xl">🌍</span>
-          </div>
-          <h2 id="world3dLoaderTitleEn" class="world3d-loader-title">House & Study Rooms</h2>
-          <p id="world3dLoaderTitleEs" class="world3d-loader-subtitle">Casa Moderna, Cocina y Estudio</p>
-
-          <div class="world3d-loader-progress-card">
-            <div class="flex items-center justify-between text-xs font-bold mb-2">
-              <span id="world3dLoaderStepLabel" class="text-sky-300 tracking-wide">Inicializando pipeline WebGL...</span>
-              <span id="world3dLoaderPercent" class="font-mono text-amber-300 text-sm font-black">0%</span>
-            </div>
-            <div class="world3d-loader-bar-track">
-              <div id="world3dLoaderBarFill" class="world3d-loader-bar-fill" style="width: 0%;"></div>
-            </div>
-            <div class="flex items-center justify-between mt-2 text-[10px] text-slate-400 font-mono">
-              <span>ACESFilmic PBR • Shaders Pre-compiled</span>
-              <span id="world3dLoaderObjectsCount">50+ Vocab Nodes</span>
-            </div>
-          </div>
-        </div>
-        <div class="world3d-loader-tip-bar">
-          <span id="world3dLoaderTipText" class="world3d-loader-tip-text">
-            💡 CONSEJO: Toca cualquier producto en las estanterías del supermercado para escuchar su pronunciación nativa y ver su fonética IPA.
-          </span>
-        </div>
-      `;
       host.appendChild(loaderEl);
     }
+
+    loaderEl.innerHTML = `
+      <div class="world3d-loader-backdrop" id="world3dLoaderBackdrop"></div>
+
+      <div class="world3d-loader-top-bar">
+        <button type="button" onclick="window.cancelWorld3DLoad(event)"
+          class="world3d-loader-cancel-btn" data-testid="btn-loader-back-portals">
+          <span>← Volver a Portales</span>
+        </button>
+        <button type="button" onclick="window.cancelWorld3DLoad(event)"
+          class="world3d-loader-close-btn" data-testid="btn-loader-cancel">
+          <span>✕ Cancelar</span>
+        </button>
+      </div>
+
+      <div class="world3d-loader-content">
+        <div class="world3d-loader-orbital-stage" id="world3dLoaderIconRing">
+          <div class="world3d-loader-orbital-ring ring-outer"></div>
+          <div class="world3d-loader-orbital-ring ring-middle"></div>
+          <div class="world3d-loader-orbital-ring ring-inner"></div>
+          <div class="world3d-loader-portal-core">
+            <span id="world3dLoaderIcon" class="world3d-loader-icon-3d">🌍</span>
+          </div>
+        </div>
+
+        <span class="world3d-loader-badge" id="world3dLoaderLevelBadge">Nivel A1 - B1</span>
+        <h2 id="world3dLoaderTitleEs" class="world3d-loader-title">Casa y Jardín</h2>
+        <p id="world3dLoaderTitleEn" class="world3d-loader-subtitle">House & Garden</p>
+
+        <div class="world3d-loader-progress-card">
+          <div class="flex items-center justify-between text-xs font-bold mb-2">
+            <span id="world3dLoaderStepLabel" class="text-sky-300 tracking-wide">Abriendo portal dimensional...</span>
+            <span id="world3dLoaderPercent" class="font-mono text-amber-300 text-sm font-black">0%</span>
+          </div>
+          <div class="world3d-loader-bar-track">
+            <div id="world3dLoaderBarFill" class="world3d-loader-bar-fill" style="width: 0%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="world3d-loader-tip-bar">
+        <span id="world3dLoaderTipText" class="world3d-loader-tip-text">
+          💡 CONSEJO: Toca cualquier objeto dentro del escenario para escuchar su pronunciación nativa y ver su fonética.
+        </span>
+      </div>
+    `;
   }
 
   function renderWorld3DLobbyCards() {
@@ -10436,10 +10522,7 @@ ensureOrbitControls();
 
     const cardsHtml = WORLD3D_LOBBY_META.map(meta => {
       const scen = WORLD_TOUR_SCENARIOS[meta.id];
-      const totalItems = (scen && Array.isArray(scen.objects)) ? scen.objects.length : 56;
-      const realObjectsCount = (scen && Array.isArray(scen.objects))
-        ? scen.objects.filter(o => !o.type || o.type === 'object').length
-        : 28;
+      const totalItems = (scen && Array.isArray(scen.objects)) ? scen.objects.length : 50;
       const discoveredInWorld = (scen && Array.isArray(scen.objects))
         ? scen.objects.filter(o => discoveredObjectIds.has(o.id)).length
         : 0;
@@ -10447,47 +10530,46 @@ ensureOrbitControls();
       const isCurrent = (currentScenarioKey === meta.id && isEngineInitialized);
 
       return `
-        <article class="world3d-lobby-card group" style="--world-accent: ${meta.accentHex}; background: ${meta.gradientBg};" onclick="window.loadWorld3DWithPrecompile('${meta.id}')">
-          <div class="world3d-lobby-card-top">
-            <div class="flex items-center justify-between gap-2 mb-3">
-              <span class="world3d-lobby-level-pill" style="border-color: ${meta.accentHex}66; color: #f8fafc; background: rgba(15,23,42,0.75);">
-                Nivel ${meta.level}
-              </span>
-              <span class="world3d-lobby-objects-pill" style="border-color: ${meta.accentHex}88; color: ${meta.accentHex};">
-                ${realObjectsCount} Objetos Reales • ${totalItems} Total
-              </span>
-            </div>
+        <article class="world3d-lobby-card world3d-hub-card group"
+          style="--world-accent: ${meta.accentHex}; --world-glow: ${meta.glowRgba}; background: ${meta.gradientBg};"
+          onmousemove="window.handlePortalCardParallax && window.handlePortalCardParallax(event, this)"
+          onmouseleave="window.resetPortalCardParallax && window.resetPortalCardParallax(this)"
+          onclick="window.loadWorld3DWithPrecompile('${meta.id}')">
 
-            <div class="flex items-center gap-3.5 mb-2.5">
-              <div class="world3d-lobby-icon-box" style="border-color: ${meta.accentHex}; box-shadow: 0 0 24px ${meta.accentHex}33;">
-                <span>${meta.icon}</span>
-              </div>
-              <div class="min-w-0 flex-1">
-                <h3 class="text-base sm:text-lg font-black text-white leading-tight truncate group-hover:text-amber-300 transition">${meta.nameEn}</h3>
-                <p class="text-xs font-bold text-slate-300 truncate">${meta.nameEs}</p>
-              </div>
-            </div>
-
-            <p class="text-[11px] text-slate-300/90 leading-relaxed line-clamp-2 mb-3">
-              ${meta.desc}
-            </p>
+          <div class="portal-arch-header">
+            <span class="portal-level-pill" style="border-color: ${meta.accentHex}88;">
+              ${meta.level}
+            </span>
+            ${isCurrent ? '<span class="portal-active-pill">Activo</span>' : ''}
           </div>
 
-          <div class="world3d-lobby-card-footer">
-            <div class="mb-2.5">
-              <div class="flex items-center justify-between text-[10px] font-bold text-slate-300 mb-1">
-                <span>Progreso del Mundo</span>
-                <span class="font-mono text-emerald-300">${discoveredInWorld}/${totalItems} (${pct}%)</span>
-              </div>
-              <div class="w-full h-1.5 bg-slate-950/80 rounded-full overflow-hidden border border-white/10">
-                <div class="h-full rounded-full transition-all duration-300" style="width: ${pct}%; background: ${meta.accentHex};"></div>
-              </div>
+          <div class="portal-dimensional-stage">
+            <div class="portal-energy-ring portal-energy-ring-outer" style="border-color: ${meta.accentHex}88; box-shadow: 0 0 28px ${meta.glowRgba};"></div>
+            <div class="portal-energy-ring portal-energy-ring-inner" style="border-color: ${meta.accentHex}cc;"></div>
+            <div class="portal-scene-parallax">
+              <span class="portal-world-icon">${meta.icon}</span>
+            </div>
+          </div>
+
+          <div class="portal-card-identity">
+            <h3 class="portal-title-es">${meta.titleEs}</h3>
+            <p class="portal-title-en">${meta.nameEn} • ${meta.zoneTag}</p>
+          </div>
+
+          <div class="portal-card-footer">
+            <div class="portal-progress-row">
+              <span>Descubiertos</span>
+              <span class="font-mono" style="color: ${meta.accentHex};">${discoveredInWorld}/${totalItems} (${pct}%)</span>
+            </div>
+            <div class="portal-progress-track">
+              <div class="portal-progress-fill" style="width: ${pct}%; background: ${meta.accentHex};"></div>
             </div>
 
             <button type="button" onclick="event.stopPropagation(); window.loadWorld3DWithPrecompile('${meta.id}')"
-              class="world3d-lobby-explore-btn" style="background: linear-gradient(135deg, ${meta.accentHex}, #4f46e5);">
-              <span>🚀 Explorar Mundo</span>
-              ${isCurrent ? '<span class="text-[10px] bg-black/30 px-2 py-0.5 rounded-full">Activo</span>' : ''}
+              class="world3d-lobby-explore-btn portal-enter-btn"
+              style="background: linear-gradient(135deg, ${meta.accentHex}, #4f46e5);">
+              <span>Entrar al Portal</span>
+              <span>→</span>
             </button>
           </div>
         </article>
@@ -10503,17 +10585,12 @@ ensureOrbitControls();
               <span>← Salir a Portales</span>
             </button>
             <div>
-              <div class="flex items-center gap-2">
-                <span class="px-2.5 py-0.5 rounded-full bg-purple-500/20 border border-purple-400/40 text-[10px] font-black text-purple-300 uppercase tracking-widest">
-                  HUB DE INMERSIÓN ESPACIAL 3D
-                </span>
-                <span class="hidden sm:inline-flex items-center gap-1 text-[10px] font-mono font-bold text-emerald-400 bg-emerald-950/70 px-2 py-0.5 rounded-full border border-emerald-500/30">
-                  ⚡ Pre-compilación WebGL Cero Lag
-                </span>
-              </div>
-              <h1 class="text-xl sm:text-2xl font-black text-white tracking-tight mt-0.5">
-                Selecciona un Mundo 3D para Explorar
+              <h1 class="text-xl sm:text-2xl font-black text-white tracking-tight">
+                Portales Dimensionales 3D
               </h1>
+              <p class="text-xs font-semibold text-slate-400">
+                Elige un escenario interactivo para explorar y practicar vocabulario en contexto
+              </p>
             </div>
           </div>
 
@@ -10553,6 +10630,9 @@ ensureOrbitControls();
     }
     window._activeModule = 'world3d';
 
+    // Ocultar la barra de cámaras mientras el usuario está en la Galería de Portales
+    setWorld3DTopCamBarVisibility(false);
+
     // Pausar loop 3D mientras el usuario está eligiendo en el Lobby para 0% consumo GPU
     pauseLoop();
 
@@ -10571,6 +10651,7 @@ ensureOrbitControls();
       lobbyEl.classList.add('hidden');
       lobbyEl.style.setProperty('display', 'none', 'important');
     }
+    setWorld3DTopCamBarVisibility(true);
     initOrResumeWorld3D();
   }
 
@@ -10623,18 +10704,20 @@ ensureOrbitControls();
     }
     if (_isPrecompilingWorld) return;
     _isPrecompilingWorld = true;
+    const loadToken = ++_activeLoadToken;
+    clearActiveLoadTimers();
 
     ensureWorld3DLobbyAndLoaderDOM();
     const targetKey = WORLD_TOUR_SCENARIOS[scenarioKey] ? scenarioKey : 'house';
     const meta = WORLD3D_LOBBY_META.find(m => m.id === targetKey) || WORLD3D_LOBBY_META[0];
-    const scen = WORLD_TOUR_SCENARIOS[targetKey];
 
-    // Ocultar Lobby y mostrar Pantalla de Carga Temática a pantalla completa
+    // Ocultar Lobby y barra superior de cámaras para que NADA se trasluzca detrás de la pantalla de carga
     const lobbyEl = document.getElementById('world3d-selection-hub');
     if (lobbyEl) {
       lobbyEl.classList.add('hidden');
       lobbyEl.style.setProperty('display', 'none', 'important');
     }
+    setWorld3DTopCamBarVisibility(false);
 
     const loaderEl = document.getElementById('world3d-loading-screen');
     const backdropEl = document.getElementById('world3dLoaderBackdrop');
@@ -10646,17 +10729,17 @@ ensureOrbitControls();
     const stepLabelEl = document.getElementById('world3dLoaderStepLabel');
     const pctEl = document.getElementById('world3dLoaderPercent');
     const fillEl = document.getElementById('world3dLoaderBarFill');
-    const countEl = document.getElementById('world3dLoaderObjectsCount');
     const tipTextEl = document.getElementById('world3dLoaderTipText');
 
     if (backdropEl) backdropEl.style.background = meta.loadingThemeBg;
     if (iconEl) iconEl.textContent = meta.icon;
-    if (iconRingEl) iconRingEl.style.borderColor = meta.accentHex;
-    if (titleEnEl) titleEnEl.textContent = meta.nameEn;
-    if (titleEsEl) titleEsEl.textContent = meta.nameEs;
-    if (badgeEl) badgeEl.textContent = `NIVEL ${meta.level} • ${meta.realCountLabel.toUpperCase()}`;
-    if (countEl && scen && Array.isArray(scen.objects)) {
-      countEl.textContent = `${scen.objects.length} Nodos Interactivos`;
+    if (iconRingEl) iconRingEl.style.setProperty('--loader-accent', meta.accentHex);
+    if (titleEsEl) titleEsEl.textContent = meta.titleEs || meta.nameEs;
+    if (titleEnEl) titleEnEl.textContent = `${meta.nameEn} • ${meta.zoneTag}`;
+    if (badgeEl) {
+      badgeEl.textContent = `Nivel ${meta.level}`;
+      badgeEl.style.borderColor = `${meta.accentHex}88`;
+      badgeEl.style.color = meta.accentHex;
     }
 
     const setLoaderProgress = (pct, label) => {
@@ -10668,10 +10751,8 @@ ensureOrbitControls();
       if (stepLabelEl) stepLabelEl.textContent = label;
     };
 
-    setLoaderProgress(8, 'Preparando entorno tridimensional...');
+    setLoaderProgress(10, 'Abriendo portal dimensional...');
 
-    // Rotación de consejos estilo Free Fire cada 2.5 segundos
-    if (_loadingTipIntervalId) clearInterval(_loadingTipIntervalId);
     let tipIdx = Math.floor(Math.random() * FREE_FIRE_STYLE_TIPS.length);
     if (tipTextEl) tipTextEl.textContent = FREE_FIRE_STYLE_TIPS[tipIdx];
     _loadingTipIntervalId = setInterval(() => {
@@ -10686,83 +10767,100 @@ ensureOrbitControls();
       loaderEl.style.pointerEvents = 'auto';
     }
 
-    // PASO 1 (20% - "Liberando memoria gráfica...")
+    // PASO 1 (25% - "Liberando memoria gráfica...")
     requestAnimationFrame(() => {
-      setTimeout(() => {
-        setLoaderProgress(20, 'Liberando memoria gráfica...');
+      const t1 = setTimeout(() => {
+        if (loadToken !== _activeLoadToken) return;
+        setLoaderProgress(25, 'Liberando memoria gráfica...');
         pauseLoop();
         disposePreviousScenarioGPU();
 
-        // PASO 2 (50% - "Generando texturas PBR y etiquetas HD...")
+        // PASO 2 (55% - "Generando texturas PBR y etiquetas HD...")
         requestAnimationFrame(() => {
-          setTimeout(() => {
-            setLoaderProgress(50, 'Generando texturas PBR y etiquetas HD...');
+          const t2 = setTimeout(() => {
+            if (loadToken !== _activeLoadToken) return;
+            setLoaderProgress(55, 'Preparando iluminación y materiales...');
             prewarmScenarioTextures(targetKey);
 
-            // PASO 3 (80% - "Ensamblando mobiliario y productos 3D...")
+            // PASO 3 (85% - "Ensamblando mobiliario y productos 3D...")
             requestAnimationFrame(() => {
-              setTimeout(() => {
-                setLoaderProgress(80, 'Ensamblando mobiliario y productos 3D...');
+              const t3 = setTimeout(() => {
+                if (loadToken !== _activeLoadToken) return;
+                setLoaderProgress(85, 'Construyendo objetos del escenario...');
                 switch3DScenario(targetKey);
 
-                // PASO 4 (100% - "Compilando shaders WebGL a 60 FPS...")
+                // PASO 4 (100% - Pre-compilación de escena)
                 requestAnimationFrame(() => {
-                  setTimeout(() => {
-                    setLoaderProgress(100, 'Compilando shaders WebGL a 60 FPS...');
+                  const t4 = setTimeout(() => {
+                    if (loadToken !== _activeLoadToken) return;
+                    setLoaderProgress(100, '¡Escenario listo!');
                     try {
                       if (renderer && scene && camera) {
                         if (typeof renderer.compile === 'function') {
                           renderer.compile(scene, camera);
                         }
-                        // Renderizar 2 fotogramas completos detrás del telón
                         renderer.render(scene, camera);
                         renderer.render(scene, camera);
                       }
                     } catch (_) {}
 
-                    setTimeout(() => {
-                      if (_loadingTipIntervalId) {
-                        clearInterval(_loadingTipIntervalId);
-                        _loadingTipIntervalId = null;
-                      }
+                    const t5 = setTimeout(() => {
+                      if (loadToken !== _activeLoadToken) return;
+                      clearActiveLoadTimers();
+                      setWorld3DTopCamBarVisibility(true);
                       if (loaderEl) {
-                        loaderEl.style.transition = 'opacity 400ms ease-out';
+                        loaderEl.style.transition = 'opacity 320ms ease-out';
                         loaderEl.style.opacity = '0';
                         loaderEl.style.pointerEvents = 'none';
-                        setTimeout(() => {
+                        const t6 = setTimeout(() => {
+                          if (loadToken !== _activeLoadToken) return;
                           loaderEl.classList.add('hidden');
                           loaderEl.style.setProperty('display', 'none', 'important');
                           _isPrecompilingWorld = false;
-                        }, 400);
+                        }, 320);
+                        _activeLoadTimers.push(t6);
                       } else {
                         _isPrecompilingWorld = false;
                       }
                       resumeLoop();
-                    }, 180);
-                  }, 90);
+                    }, 160);
+                    _activeLoadTimers.push(t5);
+                  }, 80);
+                  _activeLoadTimers.push(t4);
                 });
-              }, 90);
+              }, 80);
+              _activeLoadTimers.push(t3);
             });
-          }, 80);
+          }, 70);
+          _activeLoadTimers.push(t2);
         });
-      }, 60);
+      }, 50);
+      _activeLoadTimers.push(t1);
     });
   }
 
   global.openWorld3DLobby = openWorld3DLobby;
   global.closeWorld3DLobbyAndResume = closeWorld3DLobbyAndResume;
   global.loadWorld3DWithPrecompile = loadWorld3DWithPrecompile;
+  global.cancelWorld3DLoad = cancelWorld3DLoad;
+  global.handlePortalCardParallax = handlePortalCardParallax;
+  global.resetPortalCardParallax = resetPortalCardParallax;
   global.World3D.openWorld3DLobby = openWorld3DLobby;
   global.World3D.closeWorld3DLobbyAndResume = closeWorld3DLobbyAndResume;
   global.World3D.loadWorld3DWithPrecompile = loadWorld3DWithPrecompile;
+  global.World3D.cancelWorld3DLoad = cancelWorld3DLoad;
   if (typeof window !== 'undefined') {
     window.openWorld3DLobby = openWorld3DLobby;
     window.closeWorld3DLobbyAndResume = closeWorld3DLobbyAndResume;
     window.loadWorld3DWithPrecompile = loadWorld3DWithPrecompile;
+    window.cancelWorld3DLoad = cancelWorld3DLoad;
+    window.handlePortalCardParallax = handlePortalCardParallax;
+    window.resetPortalCardParallax = resetPortalCardParallax;
     if (window.World3D) {
       window.World3D.openWorld3DLobby = openWorld3DLobby;
       window.World3D.closeWorld3DLobbyAndResume = closeWorld3DLobbyAndResume;
       window.World3D.loadWorld3DWithPrecompile = loadWorld3DWithPrecompile;
+      window.World3D.cancelWorld3DLoad = cancelWorld3DLoad;
     }
   }
 

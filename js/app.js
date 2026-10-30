@@ -11147,25 +11147,33 @@ window.logout = function() {
         }
       },
 
-      // Renderiza el HTML UNA SOLA VEZ al abrir la cancion (Cero parpadeo)
+      // Renderiza el HTML UNA SOLA VEZ al abrir la cancion (Cero parpadeo, estilo Spotify / Apple Music)
       renderStaticLyricsDOM() {
         const container = document.getElementById('karaoke-lyrics-container') || document.getElementById('musicLyricsContainer');
         if (!container) return;
 
-        // Detectar scroll tactil en movil para no pelear con el dedo del usuario
-        const isScrollBound = (container.dataset && container.dataset.scrollBound) || container._scrollBound;
-        if (!isScrollBound && typeof container.addEventListener === 'function') {
+        const oldOffsetCtrl = document.getElementById('karaokeOffsetControls');
+        if (oldOffsetCtrl && oldOffsetCtrl.parentNode) {
+          oldOffsetCtrl.parentNode.removeChild(oldOffsetCtrl);
+        }
+
+        // Detectar scroll tactil o rueda en #karaoke-lyrics-viewport para pausar auto-scroll por 3 segundos
+        const scrollHost = document.getElementById('karaoke-lyrics-viewport') || container;
+        const isScrollBound = (scrollHost.dataset && scrollHost.dataset.scrollBound) || scrollHost._scrollBound;
+        if (!isScrollBound && typeof scrollHost.addEventListener === 'function') {
           const pauseAutoScroll = () => {
             this.isUserTouchingLyrics = true;
+            this.userScrollingUntil = Date.now() + 3000;
             clearTimeout(this.userScrollingTimeout);
-            this.userScrollingTimeout = setTimeout(() => { this.isUserTouchingLyrics = false; }, 2500);
+            this.userScrollingTimeout = setTimeout(() => { this.isUserTouchingLyrics = false; }, 3000);
           };
           try {
-            container.addEventListener('touchstart', pauseAutoScroll, { passive: true });
-            container.addEventListener('wheel', pauseAutoScroll, { passive: true });
+            scrollHost.addEventListener('touchstart', pauseAutoScroll, { passive: true });
+            scrollHost.addEventListener('touchmove', pauseAutoScroll, { passive: true });
+            scrollHost.addEventListener('wheel', pauseAutoScroll, { passive: true });
           } catch (_) {}
-          if (container.dataset) container.dataset.scrollBound = 'true';
-          container._scrollBound = true;
+          if (scrollHost.dataset) scrollHost.dataset.scrollBound = 'true';
+          scrollHost._scrollBound = true;
         }
 
         const htmlContent = this.stanzas.map((stanza, sIdx) => {
@@ -11181,18 +11189,11 @@ window.logout = function() {
           }).join(' ');
 
           return `
-            <div class="stanza-card lyric-line lyric-stanza-card" data-sidx="${sIdx}" data-start="${sStart}" data-end="${sEnd}" id="karaokeStanza-${sIdx}" onclick="window.seekToStanza(${sStart}, ${sIdx})">
-              <div class="stanza-header flex items-center justify-between mb-1.5 pb-1 border-b border-slate-800/60">
-                <span class="stanza-badge text-[10px] font-mono font-bold text-cyan-400 bg-cyan-950/70 border border-cyan-500/30 px-2 py-0.5 rounded">VERSO ${sIdx + 1} • ${Math.floor(sStart)}s</span>
-                <div class="flex items-center gap-1.5">
-                  <button type="button" onclick="event.stopPropagation(); window.syncStanzaHere ? window.syncStanzaHere(${sStart}, ${sIdx}, event) : null" class="p-1 px-2 rounded-lg bg-cyan-950/80 hover:bg-cyan-800/90 text-cyan-300 text-[10px] font-bold border border-cyan-500/30 cursor-pointer" title="Sincronizar aquí">🎯 Sync</button>
-                  <button type="button" class="stanza-tts-btn text-xs text-slate-400 hover:text-cyan-300 transition p-1 cursor-pointer" onclick="event.stopPropagation(); window.speakText ? window.speakText('${(stanza.text || '').replace(/'/g, "\\'")}') : null">🔊</button>
-                </div>
+            <div class="karaoke-lyric-row stanza-card lyric-line lyric-stanza-card" data-sidx="${sIdx}" data-start="${sStart}" data-end="${sEnd}" id="karaokeStanza-${sIdx}" onclick="window.seekToStanza(${sStart}, ${sIdx})">
+              <div class="lyric-en stanza-text">${wordsSpans}</div>
+              <div class="lyric-es stanza-translation music-stanza-translation" id="stanza-es-${sIdx}" style="display: ${window.isSpanishTranslationActive !== false ? 'block' : 'none'};">
+                ${stanza.textEs ? stanza.textEs : (stanza.es ? stanza.es : 'Traduciendo al español...')}
               </div>
-              <p class="stanza-text">${wordsSpans}</p>
-              <p class="stanza-translation music-stanza-translation text-xs sm:text-sm text-sky-400 italic mt-2 opacity-90" id="stanza-es-${sIdx}" style="display: ${window.isSpanishTranslationActive !== false ? 'block' : 'none'}; color: #38bdf8; font-size: 0.92rem; margin-top: 8px; font-style: italic; opacity: 0.9;">
-                ${stanza.textEs ? ('🇪🇸 ' + stanza.textEs) : (stanza.es ? ('🇪🇸 ' + stanza.es) : 'Traduciendo al español...')}
-              </p>
             </div>
           `;
         }).join('');
@@ -11207,6 +11208,9 @@ window.logout = function() {
       // Permite adelantar/atrasar desde la barra o tocando cualquier estrofa
       seekToTime(targetSeconds) {
         const sec = Math.max(0, Number(targetSeconds) || 0);
+        if (window.YouTubeBridge && typeof window.YouTubeBridge.seekTo === 'function') {
+          try { window.YouTubeBridge.seekTo(sec); } catch (e) {}
+        }
         if (window._holoYtPlayer && typeof window._holoYtPlayer.seekTo === 'function') {
           try { window._holoYtPlayer.seekTo(sec, true); } catch (e) {}
         }
@@ -11362,6 +11366,7 @@ window.logout = function() {
         const timeLabel = document.getElementById('karaoke-time-label');
         const holoTime = document.getElementById('holoStageTime');
         const holoBar = document.getElementById('holoStageProgressBar');
+        const liveStatusBadge = document.getElementById('karaokeLiveStatusBadge');
         const duration = window.currentTrackDurationSec || window._currentTrackTotalDuration || 210;
         if (seekSlider && !this.isUserSeeking) {
           seekSlider.max = duration;
@@ -11374,6 +11379,9 @@ window.logout = function() {
         }
         if (holoTime) {
           holoTime.textContent = formatted;
+        }
+        if (liveStatusBadge) {
+          liveStatusBadge.textContent = `● Sincronizado (${fmt(currentTime)})`;
         }
         if (holoBar && duration > 0) {
           holoBar.style.width = Math.min(100, (currentTime / duration) * 100) + '%';
@@ -11402,7 +11410,7 @@ window.logout = function() {
         // Si estamos en la introduccion instrumental antes de la primera estrofa
         if (activeIdx === -1 && t < this.stanzas[0].startTime) {
           if (this.lastStanzaIdx !== -1) {
-            container.querySelectorAll('.stanza-card.active, .stanza-card.past').forEach(el => {
+            container.querySelectorAll('.karaoke-lyric-row.active, .stanza-card.active, .stanza-card.past').forEach(el => {
               el.classList.remove('active', 'past', 'lyric-active');
               el.classList.add('lyric-inactive');
             });
@@ -11426,9 +11434,9 @@ window.logout = function() {
           }
         }
 
-        // 1. Actualizar tarjeta de estrofa SOLO si cambio el indice (CERO PARPADEO)
+        // 1. Actualizar fila de letra SOLO si cambio el indice (CERO PARPADEO)
         if (this.lastStanzaIdx !== activeIdx || forceScroll) {
-          const allCards = container.querySelectorAll('.stanza-card');
+          const allCards = container.querySelectorAll('.karaoke-lyric-row, .stanza-card');
           allCards.forEach((card, idx) => {
             if (idx === activeIdx) {
               card.classList.add('active', 'lyric-active');
@@ -11436,7 +11444,6 @@ window.logout = function() {
             } else if (idx < activeIdx) {
               card.classList.remove('active', 'lyric-active');
               card.classList.add('past', 'lyric-inactive');
-              // Dejar iluminadas todas las palabras de estrofas ya pasadas
               card.querySelectorAll('.k-word').forEach(w => {
                 w.classList.add('lit', 'word-sung');
                 w.classList.remove('word-inactive');
@@ -11444,7 +11451,6 @@ window.logout = function() {
             } else {
               card.classList.remove('active', 'lyric-active', 'past');
               card.classList.add('lyric-inactive');
-              // Apagar palabras de estrofas futuras (clave cuando el usuario atrasa la cancion)
               card.querySelectorAll('.k-word.lit, .k-word.word-active').forEach(w => {
                 w.classList.remove('lit', 'word-active', 'word-sung');
                 w.classList.add('word-inactive');
@@ -11452,15 +11458,20 @@ window.logout = function() {
             }
           });
 
-          const activeCard = container.querySelector(`.stanza-card[data-sidx="${activeIdx}"]`);
-          if (activeCard && (!this.isUserTouchingLyrics || forceScroll)) {
-            if (typeof activeCard.scrollIntoView === 'function') {
+          const activeCard = container.querySelector(`[data-sidx="${activeIdx}"]`);
+          const isManualScrollActive = this.isUserTouchingLyrics || (this.userScrollingUntil && Date.now() < this.userScrollingUntil);
+          if (activeCard && (!isManualScrollActive || forceScroll)) {
+            const viewport = document.getElementById('karaoke-lyrics-viewport') || container;
+            if (viewport && typeof viewport.scrollTo === 'function' && activeCard.offsetTop !== undefined) {
+              const targetScrollTop = Math.max(0, activeCard.offsetTop - (viewport.clientHeight / 2) + (activeCard.clientHeight / 2));
+              viewport.scrollTo({ top: targetScrollTop, behavior: 'smooth' });
+            } else if (typeof activeCard.scrollIntoView === 'function') {
               activeCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
           }
 
           const badge = document.getElementById('karaokeTimeBadge');
-          if (badge) badge.textContent = `Estrofa ${activeIdx + 1} de ${this.stanzas.length}`;
+          if (badge) badge.textContent = `Verso ${activeIdx + 1} de ${this.stanzas.length}`;
 
           this.lastStanzaIdx = activeIdx;
           this.lastWordIdx = -999;
@@ -11468,7 +11479,7 @@ window.logout = function() {
 
         // 2. Iluminacion progresiva palabra por palabra dentro de la estrofa activa
         const stanzaObj = this.stanzas[activeIdx];
-        const activeCard = container.querySelector(`.stanza-card[data-sidx="${activeIdx}"]`);
+        const activeCard = container.querySelector(`[data-sidx="${activeIdx}"]`);
         if (!activeCard || !stanzaObj) return;
 
         const wordElements = activeCard.querySelectorAll('.k-word');

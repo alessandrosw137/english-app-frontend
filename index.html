@@ -1794,12 +1794,9 @@ Fábula Clásica
 <p id="activeMusicArtist" class="text-xs text-slate-400 truncate">R.E.M. &bull; Alternative Rock</p>
 </div>
 <div class="flex items-center gap-2">
-<button id="karaokeSyncToggleBtn" onclick="toggleMusicKaraokeSync()" class="px-3 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 font-bold text-xs transition cursor-pointer flex items-center gap-1.5" title="Sincronizar estrofas en tiempo real">
+<button id="karaokeSyncToggleBtn" onclick="toggleMusicKaraokeSync()" class="px-3 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 font-bold text-xs transition cursor-pointer flex items-center gap-1.5" title="Pausar o reanudar reproducción">
 <span id="karaokeSyncToggleIcon">▶️</span>
-<span id="karaokeSyncToggleText">Sincronizar Karaoke</span>
-</button>
-<button onclick="completeMusicChallenge()" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black text-xs transition shadow cursor-pointer">
-🏆 Reto Superado (+30 EXP)
+<span id="karaokeSyncToggleText">Reproducir / Pausar</span>
 </button>
 </div>
 </div>
@@ -1813,27 +1810,27 @@ Fábula Clásica
 </div>
 </div>
 </div>
-<div id="musicLyricsRightCol" class="bg-slate-900/90 border border-slate-800 rounded-3xl p-4 shadow-xl flex flex-col h-[520px]">
+<div id="musicLyricsRightCol" class="bg-slate-900/90 border border-slate-800 rounded-3xl p-4 shadow-xl flex flex-col h-[540px]">
 <div class="flex flex-wrap items-center justify-between pb-3 border-b border-slate-800 gap-2">
 <div class="flex flex-wrap items-center gap-2">
-<h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-<span>🎤 Letra Sincronizada</span>
-</h4>
-<div class="flex items-center gap-1 bg-slate-950/80 px-2 py-0.5 rounded-lg border border-slate-800 text-[10px] font-mono">
-<button type="button" onclick="window.adjustLyricsOffset(-0.5)" class="text-slate-400 hover:text-cyan-300 cursor-pointer active:scale-95 transition" title="Adelantar letra 0.5s">⏪ -0.5s</button>
-<span id="lyricsOffsetBadge" class="text-cyan-300 font-bold px-1">Sync: -0.6s</span>
-<button type="button" onclick="window.adjustLyricsOffset(0.5)" class="text-slate-400 hover:text-cyan-300 cursor-pointer active:scale-95 transition" title="Retrasar letra 0.5s">⏩ +0.5s</button>
+<span id="karaokeLiveStatusBadge" class="text-xs font-mono font-bold text-cyan-300 bg-slate-950/90 border border-cyan-500/30 px-2.5 py-1 rounded-lg">0:00</span>
+<div class="flex items-center gap-1 bg-slate-950/90 px-2 py-1 rounded-lg border border-slate-800 text-[11px] font-mono">
+<button type="button" onclick="window.KaraokeSyncEngine ? window.KaraokeSyncEngine.adjustOffset(-0.5) : window.adjustLyricsOffset(-0.5)" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-cyan-300 cursor-pointer active:scale-95 transition" title="Adelantar letra 0.5s">-0.5s</button>
+<button type="button" onclick="window.KaraokeSyncEngine ? window.KaraokeSyncEngine.setOffset(0) : window.adjustLyricsOffset(0)" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white cursor-pointer active:scale-95 transition" title="Restablecer sincronización">Reset</button>
+<button type="button" onclick="window.KaraokeSyncEngine ? window.KaraokeSyncEngine.adjustOffset(0.5) : window.adjustLyricsOffset(0.5)" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-cyan-300 cursor-pointer active:scale-95 transition" title="Retrasar letra 0.5s">+0.5s</button>
+<span id="lyricsOffsetBadge" class="text-cyan-300 font-bold pl-1">0.0s</span>
 </div>
-<button id="toggleGlobalTranslationBtn" type="button" onclick="toggleGlobalLyricsTranslation()" class="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-[11px] font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95" title="Mostrar u ocultar subtítulos en español para toda la canción">
-<span>🌐 Traducción al Español (Toda la Canción)</span>
-</button>
 </div>
 <div class="flex items-center gap-2">
-<span id="karaokeLiveStatusBadge" class="text-[11px] font-mono font-bold text-slate-400 bg-slate-950/80 border border-slate-700 px-2.5 py-0.5 rounded-full flex items-center gap-1.5">⏸ Video en pausa</span>
-<span id="karaokeTimeBadge" class="text-[11px] font-mono font-bold text-cyan-400 bg-cyan-950/70 border border-cyan-500/30 px-2.5 py-0.5 rounded-full">Estrofa 1</span>
+<button id="toggleGlobalTranslationBtn" type="button" onclick="toggleGlobalLyricsTranslation()" class="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-[11px] font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95" title="Mostrar u ocultar traducción al español">
+<span>Traducción ES</span>
+</button>
+<span id="karaokeTimeBadge" class="hidden"></span>
 </div>
 </div>
-<div id="karaoke-lyrics-container" class="flex-1 overflow-y-auto py-3 space-y-2.5 font-medium text-sm pr-1"></div>
+<div id="karaoke-lyrics-viewport" class="flex-1 overflow-y-auto overflow-x-hidden">
+<div id="karaoke-lyrics-container" class="w-full"></div>
+</div>
 <div id="musicLyricsContainer" class="hidden" style="display: none;"></div>
 </div>
 </div>
