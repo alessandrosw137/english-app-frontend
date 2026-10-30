@@ -1,4 +1,5 @@
 import bpy
+import mathutils
 import math
 import os
 import sys
@@ -10,679 +11,964 @@ if script_dir not in sys.path:
 from core import (
     reset_scene, get_material, create_box, create_cylinder, 
     create_sphere, create_torus, join_as_named_object, export_glb,
+    place_on_surface, add_bounds_anchor, build_isometric_room,
     mat_chrome, mat_steel, mat_gold, mat_glass, mat_porcelain,
-    mat_warm_wood, mat_dark_walnut, mat_black_marble, mat_velvet_red,
-    mat_terracotta, mat_screen, add_bounds_anchor
+    mat_warm_wood, mat_dark_walnut, mat_parquet, mat_black_marble,
+    mat_burgundy_rug, mat_woven_beige, mat_commercial_tile,
+    mat_sci_fi_metal, mat_grass_natural, mat_stone_path,
+    mat_velvet_red, mat_terracotta, mat_screen
 )
 
 OUTPUT_WORLDS_DIR = r"C:\Users\alessandro\Desktop\ENGLISH\assets\models\worlds"
 
 # ==============================================================================
 # WORLD 1: HOUSE.GLB
-# Exact spatial synergy with WORLD_TOUR_SCENARIOS.house
-# Coordinate conversion: x_blender = x_three, y_blender = -z_three, z_blender = y_three
+# 4 Quadrants: Northwest Kitchen, Southwest Living, Northeast Study, Southeast Bath
 # ==============================================================================
 def build_house():
     reset_scene()
-    print("Building World: House & Kitchen (Spatial Synergy Pack)...")
-    add_bounds_anchor(radius=12.0)
+    print("Building World 1: House & Kitchen (4 Quadrants AAA Layout)...")
+    add_bounds_anchor(radius_x=8.0, radius_y=7.0)
 
-    # 1. Microwave on kitchen counter (Three.js: [-2.2, 0.95, -5.5] -> Blender: (-2.2, 5.5, 0.95))
-    x, y, z = -2.2, 5.5, 0.95
-    mw_body = create_box("mw_b", (x, y, z + 0.18), (0.60, 0.38, 0.34), mat_steel())
-    mw_frame = create_box("mw_fr", (x - 0.08, y - 0.18, z + 0.18), (0.40, 0.02, 0.28), get_material("Matte_Black_Frame", (0.1, 0.1, 0.1, 1.0), roughness=0.5))
-    mw_glass = create_box("mw_gl", (x - 0.08, y - 0.185, z + 0.18), (0.34, 0.01, 0.22), mat_glass())
-    mw_plate = create_cylinder("mw_pl", (x - 0.08, y, z + 0.04), 0.12, 0.015, mat_glass())
-    mw_handle = create_cylinder("mw_h", (x + 0.14, y - 0.20, z + 0.18), 0.014, 0.22, mat_chrome(), rotation=(math.radians(90), 0, 0))
-    mw_panel = create_box("mw_p", (x + 0.21, y - 0.18, z + 0.18), (0.14, 0.02, 0.28), mat_steel())
-    mw_screen = create_box("mw_sc", (x + 0.21, y - 0.185, z + 0.25), (0.10, 0.01, 0.05), mat_screen(color=(0.1, 1.0, 0.3, 1.0), strength=3.0, name="LED_Green"))
-    mw_btn1 = create_box("mw_bt1", (x + 0.21, y - 0.185, z + 0.17), (0.08, 0.008, 0.025), mat_chrome())
-    mw_btn2 = create_box("mw_bt2", (x + 0.21, y - 0.185, z + 0.12), (0.08, 0.008, 0.025), mat_chrome())
-    join_as_named_object([mw_body, mw_frame, mw_glass, mw_plate, mw_handle, mw_panel, mw_screen, mw_btn1, mw_btn2], "Microwave")
+    # 1. Base Room (16m x 14m, North wall at Y=6.0, West wall at X=-7.0, soft beige rug in living area)
+    build_isometric_room(
+        "House",
+        floor_size=(16.0, 14.0),
+        floor_mat=mat_warm_wood(),
+        wall_mat=get_material("House_WallMat", base_color=(0.92, 0.91, 0.89, 1.0), roughness=0.6),
+        baseboard_mat=mat_dark_walnut(),
+        north_y=6.0,
+        west_x=-7.0,
+        wall_height=3.6,
+        has_window=True,
+        window_pos=(-2.0, 6.0, 2.0),
+        window_size=(3.2, 1.8),
+        rug_config=(-3.2, -2.0, 4.4, 3.6, mat_woven_beige(), False)
+    )
 
-    # 2. Blender on kitchen counter (Three.js: [-2.6, 0.95, -5.2] -> Blender: (-2.6, 5.2, 0.95))
-    x, y, z = -2.6, 5.2, 0.95
-    bl_base = create_cylinder("bl_b", (x, y, z + 0.10), 0.12, 0.20, mat_steel())
-    bl_dial = create_cylinder("bl_d", (x, y - 0.12, z + 0.10), 0.03, 0.03, mat_chrome(), rotation=(math.radians(90), 0, 0))
-    bl_b1 = create_sphere("bl_b1", (x - 0.05, y - 0.11, z + 0.06), 0.010, mat_screen((1.0, 0.2, 0.2, 1.0), 2.0, "Btn_Red"))
-    bl_b2 = create_sphere("bl_b2", (x + 0.05, y - 0.11, z + 0.06), 0.010, mat_screen((0.2, 0.8, 1.0, 1.0), 2.0, "Btn_Blue"))
-    bl_jug = create_cylinder("bl_j", (x, y, z + 0.36), 0.11, 0.34, mat_glass(), vertices=8)
-    bl_liquid = create_cylinder("bl_lq", (x, y, z + 0.32), 0.10, 0.24, get_material("Juice_Orange", (0.95, 0.45, 0.05, 1.0), roughness=0.2, transmission=0.4))
-    bl_blade = create_box("bl_bld", (x, y, z + 0.21), (0.08, 0.08, 0.01), mat_steel())
-    bl_lid = create_cylinder("bl_l", (x, y, z + 0.54), 0.12, 0.035, mat_dark_walnut())
-    bl_cap = create_cylinder("bl_c", (x, y, z + 0.57), 0.04, 0.04, mat_glass())
-    bl_handle = create_torus("bl_h", (x + 0.10, y, z + 0.36), 0.07, 0.016, mat_dark_walnut(), rotation=(0, math.radians(90), 0))
-    join_as_named_object([bl_base, bl_dial, bl_b1, bl_b2, bl_jug, bl_liquid, bl_blade, bl_lid, bl_cap, bl_handle], "Blender")
+    # --- CUADRANTE NOROESTE (X: -6.5 a -1.0, Y: +1.5 a +5.5): COCINA INTEGRAL ---
+    # Kitchen Counter in L along North wall
+    kc_base = create_box("kc_b", (-3.8, 4.8, 0.42), (5.2, 0.90, 0.84), mat_dark_walnut())
+    kc_top = create_box("kc_t", (-3.8, 4.8, 0.87), (5.3, 0.95, 0.06), mat_black_marble())
+    join_as_named_object([kc_base, kc_top], "Kitchen_Counter")
 
-    # 3. Coffee_Maker on kitchen counter (Three.js: [-0.6, 0.95, -5.5] -> Blender: (-0.6, 5.5, 0.95))
-    x, y, z = -0.6, 5.5, 0.95
-    cf_base = create_box("cf_b", (x, y, z + 0.04), (0.30, 0.32, 0.08), mat_steel())
-    cf_plate = create_cylinder("cf_pl", (x, y - 0.06, z + 0.085), 0.09, 0.01, get_material("HotPlate", (0.15, 0.15, 0.15, 1.0), roughness=0.3))
-    cf_back = create_box("cf_bk", (x, y + 0.10, z + 0.24), (0.26, 0.12, 0.40), mat_steel())
-    cf_tank = create_cylinder("cf_tk", (x, y + 0.10, z + 0.25), 0.09, 0.34, mat_glass())
-    cf_head = create_box("cf_hd", (x, y - 0.05, z + 0.42), (0.26, 0.24, 0.08), mat_steel())
-    cf_carafe = create_sphere("cf_cr", (x, y - 0.06, z + 0.19), 0.095, mat_glass(), scale=(1.0, 1.0, 1.2))
-    cf_coffee = create_sphere("cf_co", (x, y - 0.06, z + 0.16), 0.082, get_material("Dark_Coffee", (0.12, 0.06, 0.03, 1.0), roughness=0.15, transmission=0.4))
-    cf_handle = create_torus("cf_h", (x, y - 0.16, z + 0.19), 0.06, 0.014, mat_dark_walnut())
-    cf_light = create_sphere("cf_led", (x + 0.12, y - 0.14, z + 0.04), 0.012, mat_screen((1.0, 0.1, 0.1, 1.0), 3.0, "LED_Red"))
-    join_as_named_object([cf_base, cf_plate, cf_back, cf_tank, cf_head, cf_carafe, cf_coffee, cf_handle, cf_light], "Coffee_Maker")
+    # Microwave (X=-5.2, Y=+4.8, on counter Z=0.90)
+    mw_body = create_box("mw_b", (0, 0, 0.17), (0.60, 0.38, 0.34), mat_steel())
+    mw_door = create_box("mw_dr", (-0.08, -0.18, 0.17), (0.38, 0.02, 0.28), get_material("Frame_Black", (0.1, 0.1, 0.1, 1.0), roughness=0.5))
+    mw_glass = create_box("mw_gl", (-0.08, -0.185, 0.17), (0.32, 0.01, 0.22), mat_glass())
+    mw_handle = create_cylinder("mw_h", (0.14, -0.20, 0.17), 0.012, 0.22, mat_chrome(), rotation=(math.radians(90), 0, 0))
+    mw_panel = create_box("mw_p", (0.21, -0.18, 0.17), (0.14, 0.02, 0.28), mat_steel())
+    mw_screen = create_box("mw_sc", (0.21, -0.185, 0.24), (0.10, 0.005, 0.05), mat_screen((0.1, 1.0, 0.3, 1.0), 3.0, "LED_Grn"))
+    mw_btn1 = create_box("mw_b1", (0.21, -0.185, 0.16), (0.08, 0.005, 0.025), mat_chrome())
+    mw_btn2 = create_box("mw_b2", (0.21, -0.185, 0.11), (0.08, 0.005, 0.025), mat_chrome())
+    mw = join_as_named_object([mw_body, mw_door, mw_glass, mw_handle, mw_panel, mw_screen, mw_btn1, mw_btn2], "Microwave")
+    place_on_surface(mw, -5.2, 4.8, 0.90)
 
-    # 4. Toaster on kitchen counter (Three.js: [-0.2, 0.95, -5.5] -> Blender: (-0.2, 5.5, 0.95))
-    x, y, z = -0.2, 5.5, 0.95
-    to_body = create_box("to_b", (x, y, z + 0.11), (0.32, 0.20, 0.22), mat_chrome(), bevel=0.018)
-    to_slot1 = create_box("to_s1", (x, y - 0.05, z + 0.21), (0.22, 0.025, 0.02), mat_dark_walnut())
-    to_slot2 = create_box("to_s2", (x, y + 0.05, z + 0.21), (0.22, 0.025, 0.02), mat_dark_walnut())
-    to_bread1 = create_box("to_br1", (x, y - 0.05, z + 0.24), (0.18, 0.02, 0.10), get_material("Toast_Crust", (0.72, 0.48, 0.22, 1.0), roughness=0.85), bevel=0.01)
-    to_bread2 = create_box("to_br2", (x, y + 0.05, z + 0.24), (0.18, 0.02, 0.10), get_material("Toast_Crust", (0.72, 0.48, 0.22, 1.0), roughness=0.85), bevel=0.01)
-    to_lever = create_cylinder("to_lv", (x - 0.17, y, z + 0.10), 0.012, 0.06, mat_steel(), rotation=(0, math.radians(90), 0))
-    to_dial = create_cylinder("to_dl", (x, y - 0.11, z + 0.06), 0.022, 0.018, mat_steel(), rotation=(math.radians(90), 0, 0))
-    join_as_named_object([to_body, to_slot1, to_slot2, to_bread1, to_bread2, to_lever, to_dial], "Toaster")
+    # Blender (X=-4.1, Y=+4.8, on counter Z=0.90)
+    bl_base = create_cylinder("bl_b", (0, 0, 0.10), 0.12, 0.20, mat_steel())
+    bl_dial = create_cylinder("bl_d", (0, -0.12, 0.10), 0.03, 0.03, mat_chrome(), rotation=(math.radians(90), 0, 0))
+    bl_b1 = create_sphere("bl_b1", (-0.05, -0.11, 0.06), 0.010, mat_screen((1.0, 0.2, 0.2, 1.0), 2.0, "B_Red"))
+    bl_b2 = create_sphere("bl_b2", (0.05, -0.11, 0.06), 0.010, mat_screen((0.2, 0.8, 1.0, 1.0), 2.0, "B_Blue"))
+    bl_jug = create_cylinder("bl_j", (0, 0, 0.36), 0.11, 0.34, mat_glass(), vertices=8)
+    bl_liq = create_cylinder("bl_lq", (0, 0, 0.32), 0.10, 0.24, get_material("Orange_Juice", (0.95, 0.45, 0.05, 1.0), roughness=0.2, transmission=0.4))
+    bl_lid = create_cylinder("bl_l", (0, 0, 0.54), 0.12, 0.035, mat_dark_walnut())
+    bl_cap = create_cylinder("bl_c", (0, 0, 0.57), 0.04, 0.04, mat_glass())
+    bl_handle = create_torus("bl_h", (0.10, 0, 0.36), 0.07, 0.016, mat_dark_walnut(), rotation=(0, math.radians(90), 0))
+    bl = join_as_named_object([bl_base, bl_dial, bl_b1, bl_b2, bl_jug, bl_liq, bl_lid, bl_cap, bl_handle], "Blender")
+    place_on_surface(bl, -4.1, 4.8, 0.90)
 
-    # 5. Refrigerator against kitchen wall (Three.js: [-1.4, 0.22, -5.8] -> Blender: (-1.4, 5.8, 0.22))
-    x, y, z = -1.4, 5.8, 0.22
-    rf_body = create_box("rf_b", (x, y, z + 1.0), (0.92, 0.82, 2.0), mat_steel())
-    rf_door_l = create_box("rf_dl", (x - 0.23, y - 0.42, z + 1.28), (0.43, 0.03, 1.35), mat_steel(), bevel=0.015)
-    rf_door_r = create_box("rf_dr", (x + 0.23, y - 0.42, z + 1.28), (0.43, 0.03, 1.35), mat_steel(), bevel=0.015)
-    rf_freezer = create_box("rf_fz", (x, y - 0.42, z + 0.32), (0.89, 0.03, 0.58), mat_steel(), bevel=0.015)
-    rf_disp_cav = create_box("rf_dc", (x - 0.23, y - 0.44, z + 1.28), (0.20, 0.02, 0.28), get_material("Dispenser_Cavity", (0.12, 0.12, 0.14, 1.0), roughness=0.4))
-    rf_disp_scr = create_box("rf_ds", (x - 0.23, y - 0.445, z + 1.38), (0.14, 0.01, 0.05), mat_screen((0.2, 0.7, 1.0, 1.0), 2.5, "Disp_Screen"))
-    rf_hl = create_cylinder("rf_hl", (x - 0.04, y - 0.45, z + 1.28), 0.015, 0.80, mat_chrome())
-    rf_hr = create_cylinder("rf_hr", (x + 0.04, y - 0.45, z + 1.28), 0.015, 0.80, mat_chrome())
-    rf_hf = create_cylinder("rf_hf", (x, y - 0.45, z + 0.56), 0.015, 0.60, mat_chrome(), rotation=(0, math.radians(90), 0))
-    join_as_named_object([rf_body, rf_door_l, rf_door_r, rf_freezer, rf_disp_cav, rf_disp_scr, rf_hl, rf_hr, rf_hf], "Refrigerator")
+    # Toaster (X=-3.1, Y=+4.8, on counter Z=0.90)
+    to_body = create_box("to_b", (0, 0, 0.11), (0.32, 0.20, 0.22), mat_chrome(), bevel=0.015)
+    to_slot1 = create_box("to_s1", (0, -0.05, 0.21), (0.22, 0.025, 0.02), mat_dark_walnut())
+    to_slot2 = create_box("to_s2", (0, 0.05, 0.21), (0.22, 0.025, 0.02), mat_dark_walnut())
+    to_toast1 = create_box("to_t1", (0, -0.05, 0.24), (0.18, 0.02, 0.10), get_material("Toast_Crust", (0.72, 0.48, 0.22, 1.0), roughness=0.85))
+    to_toast2 = create_box("to_t2", (0, 0.05, 0.24), (0.18, 0.02, 0.10), get_material("Toast_Crust", (0.72, 0.48, 0.22, 1.0), roughness=0.85))
+    to_lever = create_cylinder("to_lv", (-0.17, 0, 0.10), 0.012, 0.06, mat_steel(), rotation=(0, math.radians(90), 0))
+    to_dial = create_cylinder("to_dl", (0, -0.11, 0.06), 0.022, 0.018, mat_steel(), rotation=(math.radians(90), 0, 0))
+    to = join_as_named_object([to_body, to_slot1, to_slot2, to_toast1, to_toast2, to_lever, to_dial], "Toaster")
+    place_on_surface(to, -3.1, 4.8, 0.90)
 
-    # 6. Remote_Control on coffee table (Three.js: [-3.35, 0.68, -1.95] -> Blender: (-3.35, 1.95, 0.68))
-    x, y, z = -3.35, 1.95, 0.68
-    rm_body = create_box("rm_b", (x, y, z + 0.01), (0.065, 0.18, 0.018), get_material("Remote_Body", (0.08, 0.08, 0.10, 1.0), roughness=0.35), bevel=0.005)
-    rm_pwr = create_sphere("rm_p", (x, y + 0.065, z + 0.02), 0.008, mat_screen((1.0, 0.15, 0.15, 1.0), 2.5, "Btn_Pwr"))
-    rm_pad = create_torus("rm_pd", (x, y + 0.02, z + 0.02), 0.018, 0.004, mat_steel())
-    rm_btn1 = create_box("rm_b1", (x - 0.015, y - 0.03, z + 0.02), (0.016, 0.012, 0.004), mat_chrome())
-    rm_btn2 = create_box("rm_b2", (x + 0.015, y - 0.03, z + 0.02), (0.016, 0.012, 0.004), mat_chrome())
-    rm_app1 = create_box("rm_a1", (x - 0.015, y - 0.06, z + 0.02), (0.018, 0.008, 0.004), mat_screen((0.9, 0.1, 0.1, 1.0), 2.0, "App_Net"))
-    rm_app2 = create_box("rm_a2", (x + 0.015, y - 0.06, z + 0.02), (0.018, 0.008, 0.004), mat_screen((0.1, 0.6, 1.0, 1.0), 2.0, "App_Pri"))
-    join_as_named_object([rm_body, rm_pwr, rm_pad, rm_btn1, rm_btn2, rm_app1, rm_app2], "Remote_Control")
+    # Coffee_Maker (X=-2.1, Y=+4.8, on counter Z=0.90)
+    cf_base = create_box("cf_b", (0, 0, 0.04), (0.30, 0.32, 0.08), mat_steel())
+    cf_plate = create_cylinder("cf_pl", (0, -0.06, 0.085), 0.09, 0.01, get_material("HotPlate", (0.15, 0.15, 0.15, 1.0), roughness=0.3))
+    cf_back = create_box("cf_bk", (0, 0.10, 0.24), (0.26, 0.12, 0.40), mat_steel())
+    cf_tank = create_cylinder("cf_tk", (0, 0.10, 0.25), 0.09, 0.34, mat_glass())
+    cf_head = create_box("cf_hd", (0, -0.05, 0.42), (0.26, 0.24, 0.08), mat_steel())
+    cf_carafe = create_sphere("cf_cr", (0, -0.06, 0.19), 0.095, mat_glass(), scale=(1.0, 1.0, 1.2))
+    cf_coffee = create_sphere("cf_co", (0, -0.06, 0.16), 0.082, get_material("Dark_Coffee", (0.12, 0.06, 0.03, 1.0), roughness=0.15, transmission=0.4))
+    cf_handle = create_torus("cf_h", (0, -0.16, 0.19), 0.06, 0.014, mat_dark_walnut())
+    cf_led = create_sphere("cf_led", (0.12, -0.14, 0.04), 0.012, mat_screen((1.0, 0.1, 0.1, 1.0), 3.0, "LED_Red"))
+    cf = join_as_named_object([cf_base, cf_plate, cf_back, cf_tank, cf_head, cf_carafe, cf_coffee, cf_handle, cf_led], "Coffee_Maker")
+    place_on_surface(cf, -2.1, 4.8, 0.90)
 
-    # 7. Laptop on study desk (Three.js: [3.25, 0.98, -3.42] -> Blender: (3.25, 3.42, 0.98))
-    x, y, z = 3.25, 3.42, 0.98
-    lp_base = create_box("lp_bs", (x, y, z + 0.007), (0.34, 0.24, 0.014), mat_steel(), bevel=0.004)
-    lp_kbd = create_box("lp_kb", (x, y + 0.03, z + 0.015), (0.28, 0.12, 0.004), get_material("Keyboard_Chiclet", (0.08, 0.08, 0.09, 1.0), roughness=0.6))
-    lp_pad = create_box("lp_pd", (x, y - 0.065, z + 0.015), (0.11, 0.07, 0.003), mat_chrome())
-    lp_lid = create_box("lp_ld", (x, y + 0.11, z + 0.12), (0.34, 0.012, 0.22), mat_steel(), rotation=(math.radians(20), 0, 0), bevel=0.004)
-    lp_scr = create_box("lp_sc", (x, y + 0.105, z + 0.12), (0.31, 0.004, 0.19), mat_screen((0.08, 0.65, 0.95, 1.0), 3.0, "Screen_UI"), rotation=(math.radians(20), 0, 0))
-    join_as_named_object([lp_base, lp_kbd, lp_pad, lp_lid, lp_scr], "Laptop")
+    # Refrigerator (X=-6.2, Y=+3.2, on floor Z=0)
+    rf_body = create_box("rf_b", (0, 0, 1.0), (0.92, 0.82, 2.0), mat_steel(), bevel=0.015)
+    rf_dl = create_box("rf_dl", (-0.23, -0.42, 1.28), (0.43, 0.03, 1.35), mat_steel(), bevel=0.01)
+    rf_dr = create_box("rf_dr", (0.23, -0.42, 1.28), (0.43, 0.03, 1.35), mat_steel(), bevel=0.01)
+    rf_fz = create_box("rf_fz", (0, -0.42, 0.32), (0.89, 0.03, 0.58), mat_steel(), bevel=0.01)
+    rf_disp = create_box("rf_dp", (-0.23, -0.44, 1.28), (0.20, 0.02, 0.28), get_material("Disp_Black", (0.1, 0.1, 0.12, 1.0)))
+    rf_scr = create_box("rf_sc", (-0.23, -0.445, 1.38), (0.14, 0.005, 0.05), mat_screen((0.2, 0.7, 1.0, 1.0), 2.5, "Disp_Scr"))
+    rf_hl = create_cylinder("rf_hl", (-0.04, -0.45, 1.28), 0.015, 0.80, mat_chrome())
+    rf_hr = create_cylinder("rf_hr", (0.04, -0.45, 1.28), 0.015, 0.80, mat_chrome())
+    rf_hf = create_cylinder("rf_hf", (0, -0.45, 0.56), 0.015, 0.60, mat_chrome(), rotation=(0, math.radians(90), 0))
+    rf = join_as_named_object([rf_body, rf_dl, rf_dr, rf_fz, rf_disp, rf_scr, rf_hl, rf_hr, rf_hf], "Refrigerator")
+    place_on_surface(rf, -6.2, 3.2, 0.0)
 
-    # 8. Toothbrush in bathroom (Three.js: [-2.1, 1.14, -3.85] -> Blender: (-2.1, 3.85, 1.14))
-    x, y, z = -2.1, 3.85, 1.14
-    tb_base = create_cylinder("tb_bs", (x, y, z + 0.015), 0.035, 0.03, mat_porcelain())
-    tb_handle = create_cylinder("tb_h", (x, y, z + 0.11), 0.013, 0.18, get_material("Teal_Rubber", (0.1, 0.65, 0.7, 1.0), roughness=0.4))
-    tb_neck = create_cylinder("tb_nk", (x, y, z + 0.21), 0.006, 0.06, mat_porcelain())
-    tb_head = create_box("tb_hd", (x, y - 0.005, z + 0.245), (0.012, 0.010, 0.024), mat_porcelain(), bevel=0.002)
-    tb_bristles = create_box("tb_br", (x, y - 0.012, z + 0.245), (0.010, 0.006, 0.020), mat_screen((0.3, 0.9, 1.0, 1.0), 1.0, "Bristles_Blue"))
-    join_as_named_object([tb_base, tb_handle, tb_neck, tb_head, tb_bristles], "Toothbrush")
+    # --- CUADRANTE SUROESTE (X: -6.0 a -0.5, Y: -4.5 a +0.5): SALA DE ESTAR ---
+    # Sofa (X=-3.2, Y=-1.2, Z=0) facing South
+    sf_base = create_box("sf_b", (0, 0, 0.16), (2.4, 0.88, 0.24), mat_dark_walnut())
+    sf_cush1 = create_box("sf_c1", (-0.72, 0.02, 0.35), (0.68, 0.78, 0.18), mat_velvet_red())
+    sf_cush2 = create_box("sf_c2", (0.0, 0.02, 0.35), (0.68, 0.78, 0.18), mat_velvet_red())
+    sf_cush3 = create_box("sf_c3", (0.72, 0.02, 0.35), (0.68, 0.78, 0.18), mat_velvet_red())
+    sf_back = create_box("sf_bk", (0, 0.35, 0.62), (2.4, 0.22, 0.64), mat_velvet_red())
+    sf_arml = create_box("sf_al", (-1.22, 0.02, 0.44), (0.22, 0.88, 0.42), mat_velvet_red())
+    sf_armr = create_box("sf_ar", (1.22, 0.02, 0.44), (0.22, 0.88, 0.42), mat_velvet_red())
+    sf = join_as_named_object([sf_base, sf_cush1, sf_cush2, sf_cush3, sf_back, sf_arml, sf_armr], "Sofa")
+    place_on_surface(sf, -3.2, -1.2, 0.0)
 
-    # 9. Soap_Dispenser in bathroom (Three.js: [-1.8, 1.14, -3.85] -> Blender: (-1.8, 3.85, 1.14))
-    x, y, z = -1.8, 3.85, 1.14
-    sd_bottle = create_cylinder("sd_b", (x, y, z + 0.07), 0.045, 0.14, mat_glass())
-    sd_liquid = create_cylinder("sd_lq", (x, y, z + 0.06), 0.041, 0.11, get_material("Liquid_Soap_Amber", (0.92, 0.65, 0.20, 1.0), roughness=0.2, transmission=0.6))
-    sd_cap = create_cylinder("sd_cp", (x, y, z + 0.145), 0.022, 0.02, mat_chrome())
-    sd_pump = create_cylinder("sd_p", (x, y, z + 0.17), 0.010, 0.04, mat_chrome())
-    sd_nozzle = create_cylinder("sd_nz", (x, y - 0.025, z + 0.185), 0.006, 0.05, mat_chrome(), rotation=(math.radians(90), 0, 0))
-    join_as_named_object([sd_bottle, sd_liquid, sd_cap, sd_pump, sd_nozzle], "Soap_Dispenser")
+    # Living_Table (X=-3.2, Y=-2.8, Z=0, height 0.45m)
+    lt_top = create_box("lt_t", (0, 0, 0.43), (1.40, 0.75, 0.04), mat_warm_wood())
+    lt_l1 = create_cylinder("lt_l1", (-0.60, -0.30, 0.21), 0.025, 0.42, mat_dark_walnut())
+    lt_l2 = create_cylinder("lt_l2", (0.60, -0.30, 0.21), 0.025, 0.42, mat_dark_walnut())
+    lt_l3 = create_cylinder("lt_l3", (-0.60, 0.30, 0.21), 0.025, 0.42, mat_dark_walnut())
+    lt_l4 = create_cylinder("lt_l4", (0.60, 0.30, 0.21), 0.025, 0.42, mat_dark_walnut())
+    lt = join_as_named_object([lt_top, lt_l1, lt_l2, lt_l3, lt_l4], "Living_Table")
+    place_on_surface(lt, -3.2, -2.8, 0.0)
 
-    # 10. Shampoo_Bottle in bathroom (Three.js: [-2.4, 1.14, -3.85] -> Blender: (-2.4, 3.85, 1.14))
-    x, y, z = -2.4, 3.85, 1.14
-    sb_body = create_box("sb_b", (x, y, z + 0.10), (0.07, 0.045, 0.20), get_material("Shampoo_Bottle_Mat", (0.15, 0.45, 0.35, 1.0), roughness=0.3), bevel=0.012)
-    sb_cap = create_cylinder("sb_cp", (x, y, z + 0.215), 0.016, 0.03, mat_gold())
-    join_as_named_object([sb_body, sb_cap], "Shampoo_Bottle")
+    # Remote_Control (on coffee table Z=0.45m)
+    rm_body = create_box("rm_b", (0, 0, 0.01), (0.065, 0.18, 0.018), get_material("Remote_Black", (0.08, 0.08, 0.10, 1.0), roughness=0.35), bevel=0.004)
+    rm_pwr = create_sphere("rm_p", (0, 0.065, 0.02), 0.008, mat_screen((1.0, 0.15, 0.15, 1.0), 2.5, "Btn_Pwr"))
+    rm_pad = create_torus("rm_pd", (0, 0.02, 0.02), 0.018, 0.004, mat_steel())
+    rm_b1 = create_box("rm_b1", (-0.015, -0.03, 0.02), (0.016, 0.012, 0.004), mat_chrome())
+    rm_b2 = create_box("rm_b2", (0.015, -0.03, 0.02), (0.016, 0.012, 0.004), mat_chrome())
+    rm = join_as_named_object([rm_body, rm_pwr, rm_pad, rm_b1, rm_b2], "Remote_Control")
+    place_on_surface(rm, -3.2, -2.8, 0.45)
+
+    # --- CUADRANTE NORESTE (X: +1.0 a +6.5, Y: +1.5 a +5.5): ESTUDIO & RECÁMARA ---
+    # Study Desk (X=+4.5, Y=+4.6, surface at Z=0.76m)
+    dk_top = create_box("dk_t", (0, 0, 0.74), (1.50, 0.80, 0.04), mat_warm_wood())
+    dk_l1 = create_box("dk_l1", (-0.68, 0, 0.36), (0.06, 0.72, 0.72), mat_dark_walnut())
+    dk_l2 = create_box("dk_l2", (0.68, 0, 0.36), (0.06, 0.72, 0.72), mat_dark_walnut())
+    # Office chair
+    ch_seat = create_box("ch_s", (0, -0.65, 0.48), (0.50, 0.48, 0.08), mat_steel())
+    ch_back = create_box("ch_bk", (0, -0.85, 0.78), (0.46, 0.06, 0.52), mat_steel())
+    ch_pole = create_cylinder("ch_p", (0, -0.65, 0.24), 0.03, 0.48, mat_chrome())
+    dk = join_as_named_object([dk_top, dk_l1, dk_l2, ch_seat, ch_back, ch_pole], "Study_Desk")
+    place_on_surface(dk, 4.5, 4.6, 0.0)
+
+    # Laptop (open on desk Z=0.76m)
+    lp_base = create_box("lp_bs", (0, 0, 0.008), (0.34, 0.24, 0.014), mat_steel(), bevel=0.004)
+    lp_kbd = create_box("lp_kb", (0, 0.03, 0.016), (0.28, 0.12, 0.004), get_material("Keyb_Dark", (0.1, 0.1, 0.1, 1.0)))
+    lp_pad = create_box("lp_pd", (0, -0.065, 0.016), (0.10, 0.06, 0.003), mat_chrome())
+    lp_lid = create_box("lp_ld", (0, 0.11, 0.12), (0.34, 0.012, 0.22), mat_steel(), rotation=(math.radians(20), 0, 0), bevel=0.004)
+    lp_scr = create_box("lp_sc", (0, 0.105, 0.12), (0.31, 0.004, 0.19), mat_screen((0.08, 0.65, 0.95, 1.0), 3.0, "OS_Screen"), rotation=(math.radians(20), 0, 0))
+    lp = join_as_named_object([lp_base, lp_kbd, lp_pad, lp_lid, lp_scr], "Laptop")
+    place_on_surface(lp, 4.5, 4.6, 0.76)
+
+    # Bed and Wardrobe in bedroom zone (X=+4.5, Y=-1.0, Z=0) - totally uncluttered
+    bd_frame = create_box("bd_f", (0, 0, 0.20), (2.0, 2.2, 0.36), mat_warm_wood())
+    bd_mattress = create_box("bd_m", (0, 0, 0.44), (1.9, 2.1, 0.24), mat_porcelain())
+    bd_headboard = create_box("bd_h", (0, 1.05, 0.72), (2.1, 0.16, 0.90), mat_dark_walnut())
+    bd_pill1 = create_box("bd_p1", (-0.50, 0.75, 0.60), (0.60, 0.40, 0.12), mat_porcelain())
+    bd_pill2 = create_box("bd_p2", (0.50, 0.75, 0.60), (0.60, 0.40, 0.12), mat_porcelain())
+    bd_wardrobe = create_box("bd_w", (1.7, 0, 1.10), (0.80, 1.80, 2.20), mat_dark_walnut())
+    bed_unit = join_as_named_object([bd_frame, bd_mattress, bd_headboard, bd_pill1, bd_pill2, bd_wardrobe], "House_Bed")
+    place_on_surface(bed_unit, 4.5, -1.0, 0.0)
+
+    # --- CUADRANTE SURESTE (X: +1.5 a +6.5, Y: -5.0 a -2.0): TOCADOR DE BAÑO ---
+    # Bathroom Vanity with Sink Basin (X=+5.2, Y=-4.0, height 0.86m)
+    bv_cabinet = create_box("bv_c", (0, 0, 0.40), (1.60, 0.70, 0.80), mat_dark_walnut())
+    bv_top = create_box("bv_t", (0, 0, 0.83), (1.65, 0.75, 0.06), mat_black_marble())
+    # Sink basin
+    sk_basin = create_box("sk_b", (0, 0, 0.88), (0.65, 0.45, 0.14), mat_porcelain())
+    sk_faucet = create_cylinder("sk_f", (0, 0.18, 1.02), 0.016, 0.22, mat_chrome(), rotation=(0, math.radians(20), 0))
+    vanity = join_as_named_object([bv_cabinet, bv_top, sk_basin, sk_faucet], "Bathroom_Vanity")
+    place_on_surface(vanity, 5.2, -4.0, 0.0)
+
+    # Soap_Dispenser (on vanity Z=0.86m, at X=5.6, Y=-4.0)
+    sd_bottle = create_cylinder("sd_b", (0, 0, 0.07), 0.045, 0.14, mat_glass())
+    sd_liquid = create_cylinder("sd_lq", (0, 0, 0.06), 0.041, 0.11, get_material("Amber_Soap", (0.92, 0.65, 0.20, 1.0), roughness=0.2, transmission=0.6))
+    sd_cap = create_cylinder("sd_cp", (0, 0, 0.145), 0.022, 0.02, mat_chrome())
+    sd_pump = create_cylinder("sd_p", (0, 0, 0.17), 0.010, 0.04, mat_chrome())
+    sd_nozzle = create_cylinder("sd_nz", (0, -0.025, 0.185), 0.006, 0.05, mat_chrome(), rotation=(math.radians(90), 0, 0))
+    sd = join_as_named_object([sd_bottle, sd_liquid, sd_cap, sd_pump, sd_nozzle], "Soap_Dispenser")
+    place_on_surface(sd, 5.7, -4.0, 0.86)
+
+    # Toothbrush (on vanity Z=0.86m, at X=4.7, Y=-4.0)
+    tb_cup = create_cylinder("tb_c", (0, 0, 0.05), 0.038, 0.10, mat_porcelain())
+    tb_handle = create_cylinder("tb_h", (0, 0, 0.13), 0.010, 0.18, get_material("Teal_Grip", (0.1, 0.65, 0.7, 1.0), roughness=0.4))
+    tb_head = create_box("tb_hd", (0, 0, 0.23), (0.012, 0.010, 0.024), mat_porcelain())
+    tb_bristle = create_box("tb_br", (0, -0.008, 0.23), (0.010, 0.006, 0.020), mat_screen((0.3, 0.9, 1.0, 1.0), 1.0, "Bristles"))
+    tb = join_as_named_object([tb_cup, tb_handle, tb_head, tb_bristle], "Toothbrush")
+    place_on_surface(tb, 4.7, -4.0, 0.86)
+
+    # Shampoo_Bottle (on vanity Z=0.86m, at X=5.2, Y=-3.7)
+    sb_body = create_box("sb_b", (0, 0, 0.10), (0.08, 0.05, 0.20), get_material("Shampoo_Bottle_Mat", (0.15, 0.45, 0.35, 1.0), roughness=0.3), bevel=0.012)
+    sb_cap = create_cylinder("sb_cp", (0, 0, 0.215), 0.018, 0.03, mat_gold())
+    sb = join_as_named_object([sb_body, sb_cap], "Shampoo_Bottle")
+    place_on_surface(sb, 5.2, -3.7, 0.86)
 
     export_glb(os.path.join(OUTPUT_WORLDS_DIR, "house.glb"))
-    print("WORLD 1 (HOUSE) BUILT SUCCESSFULLY!")
+    print("WORLD 1 (HOUSE) EXPORTED SUCCESSFULLY!\n")
 
 
 # ==============================================================================
 # WORLD 2: SUPERMARKET.GLB
-# Exact spatial synergy with WORLD_TOUR_SCENARIOS.supermarket
+# 3 Central Gondola Aisles with 4 Tiers + Front-Right Checkout Counter + Shopping Carts
 # ==============================================================================
 def build_supermarket():
     reset_scene()
-    print("Building World: Supermarket (Spatial Synergy Pack)...")
-    add_bounds_anchor(radius=10.0)
+    print("Building World 2: Supermarket (Gondola Aisles & Checkout AAA Layout)...")
+    add_bounds_anchor(radius_x=8.0, radius_y=7.0)
 
-    # 1. Cash_Register on checkout counter (Three.js: [3.2, 1.08, 2.8] -> Blender: (3.2, -2.8, 1.08))
-    x, y, z = 3.2, -2.8, 1.08
-    cr_drawer = create_box("cr_dw", (x, y, z + 0.06), (0.42, 0.40, 0.12), mat_steel(), bevel=0.01)
-    cr_body = create_box("cr_bd", (x, y + 0.05, z + 0.18), (0.34, 0.26, 0.14), mat_steel(), bevel=0.01)
-    cr_screen = create_box("cr_sc", (x, y - 0.06, z + 0.30), (0.28, 0.02, 0.18), mat_steel(), rotation=(math.radians(25), 0, 0), bevel=0.005)
-    cr_disp = create_box("cr_ds", (x, y - 0.07, z + 0.30), (0.25, 0.005, 0.15), mat_screen((0.1, 0.9, 0.4, 1.0), 3.0, "POS_UI"), rotation=(math.radians(25), 0, 0))
-    cr_prt = create_box("cr_pr", (x + 0.12, y + 0.08, z + 0.26), (0.08, 0.08, 0.04), mat_dark_walnut())
-    cr_paper = create_box("cr_pp", (x + 0.12, y + 0.08, z + 0.30), (0.06, 0.002, 0.06), mat_porcelain())
-    join_as_named_object([cr_drawer, cr_body, cr_screen, cr_disp, cr_prt, cr_paper], "Cash_Register")
+    # 1. Base Room (16m x 14m, North wall at Y=6.0, West wall at X=-7.0, polished commercial tile floor)
+    build_isometric_room(
+        "Supermarket",
+        floor_size=(16.0, 14.0),
+        floor_mat=mat_commercial_tile(),
+        wall_mat=get_material("Market_WallMat", base_color=(0.93, 0.94, 0.96, 1.0), roughness=0.5),
+        baseboard_mat=mat_steel(),
+        north_y=6.0,
+        west_x=-7.0,
+        wall_height=3.6,
+        has_window=True,
+        window_pos=(-2.0, 6.0, 2.2),
+        window_size=(4.0, 1.6)
+    )
 
-    # 2. Barcode_Scanner on checkout counter (Three.js: [2.1, 1.08, 3.0] -> Blender: (2.1, -3.0, 1.08))
-    x, y, z = 2.1, -3.0, 1.08
-    bs_cradle = create_box("bs_c", (x, y, z + 0.03), (0.12, 0.14, 0.06), mat_dark_walnut(), bevel=0.006)
-    bs_head = create_box("bs_h", (x, y - 0.02, z + 0.14), (0.065, 0.11, 0.06), mat_steel(), rotation=(math.radians(30), 0, 0), bevel=0.008)
-    bs_lens = create_box("bs_l", (x, y - 0.075, z + 0.165), (0.05, 0.005, 0.04), mat_screen((1.0, 0.1, 0.1, 1.0), 2.5, "Laser_Red"), rotation=(math.radians(30), 0, 0))
-    bs_grip = create_cylinder("bs_g", (x, y + 0.02, z + 0.08), 0.018, 0.10, mat_dark_walnut(), rotation=(math.radians(-20), 0, 0))
-    join_as_named_object([bs_cradle, bs_head, bs_lens, bs_grip], "Barcode_Scanner")
+    # Helper: build a realistic double-sided commercial supermarket gondola
+    def create_gondola(name, center_x, center_y):
+        g_parts = []
+        # Main uprights & backpanel
+        bp = create_box(f"{name}_bp", (center_x, center_y, 0.95), (0.08, 4.2, 1.90), mat_steel())
+        base_l = create_box(f"{name}_bsl", (center_x - 0.35, center_y, 0.16), (0.60, 4.2, 0.32), mat_steel())
+        base_r = create_box(f"{name}_bsr", (center_x + 0.35, center_y, 0.16), (0.60, 4.2, 0.32), mat_steel())
+        g_parts.extend([bp, base_l, base_r])
+        # 3 upper shelf levels: Z = 0.80, 1.25, 1.70
+        for sz in [0.80, 1.25, 1.70]:
+            sl = create_box(f"{name}_sl_{sz}", (center_x - 0.32, center_y, sz - 0.02), (0.55, 4.2, 0.04), mat_steel())
+            sr = create_box(f"{name}_sr_{sz}", (center_x + 0.32, center_y, sz - 0.02), (0.55, 4.2, 0.04), mat_steel())
+            g_parts.extend([sl, sr])
+        return join_as_named_object(g_parts, name)
 
-    # 3. Card_Reader on checkout counter (Three.js: [3.4, 1.15, 2.4] -> Blender: (3.4, -2.4, 1.15))
-    x, y, z = 3.4, -2.4, 1.15
-    ct_stand = create_cylinder("ct_st", (x, y, z + 0.05), 0.022, 0.10, mat_steel())
-    ct_body = create_box("ct_b", (x, y, z + 0.13), (0.11, 0.18, 0.045), mat_dark_walnut(), rotation=(math.radians(35), 0, 0), bevel=0.006)
-    ct_scr = create_box("ct_sc", (x, y - 0.02, z + 0.16), (0.085, 0.06, 0.005), mat_screen((0.2, 0.7, 1.0, 1.0), 2.5, "POS_Pay"), rotation=(math.radians(35), 0, 0))
-    ct_pad = create_box("ct_pd", (x, y + 0.04, z + 0.12), (0.085, 0.07, 0.005), mat_steel(), rotation=(math.radians(35), 0, 0))
-    join_as_named_object([ct_stand, ct_body, ct_scr, ct_pad], "Card_Reader")
+    # 3 Gondolas at X = -4.0, -1.0, +2.0, Y = +1.0
+    g1 = create_gondola("Gondola_Aisle_1", -4.0, 1.0)
+    g2 = create_gondola("Gondola_Aisle_2", -1.0, 1.0)
+    g3 = create_gondola("Gondola_Aisle_3", 2.0, 1.0)
+    join_as_named_object([g1, g2, g3], "Gondola_Aisle")
 
-    # 4. Shopping_Cart near checkout (Three.js: [-2.8, 0, 3.2] -> Blender: (-2.8, -3.2, 0))
-    x, y, z = -2.8, -3.2, 0
-    sc_parts = []
-    # Frame & Wheels
-    sc_frame = create_box("sc_fr", (x, y, z + 0.18), (0.54, 0.72, 0.05), mat_steel(), bevel=0.01)
-    sc_parts.append(sc_frame)
-    for wx in [-0.22, 0.22]:
-        for wy in [-0.28, 0.28]:
-            wh = create_cylinder(f"sc_w_{wx}_{wy}", (x + wx, y + wy, z + 0.06), 0.055, 0.025, mat_dark_walnut(), rotation=(0, math.radians(90), 0))
-            sc_parts.append(wh)
-    # Wire basket
-    b_bot = create_box("sc_bb", (x, y, z + 0.42), (0.52, 0.70, 0.02), mat_chrome())
-    b_f = create_box("sc_bf", (x, y + 0.35, z + 0.65), (0.52, 0.02, 0.46), mat_chrome())
-    b_b = create_box("sc_bk", (x, y - 0.35, z + 0.65), (0.52, 0.02, 0.46), mat_chrome())
-    b_l = create_box("sc_bl", (x - 0.26, y, z + 0.65), (0.02, 0.70, 0.46), mat_chrome())
-    b_r = create_box("sc_br", (x + 0.26, y, z + 0.65), (0.02, 0.70, 0.46), mat_chrome())
-    handle = create_cylinder("sc_h", (x, y - 0.42, z + 0.92), 0.018, 0.54, mat_velvet_red(), rotation=(0, math.radians(90), 0))
-    sc_parts.extend([b_bot, b_f, b_b, b_l, b_r, handle])
-    join_as_named_object(sc_parts, "Shopping_Cart")
+    # --- GONDOLA 1 (X = -4.0): DESAYUNOS Y PANADERÍA ---
+    # Cereal_Box (shelf tier Z = 1.25m)
+    c_boxes = []
+    c_colors = [
+        ("Cereal_Honey", (0.95, 0.65, 0.12, 1.0)),
+        ("Cereal_Choco", (0.35, 0.18, 0.10, 1.0)),
+        ("Cereal_Blueberry", (0.15, 0.45, 0.85, 1.0))
+    ]
+    for i, (cname, col) in enumerate(c_colors):
+        b = create_box(f"cb_{i}", (0, 0, 0.15), (0.16, 0.08, 0.28), get_material(cname, col, roughness=0.4), bevel=0.005)
+        top = create_box(f"cbt_{i}", (0, 0, 0.295), (0.156, 0.076, 0.01), mat_porcelain())
+        c_boxes.extend([b, top])
+    cb = join_as_named_object(c_boxes, "Cereal_Box")
+    place_on_surface(cb, -3.8, 1.8, 1.25)
 
-    # 5. Cereal_Box on grocery shelf (Three.js: [1.8, 1.0, -2.2] -> Blender: (1.8, 2.2, 1.0))
-    x, y, z = 1.8, 2.2, 1.0
-    cb_box = create_box("cb_bx", (x, y, z + 0.16), (0.18, 0.07, 0.28), get_material("Cereal_GoldenFlakes", (0.95, 0.65, 0.12, 1.0), roughness=0.4), bevel=0.006)
-    cb_top = create_box("cb_tp", (x, y, z + 0.305), (0.176, 0.066, 0.01), mat_porcelain())
-    join_as_named_object([cb_box, cb_top], "Cereal_Box")
+    # Sliced_Bread (shelf tier Z = 0.80m)
+    br_parts = []
+    for i in range(2):
+        b = create_box(f"br_{i}", (0, (i - 0.5) * 0.30, 0.08), (0.22, 0.12, 0.13), get_material("Bread_Bag", (0.88, 0.72, 0.48, 1.0), roughness=0.5), bevel=0.018)
+        clip = create_box(f"brc_{i}", (0.12, (i - 0.5) * 0.30, 0.08), (0.015, 0.03, 0.03), mat_screen((1.0, 0.2, 0.2, 1.0), 1.0, "Clip_Red"))
+        br_parts.extend([b, clip])
+    bread = join_as_named_object(br_parts, "Sliced_Bread")
+    place_on_surface(bread, -3.8, 0.4, 0.80)
 
-    # 6. Canned_Tuna on shelf (Three.js: [-0.5, 1.0, -2.5] -> Blender: (-0.5, 2.5, 1.0))
-    x, y, z = -0.5, 2.5, 1.0
-    cn1 = create_cylinder("cn_1", (x, y, z + 0.035), 0.055, 0.06, mat_steel())
-    cn2 = create_cylinder("cn_2", (x, y, z + 0.095), 0.055, 0.06, mat_steel())
-    lbl1 = create_cylinder("cn_lb1", (x, y, z + 0.035), 0.056, 0.045, get_material("Tuna_Label", (0.1, 0.4, 0.85, 1.0), roughness=0.5))
-    lbl2 = create_cylinder("cn_lb2", (x, y, z + 0.095), 0.056, 0.045, get_material("Tuna_Label", (0.1, 0.4, 0.85, 1.0), roughness=0.5))
-    join_as_named_object([cn1, cn2, lbl1, lbl2], "Canned_Tuna")
-
-    # 7. Mayonnaise on shelf (Three.js: [-0.2, 1.15, -2.2] -> Blender: (-0.2, 2.2, 1.15))
-    x, y, z = -0.2, 2.2, 1.15
-    my_jar = create_cylinder("my_j", (x, y, z + 0.07), 0.048, 0.12, mat_glass())
-    my_fill = create_cylinder("my_fl", (x, y, z + 0.06), 0.044, 0.10, get_material("Mayo_Cream", (0.96, 0.94, 0.85, 1.0), roughness=0.3))
-    my_lid = create_cylinder("my_ld", (x, y, z + 0.135), 0.046, 0.02, mat_gold())
-    join_as_named_object([my_jar, my_fill, my_lid], "Mayonnaise")
-
-    # 8. Sliced_Bread on bakery counter (Three.js: [-1.5, 1.08, -3.9] -> Blender: (-1.5, 3.9, 1.08))
-    x, y, z = -1.5, 3.9, 1.08
-    br_loaf = create_box("br_lf", (x, y, z + 0.07), (0.24, 0.11, 0.12), get_material("Bread_Bag", (0.88, 0.72, 0.48, 1.0), roughness=0.5), bevel=0.02)
-    br_clip = create_box("br_cl", (x + 0.13, y, z + 0.07), (0.015, 0.03, 0.03), mat_screen((1.0, 0.2, 0.2, 1.0), 1.0, "Bread_Clip"))
-    join_as_named_object([br_loaf, br_clip], "Sliced_Bread")
-
-    # 9. Milk_Carton in dairy (Three.js: [1.7, 1.15, -4.1] -> Blender: (1.7, 4.1, 1.15))
-    x, y, z = 1.7, 4.1, 1.15
-    mk_body = create_box("mk_b", (x, y, z + 0.10), (0.08, 0.08, 0.18), mat_porcelain(), bevel=0.005)
-    mk_roof = create_box("mk_r", (x, y, z + 0.21), (0.078, 0.078, 0.04), get_material("Dairy_Blue", (0.1, 0.5, 0.9, 1.0), roughness=0.4), bevel=0.01)
-    mk_cap = create_cylinder("mk_c", (x + 0.02, y + 0.02, z + 0.235), 0.014, 0.015, mat_porcelain())
-    join_as_named_object([mk_body, mk_roof, mk_cap], "Milk_Carton")
-
-    # 10. Table_Cream in dairy (Three.js: [2.2, 1.15, -4.1] -> Blender: (2.2, 4.1, 1.15))
-    x, y, z = 2.2, 4.1, 1.15
-    tc_bottle = create_cylinder("tc_b", (x, y, z + 0.06), 0.038, 0.11, mat_glass())
-    tc_cream = create_cylinder("tc_cr", (x, y, z + 0.05), 0.035, 0.09, get_material("Cream_Rich", (0.98, 0.97, 0.92, 1.0), roughness=0.25))
-    tc_cap = create_cylinder("tc_c", (x, y, z + 0.12), 0.026, 0.018, mat_gold())
-    join_as_named_object([tc_bottle, tc_cream, tc_cap], "Table_Cream")
-
-    # 11. Egg_Carton in dairy (Three.js: [2.6, 1.15, -4.1] -> Blender: (2.6, 4.1, 1.15))
-    x, y, z = 2.6, 4.1, 1.15
-    eg_carton = create_box("eg_c", (x, y, z + 0.035), (0.24, 0.15, 0.06), get_material("Molded_Pulp", (0.65, 0.60, 0.52, 1.0), roughness=0.9), bevel=0.008)
+    # Egg_Carton (shelf tier Z = 0.80m)
+    eg_carton = create_box("eg_c", (0, 0, 0.035), (0.26, 0.16, 0.07), get_material("Egg_Pulp", (0.65, 0.60, 0.52, 1.0), roughness=0.9), bevel=0.008)
     eggs = []
     for ex in [-0.08, 0.0, 0.08]:
         for ey in [-0.04, 0.04]:
-            egg = create_sphere(f"eg_{ex}_{ey}", (x + ex, y + ey, z + 0.065), 0.022, get_material("Egg_Brown", (0.82, 0.62, 0.44, 1.0), roughness=0.6), scale=(1.0, 1.0, 1.25))
+            egg = create_sphere(f"eg_{ex}_{ey}", (ex, ey, 0.07), 0.023, get_material("Egg_Brown", (0.82, 0.62, 0.44, 1.0), roughness=0.6), scale=(1.0, 1.0, 1.25))
             eggs.append(egg)
-    join_as_named_object([eg_carton] + eggs, "Egg_Carton")
+    eg = join_as_named_object([eg_carton] + eggs, "Egg_Carton")
+    place_on_surface(eg, -3.8, -0.6, 0.80)
 
-    # 12. Ketchup on shelf (Three.js: [0.3, 1.15, -2.2] -> Blender: (0.3, 2.2, 1.15))
-    x, y, z = 0.3, 2.2, 1.15
-    kt_body = create_cylinder("kt_b", (x, y, z + 0.09), 0.036, 0.16, get_material("Ketchup_Red", (0.85, 0.08, 0.08, 1.0), roughness=0.35))
-    kt_cap = create_cylinder("kt_c", (x, y, z + 0.185), 0.016, 0.03, mat_porcelain())
-    join_as_named_object([kt_body, kt_cap], "Ketchup")
+    # Milk_Carton (shelf tier Z = 0.35m)
+    mk_parts = []
+    for i in range(3):
+        mk_b = create_box(f"mk_b_{i}", (0, (i - 1) * 0.16, 0.10), (0.09, 0.09, 0.20), mat_porcelain(), bevel=0.006)
+        mk_r = create_box(f"mk_r_{i}", (0, (i - 1) * 0.16, 0.21), (0.088, 0.088, 0.04), get_material("Dairy_Blue", (0.1, 0.5, 0.9, 1.0), roughness=0.4), bevel=0.01)
+        mk_parts.extend([mk_b, mk_r])
+    milk = join_as_named_object(mk_parts, "Milk_Carton")
+    place_on_surface(milk, -3.8, 1.0, 0.35)
 
-    # 13. Cooking_Oil on shelf (Three.js: [0.9, 1.15, -2.2] -> Blender: (0.9, 2.2, 1.15))
-    x, y, z = 0.9, 2.2, 1.15
-    oil_bot = create_cylinder("oil_b", (x, y, z + 0.11), 0.038, 0.20, mat_glass())
-    oil_liq = create_cylinder("oil_lq", (x, y, z + 0.09), 0.035, 0.16, get_material("Golden_Oil", (0.95, 0.82, 0.15, 1.0), roughness=0.15, transmission=0.6))
-    oil_cap = create_cylinder("oil_c", (x, y, z + 0.22), 0.018, 0.025, get_material("Cap_Green", (0.1, 0.6, 0.2, 1.0), roughness=0.4))
-    join_as_named_object([oil_bot, oil_liq, oil_cap], "Cooking_Oil")
+    # --- GONDOLA 2 (X = -1.0): ABARROTES Y CONDIMENTOS ---
+    # Mayonnaise (shelf tier Z = 1.25m)
+    my_parts = []
+    for i in range(2):
+        my_j = create_cylinder(f"my_j_{i}", (0, (i - 0.5) * 0.18, 0.07), 0.05, 0.13, mat_glass())
+        my_fl = create_cylinder(f"my_fl_{i}", (0, (i - 0.5) * 0.18, 0.06), 0.046, 0.11, get_material("Mayo_Cream", (0.96, 0.94, 0.85, 1.0), roughness=0.3))
+        my_ld = create_cylinder(f"my_ld_{i}", (0, (i - 0.5) * 0.18, 0.14), 0.048, 0.02, mat_gold())
+        my_parts.extend([my_j, my_fl, my_ld])
+    mayo = join_as_named_object(my_parts, "Mayonnaise")
+    place_on_surface(mayo, -0.8, 1.6, 1.25)
+
+    # Table_Cream (shelf tier Z = 1.25m)
+    tc_parts = []
+    for i in range(2):
+        tc_b = create_cylinder(f"tc_b_{i}", (0, (i - 0.5) * 0.16, 0.06), 0.04, 0.12, mat_glass())
+        tc_cr = create_cylinder(f"tc_cr_{i}", (0, (i - 0.5) * 0.16, 0.05), 0.037, 0.10, get_material("Cream_Rich", (0.98, 0.97, 0.92, 1.0), roughness=0.25))
+        tc_cp = create_cylinder(f"tc_cp_{i}", (0, (i - 0.5) * 0.16, 0.125), 0.028, 0.018, mat_gold())
+        tc_parts.extend([tc_b, tc_cr, tc_cp])
+    cream = join_as_named_object(tc_parts, "Table_Cream")
+    place_on_surface(cream, -0.8, 0.6, 1.25)
+
+    # Ketchup (shelf tier Z = 0.80m)
+    kt_parts = []
+    for i in range(2):
+        kt_b = create_cylinder(f"kt_b_{i}", (0, (i - 0.5) * 0.15, 0.09), 0.038, 0.17, get_material("Ketchup_Red", (0.85, 0.08, 0.08, 1.0), roughness=0.35))
+        kt_cp = create_cylinder(f"kt_cp_{i}", (0, (i - 0.5) * 0.15, 0.185), 0.017, 0.03, mat_porcelain())
+        kt_parts.extend([kt_b, kt_cp])
+    ketchup = join_as_named_object(kt_parts, "Ketchup")
+    place_on_surface(ketchup, -0.8, 1.6, 0.80)
+
+    # Cooking_Oil (shelf tier Z = 0.80m)
+    oil_parts = []
+    for i in range(2):
+        oil_b = create_cylinder(f"oil_b_{i}", (0, (i - 0.5) * 0.16, 0.11), 0.04, 0.21, mat_glass())
+        oil_lq = create_cylinder(f"oil_lq_{i}", (0, (i - 0.5) * 0.16, 0.09), 0.037, 0.17, get_material("Golden_Oil", (0.95, 0.82, 0.15, 1.0), roughness=0.15, transmission=0.6))
+        oil_cp = create_cylinder(f"oil_cp_{i}", (0, (i - 0.5) * 0.16, 0.225), 0.019, 0.025, get_material("Cap_Green", (0.1, 0.6, 0.2, 1.0), roughness=0.4))
+        oil_parts.extend([oil_b, oil_lq, oil_cp])
+    oil = join_as_named_object(oil_parts, "Cooking_Oil")
+    place_on_surface(oil, -0.8, 0.6, 0.80)
+
+    # Canned_Tuna (shelf tier Z = 0.35m)
+    tuna_parts = []
+    for i in range(3):
+        cn1 = create_cylinder(f"cn1_{i}", (0, (i - 1) * 0.16, 0.035), 0.055, 0.06, mat_steel())
+        cn2 = create_cylinder(f"cn2_{i}", (0, (i - 1) * 0.16, 0.095), 0.055, 0.06, mat_steel())
+        lbl = create_cylinder(f"cnl_{i}", (0, (i - 1) * 0.16, 0.065), 0.056, 0.10, get_material("Tuna_Label", (0.1, 0.4, 0.85, 1.0), roughness=0.5))
+        tuna_parts.extend([cn1, cn2, lbl])
+    tuna = join_as_named_object(tuna_parts, "Canned_Tuna")
+    place_on_surface(tuna, -0.8, 1.0, 0.35)
+
+    # --- ZONA DE CAJAS (X = +4.8, Y = -2.2, Z = 0): CHECKOUT COUNTER ---
+    # Checkout_Counter (Height Z = 0.92m)
+    cc_base = create_box("cc_bs", (0, 0, 0.43), (1.40, 2.60, 0.86), mat_steel())
+    cc_belt = create_box("cc_bl", (-0.15, 0, 0.89), (0.75, 2.50, 0.04), mat_dark_walnut())
+    cc_deck = create_box("cc_dk", (0.40, 0, 0.90), (0.45, 2.60, 0.06), mat_steel())
+    checkout = join_as_named_object([cc_base, cc_belt, cc_deck], "Checkout_Counter")
+    place_on_surface(checkout, 4.8, -2.2, 0.0)
+
+    # Cash_Register (on counter Z = 0.92m, at X=4.8, Y=-1.4)
+    cr_drawer = create_box("cr_dw", (0, 0, 0.06), (0.42, 0.40, 0.12), mat_steel(), bevel=0.01)
+    cr_body = create_box("cr_bd", (0, 0.05, 0.18), (0.34, 0.26, 0.14), mat_steel(), bevel=0.01)
+    cr_screen = create_box("cr_sc", (0, -0.06, 0.30), (0.28, 0.02, 0.18), mat_steel(), rotation=(math.radians(25), 0, 0), bevel=0.005)
+    cr_disp = create_box("cr_ds", (0, -0.07, 0.30), (0.25, 0.005, 0.15), mat_screen((0.1, 0.9, 0.4, 1.0), 3.0, "POS_UI"), rotation=(math.radians(25), 0, 0))
+    cr_prt = create_box("cr_pr", (0.12, 0.08, 0.26), (0.08, 0.08, 0.04), mat_dark_walnut())
+    cr = join_as_named_object([cr_drawer, cr_body, cr_screen, cr_disp, cr_prt], "Cash_Register")
+    place_on_surface(cr, 4.8, -1.4, 0.92)
+
+    # Barcode_Scanner (on counter Z = 0.92m, at X=4.8, Y=-2.2)
+    bs_cradle = create_box("bs_c", (0, 0, 0.03), (0.12, 0.14, 0.06), mat_dark_walnut(), bevel=0.006)
+    bs_head = create_box("bs_h", (0, -0.02, 0.14), (0.065, 0.11, 0.06), mat_steel(), rotation=(math.radians(30), 0, 0), bevel=0.008)
+    bs_lens = create_box("bs_l", (0, -0.075, 0.165), (0.05, 0.005, 0.04), mat_screen((1.0, 0.1, 0.1, 1.0), 2.5, "Laser_Red"), rotation=(math.radians(30), 0, 0))
+    bs_grip = create_cylinder("bs_g", (0, 0.02, 0.08), 0.018, 0.10, mat_dark_walnut(), rotation=(math.radians(-20), 0, 0))
+    bs = join_as_named_object([bs_cradle, bs_head, bs_lens, bs_grip], "Barcode_Scanner")
+    place_on_surface(bs, 4.8, -2.2, 0.92)
+
+    # Card_Reader (on counter Z = 0.92m, at X=4.8, Y=-2.9)
+    ct_stand = create_cylinder("ct_st", (0, 0, 0.05), 0.022, 0.10, mat_steel())
+    ct_body = create_box("ct_b", (0, 0, 0.13), (0.11, 0.18, 0.045), mat_dark_walnut(), rotation=(math.radians(35), 0, 0), bevel=0.006)
+    ct_scr = create_box("ct_sc", (0, -0.02, 0.16), (0.085, 0.06, 0.005), mat_screen((0.2, 0.7, 1.0, 1.0), 2.5, "POS_Pay"), rotation=(math.radians(35), 0, 0))
+    ct_pad = create_box("ct_pd", (0, 0.04, 0.12), (0.085, 0.07, 0.005), mat_steel(), rotation=(math.radians(35), 0, 0))
+    cr_reader = join_as_named_object([ct_stand, ct_body, ct_scr, ct_pad], "Card_Reader")
+    place_on_surface(cr_reader, 4.8, -2.9, 0.92)
+
+    # Shopping_Cart (parked in entrance lane X=-3.5 and -4.5, Y=-3.8)
+    def create_single_cart(name, cx, cy):
+        parts = []
+        base = create_box(f"{name}_fr", (cx, cy, 0.18), (0.54, 0.72, 0.05), mat_steel())
+        parts.append(base)
+        for wx in [-0.22, 0.22]:
+            for wy in [-0.28, 0.28]:
+                wh = create_cylinder(f"{name}_w_{wx}_{wy}", (cx + wx, cy + wy, 0.06), 0.055, 0.025, mat_dark_walnut(), rotation=(0, math.radians(90), 0))
+                parts.append(wh)
+        b_bot = create_box(f"{name}_bb", (cx, cy, 0.42), (0.52, 0.70, 0.02), mat_chrome())
+        b_f = create_box(f"{name}_bf", (cx, cy + 0.35, 0.65), (0.52, 0.02, 0.46), mat_chrome())
+        b_b = create_box(f"{name}_bk", (cx, cy - 0.35, 0.65), (0.52, 0.02, 0.46), mat_chrome())
+        b_l = create_box(f"{name}_bl", (cx - 0.26, cy, 0.65), (0.02, 0.70, 0.46), mat_chrome())
+        b_r = create_box(f"{name}_br", (cx + 0.26, cy, 0.65), (0.02, 0.70, 0.46), mat_chrome())
+        hnd = create_cylinder(f"{name}_h", (cx, cy - 0.42, 0.92), 0.018, 0.54, mat_velvet_red(), rotation=(0, math.radians(90), 0))
+        parts.extend([b_bot, b_f, b_b, b_l, b_r, hnd])
+        return join_as_named_object(parts, name)
+
+    sc1 = create_single_cart("Cart_1", -3.5, -3.8)
+    sc2 = create_single_cart("Cart_2", -4.5, -3.8)
+    join_as_named_object([sc1, sc2], "Shopping_Cart")
 
     export_glb(os.path.join(OUTPUT_WORLDS_DIR, "supermarket.glb"))
-    print("WORLD 2 (SUPERMARKET) BUILT SUCCESSFULLY!")
+    print("WORLD 2 (SUPERMARKET) EXPORTED SUCCESSFULLY!\n")
 
 
 # ==============================================================================
 # WORLD 3: RESTAURANT.GLB
-# Exact spatial synergy with WORLD_TOUR_SCENARIOS.restaurant
+# Chef Bar at Back + 4 Round Clothed Tables + Tableware strictly ON tables (Z=0.78m)
 # ==============================================================================
 def build_restaurant():
     reset_scene()
-    print("Building World: Restaurant & Gastronomy (Spatial Synergy Pack)...")
-    add_bounds_anchor(radius=10.0)
+    print("Building World 3: Gourmet Bistro & Restaurant (Zero Hot-Pink, Strict Tabletop Placement)...")
+    add_bounds_anchor(radius_x=8.0, radius_y=7.0)
 
-    # 1. Main_Course on dining table (Three.js: [-0.4, 0.98, 0.65] -> Blender: (-0.4, -0.65, 0.98))
-    x, y, z = -0.4, -0.65, 0.98
-    pl_dish = create_cylinder("mc_pl", (x, y, z + 0.012), 0.16, 0.022, mat_porcelain())
-    pl_steak = create_box("mc_stk", (x, y, z + 0.032), (0.14, 0.10, 0.024), get_material("Grilled_Steak", (0.28, 0.12, 0.08, 1.0), roughness=0.6), bevel=0.008)
-    pl_butter = create_box("mc_btr", (x, y, z + 0.048), (0.028, 0.028, 0.014), get_material("Herb_Butter", (0.92, 0.92, 0.50, 1.0), roughness=0.3))
-    pl_asp1 = create_cylinder("mc_as1", (x - 0.04, y - 0.07, z + 0.028), 0.007, 0.12, get_material("Asparagus_Green", (0.15, 0.45, 0.12, 1.0), roughness=0.5), rotation=(0, math.radians(90), 0))
-    pl_asp2 = create_cylinder("mc_as2", (x + 0.04, y - 0.07, z + 0.028), 0.007, 0.12, get_material("Asparagus_Green", (0.15, 0.45, 0.12, 1.0), roughness=0.5), rotation=(0, math.radians(90), 0))
-    join_as_named_object([pl_dish, pl_steak, pl_butter, pl_asp1, pl_asp2], "Main_Course")
+    # 1. Base Room (16m x 14m, North wall at Y=6.0, West wall at X=-7.0, Herringbone parquet & dark burgundy rug #4a1525)
+    build_isometric_room(
+        "Restaurant",
+        floor_size=(16.0, 14.0),
+        floor_mat=mat_parquet(),
+        wall_mat=get_material("Bistro_WallMat", base_color=(0.94, 0.92, 0.89, 1.0), roughness=0.55),
+        baseboard_mat=mat_dark_walnut(),
+        north_y=6.0,
+        west_x=-7.0,
+        wall_height=3.6,
+        has_window=True,
+        window_pos=(0, 6.0, 2.0),
+        window_size=(3.6, 1.8),
+        rug_config=(0, -0.8, 9.6, 7.6, mat_burgundy_rug(), False)
+    )
 
-    # 2. Fork on table (Three.js: [-0.82, 0.98, 0.85] -> Blender: (-0.82, -0.85, 0.98))
-    x, y, z = -0.82, -0.85, 0.98
-    fk_handle = create_cylinder("fk_h", (x, y, z + 0.006), 0.006, 0.16, mat_chrome(), rotation=(math.radians(90), 0, 0))
-    fk_tines = create_box("fk_t", (x, y + 0.09, z + 0.006), (0.024, 0.04, 0.003), mat_chrome())
-    join_as_named_object([fk_handle, fk_tines], "Fork")
+    # 2. Barra de Chef al Fondo (Bar_Credenza at X=0, Y=+4.5, Z=0, height 0.95m)
+    bc_base = create_box("bc_b", (0, 4.5, 0.44), (5.2, 0.90, 0.88), mat_dark_walnut())
+    bc_top = create_box("bc_t", (0, 4.5, 0.92), (5.3, 0.95, 0.06), mat_black_marble())
+    join_as_named_object([bc_base, bc_top], "Bar_Credenza")
 
-    # 3. Knife on table (Three.js: [-0.6, 0.98, 0.75] -> Blender: (-0.6, -0.75, 0.98))
-    x, y, z = -0.6, -0.75, 0.98
-    kn_handle = create_cylinder("kn_h", (x, y, z + 0.006), 0.007, 0.14, mat_dark_walnut(), rotation=(math.radians(90), 0, 0))
-    kn_blade = create_box("kn_b", (x, y + 0.09, z + 0.008), (0.003, 0.10, 0.018), mat_steel())
-    join_as_named_object([kn_handle, kn_blade], "Knife")
+    # Espresso_Machine (on bar Z = 0.95m, at X=-0.8, Y=+4.5)
+    em_body = create_box("em_b", (0, 0, 0.26), (0.68, 0.48, 0.50), mat_steel())
+    em_rail = create_box("em_rl", (0, 0, 0.52), (0.64, 0.44, 0.03), mat_chrome(), bevel=0.005)
+    em_c1 = create_cylinder("em_c1", (-0.16, 0, 0.56), 0.035, 0.05, mat_porcelain())
+    em_c2 = create_cylinder("em_c2", (0.16, 0, 0.56), 0.035, 0.05, mat_porcelain())
+    em_g1 = create_cylinder("em_g1", (-0.14, -0.26, 0.22), 0.038, 0.06, mat_chrome())
+    em_g2 = create_cylinder("em_g2", (0.14, -0.26, 0.22), 0.038, 0.06, mat_chrome())
+    em_pf1 = create_cylinder("em_pf1", (-0.14, -0.36, 0.20), 0.014, 0.15, mat_dark_walnut(), rotation=(math.radians(90), 0, 0))
+    em_pf2 = create_cylinder("em_pf2", (0.14, -0.36, 0.20), 0.014, 0.15, mat_dark_walnut(), rotation=(math.radians(90), 0, 0))
+    em_drip = create_box("em_dp", (0, -0.24, 0.05), (0.64, 0.20, 0.04), mat_steel())
+    em_gauge = create_cylinder("em_gg", (0, -0.25, 0.38), 0.032, 0.02, mat_gold(), rotation=(math.radians(90), 0, 0))
+    espresso = join_as_named_object([em_body, em_rail, em_c1, em_c2, em_g1, em_g2, em_pf1, em_pf2, em_drip, em_gauge], "Espresso_Machine")
+    place_on_surface(espresso, -0.8, 4.5, 0.95)
 
-    # 4. Spoon on table (Three.js: [0.82, 0.98, 0.85] -> Blender: (0.82, -0.85, 0.98))
-    x, y, z = 0.82, -0.85, 0.98
-    sp_handle = create_cylinder("sp_h", (x, y, z + 0.006), 0.006, 0.15, mat_chrome(), rotation=(math.radians(90), 0, 0))
-    sp_bowl = create_sphere("sp_b", (x, y + 0.09, z + 0.006), 0.018, mat_chrome(), scale=(1.2, 1.6, 0.4))
-    join_as_named_object([sp_handle, sp_bowl], "Spoon")
+    # Olive_Oil (on bar Z = 0.95m, at X=+0.8, Y=+4.5)
+    oo_flask = create_sphere("oo_f", (0, 0, 0.06), 0.042, mat_glass(), scale=(1.0, 1.0, 1.3))
+    oo_neck = create_cylinder("oo_n", (0, 0, 0.13), 0.014, 0.06, mat_glass())
+    oo_spout = create_cylinder("oo_s", (0, -0.01, 0.17), 0.005, 0.04, mat_steel(), rotation=(math.radians(35), 0, 0))
+    olive_oil = join_as_named_object([oo_flask, oo_neck, oo_spout], "Olive_Oil")
+    place_on_surface(olive_oil, 0.8, 4.5, 0.95)
 
-    # 5. Wine_Glass on table (Three.js: [0.28, 1.02, 1.18] -> Blender: (0.28, -1.18, 0.98))
-    x, y, z = 0.28, -1.18, 0.98
-    wg_base = create_cylinder("wg_bs", (x, y, z + 0.005), 0.042, 0.008, mat_glass())
-    wg_stem = create_cylinder("wg_st", (x, y, z + 0.08), 0.005, 0.15, mat_glass())
-    wg_bowl = create_sphere("wg_bw", (x, y, z + 0.19), 0.048, mat_glass(), scale=(1.0, 1.0, 1.5))
-    wg_wine = create_sphere("wg_wn", (x, y, z + 0.17), 0.042, mat_velvet_red(), scale=(0.95, 0.95, 1.1))
-    join_as_named_object([wg_base, wg_stem, wg_bowl, wg_wine], "Wine_Glass")
+    # 3. 4 Round Clothed Tables (Dining_Table at (-3.2, -2.5), (+3.2, -2.5), (-3.2, +0.8), (+3.2, +0.8))
+    table_coords = [(-3.2, -2.5), (3.2, -2.5), (-3.2, 0.8), (3.2, 0.8)]
+    table_objs = []
+    for i, (tx, ty) in enumerate(table_coords):
+        tb_leg = create_cylinder(f"dt_l_{i}", (tx, ty, 0.38), 0.06, 0.74, mat_dark_walnut())
+        tb_base = create_cylinder(f"dt_b_{i}", (tx, ty, 0.02), 0.38, 0.04, mat_steel())
+        tb_top = create_cylinder(f"dt_t_{i}", (tx, ty, 0.76), 0.75, 0.04, mat_warm_wood())
+        tb_cloth = create_cylinder(f"dt_c_{i}", (tx, ty, 0.70), 0.78, 0.16, mat_porcelain())
+        table_objs.extend([tb_leg, tb_base, tb_top, tb_cloth])
+        # 2 chairs per table
+        for cy in [-0.85, 0.85]:
+            ch_s = create_box(f"dt_ch_s_{i}_{cy}", (tx, ty + cy, 0.44), (0.44, 0.44, 0.06), mat_burgundy_rug())
+            ch_b = create_box(f"dt_ch_b_{i}_{cy}", (tx, ty + cy + (0.20 if cy > 0 else -0.20), 0.72), (0.44, 0.05, 0.52), mat_burgundy_rug())
+            ch_l = create_cylinder(f"dt_ch_l_{i}_{cy}", (tx, ty + cy, 0.22), 0.02, 0.44, mat_dark_walnut())
+            table_objs.extend([ch_s, ch_b, ch_l])
+    join_as_named_object(table_objs, "Dining_Table")
 
-    # 6. Napkin on table (Three.js: [0.75, 0.98, 0.85] -> Blender: (0.75, -0.85, 0.98))
-    x, y, z = 0.75, -0.85, 0.98
-    npk = create_box("npk_f", (x, y, z + 0.035), (0.12, 0.12, 0.07), mat_porcelain(), bevel=0.015)
-    join_as_named_object([npk], "Napkin")
+    # --- TABLE 1 (X = -3.2, Y = -2.5): MAIN COURSE PLACE SETTING (Z = 0.78m) ---
+    # Main_Course (Plate with grilled steak and asparagus)
+    pl_dish = create_cylinder("mc_pl", (0, 0, 0.012), 0.16, 0.022, mat_porcelain())
+    pl_steak = create_box("mc_stk", (0, 0, 0.032), (0.14, 0.10, 0.024), get_material("Grilled_Steak", (0.28, 0.12, 0.08, 1.0), roughness=0.6), bevel=0.008)
+    pl_butter = create_box("mc_btr", (0, 0, 0.048), (0.028, 0.028, 0.014), get_material("Herb_Butter", (0.92, 0.92, 0.50, 1.0), roughness=0.3))
+    pl_asp1 = create_cylinder("mc_as1", (-0.04, -0.07, 0.028), 0.007, 0.12, get_material("Asparagus", (0.15, 0.45, 0.12, 1.0), roughness=0.5), rotation=(0, math.radians(90), 0))
+    pl_asp2 = create_cylinder("mc_as2", (0.04, -0.07, 0.028), 0.007, 0.12, get_material("Asparagus", (0.15, 0.45, 0.12, 1.0), roughness=0.5), rotation=(0, math.radians(90), 0))
+    main_course = join_as_named_object([pl_dish, pl_steak, pl_butter, pl_asp1, pl_asp2], "Main_Course")
+    place_on_surface(main_course, -3.2, -2.5, 0.78)
 
-    # 7. Menu on table (Three.js: [-0.55, 0.98, 1.15] -> Blender: (-0.55, -1.15, 0.98))
-    x, y, z = -0.55, -1.15, 0.98
-    mn_cover = create_box("mn_cv", (x, y, z + 0.012), (0.18, 0.26, 0.018), get_material("Menu_Leather", (0.35, 0.08, 0.10, 1.0), roughness=0.5), bevel=0.006)
-    mn_pages = create_box("mn_pg", (x, y, z + 0.015), (0.16, 0.24, 0.014), mat_porcelain())
-    mn_gold = create_box("mn_gd", (x, y, z + 0.022), (0.04, 0.04, 0.004), mat_gold())
-    join_as_named_object([mn_cover, mn_pages, mn_gold], "Menu")
+    # Fork (left of plate)
+    fk_handle = create_cylinder("fk_h", (0, 0, 0.006), 0.006, 0.16, mat_chrome(), rotation=(math.radians(90), 0, 0))
+    fk_tines = create_box("fk_t", (0, 0.09, 0.006), (0.024, 0.04, 0.003), mat_chrome())
+    fork = join_as_named_object([fk_handle, fk_tines], "Fork")
+    place_on_surface(fork, -3.42, -2.5, 0.78)
 
-    # 8. Salt_Pepper_Shakers on table (Three.js: [0, 0.98, 0.95] -> Blender: (0, -0.95, 0.98))
-    x, y, z = 0, -0.95, 0.98
-    s_jar = create_cylinder("s_j", (x - 0.035, y, z + 0.045), 0.022, 0.08, mat_glass())
-    s_lid = create_cylinder("s_l", (x - 0.035, y, z + 0.09), 0.023, 0.018, mat_steel())
-    p_jar = create_cylinder("p_j", (x + 0.035, y, z + 0.045), 0.022, 0.08, mat_glass())
-    p_lid = create_cylinder("p_l", (x + 0.035, y, z + 0.09), 0.023, 0.018, mat_dark_walnut())
-    join_as_named_object([s_jar, s_lid, p_jar, p_lid], "Salt_Pepper_Shakers")
+    # Knife (right of plate)
+    kn_handle = create_cylinder("kn_h", (0, 0, 0.006), 0.007, 0.14, mat_dark_walnut(), rotation=(math.radians(90), 0, 0))
+    kn_blade = create_box("kn_b", (0, 0.09, 0.008), (0.003, 0.10, 0.018), mat_steel())
+    knife = join_as_named_object([kn_handle, kn_blade], "Knife")
+    place_on_surface(knife, -2.98, -2.5, 0.78)
 
-    # 9. Olive_Oil on table (Three.js: [0.22, 0.98, 0.82] -> Blender: (0.22, -0.82, 0.98))
-    x, y, z = 0.22, -0.82, 0.98
-    oo_flask = create_sphere("oo_f", (x, y, z + 0.06), 0.042, mat_glass(), scale=(1.0, 1.0, 1.3))
-    oo_neck = create_cylinder("oo_n", (x, y, z + 0.13), 0.014, 0.06, mat_glass())
-    oo_spout = create_cylinder("oo_s", (x, y - 0.01, z + 0.17), 0.005, 0.04, mat_steel(), rotation=(math.radians(35), 0, 0))
-    join_as_named_object([oo_flask, oo_neck, oo_spout], "Olive_Oil")
+    # Spoon (right of knife)
+    sp_handle = create_cylinder("sp_h", (0, 0, 0.006), 0.006, 0.15, mat_chrome(), rotation=(math.radians(90), 0, 0))
+    sp_bowl = create_sphere("sp_b", (0, 0.09, 0.006), 0.018, mat_chrome(), scale=(1.2, 1.6, 0.4))
+    spoon = join_as_named_object([sp_handle, sp_bowl], "Spoon")
+    place_on_surface(spoon, -2.88, -2.5, 0.78)
 
-    # 10. Espresso_Machine on bar counter (Three.js: [3.2, 0.95, -3.8] -> Blender: (3.2, 3.8, 0.95))
-    x, y, z = 3.2, 3.8, 0.95
-    em_body = create_box("em_b", (x, y, z + 0.26), (0.68, 0.48, 0.50), mat_steel())
-    em_rail = create_box("em_rl", (x, y, z + 0.52), (0.64, 0.44, 0.03), mat_chrome(), bevel=0.005)
-    em_cup1 = create_cylinder("em_c1", (x - 0.16, y, z + 0.56), 0.035, 0.05, mat_porcelain())
-    em_cup2 = create_cylinder("em_c2", (x + 0.16, y, z + 0.56), 0.035, 0.05, mat_porcelain())
-    em_gh1 = create_cylinder("em_g1", (x - 0.14, y - 0.26, z + 0.22), 0.038, 0.06, mat_chrome())
-    em_gh2 = create_cylinder("em_g2", (x + 0.14, y - 0.26, z + 0.22), 0.038, 0.06, mat_chrome())
-    em_pf1 = create_cylinder("em_pf1", (x - 0.14, y - 0.36, z + 0.20), 0.014, 0.15, mat_dark_walnut(), rotation=(math.radians(90), 0, 0))
-    em_pf2 = create_cylinder("em_pf2", (x + 0.14, y - 0.36, z + 0.20), 0.014, 0.15, mat_dark_walnut(), rotation=(math.radians(90), 0, 0))
-    em_drip = create_box("em_dp", (x, y - 0.24, z + 0.05), (0.64, 0.20, 0.04), mat_steel())
-    em_gauge = create_cylinder("em_gg", (x, y - 0.25, z + 0.38), 0.032, 0.02, mat_gold(), rotation=(math.radians(90), 0, 0))
-    join_as_named_object([em_body, em_rail, em_cup1, em_cup2, em_gh1, em_gh2, em_pf1, em_pf2, em_drip, em_gauge], "Espresso_Machine")
+    # Wine_Glass (top right of plate)
+    wg_base = create_cylinder("wg_bs", (0, 0, 0.005), 0.042, 0.008, mat_glass())
+    wg_stem = create_cylinder("wg_st", (0, 0, 0.08), 0.005, 0.15, mat_glass())
+    wg_bowl = create_sphere("wg_bw", (0, 0, 0.19), 0.048, mat_glass(), scale=(1.0, 1.0, 1.5))
+    wg_wine = create_sphere("wg_wn", (0, 0, 0.17), 0.042, mat_velvet_red(), scale=(0.95, 0.95, 1.1))
+    wine_glass = join_as_named_object([wg_base, wg_stem, wg_bowl, wg_wine], "Wine_Glass")
+    place_on_surface(wine_glass, -3.00, -2.30, 0.78)
+
+    # Napkin (folded on left)
+    npk = create_box("npk_f", (0, 0, 0.035), (0.12, 0.12, 0.07), mat_porcelain(), bevel=0.015)
+    napkin = join_as_named_object([npk], "Napkin")
+    place_on_surface(napkin, -3.55, -2.5, 0.78)
+
+    # --- TABLE 2 (X = +3.2, Y = -2.5): MENU & CONDIMENTS (Z = 0.78m) ---
+    # Menu (open leather menu card)
+    mn_cov = create_box("mn_cv", (0, 0, 0.012), (0.24, 0.32, 0.016), get_material("Menu_Leather", (0.35, 0.08, 0.10, 1.0), roughness=0.5), bevel=0.006)
+    mn_pag = create_box("mn_pg", (0, 0, 0.016), (0.22, 0.30, 0.012), mat_porcelain())
+    mn_gold = create_box("mn_gd", (0, 0, 0.022), (0.05, 0.05, 0.003), mat_gold())
+    menu = join_as_named_object([mn_cov, mn_pag, mn_gold], "Menu")
+    place_on_surface(menu, 3.2, -2.5, 0.78)
+
+    # Salt_Pepper_Shakers (on table Z=0.78m)
+    s_jar = create_cylinder("s_j", (-0.035, 0, 0.045), 0.022, 0.08, mat_glass())
+    s_lid = create_cylinder("s_l", (-0.035, 0, 0.09), 0.023, 0.018, mat_steel())
+    p_jar = create_cylinder("p_j", (0.035, 0, 0.045), 0.022, 0.08, mat_glass())
+    p_lid = create_cylinder("p_l", (0.035, 0, 0.09), 0.023, 0.018, mat_dark_walnut())
+    shakers = join_as_named_object([s_jar, s_lid, p_jar, p_lid], "Salt_Pepper_Shakers")
+    place_on_surface(shakers, 3.2, -2.30, 0.78)
 
     export_glb(os.path.join(OUTPUT_WORLDS_DIR, "restaurant.glb"))
-    print("WORLD 3 (RESTAURANT) BUILT SUCCESSFULLY!")
+    print("WORLD 3 (RESTAURANT) EXPORTED SUCCESSFULLY!\n")
 
 
 # ==============================================================================
 # WORLD 4: HOTEL.GLB
-# Exact spatial synergy with WORLD_TOUR_SCENARIOS.hotel
+# Curved Reception Desk + Elevator + Luggage Cart with Suitcase + King Bed (Zero Clutter) + Safe Box
 # ==============================================================================
 def build_hotel():
     reset_scene()
-    print("Building World: Grand Luxury Hotel (Spatial Synergy Pack)...")
-    add_bounds_anchor(radius=10.0)
+    print("Building World 4: Luxury Hotel Lobby & Suite (Zero Overlaps, Zero Neon Pink)...")
+    add_bounds_anchor(radius_x=8.0, radius_y=7.0)
 
-    # 1. Bellhop_Bell on reception desk (Three.js: [0.65, 1.12, -3.1] -> Blender: (0.65, 3.1, 1.12))
-    x, y, z = 0.65, 3.1, 1.12
-    bb_base = create_cylinder("bb_bs", (x, y, z + 0.015), 0.075, 0.03, mat_dark_walnut())
-    bb_dome = create_sphere("bb_dm", (x, y, z + 0.055), 0.065, mat_gold(), scale=(1.0, 1.0, 0.6))
-    bb_pin = create_cylinder("bb_pn", (x, y, z + 0.105), 0.008, 0.035, mat_gold())
-    bb_btn = create_cylinder("bb_bt", (x, y, z + 0.125), 0.018, 0.012, mat_gold())
-    join_as_named_object([bb_base, bb_dome, bb_pin, bb_btn], "Bellhop_Bell")
+    # 1. Base Room (16m x 14m, North wall at Y=6.0, West wall at X=-7.0, black marble floor & dark burgundy rug #581c28)
+    build_isometric_room(
+        "Hotel",
+        floor_size=(16.0, 14.0),
+        floor_mat=mat_black_marble(),
+        wall_mat=get_material("Hotel_WallMat", base_color=(0.95, 0.94, 0.92, 1.0), roughness=0.5),
+        baseboard_mat=mat_gold(),
+        north_y=6.0,
+        west_x=-7.0,
+        wall_height=3.6,
+        has_window=True,
+        window_pos=(-2.0, 6.0, 2.2),
+        window_size=(3.6, 1.8),
+        rug_config=(0, 0.5, 7.6, 5.6, mat_burgundy_rug(), False)
+    )
 
-    # 2. Room_Keycard on reception desk (Three.js: [-0.8, 1.12, -3.1] -> Blender: (-0.8, 3.1, 1.12))
-    x, y, z = -0.8, 3.1, 1.12
-    rk_sleeve = create_box("rk_sl", (x, y, z + 0.005), (0.12, 0.18, 0.008), get_material("Sleeve_Navy", (0.05, 0.10, 0.25, 1.0), roughness=0.5), bevel=0.004)
-    rk_card = create_box("rk_cd", (x, y + 0.02, z + 0.010), (0.095, 0.15, 0.006), mat_gold(), bevel=0.004)
-    join_as_named_object([rk_sleeve, rk_card], "Room_Keycard")
+    # 2. Reception_Desk (Central-North X=0, Y=+3.8, Z=0, height 1.05m)
+    rd_base = create_box("rd_b", (0, 3.8, 0.50), (4.2, 0.90, 1.00), mat_dark_walnut())
+    rd_top = create_box("rd_t", (0, 3.8, 1.02), (4.3, 0.95, 0.06), mat_black_marble())
+    rd_trim = create_box("rd_tr", (0, 3.35, 0.50), (4.25, 0.04, 0.96), mat_gold())
+    join_as_named_object([rd_base, rd_top, rd_trim], "Reception_Desk")
 
-    # 3. Passport on reception desk (Three.js: [0.05, 1.12, -3.05] -> Blender: (0.05, 3.05, 1.12))
-    x, y, z = 0.05, 3.05, 1.12
-    ps_book = create_box("ps_bk", (x, y, z + 0.008), (0.13, 0.19, 0.015), get_material("Passport_Blue", (0.06, 0.12, 0.28, 1.0), roughness=0.4), bevel=0.004)
-    ps_gold = create_box("ps_gd", (x, y, z + 0.016), (0.045, 0.045, 0.002), mat_gold())
-    join_as_named_object([ps_book, ps_gold], "Passport")
+    # Bellhop_Bell (on reception desk Z=1.05m, at X=0.6, Y=+3.8)
+    bb_base = create_cylinder("bb_bs", (0, 0, 0.015), 0.075, 0.03, mat_dark_walnut())
+    bb_dome = create_sphere("bb_dm", (0, 0, 0.055), 0.065, mat_gold(), scale=(1.0, 1.0, 0.6))
+    bb_pin = create_cylinder("bb_pn", (0, 0, 0.105), 0.008, 0.035, mat_gold())
+    bb_btn = create_cylinder("bb_bt", (0, 0, 0.125), 0.018, 0.012, mat_gold())
+    bell = join_as_named_object([bb_base, bb_dome, bb_pin, bb_btn], "Bellhop_Bell")
+    place_on_surface(bell, 0.6, 3.8, 1.05)
 
-    # 4. Luggage_Cart in lobby (Three.js: [3.8, 0, 1.2] -> Blender: (3.8, -1.2, 0))
-    x, y, z = 3.8, -1.2, 0
+    # Room_Keycard (on reception desk Z=1.05m, at X=-0.6, Y=+3.8)
+    rk_sleeve = create_box("rk_sl", (0, 0, 0.005), (0.12, 0.18, 0.008), get_material("Sleeve_Navy", (0.05, 0.10, 0.25, 1.0), roughness=0.5))
+    rk_card = create_box("rk_cd", (0, 0.02, 0.010), (0.095, 0.15, 0.006), mat_gold())
+    keycard = join_as_named_object([rk_sleeve, rk_card], "Room_Keycard")
+    place_on_surface(keycard, -0.6, 3.8, 1.05)
+
+    # Passport (on reception desk Z=1.05m, at X=0.0, Y=+3.8)
+    ps_book = create_box("ps_bk", (0, 0, 0.008), (0.13, 0.19, 0.015), get_material("Passport_Blue", (0.06, 0.12, 0.28, 1.0), roughness=0.4))
+    ps_gold = create_box("ps_gd", (0, 0, 0.016), (0.045, 0.045, 0.002), mat_gold())
+    passport = join_as_named_object([ps_book, ps_gold], "Passport")
+    place_on_surface(passport, 0.0, 3.8, 1.05)
+
+    # 3. Elevator (Back-Right wall X=+4.0, Y=+5.6, Z=0)
+    el_frame = create_box("el_fr", (4.0, 5.6, 1.45), (1.65, 0.15, 2.85), mat_gold(), bevel=0.02)
+    el_door_l = create_box("el_dl", (3.64, 5.57, 1.40), (0.68, 0.04, 2.70), mat_steel(), bevel=0.01)
+    el_door_r = create_box("el_dr", (4.36, 5.57, 1.40), (0.68, 0.04, 2.70), mat_steel(), bevel=0.01)
+    el_screen = create_box("el_sc", (4.0, 5.52, 2.65), (0.24, 0.01, 0.10), mat_screen((0.95, 0.75, 0.1, 1.0), 3.0, "Floor_5"))
+    join_as_named_object([el_frame, el_door_l, el_door_r, el_screen], "Elevator")
+
+    # 4. Luggage_Cart (Right zone X=+3.8, Y=-0.5, Z=0)
     lc_parts = []
-    lc_base = create_box("lc_bs", (x, y, z + 0.14), (0.75, 1.25, 0.08), mat_velvet_red(), bevel=0.01)
+    lc_base = create_box("lc_bs", (0, 0, 0.14), (0.75, 1.25, 0.08), mat_burgundy_rug(), bevel=0.01)
     lc_parts.append(lc_base)
     for wx in [-0.32, 0.32]:
         for wy in [-0.52, 0.52]:
-            wh = create_cylinder(f"lc_w_{wx}_{wy}", (x + wx, y + wy, z + 0.07), 0.065, 0.035, mat_dark_walnut(), rotation=(0, math.radians(90), 0))
+            wh = create_cylinder(f"lc_w_{wx}_{wy}", (wx, wy, 0.07), 0.065, 0.035, mat_dark_walnut(), rotation=(0, math.radians(90), 0))
             lc_parts.append(wh)
-    # Birdcage brass tubular frame
-    p1 = create_cylinder("lc_p1", (x - 0.34, y - 0.56, z + 0.95), 0.022, 1.60, mat_gold())
-    p2 = create_cylinder("lc_p2", (x + 0.34, y - 0.56, z + 0.95), 0.022, 1.60, mat_gold())
-    p3 = create_cylinder("lc_p3", (x - 0.34, y + 0.56, z + 0.95), 0.022, 1.60, mat_gold())
-    p4 = create_cylinder("lc_p4", (x + 0.34, y + 0.56, z + 0.95), 0.022, 1.60, mat_gold())
-    arch = create_torus("lc_ar", (x, y, z + 1.75), 0.55, 0.022, mat_gold(), rotation=(0, math.radians(90), 0))
-    rail_top = create_cylinder("lc_rt", (x, y, z + 1.68), 0.020, 1.15, mat_gold(), rotation=(math.radians(90), 0, 0))
+    p1 = create_cylinder("lc_p1", (-0.34, -0.56, 0.95), 0.022, 1.60, mat_gold())
+    p2 = create_cylinder("lc_p2", (0.34, -0.56, 0.95), 0.022, 1.60, mat_gold())
+    p3 = create_cylinder("lc_p3", (-0.34, 0.56, 0.95), 0.022, 1.60, mat_gold())
+    p4 = create_cylinder("lc_p4", (0.34, 0.56, 0.95), 0.022, 1.60, mat_gold())
+    arch = create_torus("lc_ar", (0, 0, 1.75), 0.55, 0.022, mat_gold(), rotation=(0, math.radians(90), 0))
+    rail_top = create_cylinder("lc_rt", (0, 0, 1.68), 0.020, 1.15, mat_gold(), rotation=(math.radians(90), 0, 0))
     lc_parts.extend([p1, p2, p3, p4, arch, rail_top])
-    join_as_named_object(lc_parts, "Luggage_Cart")
+    luggage_cart = join_as_named_object(lc_parts, "Luggage_Cart")
+    place_on_surface(luggage_cart, 3.8, -0.5, 0.0)
 
-    # 5. Suitcase on luggage cart (Three.js: [2.5, 0, 2.4] -> Blender: (2.5, -2.4, 0))
-    x, y, z = 2.5, -2.4, 0
-    sc_body = create_box("sc_bd", (x, y, z + 0.38), (0.34, 0.52, 0.68), get_material("Suitcase_Poly", (0.12, 0.32, 0.65, 1.0), roughness=0.35), bevel=0.025)
-    sc_handle = create_cylinder("sc_h", (x, y, z + 0.76), 0.014, 0.20, mat_chrome(), rotation=(0, math.radians(90), 0))
+    # Suitcase (resting cleanly ON the cart platform Z=0.22m)
+    sc_body = create_box("sc_bd", (0, 0, 0.35), (0.32, 0.50, 0.65), get_material("Suitcase_Navy", (0.08, 0.16, 0.32, 1.0), roughness=0.35), bevel=0.025)
+    sc_handle = create_cylinder("sc_h", (0, 0, 0.72), 0.014, 0.20, mat_chrome(), rotation=(0, math.radians(90), 0))
     sc_parts = [sc_body, sc_handle]
-    for wx in [-0.14, 0.14]:
-        for wy in [-0.22, 0.22]:
-            w = create_sphere(f"sc_w_{wx}_{wy}", (x + wx, y + wy, z + 0.03), 0.028, mat_dark_walnut())
+    for wx in [-0.13, 0.13]:
+        for wy in [-0.20, 0.20]:
+            w = create_sphere(f"sc_w_{wx}_{wy}", (wx, wy, 0.03), 0.025, mat_dark_walnut())
             sc_parts.append(w)
-    join_as_named_object(sc_parts, "Suitcase")
+    suitcase = join_as_named_object(sc_parts, "Suitcase")
+    place_on_surface(suitcase, 3.8, -0.5, 0.22)
 
-    # 6. Elevator door frame (Three.js: [5.2, 0, -3.8] -> Blender: (5.2, 3.8, 0))
-    x, y, z = 5.2, 3.8, 0
-    el_frame = create_box("el_fr", (x, y, z + 1.45), (1.65, 0.15, 2.85), mat_gold(), bevel=0.02)
-    el_door_l = create_box("el_dl", (x - 0.36, y - 0.03, z + 1.40), (0.68, 0.04, 2.70), mat_steel(), bevel=0.01)
-    el_door_r = create_box("el_dr", (x + 0.36, y - 0.03, z + 1.40), (0.68, 0.04, 2.70), mat_steel(), bevel=0.01)
-    el_screen = create_box("el_sc", (x, y - 0.08, z + 2.65), (0.24, 0.01, 0.10), mat_screen((0.95, 0.75, 0.1, 1.0), 3.0, "Floor_5"))
-    el_btn = create_box("el_bt", (x + 0.88, y - 0.08, z + 1.25), (0.08, 0.01, 0.16), mat_steel())
-    join_as_named_object([el_frame, el_door_l, el_door_r, el_screen, el_btn], "Elevator")
+    # 5. King_Bed (Suite zone left X=-4.2, Y=-1.0, Z=0) - COMPLETELY CLEAN (NO CLUTTER ON BED!)
+    kb_frame = create_box("kb_fr", (0, 0, 0.22), (2.4, 2.3, 0.38), mat_dark_walnut())
+    kb_mattress = create_box("kb_mat", (0, 0, 0.46), (2.3, 2.2, 0.26), mat_porcelain())
+    kb_headboard = create_box("kb_hb", (0, 1.10, 0.82), (2.5, 0.18, 1.10), mat_burgundy_rug())
+    kb_p1 = create_box("kb_p1", (-0.60, 0.80, 0.63), (0.65, 0.42, 0.14), mat_porcelain())
+    kb_p2 = create_box("kb_p2", (0.60, 0.80, 0.63), (0.65, 0.42, 0.14), mat_porcelain())
+    kb_runner = create_box("kb_rn", (0, -0.70, 0.595), (2.32, 0.48, 0.02), mat_gold())
+    king_bed = join_as_named_object([kb_frame, kb_mattress, kb_headboard, kb_p1, kb_p2, kb_runner], "King_Bed")
+    place_on_surface(king_bed, -4.2, -1.0, 0.0)
 
-    # 7. Safe_Box in room (Three.js: [-5.2, 0, -1.5] -> Blender: (-5.2, 1.5, 0))
-    x, y, z = -5.2, 1.5, 0
-    sf_body = create_box("sf_b", (x, y, z + 0.30), (0.54, 0.48, 0.58), mat_steel(), bevel=0.015)
-    sf_door = create_box("sf_d", (x, y - 0.25, z + 0.30), (0.48, 0.03, 0.52), mat_steel(), bevel=0.01)
-    sf_pad = create_box("sf_pd", (x - 0.10, y - 0.27, z + 0.32), (0.12, 0.01, 0.14), mat_dark_walnut())
-    sf_dial = create_cylinder("sf_dl", (x + 0.10, y - 0.28, z + 0.32), 0.045, 0.03, mat_chrome(), rotation=(math.radians(90), 0, 0))
-    join_as_named_object([sf_body, sf_door, sf_pad, sf_dial], "Safe_Box")
+    # 6. Safe_Box with Credenza Stand beside bed (at X=-6.0, Y=+1.8, Z=0)
+    cr_stand = create_box("sf_st", (0, 0, 0.32), (0.80, 0.80, 0.64), mat_dark_walnut())
+    sf_body = create_box("sf_b", (0, 0, 0.88), (0.50, 0.44, 0.48), mat_steel(), bevel=0.015)
+    sf_door = create_box("sf_d", (0, -0.23, 0.88), (0.44, 0.03, 0.42), mat_steel(), bevel=0.01)
+    sf_pad = create_box("sf_pd", (-0.09, -0.25, 0.90), (0.10, 0.01, 0.12), mat_dark_walnut())
+    sf_dial = create_cylinder("sf_dl", (0.09, -0.26, 0.90), 0.040, 0.03, mat_chrome(), rotation=(math.radians(90), 0, 0))
+    safe = join_as_named_object([cr_stand, sf_body, sf_door, sf_pad, sf_dial], "Safe_Box")
+    place_on_surface(safe, -6.0, 1.8, 0.0)
 
     export_glb(os.path.join(OUTPUT_WORLDS_DIR, "hotel.glb"))
-    print("WORLD 4 (HOTEL) BUILT SUCCESSFULLY!")
+    print("WORLD 4 (HOTEL) EXPORTED SUCCESSFULLY!\n")
 
 
 # ==============================================================================
 # WORLD 5: DATING.GLB
-# Exact spatial synergy with WORLD_TOUR_SCENARIOS.dating
+# Romantic Terrace + Bistro Table (Z=0.78m) + Candle, Fondant, Ring Box, Wine
 # ==============================================================================
 def build_dating():
     reset_scene()
-    print("Building World: Romantic Dating Bistro (Spatial Synergy Pack)...")
-    add_bounds_anchor(radius=10.0)
+    print("Building World 5: Romantic Date & Terrace (All On Bistro Table Z=0.78m)...")
+    add_bounds_anchor(radius_x=8.0, radius_y=7.0)
 
-    # 1. Candle on center table (Three.js: [0, 0.99, 0] -> Blender: (0, 0, 0.99))
-    x, y, z = 0, 0, 0.99
-    c_glass = create_cylinder("c_gl", (x, y, z + 0.075), 0.055, 0.14, mat_glass())
-    c_wax = create_cylinder("c_wx", (x, y, z + 0.055), 0.045, 0.10, get_material("Beeswax_Ivory", (0.95, 0.92, 0.82, 1.0), roughness=0.4))
-    c_flame = create_sphere("c_fl", (x, y, z + 0.13), 0.014, mat_screen((1.0, 0.65, 0.15, 1.0), 4.5, "Flame_Gold"), scale=(0.7, 0.7, 1.5))
-    join_as_named_object([c_glass, c_wax, c_flame], "Candle")
+    # 1. Base Room / Terrace (Dark cut-stone floor, circular burgundy rug #4a1525, perimeter railing with warm lanterns)
+    build_isometric_room(
+        "Dating",
+        floor_size=(16.0, 14.0),
+        floor_mat=mat_stone_path(),
+        wall_mat=get_material("Terrace_WallMat", base_color=(0.28, 0.28, 0.30, 1.0), roughness=0.7),
+        baseboard_mat=mat_steel(),
+        north_y=6.0,
+        west_x=-7.0,
+        wall_height=3.6,
+        has_window=False,
+        rug_config=(0, 0, 4.8, 4.8, mat_burgundy_rug(), True)
+    )
 
-    # 2. Wine_Glasses on table (Three.js: [0.26, 0.99, 0.26] -> Blender: (0.26, -0.26, 0.99))
-    x, y, z = 0.26, -0.26, 0.99
+    # 2. Bistro_Table in center (X=0, Y=0, Z=0, table height Z=0.78m) with 2 elegant chairs
+    bt_leg = create_cylinder("bt_l", (0, 0, 0.38), 0.05, 0.74, mat_steel())
+    bt_base = create_cylinder("bt_b", (0, 0, 0.02), 0.34, 0.04, mat_steel())
+    bt_top = create_cylinder("bt_t", (0, 0, 0.77), 0.65, 0.03, mat_black_marble())
+    # 2 Parisian bistro chairs (North and South)
+    ch_n_s = create_box("ch_ns", (0, 0.75, 0.44), (0.42, 0.42, 0.05), mat_burgundy_rug())
+    ch_n_b = create_box("ch_nb", (0, 0.92, 0.72), (0.42, 0.05, 0.52), mat_burgundy_rug())
+    ch_n_l = create_cylinder("ch_nl", (0, 0.75, 0.22), 0.018, 0.44, mat_steel())
+    ch_s_s = create_box("ch_ss", (0, -0.75, 0.44), (0.42, 0.42, 0.05), mat_burgundy_rug())
+    ch_s_b = create_box("ch_sb", (0, -0.92, 0.72), (0.42, 0.05, 0.52), mat_burgundy_rug())
+    ch_s_l = create_cylinder("ch_sl", (0, -0.75, 0.22), 0.018, 0.44, mat_steel())
+    join_as_named_object([bt_leg, bt_base, bt_top, ch_n_s, ch_n_b, ch_n_l, ch_s_s, ch_s_b, ch_s_l], "Bistro_Table")
+
+    # --- ITEMS ON BISTRO TABLE (Z = 0.78m) ---
+    # Candle (Golden candelabra with warm flame in center)
+    c_base = create_cylinder("c_bs", (0, 0, 0.015), 0.06, 0.03, mat_gold())
+    c_stem = create_cylinder("c_st", (0, 0, 0.08), 0.014, 0.12, mat_gold())
+    c_wax = create_cylinder("c_wx", (0, 0, 0.16), 0.022, 0.08, get_material("Beeswax", (0.95, 0.92, 0.82, 1.0), roughness=0.4))
+    c_flame = create_sphere("c_fl", (0, 0, 0.22), 0.015, mat_screen((1.0, 0.65, 0.15, 1.0), 4.5, "Flame_Gold"), scale=(0.7, 0.7, 1.5))
+    candle = join_as_named_object([c_base, c_stem, c_wax, c_flame], "Candle")
+    place_on_surface(candle, 0.0, 0.0, 0.78)
+
+    # Chocolate_Fondant (porcelain plate with lava cake at X=+0.22, Y=-0.18)
+    cf_plate = create_cylinder("cf_pl", (0, 0, 0.008), 0.11, 0.015, mat_porcelain())
+    cf_cake = create_cylinder("cf_ck", (0, 0, 0.035), 0.055, 0.045, get_material("Dark_Chocolate", (0.15, 0.08, 0.05, 1.0), roughness=0.6))
+    cf_lava = create_sphere("cf_lv", (0, -0.03, 0.02), 0.022, get_material("Lava_Glaze", (0.10, 0.05, 0.03, 1.0), roughness=0.2))
+    cf_berry = create_sphere("cf_by", (0.045, 0.035, 0.024), 0.014, mat_velvet_red())
+    fondant = join_as_named_object([cf_plate, cf_cake, cf_lava, cf_berry], "Chocolate_Fondant")
+    place_on_surface(fondant, 0.22, -0.18, 0.78)
+
+    # Ring_Box (navy velvet box with diamond ring at X=-0.16, Y=+0.16)
+    rb_base = create_box("rb_bs", (0, 0, 0.02), (0.065, 0.065, 0.038), get_material("Velvet_Navy_Box", (0.05, 0.08, 0.22, 1.0), roughness=0.85), bevel=0.005)
+    rb_lid = create_box("rb_ld", (0, 0.03, 0.06), (0.065, 0.065, 0.018), get_material("Velvet_Navy_Box", (0.05, 0.08, 0.22, 1.0), roughness=0.85), rotation=(math.radians(-70), 0, 0), bevel=0.005)
+    rb_ring = create_torus("rb_rg", (0, 0, 0.042), 0.012, 0.003, mat_gold(), rotation=(math.radians(90), 0, 0))
+    rb_gem = create_sphere("rb_gm", (0, 0, 0.056), 0.006, mat_glass())
+    ring_box = join_as_named_object([rb_base, rb_lid, rb_ring, rb_gem], "Ring_Box")
+    place_on_surface(ring_box, -0.16, 0.16, 0.78)
+
+    # Wine_List (card at X=-0.25, Y=-0.16)
+    wl_b = create_box("wl_b", (0, 0, 0.01), (0.16, 0.24, 0.015), get_material("WineList_Red", (0.42, 0.08, 0.12, 1.0), roughness=0.4), bevel=0.005)
+    wl_c = create_box("wl_c", (0, 0, 0.018), (0.03, 0.03, 0.002), mat_gold())
+    wine_list = join_as_named_object([wl_b, wl_c], "Wine_List")
+    place_on_surface(wine_list, -0.25, -0.16, 0.78)
+
+    # Wine_Glasses (pair of crystal glasses at X=+0.18, Y=+0.18)
     parts_wg = []
     for dx, dy in [(-0.06, 0), (0.06, 0)]:
-        bs = create_cylinder(f"wg_b_{dx}", (x + dx, y + dy, z + 0.005), 0.036, 0.006, mat_glass())
-        st = create_cylinder(f"wg_s_{dx}", (x + dx, y + dy, z + 0.07), 0.004, 0.13, mat_glass())
-        bw = create_sphere(f"wg_w_{dx}", (x + dx, y + dy, z + 0.16), 0.042, mat_glass(), scale=(1.0, 1.0, 1.4))
-        wn = create_sphere(f"wg_wn_{dx}", (x + dx, y + dy, z + 0.14), 0.036, mat_velvet_red(), scale=(0.95, 0.95, 1.1))
+        bs = create_cylinder(f"wg_b_{dx}", (dx, dy, 0.005), 0.036, 0.006, mat_glass())
+        st = create_cylinder(f"wg_s_{dx}", (dx, dy, 0.07), 0.004, 0.13, mat_glass())
+        bw = create_sphere(f"wg_w_{dx}", (dx, dy, 0.16), 0.042, mat_glass(), scale=(1.0, 1.0, 1.4))
+        wn = create_sphere(f"wg_wn_{dx}", (dx, dy, 0.14), 0.036, mat_velvet_red(), scale=(0.95, 0.95, 1.1))
         parts_wg.extend([bs, st, bw, wn])
-    join_as_named_object(parts_wg, "Wine_Glasses")
+    wine_glasses = join_as_named_object(parts_wg, "Wine_Glasses")
+    place_on_surface(wine_glasses, 0.18, 0.18, 0.78)
 
-    # 3. Wine_List on table (Three.js: [-0.34, 0.99, 0.28] -> Blender: (-0.34, -0.28, 0.99))
-    x, y, z = -0.34, -0.28, 0.99
-    wl_b = create_box("wl_b", (x, y, z + 0.01), (0.16, 0.24, 0.015), get_material("WineList_Red", (0.42, 0.08, 0.12, 1.0), roughness=0.4), bevel=0.005)
-    wl_c = create_box("wl_c", (x, y, z + 0.018), (0.03, 0.03, 0.002), mat_gold())
-    join_as_named_object([wl_b, wl_c], "Wine_List")
-
-    # 4. Bouquet_of_Roses on table (Three.js: [0, 0.99, -0.32] -> Blender: (0, 0.32, 0.99))
-    x, y, z = 0, 0.32, 0.99
-    bq_vase = create_cylinder("bq_vs", (x, y, z + 0.10), 0.06, 0.20, mat_porcelain())
+    # Bouquet_of_Roses (on table at X=+0.35, Y=+0.15)
+    bq_vase = create_cylinder("bq_vs", (0, 0, 0.10), 0.05, 0.20, mat_porcelain())
     bq_parts = [bq_vase]
     for angle in [0, 1.047, 2.094, 3.141, 4.188, 5.235]:
-        rx = x + 0.045 * math.cos(angle)
-        ry = y + 0.045 * math.sin(angle)
-        rose = create_sphere(f"bq_r_{angle}", (rx, ry, z + 0.22), 0.032, mat_velvet_red(), scale=(1.0, 1.0, 0.8))
+        rx = 0.04 * math.cos(angle)
+        ry = 0.04 * math.sin(angle)
+        rose = create_sphere(f"bq_r_{angle}", (rx, ry, 0.22), 0.03, mat_velvet_red(), scale=(1.0, 1.0, 0.8))
         bq_parts.append(rose)
-    rose_ctr = create_sphere("bq_rc", (x, y, z + 0.245), 0.036, mat_velvet_red())
-    bq_parts.append(rose_ctr)
-    join_as_named_object(bq_parts, "Bouquet_of_Roses")
+    roses = join_as_named_object(bq_parts, "Bouquet_of_Roses")
+    place_on_surface(roses, 0.35, 0.15, 0.78)
 
-    # 5. Chocolate_Fondant on table (Three.js: [0.24, 0.99, -0.26] -> Blender: (0.24, 0.26, 0.99))
-    x, y, z = 0.24, 0.26, 0.99
-    cf_plate = create_cylinder("cf_pl", (x, y, z + 0.008), 0.11, 0.015, mat_porcelain())
-    cf_cake = create_cylinder("cf_ck", (x, y, z + 0.035), 0.055, 0.045, get_material("Dark_Chocolate", (0.15, 0.08, 0.05, 1.0), roughness=0.6))
-    cf_lava = create_sphere("cf_lv", (x, y - 0.03, z + 0.02), 0.022, get_material("Lava_Glaze", (0.10, 0.05, 0.03, 1.0), roughness=0.2))
-    cf_berry = create_sphere("cf_by", (x + 0.045, y + 0.035, z + 0.024), 0.014, mat_velvet_red())
-    join_as_named_object([cf_plate, cf_cake, cf_lava, cf_berry], "Chocolate_Fondant")
+    # Champagne_Bottle (on ice bucket pedestal beside table at X=-1.4, Y=+0.6, Z=0)
+    cp_stand_b = create_cylinder("cp_sb", (0, 0, 0.02), 0.18, 0.04, mat_chrome())
+    cp_pole = create_cylinder("cp_pl", (0, 0, 0.42), 0.024, 0.80, mat_chrome())
+    cp_bucket = create_cylinder("cp_bk", (0, 0, 0.92), 0.14, 0.24, mat_steel())
+    cp_ice = create_cylinder("cp_ic", (0, 0, 0.98), 0.13, 0.06, mat_glass())
+    cp_bot = create_cylinder("cp_bt", (0, 0, 1.10), 0.048, 0.28, get_material("Champagne_Glass_Green", (0.08, 0.25, 0.12, 1.0), roughness=0.2, transmission=0.5), rotation=(0, math.radians(15), 0))
+    cp_neck = create_cylinder("cp_nk", (0.02, 0, 1.28), 0.018, 0.12, mat_gold(), rotation=(0, math.radians(15), 0))
+    champagne = join_as_named_object([cp_stand_b, cp_pole, cp_bucket, cp_ice, cp_bot, cp_neck], "Champagne_Bottle")
+    place_on_surface(champagne, -1.4, 0.6, 0.0)
 
-    # 6. Ring_Box on table (Three.js: [-0.14, 0.99, 0.12] -> Blender: (-0.14, -0.12, 0.99))
-    x, y, z = -0.14, -0.12, 0.99
-    rb_base = create_box("rb_bs", (x, y, z + 0.02), (0.065, 0.065, 0.038), get_material("Velvet_Navy_Box", (0.05, 0.08, 0.22, 1.0), roughness=0.85), bevel=0.005)
-    rb_lid = create_box("rb_ld", (x, y + 0.03, z + 0.06), (0.065, 0.065, 0.018), get_material("Velvet_Navy_Box", (0.05, 0.08, 0.22, 1.0), roughness=0.85), rotation=(math.radians(-70), 0, 0), bevel=0.005)
-    rb_ring = create_torus("rb_rg", (x, y, z + 0.042), 0.012, 0.003, mat_gold(), rotation=(math.radians(90), 0, 0))
-    rb_gem = create_sphere("rb_gm", (x, y, z + 0.056), 0.006, mat_glass())
-    join_as_named_object([rb_base, rb_lid, rb_ring, rb_gem], "Ring_Box")
-
-    # 7. Champagne_Bottle in ice bucket stand (Three.js: [-2.15, 0, -1.25] -> Blender: (-2.15, 1.25, 0))
-    x, y, z = -2.15, 1.25, 0
-    cp_stand_b = create_cylinder("cp_sb", (x, y, z + 0.02), 0.18, 0.04, mat_chrome())
-    cp_pole = create_cylinder("cp_pl", (x, y, z + 0.42), 0.024, 0.80, mat_chrome())
-    cp_bucket = create_cylinder("cp_bk", (x, y, z + 0.92), 0.14, 0.24, mat_steel())
-    cp_ice = create_cylinder("cp_ic", (x, y, z + 0.98), 0.13, 0.06, mat_glass())
-    cp_bot = create_cylinder("cp_bt", (x, y, z + 1.10), 0.048, 0.28, get_material("Champagne_Glass_Green", (0.08, 0.25, 0.12, 1.0), roughness=0.2, transmission=0.5), rotation=(0, math.radians(15), 0))
-    cp_neck = create_cylinder("cp_nk", (x + 0.02, y, z + 1.28), 0.018, 0.12, mat_gold(), rotation=(0, math.radians(15), 0))
-    join_as_named_object([cp_stand_b, cp_pole, cp_bucket, cp_ice, cp_bot, cp_neck], "Champagne_Bottle")
-
-    # 8. Violin on music stand (Three.js: [-3.4, 0, -2.2] -> Blender: (-3.4, 2.2, 0))
-    x, y, z = -3.4, 2.2, 0
-    vn_tripod = create_cylinder("vn_tr", (x, y, z + 0.02), 0.22, 0.04, mat_steel())
-    vn_mast = create_cylinder("vn_ms", (x, y, z + 0.50), 0.018, 0.96, mat_steel())
-    vn_body1 = create_sphere("vn_b1", (x, y, z + 0.96), 0.09, mat_warm_wood(), scale=(1.2, 0.8, 1.4))
-    vn_body2 = create_sphere("vn_b2", (x, y, z + 1.10), 0.075, mat_warm_wood(), scale=(1.1, 0.7, 1.3))
-    vn_neck = create_cylinder("vn_nk", (x, y, z + 1.25), 0.015, 0.24, mat_dark_walnut())
-    vn_scroll = create_torus("vn_sc", (x, y, z + 1.38), 0.025, 0.008, mat_dark_walnut())
-    vn_bow = create_cylinder("vn_bw", (x + 0.12, y, z + 1.05), 0.006, 0.70, mat_dark_walnut(), rotation=(0, math.radians(15), 0))
-    join_as_named_object([vn_tripod, vn_mast, vn_body1, vn_body2, vn_neck, vn_scroll, vn_bow], "Violin")
+    # Violin (on side music stand at X=-3.0, Y=+1.5, Z=0)
+    vn_tripod = create_cylinder("vn_tr", (0, 0, 0.02), 0.22, 0.04, mat_steel())
+    vn_mast = create_cylinder("vn_ms", (0, 0, 0.50), 0.018, 0.96, mat_steel())
+    vn_body1 = create_sphere("vn_b1", (0, 0, 0.96), 0.09, mat_warm_wood(), scale=(1.2, 0.8, 1.4))
+    vn_body2 = create_sphere("vn_b2", (0, 0, 1.10), 0.075, mat_warm_wood(), scale=(1.1, 0.7, 1.3))
+    vn_neck = create_cylinder("vn_nk", (0, 0, 1.25), 0.015, 0.24, mat_dark_walnut())
+    vn_scroll = create_torus("vn_sc", (0, 0, 1.38), 0.025, 0.008, mat_dark_walnut())
+    vn_bow = create_cylinder("vn_bw", (0.12, 0, 1.05), 0.006, 0.70, mat_dark_walnut(), rotation=(0, math.radians(15), 0))
+    violin = join_as_named_object([vn_tripod, vn_mast, vn_body1, vn_body2, vn_neck, vn_scroll, vn_bow], "Violin")
+    place_on_surface(violin, -3.0, 1.5, 0.0)
 
     export_glb(os.path.join(OUTPUT_WORLDS_DIR, "dating.glb"))
-    print("WORLD 5 (DATING) BUILT SUCCESSFULLY!")
+    print("WORLD 5 (DATING) EXPORTED SUCCESSFULLY!\n")
 
 
 # ==============================================================================
 # WORLD 6: GARDEN.GLB
-# Exact spatial synergy with WORLD_TOUR_SCENARIOS.garden
+# Botanical Garden: Natural Grass, Flagstone Path, Fountain, Pergola with Tools, Bench
 # ==============================================================================
 def build_garden():
     reset_scene()
-    print("Building World: Botanical Garden (Spatial Synergy Pack)...")
-    add_bounds_anchor(radius=18.0)
+    print("Building World 6: Botanical Garden & Park (Realistic Landscape & Pergola)...")
+    add_bounds_anchor(radius_x=8.0, radius_y=7.0)
 
-    # 1. Stone_Fountain (Three.js: [6.4, 0, 11.2] -> Blender: (6.4, -11.2, 0))
-    x, y, z = 6.4, -11.2, 0
+    # 1. Base Landscape (16m x 14m natural lawn, stone path, perimeter picket fence)
+    diorama_parts = []
+    flr = create_box("Garden_Floor", (0, 0, -0.02), (16.0, 14.0, 0.04), mat_grass_natural())
+    diorama_parts.append(flr)
+    # Winding flagstone path
+    for py in [-5.0, -3.5, -2.0, -0.5, 1.0, 2.5, 4.0]:
+        px = 0.5 * math.sin(py * 0.8)
+        stone = create_cylinder(f"path_{py}", (px, py, 0.005), 0.42, 0.01, mat_stone_path(), vertices=16)
+        diorama_parts.append(stone)
+    # White picket fence on North wall (Y=6.0) and West wall (X=-7.0)
+    for fx in range(-7, 8, 2):
+        post = create_box(f"pf_n_{fx}", (fx, 6.0, 0.60), (0.12, 0.12, 1.20), mat_porcelain())
+        rail = create_box(f"pr_n_{fx}", (fx + 0.5, 6.0, 0.50), (1.8, 0.05, 0.10), mat_porcelain())
+        diorama_parts.extend([post, rail])
+    for fy in range(-6, 7, 2):
+        post = create_box(f"pf_w_{fy}", (-7.0, fy, 0.60), (0.12, 0.12, 1.20), mat_porcelain())
+        rail = create_box(f"pr_w_{fy}", (-7.0, fy + 0.5, 0.50), (0.05, 1.8, 0.10), mat_porcelain())
+        diorama_parts.extend([post, rail])
+    join_as_named_object(diorama_parts, "Garden_Diorama")
+
+    # 2. Stone_Fountain (X=+3.8, Y=-1.2, Z=0)
     mat_stone = get_material("Limestone_Fountain", (0.82, 0.80, 0.76, 1.0), roughness=0.7)
-    ft_base = create_cylinder("ft_bs", (x, y, z + 0.12), 1.10, 0.24, mat_stone)
-    ft_ped = create_cylinder("ft_pd", (x, y, z + 0.50), 0.32, 0.60, mat_stone)
-    ft_bowl = create_cylinder("ft_bw", (x, y, z + 0.85), 0.75, 0.18, mat_stone)
-    ft_water = create_cylinder("ft_wt", (x, y, z + 0.89), 0.70, 0.04, mat_glass())
-    ft_spout = create_sphere("ft_sp", (x, y, z + 1.05), 0.14, mat_stone)
-    join_as_named_object([ft_base, ft_ped, ft_bowl, ft_water, ft_spout], "Stone_Fountain")
+    ft_base = create_cylinder("ft_bs", (0, 0, 0.12), 1.10, 0.24, mat_stone)
+    ft_ped = create_cylinder("ft_pd", (0, 0, 0.50), 0.32, 0.60, mat_stone)
+    ft_bowl = create_cylinder("ft_bw", (0, 0, 0.85), 0.75, 0.18, mat_stone)
+    ft_water = create_cylinder("ft_wt", (0, 0, 0.89), 0.70, 0.04, mat_glass())
+    ft_spout = create_sphere("ft_sp", (0, 0, 1.05), 0.14, mat_stone)
+    fountain = join_as_named_object([ft_base, ft_ped, ft_bowl, ft_water, ft_spout], "Stone_Fountain")
+    place_on_surface(fountain, 3.8, -1.2, 0.0)
 
-    # 2. Watering_Can (Three.js: [-3.2, 0, 11.4] -> Blender: (-3.2, -11.4, 0))
-    x, y, z = -3.2, -11.4, 0
-    mat_can = get_material("Watering_Can_Green", (0.12, 0.42, 0.22, 1.0), roughness=0.45)
-    wc_body = create_cylinder("wc_b", (x, y, z + 0.16), 0.14, 0.32, mat_can)
-    wc_spout = create_cylinder("wc_s", (x + 0.14, y, z + 0.25), 0.022, 0.34, mat_can, rotation=(0, math.radians(45), 0))
-    wc_rose = create_sphere("wc_r", (x + 0.28, y, z + 0.38), 0.045, mat_gold(), scale=(1.0, 1.0, 0.5))
-    wc_handle = create_torus("wc_h", (x, y, z + 0.36), 0.15, 0.018, mat_can, rotation=(0, math.radians(90), 0))
-    join_as_named_object([wc_body, wc_spout, wc_rose, wc_handle], "Watering_Can")
+    # 3. Pergola & Outdoor Table (X=+1.5, Y=+2.8, Z=0, table surface height Z=0.78m)
+    pg_table = create_box("pg_tb", (1.5, 2.8, 0.76), (1.40, 0.80, 0.04), mat_warm_wood())
+    pg_l1 = create_cylinder("pg_l1", (0.9, 2.5, 0.38), 0.03, 0.74, mat_dark_walnut())
+    pg_l2 = create_cylinder("pg_l2", (2.1, 2.5, 0.38), 0.03, 0.74, mat_dark_walnut())
+    pg_l3 = create_cylinder("pg_l3", (0.9, 3.1, 0.38), 0.03, 0.74, mat_dark_walnut())
+    pg_l4 = create_cylinder("pg_l4", (2.1, 3.1, 0.38), 0.03, 0.74, mat_dark_walnut())
+    join_as_named_object([pg_table, pg_l1, pg_l2, pg_l3, pg_l4], "Garden_Pergola_Table")
 
-    # 3. Wheelbarrow (Three.js: [3.2, 0, 13.6] -> Blender: (3.2, -13.6, 0))
-    x, y, z = 3.2, -13.6, 0
-    mat_wb_tray = get_material("Wheelbarrow_Red", (0.85, 0.15, 0.15, 1.0), roughness=0.4)
-    wb_tray = create_box("wb_tr", (x, y, z + 0.36), (0.64, 0.85, 0.26), mat_wb_tray, bevel=0.02)
-    wb_wheel = create_cylinder("wb_wh", (x, y + 0.48, z + 0.18), 0.18, 0.07, mat_dark_walnut(), rotation=(0, math.radians(90), 0))
-    wb_h1 = create_cylinder("wb_h1", (x - 0.25, y - 0.52, z + 0.32), 0.024, 0.55, mat_warm_wood(), rotation=(math.radians(35), 0, 0))
-    wb_h2 = create_cylinder("wb_h2", (x + 0.25, y - 0.52, z + 0.32), 0.024, 0.55, mat_warm_wood(), rotation=(math.radians(35), 0, 0))
-    wb_leg1 = create_cylinder("wb_l1", (x - 0.22, y - 0.15, z + 0.15), 0.018, 0.28, mat_steel())
-    wb_leg2 = create_cylinder("wb_l2", (x + 0.22, y - 0.15, z + 0.15), 0.018, 0.28, mat_steel())
-    join_as_named_object([wb_tray, wb_wheel, wb_h1, wb_h2, wb_leg1, wb_leg2], "Wheelbarrow")
+    # Pruning_Shears (on table Z=0.78m at X=1.3, Y=2.8)
+    ps_b1 = create_cylinder("ps_b1", (0, 0.04, 0.01), 0.008, 0.10, mat_steel(), rotation=(math.radians(90), 0, 0))
+    ps_h1 = create_cylinder("ps_h1", (-0.02, -0.06, 0.01), 0.012, 0.12, mat_velvet_red(), rotation=(math.radians(75), 0, 0))
+    ps_h2 = create_cylinder("ps_h2", (0.02, -0.06, 0.01), 0.012, 0.12, mat_velvet_red(), rotation=(math.radians(105), 0, 0))
+    shears = join_as_named_object([ps_b1, ps_h1, ps_h2], "Pruning_Shears")
+    place_on_surface(shears, 1.3, 2.8, 0.78)
 
-    # 4. Flower_Pot (Three.js: [1.2, 0, 6.8] -> Blender: (1.2, -6.8, 0))
-    x, y, z = 1.2, -6.8, 0
-    fp_pot = create_cylinder("fp_pt", (x, y, z + 0.22), 0.24, 0.44, mat_terracotta())
-    fp_rim = create_cylinder("fp_rm", (x, y, z + 0.42), 0.26, 0.06, mat_terracotta())
-    fp_soil = create_cylinder("fp_sl", (x, y, z + 0.41), 0.23, 0.03, get_material("Fertile_Soil", (0.18, 0.12, 0.08, 1.0), roughness=0.9))
+    # Garden_Trowel (on table Z=0.78m at X=1.7, Y=2.8)
+    gt_blade = create_cylinder("gt_b", (0, 0.08, 0.01), 0.035, 0.14, mat_steel(), rotation=(math.radians(90), 0, 0), scale=(1.0, 0.35, 1.0))
+    gt_shank = create_cylinder("gt_s", (0, 0, 0.015), 0.008, 0.06, mat_steel(), rotation=(math.radians(90), 0, 0))
+    gt_handle = create_cylinder("gt_h", (0, -0.08, 0.015), 0.016, 0.13, mat_warm_wood(), rotation=(math.radians(90), 0, 0))
+    trowel = join_as_named_object([gt_blade, gt_shank, gt_handle], "Garden_Trowel")
+    place_on_surface(trowel, 1.7, 2.8, 0.78)
+
+    # 4. Park Bench & Picnic_Basket (X=-3.2, Y=+1.2, Z=0)
+    pb_body = create_box("pb_b", (0, 0, 0.16), (0.42, 0.28, 0.26), get_material("Wicker", (0.75, 0.55, 0.32, 1.0), roughness=0.8), bevel=0.015)
+    pb_l1 = create_box("pb_l1", (-0.10, 0, 0.30), (0.20, 0.29, 0.02), mat_warm_wood())
+    pb_l2 = create_box("pb_l2", (0.10, 0, 0.30), (0.20, 0.29, 0.02), mat_warm_wood())
+    pb_handle = create_torus("pb_h", (0, 0, 0.36), 0.14, 0.016, mat_warm_wood(), rotation=(0, math.radians(90), 0))
+    basket = join_as_named_object([pb_body, pb_l1, pb_l2, pb_handle], "Picnic_Basket")
+    place_on_surface(basket, -2.2, 1.2, 0.0)
+
+    # 5. Watering_Can (X=-2.2, Y=-2.2, Z=0)
+    wc_body = create_cylinder("wc_b", (0, 0, 0.16), 0.14, 0.32, get_material("Can_Green", (0.12, 0.42, 0.22, 1.0), roughness=0.45))
+    wc_spout = create_cylinder("wc_s", (0.14, 0, 0.25), 0.022, 0.34, get_material("Can_Green", (0.12, 0.42, 0.22, 1.0), roughness=0.45), rotation=(0, math.radians(45), 0))
+    wc_rose = create_sphere("wc_r", (0.28, 0, 0.38), 0.045, mat_gold(), scale=(1.0, 1.0, 0.5))
+    wc_handle = create_torus("wc_h", (0, 0, 0.36), 0.15, 0.018, get_material("Can_Green", (0.12, 0.42, 0.22, 1.0), roughness=0.45), rotation=(0, math.radians(90), 0))
+    watering_can = join_as_named_object([wc_body, wc_spout, wc_rose, wc_handle], "Watering_Can")
+    place_on_surface(watering_can, -2.2, -2.2, 0.0)
+
+    # 6. Wheelbarrow (X=+2.0, Y=-3.5, Z=0)
+    wb_tray = create_box("wb_tr", (0, 0, 0.36), (0.64, 0.85, 0.26), mat_velvet_red(), bevel=0.02)
+    wb_wheel = create_cylinder("wb_wh", (0, 0.48, 0.18), 0.18, 0.07, mat_dark_walnut(), rotation=(0, math.radians(90), 0))
+    wb_h1 = create_cylinder("wb_h1", (-0.25, -0.52, 0.32), 0.024, 0.55, mat_warm_wood(), rotation=(math.radians(35), 0, 0))
+    wb_h2 = create_cylinder("wb_h2", (0.25, -0.52, 0.32), 0.024, 0.55, mat_warm_wood(), rotation=(math.radians(35), 0, 0))
+    wb_leg1 = create_cylinder("wb_l1", (-0.22, -0.15, 0.15), 0.018, 0.28, mat_steel())
+    wb_leg2 = create_cylinder("wb_l2", (0.22, -0.15, 0.15), 0.018, 0.28, mat_steel())
+    wheelbarrow = join_as_named_object([wb_tray, wb_wheel, wb_h1, wb_h2, wb_leg1, wb_leg2], "Wheelbarrow")
+    place_on_surface(wheelbarrow, 2.0, -3.5, 0.0)
+
+    # 7. Flower_Pot (X=-5.0, Y=-1.0, Z=0)
+    fp_pot = create_cylinder("fp_pt", (0, 0, 0.22), 0.24, 0.44, mat_terracotta())
+    fp_rim = create_cylinder("fp_rm", (0, 0, 0.42), 0.26, 0.06, mat_terracotta())
+    fp_soil = create_cylinder("fp_sl", (0, 0, 0.41), 0.23, 0.03, get_material("Fertile_Soil", (0.18, 0.12, 0.08, 1.0), roughness=0.9))
     fp_flowers = []
     for angle in [0, 1.25, 2.5, 3.75, 5.0]:
-        fx = x + 0.12 * math.cos(angle)
-        fy = y + 0.12 * math.sin(angle)
-        fl = create_sphere(f"fp_fl_{angle}", (fx, fy, z + 0.52), 0.06, mat_screen((0.95, 0.2, 0.5, 1.0), 1.5, "Geranium_Pink"))
+        fx = 0.12 * math.cos(angle)
+        fy = 0.12 * math.sin(angle)
+        fl = create_sphere(f"fp_fl_{angle}", (fx, fy, 0.52), 0.06, mat_screen((0.95, 0.2, 0.5, 1.0), 1.5, "Geranium"))
         fp_flowers.append(fl)
-    join_as_named_object([fp_pot, fp_rim, fp_soil] + fp_flowers, "Flower_Pot")
+    flower_pot = join_as_named_object([fp_pot, fp_rim, fp_soil] + fp_flowers, "Flower_Pot")
+    place_on_surface(flower_pot, -5.0, -1.0, 0.0)
 
-    # 5. Pruning_Shears (Three.js: [1.8, 0.8, 7.2] -> Blender: (1.8, -7.2, 0.8))
-    x, y, z = 1.8, -7.2, 0.8
-    ps_b1 = create_cylinder("ps_b1", (x, y + 0.04, z + 0.01), 0.008, 0.10, mat_steel(), rotation=(math.radians(90), 0, 0))
-    ps_h1 = create_cylinder("ps_h1", (x - 0.02, y - 0.06, z + 0.01), 0.012, 0.12, mat_velvet_red(), rotation=(math.radians(75), 0, 0))
-    ps_h2 = create_cylinder("ps_h2", (x + 0.02, y - 0.06, z + 0.01), 0.012, 0.12, mat_velvet_red(), rotation=(math.radians(105), 0, 0))
-    join_as_named_object([ps_b1, ps_h1, ps_h2], "Pruning_Shears")
+    # 8. Birdhouse (X=-5.2, Y=+2.5, Z=0)
+    bh_post = create_cylinder("bh_p", (0, 0, 0.75), 0.045, 1.50, mat_warm_wood())
+    bh_box = create_box("bh_bx", (0, 0, 1.65), (0.26, 0.26, 0.32), mat_dark_walnut(), bevel=0.01)
+    bh_roof = create_box("bh_rf", (0, 0, 1.84), (0.32, 0.32, 0.06), mat_velvet_red(), bevel=0.01)
+    bh_hole = create_cylinder("bh_h", (0, -0.13, 1.68), 0.038, 0.02, get_material("Cavity", (0.02, 0.02, 0.02, 1.0)), rotation=(math.radians(90), 0, 0))
+    bh_perch = create_cylinder("bh_pr", (0, -0.17, 1.60), 0.010, 0.08, mat_warm_wood(), rotation=(math.radians(90), 0, 0))
+    birdhouse = join_as_named_object([bh_post, bh_box, bh_roof, bh_hole, bh_perch], "Birdhouse")
+    place_on_surface(birdhouse, -5.2, 2.5, 0.0)
 
-    # 6. Garden_Trowel (Three.js: [0.6, 0.8, 7.2] -> Blender: (0.6, -7.2, 0.8))
-    x, y, z = 0.6, -7.2, 0.8
-    gt_blade = create_cylinder("gt_b", (x, y + 0.08, z + 0.01), 0.035, 0.14, mat_steel(), rotation=(math.radians(90), 0, 0), scale=(1.0, 0.35, 1.0))
-    gt_shank = create_cylinder("gt_s", (x, y, z + 0.015), 0.008, 0.06, mat_steel(), rotation=(math.radians(90), 0, 0))
-    gt_handle = create_cylinder("gt_h", (x, y - 0.08, z + 0.015), 0.016, 0.13, mat_warm_wood(), rotation=(math.radians(90), 0, 0))
-    join_as_named_object([gt_blade, gt_shank, gt_handle], "Garden_Trowel")
-
-    # 7. Picnic_Basket (Three.js: [-3.8, 0, 8.2] -> Blender: (-3.8, -8.2, 0))
-    x, y, z = -3.8, -8.2, 0
-    pb_body = create_box("pb_b", (x, y, z + 0.16), (0.42, 0.28, 0.26), get_material("Wicker_Weave", (0.75, 0.55, 0.32, 1.0), roughness=0.8), bevel=0.015)
-    pb_lid1 = create_box("pb_l1", (x - 0.10, y, z + 0.30), (0.20, 0.29, 0.02), mat_warm_wood(), bevel=0.005)
-    pb_lid2 = create_box("pb_l2", (x + 0.10, y, z + 0.30), (0.20, 0.29, 0.02), mat_warm_wood(), bevel=0.005)
-    pb_handle = create_torus("pb_h", (x, y, z + 0.36), 0.14, 0.016, mat_warm_wood(), rotation=(0, math.radians(90), 0))
-    join_as_named_object([pb_body, pb_lid1, pb_lid2, pb_handle], "Picnic_Basket")
-
-    # 8. Garden_Lantern (Three.js: [2.8, 0, 7.6] -> Blender: (2.8, -7.6, 0))
-    x, y, z = 2.8, -7.6, 0
-    gl_post = create_cylinder("gl_p", (x, y, z + 0.65), 0.038, 1.30, mat_steel())
-    gl_head = create_box("gl_h", (x, y, z + 1.40), (0.22, 0.22, 0.30), mat_steel(), bevel=0.01)
-    gl_glass = create_box("gl_gl", (x, y, z + 1.40), (0.18, 0.18, 0.26), mat_screen((1.0, 0.75, 0.25, 1.0), 3.0, "Amber_Glow"))
-    gl_cap = create_cylinder("gl_c", (x, y, z + 1.58), 0.16, 0.08, mat_steel(), vertices=4, rotation=(0, 0, math.radians(45)))
-    join_as_named_object([gl_post, gl_head, gl_glass, gl_cap], "Garden_Lantern")
-
-    # 9. Birdhouse (Three.js: [-6.8, 0, 10.2] -> Blender: (-6.8, -10.2, 0))
-    x, y, z = -6.8, -10.2, 0
-    bh_post = create_cylinder("bh_p", (x, y, z + 0.75), 0.045, 1.50, mat_warm_wood())
-    bh_box = create_box("bh_bx", (x, y, z + 1.65), (0.26, 0.26, 0.32), mat_dark_walnut(), bevel=0.01)
-    bh_roof = create_box("bh_rf", (x, y, z + 1.84), (0.32, 0.32, 0.06), mat_velvet_red(), bevel=0.01)
-    bh_hole = create_cylinder("bh_h", (x, y - 0.13, z + 1.68), 0.038, 0.02, get_material("Cavity_Black", (0.02, 0.02, 0.02, 1.0)), rotation=(math.radians(90), 0, 0))
-    bh_perch = create_cylinder("bh_pr", (x, y - 0.17, z + 1.60), 0.010, 0.08, mat_warm_wood(), rotation=(math.radians(90), 0, 0))
-    join_as_named_object([bh_post, bh_box, bh_roof, bh_hole, bh_perch], "Birdhouse")
+    # 9. Garden_Lantern (X=+0.5, Y=-1.0, Z=0)
+    gl_post = create_cylinder("gl_p", (0, 0, 0.65), 0.038, 1.30, mat_steel())
+    gl_head = create_box("gl_h", (0, 0, 1.40), (0.22, 0.22, 0.30), mat_steel(), bevel=0.01)
+    gl_glass = create_box("gl_gl", (0, 0, 1.40), (0.18, 0.18, 0.26), mat_screen((1.0, 0.75, 0.25, 1.0), 3.0, "Amber_Lantern"))
+    gl_cap = create_cylinder("gl_c", (0, 0, 1.58), 0.16, 0.08, mat_steel(), vertices=4, rotation=(0, 0, math.radians(45)))
+    lantern = join_as_named_object([gl_post, gl_head, gl_glass, gl_cap], "Garden_Lantern")
+    place_on_surface(lantern, 0.5, -1.0, 0.0)
 
     export_glb(os.path.join(OUTPUT_WORLDS_DIR, "garden.glb"))
-    print("WORLD 6 (GARDEN) BUILT SUCCESSFULLY!")
+    print("WORLD 6 (GARDEN) EXPORTED SUCCESSFULLY!\n")
 
 
 # ==============================================================================
 # WORLD 7: SPACE.GLB
-# Exact spatial synergy with WORLD_TOUR_SCENARIOS.space
+# Orbital Sci-Fi Deck (Zero Rockets Cutting Floor) + Control Console + Helmet + Telescope
 # ==============================================================================
 def build_space():
     reset_scene()
-    print("Building World: Orbital Deep Space (Spatial Synergy Pack)...")
-    add_bounds_anchor(radius=16.0)
+    print("Building World 7: Orbital Space Station (Zero Rocket Floor Collisions)...")
+    add_bounds_anchor(radius_x=8.0, radius_y=7.0)
 
-    # 1. Control_Console (Three.js: [-1.5, 1.2, 6.2] -> Blender: (-1.5, -6.2, 0))
-    x, y, z = -1.5, -6.2, 0
-    cc_base = create_box("cc_b", (x, y, z + 0.45), (1.40, 0.65, 0.90), mat_steel(), bevel=0.015)
-    cc_top = create_box("cc_t", (x, y, z + 0.93), (1.45, 0.70, 0.06), mat_black_marble())
-    cc_screen1 = create_box("cc_s1", (x - 0.35, y - 0.10, z + 1.20), (0.50, 0.03, 0.35), mat_screen((0.1, 0.85, 1.0, 1.0), 3.5, "Console_Telemetry"), rotation=(math.radians(20), 0, 0))
-    cc_screen2 = create_box("cc_s2", (x + 0.35, y - 0.10, z + 1.20), (0.50, 0.03, 0.35), mat_screen((0.1, 1.0, 0.4, 1.0), 3.5, "Console_Radar"), rotation=(math.radians(20), 0, 0))
-    join_as_named_object([cc_base, cc_top, cc_screen1, cc_screen2], "Control_Console")
+    # 1. Base Sci-Fi Station (16m x 14m metal deck, panoramic viewing bay window)
+    build_isometric_room(
+        "Space",
+        floor_size=(16.0, 14.0),
+        floor_mat=mat_sci_fi_metal(),
+        wall_mat=get_material("Station_Bulkhead", (0.20, 0.22, 0.26, 1.0), metallic=0.6, roughness=0.4),
+        baseboard_mat=mat_steel(),
+        north_y=6.0,
+        west_x=-7.0,
+        wall_height=3.6,
+        has_window=True,
+        window_pos=(0, 6.0, 2.0),
+        window_size=(4.8, 2.0)
+    )
 
-    # 2. Astronaut_Helmet on console (Three.js: [1.5, 1.4, 6.2] -> Blender: (1.5, -6.2, 1.2))
-    x, y, z = 1.5, -6.2, 1.2
-    ah_shell = create_sphere("ah_sh", (x, y, z + 0.20), 0.18, mat_porcelain(), scale=(1.05, 1.15, 1.1))
-    ah_visor = create_sphere("ah_vs", (x, y - 0.06, z + 0.21), 0.145, mat_gold(), scale=(1.02, 1.15, 0.9))
-    ah_ring = create_torus("ah_rg", (x, y, z + 0.03), 0.14, 0.022, mat_steel())
-    join_as_named_object([ah_shell, ah_visor, ah_ring], "Astronaut_Helmet")
+    # 2. Control_Console (Curved telemetry console at X=0, Y=+2.8, Z=0)
+    cc_base = create_box("cc_b", (0, 0, 0.45), (1.60, 0.75, 0.90), mat_steel(), bevel=0.015)
+    cc_top = create_box("cc_t", (0, 0, 0.93), (1.65, 0.80, 0.06), mat_black_marble())
+    cc_screen1 = create_box("cc_s1", (-0.40, -0.10, 1.20), (0.55, 0.03, 0.38), mat_screen((0.1, 0.85, 1.0, 1.0), 3.5, "Telemetry_HUD"), rotation=(math.radians(20), 0, 0))
+    cc_screen2 = create_box("cc_s2", (0.40, -0.10, 1.20), (0.55, 0.03, 0.38), mat_screen((0.1, 1.0, 0.4, 1.0), 3.5, "Radar_HUD"), rotation=(math.radians(20), 0, 0))
+    console = join_as_named_object([cc_base, cc_top, cc_screen1, cc_screen2], "Control_Console")
+    place_on_surface(console, 0.0, 2.8, 0.0)
 
-    # 3. Oxygen_Tank (Three.js: [-3.2, 1.2, 6.5] -> Blender: (-3.2, -6.5, 0))
-    x, y, z = -3.2, -6.5, 0
-    t1 = create_cylinder("ot_t1", (x - 0.14, y, z + 0.65), 0.12, 0.90, mat_porcelain())
-    c1_t = create_sphere("ot_c1t", (x - 0.14, y, z + 1.10), 0.12, mat_porcelain())
-    c1_b = create_sphere("ot_c1b", (x - 0.14, y, z + 0.20), 0.12, mat_porcelain())
-    t2 = create_cylinder("ot_t2", (x + 0.14, y, z + 0.65), 0.12, 0.90, mat_porcelain())
-    c2_t = create_sphere("ot_c2t", (x + 0.14, y, z + 1.10), 0.12, mat_porcelain())
-    c2_b = create_sphere("ot_c2b", (x + 0.14, y, z + 0.20), 0.12, mat_porcelain())
-    ot_pipe = create_torus("ot_pp", (x, y, z + 1.18), 0.14, 0.016, mat_chrome())
-    join_as_named_object([t1, c1_t, c1_b, t2, c2_t, c2_b, ot_pipe], "Oxygen_Tank")
+    # 3. Astronaut_Helmet on pedestal (at X=-3.5, Y=+0.8, Z=0)
+    ah_ped = create_cylinder("ah_pd", (0, 0, 0.45), 0.22, 0.90, mat_steel())
+    ah_shell = create_sphere("ah_sh", (0, 0, 1.10), 0.18, mat_porcelain(), scale=(1.05, 1.15, 1.1))
+    ah_visor = create_sphere("ah_vs", (0, -0.06, 1.11), 0.145, mat_gold(), scale=(1.02, 1.15, 0.9))
+    ah_ring = create_torus("ah_rg", (0, 0, 0.93), 0.14, 0.022, mat_steel())
+    helmet = join_as_named_object([ah_ped, ah_shell, ah_visor, ah_ring], "Astronaut_Helmet")
+    place_on_surface(helmet, -3.5, 0.8, 0.0)
 
-    # 4. Robotic_Arm (Three.js: [3.6, 2.8, 4.8] -> Blender: (3.6, -4.8, 0))
-    x, y, z = 3.6, -4.8, 0
-    ra_base = create_cylinder("ra_bs", (x, y, z + 0.15), 0.28, 0.30, mat_steel())
-    ra_seg1 = create_cylinder("ra_s1", (x, y, z + 0.85), 0.08, 1.10, mat_porcelain(), rotation=(math.radians(25), 0, 0))
-    ra_knuckle = create_sphere("ra_kn", (x, y + 0.24, z + 1.35), 0.12, mat_steel())
-    ra_seg2 = create_cylinder("ra_s2", (x, y + 0.45, z + 1.85), 0.07, 0.95, mat_porcelain(), rotation=(math.radians(-35), 0, 0))
-    ra_claw = create_torus("ra_cl", (x, y + 0.65, z + 2.25), 0.09, 0.018, mat_steel())
-    join_as_named_object([ra_base, ra_seg1, ra_knuckle, ra_seg2, ra_claw], "Robotic_Arm")
+    # 4. Oxygen_Tank (Mounted on left wall bracket at X=-5.8, Y=+1.5, Z=0)
+    t1 = create_cylinder("ot_t1", (-0.14, 0, 0.65), 0.12, 0.90, mat_porcelain())
+    c1_t = create_sphere("ot_c1t", (-0.14, 0, 1.10), 0.12, mat_porcelain())
+    c1_b = create_sphere("ot_c1b", (-0.14, 0, 0.20), 0.12, mat_porcelain())
+    t2 = create_cylinder("ot_t2", (0.14, 0, 0.65), 0.12, 0.90, mat_porcelain())
+    c2_t = create_sphere("ot_c2t", (0.14, 0, 1.10), 0.12, mat_porcelain())
+    c2_b = create_sphere("ot_c2b", (0.14, 0, 0.20), 0.12, mat_porcelain())
+    ot_pipe = create_torus("ot_pp", (0, 0, 1.18), 0.14, 0.016, mat_chrome())
+    oxygen = join_as_named_object([t1, c1_t, c1_b, t2, c2_t, c2_b, ot_pipe], "Oxygen_Tank")
+    place_on_surface(oxygen, -5.8, 1.5, 0.0)
 
-    # 5. Hydroponic_Pod (Three.js: [-4.8, 1.5, 3.2] -> Blender: (-4.8, -3.2, 0))
-    x, y, z = -4.8, -3.2, 0
-    hp_base = create_cylinder("hp_bs", (x, y, z + 0.20), 0.42, 0.40, mat_steel())
-    hp_glass = create_cylinder("hp_gl", (x, y, z + 1.05), 0.38, 1.30, mat_glass())
-    hp_cap = create_cylinder("hp_cp", (x, y, z + 1.75), 0.42, 0.15, mat_steel())
-    hp_light = create_cylinder("hp_lt", (x, y, z + 1.05), 0.04, 1.25, mat_screen((0.95, 0.1, 0.7, 1.0), 3.5, "Grow_Light"))
-    hp_plant = create_sphere("hp_pl", (x, y, z + 0.80), 0.28, get_material("Bio_Green", (0.1, 0.8, 0.2, 1.0), roughness=0.5))
-    join_as_named_object([hp_base, hp_glass, hp_cap, hp_light, hp_plant], "Hydroponic_Pod")
+    # 5. Robotic_Arm (X=+4.2, Y=+2.2, Z=0)
+    ra_base = create_cylinder("ra_bs", (0, 0, 0.15), 0.28, 0.30, mat_steel())
+    ra_seg1 = create_cylinder("ra_s1", (0, 0, 0.85), 0.08, 1.10, mat_porcelain(), rotation=(math.radians(25), 0, 0))
+    ra_knuckle = create_sphere("ra_kn", (0, 0.24, 1.35), 0.12, mat_steel())
+    ra_seg2 = create_cylinder("ra_s2", (0, 0.45, 1.85), 0.07, 0.95, mat_porcelain(), rotation=(math.radians(-35), 0, 0))
+    ra_claw = create_torus("ra_cl", (0, 0.65, 2.25), 0.09, 0.018, mat_steel())
+    arm = join_as_named_object([ra_base, ra_seg1, ra_knuckle, ra_seg2, ra_claw], "Robotic_Arm")
+    place_on_surface(arm, 4.2, 2.2, 0.0)
 
-    # 6. Airlock_Door (Three.js: [0, 1.8, 7.8] -> Blender: (0, -7.8, 0))
-    x, y, z = 0, -7.8, 0
-    al_frame = create_cylinder("al_fr", (x, y, z + 1.40), 1.15, 0.20, mat_steel(), rotation=(math.radians(90), 0, 0))
-    al_door = create_cylinder("al_dr", (x, y + 0.04, z + 1.40), 1.00, 0.12, get_material("Hazard_Yellow", (0.95, 0.78, 0.08, 1.0), roughness=0.4), rotation=(math.radians(90), 0, 0))
-    al_wheel = create_torus("al_wh", (x, y - 0.08, z + 1.40), 0.28, 0.035, mat_chrome(), rotation=(math.radians(90), 0, 0))
-    join_as_named_object([al_frame, al_door, al_wheel], "Airlock_Door")
+    # 6. Space_Telescope (Observation bay X=0, Y=-1.2, Z=0)
+    st_tripod = create_cylinder("st_tr", (0, 0, 0.45), 0.03, 0.90, mat_steel(), rotation=(math.radians(15), 0, 0))
+    st_mount = create_cylinder("st_mt", (0, 0, 0.95), 0.10, 0.15, mat_steel())
+    st_body = create_cylinder("st_bd", (0, 0, 1.25), 0.18, 0.90, mat_gold(), rotation=(math.radians(40), 0, 0))
+    st_shade = create_cylinder("st_sh", (0, -0.32, 1.52), 0.20, 0.22, mat_steel(), rotation=(math.radians(40), 0, 0))
+    telescope = join_as_named_object([st_tripod, st_mount, st_body, st_shade], "Space_Telescope")
+    place_on_surface(telescope, 0.0, -1.2, 0.0)
 
-    # 7. Space_Telescope in orbit (Three.js: [-7.5, 3.8, -4.2] -> Blender: (-7.5, 4.2, 3.8))
-    x, y, z = -7.5, 4.2, 3.8
-    st_body = create_cylinder("st_bd", (x, y, z), 0.32, 1.40, mat_gold(), rotation=(math.radians(45), 0, 0))
-    st_shade = create_cylinder("st_sh", (x, y - 0.55, z - 0.55), 0.34, 0.30, mat_steel(), rotation=(math.radians(45), 0, 0))
-    st_wing_l = create_box("st_wl", (x - 0.85, y, z), (0.90, 0.35, 0.03), mat_screen((0.1, 0.3, 0.9, 1.0), 2.5, "Solar_Cell"))
-    st_wing_r = create_box("st_wr", (x + 0.85, y, z), (0.90, 0.35, 0.03), mat_screen((0.1, 0.3, 0.9, 1.0), 2.5, "Solar_Cell"))
-    join_as_named_object([st_body, st_shade, st_wing_l, st_wing_r], "Space_Telescope")
+    # 7. Hydroponic_Pod (X=+4.2, Y=-1.8, Z=0)
+    hp_base = create_cylinder("hp_bs", (0, 0, 0.20), 0.42, 0.40, mat_steel())
+    hp_glass = create_cylinder("hp_gl", (0, 0, 1.05), 0.38, 1.30, mat_glass())
+    hp_cap = create_cylinder("hp_cp", (0, 0, 1.75), 0.42, 0.15, mat_steel())
+    hp_light = create_cylinder("hp_lt", (0, 0, 1.05), 0.04, 1.25, mat_screen((0.95, 0.1, 0.7, 1.0), 3.5, "Grow_Light"))
+    hp_plant = create_sphere("hp_pl", (0, 0, 0.80), 0.28, get_material("Bio_Green", (0.1, 0.8, 0.2, 1.0), roughness=0.5))
+    pod = join_as_named_object([hp_base, hp_glass, hp_cap, hp_light, hp_plant], "Hydroponic_Pod")
+    place_on_surface(pod, 4.2, -1.8, 0.0)
+
+    # 8. Airlock_Door (Left wall X=-6.2, Y=-2.0, Z=0)
+    al_frame = create_cylinder("al_fr", (0, 0, 1.40), 1.15, 0.20, mat_steel(), rotation=(math.radians(90), 0, 0))
+    al_door = create_cylinder("al_dr", (0, 0.04, 1.40), 1.00, 0.12, get_material("Hazard_Yellow", (0.95, 0.78, 0.08, 1.0), roughness=0.4), rotation=(math.radians(90), 0, 0))
+    al_wheel = create_torus("al_wh", (0, -0.08, 1.40), 0.28, 0.035, mat_chrome(), rotation=(math.radians(90), 0, 0))
+    airlock = join_as_named_object([al_frame, al_door, al_wheel], "Airlock_Door")
+    place_on_surface(airlock, -6.2, -2.0, 0.0)
 
     export_glb(os.path.join(OUTPUT_WORLDS_DIR, "space.glb"))
-    print("WORLD 7 (SPACE) BUILT SUCCESSFULLY!")
+    print("WORLD 7 (SPACE) EXPORTED SUCCESSFULLY!\n")
 
 
 if __name__ == "__main__":

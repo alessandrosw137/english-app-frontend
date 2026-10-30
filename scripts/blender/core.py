@@ -1,4 +1,5 @@
 import bpy
+import mathutils
 import math
 import os
 
@@ -66,11 +67,33 @@ def mat_warm_wood():
 def mat_dark_walnut():
     return get_material("dark_walnut", base_color=(0.22, 0.12, 0.07, 1.0), roughness=0.32)
 
+def mat_parquet():
+    return get_material("herringbone_parquet", base_color=(0.32, 0.18, 0.11, 1.0), roughness=0.30, coat_weight=0.25)
+
 def mat_black_marble():
     return get_material("black_marble", base_color=(0.08, 0.09, 0.11, 1.0), roughness=0.12, coat_weight=0.6)
 
+def mat_burgundy_rug():
+    # Elegant deep wine / burgundy (#4a1525 / #581c28) - zero hot-pink
+    return get_material("burgundy_rug", base_color=(0.32, 0.09, 0.14, 1.0), roughness=0.85)
+
+def mat_woven_beige():
+    return get_material("woven_beige_rug", base_color=(0.88, 0.85, 0.80, 1.0), roughness=0.90)
+
+def mat_commercial_tile():
+    return get_material("commercial_tile", base_color=(0.91, 0.91, 0.92, 1.0), roughness=0.18, coat_weight=0.35)
+
+def mat_sci_fi_metal():
+    return get_material("sci_fi_deck", base_color=(0.18, 0.20, 0.24, 1.0), metallic=0.75, roughness=0.32)
+
+def mat_grass_natural():
+    return get_material("natural_grass", base_color=(0.14, 0.46, 0.16, 1.0), roughness=0.88)
+
+def mat_stone_path():
+    return get_material("limestone_paver", base_color=(0.76, 0.74, 0.70, 1.0), roughness=0.68)
+
 def mat_velvet_red():
-    return get_material("velvet_red", base_color=(0.65, 0.06, 0.12, 1.0), roughness=0.85)
+    return get_material("velvet_red", base_color=(0.55, 0.05, 0.10, 1.0), roughness=0.85)
 
 def mat_terracotta():
     return get_material("terracotta", base_color=(0.78, 0.38, 0.22, 1.0), roughness=0.75)
@@ -166,8 +189,13 @@ def join_as_named_object(parts_list, exact_name, location=None):
     if len(valid_objs) == 1:
         single = valid_objs[0]
         single.name = exact_name
+        bpy.ops.object.select_all(action='DESELECT')
+        single.select_set(True)
+        bpy.context.view_layer.objects.active = single
+        bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
         if location:
             single.location = location
+            bpy.context.view_layer.update()
         return single
 
     bpy.ops.object.select_all(action='DESELECT')
@@ -177,69 +205,169 @@ def join_as_named_object(parts_list, exact_name, location=None):
     bpy.ops.object.join()
     combined = bpy.context.active_object
     combined.name = exact_name
+    bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
     if location:
         combined.location = location
-    apply_bevel_and_normals(combined, bevel_width=0.010, segments=3)
+        bpy.context.view_layer.update()
+    apply_bevel_and_normals(combined, bevel_width=0.008, segments=3)
     return combined
 
 def join_objects(final_name, objs, location=None):
     return join_as_named_object(objs, final_name, location)
 
+# --- Surface Placement Mathematical Engine ---
+def place_on_surface(obj, surface_x, surface_y, surface_top_z, rotation=None):
+    """
+    Computes the exact world-space bounding box of obj, then translates it so that:
+      - its bottom base (min_z) rests EXACTLY at surface_top_z.
+      - its horizontal center is positioned at (surface_x, surface_y).
+    Preserves node translation (no bake to 0,0,0) so Three.js can inspect child.position!
+    """
+    if not obj:
+        return None
+    bpy.ops.object.select_all(action='DESELECT')
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj
+    bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
+
+    if rotation:
+        obj.rotation_euler = rotation
+    bpy.context.view_layer.update()
+
+    mw = obj.matrix_world
+    world_bb = [mw @ mathutils.Vector(corner) for corner in obj.bound_box]
+    min_x = min(v.x for v in world_bb)
+    max_x = max(v.x for v in world_bb)
+    min_y = min(v.y for v in world_bb)
+    max_y = max(v.y for v in world_bb)
+    min_z = min(v.z for v in world_bb)
+
+    center_x = (min_x + max_x) / 2.0
+    center_y = (min_y + max_y) / 2.0
+
+    dx = surface_x - center_x
+    dy = surface_y - center_y
+    dz = surface_top_z - min_z
+
+    obj.location.x += dx
+    obj.location.y += dy
+    obj.location.z += dz
+
+    bpy.context.view_layer.update()
+    return obj
+
 # --- Architectural Isometric Diorama Base Helper ---
-def add_bounds_anchor(radius=12.0):
+def add_bounds_anchor(radius_x=8.0, radius_y=7.0):
     """
     Creates an invisible symmetric bounding anchor centered at (0, 0) with base at Z=0.
-    In glTF (+Y Up), Blender (X, Y, Z) becomes Three.js (X, Z, -Y).
-    This forces Three.js Box3 to compute:
-      centerX = (-radius + radius) / 2 = 0
-      centerZ = (-radius + radius) / 2 = 0
+    This guarantees Three.js Box3 computes:
+      centerX = (-8.0 + 8.0) / 2 = 0
+      centerZ = (-7.0 + 7.0) / 2 = 0
       min.y = 0
-    guaranteeing glbScene.position stays at (0, 0, 0) without any coordinate drift.
+    so glbScene.position stays at (0, 0, 0) without any coordinate drift.
     """
     mat_inv = get_material("Invisible_Anchor", base_color=(0, 0, 0, 0), roughness=1.0, alpha=0.0)
-    b1 = create_box("Anchor_Min", (-radius, radius, 0.0005), (0.001, 0.001, 0.001), mat_inv, bevel=0.0)
-    b2 = create_box("Anchor_Max", (radius, -radius, 0.0005), (0.001, 0.001, 0.001), mat_inv, bevel=0.0)
+    b1 = create_box("Anchor_Min", (-radius_x, -radius_y, 0.001), (0.001, 0.001, 0.001), mat_inv, bevel=0.0)
+    b2 = create_box("Anchor_Max", (radius_x, radius_y, 0.001), (0.001, 0.001, 0.001), mat_inv, bevel=0.0)
     return join_as_named_object([b1, b2], "World_Bounds_Anchor")
 
-def build_diorama_room(base_name, floor_size=(8.0, 8.0), wall_height=3.2, 
-                       floor_mat=None, wall_mat=None, baseboard_mat=None, 
-                       has_window=True, window_wall='back'):
-    # 1. Floor
+def build_isometric_room(base_name, floor_size=(16.0, 14.0), floor_mat=None, wall_mat=None, 
+                         baseboard_mat=None, north_y=6.0, west_x=-7.0, wall_height=3.6, 
+                         wall_thick=0.25, has_window=True, window_pos=(-1.5, 6.0, 2.0), 
+                         window_size=(3.2, 1.8), rug_config=None):
+    """
+    Constructs an open-front architectural L-cutaway room:
+    - Floor plate: floor_size (16m x 14m) centered at (0, 0) with top surface at Z = 0.
+    - North Wall: at Y = north_y (+6.0m), height 3.6m, thickness 0.25m.
+    - West Wall: at X = west_x (-7.0m), height 3.6m, thickness 0.25m.
+    - Baseboards along the North and West walls.
+    - Architectural framed window with glass and sill.
+    - Optional central accent rug (with realistic colors, zero hot-pink).
+    """
+    parts = []
     fx, fy = floor_size
-    flr = create_box(f"{base_name}_Floor", (0, 0, -0.06), (fx, fy, 0.12), floor_mat or mat_warm_wood(), bevel=0.0)
-    
-    # 2. Baseboards (Zócalos)
+    f_mat = floor_mat or mat_warm_wood()
+    w_mat = wall_mat or get_material(f"{base_name}_WallMat", base_color=(0.92, 0.92, 0.93, 1.0), roughness=0.6)
     bb_mat = baseboard_mat or mat_dark_walnut()
-    # Back baseboard (along +Y edge)
-    bb_back = create_box(f"{base_name}_BB_Back", (0, fy/2 - 0.05, 0.08), (fx, 0.08, 0.16), bb_mat, bevel=0.005)
-    # Left baseboard (along -X edge)
-    bb_left = create_box(f"{base_name}_BB_Left", (-fx/2 + 0.05, 0, 0.08), (0.08, fy, 0.16), bb_mat, bevel=0.005)
 
-    # 3. L-Shaped Walls
-    w_mat = wall_mat or get_material(f"{base_name}_WallMat", base_color=(0.92, 0.93, 0.95, 1.0), roughness=0.6)
-    w_thick = 0.20
+    # 1. Floor Plate (base at Z = -0.04, top at Z = 0.00)
+    flr = create_box(f"{base_name}_Floor", (0, 0, -0.02), (fx, fy, 0.04), f_mat, bevel=0.0)
+    parts.append(flr)
+
+    # Optional Rug
+    if rug_config:
+        # rug_config: (center_x, center_y, size_x, size_y, mat, is_circle)
+        rc_x, rc_y, rs_x, rs_y, r_mat, is_circ = rug_config
+        if is_circ:
+            rug = create_cylinder(f"{base_name}_Rug", (rc_x, rc_y, 0.008), rs_x / 2.0, 0.016, r_mat, vertices=48, bevel=0.003)
+        else:
+            rug = create_box(f"{base_name}_Rug", (rc_x, rc_y, 0.008), (rs_x, rs_y, 0.016), r_mat, bevel=0.008)
+        parts.append(rug)
+
+    # 2. L-Shaped Walls
+    # North Wall: X from west_x - wall_thick/2 (-7.125) to +fx/2 (+8.0)
+    nw_len = (fx / 2.0) - (west_x - wall_thick / 2.0)
+    nw_center_x = (west_x - wall_thick / 2.0) + (nw_len / 2.0)
     
-    # Back Wall
-    wall_back = create_box(f"{base_name}_Wall_Back", (0, fy/2 + w_thick/2, wall_height/2), (fx + w_thick*2, w_thick, wall_height), w_mat, bevel=0.015)
-    # Left Wall
-    wall_left = create_box(f"{base_name}_Wall_Left", (-fx/2 - w_thick/2, 0, wall_height/2), (w_thick, fy, wall_height), w_mat, bevel=0.015)
+    # West Wall: Y from -fy/2 (-7.0) to north_y + wall_thick/2 (+6.125)
+    ww_len = (north_y + wall_thick / 2.0) - (-fy / 2.0)
+    ww_center_y = (-fy / 2.0) + (ww_len / 2.0)
 
-    # 4. Optional Window
-    decor_parts = [flr, bb_back, bb_left, wall_back, wall_left]
-    if has_window:
-        win_frame = create_box(f"{base_name}_Win_Frame", (0, fy/2, 1.8), (2.2, 0.25, 1.4), mat_steel())
-        win_glass = create_box(f"{base_name}_Win_Glass", (0, fy/2, 1.8), (2.0, 0.05, 1.2), mat_glass())
-        win_sill = create_box(f"{base_name}_Win_Sill", (0, fy/2 - 0.10, 1.05), (2.4, 0.35, 0.08), bb_mat)
-        decor_parts.extend([win_frame, win_glass, win_sill])
+    # Build North Wall (with window cutout or framed)
+    if has_window and window_pos:
+        wx, wy, wz = window_pos
+        w_w, w_h = window_size
+        # Left section of North wall
+        left_len = (wx - w_w / 2.0) - (west_x - wall_thick / 2.0)
+        if left_len > 0.1:
+            left_cx = (west_x - wall_thick / 2.0) + left_len / 2.0
+            w_left = create_box(f"{base_name}_NW_L", (left_cx, north_y, wall_height / 2.0), (left_len, wall_thick, wall_height), w_mat, bevel=0.01)
+            parts.append(w_left)
+        # Right section of North wall
+        right_len = (fx / 2.0) - (wx + w_w / 2.0)
+        if right_len > 0.1:
+            right_cx = (wx + w_w / 2.0) + right_len / 2.0
+            w_right = create_box(f"{base_name}_NW_R", (right_cx, north_y, wall_height / 2.0), (right_len, wall_thick, wall_height), w_mat, bevel=0.01)
+            parts.append(w_right)
+        # Top header
+        top_h = wall_height - (wz + w_h / 2.0)
+        if top_h > 0.05:
+            top_cz = wz + w_h / 2.0 + top_h / 2.0
+            w_top = create_box(f"{base_name}_NW_Top", (wx, north_y, top_cz), (w_w, wall_thick, top_h), w_mat, bevel=0.01)
+            parts.append(w_top)
+        # Bottom sill wall
+        bot_h = wz - w_h / 2.0
+        if bot_h > 0.05:
+            bot_cz = bot_h / 2.0
+            w_bot = create_box(f"{base_name}_NW_Bot", (wx, north_y, bot_cz), (w_w, wall_thick, bot_h), w_mat, bevel=0.01)
+            parts.append(w_bot)
 
-    return join_as_named_object(decor_parts, f"{base_name}_Diorama")
+        # Window Frame & Glass
+        win_frame = create_box(f"{base_name}_Win_Frame", (wx, north_y, wz), (w_w + 0.10, wall_thick + 0.05, w_h + 0.10), mat_steel(), bevel=0.01)
+        win_glass = create_box(f"{base_name}_Win_Glass", (wx, north_y, wz), (w_w, 0.02, w_h), mat_glass())
+        win_sill = create_box(f"{base_name}_Win_Sill", (wx, north_y - 0.08, wz - w_h / 2.0), (w_w + 0.20, 0.32, 0.06), bb_mat, bevel=0.008)
+        parts.extend([win_frame, win_glass, win_sill])
+    else:
+        wall_north = create_box(f"{base_name}_Wall_North", (nw_center_x, north_y, wall_height / 2.0), (nw_len, wall_thick, wall_height), w_mat, bevel=0.01)
+        parts.append(wall_north)
+
+    # West Wall
+    wall_west = create_box(f"{base_name}_Wall_West", (west_x, ww_center_y, wall_height / 2.0), (wall_thick, ww_len, wall_height), w_mat, bevel=0.01)
+    parts.append(wall_west)
+
+    # 3. Baseboards (Zócalos)
+    bb_north = create_box(f"{base_name}_BB_N", (nw_center_x, north_y - wall_thick / 2.0 - 0.015, 0.075), (nw_len, 0.03, 0.15), bb_mat, bevel=0.004)
+    bb_west = create_box(f"{base_name}_BB_W", (west_x + wall_thick / 2.0 + 0.015, ww_center_y, 0.075), (0.03, ww_len, 0.15), bb_mat, bevel=0.004)
+    parts.extend([bb_north, bb_west])
+
+    return join_as_named_object(parts, f"{base_name}_Diorama")
 
 def export_glb(filepath):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
     bpy.ops.export_scene.gltf(
         filepath=filepath,
         export_format='GLB',
-        export_apply=True,
+        export_apply=False,
         export_yup=True
     )
     size_kb = os.path.getsize(filepath) / 1024

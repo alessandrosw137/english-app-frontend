@@ -8,9 +8,9 @@
 (function () {
   'use strict';
 
-  const DB_NAME = 'MasterENG_3D_Assets_DB';
-  const STORE_NAME = 'glb_packs';
-  const DB_VERSION = 1;
+  const DB_NAME = 'MasterENG_3D_Assets_DB_v2';
+  const STORE_NAME = 'glb_packs_v2';
+  const DB_VERSION = 2;
 
   // Registro maestro de paquetes 3D con estimaciones y títulos amigables
   const ASSET_PACKS_REGISTRY = {
@@ -21,8 +21,8 @@
       nameEn: 'House & Garden',
       category: 'world3d',
       icon: '🏠',
-      glbUrl: 'assets/models/house_world.glb',
-      estimatedMB: 14.85,
+      glbUrl: 'assets/models/worlds/house.glb',
+      estimatedMB: 0.41,
       description: 'Habitaciones interactivas, muebles y jardín con iluminación realista.'
     },
     supermarket: {
@@ -32,8 +32,8 @@
       nameEn: 'Supermarket',
       category: 'world3d',
       icon: '🛒',
-      glbUrl: 'assets/models/supermarket_world.glb',
-      estimatedMB: 18.20,
+      glbUrl: 'assets/models/worlds/supermarket.glb',
+      estimatedMB: 0.40,
       description: 'Pasillos de compras, estantes detallados, alimentos frescos y caja.'
     },
     restaurant: {
@@ -43,8 +43,8 @@
       nameEn: 'Restaurant',
       category: 'world3d',
       icon: '🍽️',
-      glbUrl: 'assets/models/restaurant_world.glb',
-      estimatedMB: 16.50,
+      glbUrl: 'assets/models/worlds/restaurant.glb',
+      estimatedMB: 0.34,
       description: 'Mesas reservadas, cocina interactiva, cubertería y área de bar.'
     },
     hotel: {
@@ -54,8 +54,8 @@
       nameEn: 'Grand Hotel',
       category: 'world3d',
       icon: '🏨',
-      glbUrl: 'assets/models/hotel_world.glb',
-      estimatedMB: 19.40,
+      glbUrl: 'assets/models/worlds/hotel.glb',
+      estimatedMB: 0.24,
       description: 'Recepción elegante, lobby, suite y áreas comunes para explorar.'
     },
     dating: {
@@ -65,31 +65,42 @@
       nameEn: 'Dating & Café',
       category: 'world3d',
       icon: '☕',
-      glbUrl: 'assets/models/dating_world.glb',
-      estimatedMB: 15.10,
+      glbUrl: 'assets/models/worlds/dating.glb',
+      estimatedMB: 0.56,
       description: 'Ambiente tranquilo, terraza exterior, cafetería y música suave.'
+    },
+    garden: {
+      packId: 'garden',
+      title: 'Jardín y Naturaleza',
+      titleEs: 'Jardín Botánico',
+      nameEn: 'Botanical Garden & Park',
+      category: 'world3d',
+      icon: '🌲',
+      glbUrl: 'assets/models/worlds/garden.glb',
+      estimatedMB: 0.39,
+      description: 'Jardín botánico con pérgola, fuente, herramientas y flores interactivas.'
     },
     nature: {
       packId: 'nature',
-      title: 'Naturaleza y Fauna',
-      titleEs: 'Naturaleza y Fauna',
-      nameEn: 'Nature & Wildlife',
+      title: 'Jardín y Naturaleza',
+      titleEs: 'Jardín Botánico',
+      nameEn: 'Botanical Garden & Park',
       category: 'world3d',
       icon: '🌲',
-      glbUrl: 'assets/models/nature_world.glb',
-      estimatedMB: 21.75,
-      description: 'Bosque frondoso, cascada animada, senderos y animales interactivos.'
+      glbUrl: 'assets/models/worlds/garden.glb',
+      estimatedMB: 0.39,
+      description: 'Jardín botánico con pérgola, fuente, herramientas y flores interactivas.'
     },
     space: {
       packId: 'space',
       title: 'Estación Espacial',
       titleEs: 'Estación Espacial',
-      nameEn: 'Space Station & Cosmos',
+      nameEn: 'Orbital Space Station',
       category: 'world3d',
       icon: '🚀',
-      glbUrl: 'assets/models/space_world.glb',
-      estimatedMB: 26.50,
-      description: 'Planetas detallados, el cosmos, la órbita y la estación espacial.'
+      glbUrl: 'assets/models/worlds/space.glb',
+      estimatedMB: 0.38,
+      description: 'Módulo espacial orbital, esclusa, consola de mando y telescopio.'
     },
     soccer: {
       packId: 'soccer',
@@ -98,19 +109,19 @@
       nameEn: 'Tactical Soccer Stadium',
       category: 'sports',
       icon: '⚽',
-      glbUrl: 'assets/models/soccer_stadium.glb',
-      estimatedMB: 22.40,
+      glbUrl: 'assets/models/soccer/soccer_pack.glb',
+      estimatedMB: 0.98,
       description: 'Estadio nocturno iluminado con césped y jugadas interactivas.'
     },
     hedbanz: {
       packId: 'hedbanz',
       title: 'Hedbanz Party',
       titleEs: 'Hedbanz Party',
-      nameEn: 'Hedbanz 3D Party',
+      nameEn: 'Hedbanz 3D Guessing Game',
       category: 'minigames',
       icon: '🎭',
-      glbUrl: 'assets/models/hedbanz_party.glb',
-      estimatedMB: 12.10,
+      glbUrl: 'assets/models/hedbanz/hedbanz_pack.glb',
+      estimatedMB: 0.27,
       description: 'Tarjetas divertidas, pistas y adivinanzas rápidas en 3D.'
     }
   };
@@ -879,9 +890,9 @@
         estimatedMB: reg.estimatedMB,
         onReady: function (blobUrl) {
           if (typeof origLoadWorld === 'function') {
-            origLoadWorld(key);
+            origLoadWorld(key, blobUrl);
           } else if (typeof window.switch3DScenario === 'function') {
-            window.switch3DScenario(key);
+            window.switch3DScenario(key, blobUrl);
           }
         },
         onCancel: function () {
