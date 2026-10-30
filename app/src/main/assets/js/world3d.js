@@ -351,8 +351,8 @@
   // Vistas predefinidas de cámara (Filtro Rápido)
   const CAMERA_ZONES = {
     overview: {
-      pos: { x: 0, y: 10.8, z: 16.8 },
-      lookAt: { x: 0, y: 1.3, z: -0.5 },
+      pos: { x: 12, y: 14, z: 16 },
+      lookAt: { x: 0, y: 1.5, z: 0 },
       label: '🏠 Vista General'
     },
     living: {
@@ -7183,6 +7183,65 @@ ensureOrbitControls();
   World3D.optimizeSceneFor60FPS = optimizeSceneFor60FPS;
   global.optimizeSceneFor60FPS = optimizeSceneFor60FPS;
 
+  // 6.5. ILUMINACIÓN DE ESTUDIO PMREM PARA REFLEXIONES METÁLICAS Y TRANSMISIÓN PBR
+  function setupPMREMStudioLighting(targetRenderer, targetScene) {
+    if (!targetRenderer || !targetScene || typeof THREE === 'undefined' || !THREE.PMREMGenerator) return;
+    try {
+      const pmremGenerator = new THREE.PMREMGenerator(targetRenderer);
+      if (typeof pmremGenerator.compileEquirectangularShader === 'function') {
+        pmremGenerator.compileEquirectangularShader();
+      }
+      const studioScene = new THREE.Scene();
+      studioScene.background = new THREE.Color(0x181c24);
+
+      // Cúpula suave envolvente
+      const dome = new THREE.Mesh(
+        new THREE.SphereGeometry(20, 16, 16),
+        new THREE.MeshBasicMaterial({ color: 0x222836, side: THREE.BackSide })
+      );
+      studioScene.add(dome);
+
+      // Panel 1: Key light cálida principal
+      const keyLight = new THREE.Mesh(
+        new THREE.PlaneGeometry(10, 10),
+        new THREE.MeshBasicMaterial({ color: 0xfff5ea })
+      );
+      keyLight.position.set(12, 14, 12);
+      keyLight.lookAt(0, 0, 0);
+      studioScene.add(keyLight);
+
+      // Panel 2: Fill light fría de relleno
+      const fillLight = new THREE.Mesh(
+        new THREE.PlaneGeometry(10, 10),
+        new THREE.MeshBasicMaterial({ color: 0xc8e0ff })
+      );
+      fillLight.position.set(-12, 10, -8);
+      fillLight.lookAt(0, 0, 0);
+      studioScene.add(fillLight);
+
+      // Panel 3: Rim / kicker light cenital suave
+      const rimLight = new THREE.Mesh(
+        new THREE.PlaneGeometry(8, 8),
+        new THREE.MeshBasicMaterial({ color: 0xffffff })
+      );
+      rimLight.position.set(0, 16, -10);
+      rimLight.lookAt(0, 0, 0);
+      studioScene.add(rimLight);
+
+      if (typeof pmremGenerator.fromScene === 'function') {
+        const renderTarget = pmremGenerator.fromScene(studioScene);
+        if (renderTarget && renderTarget.texture) {
+          targetScene.environment = renderTarget.texture;
+        }
+      }
+      if (typeof pmremGenerator.dispose === 'function') {
+        pmremGenerator.dispose();
+      }
+    } catch (err) {
+      console.warn('[World3D] PMREM studio generation fallback:', err);
+    }
+  }
+
   // 7. ILUMINACIÓN CINEMÁTICA EQUILIBRADA Y CICLO DÍA / NOCHE
   // ============================================================================
   function setupCinematicLighting(targetScene) {
@@ -9688,8 +9747,9 @@ ensureOrbitControls();
       controls.syncSphericalFromObject();
     }
 
-    // 5. Iluminación equilibrada, Escenario Activo + Domo Espacial
+    // 5. Iluminación equilibrada, Escenario Activo + Domo Espacial + PMREM Studio
     setupCinematicLighting(scene);
+    setupPMREMStudioLighting(renderer, scene);
     buildScenarioWorld(scene, currentScenarioKey || 'house');
     applyDayNightState(currentScenarioKey === 'dating' || currentScenarioKey === 'space');
 
@@ -10992,6 +11052,87 @@ ensureOrbitControls();
     if (!glbScene || !scenarioDynamicRoot) return;
     glbScene.name = 'Blender_GLB_' + scenarioKey;
 
+    // 1. Auto-Centrado y Encuadre Perfecto con Box3 (Base en y = 0 exacto, centrado en X y Z)
+    if (typeof THREE !== 'undefined' && THREE.Box3 && THREE.Vector3) {
+      glbScene.updateMatrixWorld(true);
+      const box = new THREE.Box3().setFromObject(glbScene);
+      if (!box.isEmpty()) {
+        const centerX = (box.max.x + box.min.x) / 2;
+        const centerZ = (box.max.z + box.min.z) / 2;
+        glbScene.position.x = -centerX;
+        glbScene.position.y = -box.min.y; // Base del diorama en y = 0 exacto
+        glbScene.position.z = -centerZ;
+        glbScene.updateMatrixWorld(true);
+      }
+    }
+
+    // 2. Encuadre de Cámara Isométrica Limpia mirando al interior sin oclusión
+    if (camera && controls) {
+      camera.position.set(12, 14, 16);
+      controls.target.set(0, 1.5, 0);
+      if (typeof controls.syncSphericalFromObject === 'function') {
+        controls.syncSphericalFromObject();
+      }
+      controls.update();
+    }
+
+    // 3. Iluminación PMREM de estudio si no estuviera activa
+    if (renderer && scene && (!scene.environment || !scene.environment.isTexture)) {
+      setupPMREMStudioLighting(renderer, scene);
+    }
+
+    // 4. Diccionario de Vocabulario Oficial de Blender Models
+    const KNOWN_BLENDER_VOCAB = {
+      microwave: { en: 'Microwave Oven', ipa: '/ˈmaɪ.kroʊ.weɪv ˈʌv.ən/', es: 'Horno Microondas', example: 'Heat up your breakfast in the microwave oven.' },
+      blender: { en: 'Kitchen Blender', ipa: '/ˈkɪtʃ.ən ˈblen.dɚ/', es: 'Licuadora de Cocina', example: 'Blend fresh fruits and milk to make a delicious smoothie.' },
+      cereal_box: { en: 'Cereal Box', ipa: '/ˈsɪr.i.əl bɑːks/', es: 'Caja de Cereales', example: 'Pour crunchy toasted corn flakes into the breakfast bowl.' },
+      mayonnaise: { en: 'Mayonnaise Jar', ipa: '/ˈmeɪ.ə.neɪz dʒɑːr/', es: 'Frasco de Mayonesa', example: 'Spread a spoonful of creamy mayonnaise on the bread.' },
+      table_cream: { en: 'Table Cream', ipa: '/ˈteɪ.bəl kriːm/', es: 'Crema de Mesa', example: 'Pour rich fresh table cream over ripe strawberries.' },
+      cash_register: { en: 'Cash Register', ipa: '/ˈkæʃ ˌredʒ.ə.stɚ/', es: 'Caja Registradora', example: 'The cashier calculates the total on the cash register.' },
+      wine_glass: { en: 'Wine Glass', ipa: '/ˈwaɪn ˌɡlæs/', es: 'Copa de Cristal', example: 'They raised their crystal wine glass for an evening toast.' },
+      wine_glasses: { en: 'Wine Glasses', ipa: '/ˈwaɪn ˌɡlæs.ɪz/', es: 'Copas de Vino', example: 'Two sparkling wine glasses are set for the romantic dinner.' },
+      bellhop_bell: { en: 'Bellhop Bell', ipa: '/ˈbel.hɑːp bel/', es: 'Campanilla de Recepción', example: 'Ring the golden bellhop bell to call the front desk.' },
+      candle: { en: 'Aromatic Candle', ipa: '/ˈkæn.dəl/', es: 'Vela Aromática', example: 'The warm candle flame creates a calm and romantic atmosphere.' },
+      violin: { en: 'Acoustic Violin', ipa: '/ˌvaɪəˈlɪn/', es: 'Violín Acústico', example: 'The musician plays a soft melody on the wooden violin.' },
+      watering_can: { en: 'Watering Can', ipa: '/ˈwɑː.t̬ɚ.ɪŋ kæn/', es: 'Regadera de Jardín', example: 'Use the green watering can to water the blooming plants.' },
+      astronaut_helmet: { en: 'Astronaut Helmet', ipa: '/ˈæs.trə.nɑːt ˈhel.mət/', es: 'Casco de Astronauta', example: 'The astronaut helmet has a reflective gold visor for space walks.' },
+      refrigerator: { en: 'Refrigerator', ipa: '/rɪˈfrɪdʒ.ə.reɪ.t̬ɚ/', es: 'Refrigerador', example: 'Keep the groceries cool and fresh in the refrigerator.' },
+      sofa: { en: 'Living Room Sofa', ipa: '/ˈsoʊ.fə/', es: 'Sofá de Sala', example: 'Relax on the comfortable sofa while reading English books.' },
+      television: { en: 'Smart Television', ipa: '/ˈtel.ə.vɪʒ.ən/', es: 'Televisión Inteligente', example: 'Watch English movies and dialogues on the smart screen.' },
+      bookshelf: { en: 'Bookshelf', ipa: '/ˈbʊk.ʃelf/', es: 'Librero / Estantería', example: 'The wooden bookshelf is filled with colorful novels and dictionaries.' },
+      coffee_table: { en: 'Coffee Table', ipa: '/ˈkɑː.fi ˌteɪ.bəl/', es: 'Mesa de Centro', example: 'A magazine and cup of hot tea rest on the coffee table.' },
+      floor_lamp: { en: 'Floor Lamp', ipa: '/ˈflɔːr ˌlæmp/', es: 'Lámpara de Pie', example: 'Turn on the tall floor lamp for soft evening reading light.' },
+      desk: { en: 'Study Desk', ipa: '/ˈstʌd.i desk/', es: 'Escritorio de Estudio', example: 'Study vocabulary and practice grammar notes at the desk.' },
+      office_chair: { en: 'Office Chair', ipa: '/ˈɑː.fɪs tʃer/', es: 'Silla de Oficina', example: 'Sit comfortably in the ergonomic chair during English study sessions.' },
+      laptop: { en: 'Laptop Computer', ipa: '/ˈlæp.tɑːp/', es: 'Computadora Portátil', example: 'Type your English assignments on the lightweight laptop.' },
+      computer_monitor: { en: 'Computer Monitor', ipa: '/kəmˈpjuː.t̬ɚ ˈmɑː.nə.t̬ɚ/', es: 'Monitor de Computadora', example: 'The monitor displays interactive vocabulary flashcards in HD.' },
+      armchair: { en: 'Armchair', ipa: '/ˈɑːrm.tʃer/', es: 'Sillón Individual', example: 'Curl up in the soft armchair with a gripping English novel.' },
+      wall_clock: { en: 'Wall Clock', ipa: '/ˈwɔːl klɑːk/', es: 'Reloj de Pared', example: 'The modern wall clock ticks rhythmically on the study room wall.' },
+      indoor_plant: { en: 'Indoor Plant', ipa: '/ˈɪn.dɔːr plænt/', es: 'Planta de Interior', example: 'The lush indoor plant purifies the room air naturally.' },
+      shopping_cart: { en: 'Shopping Cart', ipa: '/ˈʃɑː.pɪŋ kɑːrt/', es: 'Carrito de Compras', example: 'Fill the metal shopping cart with fresh grocery items.' },
+      milk_carton: { en: 'Milk Carton', ipa: '/ˈmɪlk ˈkɑːr.tən/', es: 'Cartón de Leche', example: 'Keep the cold organic milk in the refrigerator door.' },
+      apple_crate: { en: 'Apple Crate', ipa: '/ˈæp.əl kreɪt/', es: 'Caja de Manzanas', example: 'Pick ripe red apples from the supermarket wooden crate.' },
+      luggage_cart: { en: 'Luggage Cart', ipa: '/ˈlʌɡ.ɪdʒ kɑːrt/', es: 'Carrito de Equipaje', example: 'The bellhop loads the travel suitcases onto the luggage cart.' },
+      keycard_scanner: { en: 'Keycard Scanner', ipa: '/ˈkiː.kɑːrd ˈskæn.ɚ/', es: 'Lector de Llave Magnética', example: 'Tap your electronic keycard to unlock the hotel suite door.' },
+      concierge_desk: { en: 'Concierge Desk', ipa: '/koʊn.siˈerʒ desk/', es: 'Mostrador de Conserjería', example: 'Ask the concierge for local museum directions and tickets.' },
+      hotel_luggage: { en: 'Hotel Luggage', ipa: '/hoʊˈtel ˈlʌɡ.ɪdʒ/', es: 'Maleta de Viaje', example: 'Unpack your travel luggage inside the hotel room.' },
+      chef_hat: { en: 'Chef Hat', ipa: '/ˈʃef hæt/', es: 'Gorro de Chef', example: 'The executive chef wears a tall traditional white hat.' },
+      menu_card: { en: 'Dinner Menu', ipa: '/ˈmen.juː kɑːrd/', es: 'Carta del Menú', example: 'Check the dinner menu for the chef special of the day.' },
+      salt_shaker: { en: 'Salt Shaker', ipa: '/ˈsɑːlt ˌʃeɪ.kɚ/', es: 'Salero de Mesa', example: 'Sprinkle a pinch of sea salt on your warm dish.' },
+      pepper_mill: { en: 'Pepper Mill', ipa: '/ˈpep.ɚ mɪl/', es: 'Molinillo de Pimienta', example: 'Grind freshly roasted black pepper over the pasta.' },
+      serving_cloche: { en: 'Serving Cloche', ipa: '/ˈsɝː.vɪŋ kloʊʃ/', es: 'Campana para Servir', example: 'The waiter lifts the silver cloche to reveal the main course.' },
+      wheelbarrow: { en: 'Wheelbarrow', ipa: '/ˈwiːlˌber.oʊ/', es: 'Carretilla de Jardinería', example: 'Transport fertile garden soil with the sturdy wheelbarrow.' },
+      garden_bench: { en: 'Garden Bench', ipa: '/ˈɡɑːr.dən bentʃ/', es: 'Banca de Jardín', example: 'Sit peacefully on the wooden bench under the morning sun.' },
+      flower_pot: { en: 'Flower Pot', ipa: '/ˈflaʊ.ɚ pɑːt/', es: 'Maceta con Flores', example: 'Colorful spring blossoms grow inside the terracotta pot.' },
+      sun_lounger: { en: 'Sun Lounger', ipa: '/ˈsʌn ˌlaʊn.dʒɚ/', es: 'Camastro de Jardín', example: 'Lie back on the sun lounger and enjoy the afternoon breeze.' },
+      rocket_model: { en: 'Space Rocket', ipa: '/ˈrɑː.kɪt/', es: 'Cohete Espacial', example: 'The multi-stage space rocket launches into high Earth orbit.' },
+      telescope: { en: 'Observatory Telescope', ipa: '/ˈtel.ə.skoʊp/', es: 'Telescopio de Observación', example: 'Gaze at the rings of Saturn through the high-power telescope.' },
+      satellite_model: { en: 'Orbital Satellite', ipa: '/ˈsæt̬.əl.aɪt/', es: 'Satélite Orbital', example: 'The communication satellite relays signals across the globe.' },
+      lunar_rover: { en: 'Lunar Rover', ipa: '/ˈluː.nɚ ˈroʊ.vɚ/', es: 'Vehículo de Exploración Lunar', example: 'The robotic rover navigates across the rocky lunar terrain.' },
+      champagne_bottle: { en: 'Champagne Bottle', ipa: '/ʃæmˈpeɪn ˈbɑː.t̬əl/', es: 'Botella de Champaña', example: 'Chill the celebratory champagne bottle in a silver ice bucket.' },
+      rose_bouquet: { en: 'Rose Bouquet', ipa: '/roʊz buːˈkeɪ/', es: 'Ramillete de Rosas Rojas', example: 'A fresh bouquet of crimson roses decorates the table.' }
+    };
+
     const scen = WORLD_TOUR_SCENARIOS[scenarioKey] || {};
     const scenObjects = scen.objects || [];
 
@@ -11007,9 +11148,17 @@ ensureOrbitControls();
 
         const normName = rawName.toLowerCase().replace(/[^a-z0-9]/g, '_');
 
-        let meta = WORLD3D_VOCAB_CATALOG[normName] || WORLD3D_VOCAB_CATALOG[rawName];
+        let meta = KNOWN_BLENDER_VOCAB[normName] || WORLD3D_VOCAB_CATALOG[normName] || WORLD3D_VOCAB_CATALOG[rawName];
         if (!meta) {
-          meta = scenObjects.find(o => o.id === normName || o.id === rawName || (o.wordEn && o.wordEn.toLowerCase().replace(/[^a-z0-9]/g, '_') === normName));
+          meta = scenObjects.find(o => o.id === normName || o.id === (scenarioKey + '_' + normName) || (o.id && o.id.endsWith('_' + normName)) || (o.wordEn && o.wordEn.toLowerCase().replace(/[^a-z0-9]/g, '_') === normName));
+        }
+        if (!meta) {
+          for (const k in KNOWN_BLENDER_VOCAB) {
+            if (normName.includes(k) || k.includes(normName)) {
+              meta = KNOWN_BLENDER_VOCAB[k];
+              break;
+            }
+          }
         }
         if (!meta) {
           for (const k in WORLD3D_VOCAB_CATALOG) {
@@ -11022,7 +11171,7 @@ ensureOrbitControls();
 
         const cleanWord = (meta && (meta.wordEn || meta.en)) || rawName.replace(/_/g, ' ');
         const cleanEs = (meta && (meta.wordEs || meta.es)) || cleanWord;
-        const ipaPhon = (meta && (meta.ipa || meta.phonetic)) || '';
+        const ipaPhon = (meta && (meta.ipa || meta.phonetic)) || `/${cleanWord.toLowerCase().replace(/\s+/g, '.')}/`;
         const exText = (meta && meta.example) || `This is the ${cleanWord}. Practice its native pronunciation!`;
 
         child.userData = Object.assign({}, meta || {}, {
@@ -11214,7 +11363,7 @@ ensureOrbitControls();
         }
 
         // PASO 3 (85% - "Construyendo objetos del escenario...")
-        // Envuelve la compilación y carga en Promise.race con timeout de seguridad de 1200ms
+        // Envuelve la compilación y carga en Promise.race con timeout de seguridad de 1000ms
         const t3 = setTimeout(() => {
           if (loadToken !== _activeLoadToken) return;
           setLoaderProgress(85, 'Construyendo objetos del escenario...');
@@ -11248,7 +11397,7 @@ ensureOrbitControls();
             }
           });
 
-          const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 1200));
+          const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 1000));
 
           Promise.race([loadPromise, timeoutPromise]).then(() => {
             if (loadToken !== _activeLoadToken) return;

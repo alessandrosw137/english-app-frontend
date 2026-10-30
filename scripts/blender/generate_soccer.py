@@ -9,142 +9,176 @@ if script_dir not in sys.path:
 
 from core import (
     reset_scene, get_material, create_box, create_cylinder, 
-    create_sphere, create_torus, join_objects, export_glb, apply_bevel_and_normals
+    create_sphere, create_torus, join_as_named_object, export_glb,
+    mat_chrome, mat_steel, mat_gold, mat_screen
 )
 
 OUTPUT_SOCCER_DIR = r"C:\Users\alessandro\Desktop\ENGLISH\assets\models\soccer"
 
-def build_player(name, x, y, jersey_mat, shorts_mat, socks_mat, is_gk=False):
-    mat_skin = get_material("Player_Skin", base_color=(0.82, 0.62, 0.48, 1.0), roughness=0.6)
-    mat_hair = get_material("Player_Hair", base_color=(0.12, 0.08, 0.05, 1.0), roughness=0.8)
-    mat_boots = get_material("Football_Boots", base_color=(0.10, 0.10, 0.12, 1.0), roughness=0.3)
-    mat_studs = get_material("Boot_Studs", base_color=(0.95, 0.85, 0.20, 1.0), metallic=0.9, roughness=0.2)
-    mat_gloves = get_material("GK_Gloves_Neon", base_color=(0.20, 0.95, 0.15, 1.0), roughness=0.4)
+def build_stylized_player(name, x, y, jersey_mat, shorts_mat, socks_mat, dorsal="10", is_gk=False):
+    mat_skin = get_material("Player_Skin_Tone", base_color=(0.84, 0.65, 0.50, 1.0), roughness=0.55)
+    mat_hair = get_material("Player_Hair_Cut", base_color=(0.10, 0.08, 0.06, 1.0), roughness=0.8)
+    mat_boots = get_material("Cleat_Black", base_color=(0.08, 0.08, 0.09, 1.0), roughness=0.3)
+    mat_studs = mat_gold()
+    mat_white = get_material("Trim_White", base_color=(0.98, 0.98, 0.98, 1.0), roughness=0.4)
+    mat_gloves = get_material("GK_Gloves_Volt", base_color=(0.15, 0.95, 0.10, 1.0), roughness=0.35)
 
-    # 1. Torso
-    torso = create_box(f"{name}_t", (x, y, 1.25), (0.42, 0.24, 0.50), jersey_mat, bevel=0.02)
-    
-    # 2. Head & Hair
-    neck = create_cylinder(f"{name}_nk", (x, y, 1.55), 0.06, 0.10, mat_skin)
-    head = create_sphere(f"{name}_hd", (x, y, 1.70), 0.14, mat_skin, scale=(0.95, 1.05, 1.1))
-    hair = create_sphere(f"{name}_hr", (x, y - 0.02, 1.76), 0.145, mat_hair, scale=(1.0, 1.05, 0.7))
+    parts = []
 
-    # 3. Arms & Hands / Gloves
-    arm_l = create_cylinder(f"{name}_al", (x - 0.28, y, 1.25), 0.055, 0.45, jersey_mat)
-    arm_r = create_cylinder(f"{name}_ar", (x + 0.28, y, 1.25), 0.055, 0.45, jersey_mat)
-    hand_mat = mat_gloves if is_gk else mat_skin
-    hand_scale = (1.3, 1.3, 1.3) if is_gk else (1.0, 1.0, 1.0)
-    hand_l = create_sphere(f"{name}_hl", (x - 0.28, y, 0.98), 0.06, hand_mat, scale=hand_scale)
-    hand_r = create_sphere(f"{name}_hr", (x + 0.28, y, 0.98), 0.06, hand_mat, scale=hand_scale)
+    # 1. Torso & Athletic V-Neck
+    torso = create_box(f"{name}_tor", (x, y, 1.25), (0.44, 0.25, 0.52), jersey_mat, bevel=0.02)
+    collar = create_torus(f"{name}_col", (x, y, 1.50), 0.10, 0.015, mat_white)
+    # Dorsal in relief on the back
+    dorsal_plate = create_box(f"{name}_dor", (x, y + 0.13, 1.30), (0.16, 0.01, 0.20), mat_white)
+    parts.extend([torso, collar, dorsal_plate])
 
-    # 4. Shorts & Pelvis
-    shorts = create_box(f"{name}_sh", (x, y, 0.90), (0.40, 0.23, 0.24), shorts_mat, bevel=0.02)
+    # 2. Neck & Head with modern sculpted haircut & ears
+    neck = create_cylinder(f"{name}_nk", (x, y, 1.56), 0.065, 0.12, mat_skin)
+    head = create_sphere(f"{name}_hd", (x, y, 1.72), 0.145, mat_skin, scale=(0.95, 1.05, 1.15))
+    hair = create_sphere(f"{name}_hr", (x, y - 0.02, 1.78), 0.15, mat_hair, scale=(1.02, 1.06, 0.75))
+    ear_l = create_sphere(f"{name}_el", (x - 0.14, y, 1.72), 0.025, mat_skin)
+    ear_r = create_sphere(f"{name}_er", (x + 0.14, y, 1.72), 0.025, mat_skin)
+    parts.extend([neck, head, hair, ear_l, ear_r])
 
-    # 5. Legs & Socks
-    leg_l = create_cylinder(f"{name}_ll", (x - 0.12, y, 0.55), 0.065, 0.50, socks_mat)
-    leg_r = create_cylinder(f"{name}_lr", (x + 0.12, y, 0.55), 0.065, 0.50, socks_mat)
+    # 3. Arms, Elbows, Forearms, Hands/Gloves
+    arm_l = create_cylinder(f"{name}_al", (x - 0.30, y, 1.28), 0.055, 0.30, jersey_mat)
+    arm_r = create_cylinder(f"{name}_ar", (x + 0.30, y, 1.28), 0.055, 0.30, jersey_mat)
+    fore_l = create_cylinder(f"{name}_fl", (x - 0.30, y, 1.02), 0.048, 0.26, mat_skin)
+    fore_r = create_cylinder(f"{name}_fr", (x + 0.30, y, 1.02), 0.048, 0.26, mat_skin)
+    h_mat = mat_gloves if is_gk else mat_skin
+    h_sc = (1.35, 1.35, 1.35) if is_gk else (1.0, 1.0, 1.0)
+    hand_l = create_sphere(f"{name}_hl", (x - 0.30, y, 0.86), 0.055, h_mat, scale=h_sc)
+    hand_r = create_sphere(f"{name}_hr", (x + 0.30, y, 0.86), 0.055, h_mat, scale=h_sc)
+    parts.extend([arm_l, arm_r, fore_l, fore_r, hand_l, hand_r])
 
-    # 6. Cleats / Boots with Studs
-    boot_l = create_box(f"{name}_bl", (x - 0.12, y + 0.04, 0.08), (0.09, 0.22, 0.08), mat_boots, bevel=0.015)
-    boot_r = create_box(f"{name}_br", (x + 0.12, y + 0.04, 0.08), (0.09, 0.22, 0.08), mat_boots, bevel=0.015)
-    stud1 = create_cylinder(f"{name}_st1", (x - 0.12, y, 0.02), 0.012, 0.02, mat_studs)
-    stud2 = create_cylinder(f"{name}_st2", (x + 0.12, y, 0.02), 0.012, 0.02, mat_studs)
+    # 4. Athletic Shorts & Side Trim
+    shorts = create_box(f"{name}_sh", (x, y, 0.90), (0.42, 0.24, 0.26), shorts_mat, bevel=0.02)
+    s_trim_l = create_box(f"{name}_stl", (x - 0.215, y, 0.90), (0.01, 0.245, 0.26), mat_white)
+    s_trim_r = create_box(f"{name}_str", (x + 0.215, y, 0.90), (0.01, 0.245, 0.26), mat_white)
+    parts.extend([shorts, s_trim_l, s_trim_r])
 
-    objs = [torso, neck, head, hair, arm_l, arm_r, hand_l, hand_r, shorts, leg_l, leg_r, boot_l, boot_r, stud1, stud2]
-    return join_objects(name, objs)
+    # 5. Muscular Legs & Knee-High Socks
+    leg_l = create_cylinder(f"{name}_ll", (x - 0.13, y, 0.56), 0.068, 0.52, socks_mat)
+    leg_r = create_cylinder(f"{name}_lr", (x + 0.13, y, 0.56), 0.068, 0.52, socks_mat)
+    parts.extend([leg_l, leg_r])
+
+    # 6. Cleats / Boots with Molded Studs
+    boot_l = create_box(f"{name}_bl", (x - 0.13, y + 0.05, 0.08), (0.095, 0.24, 0.08), mat_boots, bevel=0.015)
+    boot_r = create_box(f"{name}_br", (x + 0.13, y + 0.05, 0.08), (0.095, 0.24, 0.08), mat_boots, bevel=0.015)
+    for sx in [-0.03, 0.03]:
+        for sy in [-0.06, 0.06]:
+            st_l = create_cylinder(f"{name}_stl_{sx}_{sy}", (x - 0.13 + sx, y + 0.05 + sy, 0.02), 0.01, 0.025, mat_studs)
+            st_r = create_cylinder(f"{name}_str_{sx}_{sy}", (x + 0.13 + sx, y + 0.05 + sy, 0.02), 0.01, 0.025, mat_studs)
+            parts.extend([st_l, st_r])
+    parts.extend([boot_l, boot_r])
+
+    return join_as_named_object(parts, name)
 
 def build_soccer():
     reset_scene()
-    print("Building Soccer Assets: MasterGoal 3D...")
+    print("Building MasterGoal 3D: Stadium & Players AAA Pack...")
 
-    mat_pitch = get_material("Pitch_Grass", base_color=(0.14, 0.48, 0.16, 1.0), roughness=0.8)
-    mat_white_line = get_material("Pitch_Lines", base_color=(0.98, 0.98, 0.98, 1.0), roughness=0.5)
-    mat_post = get_material("Goal_Posts", base_color=(0.98, 0.98, 0.98, 1.0), metallic=0.4, roughness=0.2)
-    mat_net = get_material("Goal_Net", base_color=(0.85, 0.88, 0.90, 1.0), roughness=0.9, alpha=0.7)
-    mat_flag = get_material("Corner_Flag_Yellow", base_color=(0.95, 0.85, 0.10, 1.0), roughness=0.6)
-    mat_mast = get_material("Floodlight_Steel", base_color=(0.40, 0.42, 0.45, 1.0), metallic=0.9, roughness=0.3)
-    mat_lamp = get_material("Floodlight_Emissive", base_color=(1.0, 1.0, 1.0, 1.0), emission=(1.0, 1.0, 1.0, 1.0), emission_strength=5.0)
+    # Materials
+    mat_grass_dark = get_material("Pitch_Grass_Dark", base_color=(0.10, 0.42, 0.12, 1.0), roughness=0.85)
+    mat_grass_light = get_material("Pitch_Grass_Light", base_color=(0.15, 0.52, 0.18, 1.0), roughness=0.85)
+    mat_line = get_material("Chalk_White_Lines", base_color=(0.98, 0.98, 0.98, 1.0), roughness=0.45)
+    mat_post = get_material("Tubular_Goalposts", base_color=(0.98, 0.98, 0.98, 1.0), metallic=0.35, roughness=0.2)
+    mat_net = get_material("Net_Mesh_Translucent", base_color=(0.92, 0.94, 0.96, 1.0), roughness=0.8, alpha=0.6)
+    mat_flag_cloth = get_material("Flag_Pennant_Red", base_color=(0.95, 0.15, 0.15, 1.0), roughness=0.5)
 
-    # Ball Materials
-    mat_ball_white = get_material("Ball_White", base_color=(0.98, 0.98, 0.98, 1.0), roughness=0.2)
-    mat_ball_black = get_material("Ball_Black", base_color=(0.10, 0.10, 0.12, 1.0), roughness=0.3)
-    mat_ball_gold = get_material("Ball_Gold", base_color=(0.95, 0.82, 0.25, 1.0), metallic=0.95, roughness=0.15)
-
-    # Team Kits
-    mat_home_jersey = get_material("Kit_Home_Blue", base_color=(0.08, 0.35, 0.88, 1.0), roughness=0.5)
-    mat_home_shorts = get_material("Kit_Home_White", base_color=(0.96, 0.96, 0.96, 1.0), roughness=0.5)
-    mat_home_socks = get_material("Kit_Home_Socks", base_color=(0.08, 0.35, 0.88, 1.0), roughness=0.5)
-
-    mat_away_jersey = get_material("Kit_Away_Red", base_color=(0.88, 0.10, 0.12, 1.0), roughness=0.5)
-    mat_away_shorts = get_material("Kit_Away_Black", base_color=(0.10, 0.10, 0.12, 1.0), roughness=0.5)
-    mat_away_socks = get_material("Kit_Away_Socks", base_color=(0.88, 0.10, 0.12, 1.0), roughness=0.5)
-
-    mat_gk_jersey = get_material("Kit_GK_Neon", base_color=(0.85, 0.95, 0.10, 1.0), roughness=0.4)
-    mat_gk_shorts = get_material("Kit_GK_Black", base_color=(0.10, 0.10, 0.12, 1.0), roughness=0.5)
-    mat_gk_socks = get_material("Kit_GK_Neon", base_color=(0.85, 0.95, 0.10, 1.0), roughness=0.4)
-
-    # 1. Stadium Pitch
-    pitch = create_box("pt_main", (0, 0, -0.05), (14.0, 20.0, 0.1), mat_pitch, bevel=0.0)
-    line_center = create_box("pt_lc", (0, 0, 0.01), (13.0, 0.08, 0.02), mat_white_line)
-    circle_center = create_torus("pt_cc", (0, 0, 0.01), 1.8, 0.04, mat_white_line)
+    # 1. Soccer_Stadium_Pitch (Alternating mowed lawn stripes, relief chalk lines, goals, corner flags, floodlights)
+    pitch_parts = []
     
-    # Goalpost Home (Bottom, Y = -9.0)
-    gh_l = create_cylinder("gh_l", (-1.8, -9.0, 0.9), 0.05, 1.8, mat_post)
-    gh_r = create_cylinder("gh_r", (1.8, -9.0, 0.9), 0.05, 1.8, mat_post)
-    gh_c = create_cylinder("gh_c", (0, -9.0, 1.8), 0.05, 3.6, mat_post, rotation=(0, math.radians(90), 0))
-    gh_net = create_box("gh_net", (0, -9.4, 0.9), (3.6, 0.8, 1.8), mat_net)
+    # Alternating green lawn stripes (Y axis from -11 to +11, 10 stripes)
+    stripe_w = 2.2
+    for i in range(-5, 6):
+        mat_stripe = mat_grass_light if i % 2 == 0 else mat_grass_dark
+        s = create_box(f"pt_st_{i}", (0, i * stripe_w, -0.05), (15.0, stripe_w, 0.10), mat_stripe, bevel=0.0)
+        pitch_parts.append(s)
 
-    # Goalpost Away (Top, Y = 9.0)
-    ga_l = create_cylinder("ga_l", (-1.8, 9.0, 0.9), 0.05, 1.8, mat_post)
-    ga_r = create_cylinder("ga_r", (1.8, 9.0, 0.9), 0.05, 1.8, mat_post)
-    ga_c = create_cylinder("ga_c", (0, 9.0, 1.8), 0.05, 3.6, mat_post, rotation=(0, math.radians(90), 0))
-    ga_net = create_box("ga_net", (0, 9.4, 0.9), (3.6, 0.8, 1.8), mat_net)
+    # Boundary & Infield White Chalk Lines
+    line_top = create_box("pt_lt", (0, 10.0, 0.015), (14.0, 0.08, 0.03), mat_line)
+    line_bot = create_box("pt_lb", (0, -10.0, 0.015), (14.0, 0.08, 0.03), mat_line)
+    line_l = create_box("pt_ll", (-7.0, 0, 0.015), (0.08, 20.0, 0.03), mat_line)
+    line_r = create_box("pt_lr", (7.0, 0, 0.015), (0.08, 20.0, 0.03), mat_line)
+    line_mid = create_box("pt_lm", (0, 0, 0.015), (14.0, 0.08, 0.03), mat_line)
+    circle_mid = create_torus("pt_cm", (0, 0, 0.015), 2.0, 0.04, mat_line)
+    spot_mid = create_cylinder("pt_sm", (0, 0, 0.015), 0.12, 0.03, mat_line)
+
+    # Penalty Boxes & Penalty Spots
+    box_home = create_box("pt_bxh", (0, -8.2, 0.015), (6.5, 3.6, 0.025), mat_line, bevel=0.0)
+    box_away = create_box("pt_bxa", (0, 8.2, 0.015), (6.5, 3.6, 0.025), mat_line, bevel=0.0)
+    spot_home = create_cylinder("pt_sph", (0, -7.2, 0.015), 0.10, 0.03, mat_line)
+    spot_away = create_cylinder("pt_spa", (0, 7.2, 0.015), 0.10, 0.03, mat_line)
+
+    pitch_parts.extend([
+        line_top, line_bot, line_l, line_r, line_mid, circle_mid, spot_mid,
+        box_home, box_away, spot_home, spot_away
+    ])
+
+    # Goalpost Home (Tubular posts, crossbar, net cage)
+    gh_pl = create_cylinder("gh_pl", (-2.0, -10.0, 1.05), 0.055, 2.1, mat_post)
+    gh_pr = create_cylinder("gh_pr", (2.0, -10.0, 1.05), 0.055, 2.1, mat_post)
+    gh_bar = create_cylinder("gh_br", (0, -10.0, 2.10), 0.055, 4.0, mat_post, rotation=(0, math.radians(90), 0))
+    gh_net = create_box("gh_nt", (0, -10.5, 1.05), (4.0, 1.0, 2.1), mat_net)
+
+    # Goalpost Away
+    ga_pl = create_cylinder("ga_pl", (-2.0, 10.0, 1.05), 0.055, 2.1, mat_post)
+    ga_pr = create_cylinder("ga_pr", (2.0, 10.0, 1.05), 0.055, 2.1, mat_post)
+    ga_bar = create_cylinder("ga_br", (0, 10.0, 2.10), 0.055, 4.0, mat_post, rotation=(0, math.radians(90), 0))
+    ga_net = create_box("ga_nt", (0, 10.5, 1.05), (4.0, 1.0, 2.1), mat_net)
+
+    pitch_parts.extend([gh_pl, gh_pr, gh_bar, gh_net, ga_pl, ga_pr, ga_bar, ga_net])
 
     # 4 Corner Flags
-    fl1 = create_cylinder("fl1", (-6.0, -9.0, 0.4), 0.015, 0.8, mat_white_line)
-    fl1_b = create_box("fl1_b", (-5.9, -9.0, 0.75), (0.20, 0.02, 0.15), mat_flag)
-    fl2 = create_cylinder("fl2", (6.0, -9.0, 0.4), 0.015, 0.8, mat_white_line)
-    fl2_b = create_box("fl2_b", (6.1, -9.0, 0.75), (0.20, 0.02, 0.15), mat_flag)
-    fl3 = create_cylinder("fl3", (-6.0, 9.0, 0.4), 0.015, 0.8, mat_white_line)
-    fl3_b = create_box("fl3_b", (-5.9, 9.0, 0.75), (0.20, 0.02, 0.15), mat_flag)
-    fl4 = create_cylinder("fl4", (6.0, 9.0, 0.4), 0.015, 0.8, mat_white_line)
-    fl4_b = create_box("fl4_b", (6.1, 9.0, 0.75), (0.20, 0.02, 0.15), mat_flag)
+    for f_idx, (fx, fy) in enumerate([(-7.0, -10.0), (7.0, -10.0), (-7.0, 10.0), (7.0, 10.0)]):
+        fp = create_cylinder(f"cf_p_{f_idx}", (fx, fy, 0.5), 0.016, 1.0, mat_line)
+        fc = create_box(f"cf_c_{f_idx}", (fx + (0.16 if fx > 0 else -0.16), fy, 0.90), (0.28, 0.01, 0.18), mat_flag_cloth)
+        pitch_parts.extend([fp, fc])
 
-    # Stadium Floodlight Tower (Corner)
-    fl_pole = create_cylinder("fl_p", (-6.8, -9.8, 2.5), 0.08, 5.0, mat_mast)
-    fl_bank = create_box("fl_bk", (-6.8, -9.8, 5.1), (0.8, 0.3, 0.5), mat_mast)
-    fl_lamp = create_box("fl_lp", (-6.8, -9.7, 5.1), (0.75, 0.05, 0.45), mat_lamp)
+    # 4 Stadium Floodlight Towers
+    for fl_idx, (lx, ly) in enumerate([(-8.2, -11.0), (8.2, -11.0), (-8.2, 11.0), (8.2, 11.0)]):
+        mast = create_cylinder(f"fl_m_{fl_idx}", (lx, ly, 3.0), 0.09, 6.0, mat_steel())
+        bank = create_box(f"fl_bk_{fl_idx}", (lx, ly, 6.1), (0.9, 0.35, 0.6), mat_steel())
+        lamp = create_box(f"fl_lp_{fl_idx}", (lx, ly + (0.16 if ly < 0 else -0.16), 6.1), (0.85, 0.05, 0.55), mat_screen((1.0, 1.0, 1.0, 1.0), 5.0, "Flood_LED"))
+        pitch_parts.extend([mast, bank, lamp])
 
-    pitch_objs = [
-        pitch, line_center, circle_center,
-        gh_l, gh_r, gh_c, gh_net,
-        ga_l, ga_r, ga_c, ga_net,
-        fl1, fl1_b, fl2, fl2_b, fl3, fl3_b, fl4, fl4_b,
-        fl_pole, fl_bank, fl_lamp
-    ]
-    join_objects("Soccer_Stadium_Pitch", pitch_objs)
+    join_as_named_object(pitch_parts, "Soccer_Stadium_Pitch")
 
-    # 2. Soccer_Ball_Pro (Multi-panel official match ball)
-    ball_core = create_sphere("sb_c", (0, 0, 0.22), 0.22, mat_ball_white)
-    p1 = create_sphere("sb_p1", (0, 0, 0.42), 0.065, mat_ball_black)
-    p2 = create_sphere("sb_p2", (0, 0, 0.02), 0.065, mat_ball_black)
-    p3 = create_sphere("sb_p3", (0.19, 0, 0.22), 0.065, mat_ball_gold)
-    p4 = create_sphere("sb_p4", (-0.19, 0, 0.22), 0.065, mat_ball_gold)
-    p5 = create_sphere("sb_p5", (0, 0.19, 0.22), 0.065, mat_ball_black)
-    p6 = create_sphere("sb_p6", (0, -0.19, 0.22), 0.065, mat_ball_black)
-    join_objects("Soccer_Ball_Pro", [ball_core, p1, p2, p3, p4, p5, p6])
+    # 2. Soccer_Ball_Pro (Multi-panel official match ball, gold & obsidian accents)
+    mat_b_white = get_material("Ball_Hex_White", base_color=(0.98, 0.98, 0.98, 1.0), roughness=0.18, coat_weight=0.5)
+    mat_b_black = get_material("Ball_Pent_Black", base_color=(0.08, 0.08, 0.09, 1.0), roughness=0.25)
+    mat_b_gold = mat_gold()
 
-    # 3. Player_Home (Forward in attack zone)
-    build_player("Player_Home", -1.5, -2.0, mat_home_jersey, mat_home_shorts, mat_home_socks, is_gk=False)
+    ball_core = create_sphere("sb_cr", (0, 0, 0.25), 0.24, mat_b_white)
+    b_p1 = create_sphere("sb_p1", (0, 0, 0.47), 0.075, mat_b_black)
+    b_p2 = create_sphere("sb_p2", (0, 0, 0.03), 0.075, mat_b_black)
+    b_p3 = create_sphere("sb_p3", (0.21, 0, 0.25), 0.075, mat_b_gold)
+    b_p4 = create_sphere("sb_p4", (-0.21, 0, 0.25), 0.075, mat_b_gold)
+    b_p5 = create_sphere("sb_p5", (0, 0.21, 0.25), 0.075, mat_b_black)
+    b_p6 = create_sphere("sb_p6", (0, -0.21, 0.25), 0.075, mat_b_black)
+    join_as_named_object([ball_core, b_p1, b_p2, b_p3, b_p4, b_p5, b_p6], "Soccer_Ball_Pro")
 
-    # 4. Player_Away (Defender in counter position)
-    build_player("Player_Away", 1.5, 2.0, mat_away_jersey, mat_away_shorts, mat_away_socks, is_gk=False)
+    # 3. Player_Home (Forward in attack zone, Royal Blue kit)
+    mat_home_j = get_material("Kit_Home_Blue_Jersey", base_color=(0.06, 0.32, 0.88, 1.0), roughness=0.45)
+    mat_home_sh = get_material("Kit_Home_White_Shorts", base_color=(0.97, 0.97, 0.97, 1.0), roughness=0.45)
+    mat_home_sk = get_material("Kit_Home_Blue_Socks", base_color=(0.06, 0.32, 0.88, 1.0), roughness=0.45)
+    build_stylized_player("Player_Home", -1.8, -2.5, mat_home_j, mat_home_sh, mat_home_sk, dorsal="10", is_gk=False)
 
-    # 5. Goalkeeper_Pro (Near Home goal)
-    build_player("Goalkeeper_Pro", 0, -8.2, mat_gk_jersey, mat_gk_shorts, mat_gk_socks, is_gk=True)
+    # 4. Player_Away (Defender in counter position, Crimson & Black kit)
+    mat_away_j = get_material("Kit_Away_Red_Jersey", base_color=(0.88, 0.08, 0.12, 1.0), roughness=0.45)
+    mat_away_sh = get_material("Kit_Away_Black_Shorts", base_color=(0.09, 0.09, 0.10, 1.0), roughness=0.45)
+    mat_away_sk = get_material("Kit_Away_Red_Socks", base_color=(0.88, 0.08, 0.12, 1.0), roughness=0.45)
+    build_stylized_player("Player_Away", 1.8, 2.5, mat_away_j, mat_away_sh, mat_away_sk, dorsal="7", is_gk=False)
+
+    # 5. Goalkeeper_Pro (Near Home goal, Neon Yellow-Green Volt kit)
+    mat_gk_j = get_material("Kit_GK_Volt_Jersey", base_color=(0.82, 0.96, 0.08, 1.0), roughness=0.4)
+    mat_gk_sh = get_material("Kit_GK_Black_Shorts", base_color=(0.09, 0.09, 0.10, 1.0), roughness=0.45)
+    mat_gk_sk = get_material("Kit_GK_Volt_Socks", base_color=(0.82, 0.96, 0.08, 1.0), roughness=0.4)
+    build_stylized_player("Goalkeeper_Pro", 0, -9.2, mat_gk_j, mat_gk_sh, mat_gk_sk, dorsal="1", is_gk=True)
 
     export_glb(os.path.join(OUTPUT_SOCCER_DIR, "soccer_pack.glb"))
-    print("SOCCER ASSETS EXPORTED SUCCESSFULLY!")
+    print("MASTERGOAL 3D PACK BUILT AND EXPORTED SUCCESSFULLY!")
 
 if __name__ == "__main__":
     build_soccer()

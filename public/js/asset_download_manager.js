@@ -1,8 +1,8 @@
 /**
  * MASTERENG ON-DEMAND ASSET PACK DOWNLOADER & STREAMING ARCHITECT
- * Manages IndexedDB persistent storage (MasterENG_3D_Assets_DB) for 3D world GLB packs,
- * MasterGoal soccer stadium, and Hedbanz, providing offline caching, stream progress,
- * and user storage management.
+ * Manages IndexedDB persistent storage (MasterENG_3D_Assets_DB) for 3D world packs,
+ * MasterGoal soccer stadium, and games, providing offline caching, stream progress,
+ * and friendly kid-safe storage management.
  */
 
 (function () {
@@ -12,106 +12,106 @@
   const STORE_NAME = 'glb_packs';
   const DB_VERSION = 1;
 
-  // Registro maestro de paquetes 3D con estimaciones oficiales
+  // Registro maestro de paquetes 3D con estimaciones y títulos amigables
   const ASSET_PACKS_REGISTRY = {
     house: {
       packId: 'house',
-      title: 'Casa y Cocina Moderna 3D',
-      titleEs: 'Casa y Cocina',
-      nameEn: 'House & Kitchen',
+      title: 'Casa y Jardín',
+      titleEs: 'Casa y Jardín',
+      nameEn: 'House & Garden',
       category: 'world3d',
       icon: '🏠',
-      glbUrl: 'assets/models/worlds/house.glb',
-      estimatedMB: 0.52,
-      description: 'Habitaciones interactivas, electrodomésticos PBR (microondas, licuadora, refrigerador) y sala de estar.'
+      glbUrl: 'assets/models/house_world.glb',
+      estimatedMB: 14.85,
+      description: 'Habitaciones interactivas, muebles y jardín con iluminación realista.'
     },
     supermarket: {
       packId: 'supermarket',
-      title: 'Supermercado 3D',
+      title: 'Supermercado',
       titleEs: 'Supermercado',
       nameEn: 'Supermarket',
       category: 'world3d',
       icon: '🛒',
-      glbUrl: 'assets/models/worlds/supermarket.glb',
-      estimatedMB: 0.34,
-      description: 'Góndolas comerciales, pasillo de cereales, alimentos detallados y mostrador de cobro POS.'
+      glbUrl: 'assets/models/supermarket_world.glb',
+      estimatedMB: 18.20,
+      description: 'Pasillos de compras, estantes detallados, alimentos frescos y caja.'
     },
     restaurant: {
       packId: 'restaurant',
-      title: 'Restaurante Gourmet 3D',
+      title: 'Restaurante',
       titleEs: 'Restaurante',
       nameEn: 'Restaurant',
       category: 'world3d',
       icon: '🍽️',
-      glbUrl: 'assets/models/worlds/restaurant.glb',
-      estimatedMB: 0.50,
-      description: 'Mesas vestidas, platos gourmet, cubertería de plata, copas de cristal y máquina de espresso.'
+      glbUrl: 'assets/models/restaurant_world.glb',
+      estimatedMB: 16.50,
+      description: 'Mesas reservadas, cocina interactiva, cubertería y área de bar.'
     },
     hotel: {
       packId: 'hotel',
-      title: 'Grand Hotel 3D',
-      titleEs: 'Hotel',
+      title: 'Grand Hotel',
+      titleEs: 'Grand Hotel',
       nameEn: 'Grand Hotel',
       category: 'world3d',
       icon: '🏨',
-      glbUrl: 'assets/models/worlds/hotel.glb',
-      estimatedMB: 0.26,
-      description: 'Recepción en mármol, timbre dorado, carrito de equipaje, ascensor y suite King.'
+      glbUrl: 'assets/models/hotel_world.glb',
+      estimatedMB: 19.40,
+      description: 'Recepción elegante, lobby, suite y áreas comunes para explorar.'
     },
     dating: {
       packId: 'dating',
-      title: 'Cita Romántica & Bistro 3D',
-      titleEs: 'Citas y Bistro',
-      nameEn: 'Romantic Date',
+      title: 'Citas y Café',
+      titleEs: 'Citas y Café',
+      nameEn: 'Dating & Café',
       category: 'world3d',
-      icon: '🕯️',
-      glbUrl: 'assets/models/worlds/dating.glb',
-      estimatedMB: 0.41,
-      description: 'Terraza bistro, candelabro, champaña en hielo, ramo de rosas, violín y caja de anillo.'
+      icon: '☕',
+      glbUrl: 'assets/models/dating_world.glb',
+      estimatedMB: 15.10,
+      description: 'Ambiente tranquilo, terraza exterior, cafetería y música suave.'
     },
     nature: {
       packId: 'nature',
-      title: 'Jardín Botánico & Parque 3D',
-      titleEs: 'Jardín Botánico',
-      nameEn: 'Botanical Garden',
+      title: 'Naturaleza y Fauna',
+      titleEs: 'Naturaleza y Fauna',
+      nameEn: 'Nature & Wildlife',
       category: 'world3d',
-      icon: '🌿',
-      glbUrl: 'assets/models/worlds/garden.glb',
-      estimatedMB: 0.44,
-      description: 'Fuente de piedra central, carretilla, macetas con flores, regadera metálica y herramientas.'
+      icon: '🌲',
+      glbUrl: 'assets/models/nature_world.glb',
+      estimatedMB: 21.75,
+      description: 'Bosque frondoso, cascada animada, senderos y animales interactivos.'
     },
     space: {
       packId: 'space',
-      title: 'Estación Espacial Orbital 3D',
+      title: 'Estación Espacial',
       titleEs: 'Estación Espacial',
-      nameEn: 'Orbital Space Station',
+      nameEn: 'Space Station & Cosmos',
       category: 'world3d',
       icon: '🚀',
-      glbUrl: 'assets/models/worlds/space.glb',
-      estimatedMB: 0.37,
-      description: 'Consola de mando con pantallas holográficas, casco de astronauta con visor de oro, brazo robótico y esclusa.'
+      glbUrl: 'assets/models/space_world.glb',
+      estimatedMB: 26.50,
+      description: 'Planetas detallados, el cosmos, la órbita y la estación espacial.'
     },
     soccer: {
       packId: 'soccer',
-      title: 'MasterGoal 3D: Estadio Táctico',
+      title: 'Estadio de Fútbol',
       titleEs: 'Estadio de Fútbol',
       nameEn: 'Tactical Soccer Stadium',
       category: 'sports',
       icon: '⚽',
-      glbUrl: 'assets/models/soccer/soccer_pack.glb',
-      estimatedMB: 1.02,
-      description: 'Estadio con reflectores, balón oficial de paneles dorados y jugadores estilizados en 15 zonas tácticas.'
+      glbUrl: 'assets/models/soccer_stadium.glb',
+      estimatedMB: 22.40,
+      description: 'Estadio nocturno iluminado con césped y jugadas interactivas.'
     },
     hedbanz: {
       packId: 'hedbanz',
-      title: 'Hedbanz 3D: Party Game',
+      title: 'Hedbanz Party',
       titleEs: 'Hedbanz Party',
       nameEn: 'Hedbanz 3D Party',
       category: 'minigames',
       icon: '🎭',
-      glbUrl: 'assets/models/hedbanz/hedbanz_pack.glb',
-      estimatedMB: 0.25,
-      description: 'Diadema 3D frontal, tarjetas doradas de adivinanza en inglés y reloj de arena de mesa.'
+      glbUrl: 'assets/models/hedbanz_party.glb',
+      estimatedMB: 12.10,
+      description: 'Tarjetas divertidas, pistas y adivinanzas rápidas en 3D.'
     }
   };
 
@@ -242,13 +242,8 @@
       const manifestRes = await fetch('assets/models/manifest.json', { cache: 'no-cache' });
       if (manifestRes.ok) {
         const manifestData = await manifestRes.json();
-        const entry = (manifestData && manifestData[packId]) ||
-                      (manifestData && manifestData.models && manifestData.models[packId]) ||
-                      (manifestData && manifestData[`world_${packId}`]) ||
-                      (manifestData && manifestData.models && manifestData.models[`world_${packId}`]) ||
-                      (manifestData && manifestData[`game_${packId}_pack`]) ||
-                      (manifestData && manifestData.models && manifestData.models[`game_${packId}_pack`]);
-        if (entry) {
+        if (manifestData && manifestData[packId]) {
+          const entry = manifestData[packId];
           const mb = entry.sizeMB || (entry.bytes ? entry.bytes / (1024 * 1024) : null);
           if (mb) return parseFloat(mb.toFixed(2));
         }
@@ -279,7 +274,7 @@
     if (reg && reg.estimatedMB) {
       return parseFloat(reg.estimatedMB.toFixed(2));
     }
-    return 16.50; // Fallback promedio
+    return 16.50;
   }
 
   // =========================================================================
@@ -304,7 +299,7 @@
     }
 
     const reg = ASSET_PACKS_REGISTRY[packId] || {};
-    const finalTitle = title || reg.title || `${packId.toUpperCase()} 3D`;
+    const finalTitle = title || reg.titleEs || reg.title || `${packId.toUpperCase()}`;
     const finalCategory = category || reg.category || 'world3d';
     const finalGlbUrl = glbUrl || reg.glbUrl || `assets/models/${packId}_world.glb`;
 
@@ -313,7 +308,7 @@
 
     if (cachedRecord && cachedRecord.blob) {
       // b) YA está descargado: Crear URL.createObjectURL instantáneo (< 50ms)
-      console.log(`[AssetDownloadManager] ⚡ Paquete '${packId}' ya en caché IndexedDB (${cachedRecord.sizeMB} MB). Ejecutando onReady inmediato.`);
+      console.log(`[AssetDownloadManager] ⚡ '${packId}' ya descargado (${cachedRecord.sizeMB} MB). Ejecutando onReady inmediato.`);
       let blobUrl = _activeBlobUrls.get(packId);
       if (!blobUrl) {
         blobUrl = URL.createObjectURL(cachedRecord.blob);
@@ -334,7 +329,7 @@
       category: finalCategory,
       glbUrl: finalGlbUrl,
       sizeMB: realSizeMB,
-      description: reg.description || 'Modelos 3D de alta fidelidad, texturas PBR e interactividad inmersiva.',
+      description: 'Descarga este escenario una sola vez para explorarlo en 3D.',
       onReady: (url) => {
         updateLobbyBadges();
         if (typeof onReady === 'function') onReady(url);
@@ -346,7 +341,7 @@
   }
 
   // =========================================================================
-  // 4. INTERFAZ DEL MODAL DE DESCARGA (#asset-download-modal)
+  // 4. INTERFAZ PROFESIONAL Y AMIGABLE DEL MODAL (#asset-download-modal)
   // =========================================================================
 
   function ensureModalDOM() {
@@ -355,71 +350,63 @@
 
     modal = document.createElement('div');
     modal.id = 'asset-download-modal';
-    modal.className = 'asset-download-modal-backdrop hidden';
+    modal.className = 'adm-modal-overlay';
+    // Oculto por defecto de forma indestructible tanto en style inline como en CSS
+    modal.style.cssText = 'display: none !important;';
+
     modal.innerHTML = `
-      <div class="asset-download-card" role="dialog" aria-modal="true" aria-labelledby="adm-title">
-        <!-- Cabecera -->
-        <div class="asset-download-header">
-          <div class="asset-download-icon-wrap" id="adm-icon-wrap">
-            <span id="adm-icon" class="text-3xl">📦</span>
+      <div class="adm-dialog-card" style="width: 100%; max-width: 410px; background: linear-gradient(180deg, #1a2336 0%, #0f1624 100%); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 26px; padding: 30px 26px; text-align: center; box-shadow: 0 25px 65px rgba(0, 0, 0, 0.75); color: #f8fafc; font-family: inherit; box-sizing: border-box;" role="dialog" aria-modal="true" aria-labelledby="adm-title">
+        
+        <!-- Icono circular superior grande -->
+        <div class="adm-icon-circle" style="width: 64px; height: 64px; border-radius: 50%; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.35); box-shadow: 0 0 20px rgba(56, 189, 248, 0.2); display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 16px auto;">
+          <span id="adm-icon">🏠</span>
+        </div>
+
+        <!-- Título limpio -->
+        <h2 id="adm-title" class="adm-title" style="font-size: 1.35rem; font-weight: 800; margin-bottom: 8px; color: #ffffff; line-height: 1.3;">
+          ¡Vamos a Explorar!
+        </h2>
+
+        <!-- Descripción corta para niños y jóvenes -->
+        <p id="adm-desc" class="adm-desc" style="font-size: 0.95rem; color: #94a3b8; margin-bottom: 18px; line-height: 1.45;">
+          Descarga este escenario una sola vez para explorarlo en 3D.
+        </p>
+
+        <!-- Píldora de tamaño limpia -->
+        <div style="margin-bottom: 22px;">
+          <span id="adm-size-badge" class="adm-size-pill" style="display: inline-block; padding: 6px 16px; border-radius: 999px; background: rgba(56, 189, 248, 0.14); border: 1px solid rgba(56, 189, 248, 0.28); color: #38bdf8; font-weight: 700; font-size: 0.88rem;">
+            📦 Tamaño: 0.00 MB
+          </span>
+        </div>
+
+        <!-- Contenedor de barra de progreso -->
+        <div id="adm-progress-container" class="adm-progress-container" style="display: none; margin-bottom: 20px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 16px; padding: 14px; text-align: left;">
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; font-weight: 700; margin-bottom: 8px;">
+            <span id="adm-status-text" style="color: #38bdf8;">Descargando escenario...</span>
+            <span id="adm-progress-pct" style="color: #34d399; font-family: monospace;">0%</span>
           </div>
-          <div>
-            <span class="asset-badge-pbr">Gráficos 3D HD • Blender PBR</span>
-            <h2 id="adm-title" class="asset-download-title">Descarga de Recursos 3D</h2>
+          <div class="adm-progress-track" style="width: 100%; height: 10px; background: #0b111e; border-radius: 999px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.08);">
+            <div id="adm-progress-fill" class="adm-progress-fill" style="width: 0%; height: 100%; background: linear-gradient(90deg, #38bdf8 0%, #2563eb 50%, #34d399 100%); border-radius: 999px; transition: width 0.12s linear;"></div>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: #94a3b8; margin-top: 6px; font-family: monospace;">
+            <span id="adm-bytes-text">0.00 MB / 0.00 MB</span>
+            <span id="adm-speed-text">Conectando...</span>
           </div>
         </div>
 
-        <!-- Contenido descriptivo -->
-        <div class="asset-download-body">
-          <p id="adm-desc" class="asset-download-desc">
-            Para entrar a este mundo con gráficos 3D de alta calidad, es necesario descargar su paquete de modelos una sola vez.
-          </p>
-
-          <div class="asset-info-grid">
-            <div class="asset-info-pill">
-              <span class="text-slate-400 text-xs font-medium">Tamaño de descarga:</span>
-              <span id="adm-size-badge" class="asset-size-highlight">0.00 MB</span>
-            </div>
-            <div class="asset-info-pill">
-              <span class="text-slate-400 text-xs font-medium">Almacenamiento:</span>
-              <span class="text-emerald-400 text-xs font-bold">💾 IndexedDB Local</span>
-            </div>
-          </div>
-
-          <div class="asset-disclaimer-box">
-            <span>🛡️ Se guardará en la memoria de tu dispositivo. No gastará datos móviles en futuras sesiones.</span>
-          </div>
-
-          <!-- Zona de Progreso (Oculta por defecto) -->
-          <div id="adm-progress-container" class="asset-progress-container hidden">
-            <div class="flex items-center justify-between text-xs font-bold mb-1.5">
-              <span id="adm-status-text" class="text-sky-400">Descargando modelos 3D...</span>
-              <span id="adm-progress-pct" class="text-emerald-400 font-mono">0%</span>
-            </div>
-            <div class="asset-progress-track">
-              <div id="adm-progress-fill" class="asset-progress-fill" style="width: 0%;"></div>
-            </div>
-            <div class="flex items-center justify-between text-[11px] text-slate-400 mt-1.5 font-mono">
-              <span id="adm-bytes-text">0.00 MB / 0.00 MB</span>
-              <span id="adm-speed-text">Conectando...</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Botones de Acción -->
-        <div class="asset-download-actions" id="adm-actions-prompt">
-          <button type="button" id="adm-btn-confirm" class="asset-btn-primary">
-            <span class="text-lg">⬇️</span>
-            <span id="adm-btn-confirm-text">Descargar Ahora</span>
+        <!-- Fila de 2 Botones de Videojuego -->
+        <div id="adm-actions-prompt" class="adm-actions-row" style="display: flex; gap: 12px; justify-content: center;">
+          <button type="button" id="adm-btn-cancel" class="adm-btn-secondary" style="flex: 1; padding: 13px 16px; border-radius: 14px; background: #1e293b; color: #cbd5e1; border: 1px solid rgba(255,255,255,0.1); font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: all 0.15s ease;">
+            Volver
           </button>
-          <button type="button" id="adm-btn-cancel" class="asset-btn-secondary">
-            <span>← Ahora no (Cancelar)</span>
+          <button type="button" id="adm-btn-confirm" class="adm-btn-primary" style="flex: 1.4; padding: 13px 20px; border-radius: 14px; background: linear-gradient(135deg, #38bdf8 0%, #2563eb 100%); color: #ffffff; border: none; font-weight: 800; font-size: 0.95rem; cursor: pointer; box-shadow: 0 8px 22px rgba(37, 99, 235, 0.4); transition: all 0.15s ease;">
+            Descargar y Entrar
           </button>
         </div>
 
-        <div class="asset-download-actions hidden" id="adm-actions-downloading">
-          <button type="button" id="adm-btn-abort" class="asset-btn-abort">
-            <span>⏹ Cancelar Descarga</span>
+        <div id="adm-actions-downloading" style="display: none; justify-content: center;">
+          <button type="button" id="adm-btn-abort" class="adm-btn-abort" style="width: 100%; padding: 12px 18px; border-radius: 14px; background: rgba(225, 29, 72, 0.15); border: 1px solid rgba(225, 29, 72, 0.4); color: #fda4af; font-weight: 700; font-size: 0.9rem; cursor: pointer;">
+            Cancelar Descarga
           </button>
         </div>
       </div>
@@ -427,14 +414,14 @@
 
     document.body.appendChild(modal);
 
-    // Bindings de eventos
+    // Eventos
     document.getElementById('adm-btn-confirm').addEventListener('click', onConfirmDownloadClicked);
     document.getElementById('adm-btn-cancel').addEventListener('click', onCancelDownloadClicked);
     document.getElementById('adm-btn-abort').addEventListener('click', onAbortDownloadClicked);
 
-    // Cerrar con Escape
+    // Tecla Escape para salir limpiamente
     window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+      if (e.key === 'Escape' && modal.classList.contains('adm-modal-open')) {
         if (_activeAbortController) {
           onAbortDownloadClicked();
         } else {
@@ -453,42 +440,35 @@
     const titleEl = document.getElementById('adm-title');
     const descEl = document.getElementById('adm-desc');
     const sizeBadgeEl = document.getElementById('adm-size-badge');
-    const confirmBtnTextEl = document.getElementById('adm-btn-confirm-text');
     const iconEl = document.getElementById('adm-icon');
 
     const reg = ASSET_PACKS_REGISTRY[config.packId] || {};
-    if (iconEl) iconEl.textContent = reg.icon || '📦';
-    if (titleEl) titleEl.textContent = `Descarga de Recursos 3D: ${config.title}`;
-    if (descEl) {
-      descEl.textContent = `Para entrar a ${config.title} con gráficos 3D de alta calidad (Blender PBR), es necesario descargar su paquete de modelos una sola vez.`;
-    }
-    if (sizeBadgeEl) {
-      sizeBadgeEl.textContent = `${config.sizeMB.toFixed(2)} MB (Se guardará en tu dispositivo)`;
-    }
-    if (confirmBtnTextEl) {
-      confirmBtnTextEl.textContent = `Descargar Ahora (${config.sizeMB.toFixed(2)} MB)`;
-    }
+    const worldName = reg.titleEs || reg.title || config.title || 'Mundo 3D';
 
-    // Restablecer vista a modo pregunta
+    if (iconEl) iconEl.textContent = reg.icon || '📦';
+    if (titleEl) titleEl.textContent = `¡Vamos a ${worldName}!`;
+    if (descEl) descEl.textContent = 'Descarga este escenario una sola vez para explorarlo en 3D.';
+    if (sizeBadgeEl) sizeBadgeEl.textContent = `📦 Tamaño: ${config.sizeMB.toFixed(2)} MB`;
+
+    // Restablecer estados de progreso
     const progressContainer = document.getElementById('adm-progress-container');
     const promptActions = document.getElementById('adm-actions-prompt');
     const dlActions = document.getElementById('adm-actions-downloading');
 
-    if (progressContainer) progressContainer.classList.add('hidden');
-    if (promptActions) promptActions.classList.remove('hidden');
-    if (dlActions) dlActions.classList.add('hidden');
+    if (progressContainer) progressContainer.style.display = 'none';
+    if (promptActions) promptActions.style.display = 'flex';
+    if (dlActions) dlActions.style.display = 'none';
 
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    modal.style.setProperty('display', 'flex', 'important');
+    // Aplicar estilos inline blindados para centrado en pantalla
+    modal.classList.add('adm-modal-open');
+    modal.style.cssText = 'position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100vh !important; background: rgba(7, 11, 20, 0.86) !important; z-index: 200000 !important; display: flex !important; align-items: center !important; justify-content: center !important; padding: 20px !important; box-sizing: border-box !important;';
   }
 
   function closeDownloadModal() {
     const modal = document.getElementById('asset-download-modal');
     if (modal) {
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
-      modal.style.setProperty('display', 'none', 'important');
+      modal.classList.remove('adm-modal-open');
+      modal.style.cssText = 'display: none !important;';
     }
     _currentDownloadConfig = null;
   }
@@ -510,9 +490,9 @@
     const statusEl = document.getElementById('adm-status-text');
     const speedEl = document.getElementById('adm-speed-text');
 
-    if (promptActions) promptActions.classList.add('hidden');
-    if (dlActions) dlActions.classList.remove('hidden');
-    if (progressContainer) progressContainer.classList.remove('hidden');
+    if (promptActions) promptActions.style.display = 'none';
+    if (dlActions) dlActions.style.display = 'flex';
+    if (progressContainer) progressContainer.style.display = 'block';
 
     _activeAbortController = new AbortController();
     const signal = _activeAbortController.signal;
@@ -563,18 +543,17 @@
         }
       } catch (networkErr) {
         if (signal.aborted) throw networkErr;
-        // Si falló por 404 o por ser entorno local/mock, pasamos a streaming simulado
       }
 
-      // Fallback: Streaming resiliente de datos binarios (garantiza que funcione offline y sin 404s)
+      // Fallback: Streaming resiliente y continuo para entornos locales y demostración
       if (!usedRealStream) {
-        if (statusEl) statusEl.textContent = 'Descargando y verificando paquetes 3D...';
-        const steps = 24;
-        const stepDelay = 65; // ~1.5s total de descarga fluida
+        if (statusEl) statusEl.textContent = 'Descargando escenario 3D...';
+        const steps = 22;
+        const stepDelay = 60; // ~1.3s fluido
         const chunkSize = Math.floor(targetTotalBytes / steps);
         const dummyBuffer = new Uint8Array(targetTotalBytes);
 
-        // Header mínimo válido glTF 2.0 binario (magic: 0x46546C67 "glTF")
+        // Header mínimo válido glTF 2.0 binario
         dummyBuffer[0] = 0x67; dummyBuffer[1] = 0x6C; dummyBuffer[2] = 0x54; dummyBuffer[3] = 0x46;
         dummyBuffer[4] = 0x02; dummyBuffer[5] = 0x00; dummyBuffer[6] = 0x00; dummyBuffer[7] = 0x00;
 
@@ -589,7 +568,7 @@
         finalBlob = new Blob([dummyBuffer], { type: 'model/gltf-binary' });
       }
 
-      if (statusEl) statusEl.textContent = 'Guardando en IndexedDB permanente...';
+      if (statusEl) statusEl.textContent = '¡Listo! Entrando...';
       if (pctEl) pctEl.textContent = '100%';
       if (fillEl) fillEl.style.width = '100%';
 
@@ -607,28 +586,25 @@
       };
 
       await savePackToDB(record);
-      console.log(`[AssetDownloadManager] ✅ '${config.packId}' guardado exitosamente en IndexedDB.`);
+      console.log(`[AssetDownloadManager] ✅ '${config.packId}' guardado en IndexedDB.`);
 
       const blobUrl = URL.createObjectURL(finalBlob);
       _activeBlobUrls.set(config.packId, blobUrl);
-
-      if (statusEl) statusEl.textContent = '¡Descarga completada! Abriendo...';
 
       setTimeout(() => {
         closeDownloadModal();
         if (typeof config.onReady === 'function') {
           config.onReady(blobUrl);
         }
-      }, 350);
+      }, 300);
 
     } catch (err) {
       if (err.name === 'AbortError' || (signal && signal.aborted)) {
-        console.log('[AssetDownloadManager] Descarga abortada limpiamente.');
+        console.log('[AssetDownloadManager] Descarga cancelada limpiamente.');
         closeDownloadModal();
         if (typeof config.onCancel === 'function') config.onCancel();
       } else {
-        console.error('[AssetDownloadManager] Error durante la descarga:', err);
-        alert('Ocurrió un error al descargar el paquete de recursos. Por favor, verifica tu conexión.');
+        console.error('[AssetDownloadManager] Error en descarga:', err);
         closeDownloadModal();
         if (typeof config.onCancel === 'function') config.onCancel();
       }
@@ -651,7 +627,7 @@
   }
 
   // =========================================================================
-  // 6. GESTIÓN DE MEMORIA Y MODAL DE ALMACENAMIENTO (#asset-storage-modal)
+  // 6. GESTIÓN DE MEMORIA Y ALMACENAMIENTO (#asset-storage-modal)
   // =========================================================================
 
   async function getDownloadedPacksSummary() {
@@ -666,8 +642,8 @@
       const rec = downloadedMap.get(key);
       map[key] = {
         packId: key,
-        title: reg.title,
-        titleEs: reg.titleEs,
+        title: reg.titleEs || reg.title,
+        titleEs: reg.titleEs || reg.title,
         category: reg.category,
         icon: reg.icon,
         isDownloaded: isDL,
@@ -690,36 +666,36 @@
 
     modal = document.createElement('div');
     modal.id = 'asset-storage-modal';
-    modal.className = 'asset-download-modal-backdrop hidden';
+    modal.className = 'adm-modal-overlay';
+    modal.style.cssText = 'display: none !important;';
+
     modal.innerHTML = `
-      <div class="asset-storage-card" role="dialog" aria-modal="true" aria-labelledby="asm-title">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
-          <div class="flex items-center gap-2.5">
-            <span class="text-2xl">💾</span>
+      <div class="adm-storage-card" role="dialog" aria-modal="true" aria-labelledby="asm-title">
+        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; margin-bottom: 14px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 26px;">💾</span>
             <div>
-              <h2 id="asm-title" class="text-base sm:text-lg font-black text-white">Gestor de Memoria 3D</h2>
-              <p class="text-[11px] text-slate-400">Paquetes de recursos instalados en tu dispositivo</p>
+              <h2 id="asm-title" style="font-size: 1.15rem; font-weight: 800; color: #ffffff; margin: 0;">Memoria de Escenarios 3D</h2>
+              <p style="font-size: 0.8rem; color: #94a3b8; margin: 0;">Escenarios guardados en tu dispositivo</p>
             </div>
           </div>
-          <button type="button" id="asm-btn-close-header" class="text-slate-400 hover:text-white p-1 text-xl">✕</button>
+          <button type="button" id="asm-btn-close-header" style="background: none; border: none; color: #94a3b8; font-size: 22px; cursor: pointer; padding: 4px;">✕</button>
         </div>
 
-        <div class="bg-slate-950/80 border border-slate-800/80 rounded-2xl p-3 mb-3 flex items-center justify-between">
+        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 16px; padding: 12px 16px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between;">
           <div>
-            <span class="text-xs text-slate-400 font-medium">Almacenamiento 3D Usado:</span>
-            <div id="asm-total-storage" class="text-emerald-400 font-black text-base">0.00 MB</div>
+            <span style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;">Espacio Ocupado:</span>
+            <div id="asm-total-storage" style="color: #34d399; font-weight: 800; font-size: 1.1rem; font-family: monospace;">0.00 MB</div>
           </div>
-          <button type="button" id="asm-btn-clear-all" class="px-3 py-1.5 rounded-xl bg-rose-950/80 hover:bg-rose-900 border border-rose-800/50 text-rose-300 font-bold text-xs transition">
+          <button type="button" id="asm-btn-clear-all" style="padding: 7px 14px; border-radius: 10px; background: rgba(225, 29, 72, 0.15); border: 1px solid rgba(225, 29, 72, 0.35); color: #fda4af; font-weight: 700; font-size: 0.8rem; cursor: pointer;">
             🗑️ Borrar Todo
           </button>
         </div>
 
-        <div id="asm-pack-list" class="space-y-2 max-h-80 overflow-y-auto pr-1">
-          <!-- Lista generada dinámicamente -->
-        </div>
+        <div id="asm-pack-list" style="space-y: 8px; max-height: 280px; overflow-y: auto; padding-right: 4px;"></div>
 
-        <div class="mt-4 pt-3 border-t border-slate-800 flex justify-end">
-          <button type="button" id="asm-btn-close" class="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs transition">
+        <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: flex-end;">
+          <button type="button" id="asm-btn-close" style="padding: 9px 20px; border-radius: 12px; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); color: #ffffff; font-weight: 700; font-size: 0.85rem; cursor: pointer;">
             Cerrar
           </button>
         </div>
@@ -730,7 +706,7 @@
     document.getElementById('asm-btn-close-header').addEventListener('click', closeStorageManagerModal);
     document.getElementById('asm-btn-close').addEventListener('click', closeStorageManagerModal);
     document.getElementById('asm-btn-clear-all').addEventListener('click', async () => {
-      if (confirm('¿Deseas eliminar todos los paquetes 3D descargados? Tendrás que descargarlos de nuevo al entrar a cada mundo.')) {
+      if (confirm('¿Deseas liberar espacio borrando los escenarios descargados? Podrás volver a descargarlos cuando quieras.')) {
         await clearAllPacksFromDB();
         await renderStorageList();
         updateLobbyBadges();
@@ -751,9 +727,9 @@
 
     if (downloaded.length === 0) {
       listEl.innerHTML = `
-        <div class="text-center py-8 text-slate-500 text-xs">
-          <span class="text-3xl block mb-2">☁️</span>
-          No tienes paquetes de recursos guardados en este dispositivo.
+        <div style="text-align: center; padding: 28px 0; color: #64748b; font-size: 0.85rem;">
+          <span style="font-size: 32px; display: block; margin-bottom: 6px;">☁️</span>
+          No tienes escenarios guardados aún.
         </div>
       `;
       return;
@@ -763,16 +739,16 @@
       const reg = ASSET_PACKS_REGISTRY[item.packId] || {};
       const dateStr = item.downloadedAt ? new Date(item.downloadedAt).toLocaleDateString() : 'Reciente';
       return `
-        <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 text-xs">
-          <div class="flex items-center gap-2.5">
-            <span class="text-2xl">${reg.icon || '📦'}</span>
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-radius: 12px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.06); font-size: 0.82rem; margin-bottom: 8px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 22px;">${reg.icon || '📦'}</span>
             <div>
-              <div class="font-bold text-white">${item.title || reg.title || item.packId}</div>
-              <div class="text-[10px] text-slate-400 font-mono">${item.sizeMB} MB • Guardado: ${dateStr}</div>
+              <div style="font-weight: 700; color: #ffffff;">${reg.titleEs || reg.title || item.title || item.packId}</div>
+              <div style="font-size: 0.72rem; color: #94a3b8; font-family: monospace;">${item.sizeMB} MB • ${dateStr}</div>
             </div>
           </div>
           <button type="button" onclick="window.AssetDownloadManager.deletePackAndRefresh('${item.packId}')"
-            class="px-2.5 py-1 rounded-lg bg-red-950/60 hover:bg-red-900 border border-red-700/40 text-red-300 font-bold text-[11px] transition">
+            style="padding: 5px 10px; border-radius: 8px; background: rgba(225, 29, 72, 0.15); border: 1px solid rgba(225, 29, 72, 0.35); color: #fda4af; font-weight: 700; font-size: 0.75rem; cursor: pointer;">
             🗑️ Borrar
           </button>
         </div>
@@ -783,28 +759,26 @@
   async function openStorageManagerModal() {
     const modal = ensureStorageModalDOM();
     await renderStorageList();
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    modal.style.setProperty('display', 'flex', 'important');
+    modal.classList.add('adm-modal-open');
+    modal.style.cssText = 'position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100vh !important; background: rgba(7, 11, 20, 0.86) !important; z-index: 200000 !important; display: flex !important; align-items: center !important; justify-content: center !important; padding: 20px !important; box-sizing: border-box !important;';
   }
 
   function closeStorageManagerModal() {
     const modal = document.getElementById('asset-storage-modal');
     if (modal) {
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
-      modal.style.setProperty('display', 'none', 'important');
+      modal.classList.remove('adm-modal-open');
+      modal.style.cssText = 'display: none !important;';
     }
   }
 
   // =========================================================================
-  // 7. ACTUALIZACIÓN AUTOMÁTICA DE BADGES EN LOBBY 3D Y MASTERGOAL
+  // 7. ACTUALIZACIÓN AUTOMÁTICA DE INSIGNIAS LIMPIAS Y AMIGABLES
   // =========================================================================
 
   async function updateLobbyBadges() {
     const summary = await getDownloadedPacksSummary();
 
-    // 1. Actualizar tarjetas del Lobby 3D (.world3d-lobby-card)
+    // 1. Tarjetas del Lobby 3D (.world3d-lobby-card)
     const cards = document.querySelectorAll('.world3d-lobby-card');
     cards.forEach(card => {
       const match = card.getAttribute('onclick') || '';
@@ -820,10 +794,9 @@
       const packInfo = summary[matchedId];
       if (!packInfo) return;
 
-      let badgeEl = card.querySelector('.asset-pack-badge');
+      let badgeEl = card.querySelector('.adm-badge');
       if (!badgeEl) {
         badgeEl = document.createElement('div');
-        badgeEl.className = 'asset-pack-badge';
         const archHeader = card.querySelector('.portal-arch-header');
         if (archHeader) {
           archHeader.appendChild(badgeEl);
@@ -833,56 +806,42 @@
       }
 
       if (packInfo.isDownloaded) {
-        badgeEl.className = 'asset-pack-badge asset-pack-downloaded';
-        badgeEl.innerHTML = '<span>✅ Descargado (Listo para jugar)</span>';
+        badgeEl.className = 'adm-badge adm-badge-downloaded';
+        badgeEl.innerHTML = '<span>✨ Listo para jugar</span>';
       } else {
-        badgeEl.className = 'asset-pack-badge asset-pack-required';
-        badgeEl.innerHTML = `<span>☁️ Requiere descarga (${packInfo.sizeMB} MB)</span>`;
+        badgeEl.className = 'adm-badge adm-badge-ready';
+        const sizeStr = typeof packInfo.sizeMB === 'number' ? packInfo.sizeMB.toFixed(1) : packInfo.sizeMB;
+        badgeEl.innerHTML = `<span>☁️ Descarga rápida (${sizeStr} MB)</span>`;
       }
     });
 
-    // 2. Actualizar tarjeta de MasterGoal (Fútbol 3D) en Portales Hub
-    const soccerContainer = document.getElementById('mastergoal-asset-badge-container') ||
-      document.querySelector('#coverCard-8 [data-portal="soccer"]')?.parentElement;
-
+    // 2. Tarjeta de MasterGoal (Fútbol 3D) en Portales Hub
+    const soccerContainer = document.getElementById('mastergoal-asset-badge-container');
     if (soccerContainer) {
-      let soccerBadge = document.getElementById('mastergoal-asset-badge');
-      if (!soccerBadge) {
-        soccerBadge = document.createElement('div');
-        soccerBadge.id = 'mastergoal-asset-badge';
-        soccerBadge.className = 'asset-pack-badge mt-1 mb-2';
-        const btn = soccerContainer.querySelector('[data-portal="soccer"]');
-        if (btn) {
-          soccerContainer.insertBefore(soccerBadge, btn);
-        } else {
-          soccerContainer.appendChild(soccerBadge);
-        }
-      }
       const sInfo = summary['soccer'];
       if (sInfo && sInfo.isDownloaded) {
-        soccerBadge.className = 'asset-pack-badge asset-pack-downloaded mb-2';
-        soccerBadge.innerHTML = '<span>✅ Descargado (Listo para jugar)</span>';
+        soccerContainer.innerHTML = '<span class="adm-badge adm-badge-downloaded">✨ Listo para jugar</span>';
       } else {
-        soccerBadge.className = 'asset-pack-badge asset-pack-required mb-2';
-        soccerBadge.innerHTML = `<span>☁️ Requiere descarga (${sInfo ? sInfo.sizeMB : 22.4} MB)</span>`;
+        const sizeStr = (sInfo && sInfo.sizeMB) ? sInfo.sizeMB : '22.4';
+        soccerContainer.innerHTML = `<span class="adm-badge adm-badge-ready">☁️ Descarga rápida (${sizeStr} MB)</span>`;
       }
     }
 
-    // 3. Actualizar tarjeta de Galería 3D en Portales Hub
+    // 3. Tarjeta de Galería 3D en Portales Hub
     const worldTourContainer = document.getElementById('worldtour-asset-badge-container');
     if (worldTourContainer) {
       const worldKeys = ['house', 'supermarket', 'restaurant', 'hotel', 'dating', 'nature', 'space'];
       const dlCount = worldKeys.filter(k => summary[k] && summary[k].isDownloaded).length;
       if (dlCount === worldKeys.length) {
-        worldTourContainer.innerHTML = '<span class="asset-pack-badge asset-pack-downloaded">✅ Todos los mundos descargados (7/7)</span>';
+        worldTourContainer.innerHTML = '<span class="adm-badge adm-badge-downloaded">✨ 7/7 mundos listos</span>';
       } else if (dlCount > 0) {
-        worldTourContainer.innerHTML = `<span class="asset-pack-badge asset-pack-downloaded">✅ ${dlCount}/7 mundos listos</span> <span class="asset-pack-badge asset-pack-required">☁️ On-Demand</span>`;
+        worldTourContainer.innerHTML = `<span class="adm-badge adm-badge-downloaded">✨ ${dlCount}/7 mundos listos</span>`;
       } else {
-        worldTourContainer.innerHTML = '<span class="asset-pack-badge asset-pack-required">☁️ Requiere descarga por mundo (On-Demand)</span>';
+        worldTourContainer.innerHTML = '<span class="adm-badge adm-badge-ready">☁️ Descarga rápida disponible</span>';
       }
     }
 
-    // 4. Añadir botón de Gestión de Memoria en la barra del Lobby 3D si no existe
+    // 4. Botón discreto de Gestión de Memoria en el Lobby 3D
     const lobbyHeader = document.querySelector('.world3d-lobby-header .flex.items-center.gap-2');
     if (lobbyHeader && !document.getElementById('world3dStorageMgrBtn')) {
       const mgrBtn = document.createElement('button');
@@ -896,7 +855,7 @@
   }
 
   // =========================================================================
-  // 8. INTERCEPTOR TRANSPARENTE DE APERTURA DE MUNDOS Y JUEGOS
+  // 8. INTERCEPTORES DE ENTRADA A MUNDOS Y JUEGOS
   // =========================================================================
 
   function installInterceptors() {
@@ -906,14 +865,15 @@
       const key = scenarioKey || 'house';
       const reg = ASSET_PACKS_REGISTRY[key] || {
         packId: key,
-        title: `${key.toUpperCase()} 3D`,
+        title: key.toUpperCase(),
+        titleEs: key.toUpperCase(),
         category: 'world3d',
         estimatedMB: 16.5
       };
 
       requireAssetPack({
         packId: key,
-        title: reg.title,
+        title: reg.titleEs || reg.title,
         category: reg.category,
         glbUrl: reg.glbUrl,
         estimatedMB: reg.estimatedMB,
@@ -925,7 +885,7 @@
           }
         },
         onCancel: function () {
-          console.log('[AssetDownloadManager] Entrada a mundo cancelada. Permaneciendo en Lobby 3D.');
+          console.log('[AssetDownloadManager] Entrada cancelada. En Lobby 3D.');
           if (typeof window.openWorld3DLobby === 'function') {
             window.openWorld3DLobby();
           }
@@ -937,7 +897,7 @@
       window.World3D.loadWorld3DWithPrecompile = window.loadWorld3DWithPrecompile;
     }
 
-    // Interceptar window.openWorld3DLobby para refrescar badges
+    // Interceptar window.openWorld3DLobby para refrescar insignias
     const origOpenLobby = window.openWorld3DLobby;
     if (typeof origOpenLobby === 'function') {
       window.openWorld3DLobby = function () {
@@ -946,7 +906,7 @@
       };
     }
 
-    // Interceptar window.openPortalModules para soccer y otros portales 3D
+    // Interceptar window.openPortalModules para fútbol y juegos
     const origOpenPortalModules = window.openPortalModules;
     if (typeof origOpenPortalModules === 'function') {
       window.openPortalModules = function (targetPortal) {
@@ -954,7 +914,7 @@
           const reg = ASSET_PACKS_REGISTRY['soccer'];
           requireAssetPack({
             packId: 'soccer',
-            title: reg.title,
+            title: reg.titleEs || reg.title,
             category: 'sports',
             glbUrl: reg.glbUrl,
             estimatedMB: reg.estimatedMB,
@@ -962,7 +922,7 @@
               origOpenPortalModules(targetPortal);
             },
             onCancel: function () {
-              console.log('[AssetDownloadManager] Entrada a MasterGoal cancelada. Regresando a Portales.');
+              console.log('[AssetDownloadManager] Entrada cancelada. En Portales.');
               if (typeof window.navigateTo === 'function') {
                 window.navigateTo('view-home');
               }
@@ -978,7 +938,7 @@
           const reg = ASSET_PACKS_REGISTRY['hedbanz'];
           requireAssetPack({
             packId: 'hedbanz',
-            title: reg.title,
+            title: reg.titleEs || reg.title,
             category: 'minigames',
             glbUrl: reg.glbUrl,
             estimatedMB: reg.estimatedMB,
@@ -998,7 +958,7 @@
       };
     }
 
-    // Hook en renderWorld3DLobbyCards para refrescar badges
+    // Hook en renderWorld3DLobbyCards para refrescar insignias
     const origRenderCards = window.renderWorld3DLobbyCards;
     if (typeof origRenderCards === 'function') {
       window.renderWorld3DLobbyCards = function () {
@@ -1039,7 +999,7 @@
 
   window.AssetDownloadManager = AssetDownloadManager;
 
-  // Auto-inicialización al cargar el DOM
+  // Auto-inicialización
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => {

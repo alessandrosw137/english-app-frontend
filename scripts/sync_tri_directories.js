@@ -59,6 +59,11 @@ const targets = [
   path.join(__dirname, '..', 'app', 'src', 'main', 'assets')
 ];
 
+const subDir = path.join(__dirname, '..', 'ENGLISH-');
+if (fs.existsSync(subDir)) {
+  targets.push(subDir);
+}
+
 targets.forEach(targetDir => {
   filesToSync.forEach(file => {
     const src = path.join(__dirname, '..', file);

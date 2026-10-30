@@ -1,5 +1,5 @@
-// mastereng-v1-pwa-v25-compat Service Worker Network-First with Auto-Cache Cleanup
-const CACHE_NAME = 'mastereng-pwa-v25-' + Date.now();
+// mastereng-pwa-v27 Service Worker Network-First with Auto-Cache Cleanup
+const CACHE_NAME = 'mastereng-pwa-v27-' + Date.now();
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -20,6 +20,7 @@ const CORE_ASSETS = [
   './js/pet_sanctuary.js',
   './js/profile_social.js',
   './js/soccer_tactics_3d.js',
+  './js/asset_download_manager.js',
   './manifest.json',
   './icon.png',
   './icon-512.png'
@@ -44,6 +45,12 @@ self.addEventListener('message', (e) => {
 
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET' || !e.request.url.startsWith('http')) return;
+  
+  // Excluir paquetes .glb pesados para que AssetDownloadManager los gestione bajo demanda en IndexedDB
+  if (e.request.url.includes('.glb')) {
+    return;
+  }
+
   e.respondWith(
     fetch(e.request)
       .then((netRes) => {
