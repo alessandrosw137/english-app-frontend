@@ -14863,8 +14863,15 @@ window.switchMasterView = function(targetMode) {
 
       const text = (btn.textContent || '').trim().toLowerCase();
 
-      // 1. Si el texto del botón pulsado incluye 'regresar a portales', 'volver a portales', 'volver al hub', 'volver al inicio' o es #headerGlobalBackBtn:
-      if (text.includes('regresar a portales') || text.includes('volver a portales') || text.includes('volver al hub') || text.includes('volver al inicio') || (btn.id === 'headerGlobalBackBtn')) {
+      // Si el clic ocurre en un botón de cancelar/volver a la Galería 3D dentro de #world3d-loading-screen o #world3d-selection-hub, permitir su propio handler
+      if (btn.closest && btn.closest('#world3d-loading-screen, #world3d-selection-hub')) {
+        if (text.includes('galería 3d') || text.includes('escenario activo') || btn.classList.contains('world3d-lobby-card') || btn.closest('.world3d-lobby-card')) {
+          return;
+        }
+      }
+
+      // 1. Si el texto del botón pulsado incluye 'regresar a portales', 'volver a portales', 'salir a portales', 'volver al hub', 'volver al inicio' o es #headerGlobalBackBtn:
+      if (text.includes('regresar a portales') || text.includes('regresar al menú de portales') || text.includes('volver a portales') || text.includes('salir a portales') || text.includes('volver al hub') || text.includes('volver al inicio') || (btn.id === 'headerGlobalBackBtn')) {
         e.preventDefault();
         e.stopPropagation();
         if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
@@ -14875,14 +14882,15 @@ window.switchMasterView = function(targetMode) {
         return;
       }
 
-      // 2. Si el usuario hace clic en el portal 3D:
+      // 2. Si el usuario hace clic en el portal 3D desde el Hub principal:
       const pCard = btn.closest ? btn.closest('.portal-card, .coverflow-portal-card, .card, [class*="portal"]') : null;
       const pCardText = pCard ? (pCard.textContent || '').toLowerCase() : '';
       if (text.includes('entorno 3d') || text.includes('mundo 3d') || (text.includes('entrar al portal') && (pCardText.includes('inmersivo 3d') || pCardText.includes('entorno 3d') || (btn.dataset && btn.dataset.portal === 'worldtour')))) {
         e.preventDefault();
         e.stopPropagation();
         if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
-        if (typeof window.open3DPortalView === 'function') window.open3DPortalView(e);
+        if (typeof window.openWorld3DLobby === 'function') window.openWorld3DLobby();
+        else if (typeof window.open3DPortalView === 'function') window.open3DPortalView(e);
         return;
       }
 
@@ -14892,7 +14900,8 @@ window.switchMasterView = function(targetMode) {
             e.preventDefault();
             e.stopPropagation();
             if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
-            if (typeof window.open3DPortalView === 'function') window.open3DPortalView(e);
+            if (typeof window.openWorld3DLobby === 'function') window.openWorld3DLobby();
+            else if (typeof window.open3DPortalView === 'function') window.open3DPortalView(e);
             return;
           }
         }
@@ -15986,7 +15995,18 @@ window.deduplicateWorld3DBars = function() {
   if (candidateBars.length >= 1) {
     const activeBar = candidateBars[0];
     activeBar.id = 'unified-world3d-cam-bar';
-    activeBar.style.cssText = 'position: absolute !important; top: 10px !important; left: 10px !important; right: 10px !important; max-width: calc(100vw - 20px) !important; z-index: 80 !important; display: flex !important; flex-wrap: nowrap !important; overflow-x: auto !important; align-items: center !important; gap: 6px !important; background: rgba(15, 23, 42, 0.88) !important; backdrop-filter: blur(10px) !important; padding: 6px 10px !important; border-radius: 14px !important; border: 1px solid rgba(148, 163, 184, 0.3) !important; pointer-events: auto !important;';
+    const lobbyEl = document.getElementById('world3d-selection-hub');
+    const loaderEl = document.getElementById('world3d-loading-screen');
+    const isOverlayActive = Boolean(
+      (lobbyEl && !lobbyEl.classList.contains('hidden') && lobbyEl.style.display !== 'none') ||
+      (loaderEl && !loaderEl.classList.contains('hidden') && loaderEl.style.display !== 'none')
+    );
+    if (isOverlayActive) {
+      activeBar.style.setProperty('display', 'none', 'important');
+      activeBar.style.setProperty('visibility', 'hidden', 'important');
+    } else {
+      activeBar.style.cssText = 'position: absolute !important; top: 10px !important; left: 10px !important; right: 10px !important; max-width: calc(100vw - 20px) !important; z-index: 80 !important; display: flex !important; flex-wrap: nowrap !important; overflow-x: auto !important; align-items: center !important; gap: 6px !important; background: rgba(15, 23, 42, 0.88) !important; backdrop-filter: blur(10px) !important; padding: 6px 10px !important; border-radius: 14px !important; border: 1px solid rgba(148, 163, 184, 0.3) !important; pointer-events: auto !important;';
+    }
   }
 };
 

@@ -1035,7 +1035,7 @@
               </div>
             ` : `
               <!-- Header del Chat Activo -->
-              <header class="wa-chat-header">
+              <div role="banner" class="wa-chat-header">
                 <div class="flex items-center gap-2.5 min-w-0">
                   <button type="button" class="wa-mobile-back-btn" onclick="window.SocialChat.backToSidebarMobile()" title="Volver a lista de chats">
                     ←
@@ -1105,7 +1105,7 @@
                     <span>🎯 Misiones (${(m1Progress >= 5 ? 1 : 0) + (m2Progress >= 3 ? 1 : 0) + (m3Progress >= 2 ? 1 : 0)}/3)</span>
                   </button>
                 </div>
-              </header>
+              </div>
 
               <!-- Panel Desplegable de "Misiones de Vínculo / Pareja" -->
               <div id="waMissionsDrawer" class="wa-missions-drawer ${state.showMissionsDrawer ? 'open' : ''}">

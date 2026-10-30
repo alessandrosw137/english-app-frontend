@@ -367,6 +367,86 @@
     };
   }
 
+  function calculateSoccerRank() {
+    const DIVISIONS = [
+      { div: 10, minRP: 0, maxRP: 99, title: 'División 10 • Inicio', badge: '🥉 Bronce I', color: '#cd7f32', tierClass: 'tier-a1' },
+      { div: 9, minRP: 100, maxRP: 199, title: 'División 9 • Amateur', badge: '🥉 Bronce II', color: '#d97706', tierClass: 'tier-a1' },
+      { div: 8, minRP: 200, maxRP: 299, title: 'División 8 • Juvenil', badge: '🥉 Bronce III', color: '#f59e0b', tierClass: 'tier-a2' },
+      { div: 7, minRP: 300, maxRP: 419, title: 'División 7 • Semi-Pro', badge: '🥈 Plata I', color: '#94a3b8', tierClass: 'tier-a2' },
+      { div: 6, minRP: 420, maxRP: 549, title: 'División 6 • Profesional', badge: '🥈 Plata II', color: '#cbd5e1', tierClass: 'tier-b1' },
+      { div: 5, minRP: 550, maxRP: 699, title: 'División 5 • Primera Liga', badge: '🥇 Oro I', color: '#fbbf24', tierClass: 'tier-b1' },
+      { div: 4, minRP: 700, maxRP: 849, title: 'División 4 • Clase Mundial', badge: '🥇 Oro II', color: '#f59e0b', tierClass: 'tier-b2' },
+      { div: 3, minRP: 850, maxRP: 999, title: 'División 3 • Élite Continental', badge: '💎 Diamante I', color: '#38bdf8', tierClass: 'tier-b2' },
+      { div: 2, minRP: 1000, maxRP: 1299, title: 'División 2 • Champions', badge: '💎 Diamante Élite', color: '#818cf8', tierClass: 'tier-c1' },
+      { div: 1, minRP: 1300, maxRP: 99999, title: 'División 1 • Campeón Mundial', badge: '👑 Leyenda', color: '#f43f5e', tierClass: 'tier-c2' }
+    ];
+
+    let stats = {
+      rp: 0,
+      division: 10,
+      matchesPlayed: 0,
+      wins: 0,
+      draws: 0,
+      losses: 0,
+      goalsScored: 0,
+      questionsAnswered: 0,
+      questionsCorrect: 0,
+      currentStreak: 0
+    };
+
+    try {
+      const raw = localStorage.getItem('mastergoal_stats_v2');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          stats = Object.assign(stats, parsed);
+        }
+      }
+    } catch (_) {}
+
+    const safeRP = Math.max(0, Number(stats.rp) || 0);
+    let currentDivObj = DIVISIONS[0];
+    for (let i = DIVISIONS.length - 1; i >= 0; i--) {
+      if (safeRP >= DIVISIONS[i].minRP) {
+        currentDivObj = DIVISIONS[i];
+        break;
+      }
+    }
+
+    const nextDivObj = DIVISIONS.find(d => d.div === currentDivObj.div - 1) || null;
+    let percent = 100;
+    let neededRP = 0;
+    let nextLabel = 'División 1 Máxima Alcanzada';
+    if (nextDivObj) {
+      const span = Math.max(1, nextDivObj.minRP - currentDivObj.minRP);
+      percent = Math.min(100, Math.max(0, Math.round(((safeRP - currentDivObj.minRP) / span) * 100)));
+      neededRP = Math.max(0, nextDivObj.minRP - safeRP);
+      nextLabel = `Ascenso a Div ${nextDivObj.div} (${nextDivObj.minRP} RP)`;
+    }
+
+    const qAns = Math.max(0, Number(stats.questionsAnswered) || 0);
+    const qOk = Math.max(0, Number(stats.questionsCorrect) || 0);
+    const accuracy = qAns > 0 ? Math.min(100, Math.round((qOk / qAns) * 100)) : 0;
+
+    return {
+      rp: safeRP,
+      div: currentDivObj.div,
+      divCode: `DIV ${currentDivObj.div}`,
+      title: currentDivObj.title,
+      badge: currentDivObj.badge,
+      color: currentDivObj.color,
+      tierClass: currentDivObj.tierClass,
+      percent,
+      neededRP,
+      nextLabel,
+      matchesPlayed: Math.max(0, Number(stats.matchesPlayed) || 0),
+      wins: Math.max(0, Number(stats.wins) || 0),
+      goalsScored: Math.max(0, Number(stats.goalsScored) || 0),
+      accuracy,
+      streak: Math.max(0, Number(stats.currentStreak) || 0)
+    };
+  }
+
   // ============================================================================
   // 7. GESTIÓN Y SUBIDA DE AVATAR (CANVAS COMPRESS 256x256 -> BASE64)
   // ============================================================================
@@ -459,6 +539,7 @@
     const coopGroup = getCoopGroupData(user);
     const engRank = calculateEnglishRank(user);
     const petRank = calculatePetParentRank(activePet, pets.length);
+    const soccerRank = calculateSoccerRank();
     const isGuest = user.role === 'guest' || user.username === 'Invitado';
     const isAdmin = Boolean(
       user && (
@@ -700,7 +781,70 @@
             </div>
           </div>
 
-          <!-- TARJETA 2: SANTUARIO DE MASCOTAS (ESTÉTICA CARTÓN / PAPERCRAFT) -->
+          <!-- TARJETA 2: RANGO OFICIAL DE FÚTBOL (MASTERGOAL 3D DIVISION RIVALS) -->
+          <div class="rank-card-metallic ${soccerRank.tierClass}" id="profile-soccer-rank-card">
+            <div class="rank-card-header">
+              <span class="rank-card-title">
+                <span>⚽</span>
+                <span>Rango en Fútbol (MasterGoal 3D)</span>
+              </span>
+              <span class="px-2 py-0.5 rounded-md bg-emerald-950/90 border border-emerald-400/40 text-emerald-300 font-mono text-[11px] font-extrabold">
+                ${soccerRank.rp} RP
+              </span>
+            </div>
+
+            <div class="rank-shield-display">
+              <div class="rank-shield-icon" style="font-size:15px;letter-spacing:0.04em;text-align:center;line-height:1.1;">
+                ${soccerRank.divCode}
+              </div>
+              <div class="rank-info-text">
+                <h4>${soccerRank.badge} • ${soccerRank.title}</h4>
+                <p>Liga Competitiva de Fútbol Táctico e Inglés</p>
+              </div>
+            </div>
+
+            <!-- Barra de Progreso de División -->
+            <div class="rank-progress-wrapper">
+              <div class="rank-progress-labels">
+                <span>${soccerRank.nextLabel}</span>
+                <span class="text-emerald-300 font-bold">${soccerRank.percent}%</span>
+              </div>
+              <div class="rank-progress-bar-bg">
+                <div class="rank-progress-bar-fill" style="width: ${soccerRank.percent}%; background: linear-gradient(90deg, #10b981, #38bdf8);"></div>
+              </div>
+              <div class="flex justify-between text-[10px] text-slate-500 font-medium">
+                <span>${soccerRank.rp} RP actuales</span>
+                <span>${soccerRank.neededRP > 0 ? `Faltan ${soccerRank.neededRP} RP` : 'Rango Máximo'}</span>
+              </div>
+            </div>
+
+            <!-- Métricas de Fútbol Reales -->
+            <div class="rank-stats-pills">
+              <div class="stat-metric-pill">
+                <span class="num">${soccerRank.matchesPlayed}</span>
+                <span class="lbl">Partidos</span>
+              </div>
+              <div class="stat-metric-pill">
+                <span class="num">${soccerRank.wins}</span>
+                <span class="lbl">Victorias</span>
+              </div>
+              <div class="stat-metric-pill">
+                <span class="num">⚽ ${soccerRank.goalsScored}</span>
+                <span class="lbl">Goles</span>
+              </div>
+              <div class="stat-metric-pill">
+                <span class="num">${soccerRank.accuracy}%</span>
+                <span class="lbl">Precisión</span>
+              </div>
+            </div>
+
+            <button type="button" onclick="event.stopPropagation(); window.closeProfileModal(event); if(typeof window.openSoccerTactics3DPortal==='function') window.openSoccerTactics3DPortal(); else if(typeof window.navigateTo==='function') window.navigateTo('soccer');" class="w-full mt-1 py-2 px-3 rounded-xl font-extrabold text-xs text-white flex items-center justify-center gap-2 shadow-md transition hover:brightness-110 cursor-pointer" style="background: linear-gradient(135deg, #059669, #0284c7); border: 1px solid rgba(52, 211, 153, 0.4);">
+              <span>⚽</span>
+              <span>Ir a MasterGoal 3D</span>
+            </button>
+          </div>
+
+          <!-- TARJETA 3: SANTUARIO DE MASCOTAS (ESTÉTICA CARTÓN / PAPERCRAFT) -->
           <div class="craft-sanctuary-card">
             <div class="craft-stitch-border"></div>
             <div class="craft-washi-tape"></div>

@@ -602,7 +602,12 @@
             <div id="soccerQuizCard" class="soccer-quiz-card">
               <div class="soccer-quiz-top">
                 <span id="soccerQuizBadge" class="soccer-quiz-badge">TURNO DE ATAQUE</span>
-                <span id="soccerQuizTimerText" class="soccer-quiz-timer-text">8.0s</span>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span id="soccerQuizTimerText" class="soccer-quiz-timer-text">8.0s</span>
+                  <button type="button" onclick="window.SoccerTactics3D.exitMatchToLobby()" style="padding:4px 10px;border-radius:8px;background:rgba(244,63,94,0.18);border:1px solid rgba(244,63,94,0.45);color:#fda4af;font-size:11px;font-weight:800;cursor:pointer;" title="Retroceder al Lobby de Fútbol">
+                    ← Salir al Lobby
+                  </button>
+                </div>
               </div>
               <div class="soccer-quiz-timer-track">
                 <div id="soccerQuizTimerFill" class="soccer-quiz-timer-fill"></div>

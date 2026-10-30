@@ -1181,7 +1181,7 @@
 
     container.innerHTML = `
       <!-- BARRA DE NAVEGACIÓN SUPERIOR FIJA DEL SANTUARIO -->
-      <header class="w-full bg-[#1e130c]/95 backdrop-blur-md border-b-4 border-[#b45309] px-3 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 shadow-xl sticky top-0 z-40">
+      <div role="banner" class="pet-sanctuary-topbar w-full bg-[#1e130c]/95 backdrop-blur-md border-b-4 border-[#b45309] px-3 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 shadow-xl sticky top-0 z-40">
         <!-- IZQUIERDA: BOTÓN VOLVER A PORTALES -->
         <div class="flex items-center gap-3">
           <button type="button" onclick="window.closePetSanctuary()" class="paper-btn-secondary px-3.5 py-2 text-xs font-black flex items-center gap-2 shadow-md hover:scale-105 active:scale-95 transition cursor-pointer" title="Regresar al Menú de Portales Arcanos">
@@ -1228,7 +1228,7 @@
             <span class="lg:hidden">Invitar</span>
           </button>
         </div>
-      </header>
+      </div>
 
       <!-- CONTENEDOR CENTRAL ESTILO TEATRO -->
       <main class="max-w-6xl w-full mx-auto p-4 sm:p-6 flex-1 flex flex-col gap-6">
@@ -1485,7 +1485,7 @@
 
     container.innerHTML = `
       <!-- BARRA SUPERIOR FIJA DE LA HABITACIÓN -->
-      <header class="w-full bg-[#1e130c]/95 backdrop-blur-md border-b-4 border-[#b45309] px-3 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 shadow-xl sticky top-0 z-40">
+      <div role="banner" class="pet-sanctuary-topbar w-full bg-[#1e130c]/95 backdrop-blur-md border-b-4 border-[#b45309] px-3 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 shadow-xl sticky top-0 z-40">
         <!-- IZQUIERDA: BOTONES VOLVER A PORTALES Y HUB -->
         <div class="flex items-center gap-2">
           <button type="button" onclick="window.closePetSanctuary()" class="paper-btn-secondary px-3 py-1.5 text-xs font-black flex items-center gap-1 shadow hover:scale-105 active:scale-95 transition cursor-pointer" title="Regresar al Menú de Portales Arcanos">
@@ -1528,7 +1528,7 @@
             <span>👥</span>
           </button>
         </div>
-      </header>
+      </div>
 
       <!-- ÁREA DE JUEGO PRINCIPAL -->
       <main class="flex-1 max-w-4xl w-full mx-auto p-4 flex flex-col justify-between items-center gap-4">

@@ -768,11 +768,11 @@ ensureOrbitControls();
     },
 
     createProductLabelMaterial(spec = {}) {
-      const id = spec.id || 'generic_label';
+      const id = spec.id || spec.key || spec.title || 'generic_label';
       const matKey = 'prod_mat_' + id;
       if (this.matCache[matKey]) return this.matCache[matKey];
       const bg = spec.bg || '#f59e0b';
-      const accent = spec.accent || '#dc2626';
+      const accent = spec.accent || spec.band || '#dc2626';
       const title = spec.title || 'PREMIUM';
       const subtitle = spec.subtitle || 'ORGANIC QUALITY';
       const badge = spec.badge || '100% REAL';
@@ -823,8 +823,18 @@ ensureOrbitControls();
       return mat;
     },
 
+    createProductLabel(title, subtitle, bg, accent) {
+      return this.createProductLabelMaterial({
+        id: String(title || 'prod').toLowerCase().replace(/[^a-z0-9]+/g, '_'),
+        title: title || 'PRODUCT',
+        subtitle: subtitle || 'QUALITY',
+        bg: bg || '#f59e0b',
+        accent: accent || '#dc2626'
+      });
+    },
+
     createDigitalScreenMaterial(spec = {}) {
-      const id = spec.id || 'pos_screen';
+      const id = spec.id || spec.key || spec.header || 'pos_screen';
       const matKey = 'screen_mat_' + id;
       if (this.matCache[matKey]) return this.matCache[matKey];
       const bg = spec.bg || '#061326';
@@ -876,6 +886,15 @@ ensureOrbitControls();
       return mat;
     },
 
+    createScreenUI(header, lines, primary) {
+      return this.createDigitalScreenMaterial({
+        id: String(header || 'screen').toLowerCase().replace(/[^a-z0-9]+/g, '_'),
+        header: header || 'SYSTEM ONLINE',
+        lines: Array.isArray(lines) ? lines : ['STATUS: ONLINE'],
+        primary: primary || '#38bdf8'
+      });
+    },
+
     createBrickMaterial() {
       if (this.matCache.brickWall) return this.matCache.brickWall;
       const tex = this.getCanvasTexture('brick_hd', (ctx) => {
@@ -920,6 +939,10 @@ ensureOrbitControls();
       });
       this.matCache.solarCells = mat;
       return mat;
+    },
+
+    createSolarCellMaterial() {
+      return this.createSolarPanelMaterial();
     },
 
     getContactShadowMaterial() {
@@ -3341,6 +3364,7 @@ ensureOrbitControls();
     const matRosePink = new PhysicalMat({ color: 0xf43f5e, emissive: 0x881337, emissiveIntensity: 0.2, roughness: 0.28, clearcoat: 0.5 });
     const matVelvet = M.burgundyCloth || new PhysicalMat({ color: 0x9f1239, roughness: 0.65, metalness: 0.08 });
     const matEmerald = new PhysicalMat({ color: 0x10b981, roughness: 0.28, metalness: 0.1, clearcoat: 0.6 });
+    const matTeal = new PhysicalMat({ color: 0x14b8a6, roughness: 0.28, metalness: 0.1, clearcoat: 0.6 });
     const matSky = new PhysicalMat({ color: 0x0ea5e9, roughness: 0.25, metalness: 0.2, clearcoat: 0.6 });
     const matBrass = M.metalBrass || matGold;
     const matStone = M.stoneGray || matDark;
@@ -8198,7 +8222,19 @@ ensureOrbitControls();
       if (candidateBars.length >= 1) {
         const activeBar = candidateBars[0];
         activeBar.id = 'unified-world3d-cam-bar';
-        activeBar.style.cssText = 'position: absolute !important; top: 10px !important; left: 10px !important; right: 10px !important; max-width: calc(100vw - 20px) !important; z-index: 80 !important; display: flex !important; flex-wrap: nowrap !important; overflow-x: auto !important; align-items: center !important; gap: 6px !important; background: rgba(15, 18, 26, 0.92) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; padding: 6px 10px !important; border-radius: 14px !important; border: 1px solid rgba(148, 163, 184, 0.3) !important; pointer-events: auto !important;';
+        const lobbyEl = document.getElementById('world3d-selection-hub');
+        const loaderEl = document.getElementById('world3d-loading-screen');
+        const isOverlayActive = Boolean(
+          _isPrecompilingWorld ||
+          (lobbyEl && !lobbyEl.classList.contains('hidden') && lobbyEl.style.display !== 'none') ||
+          (loaderEl && !loaderEl.classList.contains('hidden') && loaderEl.style.display !== 'none')
+        );
+        if (isOverlayActive) {
+          activeBar.style.setProperty('display', 'none', 'important');
+          activeBar.style.setProperty('visibility', 'hidden', 'important');
+        } else {
+          activeBar.style.cssText = 'position: absolute !important; top: 10px !important; left: 10px !important; right: 10px !important; max-width: calc(100vw - 20px) !important; z-index: 80 !important; display: flex !important; flex-wrap: nowrap !important; overflow-x: auto !important; align-items: center !important; gap: 6px !important; background: rgba(15, 18, 26, 0.92) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; padding: 6px 10px !important; border-radius: 14px !important; border: 1px solid rgba(148, 163, 184, 0.3) !important; pointer-events: auto !important;';
+        }
       }
     };
 
@@ -9616,20 +9652,10 @@ ensureOrbitControls();
       window._activeModule = 'world3d';
     }
 
-    // Asegurar que el motor esté inicializado o reanudado
-    initOrResumeWorld3D();
-
-    // Forzar redimensionado y actualización de la projection matrix en World3D
-    if (World3D.camera && World3D.renderer) {
-      World3D.camera.aspect = window.innerWidth / window.innerHeight;
-      World3D.camera.updateProjectionMatrix();
-      World3D.renderer.setSize(window.innerWidth, window.innerHeight);
-    }
-
     const key = String(scenarioKey || 'house').toLowerCase().trim();
 
     // Si es una sub-zona rápida de la casa ("study" o "living") y ya estamos en house, enfocar cámara
-    if ((key === 'study' || key === 'living') && currentScenarioKey === 'house') {
+    if ((key === 'study' || key === 'living') && currentScenarioKey === 'house' && isEngineInitialized) {
       focusWorld3DZone(key);
       return;
     }
@@ -9639,7 +9665,18 @@ ensureOrbitControls();
     const scenMeta = WORLD_TOUR_SCENARIOS[targetScenario];
     const scenarioTitle = (scenMeta && scenMeta.title) ? scenMeta.title : targetScenario;
 
-    if (scene) {
+    // Asegurar que el motor esté inicializado o reanudado (si no estaba inicializado, initOrResumeWorld3D construye currentScenarioKey una sola vez)
+    const wasEngineInitialized = isEngineInitialized;
+    initOrResumeWorld3D();
+
+    // Forzar redimensionado y actualización de la projection matrix en World3D
+    if (World3D.camera && World3D.renderer) {
+      World3D.camera.aspect = window.innerWidth / window.innerHeight;
+      World3D.camera.updateProjectionMatrix();
+      World3D.renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    if (scene && wasEngineInitialized) {
       buildScenarioWorld(scene, targetScenario);
       applyDayNightState(targetScenario === 'dating' || targetScenario === 'space');
     }
@@ -9734,7 +9771,19 @@ ensureOrbitControls();
     if (candidateBars.length >= 1) {
       const activeBar = candidateBars[0];
       activeBar.id = 'unified-world3d-cam-bar';
-      activeBar.style.cssText = 'position: absolute !important; top: 96px !important; left: 16px !important; right: 16px !important; max-width: calc(100vw - 32px) !important; z-index: 80 !important; display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: 8px !important; background: rgba(15, 23, 42, 0.88) !important; backdrop-filter: none !important !important; padding: 6px 10px !important; border-radius: 14px !important; border: 1px solid rgba(148, 163, 184, 0.3) !important; pointer-events: auto !important;';
+      const lobbyEl = document.getElementById('world3d-selection-hub');
+      const loaderEl = document.getElementById('world3d-loading-screen');
+      const isOverlayActive = Boolean(
+        _isPrecompilingWorld ||
+        (lobbyEl && !lobbyEl.classList.contains('hidden') && lobbyEl.style.display !== 'none') ||
+        (loaderEl && !loaderEl.classList.contains('hidden') && loaderEl.style.display !== 'none')
+      );
+      if (isOverlayActive) {
+        activeBar.style.setProperty('display', 'none', 'important');
+        activeBar.style.setProperty('visibility', 'hidden', 'important');
+      } else {
+        activeBar.style.cssText = 'position: absolute !important; top: 10px !important; left: 12px !important; right: 12px !important; max-width: calc(100vw - 24px) !important; z-index: 80 !important; display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: 8px !important; background: rgba(15, 23, 42, 0.88) !important; backdrop-filter: none !important; padding: 6px 10px !important; border-radius: 14px !important; border: 1px solid rgba(148, 163, 184, 0.3) !important; pointer-events: auto !important;';
+      }
     }
 
     const selectEl = document.getElementById('world3dScenarioSelect');
@@ -10474,11 +10523,11 @@ ensureOrbitControls();
       <div class="world3d-loader-top-bar">
         <button type="button" onclick="window.cancelWorld3DLoad(event)"
           class="world3d-loader-cancel-btn" data-testid="btn-loader-back-portals">
-          <span>← Volver a Portales</span>
+          <span>← Volver a Galería 3D</span>
         </button>
-        <button type="button" onclick="window.cancelWorld3DLoad(event)"
+        <button type="button" onclick="if(typeof window.returnToMainPortals==='function') window.returnToMainPortals(event); else window.navigateTo('view-home');"
           class="world3d-loader-close-btn" data-testid="btn-loader-cancel">
-          <span>✕ Cancelar</span>
+          <span>🏠 Volver a Portales</span>
         </button>
       </div>
 
@@ -10503,6 +10552,16 @@ ensureOrbitControls();
           </div>
           <div class="world3d-loader-bar-track">
             <div id="world3dLoaderBarFill" class="world3d-loader-bar-fill" style="width: 0%;"></div>
+          </div>
+          <div class="mt-3 pt-2.5 border-t border-slate-800/80 flex items-center justify-between gap-2 flex-wrap">
+            <button type="button" onclick="window.cancelWorld3DLoad(event)"
+              class="px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-600/70 text-[11px] font-extrabold cursor-pointer transition flex items-center gap-1.5">
+              <span>← Retroceder a Galería 3D</span>
+            </button>
+            <button type="button" onclick="if(typeof window.returnToMainPortals==='function') window.returnToMainPortals(event); else window.navigateTo('view-home');"
+              class="px-3 py-1.5 rounded-xl bg-rose-950/70 hover:bg-rose-900/80 text-rose-200 border border-rose-500/40 text-[11px] font-extrabold cursor-pointer transition flex items-center gap-1.5">
+              <span>🏠 Salir a Portales</span>
+            </button>
           </div>
         </div>
       </div>
@@ -10578,11 +10637,11 @@ ensureOrbitControls();
 
     lobbyEl.innerHTML = `
       <div class="world3d-lobby-container">
-        <header class="world3d-lobby-header">
-          <div class="flex items-center gap-3">
+        <div role="banner" class="world3d-lobby-header">
+          <div class="flex items-center gap-3 flex-wrap">
             <button type="button" onclick="if(typeof window.returnToMainPortals==='function') window.returnToMainPortals(event); else window.navigateTo('view-home');"
-              class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 hover:text-white border border-slate-700 text-xs font-extrabold flex items-center gap-1.5 cursor-pointer transition active:scale-95 shadow-lg">
-              <span>← Salir a Portales</span>
+              class="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white border border-sky-500/50 text-xs font-black flex items-center gap-2 cursor-pointer transition active:scale-95 shadow-lg">
+              <span>← Volver a Portales</span>
             </button>
             <div>
               <h1 class="text-xl sm:text-2xl font-black text-white tracking-tight">
@@ -10594,18 +10653,29 @@ ensureOrbitControls();
             </div>
           </div>
 
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 flex-wrap">
             ${isEngineInitialized ? `
               <button type="button" onclick="window.closeWorld3DLobbyAndResume()"
                 class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-lg cursor-pointer transition active:scale-95 flex items-center gap-1.5">
                 <span>▶ Volver al Escenario Activo</span>
               </button>
             ` : ''}
+            <button type="button" onclick="if(typeof window.returnToMainPortals==='function') window.returnToMainPortals(event); else window.navigateTo('view-home');"
+              class="px-3.5 py-2 rounded-xl bg-rose-950/80 hover:bg-rose-900 text-rose-200 border border-rose-500/40 text-xs font-extrabold flex items-center gap-1.5 cursor-pointer transition active:scale-95 shadow-lg">
+              <span>🏠 Menú Principal</span>
+            </button>
           </div>
-        </header>
+        </div>
 
         <div class="world3d-lobby-grid">
           ${cardsHtml}
+        </div>
+
+        <div class="flex items-center justify-center pt-2 pb-4">
+          <button type="button" onclick="if(typeof window.returnToMainPortals==='function') window.returnToMainPortals(event); else window.navigateTo('view-home');"
+            class="px-5 py-2.5 rounded-xl bg-slate-900/95 hover:bg-slate-800 text-slate-200 hover:text-white border border-slate-700 text-xs font-black flex items-center gap-2 cursor-pointer transition active:scale-95 shadow-xl">
+            <span>← Regresar al Menú de Portales</span>
+          </button>
         </div>
       </div>
     `;
@@ -10767,76 +10837,91 @@ ensureOrbitControls();
       loaderEl.style.pointerEvents = 'auto';
     }
 
-    // PASO 1 (25% - "Liberando memoria gráfica...")
-    requestAnimationFrame(() => {
-      const t1 = setTimeout(() => {
+    const finishLoaderAndShowScene = () => {
+      if (loadToken !== _activeLoadToken) return;
+      clearActiveLoadTimers();
+      setLoaderProgress(100, '¡Escenario listo!');
+      try {
+        if (renderer && scene && camera) {
+          if (typeof renderer.compile === 'function') {
+            renderer.compile(scene, camera);
+          }
+          renderer.render(scene, camera);
+        }
+      } catch (_) {}
+
+      const tFade = setTimeout(() => {
         if (loadToken !== _activeLoadToken) return;
-        setLoaderProgress(25, 'Liberando memoria gráfica...');
+        setWorld3DTopCamBarVisibility(true);
+        if (loaderEl) {
+          loaderEl.style.transition = 'opacity 180ms ease-out';
+          loaderEl.style.opacity = '0';
+          loaderEl.style.pointerEvents = 'none';
+          const tHide = setTimeout(() => {
+            if (loadToken !== _activeLoadToken) return;
+            loaderEl.classList.add('hidden');
+            loaderEl.style.setProperty('display', 'none', 'important');
+            _isPrecompilingWorld = false;
+          }, 180);
+          _activeLoadTimers.push(tHide);
+        } else {
+          _isPrecompilingWorld = false;
+        }
+        resumeLoop();
+      }, 90);
+      _activeLoadTimers.push(tFade);
+    };
+
+    // Fail-safe watchdog: garantiza que la pantalla de carga NUNCA se quede congelada en 85%
+    const watchdogTimer = setTimeout(() => {
+      if (loadToken === _activeLoadToken && _isPrecompilingWorld) {
+        finishLoaderAndShowScene();
+      }
+    }, 1800);
+    _activeLoadTimers.push(watchdogTimer);
+
+    // PASO 1 (30% - "Liberando memoria gráfica...")
+    const t1 = setTimeout(() => {
+      if (loadToken !== _activeLoadToken) return;
+      setLoaderProgress(30, 'Liberando memoria gráfica...');
+      try {
         pauseLoop();
         disposePreviousScenarioGPU();
+      } catch (err) {
+        console.warn('[World3D] Dispose warning:', err);
+      }
 
-        // PASO 2 (55% - "Generando texturas PBR y etiquetas HD...")
-        requestAnimationFrame(() => {
-          const t2 = setTimeout(() => {
-            if (loadToken !== _activeLoadToken) return;
-            setLoaderProgress(55, 'Preparando iluminación y materiales...');
-            prewarmScenarioTextures(targetKey);
+      // PASO 2 (60% - "Preparando iluminación y materiales...")
+      const t2 = setTimeout(() => {
+        if (loadToken !== _activeLoadToken) return;
+        setLoaderProgress(60, 'Preparando iluminación y materiales...');
+        try {
+          prewarmScenarioTextures(targetKey);
+        } catch (err) {
+          console.warn('[World3D] Prewarm warning:', err);
+        }
 
-            // PASO 3 (85% - "Ensamblando mobiliario y productos 3D...")
-            requestAnimationFrame(() => {
-              const t3 = setTimeout(() => {
-                if (loadToken !== _activeLoadToken) return;
-                setLoaderProgress(85, 'Construyendo objetos del escenario...');
-                switch3DScenario(targetKey);
+        // PASO 3 (85% - "Construyendo objetos del escenario...")
+        const t3 = setTimeout(() => {
+          if (loadToken !== _activeLoadToken) return;
+          setLoaderProgress(85, 'Construyendo objetos del escenario...');
+          try {
+            switch3DScenario(targetKey);
+          } catch (err) {
+            console.error('[World3D] Error building scenario:', err);
+          }
 
-                // PASO 4 (100% - Pre-compilación de escena)
-                requestAnimationFrame(() => {
-                  const t4 = setTimeout(() => {
-                    if (loadToken !== _activeLoadToken) return;
-                    setLoaderProgress(100, '¡Escenario listo!');
-                    try {
-                      if (renderer && scene && camera) {
-                        if (typeof renderer.compile === 'function') {
-                          renderer.compile(scene, camera);
-                        }
-                        renderer.render(scene, camera);
-                        renderer.render(scene, camera);
-                      }
-                    } catch (_) {}
-
-                    const t5 = setTimeout(() => {
-                      if (loadToken !== _activeLoadToken) return;
-                      clearActiveLoadTimers();
-                      setWorld3DTopCamBarVisibility(true);
-                      if (loaderEl) {
-                        loaderEl.style.transition = 'opacity 320ms ease-out';
-                        loaderEl.style.opacity = '0';
-                        loaderEl.style.pointerEvents = 'none';
-                        const t6 = setTimeout(() => {
-                          if (loadToken !== _activeLoadToken) return;
-                          loaderEl.classList.add('hidden');
-                          loaderEl.style.setProperty('display', 'none', 'important');
-                          _isPrecompilingWorld = false;
-                        }, 320);
-                        _activeLoadTimers.push(t6);
-                      } else {
-                        _isPrecompilingWorld = false;
-                      }
-                      resumeLoop();
-                    }, 160);
-                    _activeLoadTimers.push(t5);
-                  }, 80);
-                  _activeLoadTimers.push(t4);
-                });
-              }, 80);
-              _activeLoadTimers.push(t3);
-            });
-          }, 70);
-          _activeLoadTimers.push(t2);
-        });
-      }, 50);
-      _activeLoadTimers.push(t1);
-    });
+          // PASO 4 (100% - Pre-compilación y apertura inmediata)
+          const t4 = setTimeout(() => {
+            finishLoaderAndShowScene();
+          }, 30);
+          _activeLoadTimers.push(t4);
+        }, 20);
+        _activeLoadTimers.push(t3);
+      }, 20);
+      _activeLoadTimers.push(t2);
+    }, 16);
+    _activeLoadTimers.push(t1);
   }
 
   global.openWorld3DLobby = openWorld3DLobby;

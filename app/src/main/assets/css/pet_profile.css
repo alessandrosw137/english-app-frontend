@@ -348,7 +348,7 @@ html body #profileModal.active button {
 }
 
 #profileModal > div {
-  max-width: 780px !important;
+  max-width: 960px !important;
   width: 95vw !important;
   max-height: 92vh !important;
   overflow-y: auto !important;
@@ -718,7 +718,7 @@ html body #profileModal.active button {
    ========================================================================== */
 .profile-badges-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(275px, 1fr));
   gap: 16px;
   padding: 20px 24px;
 }

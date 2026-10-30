@@ -42,14 +42,16 @@
   }
 
   // ============================================================================
-  // GENERADORES PROCEDURALES DE TEXTURAS CANVAS (1024x512)
+  // GENERADORES PROCEDURALES DE TEXTURAS CANVAS CON CACHÉ EN MEMORIA
   // ============================================================================
+  const _spaceTextureCache = {};
+
   function createProceduralCanvas(width, height) {
     if (typeof document === 'undefined') return null;
     try {
       const canvas = document.createElement('canvas');
-      canvas.width = width || 1024;
-      canvas.height = height || 512;
+      canvas.width = width || 512;
+      canvas.height = height || 256;
       return canvas;
     } catch (_) {
       return null;
@@ -59,37 +61,38 @@
   // 1. Textura Solar: Plasma solar granulado amarillo/naranja con fulguraciones y manchas
   function generateSunTexture() {
     if (typeof THREE === 'undefined') return null;
-    const canvas = createProceduralCanvas(1024, 512);
+    if (_spaceTextureCache.sun) return _spaceTextureCache.sun;
+    const canvas = createProceduralCanvas(512, 256);
     if (!canvas) return null;
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
 
     // Fondo degradado de plasma
-    const grad = ctx.createLinearGradient(0, 0, 1024, 512);
+    const grad = ctx.createLinearGradient(0, 0, 512, 256);
     grad.addColorStop(0.0, '#fffbeb');
     grad.addColorStop(0.25, '#fef08a');
     grad.addColorStop(0.55, '#f59e0b');
     grad.addColorStop(0.85, '#ea580c');
     grad.addColorStop(1.0, '#b91c1c');
     ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 1024, 512);
+    ctx.fillRect(0, 0, 512, 256);
 
     // Células de convección y granulación solar
     ctx.fillStyle = 'rgba(254, 240, 138, 0.35)';
-    for (let i = 0; i < 400; i++) {
-      const x = Math.random() * 1024;
-      const y = Math.random() * 512;
-      const r = 8 + Math.random() * 22;
+    for (let i = 0; i < 95; i++) {
+      const x = Math.random() * 512;
+      const y = Math.random() * 256;
+      const r = 5 + Math.random() * 14;
       ctx.beginPath();
       ctx.arc(x, y, r, 0, Math.PI * 2);
       ctx.fill();
     }
 
     ctx.fillStyle = 'rgba(234, 88, 12, 0.45)';
-    for (let i = 0; i < 350; i++) {
-      const x = Math.random() * 1024;
-      const y = Math.random() * 512;
-      const r = 12 + Math.random() * 30;
+    for (let i = 0; i < 80; i++) {
+      const x = Math.random() * 512;
+      const y = Math.random() * 256;
+      const r = 7 + Math.random() * 18;
       ctx.beginPath();
       ctx.arc(x, y, r, 0, Math.PI * 2);
       ctx.fill();
@@ -97,17 +100,15 @@
 
     // Manchas solares (sunspots) con umbra y penumbra
     const sunspots = [
-      { x: 320, y: 190, r: 18 }, { x: 350, y: 210, r: 11 },
-      { x: 680, y: 310, r: 24 }, { x: 720, y: 330, r: 14 },
-      { x: 510, y: 250, r: 16 }
+      { x: 160, y: 95, r: 9 }, { x: 175, y: 105, r: 6 },
+      { x: 340, y: 155, r: 12 }, { x: 360, y: 165, r: 7 },
+      { x: 255, y: 125, r: 8 }
     ];
     sunspots.forEach(s => {
-      // Penumbra
       ctx.fillStyle = 'rgba(120, 53, 15, 0.7)';
       ctx.beginPath();
       ctx.arc(s.x, s.y, s.r * 1.6, 0, Math.PI * 2);
       ctx.fill();
-      // Umbra oscura
       ctx.fillStyle = '#290e03';
       ctx.beginPath();
       ctx.arc(s.x, s.y, s.r * 0.8, 0, Math.PI * 2);
@@ -117,12 +118,14 @@
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = THREE.RepeatWrapping;
     tex.wrapT = THREE.ClampToEdgeWrapping;
+    _spaceTextureCache.sun = tex;
     return tex;
   }
 
   // 2. Textura de la Tierra: Océano azul profundo, continentes verdes/ocres y casquetes polares
   function generateEarthTexture() {
     if (typeof THREE === 'undefined') return null;
+    if (_spaceTextureCache.earth) return _spaceTextureCache.earth;
     const canvas = createProceduralCanvas(1024, 512);
     if (!canvas) return null;
     const ctx = canvas.getContext('2d');
@@ -197,25 +200,27 @@
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = THREE.RepeatWrapping;
     tex.wrapT = THREE.ClampToEdgeWrapping;
+    _spaceTextureCache.earth = tex;
     return tex;
   }
 
   // Capa de nubes para la Tierra (semitransparente con vórtices)
   function generateEarthCloudsTexture() {
     if (typeof THREE === 'undefined') return null;
-    const canvas = createProceduralCanvas(1024, 512);
+    if (_spaceTextureCache.earthClouds) return _spaceTextureCache.earthClouds;
+    const canvas = createProceduralCanvas(512, 256);
     if (!canvas) return null;
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
 
-    ctx.clearRect(0, 0, 1024, 512);
+    ctx.clearRect(0, 0, 512, 256);
     ctx.fillStyle = 'rgba(255, 255, 255, 0.48)';
 
-    for (let i = 0; i < 70; i++) {
-      const cx = Math.random() * 1024;
-      const cy = 60 + Math.random() * 392;
-      const rw = 40 + Math.random() * 95;
-      const rh = 12 + Math.random() * 32;
+    for (let i = 0; i < 45; i++) {
+      const cx = Math.random() * 512;
+      const cy = 30 + Math.random() * 196;
+      const rw = 20 + Math.random() * 48;
+      const rh = 6 + Math.random() * 16;
       ctx.beginPath();
       ctx.ellipse(cx, cy, rw, rh, Math.random() * 0.4 - 0.2, 0, Math.PI * 2);
       ctx.fill();
@@ -223,10 +228,10 @@
 
     // Espirales de ciclones
     ctx.fillStyle = 'rgba(255, 255, 255, 0.72)';
-    [ { x: 310, y: 160 }, { x: 740, y: 170 }, { x: 420, y: 360 } ].forEach(storm => {
+    [ { x: 155, y: 80 }, { x: 370, y: 85 }, { x: 210, y: 180 } ].forEach(storm => {
       ctx.beginPath();
-      ctx.arc(storm.x, storm.y, 28, 0, Math.PI * 1.7);
-      ctx.lineWidth = 14;
+      ctx.arc(storm.x, storm.y, 14, 0, Math.PI * 1.7);
+      ctx.lineWidth = 7;
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
       ctx.stroke();
     });
@@ -234,12 +239,14 @@
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = THREE.RepeatWrapping;
     tex.wrapT = THREE.ClampToEdgeWrapping;
+    _spaceTextureCache.earthClouds = tex;
     return tex;
   }
 
   // 3. Textura de Marte: Terracota rojizo, cuencas oscuras, Olympus Mons y Valles Marineris
   function generateMarsTexture() {
     if (typeof THREE === 'undefined') return null;
+    if (_spaceTextureCache.mars) return _spaceTextureCache.mars;
     const canvas = createProceduralCanvas(1024, 512);
     if (!canvas) return null;
     const ctx = canvas.getContext('2d');
@@ -297,12 +304,14 @@
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = THREE.RepeatWrapping;
     tex.wrapT = THREE.ClampToEdgeWrapping;
+    _spaceTextureCache.mars = tex;
     return tex;
   }
 
   // 4. Textura de Júpiter: Bandas horizontales turbulentas y Gran Mancha Roja
   function generateJupiterTexture() {
     if (typeof THREE === 'undefined') return null;
+    if (_spaceTextureCache.jupiter) return _spaceTextureCache.jupiter;
     const canvas = createProceduralCanvas(1024, 512);
     if (!canvas) return null;
     const ctx = canvas.getContext('2d');
@@ -324,7 +333,7 @@
       // Turbulencias y ondas sinusoidales en los límites de banda
       ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
       ctx.beginPath();
-      for (let x = 0; x <= 1024; x += 16) {
+      for (let x = 0; x <= 1024; x += 32) {
         const wave = Math.sin(x * 0.04 + idx) * 4;
         ctx.lineTo(x, y + wave);
       }
@@ -363,13 +372,15 @@
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = THREE.RepeatWrapping;
     tex.wrapT = THREE.ClampToEdgeWrapping;
+    _spaceTextureCache.jupiter = tex;
     return tex;
   }
 
   // 5. Textura de Saturno: Esfera dorada en bandas suaves
   function generateSaturnTexture() {
     if (typeof THREE === 'undefined') return null;
-    const canvas = createProceduralCanvas(1024, 512);
+    if (_spaceTextureCache.saturn) return _spaceTextureCache.saturn;
+    const canvas = createProceduralCanvas(512, 256);
     if (!canvas) return null;
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
@@ -379,28 +390,30 @@
       '#fcd34d', '#d97706', '#fde68a', '#b45309',
       '#fcd34d', '#fef3c7', '#f59e0b'
     ];
-    const step = 512 / saturnTones.length;
+    const step = 256 / saturnTones.length;
     saturnTones.forEach((tone, i) => {
       ctx.fillStyle = tone;
-      ctx.fillRect(0, i * step, 1024, step + 1);
+      ctx.fillRect(0, i * step, 512, step + 1);
     });
 
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = THREE.RepeatWrapping;
     tex.wrapT = THREE.ClampToEdgeWrapping;
+    _spaceTextureCache.saturn = tex;
     return tex;
   }
 
   // Anillos concéntricos de Saturno con División de Cassini translúcida
   function generateSaturnRingsTexture() {
     if (typeof THREE === 'undefined') return null;
-    const canvas = createProceduralCanvas(1024, 64);
+    if (_spaceTextureCache.saturnRings) return _spaceTextureCache.saturnRings;
+    const canvas = createProceduralCanvas(512, 32);
     if (!canvas) return null;
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
 
-    ctx.clearRect(0, 0, 1024, 64);
-    const ringGrad = ctx.createLinearGradient(0, 0, 1024, 0);
+    ctx.clearRect(0, 0, 512, 32);
+    const ringGrad = ctx.createLinearGradient(0, 0, 512, 0);
     ringGrad.addColorStop(0.0, 'rgba(217, 119, 6, 0.15)'); // Borde interno
     ringGrad.addColorStop(0.25, 'rgba(252, 211, 77, 0.85)'); // Anillo B denso
     ringGrad.addColorStop(0.58, 'rgba(245, 158, 11, 0.90)');
@@ -410,34 +423,37 @@
     ringGrad.addColorStop(0.96, 'rgba(217, 119, 6, 0.45)');
     ringGrad.addColorStop(1.0, 'rgba(217, 119, 6, 0.0)');   // Borde externo
     ctx.fillStyle = ringGrad;
-    ctx.fillRect(0, 0, 1024, 64);
+    ctx.fillRect(0, 0, 512, 32);
 
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = THREE.ClampToEdgeWrapping;
     tex.wrapT = THREE.ClampToEdgeWrapping;
+    _spaceTextureCache.saturnRings = tex;
     return tex;
   }
 
   // 6. Textura del Disco de Acreción del Agujero Negro (Plasma Doppler naranja y violeta)
   function generateBlackHoleAccretionTexture() {
     if (typeof THREE === 'undefined') return null;
-    const canvas = createProceduralCanvas(1024, 128);
+    if (_spaceTextureCache.blackHole) return _spaceTextureCache.blackHole;
+    const canvas = createProceduralCanvas(512, 64);
     if (!canvas) return null;
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
 
-    const diskGrad = ctx.createLinearGradient(0, 0, 1024, 0);
+    const diskGrad = ctx.createLinearGradient(0, 0, 512, 0);
     diskGrad.addColorStop(0.0, 'rgba(255, 255, 255, 0.95)'); // Horizonte incandescente
     diskGrad.addColorStop(0.18, 'rgba(249, 115, 22, 0.92)'); // Plasma naranja
     diskGrad.addColorStop(0.50, 'rgba(217, 70, 239, 0.80)'); // Radiación violeta Doppler
     diskGrad.addColorStop(0.85, 'rgba(99, 102, 241, 0.45)'); // Borde relativista
     diskGrad.addColorStop(1.0, 'rgba(15, 23, 42, 0.0)');
     ctx.fillStyle = diskGrad;
-    ctx.fillRect(0, 0, 1024, 128);
+    ctx.fillRect(0, 0, 512, 64);
 
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = THREE.ClampToEdgeWrapping;
     tex.wrapT = THREE.ClampToEdgeWrapping;
+    _spaceTextureCache.blackHole = tex;
     return tex;
   }
 
