@@ -127,6 +127,7 @@
 
       this.lastYtTime = 0;
       this.lastPerfTime = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+      this._hasAutoCalibratedYtDur = false;
 
       const tick = () => {
         const p = window.activeYtPlayer || this.player || ytMusicPlayer || window._holoYtPlayer;
@@ -138,11 +139,33 @@
             pState = this.playerState;
           }
 
-          if (pState === 1) { // PLAYING: Sincronización en vivo
+          if (pState === 1) { // PLAYING: Sincronización en vivo a 60Hz interpolado
             let rawTime = 0;
             try { rawTime = p.getCurrentTime(); } catch (_) {}
+            const nowPerf = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
             if (typeof rawTime === 'number' && !isNaN(rawTime) && rawTime >= 0) {
-              this.lastYtTime = rawTime;
+              if (Math.abs(rawTime - this.lastYtTime) > 0.005) {
+                this.lastYtTime = rawTime;
+                this.lastPerfTime = nowPerf;
+              } else {
+                const elapsed = Math.min(Math.max(0, (nowPerf - this.lastPerfTime) / 1000), 0.35);
+                rawTime = this.lastYtTime + elapsed;
+              }
+
+              if (this._pendingLrcDuration && !this._hasAutoCalibratedYtDur && typeof p.getDuration === 'function') {
+                try {
+                  const ytDur = p.getDuration();
+                  const lrcDur = this._pendingLrcDuration;
+                  if (ytDur > 30 && lrcDur > 30) {
+                    this._hasAutoCalibratedYtDur = true;
+                    if (Math.abs(ytDur - lrcDur) > 1.5 && Math.abs(ytDur - lrcDur) < 45) {
+                      const introDiff = Math.round((ytDur - lrcDur) * 10) / 10;
+                      this.setExactOffset(-introDiff, this.currentSongId);
+                    }
+                  }
+                } catch (_) {}
+              }
+
               const smoothTime = rawTime + this.offsetSec;
               this.updateActiveLine(smoothTime);
               this.updateLiveSyncBadge(rawTime, true, pState);
@@ -2166,7 +2189,7 @@
               <div class="flex items-center gap-1.5">
                 <button type="button" onclick="event.stopPropagation(); window.syncStanzaHere(${lineTime}, ${lIdx}, event)"
                   class="p-1 px-2.5 rounded-lg bg-cyan-950/90 hover:bg-cyan-800 text-cyan-300 hover:text-white text-xs transition cursor-pointer flex items-center gap-1 border border-cyan-500/40 shadow-sm active:scale-95 hover:border-cyan-400" title="Alinear letra al segundo actual del video">
-                  <span>🎯</span> <span class="text-[10px] font-bold">Sincronizar voz aquí</span>
+                  <span>🎯</span> <span class="text-[10px] font-bold">Sincronizar aquí</span>
                 </button>
                 <button type="button" onclick="event.stopPropagation(); speakText('${safeFullText}')"
                   class="p-1 px-2.5 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-cyan-300 text-xs transition cursor-pointer flex items-center gap-1 border border-slate-700/60 shadow-sm active:scale-95" title="Pronunciación de la estrofa">
@@ -2247,10 +2270,11 @@
         } catch (_) {}
       } else {
         // Salta el video de YouTube directamente a ese verso
-        const seekTarget = Math.max(0, lineTime - offset);
+        const offsetSec = offset;
+        const seekTarget = Math.max(0, lineTime + offsetSec);
         if (player && typeof player.seekTo === 'function') {
           try {
-            player.seekTo(seekTarget, true);
+            player.seekTo(lineTime + offsetSec, true);
             if (typeof player.playVideo === 'function') {
               player.playVideo();
             }
@@ -2768,19 +2792,19 @@
 
           if (!discard && diff <= 45) {
             let autoIntroOffset = 0;
-            if (targetDuration > 30 && candidateDuration > 30) {
-              const dIntro = targetDuration - candidateDuration;
-              if (dIntro > 0 && dIntro <= 25) {
-                autoIntroOffset = Math.round(dIntro * 10) / 10;
-                // Auto-ajuste de calibración para compensar la intro
-                if (window.KaraokeSyncEngine) {
-                  window.KaraokeSyncEngine.setExactOffset(-autoIntroOffset);
-                }
-                if (typeof showFloatingToast === 'function') {
-                  showFloatingToast(`⚡ Sincronización auto-ajustada al video (+${autoIntroOffset}s intro)`, '⚡');
-                }
-              } else if (dIntro >= 3 && dIntro <= 45) {
-                autoIntroOffset = Math.round(dIntro * 10) / 10;
+            const ytDur = targetDuration;
+            const lrcDur = candidateDuration;
+            if (window.KaraokeSyncEngine) {
+              window.KaraokeSyncEngine._pendingLrcDuration = lrcDur;
+            }
+            if (ytDur > 30 && lrcDur > 30 && Math.abs(ytDur - lrcDur) > 1.5 && Math.abs(ytDur - lrcDur) < 45) {
+              const dIntro = ytDur - lrcDur;
+              autoIntroOffset = Math.round(dIntro * 10) / 10;
+              if (window.KaraokeSyncEngine) {
+                window.KaraokeSyncEngine.setExactOffset(-autoIntroOffset);
+              }
+              if (typeof showFloatingToast === 'function') {
+                showFloatingToast(`⚡ Sincronización auto-ajustada al video (${autoIntroOffset > 0 ? '+' : ''}${autoIntroOffset}s intro)`, '⚡');
               }
             }
             window._autoIntroOffset = autoIntroOffset;
@@ -2830,19 +2854,20 @@
             }, pool[0]);
 
             const lrcDuration = bestMatch.duration || 0;
+            const ytDur = targetDuration;
+            const lrcDur = lrcDuration;
+            if (window.KaraokeSyncEngine) {
+              window.KaraokeSyncEngine._pendingLrcDuration = lrcDur;
+            }
             let autoIntroOffset = 0;
-            if (targetDuration > 30 && lrcDuration > 30) {
-              const dIntro = targetDuration - lrcDuration;
-              if (dIntro > 0 && dIntro <= 25) {
-                autoIntroOffset = Math.round(dIntro * 10) / 10;
-                if (window.KaraokeSyncEngine) {
-                  window.KaraokeSyncEngine.setExactOffset(-autoIntroOffset);
-                }
-                if (typeof showFloatingToast === 'function') {
-                  showFloatingToast(`⚡ Sincronización auto-ajustada al video (+${autoIntroOffset}s intro)`, '⚡');
-                }
-              } else if (dIntro >= 3 && dIntro <= 45) {
-                autoIntroOffset = Math.round(dIntro * 10) / 10;
+            if (ytDur > 30 && lrcDur > 30 && Math.abs(ytDur - lrcDur) > 1.5 && Math.abs(ytDur - lrcDur) < 45) {
+              const dIntro = ytDur - lrcDur;
+              autoIntroOffset = Math.round(dIntro * 10) / 10;
+              if (window.KaraokeSyncEngine) {
+                window.KaraokeSyncEngine.setExactOffset(-autoIntroOffset);
+              }
+              if (typeof showFloatingToast === 'function') {
+                showFloatingToast(`⚡ Sincronización auto-ajustada al video (${autoIntroOffset > 0 ? '+' : ''}${autoIntroOffset}s intro)`, '⚡');
               }
             }
             window._autoIntroOffset = autoIntroOffset;

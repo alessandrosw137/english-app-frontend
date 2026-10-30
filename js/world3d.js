@@ -700,6 +700,333 @@ ensureOrbitControls();
   global.getSharedMaterial = getSharedMaterial;
   if (typeof window !== 'undefined') window.getSharedMaterial = getSharedMaterial;
 
+  // ============================================================================
+  // 4A. CACHÉ CENTRALIZADO DE TEXTURAS PROCEDURALES HD 256x256 (ProceduralMaterialFactory)
+  //     Y FACTORÍA DE GEOMETRÍAS COMPUESTAS (LatheGeometry, ExtrudeGeometry, TubeGeometry)
+  // ============================================================================
+  const textureCache = World3D.textureCache || {};
+  World3D.textureCache = textureCache;
+  global.textureCache = textureCache;
+
+  const ProceduralMaterialFactory = {
+    cache: textureCache,
+    matCache: {},
+
+    getCanvasTexture(cacheKey, drawFn, repeatX = 1, repeatY = 1) {
+      if (this.cache[cacheKey]) return this.cache[cacheKey];
+      if (typeof document === 'undefined' || typeof THREE === 'undefined') return null;
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      if (ctx && typeof drawFn === 'function') {
+        try {
+          drawFn(ctx, 256, 256);
+        } catch (e) {}
+      }
+      const tex = new THREE.CanvasTexture(canvas);
+      if (THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
+      if (repeatX > 1 || repeatY > 1) {
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.RepeatWrapping;
+        if (tex.repeat && typeof tex.repeat.set === 'function') {
+          tex.repeat.set(repeatX, repeatY);
+        }
+      }
+      this.cache[cacheKey] = tex;
+      return tex;
+    },
+
+    drawBarcode(ctx, x, y, w, h) {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(x, y, w, h);
+      ctx.fillStyle = '#0f172a';
+      for (let bx = x + 3; bx < x + w - 3; bx += 4) {
+        const bw = ((bx * 7) % 3 === 0) ? 2.5 : 1.2;
+        ctx.fillRect(bx, y + 2, bw, h - 8);
+      }
+      ctx.font = 'bold 7px monospace';
+      ctx.fillText('7 501055 3624', x + 4, y + h - 1);
+    },
+
+    drawNutritionPanel(ctx, x, y, w, h) {
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(x, y, w, h);
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(x, y, w, h);
+      ctx.fillStyle = '#0f172a';
+      ctx.font = 'bold 8px sans-serif';
+      ctx.fillText('NUTRITION FACTS', x + 3, y + 10);
+      ctx.fillRect(x + 2, y + 13, w - 4, 2);
+      for (let r = 0; r < 5; r++) {
+        const ry = y + 21 + r * 8;
+        ctx.fillRect(x + 3, ry, w - 6, 1);
+      }
+    },
+
+    createProductLabelMaterial(spec = {}) {
+      const id = spec.id || 'generic_label';
+      const matKey = 'prod_mat_' + id;
+      if (this.matCache[matKey]) return this.matCache[matKey];
+      const bg = spec.bg || '#f59e0b';
+      const accent = spec.accent || '#dc2626';
+      const title = spec.title || 'PREMIUM';
+      const subtitle = spec.subtitle || 'ORGANIC QUALITY';
+      const badge = spec.badge || '100% REAL';
+      const roughness = spec.roughness !== undefined ? spec.roughness : 0.32;
+      const metalness = spec.metalness !== undefined ? spec.metalness : 0.08;
+
+      const tex = this.getCanvasTexture('label_' + id, (ctx) => {
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, 256, 256);
+        ctx.fillStyle = accent;
+        ctx.fillRect(0, 0, 256, 52);
+        ctx.fillRect(0, 208, 256, 48);
+
+        ctx.fillStyle = 'rgba(255,255,255,0.94)';
+        ctx.fillRect(14, 60, 156, 140);
+        ctx.strokeStyle = accent;
+        ctx.lineWidth = 3;
+        ctx.strokeRect(14, 60, 156, 140);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 20px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(String(title).slice(0, 16), 128, 34);
+
+        ctx.fillStyle = '#0f172a';
+        ctx.font = 'bold 17px sans-serif';
+        ctx.fillText(String(subtitle).slice(0, 16), 92, 96);
+
+        ctx.fillStyle = accent;
+        ctx.beginPath();
+        ctx.arc(92, 138, 28, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 11px sans-serif';
+        ctx.fillText(String(badge).slice(0, 10), 92, 142);
+
+        ctx.textAlign = 'left';
+        this.drawNutritionPanel(ctx, 176, 60, 68, 86);
+        this.drawBarcode(ctx, 176, 154, 68, 46);
+      });
+
+      const mat = new THREE.MeshStandardMaterial({
+        map: tex,
+        roughness,
+        metalness
+      });
+      this.matCache[matKey] = mat;
+      return mat;
+    },
+
+    createDigitalScreenMaterial(spec = {}) {
+      const id = spec.id || 'pos_screen';
+      const matKey = 'screen_mat_' + id;
+      if (this.matCache[matKey]) return this.matCache[matKey];
+      const bg = spec.bg || '#061326';
+      const primary = spec.primary || '#38bdf8';
+      const secondary = spec.secondary || '#22c55e';
+      const header = spec.header || 'SYSTEM ONLINE';
+      const lines = spec.lines || ['ITEM 1 ......... $4.50', 'ITEM 2 ......... $3.20', 'TOTAL .......... $7.70'];
+
+      const tex = this.getCanvasTexture('screen_' + id, (ctx) => {
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, 256, 256);
+        ctx.fillStyle = primary;
+        ctx.fillRect(0, 0, 256, 36);
+        ctx.fillStyle = '#020617';
+        ctx.font = 'bold 15px monospace';
+        ctx.fillText(String(header).slice(0, 22), 12, 24);
+
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.25)';
+        ctx.lineWidth = 1;
+        for (let y = 44; y < 240; y += 20) {
+          ctx.beginPath();
+          ctx.moveTo(8, y);
+          ctx.lineTo(248, y);
+          ctx.stroke();
+        }
+
+        ctx.font = 'bold 13px monospace';
+        lines.forEach((line, idx) => {
+          ctx.fillStyle = idx === lines.length - 1 ? secondary : '#e2e8f0';
+          ctx.fillText(String(line).slice(0, 26), 14, 72 + idx * 32);
+        });
+
+        ctx.fillStyle = secondary;
+        ctx.fillRect(14, 210, 228, 30);
+        ctx.fillStyle = '#020617';
+        ctx.font = 'bold 14px sans-serif';
+        ctx.fillText('READY • MASTERENG OS', 34, 230);
+      });
+
+      const mat = new THREE.MeshStandardMaterial({
+        map: tex,
+        emissive: new THREE.Color(primary),
+        emissiveMap: tex,
+        emissiveIntensity: 0.55,
+        roughness: 0.18,
+        metalness: 0.15
+      });
+      this.matCache[matKey] = mat;
+      return mat;
+    },
+
+    createBrickMaterial() {
+      if (this.matCache.brickWall) return this.matCache.brickWall;
+      const tex = this.getCanvasTexture('brick_hd', (ctx) => {
+        ctx.fillStyle = '#cbd5e1';
+        ctx.fillRect(0, 0, 256, 256);
+        const rows = 8;
+        const bh = 256 / rows;
+        const bw = 64;
+        for (let r = 0; r < rows; r++) {
+          const offset = (r % 2) * (bw / 2);
+          for (let c = -1; c < 5; c++) {
+            ctx.fillStyle = (r + c) % 2 === 0 ? '#9a3412' : '#7c2d12';
+            ctx.fillRect(c * bw + offset + 2, r * bh + 2, bw - 4, bh - 4);
+          }
+        }
+      }, 3, 3);
+      const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.78, metalness: 0.04 });
+      this.matCache.brickWall = mat;
+      return mat;
+    },
+
+    createSolarPanelMaterial() {
+      if (this.matCache.solarCells) return this.matCache.solarCells;
+      const tex = this.getCanvasTexture('solar_cells_hd', (ctx) => {
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(0, 0, 256, 256);
+        for (let r = 0; r < 8; r++) {
+          for (let c = 0; c < 4; c++) {
+            ctx.fillStyle = (r + c) % 2 === 0 ? '#1d4ed8' : '#1e3a8a';
+            ctx.fillRect(c * 64 + 3, r * 32 + 3, 58, 26);
+            ctx.fillStyle = 'rgba(147, 197, 253, 0.35)';
+            ctx.fillRect(c * 64 + 30, r * 32 + 3, 2, 26);
+          }
+        }
+      }, 2, 2);
+      const mat = new THREE.MeshStandardMaterial({
+        map: tex,
+        roughness: 0.16,
+        metalness: 0.72,
+        emissive: new THREE.Color(0x1e3a8a),
+        emissiveIntensity: 0.22
+      });
+      this.matCache.solarCells = mat;
+      return mat;
+    },
+
+    getContactShadowMaterial() {
+      if (this.matCache.contactShadow) return this.matCache.contactShadow;
+      const tex = this.getCanvasTexture('contact_shadow_radial', (ctx) => {
+        ctx.clearRect(0, 0, 256, 256);
+        if (typeof ctx.createRadialGradient === 'function') {
+          const g = ctx.createRadialGradient(128, 128, 12, 128, 128, 122);
+          g.addColorStop(0, 'rgba(2, 6, 23, 0.58)');
+          g.addColorStop(0.55, 'rgba(2, 6, 23, 0.26)');
+          g.addColorStop(1, 'rgba(2, 6, 23, 0.0)');
+          ctx.fillStyle = g;
+        } else {
+          ctx.fillStyle = 'rgba(2, 6, 23, 0.35)';
+        }
+        ctx.beginPath();
+        ctx.arc(128, 128, 122, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      const mat = new THREE.MeshBasicMaterial({
+        map: tex,
+        transparent: true,
+        opacity: 0.85,
+        depthWrite: false
+      });
+      this.matCache.contactShadow = mat;
+      return mat;
+    }
+  };
+
+  World3D.ProceduralMaterialFactory = ProceduralMaterialFactory;
+  global.ProceduralMaterialFactory = ProceduralMaterialFactory;
+  if (typeof window !== 'undefined') window.ProceduralMaterialFactory = ProceduralMaterialFactory;
+
+  // --- CONSTRUCTORES DE GEOMETRÍAS COMPUESTAS AVANZADAS ---
+  function createLatheProfileMesh(pointsArray, material, segments = 24) {
+    if (typeof THREE === 'undefined') return null;
+    const pts = (pointsArray || []).map(([r, y]) => new THREE.Vector2(Math.max(0.001, r), y));
+    const geo = typeof THREE.LatheGeometry === 'function'
+      ? new THREE.LatheGeometry(pts, segments)
+      : new THREE.CylinderGeometry(pts[pts.length - 1]?.x || 0.1, pts[0]?.x || 0.1, Math.abs((pts[pts.length - 1]?.y || 0.25) - (pts[0]?.y || 0)), segments);
+    return new THREE.Mesh(geo, material);
+  }
+
+  function createBeveledBoxExtrude(width, height, depth, material, bevelOpts = {}) {
+    if (typeof THREE === 'undefined') return null;
+    const bThick = bevelOpts.bevelThickness !== undefined ? bevelOpts.bevelThickness : 0.02;
+    const bSize = bevelOpts.bevelSize !== undefined ? bevelOpts.bevelSize : 0.015;
+    const bSegs = bevelOpts.bevelSegments !== undefined ? bevelOpts.bevelSegments : 3;
+    const w = Math.max(0.02, width - bSize * 2);
+    const h = Math.max(0.02, height - bSize * 2);
+    const d = Math.max(0.01, depth - bThick * 2);
+
+    if (typeof THREE.Shape === 'function' && typeof THREE.ExtrudeGeometry === 'function') {
+      const shape = new THREE.Shape();
+      shape.moveTo(-w / 2, -h / 2);
+      shape.lineTo(w / 2, -h / 2);
+      shape.lineTo(w / 2, h / 2);
+      shape.lineTo(-w / 2, h / 2);
+      shape.closePath();
+      const geo = new THREE.ExtrudeGeometry(shape, {
+        depth: d,
+        bevelEnabled: true,
+        bevelThickness: bThick,
+        bevelSize: bSize,
+        bevelSegments: bSegs
+      });
+      geo.translate(0, 0, -d / 2);
+      return new THREE.Mesh(geo, material);
+    }
+    return new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), material);
+  }
+
+  function createTubeHandleMesh(points3D, radius, material, tubularSegments = 20, radialSegments = 10, closed = false) {
+    if (typeof THREE === 'undefined') return null;
+    const vectors = (points3D || []).map(p => (p && p.isVector3) ? p : new THREE.Vector3(p[0], p[1], p[2]));
+    if (typeof THREE.CatmullRomCurve3 === 'function' && typeof THREE.TubeGeometry === 'function' && vectors.length >= 2) {
+      const curve = new THREE.CatmullRomCurve3(vectors, closed);
+      const geo = new THREE.TubeGeometry(curve, tubularSegments, radius, radialSegments, closed);
+      return new THREE.Mesh(geo, material);
+    }
+    return new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, 0.25, radialSegments), material);
+  }
+
+  let sharedContactShadowGeo = null;
+  function attachContactShadow(targetGroup, radius = 0.45, yOffset = 0.004) {
+    if (!targetGroup || typeof THREE === 'undefined') return null;
+    if (!sharedContactShadowGeo) {
+      sharedContactShadowGeo = new THREE.CircleGeometry(1, 24);
+    }
+    const shadowMesh = new THREE.Mesh(sharedContactShadowGeo, ProceduralMaterialFactory.getContactShadowMaterial());
+    shadowMesh.rotation.x = -Math.PI / 2;
+    shadowMesh.scale.set(radius, radius, 1);
+    shadowMesh.position.y = yOffset;
+    shadowMesh.raycast = () => {};
+    shadowMesh.userData = { isContactShadow: true, ignoreRaycast: true };
+    targetGroup.add(shadowMesh);
+    return shadowMesh;
+  }
+
+  World3D.createLatheProfileMesh = createLatheProfileMesh;
+  World3D.createBeveledBoxExtrude = createBeveledBoxExtrude;
+  World3D.createTubeHandleMesh = createTubeHandleMesh;
+  World3D.attachContactShadow = attachContactShadow;
+  global.createLatheProfileMesh = createLatheProfileMesh;
+  global.createBeveledBoxExtrude = createBeveledBoxExtrude;
+  global.createTubeHandleMesh = createTubeHandleMesh;
+  global.attachContactShadow = attachContactShadow;
+
   // --- GENERADORES PROCEDURALES PBR DE ALTA RESOLUCIÓN ---
   let cachedPBRWoodTexture = null;
   function createPBRWoodTexture() {
@@ -2462,6 +2789,11 @@ ensureOrbitControls();
         {"id":"house_wifi_router","en":"Wi-Fi router","ipa":"/ˈwaɪ.faɪ ˈruː.t̬ɚ/","es":"Enrutador Wi-Fi","category":"Home Concept","type":"object","example":"The high-speed Wi-Fi router provides smooth streaming across the home.","pos":[4.8,1.1,-3.6]},
         {"id":"house_light_switch","en":"Light switch","ipa":"/ˈlaɪt ˌswɪtʃ/","es":"Interruptor de Luz","category":"Home Concept","type":"object","example":"Flick the light switch by the entryway to turn on the overhead lights.","pos":[0.3,1.4,3.2]},
         {"id":"house_doorknob","en":"Brass doorknob","ipa":"/bræs ˈdɔːr.nɑːb/","es":"Pomo de la Puerta","category":"Home Concept","type":"object","example":"Turn the polished brass doorknob to open the study room door.","pos":[-0.2,1.2,3.2]},
+        {"id":"house_remote_control","en":"Remote Control","ipa":"/rɪˈmoʊt kənˈtroʊl/","es":"Control Remoto de TV","category":"Living Room","type":"object","example":"Pass me the remote control on the coffee table so I can turn on English subtitles.","pos":[-3.35,0.68,-1.95]},
+        {"id":"house_laptop","en":"Laptop Computer","ipa":"/ˈlæp.tɑːp kəmˈpjuː.t̬ɚ/","es":"Laptop Abierta con Interfaz","category":"Study Room","type":"object","example":"My open laptop displays the interactive English grammar dashboard.","pos":[3.25,0.98,-3.42]},
+        {"id":"house_toothbrush","en":"Toothbrush","ipa":"/ˈtuːθ.brʌʃ/","es":"Cepillo de Dientes","category":"Bathroom","type":"object","example":"Replace your soft-bristle toothbrush every three months for good hygiene.","pos":[-2.1,1.14,-3.85]},
+        {"id":"house_soap_dispenser","en":"Soap Dispenser","ipa":"/soʊp dɪˈspen.sɚ/","es":"Dispensador de Jabón Líquido","category":"Bathroom","type":"object","example":"Press the pump on the ceramic soap dispenser to wash your hands.","pos":[-1.8,1.14,-3.85]},
+        {"id":"house_shampoo_bottle","en":"Shampoo Bottle","ipa":"/ʃæmˈpuː ˈbɑː.t̬əl/","es":"Botella de Shampoo","category":"Bathroom","type":"object","example":"This herbal shampoo bottle has a flip-top cap and a botanical label.","pos":[-2.4,1.14,-3.85]},
         {"id":"house_mortgage_rent","en":"Mortgage / Monthly Rent","ipa":"/ˈmɔːr.ɡɪdʒ / rent/","es":"Hipoteca o Renta Mensual","category":"Home Concept","type":"concept","example":"Paying your rent or mortgage on time maintains a good credit score.","pos":[2.5,1.8,-0.5]},
         {"id":"house_roommate","en":"Friendly Roommate","ipa":"/ˈruːm.meɪt/","es":"Compañero de Habitación","category":"Home Concept","type":"concept","example":"Having a bilingual roommate gives you daily opportunities to practice.","pos":[4.2,1.8,0.8]}
       ]
@@ -2495,7 +2827,11 @@ ensureOrbitControls();
         {"id":"garden_lawn_mower","en":"Lawn Mower","ipa":"/ˈlɔːn ˌmoʊ.ɚ/","es":"Cortadora de Césped","category":"Garden & Yard","type":"object","example":"Mow the front lawn with the electric green lawn mower.","pos":[-1.2,0,13.2]},
         {"id":"garden_wheelbarrow","en":"Wheelbarrow","ipa":"/ˈwiːlˌber.oʊ/","es":"Carretilla de Jardinería","category":"Garden & Yard","type":"object","example":"Load the rich potting soil into the steel wheelbarrow.","pos":[3.2,0,13.6]},
         {"id":"garden_patio_umbrella","en":"Patio Umbrella","ipa":"/ˈpæt̬.i.oʊ ʌmˈbrel.ə/","es":"Sombrilla de Terraza","category":"Garden & Yard","type":"object","example":"Open the large patio umbrella to stay cool during sunny afternoons.","pos":[4.6,0,6.2]},
-        {"id":"garden_terracotta_pot","en":"Terracotta Pot","ipa":"/ˌter.əˈkɑː.t̬ə pɑːt/","es":"Maceta de Barro","category":"Garden & Yard","type":"object","example":"Plant purple lavender inside the handmade terracotta pot.","pos":[1.2,0,6.8]},
+        {"id":"garden_terracotta_pot","en":"Flower Pot","ipa":"/ˈflaʊ.ɚ pɑːt/","es":"Maceta de Barro (Terracota)","category":"Garden & Yard","type":"object","example":"Plant purple lavender inside the handmade terracotta flower pot.","pos":[1.2,0,6.8]},
+        {"id":"garden_pruning_shears","en":"Pruning Shears","ipa":"/ˈpruː.nɪŋ ʃɪrz/","es":"Tijeras de Podar","category":"Garden & Yard","type":"object","example":"Use sharp steel pruning shears to trim dead stems from the rose bush.","pos":[1.8,0,7.2]},
+        {"id":"garden_trowel","en":"Garden Trowel","ipa":"/ˈɡɑːr.dən ˈtraʊ.əl/","es":"Pala de Mano de Jardinería","category":"Garden & Yard","type":"object","example":"Dig small holes for flower bulbs using the hand garden trowel.","pos":[0.6,0,7.2]},
+        {"id":"garden_picnic_basket","en":"Picnic Basket","ipa":"/ˈpɪk.nɪk ˈbæs.kɪt/","es":"Cesta de Picnic Tejida","category":"Garden & Yard","type":"object","example":"We packed sandwiches and fruit inside the woven wicker picnic basket.","pos":[-3.8,0,8.2]},
+        {"id":"garden_lantern","en":"Garden Lantern","ipa":"/ˈɡɑːr.dən ˈlæn.tɚn/","es":"Farol Solar de Jardín","category":"Garden & Yard","type":"object","example":"The solar garden lantern charges during the day and glows warmly at dusk.","pos":[2.8,0,7.6]},
         {"id":"garden_hose","en":"Garden Hose","ipa":"/ˈɡɑːr.dən hoʊz/","es":"Manguera de Riego","category":"Garden & Yard","type":"object","example":"Uncoil the flexible garden hose to wash the flagstone patio.","pos":[-5.2,0,11.6]},
         {"id":"garden_shovel","en":"Garden Shovel","ipa":"/ˈʃʌv.əl/","es":"Pala de Jardinería","category":"Garden & Yard","type":"object","example":"Dig a small hole for the new rose bush with the steel shovel.","pos":[-7.2,0,8.8]},
         {"id":"garden_rake","en":"Leaf Rake","ipa":"/liːf reɪk/","es":"Rastrillo de Hojas","category":"Garden & Yard","type":"object","example":"Rake the fallen autumn leaves into a tidy compost pile.","pos":[-7.8,0,9.6]},
@@ -2549,16 +2885,17 @@ ensureOrbitControls();
       },
       objects: [
         {"id":"dating_table_for_two","en":"Table for Two","ipa":"/ˈteɪ.bəl fɔːr tuː/","es":"Mesa Íntima para Dos con Mantel Borgoña","category":"Romantic Date","type":"object","example":"I reserved a romantic table for two on the rooftop terrace.","pos":[0,0,0]},
-        {"id":"dating_candlelight","en":"Candlelight","ipa":"/ˈkæn.dəl.laɪt/","es":"Vela Encendida con Luz Cálida","category":"Romantic Date","type":"object","example":"We enjoyed a quiet dinner by warm candlelight on the starry terrace.","pos":[0,0.99,0]},
+        {"id":"dating_candlelight","en":"Candle","ipa":"/ˈkæn.dəl/","es":"Vela Encendida con Portavelas","category":"Romantic Date","type":"object","example":"We enjoyed a quiet dinner by warm candlelight on the starry terrace.","pos":[0,0.99,0]},
         {"id":"dating_wine_glasses","en":"Wine Glasses","ipa":"/waɪn ˈɡlæs.ɪz/","es":"Dos Copas de Cristal PBR","category":"Romantic Date","type":"object","example":"They clinked their wine glasses and made a toast in English.","pos":[0.26,0.99,0.26]},
-        {"id":"dating_menu","en":"Menu","ipa":"/ˈmen.juː/","es":"Menú Bilingüe del Bistró","category":"Romantic Date","type":"object","example":"Could we see the dinner menu and the wine list, please?","pos":[-0.34,0.99,0.28]},
-        {"id":"dating_rose_bouquet","en":"Rose Bouquet","ipa":"/roʊz buˈkeɪ/","es":"Ramo de Rosas Rojas","category":"Romantic Date","type":"object","example":"A fresh red rose bouquet decorated the center of our table.","pos":[0,0.99,-0.32]},
-        {"id":"dating_violin","en":"Violin","ipa":"/ˌvaɪəˈlɪn/","es":"Violín Acústico de Serenata","category":"Romantic Date","type":"object","example":"A romantic violin melody played softly under the stars.","pos":[-3.4,0,-2.2]},
+        {"id":"dating_menu","en":"Wine List","ipa":"/waɪn lɪst/","es":"Carta de Vinos y Menú del Bistró","category":"Romantic Date","type":"object","example":"Could we see the dinner menu and the wine list, please?","pos":[-0.34,0.99,0.28]},
+        {"id":"dating_rose_bouquet","en":"Bouquet of Roses","ipa":"/buˈkeɪ əv ˈroʊ.zɪz/","es":"Ramo de Rosas Rojas en Florero","category":"Romantic Date","type":"object","example":"A fresh bouquet of roses decorated the center of our table.","pos":[0,0.99,-0.32]},
+        {"id":"dating_violin","en":"Violin","ipa":"/ˌvaɪəˈlɪn/","es":"Violín Acústico con Arco sobre Soporte","category":"Romantic Date","type":"object","example":"A romantic violin melody played softly under the stars.","pos":[-3.4,0,-2.2]},
         {"id":"dating_city_balcony","en":"City View Balcony","ipa":"/ˈsɪt̬.i vjuː ˈbæl.kə.ni/","es":"Balcón con Skyline Nocturno Iluminado","category":"Romantic Date","type":"object","example":"We stepped out onto the city view balcony to admire the skyline.","pos":[0,0,-5.2]},
         {"id":"dating_waiter_npc","en":"Waiter NPC","ipa":"/ˈweɪ.t̬ɚ/","es":"Mesero 3D Interactivo","category":"Romantic Date","type":"object","example":"Our friendly waiter recommended the chef’s special tonight.","pos":[2.8,0,-2.4]},
-        {"id":"dating_chocolate_dessert","en":"Chocolate Dessert","ipa":"/ˈtʃɑː.klət dɪˈzɝːt/","es":"Postre de Chocolate Gourmet","category":"Romantic Date","type":"object","example":"Would you like to share this warm chocolate dessert with me?","pos":[0.24,0.99,-0.26]},
+        {"id":"dating_chocolate_dessert","en":"Chocolate Fondant","ipa":"/ˈtʃɑː.klət ˈfɑːn.dənt/","es":"Postre Fondant de Chocolate Compartido","category":"Romantic Date","type":"object","example":"Would you like to share this warm chocolate fondant dessert with me?","pos":[0.24,0.99,-0.26]},
+        {"id":"dating_ring_box","en":"Ring Box","ipa":"/rɪŋ bɑːks/","es":"Caja de Terciopelo con Anillo","category":"Romantic Date","type":"object","example":"He opened a crimson velvet ring box under the starlight.","pos":[-0.14,0.99,0.12]},
         {"id":"dating_conversation_cards","en":"Conversation Cards","ipa":"/ˌkɑːn.vɚˈseɪ.ʃən kɑːrdz/","es":"Tarjetas Románticas (Icebreakers)","category":"Romantic Date","type":"object","example":"These conversation cards have great questions to get to know each other.","pos":[-0.32,0.99,-0.26]},
-        {"id":"dating_ice_bucket","en":"Ice Bucket","ipa":"/aɪs ˈbʌk.ɪt/","es":"Cubeta de Hielo y Espumoso","category":"Romantic Date","type":"object","example":"The sparkling cider is chilling in the silver ice bucket.","pos":[-2.15,0,-1.25]},
+        {"id":"dating_ice_bucket","en":"Champagne Bottle & Ice Bucket","ipa":"/ʃæmˈpeɪn ˈbɑː.t̬əl ænd aɪs ˈbʌk.ɪt/","es":"Botella de Champaña en Cubeta con Hielo","category":"Romantic Date","type":"object","example":"The champagne bottle is chilling inside the silver ice bucket.","pos":[-2.15,0,-1.25]},
         {"id":"dating_string_lights","en":"String Lights","ipa":"/strɪŋ laɪts/","es":"Guirnalda de Luces de Terraza","category":"Romantic Date","type":"object","example":"Golden string lights glowed above the bistro terrace all night.","pos":[3.6,0,-2.8]},
         {"id":"dating_chandelier","en":"Crystal Chandelier","ipa":"/ˈkrɪs.təl ˌʃæn.dəˈlɪr/","es":"Candelabro de Cristal","category":"Bistro Decor","type":"object","example":"The antique crystal chandelier cast romantic refractions across the floor.","pos":[0,3.8,-0.5]},
         {"id":"dating_cloth_napkin","en":"Linen Cloth Napkin","ipa":"/ˈlɪn.ɪn klɑːθ ˈnæp.kɪn/","es":"Servilleta de Lino Fino","category":"Romantic Date","type":"object","example":"Unfold your linen cloth napkin and place it gently on your lap.","pos":[0.45,0.99,0.12]},
@@ -2622,8 +2959,14 @@ ensureOrbitControls();
         {"id":"space_mars","en":"Mars","ipa":"/mɑːrz/","es":"Marte (El Planeta Rojo)","category":"Outer Space","type":"object","example":"Mars is known as the Red Planet because of iron oxide on its surface.","pos":[-6.4,2.2,2],"orbitRadius":6.7,"orbitSpeed":0.28,"orbitPhase":2.6,"rotSpeed":1},
         {"id":"space_saturn","en":"Saturn & Rings","ipa":"/ˈsæt̬.ɚn ænd rɪŋz/","es":"Saturno con Anillos","category":"Outer Space","type":"object","example":"Saturn & Rings are famous for their spectacular icy ring system.","pos":[8.8,2.4,-3.5],"orbitRadius":9.4,"orbitSpeed":0.18,"orbitPhase":5.1,"rotSpeed":0.7},
         {"id":"space_spacecraft","en":"Spacecraft","ipa":"/ˈspeɪs.kræft/","es":"Nave Espacial / Cohete","category":"Outer Space","type":"object","example":"The spacecraft ignited its engines to travel beyond Earth orbit.","pos":[-3.5,3.6,5.2],"orbitRadius":6.2,"orbitSpeed":0.44,"orbitPhase":3.8,"rotSpeed":0.5},
-        {"id":"space_telescope","en":"Telescope","ipa":"/ˈtel.ə.skoʊp/","es":"Telescopio Espacial Orbital","category":"Outer Space","type":"object","example":"The space telescope captures deep infrared images of distant galaxies.","pos":[-7.5,3.8,-4.2],"orbitRadius":8.6,"orbitSpeed":0.15,"orbitPhase":4,"rotSpeed":0.35},
+        {"id":"space_telescope","en":"Space Telescope","ipa":"/speɪs ˈtel.ə.skoʊp/","es":"Telescopio Espacial Orbital","category":"Outer Space","type":"object","example":"The space telescope captures deep infrared images of distant galaxies.","pos":[-7.5,3.8,-4.2],"orbitRadius":8.6,"orbitSpeed":0.15,"orbitPhase":4,"rotSpeed":0.35},
         {"id":"space_astronaut","en":"Astronaut","ipa":"/ˈæs.trə.nɑːt/","es":"Astronauta en Caminata Espacial","category":"Outer Space","type":"object","example":"The astronaut wore a pressurized suit during the spacewalk.","pos":[2.6,3.4,5.8],"orbitRadius":6.3,"orbitSpeed":0.22,"orbitPhase":1.7,"rotSpeed":0.4},
+        {"id":"space_control_console","en":"Control Console","ipa":"/kənˈtroʊl ˈkɑːn.soʊl/","es":"Consola de Control con Telemetría","category":"Space Station","type":"object","example":"The commander monitored orbital telemetry on the curved control console.","pos":[-1.5,1.2,6.2],"orbitRadius":0,"orbitSpeed":0,"rotSpeed":0},
+        {"id":"space_astronaut_helmet","en":"Astronaut Helmet","ipa":"/ˈæs.trə.nɑːt ˈhel.mət/","es":"Casco de Astronauta con Visor Dorado","category":"Space Station","type":"object","example":"The astronaut helmet features a reflective gold visor to block solar radiation.","pos":[1.5,1.4,6.2],"orbitRadius":0,"orbitSpeed":0,"rotSpeed":0.25},
+        {"id":"space_oxygen_tank","en":"Oxygen Tank","ipa":"/ˈɑːk.sɪ.dʒən tæŋk/","es":"Tanque de Oxígeno con Manómetros","category":"Space Station","type":"object","example":"Check the pressure gauge on the primary oxygen tank before the spacewalk.","pos":[-3.2,1.2,6.5],"orbitRadius":0,"orbitSpeed":0,"rotSpeed":0},
+        {"id":"space_robotic_arm","en":"Robotic Arm","ipa":"/roʊˈbɑː.t̬ɪk ɑːrm/","es":"Brazo Robótico Articulado","category":"Space Station","type":"object","example":"The articulated robotic arm grappled the incoming supply capsule.","pos":[3.6,2.8,4.8],"orbitRadius":0,"orbitSpeed":0,"rotSpeed":0.15},
+        {"id":"space_hydroponic_pod","en":"Hydroponic Pod","ipa":"/ˌhaɪ.drəˈpɑː.nɪk pɑːd/","es":"Cápsula Hidropónica con Luz UV","category":"Space Station","type":"object","example":"Fresh greens grow inside the illuminated hydroponic pod aboard the station.","pos":[-4.8,1.5,3.2],"orbitRadius":0,"orbitSpeed":0,"rotSpeed":0},
+        {"id":"space_airlock_door","en":"Airlock Door","ipa":"/ˈer.lɑːk dɔːr/","es":"Compuerta Presurizada (Esclusa de Aire)","category":"Space Station","type":"object","example":"Seal the pressurized airlock door before depressurizing the chamber.","pos":[0,1.8,7.8],"orbitRadius":0,"orbitSpeed":0,"rotSpeed":0},
         {"id":"space_asteroid","en":"Asteroid","ipa":"/ˈæs.tə.rɔɪd/","es":"Asteroide Rocoso","category":"Outer Space","type":"object","example":"A metallic asteroid tumbled silently through the asteroid belt.","pos":[7.2,1.8,5.2],"orbitRadius":8.8,"orbitSpeed":0.31,"orbitPhase":0.9,"rotSpeed":1.6},
         {"id":"space_black_hole","en":"Black Hole","ipa":"/ˌblæk ˈhoʊl/","es":"Agujero Negro Supermasivo","category":"Outer Space","type":"object","example":"Nothing, not even light, can escape the event horizon of a black hole.","pos":[6.8,3.8,-6.2],"orbitRadius":0,"orbitSpeed":0,"rotSpeed":1.8},
         {"id":"space_satellite","en":"Satellite","ipa":"/ˈsæt̬.əl.aɪt/","es":"Satélite de Comunicaciones","category":"Outer Space","type":"object","example":"The solar-powered satellite relays global communication signals.","pos":[-4.8,4,-5],"orbitRadius":6.9,"orbitSpeed":0.35,"orbitPhase":2.1,"rotSpeed":0.6},
@@ -2693,17 +3036,29 @@ ensureOrbitControls();
         {"id":"market_dairy_section","en":"Dairy Section","ipa":"/ˈder.i ˈsek.ʃən/","es":"Sección de Lácteos","category":"Supermarket","type":"object","example":"Cold milk, butter, and yogurt are kept in the refrigerated dairy section.","pos":[2,0,-4.2]},
         {"id":"market_frozen_aisle","en":"Frozen Foods Aisle","ipa":"/ˈfroʊ.zən aɪl/","es":"Pasillo de Congelados","category":"Supermarket","type":"object","example":"Ice cream and frozen vegetables are stored in the glass frozen aisle.","pos":[5.2,0,-1.2]},
         {"id":"market_scale","en":"Produce Scale","ipa":"/ˈproʊ.duːs skeɪl/","es":"Báscula Digital de Peso","category":"Supermarket","type":"object","example":"Place the fruit on the scale to measure its weight in pounds or kilos.","pos":[-2.4,0,-0.8]},
-        {"id":"market_shopping_basket","en":"Hand Shopping Basket","ipa":"/ˈʃɑː.pɪŋ ˈbæs.kɪt/","es":"Canasta de Mano","category":"Supermarket","type":"object","example":"Carry a hand shopping basket when you only need a few groceries.","pos":[-0.8,0,3.8]},
+        {"id":"market_shopping_basket","en":"Shopping Basket","ipa":"/ˈʃɑː.pɪŋ ˈbæs.kɪt/","es":"Cesta de Mano","category":"Supermarket","type":"object","example":"Carry a hand shopping basket when you only need a few groceries.","pos":[-0.8,0,3.8]},
         {"id":"market_price_tag","en":"Yellow Price Tag","ipa":"/ˈpraɪs tæɡ/","es":"Etiqueta de Precio en Oferta","category":"Supermarket","type":"object","example":"Look at the yellow price tag to see the twenty percent discount.","pos":[-4.8,1.65,1.2]},
         {"id":"market_receipt","en":"Printed Receipt","ipa":"/rɪˈsiːt/","es":"Recibo / Ticket de Compra","category":"Supermarket","type":"object","example":"Would you like your printed receipt in the bag or with you?","pos":[4.1,1.08,3.1]},
-        {"id":"market_checkout","en":"Checkout Belt Lane","ipa":"/ˈtʃek.aʊt leɪn/","es":"Línea de Caja / Checkout","category":"Supermarket","type":"object","example":"Place your groceries on the moving belt at the express checkout.","pos":[3,0,2.8]},
-        {"id":"market_conveyor_belt","en":"Motorized Conveyor Belt","ipa":"/kənˈveɪ.ɚ belt/","es":"Cinta Transportadora de Caja","category":"Supermarket","type":"object","example":"The motorized conveyor belt glided the groceries toward the cashier.","pos":[2.5,0.95,2.2]},
+        {"id":"market_checkout","en":"Checkout Counter","ipa":"/ˈtʃek.aʊt ˈkaʊn.tɚ/","es":"Mostrador de Caja / Checkout","category":"Supermarket","type":"object","example":"Place your groceries on the moving belt at the checkout counter.","pos":[3,0,2.8]},
+        {"id":"market_conveyor_belt","en":"Conveyor Belt","ipa":"/kənˈveɪ.ɚ belt/","es":"Banda Transportadora de Caja","category":"Supermarket","type":"object","example":"The motorized conveyor belt glided the groceries toward the cashier.","pos":[2.5,0.95,2.2]},
         {"id":"market_deli_counter","en":"Gourmet Deli Counter","ipa":"/ˈdel.i ˈkaʊn.tɚ/","es":"Mostrador de Fiambrería y Quesos","category":"Supermarket","type":"object","example":"Ask the butcher to slice half a pound of smoked turkey at the deli counter.","pos":[-5.2,0,-4.2]},
         {"id":"market_beverage_aisle","en":"Beverage & Juice Aisle","ipa":"/ˈbev.rɪdʒ aɪl/","es":"Pasillo de Bebidas y Jugos","category":"Supermarket","type":"object","example":"Sparkling waters and cold pressed juices line the beverage aisle.","pos":[4.8,0,-3.8]},
-        {"id":"market_canned_goods","en":"Canned Goods Shelf","ipa":"/kænd ɡʊdz ʃelf/","es":"Estantería de Alimentos Enlatados","category":"Supermarket","type":"object","example":"Stock up on canned tomatoes, tuna, and black beans for your pantry.","pos":[-0.5,0,-2.5]},
-        {"id":"market_cereal_aisle","en":"Breakfast Cereal Aisle","ipa":"/ˈsɪr.i.əl aɪl/","es":"Pasillo de Cereales y Granola","category":"Supermarket","type":"object","example":"Whole grain oats and crunchy granolas fill the cereal aisle.","pos":[1.8,0,-2.2]},
+        {"id":"market_canned_goods","en":"Canned Tuna","ipa":"/kænd ˈtuː.nə/","es":"Latas de Atún y Conservas con Abre-fácil","category":"Supermarket","type":"object","example":"Stock up on canned tuna, tomatoes, and black beans for your pantry.","pos":[-0.5,0,-2.5]},
+        {"id":"market_cereal_aisle","en":"Cereal Box","ipa":"/ˈsɪr.i.əl bɑːks/","es":"Cajas de Cereal (Corn Flakes, Choco Rings, Honey Oats)","category":"Supermarket","type":"object","example":"Grab a box of crunchy Corn Flakes or Honey Oats from the cereal aisle.","pos":[1.8,0,-2.2]},
+        {"id":"market_mayonnaise","en":"Mayonnaise","ipa":"/ˈmeɪ.ə.neɪz/","es":"Frasco de Mayonesa con Tapa Azul","category":"Supermarket","type":"object","example":"Spread a spoonful of creamy mayonnaise on the turkey sandwich.","pos":[-0.2,1.15,-2.2]},
+        {"id":"market_table_cream","en":"Table Cream / Heavy Cream","ipa":"/ˈteɪ.bəl kriːm/","es":"Crema de Mesa / Crema para Batir","category":"Supermarket","type":"object","example":"Pour rich table cream over fresh strawberries for dessert.","pos":[2.2,1.15,-4.1]},
+        {"id":"market_milk_carton","en":"Milk Carton","ipa":"/mɪlk ˈkɑːr.tən/","es":"Cartón de Leche con Pico Vertedor","category":"Supermarket","type":"object","example":"Open the top spout of the fresh milk carton to pour a glass.","pos":[1.7,1.15,-4.1]},
+        {"id":"market_egg_carton","en":"Egg Carton","ipa":"/eɡ ˈkɑːr.tən/","es":"Cartón de Doce Huevos con Relieve","category":"Supermarket","type":"object","example":"Check inside the molded egg carton to make sure none are cracked.","pos":[2.6,1.15,-4.1]},
+        {"id":"market_sliced_bread","en":"Sliced Bread","ipa":"/slaɪst bred/","es":"Pan de Molde en Bolsa con Cierre","category":"Supermarket","type":"object","example":"Pick up a soft loaf of whole-wheat sliced bread for morning toast.","pos":[-1.5,1.08,-3.9]},
+        {"id":"market_ketchup","en":"Ketchup","ipa":"/ˈketʃ.ʌp/","es":"Botella de Salsa de Tomate (Ketchup)","category":"Supermarket","type":"object","example":"Squeeze tomato ketchup onto the hot french fries.","pos":[0.3,1.15,-2.2]},
+        {"id":"market_mustard","en":"Mustard","ipa":"/ˈmʌs.tɚd/","es":"Botella de Mostaza Amarilla","category":"Supermarket","type":"object","example":"Add a swirl of tangy yellow mustard to your hot dog.","pos":[0.6,1.15,-2.2]},
+        {"id":"market_cooking_oil","en":"Cooking Oil","ipa":"/ˈkʊk.ɪŋ ɔɪl/","es":"Botella de Aceite de Cocina","category":"Supermarket","type":"object","example":"Heat a tablespoon of vegetable cooking oil in the frying pan.","pos":[0.9,1.15,-2.2]},
+        {"id":"market_strawberry_jam","en":"Strawberry Jam","ipa":"/ˈstrɑː.ber.i dʒæm/","es":"Frasco de Mermelada de Fresa","category":"Supermarket","type":"object","example":"Spread sweet strawberry jam over warm buttered toast.","pos":[-0.8,1.15,-2.2]},
+        {"id":"market_peanut_butter","en":"Peanut Butter","ipa":"/ˈpiː.nʌt ˌbʌt̬.ɚ/","es":"Frasco de Mantequilla de Maní","category":"Supermarket","type":"object","example":"Crunchy peanut butter is packed with protein for breakfast.","pos":[-1.1,1.15,-2.2]},
+        {"id":"market_bag_of_rice","en":"Bag of Rice","ipa":"/bæɡ əv raɪs/","es":"Bolsa de Arroz Blanco Grano Largo","category":"Supermarket","type":"object","example":"We bought a two-kilogram bag of jasmine rice for dinner.","pos":[1.2,0.65,-2.2]},
+        {"id":"market_soda_can","en":"Soda Can","ipa":"/ˈsoʊ.də kæn/","es":"Lata de Refresco con Anillo Metálico","category":"Supermarket","type":"object","example":"Pop the tab on the chilled aluminum soda can.","pos":[4.5,1.15,-3.6]},
         {"id":"market_reusable_bag","en":"Eco Reusable Grocery Bag","ipa":"/riːˈjuː.zə.bəl ˈɡroʊ.sɚ.i bæɡ/","es":"Bolsa Ecológica Reutilizable","category":"Supermarket","type":"object","example":"Bring your own canvas reusable bag to reduce plastic waste.","pos":[3.8,0.8,2.5]},
-        {"id":"market_card_terminal","en":"Contactless POS Terminal","ipa":"/ˌpiː.oʊˈes ˈtɝː.mə.nəl/","es":"Terminal de Tarjeta sin Contacto","category":"Supermarket","type":"object","example":"Tap your smartphone or contactless debit card against the POS terminal.","pos":[3.4,1.15,2.4]},
+        {"id":"market_card_terminal","en":"Card Reader","ipa":"/kɑːrd ˈriː.dɚ/","es":"Terminal Lectora de Tarjetas","category":"Supermarket","type":"object","example":"Tap your smartphone or contactless debit card against the card reader.","pos":[3.4,1.15,2.4]},
         {"id":"market_cooler_display","en":"Refrigerated Glass Cooler","ipa":"/rɪˈfrɪdʒ.ə.reɪ.t̬ɪd ˈkuː.lɚ/","es":"Vitrina Enfriadora con Puertas de Vidrio","category":"Supermarket","type":"object","example":"Open the misted glass door of the cooler to select your almond milk.","pos":[5.4,0,1.5]},
         {"id":"market_produce_crate","en":"Rustic Produce Crate","ipa":"/ˈrʌs.tɪk ˈproʊ.duːs kreɪt/","es":"Huacal de Frutas Frescas","category":"Supermarket","type":"object","example":"Crisp Fuji apples are arranged neatly in the wooden produce crate.","pos":[-3.8,0.4,-0.8]},
         {"id":"market_trolley_bay","en":"Supermarket Trolley Bay","ipa":"/ˈtrɑː.li beɪ/","es":"Bahía de Carritos de Compra","category":"Supermarket","type":"object","example":"Return your empty shopping cart to the designated trolley bay.","pos":[-4.5,0,4.5]},
@@ -2753,20 +3108,20 @@ ensureOrbitControls();
         zone3: { pos: { x: -3.8, y: 3.6, z: 5.5 }, lookAt: { x: -4, y: 1.1, z: -1 }, label: '🛋️ Lobby y Check-in' }
       },
       objects: [
-        {"id":"hotel_receptionist_desk","en":"Receptionist Desk","ipa":"/rɪˈsep.ʃən.ɪst desk/","es":"Mostrador de Recepción","category":"Hotel & Reception","type":"object","example":"Welcome! Please check in at the main receptionist desk.","pos":[0,0,-3.5]},
-        {"id":"hotel_room_keycard","en":"Magnetic Room Keycard","ipa":"/ruːm ˈkiː.kɑːrd/","es":"Tarjeta Llave de Habitación","category":"Hotel & Reception","type":"object","example":"Here is your magnetic room keycard for suite 402 on the fourth floor.","pos":[-0.8,1.12,-3.1]},
-        {"id":"hotel_luggage_cart","en":"Brass Luggage Cart","ipa":"/ˈlʌɡ.ɪdʒ kɑːrt/","es":"Carrito de Equipaje Dorado","category":"Hotel & Reception","type":"object","example":"The bellhop placed our bags on the brass luggage cart.","pos":[3.8,0,1.2]},
-        {"id":"hotel_suitcase","en":"Rolling Suitcase","ipa":"/ˈsuːt.keɪs/","es":"Maletas de Viaje con Ruedas","category":"Hotel & Reception","type":"object","example":"My rolling suitcase fits easily in the overhead compartment.","pos":[2.5,0,2.4]},
-        {"id":"hotel_elevator","en":"Glass Elevator","ipa":"/ˈel.ə.veɪ.t̬ɚ/","es":"Elevador Panorámico","category":"Hotel & Reception","type":"object","example":"Press the up button to call the glass hotel elevator.","pos":[5.2,0,-3.8]},
-        {"id":"hotel_bellhop_bell","en":"Golden Bellhop Bell","ipa":"/ˈbel.hɑːp bel/","es":"Campana Dorada de Servicio","category":"Hotel & Reception","type":"object","example":"Ring the golden bellhop bell on the counter for service.","pos":[0.65,1.12,-3.1]},
+        {"id":"hotel_receptionist_desk","en":"Receptionist Desk","ipa":"/rɪˈsep.ʃən.ɪst desk/","es":"Mostrador de Recepción de Mármol Veteado","category":"Hotel & Reception","type":"object","example":"Welcome! Please check in at the main receptionist desk.","pos":[0,0,-3.5]},
+        {"id":"hotel_room_keycard","en":"Room Keycard","ipa":"/ruːm ˈkiː.kɑːrd/","es":"Tarjeta Llave Magnética de Habitación","category":"Hotel & Reception","type":"object","example":"Here is your magnetic room keycard for suite 402 on the fourth floor.","pos":[-0.8,1.12,-3.1]},
+        {"id":"hotel_luggage_cart","en":"Luggage Cart","ipa":"/ˈlʌɡ.ɪdʒ kɑːrt/","es":"Carrito Portaequipaje de Latón Dorado","category":"Hotel & Reception","type":"object","example":"The bellhop placed our bags on the brass luggage cart.","pos":[3.8,0,1.2]},
+        {"id":"hotel_suitcase","en":"Suitcase","ipa":"/ˈsuːt.keɪs/","es":"Maleta de Viaje con Ruedas y Asa Retráctil","category":"Hotel & Reception","type":"object","example":"My rolling suitcase fits easily in the overhead compartment.","pos":[2.5,0,2.4]},
+        {"id":"hotel_elevator","en":"Elevator","ipa":"/ˈel.ə.veɪ.t̬ɚ/","es":"Puertas de Ascensor con Indicador Digital","category":"Hotel & Reception","type":"object","example":"Press the up button to call the glass hotel elevator.","pos":[5.2,0,-3.8]},
+        {"id":"hotel_bellhop_bell","en":"Bellhop Bell","ipa":"/ˈbel.hɑːp bel/","es":"Campana de Recepción Dorada","category":"Hotel & Reception","type":"object","example":"Ring the golden bellhop bell on the counter for service.","pos":[0.65,1.12,-3.1]},
         {"id":"hotel_lobby_sofa","en":"Plush Lobby Sofa","ipa":"/ˈlɑː.bi ˈsoʊ.fə/","es":"Sofá Acolchado del Lobby","category":"Hotel & Reception","type":"object","example":"Please have a seat on the plush lobby sofa while we prepare your room.","pos":[-4.2,0,1]},
         {"id":"hotel_chandelier","en":"Crystal Chandelier","ipa":"/ˌʃæn.dəˈlɪr/","es":"Candelabro Imperial de Cristal","category":"Hotel & Reception","type":"object","example":"A grand crystal chandelier illuminates the entire hotel lobby.","pos":[0,4.4,-0.5]},
         {"id":"hotel_checkin_terminal","en":"Express Check-in Terminal","ipa":"/ˈtʃek.ɪn ˈtɝː.mə.nəl/","es":"Terminal Digital de Check-in","category":"Hotel & Reception","type":"object","example":"Use the touch-screen check-in terminal for fast express registration.","pos":[-3.8,0,-3.2]},
         {"id":"hotel_concierge","en":"Concierge Desk","ipa":"/ˌkɑːn.siˈerʒ/","es":"Módulo de Conserjería Turística","category":"Hotel & Reception","type":"object","example":"Our hotel concierge can book city tours, taxis, and theater tickets.","pos":[3.6,0,-2.2]},
-        {"id":"hotel_safe_box","en":"In-Room Safe Box","ipa":"/seɪf bɑːks/","es":"Caja Fuerte Electrónica","category":"Hotel & Reception","type":"object","example":"Enter a four-digit PIN code to lock the electronic safe box.","pos":[-5.2,0,-1.5]},
-        {"id":"hotel_passport","en":"Passport & Credentials","ipa":"/ˈpæs.pɔːrt/","es":"Pasaporte Internacional","category":"Hotel & Reception","type":"object","example":"May I see your passport and booking confirmation, please?","pos":[0.05,1.12,-3.05]},
+        {"id":"hotel_safe_box","en":"Safe Box","ipa":"/seɪf bɑːks/","es":"Caja Fuerte Digital","category":"Hotel & Reception","type":"object","example":"Enter a four-digit PIN code to lock the electronic safe box.","pos":[-5.2,0,-1.5]},
+        {"id":"hotel_passport","en":"Passport & Guestbook","ipa":"/ˈpæs.pɔːrt ænd ˈɡest.bʊk/","es":"Pasaporte y Libro de Registro","category":"Hotel & Reception","type":"object","example":"May I see your passport and sign the hotel guestbook, please?","pos":[0.05,1.12,-3.05]},
         {"id":"hotel_minibar","en":"Stocked Minibar Fridge","ipa":"/ˈmɪn.i.bɑːr frɪdʒ/","es":"Minibar de Habitación","category":"Hotel Amenities","type":"object","example":"Chilled sparkling water and artisan chocolates are stocked in the minibar.","pos":[-5,0,-3.8]},
-        {"id":"hotel_king_bed","en":"King-size Luxury Bed","ipa":"/kɪŋ saɪz bed/","es":"Cama King Size de Lujo","category":"Hotel Room","type":"object","example":"The executive suite features a king-size luxury bed with Egyptian cotton sheets.","pos":[-4.8,0,3.5]},
+        {"id":"hotel_king_bed","en":"King-size Luxury Bed","ipa":"/kɪŋ saɪz bed/","es":"Cama King con Almohadas Acolchadas","category":"Hotel Room","type":"object","example":"The executive suite features a king-size luxury bed with Egyptian cotton sheets.","pos":[-4.8,0,3.5]},
         {"id":"hotel_room_service_tray","en":"Silver Room Service Tray","ipa":"/ruːm ˈsɝː.vɪs treɪ/","es":"Bandeja de Servicio a la Habitación","category":"Hotel Amenities","type":"object","example":"Fresh orange juice and croissants arrived on a polished silver room service tray.","pos":[-1.2,1.1,-3.1]},
         {"id":"hotel_do_not_disturb","en":"Do Not Disturb Door Sign","ipa":"/duː nɑːt dɪˈstɝːb/","es":"Letrero de No Molestar","category":"Hotel Amenities","type":"object","example":"Hang the Do Not Disturb door sign outside when taking an afternoon nap.","pos":[-3.2,1.2,-3.8]},
         {"id":"hotel_bathrobe","en":"Plush Cotton Bathrobe","ipa":"/plʌʃ ˈbæθ.roʊb/","es":"Bata de Baño Afelpada","category":"Hotel Amenities","type":"object","example":"Slip into the plush cotton bathrobe after relaxing in the heated jacuzzi.","pos":[-4,1.1,3.2]},
@@ -2777,7 +3132,7 @@ ensureOrbitControls();
         {"id":"hotel_pillow_menu","en":"Memory Foam Pillow Menu","ipa":"/ˈpɪl.oʊ ˈmen.juː/","es":"Menú de Almohadas Personalizadas","category":"Hotel Amenities","type":"object","example":"Select feather down or ergonomic memory foam from the luxury pillow menu.","pos":[-4.2,0.8,3.8]},
         {"id":"hotel_slippers","en":"Velvet Hotel Slippers","ipa":"/hoʊˈtel ˈslɪp.ɚz/","es":"Pantuflas Suaves de Hotel","category":"Hotel Amenities","type":"object","example":"Complimentary velvet hotel slippers are provided beside the wardrobe.","pos":[-4.2,0.1,2.8]},
         {"id":"hotel_key_drop","en":"Express Key Drop Box","ipa":"/kiː drɑːp bɑːks/","es":"Buzón de Devolución de Llaves Express","category":"Hotel Services","type":"object","example":"Drop your card into the express key drop box for frictionless checkout.","pos":[-1.4,0.9,-3.2]},
-        {"id":"hotel_coffee_station","en":"Nespresso Coffee Station","ipa":"/ˈkɑː.fi ˈsteɪ.ʃən/","es":"Estación de Café en Habitación","category":"Hotel Amenities","type":"object","example":"Brew complimentary morning espresso at the in-room coffee station.","pos":[-5.2,0.9,-2.5]},
+        {"id":"hotel_coffee_station","en":"Nespresso Coffee Station","ipa":"/ˈkɑː.fi ˈsteɪ.ʃən/","es":"Cafetera de Cortesía en Habitación","category":"Hotel Amenities","type":"object","example":"Brew complimentary morning espresso at the in-room coffee station.","pos":[-5.2,0.9,-2.5]},
         {"id":"hotel_ironing_board","en":"Steam Iron & Board","ipa":"/ˈaɪrn ænd bɔːrd/","es":"Plancha de Vapor y Tabla","category":"Hotel Amenities","type":"object","example":"Press business shirts neatly with the steam iron and collapsible board.","pos":[-5.5,0,0.5]},
         {"id":"hotel_suit_hangers","en":"Polished Wooden Hangers","ipa":"/ˈwʊd.ən ˈhæŋ.ɚz/","es":"Ganchos de Madera para Trajes","category":"Hotel Amenities","type":"object","example":"Hang dresses and tailored jackets on the polished wooden hangers.","pos":[-4.8,1.4,-1.2]},
         {"id":"hotel_swimming_pool","en":"Infinity Swimming Pool","ipa":"/ɪnˈfɪn.ə.t̬i ˈswɪm.ɪŋ puːl/","es":"Piscina Infinita Climatizada","category":"Hotel Amenities","type":"object","example":"Enjoy panoramic city views from the rooftop heated infinity swimming pool.","pos":[5.8,0,4.5]},
@@ -2821,32 +3176,36 @@ ensureOrbitControls();
         zone3: { pos: { x: 3.5, y: 3.4, z: 5.8 }, lookAt: { x: 3.2, y: 1, z: 0.5 }, label: '🍰 Postres y Barra' }
       },
       objects: [
-        {"id":"rest_dining_table","en":"Dining Table","ipa":"/ˈdaɪ.nɪŋ ˈteɪ.bəl/","es":"Mesa Vestida de Comedor","category":"Fine Restaurant","type":"object","example":"Our dining table is ready near the warm ambient lamps.","pos":[0,0,0.8]},
+        {"id":"rest_dining_table","en":"Dining Table","ipa":"/ˈdaɪ.nɪŋ ˈteɪ.bəl/","es":"Mesa Vestida de Comedor con Mantelería","category":"Fine Restaurant","type":"object","example":"Our dining table is ready near the warm ambient lamps.","pos":[0,0,0.8]},
         {"id":"rest_chef_station","en":"Chef Station","ipa":"/ʃef ˈsteɪ.ʃən/","es":"Estación del Chef","category":"Fine Restaurant","type":"object","example":"The executive chef garnishes every plate at the chef station.","pos":[0,0,-4.5]},
-        {"id":"rest_menu","en":"Menu","ipa":"/ˈmen.juː/","es":"Menú Gourmet","category":"Fine Restaurant","type":"object","example":"Our sommelier and chef prepared a seasonal tasting menu tonight.","pos":[-0.55,0.98,1.15]},
-        {"id":"rest_main_course","en":"Main Course","ipa":"/meɪn kɔːrs/","es":"Plato Fuerte / Principal","category":"Fine Restaurant","type":"object","example":"For the main course, I would like the grilled steak with herbs.","pos":[-0.4,0.98,0.65]},
-        {"id":"rest_appetizer","en":"Appetizer","ipa":"/ˈæp.ə.taɪ.zɚ/","es":"Entrada / Aperitivo Gourmet","category":"Fine Restaurant","type":"object","example":"Would you care to start with a warm appetizer before dinner?","pos":[0.42,0.98,0.65]},
-        {"id":"rest_cutlery","en":"Cutlery","ipa":"/ˈkʌt.lɚ.i/","es":"Cubiertos de Plata","category":"Fine Restaurant","type":"object","example":"The polished silver cutlery is placed neatly beside each plate.","pos":[-0.75,0.96,0.85]},
+        {"id":"rest_menu","en":"Menu","ipa":"/ˈmen.juː/","es":"Menú Abierto Encuadernado","category":"Fine Restaurant","type":"object","example":"Our sommelier and chef prepared a seasonal tasting menu tonight.","pos":[-0.55,0.98,1.15]},
+        {"id":"rest_main_course","en":"Main Course","ipa":"/meɪn kɔːrs/","es":"Plato Fuerte (Filete con Guarnición / Pasta)","category":"Fine Restaurant","type":"object","example":"For the main course, I would like the grilled steak with herbs.","pos":[-0.4,0.98,0.65]},
+        {"id":"rest_appetizer","en":"Appetizer","ipa":"/ˈæp.ə.taɪ.zɚ/","es":"Entrada / Ensalada Gourmet","category":"Fine Restaurant","type":"object","example":"Would you care to start with a warm appetizer before dinner?","pos":[0.42,0.98,0.65]},
+        {"id":"rest_cutlery","en":"Fork, Knife & Spoon","ipa":"/fɔːrk, naɪf ænd spuːn/","es":"Tenedor, Cuchillo y Cuchara de Plata","category":"Fine Restaurant","type":"object","example":"The polished silver fork, knife, and spoon are placed neatly beside each plate.","pos":[-0.75,0.96,0.85]},
+        {"id":"rest_fork","en":"Fork","ipa":"/fɔːrk/","es":"Tenedor de Mesa con Dientes Metálicos","category":"Fine Restaurant","type":"object","example":"Use the salad fork on the outside left for your starter.","pos":[-0.82,0.98,0.85]},
+        {"id":"rest_spoon","en":"Spoon","ipa":"/spuːn/","es":"Cuchara Sopera de Plata","category":"Fine Restaurant","type":"object","example":"Stir your hot bisque gently with the silver soup spoon.","pos":[0.82,0.98,0.85]},
+        {"id":"rest_olive_oil","en":"Olive Oil","ipa":"/ˈɑː.lɪv ɔɪl/","es":"Botella de Aceite de Oliva Extra Virgen","category":"Fine Restaurant","type":"object","example":"Drizzle golden extra-virgin olive oil over the warm artisan bread.","pos":[0.22,0.98,0.82]},
+        {"id":"rest_espresso_machine","en":"Espresso Machine","ipa":"/esˈpres.oʊ məˈʃiːn/","es":"Máquina de Café Espresso Profesional","category":"Kitchen Equipment","type":"object","example":"The barista steamed velvety milk on the professional espresso machine.","pos":[3.2,0.95,-3.8]},
         {"id":"rest_bill_folder","en":"Bill Folder","ipa":"/bɪl ˈfoʊl.dɚ/","es":"Carpeta de Cuenta","category":"Fine Restaurant","type":"object","example":"Place your credit card inside the leather bill folder when ready.","pos":[-0.2,0.96,1.25]},
         {"id":"rest_kitchen_pass","en":"Kitchen Pass","ipa":"/ˈkɪtʃ.ən pæs/","es":"Barra de Cocina","category":"Fine Restaurant","type":"object","example":"Waiters pick up hot dishes directly from the illuminated kitchen pass.","pos":[-3.8,0,-3.8]},
         {"id":"rest_napkin","en":"Napkin","ipa":"/ˈnæp.kɪn/","es":"Servilleta de Tela Doblada","category":"Fine Restaurant","type":"object","example":"Could you bring us an extra cloth napkin, please?","pos":[0.75,0.98,0.85]},
-        {"id":"rest_beverage","en":"Beverage","ipa":"/ˈbev.rɪdʒ/","es":"Bebida / Copa Refrescante","category":"Fine Restaurant","type":"object","example":"What kind of cold beverage would you like with your meal?","pos":[0.28,1.02,1.18]},
+        {"id":"rest_beverage","en":"Wine Glass","ipa":"/waɪn ɡlæs/","es":"Copa de Vino de Cristal Traslúcido","category":"Fine Restaurant","type":"object","example":"The sommelier poured a Cabernet into the crystal wine glass.","pos":[0.28,1.02,1.18]},
         {"id":"rest_reserved_sign","en":"Reserved Sign","ipa":"/rɪˈzɝːvd saɪn/","es":"Letrero de Mesa Reservada","category":"Fine Restaurant","type":"object","example":"This VIP table has a golden reserved sign on top.","pos":[-3.6,0.96,1.2]},
         {"id":"rest_dessert_cart","en":"Dessert Cart","ipa":"/dɪˈzɝːt kɑːrt/","es":"Carrito de Postres","category":"Fine Restaurant","type":"object","example":"Choose your favorite cake from our rolling dessert cart.","pos":[3.6,0,1.4]},
         {"id":"rest_padded_booth","en":"Padded Leather Booth","ipa":"/ˈpæd.ɪd ˈleð.ɚ buːð/","es":"Cabina Privada de Cuero Acolchado","category":"Fine Restaurant","type":"object","example":"Our party enjoyed dinner inside the cozy padded leather booth.","pos":[-4.2,0,1]},
         {"id":"rest_high_chair","en":"Toddler High Chair","ipa":"/ˈtɑːd.lɚ ˈhɑɪ ˌtʃer/","es":"Silla Alta para Niños Pequeños","category":"Restaurant Furniture","type":"object","example":"The server provided a clean wooden high chair for the toddler.","pos":[-2.2,0,1.8]},
         {"id":"rest_executive_chef","en":"Executive Head Chef","ipa":"/ɪɡˈzek.jə.t̬ɪv hed ʃef/","es":"Chef Ejecutivo del Restaurante","category":"Kitchen Team","type":"object","example":"The executive head chef personally inspected every culinary dish.","pos":[0,0,-3.8]},
-        {"id":"rest_gas_stove","en":"Commercial Gas Stove","ipa":"/kəˈmɝː.ʃəl ɡæs stoʊv/","es":"Estufa Industrial a Gas","category":"Kitchen Equipment","type":"object","example":"Blue gas flames roared beneath heavy copper pans on the commercial stove.","pos":[-1.8,0,-4.8]},
+        {"id":"rest_gas_stove","en":"Commercial Gas Stove","ipa":"/kəˈmɝː.ʃəl ɡæs stoʊv/","es":"Estufa Industrial con Campana Extractora","category":"Kitchen Equipment","type":"object","example":"Blue gas flames roared beneath heavy copper pans on the commercial stove.","pos":[-1.8,0,-4.8]},
         {"id":"rest_frying_pan","en":"Copper Sauté Frying Pan","ipa":"/ˈkɑː.pɚ soʊˈteɪ ˈfraɪ.ɪŋ pæn/","es":"Sartén de Cobre para Saltear","category":"Kitchen Equipment","type":"object","example":"The sous-chef seared sea scallops in a glowing copper sauté pan.","pos":[-1.8,0.95,-4.8]},
         {"id":"rest_cutting_board","en":"Hardwood Cutting Board","ipa":"/ˈhɑːrd.wʊd ˈkʌt.ɪŋ bɔːrd/","es":"Tabla de Picar de Madera Noble","category":"Kitchen Equipment","type":"object","example":"Chopped rosemary and thyme rested on the thick hardwood cutting board.","pos":[1.8,0.95,-4.8]},
         {"id":"rest_wine_list_leather","en":"Sommelier Wine List","ipa":"/ˌsɑːm.əlˈjeɪ waɪn lɪst/","es":"Carta de Vinos Encuadernada en Cuero","category":"Fine Restaurant","type":"object","example":"Browse the vintage Bordeaux selections in the leather sommelier wine list.","pos":[-0.65,0.98,0.95]},
         {"id":"rest_water_pitcher","en":"Chilled Water Pitcher","ipa":"/tʃɪld ˈwɑː.t̬ɚ ˈpɪtʃ.ɚ/","es":"Jarra de Agua Fría","category":"Fine Restaurant","type":"object","example":"The busser refilled our glasses from the chilled glass water pitcher.","pos":[0.65,0.98,1.1]},
-        {"id":"rest_salt_pepper","en":"Ceramic Salt & Pepper Shakers","ipa":"/sɑːlt ænd ˈpep.ɚ ˈʃeɪ.kɚz/","es":"Salero y Pimentero de Cerámica","category":"Fine Restaurant","type":"object","example":"Pass the sea salt and freshly cracked black pepper shakers, please.","pos":[0,0.98,0.95]},
+        {"id":"rest_salt_pepper","en":"Salt & Pepper Shakers","ipa":"/sɑːlt ænd ˈpep.ɚ ˈʃeɪ.kɚz/","es":"Salero y Pimentero de Vidrio","category":"Fine Restaurant","type":"object","example":"Pass the sea salt and freshly cracked black pepper shakers, please.","pos":[0,0.98,0.95]},
         {"id":"rest_toothpick_holder","en":"Bamboo Toothpick Dispenser","ipa":"/ˈtuːθ.pɪk dɪˈspen.sɚ/","es":"Dispensador de Palillos de Bambú","category":"Fine Restaurant","type":"object","example":"Take a sealed bamboo toothpick from the wooden table dispenser.","pos":[-0.15,0.98,0.75]},
         {"id":"rest_pos_terminal","en":"Handheld POS Terminal","ipa":"/ˈhænd.held ˌpiː.oʊˈes ˈtɝː.mə.nəl/","es":"Terminal Portátil de Cobro con Tarjeta","category":"Fine Restaurant","type":"object","example":"The server brought the handheld wireless POS terminal right to our table.","pos":[0.15,0.98,0.75]},
-        {"id":"rest_service_tray","en":"Heavy Oval Service Tray","ipa":"/ˈoʊ.vəl ˈsɝː.vɪs treɪ/","es":"Bandeja Ovalada de Mesero","category":"Fine Restaurant","type":"object","example":"The waiter balanced four hot dinner entrées on the large oval service tray.","pos":[-2.8,0.95,-3.8]},
+        {"id":"rest_service_tray","en":"Serving Tray","ipa":"/ˈsɝː.vɪŋ treɪ/","es":"Bandeja de Mesero Cromada","category":"Fine Restaurant","type":"object","example":"The waiter balanced four hot dinner entrées on the large oval serving tray.","pos":[-2.8,0.95,-3.8]},
         {"id":"rest_chef_uniform","en":"White Chef Jacket & Apron","ipa":"/waɪt ʃef ˈdʒæk.ɪt ænd ˈeɪ.prən/","es":"Filipina y Mandil Blanco de Chef","category":"Kitchen Team","type":"object","example":"Every line cook wears a spotless double-breasted white chef jacket.","pos":[0.8,0.95,-4]},
-        {"id":"rest_steak_knife","en":"Serrated Steak Knife","ipa":"/səˈreɪ.t̬ɪd steɪk naɪf/","es":"Cuchillo Sierra para Carnes","category":"Fine Restaurant","type":"object","example":"Cut through the prime ribeye steak with the razor-sharp serrated knife.","pos":[-0.6,0.98,0.75]},
+        {"id":"rest_steak_knife","en":"Knife","ipa":"/naɪf/","es":"Cuchillo de Mesa / Cuchillo para Carnes","category":"Fine Restaurant","type":"object","example":"Cut through the prime ribeye steak with the razor-sharp serrated knife.","pos":[-0.6,0.98,0.75]},
         {"id":"rest_soup_tureen","en":"Porcelain Soup Tureen","ipa":"/ˈpɔːr.səl.ɪn suːp tʊˈriːn/","es":"Sopera de Porcelana","category":"Fine Restaurant","type":"object","example":"Creamy lobster bisque was ladled out of the lidded porcelain soup tureen.","pos":[2.2,0.95,-4.5]},
         {"id":"rest_bread_plate","en":"Butter & Sourdough Plate","ipa":"/ˈbʌt̬.ɚ ænd bred pleɪt/","es":"Platillo de Mantequilla y Pan","category":"Fine Restaurant","type":"object","example":"Spread cultured French butter over the warm sourdough slice.","pos":[-0.65,0.98,0.65]},
         {"id":"rest_sauce_boat","en":"Silver Gravy Sauce Boat","ipa":"/ˈsɪl.vɚ ˈɡreɪ.vi sɑːs boʊt/","es":"Salsera de Plata para Gravy","category":"Fine Restaurant","type":"object","example":"Pour rich peppercorn reduction from the silver sauce boat over your steak.","pos":[0.65,0.98,0.65]},
@@ -4101,61 +4460,149 @@ ensureOrbitControls();
     }
     // --- MODELOS 3D DETALLADOS ADICIONALES: HOUSE ---
     else if (id === 'house_coffee_maker' || id === 'hotel_coffee_station') {
-      const base = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.04, 0.34), matDark);
+      const base = createBeveledBoxExtrude(0.30, 0.04, 0.34, matDark, 0.015, 0.012);
       base.position.y = 0.02;
-      const tower = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.38, 0.16), matDark);
+      const tower = createBeveledBoxExtrude(0.28, 0.38, 0.16, matDark, 0.018, 0.014);
       tower.position.set(0, 0.21, -0.08);
-      const topCap = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.06, 0.34), matSilver);
+      const topCap = createBeveledBoxExtrude(0.30, 0.06, 0.34, matSilver, 0.015, 0.012);
       topCap.position.set(0, 0.38, 0);
-      const carafe = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.11, 0.20, 16), M.glassClear);
-      carafe.position.set(0, 0.14, 0.06);
-      const coffeeLiquid = new THREE.Mesh(new THREE.CylinderGeometry(0.082, 0.10, 0.12, 14), matWalnut);
-      coffeeLiquid.position.set(0, 0.10, 0.06);
-      const handle = new THREE.Mesh(new THREE.TorusGeometry(0.055, 0.012, 8, 16, Math.PI), matDark);
-      handle.position.set(0.10, 0.15, 0.06);
-      handle.rotation.z = -Math.PI / 2;
+      const carafe = createLatheProfileMesh([[0.0, 0.0], [0.095, 0.0], [0.11, 0.08], [0.09, 0.19], [0.095, 0.20]], M.glassClear, 20);
+      carafe.position.set(0, 0.04, 0.06);
+      const coffeeLiquid = createLatheProfileMesh([[0.0, 0.0], [0.085, 0.0], [0.098, 0.06], [0.082, 0.12], [0.0, 0.12]], matWalnut, 18);
+      coffeeLiquid.position.set(0, 0.045, 0.06);
+      const handle = createTubeHandleMesh([[0.09, 0.21, 0.06], [0.155, 0.18, 0.06], [0.155, 0.10, 0.06], [0.095, 0.07, 0.06]], 0.012, matDark);
       group.add(base, tower, topCap, carafe, coffeeLiquid, handle);
     } else if (id === 'house_microwave') {
-      const chassis = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.34, 0.38), matSilver);
+      const chassis = createBeveledBoxExtrude(0.56, 0.34, 0.38, matSilver, 0.02, 0.015);
       chassis.position.y = 0.17;
-      const windowGlass = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.24, 0.02), M.ironBlack);
-      windowGlass.position.set(-0.07, 0.17, 0.19);
-      const keypad = new THREE.Mesh(new THREE.PlaneGeometry(0.11, 0.24), M.emissiveScreen);
-      keypad.position.set(0.20, 0.17, 0.195);
-      const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.22, 10), matSilver);
-      handle.position.set(0.11, 0.17, 0.21);
-      group.add(chassis, windowGlass, keypad, handle);
+      const doorFrame = createBeveledBoxExtrude(0.38, 0.28, 0.025, M.ironBlack, 0.012, 0.01);
+      doorFrame.position.set(-0.07, 0.17, 0.19);
+      const windowGlass = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.22, 0.03), M.glassClear);
+      windowGlass.position.set(-0.07, 0.17, 0.192);
+      const interiorGlow = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.18, 0.01), M.emissiveBulb);
+      interiorGlow.position.set(-0.07, 0.17, 0.175);
+      const keypadMat = ProceduralMaterialFactory.createDigitalScreenMaterial({
+        key: 'microwave_keypad',
+        bg: '#090d16',
+        accent: '#10b981',
+        title: '12:45',
+        lines: ['[1] [2] [3]', '[4] [5] [6]', '[7] [8] [9]', '[START] [0]']
+      });
+      const keypad = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.26), keypadMat);
+      keypad.position.set(0.20, 0.17, 0.202);
+      const handle = createTubeHandleMesh([[0.10, 0.27, 0.20], [0.10, 0.27, 0.235], [0.10, 0.07, 0.235], [0.10, 0.07, 0.20]], 0.011, matSilver);
+      group.add(chassis, doorFrame, windowGlass, interiorGlow, keypad, handle);
     } else if (id === 'house_toaster') {
-      const body = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.22, 0.20), matSilver);
+      const body = createBeveledBoxExtrude(0.30, 0.22, 0.20, matSilver, 0.022, 0.018);
       body.position.y = 0.11;
-      const slot1 = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.02, 0.035), M.ironBlack);
-      slot1.position.set(0, 0.22, -0.035);
-      const slot2 = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.02, 0.035), M.ironBlack);
-      slot2.position.set(0, 0.22, 0.035);
-      const toast1 = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.10, 0.024), matWood);
-      toast1.position.set(0, 0.25, -0.035);
-      const toast2 = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.10, 0.024), matWood);
-      toast2.position.set(0, 0.25, 0.035);
-      const lever = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.02, 0.04), matDark);
-      lever.position.set(0.16, 0.14, 0);
-      group.add(body, slot1, slot2, toast1, toast2, lever);
+      const slot1 = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.025, 0.038), M.ironBlack);
+      slot1.position.set(0, 0.222, -0.04);
+      const slot2 = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.025, 0.038), M.ironBlack);
+      slot2.position.set(0, 0.222, 0.04);
+      const toast1 = createBeveledBoxExtrude(0.14, 0.11, 0.024, matWood, 0.008, 0.006);
+      toast1.position.set(0, 0.25, -0.04);
+      const toast2 = createBeveledBoxExtrude(0.14, 0.11, 0.024, matWood, 0.008, 0.006);
+      toast2.position.set(0, 0.25, 0.04);
+      const leverTrack = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.12, 0.02), M.ironBlack);
+      leverTrack.position.set(0.16, 0.12, 0);
+      const lever = createBeveledBoxExtrude(0.045, 0.022, 0.045, matDark, 0.006, 0.005);
+      lever.position.set(0.175, 0.15, 0);
+      group.add(body, slot1, slot2, toast1, toast2, leverTrack, lever);
     } else if (id === 'house_blender') {
-      const motorBase = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.13, 0.18, 18), matDark);
-      motorBase.position.y = 0.09;
-      const dial = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.02, 12), matSilver);
+      const motorBase = createLatheProfileMesh([[0.0, 0.0], [0.13, 0.0], [0.125, 0.06], [0.105, 0.16], [0.11, 0.18], [0.0, 0.18]], matDark, 22);
+      const dial = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.024, 14), matSilver);
       dial.rotation.x = Math.PI / 2;
-      dial.position.set(0, 0.09, 0.12);
-      const pitcher = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.085, 0.30, 18), M.glassClear);
-      pitcher.position.y = 0.33;
-      const smoothie = new THREE.Mesh(new THREE.CylinderGeometry(0.098, 0.08, 0.18, 16), matRosePink);
-      smoothie.position.y = 0.29;
-      const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.115, 0.035, 18), matDark);
-      lid.position.y = 0.49;
-      group.add(motorBase, dial, pitcher, smoothie, lid);
+      dial.position.set(0, 0.09, 0.122);
+      const pitcher = createLatheProfileMesh([[0.0, 0.18], [0.085, 0.18], [0.095, 0.32], [0.115, 0.48], [0.108, 0.48]], M.glassClear, 22);
+      const bladeHub = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 0.03, 12), matSilver);
+      bladeHub.position.y = 0.20;
+      const blade1 = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.006, 0.02), matSilver);
+      blade1.position.y = 0.21;
+      blade1.rotation.z = 0.22;
+      const blade2 = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.006, 0.12), matSilver);
+      blade2.position.y = 0.215;
+      blade2.rotation.x = -0.22;
+      const smoothie = createLatheProfileMesh([[0.0, 0.19], [0.08, 0.19], [0.098, 0.38], [0.0, 0.38]], matRosePink, 18);
+      const lid = createLatheProfileMesh([[0.0, 0.475], [0.118, 0.475], [0.118, 0.505], [0.04, 0.52], [0.0, 0.52]], matDark, 20);
+      const handle = createTubeHandleMesh([[0.105, 0.45, 0], [0.165, 0.43, 0], [0.16, 0.24, 0], [0.09, 0.22, 0]], 0.012, matDark);
+      group.add(motorBase, dial, pitcher, bladeHub, blade1, blade2, smoothie, lid, handle);
+    } else if (id === 'house_remote_control') {
+      const body = createBeveledBoxExtrude(0.09, 0.03, 0.24, M.ironBlack, 0.008, 0.006);
+      body.position.y = 0.015;
+      const powerBtn = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.012, 12), matRed);
+      powerBtn.position.set(-0.02, 0.032, -0.085);
+      const dpadRing = new THREE.Mesh(new THREE.TorusGeometry(0.024, 0.006, 10, 18), matSilver);
+      dpadRing.rotation.x = Math.PI / 2;
+      dpadRing.position.set(0, 0.032, -0.02);
+      for (let r = 0; r < 3; r++) {
+        for (let c = -1; c <= 1; c++) {
+          const btn = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.008, 0.014), matDark);
+          btn.position.set(c * 0.024, 0.032, 0.035 + r * 0.024);
+          group.add(btn);
+        }
+      }
+      group.add(body, powerBtn, dpadRing);
+    } else if (id === 'house_laptop') {
+      const base = createBeveledBoxExtrude(0.38, 0.018, 0.26, matSilver, 0.006, 0.005);
+      base.position.y = 0.01;
+      const keyboardWell = new THREE.Mesh(new THREE.BoxGeometry(0.33, 0.005, 0.14), M.ironBlack);
+      keyboardWell.position.set(0, 0.02, -0.025);
+      const trackpad = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.004, 0.065), matDark);
+      trackpad.position.set(0, 0.02, 0.08);
+      const lidGroup = new THREE.Group();
+      lidGroup.position.set(0, 0.018, -0.125);
+      lidGroup.rotation.x = -0.22;
+      const lidShell = createBeveledBoxExtrude(0.38, 0.25, 0.012, matSilver, 0.005, 0.004);
+      lidShell.position.set(0, 0.125, 0);
+      const screenMat = ProceduralMaterialFactory.createDigitalScreenMaterial({
+        key: 'laptop_ui_screen',
+        bg: '#0f172a',
+        accent: '#38bdf8',
+        title: 'CODE STUDIO PRO',
+        lines: ['> npm run build:3d', '✓ PBR Shaders Ready', '✓ 60 FPS Verified', '★ English Mastery 100%']
+      });
+      const lcd = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.21), screenMat);
+      lcd.position.set(0, 0.125, 0.008);
+      lidGroup.add(lidShell, lcd);
+      group.add(base, keyboardWell, trackpad, lidGroup);
+    } else if (id === 'house_toothbrush') {
+      const tumbler = createLatheProfileMesh([[0.0, 0.0], [0.042, 0.0], [0.052, 0.12], [0.048, 0.12]], M.glassClear, 18);
+      const handleCurve = createTubeHandleMesh([[0, 0.02, 0], [0.01, 0.09, 0.005], [0.022, 0.16, 0.01], [0.028, 0.21, 0.012]], 0.008, matSky);
+      const bristleHead = createBeveledBoxExtrude(0.016, 0.036, 0.014, matWhite, 0.003, 0.002);
+      bristleHead.position.set(0.028, 0.22, 0.022);
+      const pasteSwirl = new THREE.Mesh(new THREE.SphereGeometry(0.009, 10, 10), matTeal);
+      pasteSwirl.position.set(0.028, 0.225, 0.032);
+      group.add(tumbler, handleCurve, bristleHead, pasteSwirl);
+    } else if (id === 'house_soap_dispenser') {
+      const bottle = createLatheProfileMesh([
+        [0.0, 0.0], [0.052, 0.0], [0.058, 0.04], [0.056, 0.13], [0.024, 0.165], [0.022, 0.185], [0.0, 0.185]
+      ], matTeal, 20);
+      const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.025, 14), matSilver);
+      collar.position.y = 0.195;
+      const nozzle = createTubeHandleMesh([[0, 0.205, 0], [0, 0.23, 0.01], [0, 0.225, 0.055]], 0.007, matSilver);
+      group.add(bottle, collar, nozzle);
+    } else if (id === 'house_shampoo_bottle') {
+      const body = createLatheProfileMesh([
+        [0.0, 0.0], [0.048, 0.0], [0.056, 0.06], [0.054, 0.18], [0.026, 0.22], [0.0, 0.22]
+      ], matRosePink, 20);
+      const flipCap = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.032, 16), matWhite);
+      flipCap.position.y = 0.235;
+      const labelMat = ProceduralMaterialFactory.createProductLabelMaterial({
+        key: 'shampoo_label',
+        bg: '#fdf2f8',
+        band: '#db2777',
+        title: 'SILK CARE',
+        subtitle: 'BOTANICAL SHAMPOO',
+        badge: '500ml',
+        roughness: 0.35
+      });
+      const frontLabel = new THREE.Mesh(new THREE.PlaneGeometry(0.065, 0.11), labelMat);
+      frontLabel.position.set(0, 0.11, 0.057);
+      group.add(body, flipCap, frontLabel);
     } else if (id === 'house_dishwasher' || id === 'house_washing_machine' || id === 'house_clothes_dryer') {
-      const cabinet = new THREE.Mesh(new THREE.BoxGeometry(0.78, 0.92, 0.72), id === 'house_dishwasher' ? matSilver : matWhite);
+      const cabinet = createBeveledBoxExtrude(0.78, 0.92, 0.72, id === 'house_dishwasher' ? matSilver : matWhite, 0.02, 0.015);
       cabinet.position.y = 0.46;
-      const topPanel = new THREE.Mesh(new THREE.BoxGeometry(0.79, 0.12, 0.73), matDark);
+      const topPanel = createBeveledBoxExtrude(0.79, 0.12, 0.73, matDark, 0.012, 0.01);
       topPanel.position.y = 0.86;
       const display = new THREE.Mesh(new THREE.PlaneGeometry(0.24, 0.06), M.emissiveScreen);
       display.position.set(0.18, 0.86, 0.37);
@@ -4174,17 +4621,16 @@ ensureOrbitControls();
         group.add(drumRim, drumGlass);
       }
     } else if (id === 'house_kitchen_counter') {
-      const base = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.88, 0.78), matWalnut);
+      const base = createBeveledBoxExtrude(2.2, 0.88, 0.78, matWalnut, 0.02, 0.015);
       base.position.y = 0.44;
-      const marbleTop = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.06, 0.84), matWhite);
+      const marbleTop = createBeveledBoxExtrude(2.3, 0.06, 0.84, matWhite, 0.015, 0.012);
       marbleTop.position.y = 0.91;
       const sinkBasin = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.04, 0.44), matSilver);
       sinkBasin.position.set(-0.4, 0.93, 0);
-      const faucetArc = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.018, 10, 20, Math.PI), matSilver);
-      faucetArc.position.set(-0.4, 1.06, -0.14);
+      const faucetArc = createTubeHandleMesh([[-0.4, 0.94, -0.18], [-0.4, 1.14, -0.18], [-0.4, 1.16, -0.04], [-0.4, 1.08, -0.02]], 0.016, matSilver);
       group.add(base, marbleTop, sinkBasin, faucetArc);
     } else if (id === 'house_dining_table') {
-      const top = new THREE.Mesh(new THREE.BoxGeometry(1.95, 0.08, 1.05), matWalnut);
+      const top = createBeveledBoxExtrude(1.95, 0.08, 1.05, matWalnut, 0.018, 0.015);
       top.position.y = 0.78;
       const runner = new THREE.Mesh(new THREE.BoxGeometry(1.65, 0.015, 0.32), matVelvet);
       runner.position.y = 0.825;
@@ -4195,9 +4641,9 @@ ensureOrbitControls();
         group.add(leg);
       });
     } else if (id === 'house_dining_chair') {
-      const seat = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.06, 0.48), matVelvet);
+      const seat = createBeveledBoxExtrude(0.48, 0.06, 0.48, matVelvet, 0.014, 0.012);
       seat.position.y = 0.46;
-      const back = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.54, 0.05), matWalnut);
+      const back = createBeveledBoxExtrude(0.48, 0.54, 0.05, matWalnut, 0.012, 0.01);
       back.position.set(0, 0.75, -0.22);
       group.add(seat, back);
       [[-0.20, -0.20], [0.20, -0.20], [-0.20, 0.20], [0.20, 0.20]].forEach(([lx, lz]) => {
@@ -4220,17 +4666,24 @@ ensureOrbitControls();
         group.add(blade);
       }
     } else if (id === 'house_oled_tv') {
-      const standBase = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.03, 0.28), matSilver);
+      const standBase = createBeveledBoxExtrude(0.68, 0.03, 0.28, matSilver, 0.008, 0.006);
       standBase.position.y = 0.015;
       const neck = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.18, 0.06), matDark);
       neck.position.y = 0.10;
-      const bezel = new THREE.Mesh(new THREE.BoxGeometry(1.75, 1.02, 0.04), M.ironBlack);
+      const bezel = createBeveledBoxExtrude(1.75, 1.02, 0.04, M.ironBlack, 0.012, 0.01);
       bezel.position.y = 0.65;
-      const screen = new THREE.Mesh(new THREE.PlaneGeometry(1.68, 0.95), M.emissiveScreen);
+      const tvMat = ProceduralMaterialFactory.createDigitalScreenMaterial({
+        key: 'oled_tv_cinema',
+        bg: '#090d16',
+        accent: '#38bdf8',
+        title: '4K ULTRA HD CINEMA',
+        lines: ['★ MASTER ENGLISH IMMERSION', '▶ Now Playing: World Tour 3D', '🔊 Dolby Atmos Active']
+      });
+      const screen = new THREE.Mesh(new THREE.PlaneGeometry(1.68, 0.95), tvMat);
       screen.position.set(0, 0.65, 0.025);
       group.add(standBase, neck, bezel, screen);
     } else if (id === 'house_soundbar') {
-      const bar = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.09, 0.12), M.ironBlack);
+      const bar = createBeveledBoxExtrude(1.15, 0.09, 0.12, M.ironBlack, 0.012, 0.01);
       bar.position.y = 0.045;
       const grille = new THREE.Mesh(new THREE.BoxGeometry(1.10, 0.07, 0.02), matDark);
       grille.position.set(0, 0.045, 0.06);
@@ -4238,7 +4691,7 @@ ensureOrbitControls();
       led.position.set(0, 0.045, 0.072);
       group.add(bar, grille, led);
     } else if (id === 'house_wardrobe') {
-      const body = new THREE.Mesh(new THREE.BoxGeometry(1.25, 2.05, 0.62), matWalnut);
+      const body = createBeveledBoxExtrude(1.25, 2.05, 0.62, matWalnut, 0.02, 0.015);
       body.position.y = 1.025;
       const seam = new THREE.Mesh(new THREE.BoxGeometry(0.02, 1.95, 0.64), matDark);
       seam.position.y = 1.025;
@@ -4248,19 +4701,22 @@ ensureOrbitControls();
       handleR.position.set(0.08, 1.05, 0.33);
       group.add(body, seam, handleL, handleR);
     } else if (id === 'house_full_mirror') {
-      const frame = new THREE.Mesh(new THREE.BoxGeometry(0.68, 1.68, 0.06), matGold);
+      const frame = createBeveledBoxExtrude(0.68, 1.68, 0.06, matGold, 0.018, 0.014);
       frame.position.y = 0.84;
       frame.rotation.x = -0.08;
-      const glass = new THREE.Mesh(new THREE.BoxGeometry(0.58, 1.58, 0.07), M.glassClear);
+      const ledStrip = new THREE.Mesh(new THREE.BoxGeometry(0.61, 1.61, 0.065), M.emissiveBulb);
+      ledStrip.position.y = 0.84;
+      ledStrip.rotation.x = -0.08;
+      const glass = new THREE.Mesh(new THREE.BoxGeometry(0.56, 1.56, 0.072), M.glassClear);
       glass.position.y = 0.84;
       glass.rotation.x = -0.08;
-      group.add(frame, glass);
+      group.add(frame, ledStrip, glass);
     } else if (id === 'house_nightstand') {
-      const body = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.56, 0.44), matWalnut);
+      const body = createBeveledBoxExtrude(0.52, 0.56, 0.44, matWalnut, 0.016, 0.012);
       body.position.y = 0.28;
-      const drawer1 = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.18, 0.03), matWood);
+      const drawer1 = createBeveledBoxExtrude(0.46, 0.18, 0.03, matWood, 0.008, 0.006);
       drawer1.position.set(0, 0.40, 0.22);
-      const drawer2 = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.18, 0.03), matWood);
+      const drawer2 = createBeveledBoxExtrude(0.46, 0.18, 0.03, matWood, 0.008, 0.006);
       drawer2.position.set(0, 0.18, 0.22);
       const knob1 = new THREE.Mesh(new THREE.SphereGeometry(0.022, 10, 10), matGold);
       knob1.position.set(0, 0.40, 0.25);
@@ -4268,15 +4724,15 @@ ensureOrbitControls();
       knob2.position.set(0, 0.18, 0.25);
       group.add(body, drawer1, drawer2, knob1, knob2);
     } else if (id === 'house_bedside_lamp') {
-      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.13, 0.04, 16), matGold);
-      base.position.y = 0.02;
-      const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.025, 0.26, 12), matGold);
-      stem.position.y = 0.15;
-      const shade = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.22, 20, 1, true), matWhite);
-      shade.position.y = 0.32;
+      const baseAndStem = createLatheProfileMesh([
+        [0.0, 0.0], [0.13, 0.0], [0.11, 0.035], [0.035, 0.06], [0.022, 0.26], [0.0, 0.26]
+      ], matGold, 20);
+      const shade = createLatheProfileMesh([
+        [0.18, 0.22], [0.11, 0.43]
+      ], matWhite, 22);
       const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.05, 12, 12), M.emissiveBulb);
       bulb.position.y = 0.28;
-      group.add(base, stem, shade, bulb);
+      group.add(baseAndStem, shade, bulb);
     } else if (id === 'house_curtains' || id === 'dating_velvet_drapes') {
       const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 2.2, 12), matGold);
       rod.rotation.z = Math.PI / 2;
@@ -4296,7 +4752,7 @@ ensureOrbitControls();
       center.position.y = 0.018;
       group.add(outer, inner, center);
     } else if (id === 'house_wifi_router') {
-      const body = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.05, 0.18), M.ironBlack);
+      const body = createBeveledBoxExtrude(0.28, 0.05, 0.18, M.ironBlack, 0.008, 0.006);
       body.position.y = 0.025;
       const leds = new THREE.Mesh(new THREE.PlaneGeometry(0.18, 0.015), M.emissiveScreen);
       leds.position.set(0, 0.03, 0.092);
@@ -4308,7 +4764,7 @@ ensureOrbitControls();
       });
       group.add(body, leds);
     } else if (id === 'house_power_outlet' || id === 'house_light_switch' || id === 'hotel_thermostat') {
-      const plate = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.32, 0.04), matWhite);
+      const plate = createBeveledBoxExtrude(0.22, 0.32, 0.04, matWhite, 0.008, 0.006);
       plate.position.y = 0.16;
       const inner = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.18, 0.05), id === 'hotel_thermostat' ? M.emissiveScreen : matDark);
       inner.position.y = 0.16;
@@ -5540,6 +5996,9 @@ ensureOrbitControls();
     };
     WORLD3D_VOCAB_CATALOG[itemSpec.id] = userData;
     group.userData = Object.assign({}, userData);
+    if (scenarioKey !== 'space') {
+      attachContactShadow(group, 0.42);
+    }
     applyNormalMapToObjectHierarchy(group, scenarioKey);
     group.traverse(child => {
       if (child.isMesh) {
@@ -5976,10 +6435,9 @@ ensureOrbitControls();
               (typeof global !== 'undefined' && global.MasterENG3DBuilders) ||
               (typeof globalThis !== 'undefined' && globalThis.MasterENG3DBuilders);
 
-    if (key === 'house') {
-      buildDetailedHouseAndGarden(scenarioDynamicRoot);
+    const spawnMissingCatalogObjects = () => {
       const existingIds = new Set(interactiveObjects.map(o => o.userData && o.userData.id).filter(Boolean));
-      scen.objects.forEach(item => {
+      (scen.objects || []).forEach(item => {
         if (!existingIds.has(item.id)) {
           let node = null;
           if (item.type === 'concept' || item.type === 'phrase') {
@@ -5990,18 +6448,29 @@ ensureOrbitControls();
           if (node) scenarioDynamicRoot.add(node);
         }
       });
+    };
+
+    if (key === 'house') {
+      buildDetailedHouseAndGarden(scenarioDynamicRoot);
+      spawnMissingCatalogObjects();
     } else if (key === 'garden' && B && typeof B.buildGardenScene === 'function') {
       B.buildGardenScene(scenarioDynamicRoot, scen.objects);
+      spawnMissingCatalogObjects();
     } else if (key === 'space' && B && typeof B.buildSpaceScene === 'function') {
       B.buildSpaceScene(scenarioDynamicRoot, scen.objects);
+      spawnMissingCatalogObjects();
     } else if (key === 'hotel' && B && typeof B.buildHotelScene === 'function') {
       B.buildHotelScene(scenarioDynamicRoot);
+      spawnMissingCatalogObjects();
     } else if (key === 'restaurant' && B && typeof B.buildRestaurantScene === 'function') {
       B.buildRestaurantScene(scenarioDynamicRoot);
+      spawnMissingCatalogObjects();
     } else if (key === 'supermarket' && B && typeof B.buildSupermarketScene === 'function') {
       B.buildSupermarketScene(scenarioDynamicRoot);
+      spawnMissingCatalogObjects();
     } else if (key === 'dating' && B && typeof B.buildDatingScene === 'function') {
       B.buildDatingScene(scenarioDynamicRoot);
+      spawnMissingCatalogObjects();
       rebuildDatingSeatedAvatars();
       if (typeof global.setWaiterState === 'function') {
         global.setWaiterState('station', { silent: true });
@@ -8923,7 +9392,10 @@ ensureOrbitControls();
     renderer.setPixelRatio(Math.min((typeof window !== 'undefined' && window.devicePixelRatio) || 1, 1.5));
     renderer.shadowMap.enabled = false; // Desactivar shadowMap costoso para garantizar 60 FPS clavados en los 7 mundos
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.1;
+    renderer.toneMappingExposure = 1.15;
+    if (THREE.SRGBColorSpace) {
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+    }
 
     renderer.domElement.id = 'world3d-canvas';
     renderer.domElement.className = 'w-full h-full block select-none cursor-grab active:cursor-grabbing';

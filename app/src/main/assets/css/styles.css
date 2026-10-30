@@ -400,9 +400,9 @@
       left: 50%;
       transform: translateX(-50%);
       z-index: 95;
-      background: rgba(15, 18, 26, 0.92);
-      backdrop-filter: none !important;
-      -webkit-backdrop-filter: none !important;
+      background: rgba(15, 23, 42, 0.94);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border: 1.5px solid rgba(168, 85, 247, 0.7);
       border-radius: 16px;
       padding: 8px 14px;
@@ -446,9 +446,9 @@
         left: 50% !important;
         transform: translateX(-50%) !important;
         z-index: 55 !important;
-        background: rgba(15, 18, 26, 0.92) !important;
-        backdrop-filter: none !important;
-        -webkit-backdrop-filter: none !important;
+        background: rgba(15, 23, 42, 0.82) !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
         border: 1px solid rgba(148, 163, 184, 0.28) !important;
         border-radius: 9999px !important;
         padding: 6px 16px !important;
@@ -3649,30 +3649,4 @@ header, .main-header, .top-nav, #appHeader {
     min-width: 32px !important;
     padding: 0 !important;
   }
-}
-
-/* ==========================================================================
-   OPTIMIZACIÓN CRÍTICA WEBGL GPU: CERO BACKDROP-FILTER SOBRE EL CANVAS 3D
-   (Elimina copias y readbacks del framebuffer completo en cada frame)
-   ========================================================================== */
-#view-worldtour *,
-#world3d-container *,
-#threeCanvasContainer *,
-#threeWebGLMount *,
-#world3d-view *,
-#worldTourTopBar,
-#world3dOrientationPromptBanner,
-#world3dVocabHudCard,
-#world3dControlsHelpModal,
-#world3dPortraitWarningOverlay,
-#unified-world3d-cam-bar,
-#datingAvatarGenderSelectorBar,
-#datingAvatarGenderSelectorBar *,
-#datingBottomDockPills,
-#datingBottomDockPills *,
-#datingWaiterChatPanel,
-#datingPartnerChatPanel,
-.world3d-hud-element {
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
 }

@@ -463,6 +463,10 @@
         global.World3D.interactiveObjects.push(group);
       }
     }
+
+    if (typeof global.attachContactShadow === 'function') {
+      global.attachContactShadow(group, 0.36);
+    }
   }
 
   // ============================================================================
@@ -603,19 +607,22 @@
     attachInteractiveData(deskGroup, deskMeta, 'Hotel & Reception');
     sceneContainer.add(deskGroup);
 
-    // Bellhop Bell
+    // Bellhop Bell (LatheGeometry)
     const bellMeta = getMeta('hotel_bellhop_bell');
     const bellGroup = new THREE.Group();
     bellGroup.name = 'BellhopBell';
 
-    const bellBase = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.09, 0.02, 20), M.metalBrass);
+    const bellBase = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.09, 0.02, 22), M.metalBrass);
     bellBase.position.y = 0.01;
-    const bellDome = new THREE.Mesh(new THREE.SphereGeometry(0.065, 12, 10, 0, Math.PI * 2, 0, Math.PI * 0.55), M.metalBrass);
-    bellDome.position.y = 0.03;
-    const bellPin = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.035, 10), M.metalChrome);
-    bellPin.position.y = 0.085;
-    const bellKnob = new THREE.Mesh(new THREE.SphereGeometry(0.015, 12, 12), M.metalBrass);
-    bellKnob.position.y = 0.105;
+    const bellDome = typeof global.createLatheProfileMesh === 'function'
+      ? global.createLatheProfileMesh([
+          [0.072, 0.02], [0.068, 0.045], [0.052, 0.072], [0.022, 0.088], [0.0, 0.09]
+        ], M.metalBrass, 24)
+      : new THREE.Mesh(new THREE.SphereGeometry(0.065, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.55), M.metalBrass);
+    const bellPin = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.035, 12), M.metalChrome);
+    bellPin.position.y = 0.095;
+    const bellKnob = new THREE.Mesh(new THREE.SphereGeometry(0.016, 14, 14), M.metalBrass);
+    bellKnob.position.y = 0.112;
 
     bellGroup.add(bellBase, bellDome, bellPin, bellKnob);
     bellGroup.position.set(0.65, 1.22, -3.1);
@@ -1595,6 +1602,30 @@
     attachInteractiveData(menuGroup, menuMeta, 'Romantic Date');
     sceneContainer.add(menuGroup);
 
+    // G2. Estuche de Anillo de Terciopelo con Diamante (Velvet Ring Box)
+    const ringMeta = getMeta('dating_ring_box');
+    const ringGroup = new THREE.Group();
+    ringGroup.name = 'VelvetRingBox';
+    const boxBase = typeof global.createBeveledBoxExtrude === 'function'
+      ? global.createBeveledBoxExtrude(0.095, 0.048, 0.095, M.velvetBurgundy, 0.008, 0.006)
+      : new THREE.Mesh(new THREE.BoxGeometry(0.095, 0.048, 0.095), M.velvetBurgundy);
+    boxBase.position.y = 0.024;
+    const boxLid = typeof global.createBeveledBoxExtrude === 'function'
+      ? global.createBeveledBoxExtrude(0.095, 0.032, 0.095, M.velvetBurgundy, 0.008, 0.006)
+      : new THREE.Mesh(new THREE.BoxGeometry(0.095, 0.032, 0.095), M.velvetBurgundy);
+    boxLid.position.set(0, 0.068, -0.042);
+    boxLid.rotation.x = -0.95;
+    const satinCushion = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.016, 0.075), M.linenWhite);
+    satinCushion.position.y = 0.048;
+    const goldBand = new THREE.Mesh(new THREE.TorusGeometry(0.018, 0.004, 12, 24), M.metalBrass);
+    goldBand.position.set(0, 0.064, 0.005);
+    const diamond = new THREE.Mesh(new THREE.OctahedronGeometry(0.011, 0), M.glassClear);
+    diamond.position.set(0, 0.084, 0.005);
+    ringGroup.add(boxBase, boxLid, satinCushion, goldBand, diamond);
+    ringGroup.position.set(0.18, 0.98, 0.14);
+    attachInteractiveData(ringGroup, ringMeta, 'Romantic Date');
+    sceneContainer.add(ringGroup);
+
     // H. Violín acústico detallado con arco y atril
     const violinMeta = getMeta('dating_violin');
     const violinGroup = new THREE.Group();
@@ -1712,12 +1743,15 @@
   B['hotel_bellhop_bell'] = function(item, scen, P) {
     const M = createSharedPBRMaterials(THREE);
     const g = new THREE.Group();
-    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.09, 0.02, 20), M.metalBrass);
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.09, 0.02, 22), M.metalBrass);
     base.position.y = 0.01;
-    const dome = new THREE.Mesh(new THREE.SphereGeometry(0.065, 12, 10, 0, Math.PI * 2, 0, Math.PI * 0.55), M.metalBrass);
-    dome.position.y = 0.03;
-    const pin = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.035, 10), M.metalChrome);
-    pin.position.y = 0.085;
+    const dome = typeof global.createLatheProfileMesh === 'function'
+      ? global.createLatheProfileMesh([
+          [0.072, 0.02], [0.068, 0.045], [0.052, 0.072], [0.022, 0.088], [0.0, 0.09]
+        ], M.metalBrass, 24)
+      : new THREE.Mesh(new THREE.SphereGeometry(0.065, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.55), M.metalBrass);
+    const pin = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.035, 12), M.metalChrome);
+    pin.position.y = 0.095;
     g.add(base, dome, pin);
     return g;
   };
@@ -1725,27 +1759,45 @@
   B['hotel_luggage_cart'] = function(item, scen, P) {
     const M = createSharedPBRMaterials(THREE);
     const g = new THREE.Group();
-    const platform = new THREE.Mesh(new THREE.BoxGeometry(1.65, 0.12, 0.95), M.velvetBurgundy);
+    const platform = typeof global.createBeveledBoxExtrude === 'function'
+      ? global.createBeveledBoxExtrude(1.65, 0.12, 0.95, M.velvetBurgundy, 0.015, 0.012)
+      : new THREE.Mesh(new THREE.BoxGeometry(1.65, 0.12, 0.95), M.velvetBurgundy);
     platform.position.y = 0.22;
+    if (typeof global.createTubeHandleMesh === 'function') {
+      const arch = global.createTubeHandleMesh([[-0.72, 0.28, 0], [-0.72, 1.55, 0], [0, 1.85, 0], [0.72, 1.55, 0], [0.72, 0.28, 0]], 0.026, M.metalBrass);
+      g.add(arch);
+    }
     g.add(platform);
     return g;
   };
 
   B['hotel_elevator'] = function(item, scen, P) {
     const M = createSharedPBRMaterials(THREE);
+    const PMF = global.ProceduralMaterialFactory;
     const g = new THREE.Group();
-    const frame = new THREE.Mesh(new THREE.BoxGeometry(3.4, 3.8, 0.25), M.metalBronze);
+    const frame = typeof global.createBeveledBoxExtrude === 'function'
+      ? global.createBeveledBoxExtrude(3.4, 3.8, 0.25, M.metalBronze, 0.02, 0.015)
+      : new THREE.Mesh(new THREE.BoxGeometry(3.4, 3.8, 0.25), M.metalBronze);
     frame.position.y = 1.9;
-    g.add(frame);
+    const indMat = PMF ? PMF.createDigitalScreenMaterial({
+      key: 'elevator_floor_ind', bg: '#090d16', accent: '#f59e0b', title: '▲ FLOOR 12', lines: ['PENTHOUSE SUITE', 'EXPRESS ELEVATOR']
+    }) : M.metalBrass;
+    const ind = new THREE.Mesh(new THREE.PlaneGeometry(0.65, 0.22), indMat);
+    ind.position.set(0, 3.55, 0.14);
+    g.add(frame, ind);
     return g;
   };
 
   B['hotel_lobby_sofa'] = function(item, scen, P) {
     const M = createSharedPBRMaterials(THREE);
     const g = new THREE.Group();
-    const seat = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.28, 0.85), M.leatherChesterfield);
+    const seat = typeof global.createBeveledBoxExtrude === 'function'
+      ? global.createBeveledBoxExtrude(2.1, 0.28, 0.85, M.leatherChesterfield, 0.02, 0.015)
+      : new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.28, 0.85), M.leatherChesterfield);
     seat.position.y = 0.38;
-    const back = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.62, 0.28), M.leatherChesterfield);
+    const back = typeof global.createBeveledBoxExtrude === 'function'
+      ? global.createBeveledBoxExtrude(2.1, 0.62, 0.28, M.leatherChesterfield, 0.02, 0.015)
+      : new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.62, 0.28), M.leatherChesterfield);
     back.position.set(0, 0.72, -0.32);
     g.add(seat, back);
     return g;
@@ -1765,9 +1817,13 @@
   B['hotel_king_bed'] = function(item, scen, P) {
     const M = createSharedPBRMaterials(THREE);
     const g = new THREE.Group();
-    const headboard = new THREE.Mesh(new THREE.BoxGeometry(2.7, 1.8, 0.18), M.woodWalnut);
+    const headboard = typeof global.createBeveledBoxExtrude === 'function'
+      ? global.createBeveledBoxExtrude(2.7, 1.8, 0.18, M.woodWalnut, 0.02, 0.015)
+      : new THREE.Mesh(new THREE.BoxGeometry(2.7, 1.8, 0.18), M.woodWalnut);
     headboard.position.set(0, 0.9, -1.25);
-    const mattress = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.32, 2.2), M.linenWhite);
+    const mattress = typeof global.createBeveledBoxExtrude === 'function'
+      ? global.createBeveledBoxExtrude(2.1, 0.32, 2.2, M.linenWhite, 0.025, 0.02)
+      : new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.32, 2.2), M.linenWhite);
     mattress.position.set(0, 0.51, 0);
     g.add(headboard, mattress);
     return g;
@@ -1776,7 +1832,9 @@
   B['hotel_minibar'] = function(item, scen, P) {
     const M = createSharedPBRMaterials(THREE);
     const g = new THREE.Group();
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.95, 0.65), M.wroughtIron);
+    const body = typeof global.createBeveledBoxExtrude === 'function'
+      ? global.createBeveledBoxExtrude(0.75, 0.95, 0.65, M.wroughtIron, 0.018, 0.014)
+      : new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.95, 0.65), M.wroughtIron);
     body.position.y = 0.475;
     const door = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.88, 0.04), M.glassClear);
     door.position.set(0, 0.475, 0.33);
@@ -1786,10 +1844,21 @@
 
   B['hotel_safe_box'] = function(item, scen, P) {
     const M = createSharedPBRMaterials(THREE);
+    const PMF = global.ProceduralMaterialFactory;
     const g = new THREE.Group();
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.45, 0.48), M.wroughtIron);
+    const body = typeof global.createBeveledBoxExtrude === 'function'
+      ? global.createBeveledBoxExtrude(0.55, 0.45, 0.48, M.wroughtIron, 0.018, 0.014)
+      : new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.45, 0.48), M.wroughtIron);
     body.position.y = 0.225;
-    g.add(body);
+    const keypadMat = PMF ? PMF.createDigitalScreenMaterial({
+      key: 'hotel_safe_keypad', bg: '#090d16', accent: '#22c55e', title: 'LOCKED [----]', lines: ['[1] [2] [3]', '[4] [5] [6]', '[7] [8] [9]', '[CLEAR] [0] [OK]']
+    }) : M.metalBrass;
+    const keypad = new THREE.Mesh(new THREE.PlaneGeometry(0.18, 0.24), keypadMat);
+    keypad.position.set(0.12, 0.24, 0.248);
+    const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.03, 14), M.metalBrass);
+    handle.rotation.x = Math.PI / 2;
+    handle.position.set(-0.12, 0.24, 0.25);
+    g.add(body, keypad, handle);
     return g;
   };
 
@@ -2191,46 +2260,32 @@
     return g;
   };
 
+  B['dating_ring_box'] = function(item, scen, P) {
+    const M = createSharedPBRMaterials(THREE);
+    const g = new THREE.Group();
+    const base = typeof global.createBeveledBoxExtrude === 'function'
+      ? global.createBeveledBoxExtrude(0.11, 0.055, 0.11, M.velvetBurgundy, 0.008, 0.006)
+      : new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.055, 0.11), M.velvetBurgundy);
+    base.position.y = 0.028;
+    const lid = typeof global.createBeveledBoxExtrude === 'function'
+      ? global.createBeveledBoxExtrude(0.11, 0.035, 0.11, M.velvetBurgundy, 0.008, 0.006)
+      : new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.035, 0.11), M.velvetBurgundy);
+    lid.position.set(0, 0.072, -0.048);
+    lid.rotation.x = -0.95;
+    const band = new THREE.Mesh(new THREE.TorusGeometry(0.02, 0.004, 12, 24), M.metalBrass);
+    band.position.set(0, 0.068, 0.005);
+    const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.012, 0), M.glassClear);
+    gem.position.set(0, 0.09, 0.005);
+    g.add(base, lid, band, gem);
+    return g;
+  };
+
   // ============================================================================
-  // 7. BUCLE DE ANIMACIÓN INTERNO (PARPADEO REALISTA DE VELAS Y LUCES)
+  // 7. BUCLE DE ANIMACIÓN INTERNO DESACTIVADO (UNIFICADO EN WORLD3D._rafId)
   // ============================================================================
 
   function startLocalAnimationLoop() {
-    if (localAnimationState.animFrameId) return;
-
-    function tick(now) {
-      localAnimationState.animFrameId = requestAnimationFrame(tick);
-      const t = now * 0.001;
-
-      if (localAnimationState.candleLights.length > 0) {
-        const flicker = 2.6 + Math.sin(t * 11.2) * 0.22 + Math.cos(t * 19.5) * 0.15;
-        localAnimationState.candleLights.forEach((light) => {
-          if (light && light.parent) light.intensity = flicker;
-        });
-      }
-
-      if (localAnimationState.candleMeshes.length > 0) {
-        const scaleY = 1.0 + Math.sin(t * 14.0) * 0.14;
-        localAnimationState.candleMeshes.forEach((mesh) => {
-          if (mesh && mesh.parent) mesh.scale.y = scaleY;
-        });
-      }
-
-      if (localAnimationState.stringLightBulbs.length > 0 && Math.floor(t * 10) % 4 === 0) {
-        const pulse = 0.95 + Math.sin(t * 3.5) * 0.08;
-        localAnimationState.stringLightBulbs.forEach((bulb) => {
-          if (bulb && bulb.parent) bulb.scale.set(pulse, pulse, pulse);
-        });
-      }
-    }
-
-    if (typeof requestAnimationFrame !== 'undefined') {
-      localAnimationState.animFrameId = requestAnimationFrame(tick);
-    }
-  }
-
-  if (typeof requestAnimationFrame !== 'undefined') {
-    startLocalAnimationLoop();
+    // Unificado con el bucle principal World3D._rafId para garantizar 60 FPS sin doble RAF.
   }
 
   // ============================================================================
@@ -2239,83 +2294,8 @@
 
   function hookIntoWorld3D() {
     if (!global.World3D) return;
-
-    // Hook switchScenario
     if (!global.World3D._datingHotelHooked) {
       global.World3D._datingHotelHooked = true;
-
-      const origSwitch = global.World3D.switchScenario;
-      global.World3D.switchScenario = function (scenarioKey) {
-        const res = typeof origSwitch === 'function' ? origSwitch.apply(this, arguments) : undefined;
-        const key = String(scenarioKey || '').toLowerCase().trim();
-
-        setTimeout(() => {
-          const sc = global.World3D.scene;
-          if (!sc) return;
-          if (key === 'hotel') {
-            buildHotelScene(sc);
-          } else if (key === 'dating') {
-            buildDatingScene(sc);
-          }
-          if (global.World3D && typeof global.World3D.normalizeSceneInteractiveMetadata === 'function') {
-            global.World3D.normalizeSceneInteractiveMetadata(sc, key);
-          }
-        }, 50);
-
-        return res;
-      };
-      global.World3D.switch3DScenario = global.World3D.switchScenario;
-
-      // Hook buildScenarioWorld
-      const origBuild = global.World3D.buildScenarioWorld;
-      if (typeof origBuild === 'function') {
-        global.World3D.buildScenarioWorld = function (targetScene, scenarioKey) {
-          const res = origBuild.apply(this, arguments);
-          const key = String(scenarioKey || '').toLowerCase().trim();
-          const sc = targetScene || global.World3D.scene;
-          if (sc) {
-            if (key === 'hotel') {
-              buildHotelScene(sc);
-            } else if (key === 'dating') {
-              buildDatingScene(sc);
-            }
-            if (global.World3D && typeof global.World3D.normalizeSceneInteractiveMetadata === 'function') {
-              global.World3D.normalizeSceneInteractiveMetadata(sc, key);
-            }
-          }
-          return res;
-        };
-      }
-
-      // Hook buildCompound3DObject
-      const origCompound = global.World3D.buildCompound3DObject;
-      if (typeof origCompound === 'function') {
-        global.World3D.buildCompound3DObject = function (itemSpec, scenarioKey) {
-          if ((scenarioKey === 'hotel' || scenarioKey === 'dating') && itemSpec && itemSpec.id && typeof B[itemSpec.id] === 'function') {
-            const custom = B[itemSpec.id](itemSpec, scenarioKey);
-            if (custom) {
-              attachInteractiveData(custom, itemSpec, scenarioKey === 'hotel' ? 'Hotel & Reception' : 'Romantic Date');
-              return custom;
-            }
-          }
-          return origCompound.apply(this, arguments);
-        };
-        global.buildCompound3DObject = global.World3D.buildCompound3DObject;
-      }
-    }
-
-    // Auto-construir si ya está en hotel o dating
-    const selectEl = typeof document !== 'undefined' ? document.getElementById('world3dScenarioSelect') : null;
-    const currentKey = (selectEl && selectEl.value) || (global.currentScenarioKey) || '';
-    if (currentKey === 'hotel' || currentKey === 'dating') {
-      const sc = global.World3D.scene;
-      if (sc) {
-        if (currentKey === 'hotel') buildHotelScene(sc);
-        if (currentKey === 'dating') buildDatingScene(sc);
-        if (global.World3D && typeof global.World3D.normalizeSceneInteractiveMetadata === 'function') {
-          global.World3D.normalizeSceneInteractiveMetadata(sc, currentKey);
-        }
-      }
     }
   }
 

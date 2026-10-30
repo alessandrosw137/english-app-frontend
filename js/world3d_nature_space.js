@@ -943,26 +943,29 @@
     return g;
   }
 
-  // Regadera Clásica Británica con Pitorro de Latón
+  // Regadera Clásica Británica con Pitorro de Latón y Asa TubeGeometry
   function buildWateringCanMesh(P) {
     const g = new THREE.Group();
-    const matGreenBody = getMat(P, 'leafGreen2', 0x15803d, 0.35, 0.25);
-    const matBrass = getMat(P, 'metalBrass', 0xf59e0b, 0.15, 0.85);
+    const matGreenBody = getMat(P, 'leafGreen2', 0x15803d, 0.32, 0.35);
+    const matBrass = getMat(P, 'metalBrass', 0xf59e0b, 0.18, 0.88);
 
-    const canBody = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.18, 0.32, 16), matGreenBody);
-    canBody.position.y = 0.16;
+    const canBody = typeof globalScope.createLatheProfileMesh === 'function'
+      ? globalScope.createLatheProfileMesh([
+          [0.0, 0.0], [0.18, 0.0], [0.17, 0.28], [0.14, 0.32], [0.09, 0.33]
+        ], matGreenBody, 22)
+      : new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.18, 0.32, 18), matGreenBody);
 
-    const spout = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.032, 0.42, 12), matBrass);
-    spout.position.set(0.19, 0.26, 0);
-    spout.rotation.z = -Math.PI / 3.6;
+    const spout = typeof globalScope.createTubeHandleMesh === 'function'
+      ? globalScope.createTubeHandleMesh([[0.15, 0.12, 0], [0.24, 0.24, 0], [0.34, 0.40, 0]], 0.022, matBrass)
+      : new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.032, 0.42, 12), matBrass);
 
-    const roseHead = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.03, 0.04, 16), matBrass);
+    const roseHead = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.028, 0.045, 18), matBrass);
     roseHead.position.set(0.35, 0.42, 0);
     roseHead.rotation.z = -Math.PI / 3.6;
 
-    const handle = new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.018, 8, 20, Math.PI * 1.1), matGreenBody);
-    handle.position.set(-0.06, 0.23, 0);
-    handle.rotation.z = -Math.PI / 2.1;
+    const handle = typeof globalScope.createTubeHandleMesh === 'function'
+      ? globalScope.createTubeHandleMesh([[0.04, 0.32, 0], [-0.08, 0.44, 0], [-0.24, 0.30, 0], [-0.22, 0.12, 0], [-0.15, 0.08, 0]], 0.016, matGreenBody)
+      : new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.018, 8, 20, Math.PI * 1.1), matGreenBody);
 
     g.add(canBody, spout, roseHead, handle);
     return g;
@@ -1534,6 +1537,9 @@
         lookAtPos: { x: px, y: py + 0.5, z: pz }
       };
       g.userData = Object.assign({}, meta);
+      if (typeof globalScope.attachContactShadow === 'function') {
+        globalScope.attachContactShadow(g, 0.38);
+      }
       g.traverse(ch => {
         if (ch.isMesh) {
           ch.castShadow = false;
@@ -1615,19 +1621,120 @@
   };
   B['garden_terracotta_pot'] = function(item, scen, P) {
     const g = new THREE.Group();
-    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.15, 0.34, 16), getMat(P, 'terracottaPot', 0xc2410c));
-    pot.position.y = 0.17;
-    const plant = new THREE.Mesh(new THREE.DodecahedronGeometry(0.18, 1), getMat(P, 'leafGreen3', 0x15803d));
-    plant.position.y = 0.4;
-    g.add(pot, plant);
+    const terraMat = getMat(P, 'terracottaPot', 0xc2410c, 0.65, 0.04);
+    const pot = typeof globalScope.createLatheProfileMesh === 'function'
+      ? globalScope.createLatheProfileMesh([
+          [0.0, 0.0], [0.14, 0.0], [0.21, 0.28], [0.24, 0.29], [0.24, 0.35], [0.20, 0.35], [0.19, 0.30]
+        ], terraMat, 24)
+      : new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.15, 0.34, 18), terraMat);
+    const soil = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.18, 0.03, 18), getMat(P, 'woodDark', 0x3e1f0d, 0.9));
+    soil.position.y = 0.30;
+    const plant = new THREE.Mesh(new THREE.DodecahedronGeometry(0.18, 1), getMat(P, 'leafGreen3', 0x15803d, 0.6));
+    plant.position.y = 0.44;
+    const bloom1 = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 10), getMat(P, 'flowerRed', 0xe11d48));
+    bloom1.position.set(0.08, 0.56, 0.04);
+    const bloom2 = new THREE.Mesh(new THREE.SphereGeometry(0.04, 10, 10), getMat(P, 'metalBrass', 0xfacc15));
+    bloom2.position.set(-0.07, 0.54, -0.05);
+    g.add(pot, soil, plant, bloom1, bloom2);
     return g;
   };
   B['garden_hose'] = function(item, scen, P) {
     const g = new THREE.Group();
-    const coil = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.05, 10, 20), getMat(P, 'leafGreen1', 0x14532d));
-    coil.rotation.x = Math.PI / 2;
-    coil.position.y = 0.06;
-    g.add(coil);
+    const hoseMat = getMat(P, 'leafGreen1', 0x14532d, 0.45, 0.1);
+    const coil1 = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.035, 12, 24), hoseMat);
+    coil1.rotation.x = Math.PI / 2;
+    coil1.position.y = 0.035;
+    const coil2 = new THREE.Mesh(new THREE.TorusGeometry(0.21, 0.035, 12, 24), hoseMat);
+    coil2.rotation.x = Math.PI / 2;
+    coil2.position.y = 0.085;
+    if (typeof globalScope.createTubeHandleMesh === 'function') {
+      const lead = globalScope.createTubeHandleMesh([[0.21, 0.09, 0], [0.32, 0.14, 0.12], [0.38, 0.18, 0.22]], 0.028, hoseMat);
+      g.add(lead);
+    }
+    const nozzle = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.09, 12), getMat(P, 'metalBrass', 0xf59e0b, 0.2, 0.85));
+    nozzle.rotation.x = Math.PI / 2;
+    nozzle.position.set(0.39, 0.19, 0.26);
+    g.add(coil1, coil2, nozzle);
+    return g;
+  };
+  B['garden_pruning_shears'] = function(item, scen, P) {
+    const g = new THREE.Group();
+    const steelMat = getMat(P, 'metalChrome', 0xe2e8f0, 0.18, 0.92);
+    const gripMat = getMat(P, 'flowerRed', 0xdc2626, 0.45, 0.1);
+    const bladeL = new THREE.Mesh(new THREE.BoxGeometry(0.028, 0.008, 0.16), steelMat);
+    bladeL.position.set(-0.015, 0.02, -0.07);
+    bladeL.rotation.y = 0.18;
+    const bladeR = new THREE.Mesh(new THREE.BoxGeometry(0.028, 0.008, 0.16), steelMat);
+    bladeR.position.set(0.015, 0.024, -0.07);
+    bladeR.rotation.y = -0.18;
+    const pivot = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.018, 12), getMat(P, 'metalBrass', 0xf59e0b));
+    pivot.position.set(0, 0.022, 0);
+    if (typeof globalScope.createTubeHandleMesh === 'function') {
+      const hL = globalScope.createTubeHandleMesh([[-0.012, 0.02, 0.01], [-0.045, 0.02, 0.10], [-0.055, 0.02, 0.19]], 0.014, gripMat);
+      const hR = globalScope.createTubeHandleMesh([[0.012, 0.02, 0.01], [0.045, 0.02, 0.10], [0.055, 0.02, 0.19]], 0.014, gripMat);
+      g.add(hL, hR);
+    }
+    g.add(bladeL, bladeR, pivot);
+    return g;
+  };
+  B['garden_trowel'] = function(item, scen, P) {
+    const g = new THREE.Group();
+    const steelMat = getMat(P, 'metalChrome', 0xe2e8f0, 0.18, 0.9);
+    const woodMat = getMat(P, 'woodOak', 0x9a6234, 0.42, 0.05);
+    const handle = typeof globalScope.createLatheProfileMesh === 'function'
+      ? globalScope.createLatheProfileMesh([[0.0, 0.0], [0.022, 0.0], [0.026, 0.08], [0.018, 0.15], [0.0, 0.15]], woodMat, 16)
+      : new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.15, 14), woodMat);
+    handle.rotation.x = Math.PI / 2;
+    handle.position.set(0, 0.03, 0.06);
+    const scoop = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.012, 0.18, 14, 1, false, 0, Math.PI), steelMat);
+    scoop.rotation.x = Math.PI / 2;
+    scoop.position.set(0, 0.025, -0.06);
+    g.add(handle, scoop);
+    return g;
+  };
+  B['garden_picnic_basket'] = function(item, scen, P) {
+    const g = new THREE.Group();
+    const wickerMat = getMat(P, 'woodPine', 0xb47b38, 0.65, 0.04);
+    const clothMat = getMat(P, 'flowerRed', 0xdc2626, 0.72, 0.02);
+    const body = typeof globalScope.createBeveledBoxExtrude === 'function'
+      ? globalScope.createBeveledBoxExtrude(0.46, 0.24, 0.32, wickerMat, 0.016, 0.012)
+      : new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.24, 0.32), wickerMat);
+    body.position.y = 0.12;
+    const clothTrim = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.04, 0.34), clothMat);
+    clothTrim.position.y = 0.23;
+    const flapL = typeof globalScope.createBeveledBoxExtrude === 'function'
+      ? globalScope.createBeveledBoxExtrude(0.22, 0.02, 0.31, wickerMat, 0.008, 0.006)
+      : new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.02, 0.31), wickerMat);
+    flapL.position.set(-0.11, 0.26, 0);
+    flapL.rotation.z = 0.18;
+    const flapR = typeof globalScope.createBeveledBoxExtrude === 'function'
+      ? globalScope.createBeveledBoxExtrude(0.22, 0.02, 0.31, wickerMat, 0.008, 0.006)
+      : new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.02, 0.31), wickerMat);
+    flapR.position.set(0.11, 0.26, 0);
+    flapR.rotation.z = -0.18;
+    if (typeof globalScope.createTubeHandleMesh === 'function') {
+      const arch = globalScope.createTubeHandleMesh([[0, 0.24, -0.15], [0, 0.42, 0], [0, 0.24, 0.15]], 0.015, wickerMat);
+      g.add(arch);
+    }
+    g.add(body, clothTrim, flapL, flapR);
+    return g;
+  };
+  B['garden_lantern'] = function(item, scen, P) {
+    const g = new THREE.Group();
+    const ironMat = getMat(P, 'metalDark', 0x1e293b, 0.35, 0.75);
+    const glassMat = getMat(P, 'glassClear', 0xe0f2fe, 0.1, 0.05);
+    const bulbMat = getMat(P, 'emissiveOrange', 0xfef08a);
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.13, 0.03, 6), ironMat);
+    base.position.y = 0.015;
+    const glassBody = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.085, 0.22, 6), glassMat);
+    glassBody.position.y = 0.14;
+    const glowCore = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.12, 12), bulbMat);
+    glowCore.position.y = 0.13;
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.09, 6), ironMat);
+    roof.position.y = 0.295;
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.006, 8, 16), ironMat);
+    ring.position.y = 0.36;
+    g.add(base, glassBody, glowCore, roof, ring);
     return g;
   };
   B['garden_hedge_trimmer'] = function(item, scen, P) {
@@ -1735,11 +1842,136 @@
   };
   B['space_telescope'] = function(item, scen, P) {
     const g = new THREE.Group();
+    const tube = typeof globalScope.createLatheProfileMesh === 'function'
+      ? globalScope.createLatheProfileMesh([[0.0, 0.0], [0.18, 0.0], [0.19, 0.45], [0.24, 0.72]], getMat(P, 'metalChrome', 0xe2e8f0, 0.2, 0.9), 20)
+      : new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.18, 0.7, 16), getMat(P, 'metalChrome', 0xe2e8f0));
+    tube.rotation.x = Math.PI / 3;
     const shield = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.04, 0.9), getMat(P, 'metalDark', 0x1e293b));
     shield.rotation.x = 0.45;
-    const mirror = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.02, 6), getMat(P, 'metalBrass', 0xf59e0b));
-    mirror.position.set(0, 0.2, 0.05);
-    g.add(shield, mirror);
+    const mirror = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.03, 6), getMat(P, 'metalBrass', 0xf59e0b, 0.12, 0.95));
+    mirror.position.set(0, 0.22, 0.08);
+    g.add(tube, shield, mirror);
+    return g;
+  };
+  B['space_control_console'] = function(item, scen, P) {
+    const g = new THREE.Group();
+    const PMF = globalScope.ProceduralMaterialFactory;
+    const deskMat = getMat(P, 'metalDark', 0x1e293b, 0.3, 0.75);
+    const base = typeof globalScope.createBeveledBoxExtrude === 'function'
+      ? globalScope.createBeveledBoxExtrude(1.35, 0.82, 0.62, deskMat, 0.02, 0.015)
+      : new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.82, 0.62), deskMat);
+    base.position.y = 0.41;
+    const scrMat = PMF ? PMF.createDigitalScreenMaterial({
+      key: 'space_telemetry_hud', bg: '#020617', accent: '#38bdf8', title: 'ORBITAL TELEMETRY', lines: ['ALT: 408.2 KM | VEL: 7.66 KM/S', 'O2: 99.4% | CABIN: 101.3 KPA', 'SOLAR ARRAY: 142.8 KW ONLINE']
+    }) : getMat(P, 'emissiveScreen', 0x38bdf8);
+    [-0.42, 0, 0.42].forEach((sx, idx) => {
+      const mon = new THREE.Mesh(new THREE.PlaneGeometry(0.38, 0.26), scrMat);
+      mon.position.set(sx, 1.02, -0.08 + Math.abs(sx) * 0.18);
+      mon.rotation.y = -sx * 0.55;
+      mon.rotation.x = -0.22;
+      g.add(mon);
+    });
+    g.add(base);
+    return g;
+  };
+  B['space_astronaut_helmet'] = function(item, scen, P) {
+    const g = new THREE.Group();
+    const shellMat = getMat(P, 'crownWhite', 0xf8fafc, 0.22, 0.15);
+    const goldVisorMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.08, metalness: 0.96 });
+    const neckRing = new THREE.Mesh(new THREE.TorusGeometry(0.20, 0.032, 12, 24), getMat(P, 'metalChrome', 0x94a3b8, 0.25, 0.85));
+    neckRing.rotation.x = Math.PI / 2;
+    neckRing.position.y = 0.04;
+    const dome = typeof globalScope.createLatheProfileMesh === 'function'
+      ? globalScope.createLatheProfileMesh([
+          [0.19, 0.04], [0.24, 0.18], [0.23, 0.36], [0.14, 0.46], [0.0, 0.49]
+        ], shellMat, 26)
+      : new THREE.Mesh(new THREE.SphereGeometry(0.24, 22, 20), shellMat);
+    const visor = new THREE.Mesh(new THREE.SphereGeometry(0.225, 22, 18, 0, Math.PI * 0.85, Math.PI * 0.18, Math.PI * 0.52), goldVisorMat);
+    visor.position.set(0, 0.24, 0.03);
+    visor.rotation.y = Math.PI * 0.08;
+    g.add(neckRing, dome, visor);
+    return g;
+  };
+  B['space_oxygen_tank'] = function(item, scen, P) {
+    const g = new THREE.Group();
+    const tankMat = getMat(P, 'crownWhite', 0xe2e8f0, 0.28, 0.55);
+    const brassMat = getMat(P, 'metalBrass', 0xf59e0b, 0.22, 0.88);
+    [-0.12, 0.12].forEach(tx => {
+      const cyl = typeof globalScope.createLatheProfileMesh === 'function'
+        ? globalScope.createLatheProfileMesh([
+            [0.0, 0.0], [0.085, 0.02], [0.095, 0.08], [0.095, 0.48], [0.035, 0.56], [0.025, 0.62], [0.0, 0.62]
+          ], tankMat, 22)
+        : new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.56, 18), tankMat);
+      cyl.position.x = tx;
+      const valve = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.04, 12), brassMat);
+      valve.position.set(tx, 0.64, 0);
+      g.add(cyl, valve);
+    });
+    if (typeof globalScope.createTubeHandleMesh === 'function') {
+      const manifold = globalScope.createTubeHandleMesh([[-0.12, 0.58, 0], [0, 0.62, 0.05], [0.12, 0.58, 0]], 0.014, brassMat);
+      g.add(manifold);
+    }
+    const gauge = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.02, 16), getMat(P, 'emissiveScreen', 0x38bdf8));
+    gauge.rotation.x = Math.PI / 2;
+    gauge.position.set(0, 0.42, 0.11);
+    g.add(gauge);
+    return g;
+  };
+  B['space_robotic_arm'] = function(item, scen, P) {
+    const g = new THREE.Group();
+    const whiteMat = getMat(P, 'crownWhite', 0xf8fafc, 0.3, 0.4);
+    const jointMat = getMat(P, 'metalDark', 0x1e293b, 0.3, 0.8);
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 0.12, 18), jointMat);
+    base.position.y = 0.06;
+    if (typeof globalScope.createTubeHandleMesh === 'function') {
+      const boom1 = globalScope.createTubeHandleMesh([[0, 0.12, 0], [0.18, 0.55, 0.08], [0.42, 0.85, 0.15]], 0.048, whiteMat);
+      const boom2 = globalScope.createTubeHandleMesh([[0.42, 0.85, 0.15], [0.72, 0.65, 0.25], [0.92, 0.48, 0.32]], 0.038, whiteMat);
+      g.add(boom1, boom2);
+    }
+    const elbowJoint = new THREE.Mesh(new THREE.SphereGeometry(0.075, 14, 14), jointMat);
+    elbowJoint.position.set(0.42, 0.85, 0.15);
+    const wrist = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.08, 14), jointMat);
+    wrist.position.set(0.92, 0.48, 0.32);
+    g.add(base, elbowJoint, wrist);
+    return g;
+  };
+  B['space_hydroponic_pod'] = function(item, scen, P) {
+    const g = new THREE.Group();
+    const frameMat = getMat(P, 'metalChrome', 0xe2e8f0, 0.22, 0.85);
+    const glassMat = getMat(P, 'glassClear', 0xe0f2fe, 0.1, 0.1);
+    const uvMat = new THREE.MeshStandardMaterial({ color: 0xd946ef, emissive: 0xa855f7, emissiveIntensity: 1.8 });
+    const base = typeof globalScope.createBeveledBoxExtrude === 'function'
+      ? globalScope.createBeveledBoxExtrude(0.86, 0.14, 0.48, frameMat, 0.015, 0.012)
+      : new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.14, 0.48), frameMat);
+    base.position.y = 0.07;
+    const dome = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.82, 18, 1, false, 0, Math.PI), glassMat);
+    dome.rotation.z = Math.PI / 2;
+    dome.position.y = 0.14;
+    const uvBar = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.025, 0.06), uvMat);
+    uvBar.position.y = 0.34;
+    [-0.26, -0.08, 0.08, 0.26].forEach(px => {
+      const crop = new THREE.Mesh(new THREE.DodecahedronGeometry(0.075, 1), getMat(P, 'leafGreen3', 0x22c55e));
+      crop.position.set(px, 0.19, 0);
+      g.add(crop);
+    });
+    g.add(base, dome, uvBar);
+    return g;
+  };
+  B['space_airlock_door'] = function(item, scen, P) {
+    const g = new THREE.Group();
+    const bulkheadMat = getMat(P, 'metalChrome', 0xcbd5e1, 0.28, 0.82);
+    const darkMat = getMat(P, 'metalDark', 0x1e293b, 0.35, 0.75);
+    const outerRing = new THREE.Mesh(new THREE.TorusGeometry(0.58, 0.08, 16, 32), darkMat);
+    outerRing.position.y = 0.65;
+    const hatchDisc = new THREE.Mesh(new THREE.CylinderGeometry(0.54, 0.54, 0.10, 28), bulkheadMat);
+    hatchDisc.rotation.x = Math.PI / 2;
+    hatchDisc.position.y = 0.65;
+    const viewport = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.12, 20), getMat(P, 'emissiveScreen', 0x38bdf8));
+    viewport.rotation.x = Math.PI / 2;
+    viewport.position.set(0, 0.82, 0);
+    const wheel = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.018, 10, 20), getMat(P, 'flowerRed', 0xef4444));
+    wheel.position.set(0, 0.52, 0.07);
+    g.add(outerRing, hatchDisc, viewport, wheel);
     return g;
   };
   B['space_asteroid'] = function(item, scen, P) {
@@ -1757,11 +1989,14 @@
   };
   B['space_satellite'] = function(item, scen, P) {
     const g = new THREE.Group();
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.32, 0.32), getMat(P, 'metalBrass', 0xf59e0b));
-    const p1 = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.25, 0.7), getMat(P, 'emissiveScreen', 0x0284c7));
-    p1.position.z = 0.5;
-    const p2 = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.25, 0.7), getMat(P, 'emissiveScreen', 0x0284c7));
-    p2.position.z = -0.5;
+    const PMF = globalScope.ProceduralMaterialFactory;
+    const solarMat = PMF ? PMF.createSolarCellMaterial() : getMat(P, 'emissiveScreen', 0x0284c7);
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.48, 16), getMat(P, 'metalBrass', 0xf59e0b, 0.2, 0.9));
+    body.rotation.z = Math.PI / 2;
+    const p1 = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.34, 0.88), solarMat);
+    p1.position.z = 0.62;
+    const p2 = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.34, 0.88), solarMat);
+    p2.position.z = -0.62;
     g.add(body, p1, p2);
     return g;
   };
@@ -1836,9 +2071,11 @@
   };
   B['space_solar_array'] = function(item, scen, P) {
     const g = new THREE.Group();
-    const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.7, 8), getMat(P, 'metalDark', 0x1e293b));
+    const PMF = globalScope.ProceduralMaterialFactory;
+    const solarMat = PMF ? PMF.createSolarCellMaterial() : getMat(P, 'emissiveScreen', 0x0284c7);
+    const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.7, 10), getMat(P, 'metalDark', 0x1e293b));
     mast.position.y = 0.35;
-    const array = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.025, 0.5), getMat(P, 'emissiveScreen', 0x0284c7));
+    const array = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.03, 0.58), solarMat);
     array.position.y = 0.7;
     g.add(mast, array);
     return g;
@@ -1866,74 +2103,7 @@
   function hookIntoWorld3D() {
     const w3d = globalScope.World3D || (typeof window !== 'undefined' ? window.World3D : null);
     if (!w3d) return;
-
-    if (!w3d._hasMasterENGNatureSpaceHook) {
-      w3d._hasMasterENGNatureSpaceHook = true;
-      const originalSwitch = w3d.switchScenario || globalScope.switch3DScenario;
-
-      function patchedSwitchScenario(scenarioKey) {
-        let result = null;
-        if (typeof originalSwitch === 'function') {
-          result = originalSwitch.apply(this, arguments);
-        }
-
-        try {
-          const activeScene = w3d.scene || (typeof window !== 'undefined' && window.World3D && window.World3D.scene);
-          if (activeScene) {
-            let dynamicRoot = activeScene.getObjectByName('ScenarioDynamicRoot');
-            if (!dynamicRoot) dynamicRoot = activeScene;
-
-            if (scenarioKey === 'space') {
-              buildSpaceScene(dynamicRoot);
-            } else if (scenarioKey === 'garden') {
-              buildGardenScene(dynamicRoot);
-            }
-            if (w3d && typeof w3d.normalizeSceneInteractiveMetadata === 'function') {
-              w3d.normalizeSceneInteractiveMetadata(activeScene, scenarioKey);
-            }
-          }
-        } catch (err) {
-          console.warn('[MasterENG3D Nature & Space] Error en inyección de escenario:', err);
-        }
-
-        return result;
-      }
-
-      w3d.switchScenario = patchedSwitchScenario;
-      w3d.switch3DScenario = patchedSwitchScenario;
-      if (typeof window !== 'undefined') {
-        try {
-          Object.defineProperty(window, 'switch3DScenario', {
-            value: patchedSwitchScenario,
-            writable: true,
-            configurable: true
-          });
-        } catch (_) {
-          window.switch3DScenario = patchedSwitchScenario;
-        }
-      }
-      console.log('[MasterENG3D] Hook para Space y Garden acoplado exitosamente a World3D.');
-    }
-  }
-
-  hookIntoWorld3D();
-  if (typeof document !== 'undefined') {
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', hookIntoWorld3D);
-    } else {
-      setTimeout(hookIntoWorld3D, 50);
-    }
-  }
-
-  if (typeof setInterval !== 'undefined') {
-    let checks = 0;
-    const interval = setInterval(function() {
-      checks++;
-      hookIntoWorld3D();
-      if (checks > 25 || (globalScope.World3D && globalScope.World3D._hasMasterENGNatureSpaceHook)) {
-        clearInterval(interval);
-      }
-    }, 200);
+    w3d._hasMasterENGNatureSpaceHook = true;
   }
 
   console.log('[MasterENG3D] Nature & Space module loaded successfully.');

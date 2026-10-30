@@ -1,26 +1,49 @@
 const fs = require('fs');
 const path = require('path');
 
+// Keep css/styles.css synchronized with css/style.css
+const styleSrc = path.join(__dirname, '..', 'css', 'style.css');
+const stylesAlias = path.join(__dirname, '..', 'css', 'styles.css');
+if (fs.existsSync(styleSrc)) {
+  fs.copyFileSync(styleSrc, stylesAlias);
+}
+
 const filesToSync = [
   'index.html',
   'master_data.js',
   'css/style.css',
+  'css/styles.css',
+  'css/pet_profile.css',
+  'tailwind.js',
+  'three.min.js',
   'js/app.js',
   'js/world3d.js',
+  'js/world3d_nature_space.js',
+  'js/world3d_dating_hotel.js',
+  'js/world3d_market_rest.js',
   'js/karaoke.js',
   'js/jest_game.js',
   'js/social_chat.js',
-  'js/firebase-sync.js',
+  'js/pdf-generator.js',
+  'js/pet_minigames_2d.js',
+  'js/pet_engine_2d.js',
+  'js/pet_sanctuary.js',
+  'js/profile_social.js',
+  'images/app_hero_logo.jpg',
   'images/ai_tutor_mascot.jpg',
   'images/ai_tutor_mascot.svg',
+  'images/portal_learning_path.jpg',
+  'images/portal_stories.jpg',
+  'images/portal_worldtour.jpg',
   'manifest.json',
   'sw.js',
-  'icon.png'
+  'icon.png',
+  'icon-512.png'
 ];
 
 const targets = [
-  path.join(__dirname, '..', 'app', 'src', 'main', 'assets'),
-  path.join(__dirname, '..', '..')
+  path.join(__dirname, '..', 'public'),
+  path.join(__dirname, '..', 'app', 'src', 'main', 'assets')
 ];
 
 targets.forEach(targetDir => {
