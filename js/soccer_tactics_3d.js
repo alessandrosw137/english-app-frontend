@@ -1017,12 +1017,94 @@
       this.buildStadiumGeometry();
       this.build15TacticalNodes();
       this.buildTeamsAndBall();
+      this.loadBlenderSoccerPack();
 
       this.renderer.domElement.addEventListener('pointerdown', (ev) => this.onCanvasPointerDown(ev));
       window.addEventListener('resize', () => this.handleResize());
 
       if (typeof this.renderer.compile === 'function') {
         try { this.renderer.compile(this.scene, this.camera); } catch (e) {}
+      }
+    },
+
+    loadBlenderSoccerPack: function (onComplete) {
+      if (this.blenderSoccerPack) {
+        this.integrateBlenderModelsIntoStadium();
+        if (typeof onComplete === 'function') onComplete(this.blenderSoccerPack);
+        return;
+      }
+      const gltfUrl = this.soccerGlbUrl || 'assets/models/soccer/soccer_pack.glb';
+      const LoaderClass = (typeof THREE !== 'undefined' && THREE.GLTFLoader) || (typeof window !== 'undefined' && window.GLTFLoader);
+      if (!LoaderClass) {
+        if (typeof onComplete === 'function') onComplete(null);
+        return;
+      }
+      try {
+        const loader = new LoaderClass();
+        loader.load(gltfUrl, (gltf) => {
+          if (gltf && gltf.scene) {
+            this.blenderSoccerPack = gltf.scene;
+            this.integrateBlenderModelsIntoStadium();
+          }
+          if (typeof onComplete === 'function') onComplete(this.blenderSoccerPack);
+        }, undefined, (err) => {
+          console.warn('[SoccerTactics3D] Using procedural pitch and players:', err);
+          if (typeof onComplete === 'function') onComplete(null);
+        });
+      } catch (e) {
+        if (typeof onComplete === 'function') onComplete(null);
+      }
+    },
+
+    integrateBlenderModelsIntoStadium: function () {
+      if (!this.blenderSoccerPack || !this.scene) return;
+      try {
+        const pitchBlender = this.blenderSoccerPack.getObjectByName('Soccer_Stadium_Pitch');
+        if (pitchBlender && this.pitchGroup && !this.pitchGroup._hasBlenderPitch) {
+          this.pitchGroup._hasBlenderPitch = true;
+          const pbClone = pitchBlender.clone();
+          pbClone.scale.set(6.0, 1.0, 2.5);
+          pbClone.position.set(0, -0.02, 0);
+          this.pitchGroup.add(pbClone);
+        }
+
+        const ballBlender = this.blenderSoccerPack.getObjectByName('Soccer_Ball_Pro');
+        if (ballBlender && this.ballMesh && !this.ballMesh._hasBlenderBall) {
+          this.ballMesh._hasBlenderBall = true;
+          const ballModel = ballBlender.clone();
+          ballModel.scale.set(2.2, 2.2, 2.2);
+          if (this.ballMesh.material) this.ballMesh.material.visible = false;
+          this.ballMesh.add(ballModel);
+        }
+
+        const homeModel = this.blenderSoccerPack.getObjectByName('Player_Home');
+        const awayModel = this.blenderSoccerPack.getObjectByName('Player_Away');
+        const gkModel = this.blenderSoccerPack.getObjectByName('Goalkeeper_Pro');
+
+        if (homeModel && this.homePlayers) {
+          this.homePlayers.forEach((p, idx) => {
+            if (!p._hasBlenderPlayer) {
+              p._hasBlenderPlayer = true;
+              const m = (idx === 0 && gkModel) ? gkModel.clone() : homeModel.clone();
+              m.scale.set(1.4, 1.4, 1.4);
+              m.position.set(0, 0, 0);
+              p.add(m);
+            }
+          });
+        }
+        if (awayModel && this.awayPlayers) {
+          this.awayPlayers.forEach((p, idx) => {
+            if (!p._hasBlenderPlayer) {
+              p._hasBlenderPlayer = true;
+              const m = (idx === 0 && gkModel) ? gkModel.clone() : awayModel.clone();
+              m.scale.set(1.4, 1.4, 1.4);
+              m.position.set(0, 0, 0);
+              p.add(m);
+            }
+          });
+        }
+      } catch (err) {
+        console.warn('[SoccerTactics3D] integrateBlenderModels error:', err);
       }
     },
 
@@ -1378,38 +1460,61 @@
     // FLUJO DE PARTIDO: ALTERNANCIA ESTRICTA 1 A 1, MOMENTUM Y MUERTE SÚBITA
     // =========================================================================
     startMatch: function (mode, options) {
-      const opts = options || {};
-      this.match.mode = mode || 'ranked_online';
-      this.match.offlineDifficulty = opts.offlineDifficulty || this.profile.offlineDifficulty || 'medium';
-      this.match.rivalName = opts.rivalName || (mode === 'offline_ai' ? 'IA Táctica' : 'Rival Online');
-      this.match.rivalCode = opts.rivalCode || 'MENG-4109';
-      this.match.roomCode = opts.roomCode || '';
+      const startMatchCore = () => {
+        const opts = options || {};
+        this.match.mode = mode || 'ranked_online';
+        this.match.offlineDifficulty = opts.offlineDifficulty || this.profile.offlineDifficulty || 'medium';
+        this.match.rivalName = opts.rivalName || (mode === 'offline_ai' ? 'IA Táctica' : 'Rival Online');
+        this.match.rivalCode = opts.rivalCode || 'MENG-4109';
+        this.match.roomCode = opts.roomCode || '';
 
-      this.match.active = true;
-      this.match.homeScore = 0;
-      this.match.awayScore = 0;
-      this.match.playsElapsed = 0;
-      this.match.maxPlays = 12; // 12 turnos fijos (6 por jugador)
-      this.match.possession = 'home'; // Turno 1 siempre inicia el jugador ('home')
-      this.match.ballZone = 0;
-      this.match.ballLane = 'center';
-      this.match.homeMomentum = 0;
-      this.match.awayMomentum = 0;
-      this.match.isSuddenDeath = false;
-      this.match.suddenDeathRound = 0;
-      this.match.matchCorrectAnswers = 0;
-      this.match.matchTotalQuestions = 0;
+        this.match.active = true;
+        this.match.homeScore = 0;
+        this.match.awayScore = 0;
+        this.match.playsElapsed = 0;
+        this.match.maxPlays = 12; // 12 turnos fijos (6 por jugador)
+        this.match.possession = 'home'; // Turno 1 siempre inicia el jugador ('home')
+        this.match.ballZone = 0;
+        this.match.ballLane = 'center';
+        this.match.homeMomentum = 0;
+        this.match.awayMomentum = 0;
+        this.match.isSuddenDeath = false;
+        this.match.suddenDeathRound = 0;
+        this.match.matchCorrectAnswers = 0;
+        this.match.matchTotalQuestions = 0;
 
-      const postModal = document.getElementById('soccer-postmatch-modal');
-      if (postModal) postModal.style.display = 'none';
-      const quizModal = document.getElementById('soccer-quiz-modal');
-      if (quizModal) quizModal.style.display = 'none';
+        const postModal = document.getElementById('soccer-postmatch-modal');
+        if (postModal) postModal.style.display = 'none';
+        const quizModal = document.getElementById('soccer-quiz-modal');
+        if (quizModal) quizModal.style.display = 'none';
 
-      this.switchTab('match');
-      this.init3DStadiumIfNeeded();
-      this.positionPlayersForTacticalState(true);
-      this.updateScoreboardHUD();
-      this.prepareNextTacticalPlay();
+        this.switchTab('match');
+        this.init3DStadiumIfNeeded();
+        this.startLoop();
+        this.positionPlayersForTacticalState(true);
+        this.updateScoreboardHUD();
+        this.prepareNextTacticalPlay();
+      };
+
+      if (typeof window !== 'undefined' && window.AssetDownloadManager && typeof window.AssetDownloadManager.requireAssetPack === 'function') {
+        window.AssetDownloadManager.requireAssetPack({
+          packId: 'soccer',
+          glbUrl: 'assets/models/soccer/soccer_pack.glb',
+          title: 'MasterGoal 3D: Estadio Táctico',
+          category: 'sports',
+          estimatedMB: 1.02,
+          onReady: (blobUrl) => {
+            this.soccerGlbUrl = blobUrl || 'assets/models/soccer/soccer_pack.glb';
+            startMatchCore();
+          },
+          onCancel: () => {
+            console.log('[SoccerTactics3D] Entrada a partido cancelada por el usuario.');
+            this.switchTab('lobby');
+          }
+        });
+      } else {
+        startMatchCore();
+      }
     },
 
     updateScoreboardHUD: function () {
@@ -2166,11 +2271,70 @@
       this.camera.lookAt(this.cameraLookAtPos.x, this.cameraLookAtPos.y, this.cameraLookAtPos.z);
 
       this.renderer.render(this.scene, this.camera);
+    },
+
+    handleUniversalBack: function (event) {
+      if (event && event.stopPropagation) event.stopPropagation();
+      if (this.activeTab === 'match') {
+        this.pauseLoop();
+        this.switchTab('lobby');
+      } else {
+        this.dispose();
+        if (typeof window.returnToMainPortals === 'function') {
+          window.returnToMainPortals(event);
+        } else if (typeof window.navigateTo === 'function') {
+          window.navigateTo('view-home');
+        }
+      }
+    },
+
+    dispose: function () {
+      this.pauseLoop();
+      if (this.scene) {
+        try {
+          this.scene.traverse((obj) => {
+            if (obj.isMesh) {
+              if (obj.geometry && typeof obj.geometry.dispose === 'function') obj.geometry.dispose();
+              if (obj.material) {
+                if (Array.isArray(obj.material)) {
+                  obj.material.forEach((m) => { if (m && typeof m.dispose === 'function') m.dispose(); });
+                } else if (typeof obj.material.dispose === 'function') {
+                  obj.material.dispose();
+                }
+              }
+            }
+          });
+        } catch (_) {}
+      }
+      if (this.renderer) {
+        try {
+          if (typeof this.renderer.dispose === 'function') this.renderer.dispose();
+          if (this.renderer.domElement && this.renderer.domElement.parentNode) {
+            this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
+          }
+        } catch (_) {}
+      }
+      this.scene = null;
+      this.camera = null;
+      this.renderer = null;
+      this.pitchGroup = null;
+      this.ballMesh = null;
+      this.homePlayers = [];
+      this.awayPlayers = [];
+      this.nodesMap = {};
+      this.blenderSoccerPack = null;
     }
   };
 
   window.SoccerTactics3D = SoccerTactics3D;
   window.openSoccerTacticsPortal = function () {
     SoccerTactics3D.openPortal();
+  };
+  window.backToPortalsMenu = function (e) {
+    if (window.SoccerTactics3D && typeof window.SoccerTactics3D.handleUniversalBack === 'function') {
+      window.SoccerTactics3D.handleUniversalBack(e);
+    } else if (typeof window.returnToMainPortals === 'function') {
+      window.returnToMainPortals(e);
+    }
   };
 })();

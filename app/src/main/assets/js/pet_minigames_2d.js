@@ -1932,62 +1932,96 @@
         <!-- CONTENEDOR CENTRAL: SELECTOR DE JUEGOS O PANTALLA DE JUEGO -->
         <div class="flex-1 relative flex items-center justify-center p-3 overflow-hidden" id="arcadeContentArea">
           
-          <!-- VISTA 1: MENÚ SELECTOR DE LOS 3 MINIJUEGOS -->
-          <div id="arcadeHubMenu" class="w-full max-w-4xl grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- VISTA 1: MENÚ SELECTOR DE LOS 4 MINIJUEGOS -->
+          <div id="arcadeHubMenu" class="w-full max-w-5xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
             
             <!-- TARJETA JUEGO 1: POU BASKETBALL HOOPS -->
-            <div class="bg-[#caa778] border-4 border-[#78350f] rounded-3xl p-5 shadow-2xl flex flex-col justify-between hover:scale-[1.02] transition cursor-pointer relative overflow-hidden"
+            <div class="bg-[#caa778] border-4 border-[#78350f] rounded-3xl p-4 shadow-2xl flex flex-col justify-between hover:scale-[1.02] transition cursor-pointer relative overflow-hidden"
                  onclick="window.startArcadeGame('basketball')">
               <div class="absolute -right-4 -top-4 w-20 h-20 bg-[#ea580c]/20 rounded-full blur-xl pointer-events-none"></div>
               <div>
-                <div class="w-16 h-16 bg-[#ea580c] rounded-2xl border-2 border-[#7c2d12] flex items-center justify-center text-4xl shadow-md mb-3">
+                <div class="w-14 h-14 bg-[#ea580c] rounded-2xl border-2 border-[#7c2d12] flex items-center justify-center text-3xl shadow-md mb-2">
                   🏀
                 </div>
-                <h3 class="text-base font-black text-[#451a03]">Pou Basketball Hoops</h3>
-                <p class="text-xs text-[#78350f] font-semibold mt-1">
+                <h3 class="text-sm font-black text-[#451a03]">Pou Basketball Hoops</h3>
+                <p class="text-[11px] text-[#78350f] font-semibold mt-1">
                   Lanza a la canasta con físicas parabólicas 2D. Encesta en tiros <b>Golden Shot</b> bilingües para duplicar monedas.
                 </p>
-                <div class="mt-3 flex items-center gap-2">
-                  <span class="bg-[#ea580c] text-white text-[10px] font-black px-2 py-0.5 rounded-full">Deportes & Físicas</span>
-                  <span class="bg-[#15803d] text-white text-[10px] font-black px-2 py-0.5 rounded-full">Tiro Paribólico</span>
+                <div class="mt-2.5 flex items-center gap-1.5 flex-wrap">
+                  <span class="bg-[#ea580c] text-white text-[9px] font-black px-2 py-0.5 rounded-full">Deportes & Físicas</span>
+                  <span class="bg-[#15803d] text-white text-[9px] font-black px-2 py-0.5 rounded-full">Tiro Parabólico</span>
                 </div>
               </div>
-              <button class="mt-4 w-full bg-[#ea580c] hover:bg-[#c2410c] text-white font-black py-2.5 rounded-xl border-2 border-[#7c2d12] shadow active:scale-95 transition">
+              <button class="mt-3 w-full bg-[#ea580c] hover:bg-[#c2410c] text-white font-black py-2 rounded-xl border-2 border-[#7c2d12] text-xs shadow active:scale-95 transition">
                 ¡JUGAR BÁSQUETBOL!
               </button>
             </div>
 
             <!-- TARJETA JUEGO 2: POU BEACH VOLLEYBALL 2D -->
-            <div class="bg-[#caa778] border-4 border-[#78350f] rounded-3xl p-5 shadow-2xl flex flex-col justify-between hover:scale-[1.02] transition cursor-pointer relative overflow-hidden"
+            <div class="bg-[#caa778] border-4 border-[#78350f] rounded-3xl p-4 shadow-2xl flex flex-col justify-between hover:scale-[1.02] transition cursor-pointer relative overflow-hidden"
                  onclick="window.startArcadeGame('volleyball')">
               <div class="absolute -right-4 -top-4 w-20 h-20 bg-[#38bdf8]/20 rounded-full blur-xl pointer-events-none"></div>
               <div>
-                <div class="w-16 h-16 bg-[#38bdf8] rounded-2xl border-2 border-[#0284c7] flex items-center justify-center text-4xl shadow-md mb-3">
+                <div class="w-14 h-14 bg-[#38bdf8] rounded-2xl border-2 border-[#0284c7] flex items-center justify-center text-3xl shadow-md mb-2">
                   🏐
                 </div>
-                <h3 class="text-base font-black text-[#451a03]">Pou Beach Volleyball 2D</h3>
-                <p class="text-xs text-[#78350f] font-semibold mt-1">
+                <h3 class="text-sm font-black text-[#451a03]">Pou Beach Volleyball 2D</h3>
+                <p class="text-[11px] text-[#78350f] font-semibold mt-1">
                   Enfréntate al bot de cartón en la playa. Cabecea, salta y realiza <b>Remates Spike!</b> fulminantes sobre la red.
                 </p>
-                <div class="mt-3 flex items-center gap-2">
-                  <span class="bg-[#0284c7] text-white text-[10px] font-black px-2 py-0.5 rounded-full">1 vs 1 Bot</span>
-                  <span class="bg-[#eab308] text-slate-900 text-[10px] font-black px-2 py-0.5 rounded-full">Remate Spike</span>
+                <div class="mt-2.5 flex items-center gap-1.5 flex-wrap">
+                  <span class="bg-[#0284c7] text-white text-[9px] font-black px-2 py-0.5 rounded-full">1 vs 1 Bot</span>
+                  <span class="bg-[#eab308] text-slate-900 text-[9px] font-black px-2 py-0.5 rounded-full">Remate Spike</span>
                 </div>
               </div>
-              <button class="mt-4 w-full bg-[#0284c7] hover:bg-[#0369a1] text-white font-black py-2.5 rounded-xl border-2 border-[#075985] shadow active:scale-95 transition">
+              <button class="mt-3 w-full bg-[#0284c7] hover:bg-[#0369a1] text-white font-black py-2 rounded-xl border-2 border-[#075985] text-xs shadow active:scale-95 transition">
                 ¡JUGAR VOLEIBOL!
               </button>
             </div>
 
             <!-- TARJETA JUEGO 3: WORD FOOD CATCH -->
-            <div class="bg-[#caa778] border-4 border-[#78350f] rounded-3xl p-5 shadow-2xl flex flex-col justify-between hover:scale-[1.02] transition cursor-pointer relative overflow-hidden"
+            <div class="bg-[#caa778] border-4 border-[#78350f] rounded-3xl p-4 shadow-2xl flex flex-col justify-between hover:scale-[1.02] transition cursor-pointer relative overflow-hidden"
                  onclick="window.startArcadeGame('food_catch')">
               <div class="absolute -right-4 -top-4 w-20 h-20 bg-[#16a34a]/20 rounded-full blur-xl pointer-events-none"></div>
               <div>
-                <div class="w-16 h-16 bg-[#16a34a] rounded-2xl border-2 border-[#14532d] flex items-center justify-center text-4xl shadow-md mb-3">
+                <div class="w-14 h-14 bg-[#16a34a] rounded-2xl border-2 border-[#14532d] flex items-center justify-center text-3xl shadow-md mb-2">
                   🍎
                 </div>
-                <h3 class="text-base font-black text-[#451a03]">Word Food Catch</h3>
+                <h3 class="text-sm font-black text-[#451a03]">Word Food Catch</h3>
+                <p class="text-[11px] text-[#78350f] font-semibold mt-1">
+                  Atrapa la comida que cae según la orden en inglés emitida por el narrador nativo. ¡Evita los ítems no comestibles!
+                </p>
+                <div class="mt-2.5 flex items-center gap-1.5 flex-wrap">
+                  <span class="bg-[#16a34a] text-white text-[9px] font-black px-2 py-0.5 rounded-full">Listening Activo</span>
+                  <span class="bg-[#d97706] text-white text-[9px] font-black px-2 py-0.5 rounded-full">Alimentos</span>
+                </div>
+              </div>
+              <button class="mt-3 w-full bg-[#16a34a] hover:bg-[#15803d] text-white font-black py-2 rounded-xl border-2 border-[#14532d] text-xs shadow active:scale-95 transition">
+                ¡ATRAPAR COMIDA!
+              </button>
+            </div>
+
+            <!-- TARJETA JUEGO 4: HEDBANZ 3D PARTY -->
+            <div class="bg-[#caa778] border-4 border-[#78350f] rounded-3xl p-4 shadow-2xl flex flex-col justify-between hover:scale-[1.02] transition cursor-pointer relative overflow-hidden"
+                 onclick="window.openHedbanz3DGame()">
+              <div class="absolute -right-4 -top-4 w-20 h-20 bg-[#a855f7]/20 rounded-full blur-xl pointer-events-none"></div>
+              <div>
+                <div class="w-14 h-14 bg-[#a855f7] rounded-2xl border-2 border-[#6b21a8] flex items-center justify-center text-3xl shadow-md mb-2">
+                  🎴
+                </div>
+                <h3 class="text-sm font-black text-[#451a03]">Hedbanz 3D • Guess What I Am</h3>
+                <p class="text-[11px] text-[#78350f] font-semibold mt-1">
+                  Visor 3D con vincha y carta en la frente. Haz preguntas en inglés al árbitro IA y adivina tu palabra antes de que acabe el reloj de arena.
+                </p>
+                <div class="mt-2.5 flex items-center gap-1.5 flex-wrap">
+                  <span class="bg-[#9333ea] text-white text-[9px] font-black px-2 py-0.5 rounded-full">Blender 3D</span>
+                  <span class="bg-[#eab308] text-slate-900 text-[9px] font-black px-2 py-0.5 rounded-full">Árbitro IA</span>
+                </div>
+              </div>
+              <button class="mt-3 w-full bg-[#9333ea] hover:bg-[#7e22ce] text-white font-black py-2 rounded-xl border-2 border-[#581c87] text-xs shadow active:scale-95 transition">
+                ¡JUGAR HEDBANZ 3D!
+              </button>
+            </div>
                 <p class="text-xs text-[#78350f] font-semibold mt-1">
                   Atrapa únicamente los alimentos que tu mascota desea según la instrucción en inglés. ¡Esquiva botas y bombas!
                 </p>
@@ -2221,6 +2255,642 @@
       document.getElementById('arcadeResultsModal').classList.remove('hidden');
     }
   }
+
+  // ============================================================================
+  // 7B. MOTOR 3D HEDBANZ CON ASSETS DE BLENDER Y ÁRBITRO IA EN INGLÉS
+  // ============================================================================
+
+  const HEDBANZ_VOCAB_DB = [
+    { word: 'Elephant', es: 'Elefante', isLiving: true, isSupermarket: false, isEatable: false, isAppliance: false, isWearable: false, isAnimal: true, canFly: false, isHouse: false, hint: 'A large gray mammal with a long trunk.' },
+    { word: 'Apple', es: 'Manzana', isLiving: true, isSupermarket: true, isEatable: true, isAppliance: false, isWearable: false, isAnimal: false, canFly: false, isHouse: true, hint: 'A sweet red or green fruit that keeps the doctor away.' },
+    { word: 'Microwave', es: 'Microondas', isLiving: false, isSupermarket: false, isEatable: false, isAppliance: true, isWearable: false, isAnimal: false, canFly: false, isHouse: true, hint: 'A kitchen appliance that heats food quickly with radiation.' },
+    { word: 'T-Shirt', es: 'Camiseta', isLiving: false, isSupermarket: true, isEatable: false, isAppliance: false, isWearable: true, isAnimal: false, canFly: false, isHouse: true, hint: 'Cotton clothing item you wear on your torso.' },
+    { word: 'Eagle', es: 'Águila', isLiving: true, isSupermarket: false, isEatable: false, isAppliance: false, isWearable: false, isAnimal: true, canFly: true, isHouse: false, hint: 'A majestic bird of prey with keen eyesight.' },
+    { word: 'Milk', es: 'Leche', isLiving: false, isSupermarket: true, isEatable: true, isAppliance: false, isWearable: false, isAnimal: false, canFly: false, isHouse: true, hint: 'A white liquid rich in calcium, often from dairy cows.' },
+    { word: 'Blender', es: 'Licuadora', isLiving: false, isSupermarket: false, isEatable: false, isAppliance: true, isWearable: false, isAnimal: false, canFly: false, isHouse: true, hint: 'An appliance with sharp spinning blades to make smoothies.' },
+    { word: 'Dog', es: 'Perro', isLiving: true, isSupermarket: false, isEatable: false, isAppliance: false, isWearable: false, isAnimal: true, canFly: false, isHouse: true, hint: 'Loyal four-legged domestic animal known as man\'s best friend.' },
+    { word: 'Sunglasses', es: 'Gafas de sol', isLiving: false, isSupermarket: true, isEatable: false, isAppliance: false, isWearable: true, isAnimal: false, canFly: false, isHouse: true, hint: 'Eyewear designed to protect your eyes from bright sunlight.' },
+    { word: 'Refrigerator', es: 'Refrigerador', isLiving: false, isSupermarket: false, isEatable: false, isAppliance: true, isWearable: false, isAnimal: false, canFly: false, isHouse: true, hint: 'Large cold appliance that preserves perishables and drinks.' },
+    { word: 'Pizza', es: 'Pizza', isLiving: false, isSupermarket: true, isEatable: true, isAppliance: false, isWearable: false, isAnimal: false, canFly: false, isHouse: true, hint: 'Baked flat bread topped with tomato sauce and melted cheese.' },
+    { word: 'Laptop', es: 'Computadora portátil', isLiving: false, isSupermarket: false, isEatable: false, isAppliance: true, isWearable: false, isAnimal: false, canFly: false, isHouse: true, hint: 'Portable personal computer with a foldable screen and keyboard.' }
+  ];
+
+  class Hedbanz3DEngine {
+    constructor() {
+      this.scene = null;
+      this.camera = null;
+      this.renderer = null;
+      this.rafId = null;
+      this.isRunning = false;
+      this.currentCard = null;
+      this.timeLeft = 90;
+      this.timerInterval = null;
+      this.strikes = 0;
+      this.isSolved = false;
+      this.askedQuestions = [];
+      this.hourglassMesh = null;
+      this.cardMesh = null;
+      this.headbandMesh = null;
+      this.avatarGroup = null;
+      this.sfx = new ArcadeAudioEngine();
+    }
+
+    open(options) {
+      if (typeof window !== 'undefined' && typeof window.hideAllModules === 'function') {
+        window.hideAllModules();
+      }
+
+      if (typeof window !== 'undefined' && window.AssetDownloadManager && typeof window.AssetDownloadManager.requireAssetPack === 'function') {
+        window.AssetDownloadManager.requireAssetPack({
+          packId: 'hedbanz',
+          glbUrl: 'assets/models/hedbanz/hedbanz_pack.glb',
+          title: 'Hedbanz 3D: Party Game',
+          category: 'minigames',
+          estimatedMB: 0.25,
+          onReady: (blobUrl) => {
+            this.initStageAndStart(blobUrl || 'assets/models/hedbanz/hedbanz_pack.glb');
+          },
+          onCancel: () => {
+            console.log('[Hedbanz3D] Descarga cancelada. Regresando a Portales.');
+            if (typeof window.returnToMainPortals === 'function') {
+              window.returnToMainPortals();
+            } else if (typeof window.navigateTo === 'function') {
+              window.navigateTo('view-home');
+            }
+          }
+        });
+      } else {
+        this.initStageAndStart('assets/models/hedbanz/hedbanz_pack.glb');
+      }
+    }
+
+    initStageAndStart(glbUrl) {
+      this.ensureDOM();
+      const container = document.getElementById('view-jest-game') || document.getElementById('hedbanz-main-container');
+      if (container) {
+        container.classList.remove('hidden');
+        container.style.setProperty('display', 'flex', 'important');
+        container.style.setProperty('visibility', 'visible', 'important');
+        container.style.setProperty('opacity', '1', 'important');
+      }
+
+      this.pickNewMysteryCard();
+      this.initThreeViewer(glbUrl);
+      this.startCountdownTimer();
+    }
+
+    ensureDOM() {
+      let host = document.getElementById('view-jest-game');
+      if (!host) {
+        host = document.createElement('div');
+        host.id = 'view-jest-game';
+        host.className = 'flex-1 w-full hidden';
+        document.body.appendChild(host);
+      }
+
+      host.innerHTML = `
+        <div id="hedbanz-main-container" class="relative w-full h-[calc(100dvh-56px)] min-h-[520px] bg-gradient-to-b from-[#1e112a] via-[#0d0714] to-[#05020a] flex flex-col select-none overflow-hidden font-sans">
+          
+          <!-- TOPBAR CON BOTÓN VOLVER UNIVERSAL -->
+          <header class="h-14 bg-slate-900/90 border-b border-purple-500/30 flex items-center justify-between px-4 z-20 backdrop-blur-md">
+            <div class="flex items-center gap-3">
+              <button type="button" onclick="window.Hedbanz3D.handleBack(event)"
+                      class="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-sky-300 hover:text-white border border-sky-500/50 text-xs font-black flex items-center gap-1.5 shadow-md transition cursor-pointer active:scale-95">
+                <span>← Volver a Portales</span>
+              </button>
+              <div>
+                <h1 class="text-sm font-black text-purple-200 tracking-wide flex items-center gap-1.5">
+                  <span>🎴 Hedbanz 3D • Guess What I Am</span>
+                </h1>
+                <p class="text-[10px] text-purple-300/70 font-semibold hidden sm:block">Adivina tu carta en inglés haciendo preguntas estratégicas al árbitro IA</p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2.5">
+              <div class="px-3 py-1 rounded-xl bg-purple-950/80 border border-purple-500/40 text-amber-300 font-mono text-xs font-black flex items-center gap-1.5 shadow">
+                <span>⏳</span>
+                <span id="hedbanzClockDisplay">90s</span>
+              </div>
+              <div class="px-2.5 py-1 rounded-xl bg-slate-800/90 border border-slate-700 text-rose-300 text-xs font-black flex items-center gap-1" id="hedbanzStrikesBadge">
+                <span>❌</span>
+                <span id="hedbanzStrikesCount">0/3</span>
+              </div>
+            </div>
+          </header>
+
+          <!-- ÁREA CENTRAL: VISOR THREE.JS + PANEL DE CONTROL DEL JUGADOR -->
+          <div class="flex-1 relative flex flex-col md:flex-row overflow-hidden">
+            
+            <!-- STAGE THREE.JS 3D -->
+            <div class="flex-1 relative h-64 md:h-full bg-transparent overflow-hidden" id="hedbanzCanvasMount">
+              <div id="hedbanzLoadingOverlay" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/80 z-10 transition-opacity">
+                <div class="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+                <span class="text-xs font-extrabold text-purple-300">Cargando paquetes 3D de Blender...</span>
+              </div>
+
+              <!-- HUD DEL ÁRBITRO IA FLOTANTE EN EL ESCENARIO 3D -->
+              <div id="hedbanzRefereeHUD" class="absolute top-3 left-1/2 -translate-x-1/2 px-4 py-2 rounded-2xl bg-slate-900/90 border border-purple-400/40 shadow-2xl backdrop-blur-md flex items-center gap-2.5 pointer-events-none transition-all duration-300 opacity-90">
+                <span class="text-xl">🤖</span>
+                <div>
+                  <div class="text-[10px] font-extrabold text-purple-300 uppercase tracking-wider">AI Referee</div>
+                  <div id="hedbanzRefereeVerdict" class="text-sm font-black text-amber-300">Ask me a question!</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- PANEL DERECHO: PREGUNTAS ESTRATÉGICAS Y ACCIONES -->
+            <div class="w-full md:w-96 bg-slate-900/95 border-t md:border-t-0 md:border-l border-purple-500/30 flex flex-col p-3.5 gap-2.5 z-10 backdrop-blur-md overflow-y-auto max-h-[50vh] md:max-h-full">
+              
+              <!-- CATEGORÍAS ESTRATÉGICAS EN INGLÉS -->
+              <div>
+                <span class="text-[10px] font-extrabold text-purple-300 uppercase tracking-wider block mb-1.5">
+                  Preguntas Estratégicas por Categoría:
+                </span>
+                <div class="grid grid-cols-2 gap-1.5" id="hedbanzQuestionsGrid">
+                  <button type="button" onclick="window.Hedbanz3D.askQuestion('isLiving')"
+                          class="p-2 rounded-xl bg-purple-950/70 hover:bg-purple-900 border border-purple-500/40 text-purple-100 text-[11px] font-extrabold text-left transition shadow cursor-pointer active:scale-95">
+                    🌱 Is it a living thing?
+                  </button>
+                  <button type="button" onclick="window.Hedbanz3D.askQuestion('isSupermarket')"
+                          class="p-2 rounded-xl bg-purple-950/70 hover:bg-purple-900 border border-purple-500/40 text-purple-100 text-[11px] font-extrabold text-left transition shadow cursor-pointer active:scale-95">
+                    🛒 Is it in a supermarket?
+                  </button>
+                  <button type="button" onclick="window.Hedbanz3D.askQuestion('isEatable')"
+                          class="p-2 rounded-xl bg-purple-950/70 hover:bg-purple-900 border border-purple-500/40 text-purple-100 text-[11px] font-extrabold text-left transition shadow cursor-pointer active:scale-95">
+                    🍎 Can you eat it?
+                  </button>
+                  <button type="button" onclick="window.Hedbanz3D.askQuestion('isAppliance')"
+                          class="p-2 rounded-xl bg-purple-950/70 hover:bg-purple-900 border border-purple-500/40 text-purple-100 text-[11px] font-extrabold text-left transition shadow cursor-pointer active:scale-95">
+                    🔌 Is it an appliance?
+                  </button>
+                  <button type="button" onclick="window.Hedbanz3D.askQuestion('isWearable')"
+                          class="p-2 rounded-xl bg-purple-950/70 hover:bg-purple-900 border border-purple-500/40 text-purple-100 text-[11px] font-extrabold text-left transition shadow cursor-pointer active:scale-95">
+                    👕 Can you wear it?
+                  </button>
+                  <button type="button" onclick="window.Hedbanz3D.askQuestion('isAnimal')"
+                          class="p-2 rounded-xl bg-purple-950/70 hover:bg-purple-900 border border-purple-500/40 text-purple-100 text-[11px] font-extrabold text-left transition shadow cursor-pointer active:scale-95">
+                    🐾 Is it an animal?
+                  </button>
+                  <button type="button" onclick="window.Hedbanz3D.askQuestion('canFly')"
+                          class="p-2 rounded-xl bg-purple-950/70 hover:bg-purple-900 border border-purple-500/40 text-purple-100 text-[11px] font-extrabold text-left transition shadow cursor-pointer active:scale-95">
+                    🦅 Can it fly?
+                  </button>
+                  <button type="button" onclick="window.Hedbanz3D.askQuestion('isHouse')"
+                          class="p-2 rounded-xl bg-purple-950/70 hover:bg-purple-900 border border-purple-500/40 text-purple-100 text-[11px] font-extrabold text-left transition shadow cursor-pointer active:scale-95">
+                    🏠 Is it found in a house?
+                  </button>
+                </div>
+              </div>
+
+              <!-- PREGUNTA PERSONALIZADA EN INGLÉS -->
+              <div class="mt-1 flex gap-1.5">
+                <input type="text" id="hedbanzCustomQuestionInput" placeholder="Ask custom question in English..."
+                       class="flex-1 bg-slate-950 border border-purple-500/40 rounded-xl px-2.5 py-1.5 text-xs text-purple-100 placeholder-purple-400/50 focus:outline-none focus:border-purple-400 font-semibold"
+                       onkeydown="if(event.key==='Enter') window.Hedbanz3D.askCustomQuestion();">
+                <button type="button" onclick="window.Hedbanz3D.askCustomQuestion()"
+                        class="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-black shadow cursor-pointer active:scale-95">
+                  Ask
+                </button>
+              </div>
+
+              <!-- HISTORIAL DE PREGUNTAS Y VEREDICTOS -->
+              <div class="flex-1 min-h-[90px] max-h-36 bg-slate-950/60 border border-purple-500/20 rounded-2xl p-2 overflow-y-auto flex flex-col gap-1 text-[11px]" id="hedbanzHistoryList">
+                <div class="text-slate-500 italic text-[10px]">Tus pistas acumuladas aparecerán aquí...</div>
+              </div>
+
+              <!-- BOTÓN PRINCIPAL DE ADIVINANZA FINAL -->
+              <div class="pt-1">
+                <button type="button" onclick="window.Hedbanz3D.openGuessModal()"
+                        class="w-full py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-amber-500/20 cursor-pointer active:scale-95 flex items-center justify-center gap-1.5">
+                  <span>🎯 Adivinar Palabra / Make Final Guess</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- MODAL DE ADIVINANZA FINAL -->
+          <div id="hedbanzGuessModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 hidden">
+            <div class="bg-slate-900 border-2 border-amber-400 rounded-3xl p-5 max-w-sm w-full shadow-2xl text-center">
+              <span class="text-4xl block mb-2">🤔</span>
+              <h3 class="text-base font-black text-white">¿Qué o quién soy?</h3>
+              <p class="text-xs text-slate-300 mt-1 mb-3">Escribe tu respuesta en inglés o elige una de las opciones:</p>
+              
+              <input type="text" id="hedbanzGuessInput" placeholder="Escribe tu palabra en inglés..."
+                     class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 text-center font-bold mb-3 focus:outline-none focus:border-amber-400 uppercase"
+                     onkeydown="if(event.key==='Enter') window.Hedbanz3D.submitGuess();">
+
+              <div id="hedbanzGuessOptions" class="grid grid-cols-2 gap-1.5 mb-3.5"></div>
+
+              <div class="flex items-center gap-2">
+                <button type="button" onclick="window.Hedbanz3D.closeGuessModal()"
+                        class="flex-1 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs hover:bg-slate-700">
+                  Volver a preguntar
+                </button>
+                <button type="button" onclick="window.Hedbanz3D.submitGuess()"
+                        class="flex-1 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs">
+                  ¡Adivinar!
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- MODAL DE VICTORIA & CELEBRACIÓN -->
+          <div id="hedbanzVictoryModal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-lg flex items-center justify-center p-4 hidden">
+            <div class="bg-slate-900 border-2 border-emerald-400 rounded-3xl p-6 max-w-md w-full shadow-2xl text-center relative overflow-hidden animate-bounce-short">
+              <div class="text-5xl mb-2">🎉</div>
+              <h2 class="text-xl font-black text-emerald-300 uppercase">¡EXCELLENT! YOU GOT IT!</h2>
+              <p class="text-sm font-extrabold text-white mt-1" id="hedbanzRevealedWord">It is a: Dog</p>
+              <p class="text-xs text-emerald-200/80 mt-1" id="hedbanzRevealedHint">Loyal four-legged domestic animal.</p>
+
+              <div class="my-4 py-3 px-4 bg-emerald-950/60 border border-emerald-500/40 rounded-2xl flex items-center justify-around">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xl">💰</span>
+                  <span class="text-sm font-black text-amber-300">+100 PetCoins</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xl">⚡</span>
+                  <span class="text-sm font-black text-sky-300">+50 EXP</span>
+                </div>
+              </div>
+
+              <div class="flex gap-2">
+                <button type="button" onclick="window.Hedbanz3D.handleBack(event)"
+                        class="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs">
+                  Salir a Portales
+                </button>
+                <button type="button" onclick="window.Hedbanz3D.nextRound()"
+                        class="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs shadow-lg">
+                  Siguiente Carta ➔
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      `;
+    }
+
+    pickNewMysteryCard() {
+      const idx = Math.floor(Math.random() * HEDBANZ_VOCAB_DB.length);
+      this.currentCard = HEDBANZ_VOCAB_DB[idx];
+      this.timeLeft = 90;
+      this.strikes = 0;
+      this.isSolved = false;
+      this.askedQuestions = [];
+
+      const strikesCount = document.getElementById('hedbanzStrikesCount');
+      if (strikesCount) strikesCount.textContent = '0/3';
+      const historyList = document.getElementById('hedbanzHistoryList');
+      if (historyList) historyList.innerHTML = '<div class="text-slate-500 italic text-[10px]">Tus pistas acumuladas aparecerán aquí...</div>';
+      const verdictEl = document.getElementById('hedbanzRefereeVerdict');
+      if (verdictEl) verdictEl.textContent = 'Ask me a question!';
+    }
+
+    initThreeViewer(glbUrl) {
+      this.disposeThree();
+      const mount = document.getElementById('hedbanzCanvasMount');
+      if (!mount || typeof THREE === 'undefined') return;
+
+      const w = Math.max(280, mount.clientWidth);
+      const h = Math.max(260, mount.clientHeight);
+
+      this.scene = new THREE.Scene();
+      this.camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
+      this.camera.position.set(0, 0.65, 1.65);
+      this.camera.lookAt(0, 0.52, 0);
+
+      this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+      this.renderer.setSize(w, h);
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+      this.renderer.shadowMap.enabled = false;
+      mount.appendChild(this.renderer.domElement);
+
+      const hemi = new THREE.HemisphereLight(0xffffff, 0x443355, 1.2);
+      this.scene.add(hemi);
+      const dirLight = new THREE.DirectionalLight(0xffeedd, 0.8);
+      dirLight.position.set(2, 3, 2);
+      this.scene.add(dirLight);
+
+      this.avatarGroup = new THREE.Group();
+      this.scene.add(this.avatarGroup);
+
+      // Cabeza estilizada
+      const headMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, roughness: 0.6 });
+      const headGeo = new THREE.SphereGeometry(0.24, 24, 24);
+      headGeo.scale(1, 1.15, 1);
+      const headMesh = new THREE.Mesh(headGeo, headMat);
+      headMesh.position.set(0, 0.48, 0);
+      this.avatarGroup.add(headMesh);
+
+      // Cargar paquete Blender GLB
+      const LoaderClass = THREE.GLTFLoader || (typeof window !== 'undefined' && window.GLTFLoader);
+      if (LoaderClass) {
+        const loader = new LoaderClass();
+        loader.load(glbUrl, (gltf) => {
+          const loadingOverlay = document.getElementById('hedbanzLoadingOverlay');
+          if (loadingOverlay) loadingOverlay.style.opacity = '0';
+          setTimeout(() => { if (loadingOverlay) loadingOverlay.style.display = 'none'; }, 200);
+
+          if (gltf && gltf.scene) {
+            const headband = gltf.scene.getObjectByName('Avatar_Headband_Pro');
+            const card = gltf.scene.getObjectByName('Mystery_Card_3D');
+            const hourglass = gltf.scene.getObjectByName('Game_Timer_Hourglass');
+
+            if (headband) {
+              this.headbandMesh = headband.clone();
+              this.avatarGroup.add(this.headbandMesh);
+            }
+            if (card) {
+              this.cardMesh = card.clone();
+              this.cardMesh.position.set(0, 0.72, -0.27);
+              this.avatarGroup.add(this.cardMesh);
+            }
+            if (hourglass) {
+              this.hourglassMesh = hourglass.clone();
+              this.hourglassMesh.position.set(0.65, 0.25, 0);
+              this.hourglassMesh.scale.set(1.5, 1.5, 1.5);
+              this.scene.add(this.hourglassMesh);
+            }
+          }
+        }, undefined, (err) => {
+          console.warn('[Hedbanz3D] Usando modelos procedurales de respaldo:', err);
+          const loadingOverlay = document.getElementById('hedbanzLoadingOverlay');
+          if (loadingOverlay) loadingOverlay.style.display = 'none';
+        });
+      }
+
+      this.isRunning = true;
+      const tick = () => {
+        if (!this.isRunning) return;
+        this.rafId = requestAnimationFrame(tick);
+        const t = performance.now() * 0.0015;
+        if (this.avatarGroup) {
+          this.avatarGroup.position.y = Math.sin(t * 1.5) * 0.02;
+          this.avatarGroup.rotation.y = Math.sin(t * 0.8) * 0.12;
+        }
+        if (this.hourglassMesh) {
+          this.hourglassMesh.rotation.y += 0.015;
+        }
+        this.renderer.render(this.scene, this.camera);
+      };
+      this.rafId = requestAnimationFrame(tick);
+    }
+
+    startCountdownTimer() {
+      if (this.timerInterval) clearInterval(this.timerInterval);
+      this.timerInterval = setInterval(() => {
+        if (this.isSolved) return;
+        this.timeLeft--;
+        const clockEl = document.getElementById('hedbanzClockDisplay');
+        if (clockEl) clockEl.textContent = `${this.timeLeft}s`;
+
+        if (this.timeLeft <= 0) {
+          clearInterval(this.timerInterval);
+          this.handleTimeout();
+        }
+      }, 1000);
+    }
+
+    askQuestion(categoryKey) {
+      if (!this.currentCard || this.isSolved) return;
+
+      const questionsMap = {
+        isLiving: 'Is it a living thing?',
+        isSupermarket: 'Is it in a supermarket?',
+        isEatable: 'Can you eat it?',
+        isAppliance: 'Is it an appliance?',
+        isWearable: 'Can you wear it?',
+        isAnimal: 'Is it an animal?',
+        canFly: 'Can it fly?',
+        isHouse: 'Is it found in a house?'
+      };
+
+      const qText = questionsMap[categoryKey] || 'Custom question';
+      const isYes = !!this.currentCard[categoryKey];
+      const verdict = isYes ? 'YES!' : 'NO!';
+
+      this.recordVerdict(qText, verdict, isYes);
+    }
+
+    askCustomQuestion() {
+      const input = document.getElementById('hedbanzCustomQuestionInput');
+      if (!input || !input.value.trim() || !this.currentCard || this.isSolved) return;
+      const q = input.value.trim();
+      input.value = '';
+
+      const lower = q.toLowerCase();
+      let verdict = 'SOMETIMES!';
+      let isYes = true;
+
+      if (lower.includes('eat') || lower.includes('food') || lower.includes('delicious')) {
+        verdict = this.currentCard.isEatable ? 'YES!' : 'NO!';
+        isYes = this.currentCard.isEatable;
+      } else if (lower.includes('animal') || lower.includes('pet')) {
+        verdict = this.currentCard.isAnimal ? 'YES!' : 'NO!';
+        isYes = this.currentCard.isAnimal;
+      } else if (lower.includes('live') || lower.includes('alive')) {
+        verdict = this.currentCard.isLiving ? 'YES!' : 'NO!';
+        isYes = this.currentCard.isLiving;
+      } else if (lower.includes('electric') || lower.includes('plug') || lower.includes('appliance')) {
+        verdict = this.currentCard.isAppliance ? 'YES!' : 'NO!';
+        isYes = this.currentCard.isAppliance;
+      } else if (lower.includes('wear') || lower.includes('cloth')) {
+        verdict = this.currentCard.isWearable ? 'YES!' : 'NO!';
+        isYes = this.currentCard.isWearable;
+      } else if (lower.includes('fly') || lower.includes('wing')) {
+        verdict = this.currentCard.canFly ? 'YES!' : 'NO!';
+        isYes = this.currentCard.canFly;
+      }
+
+      this.recordVerdict(q, verdict, isYes);
+    }
+
+    recordVerdict(questionText, verdict, isYes) {
+      this.askedQuestions.push({ questionText, verdict, isYes });
+      const verdictEl = document.getElementById('hedbanzRefereeVerdict');
+      if (verdictEl) {
+        verdictEl.textContent = `${verdict} • "${questionText}"`;
+        verdictEl.className = isYes ? 'text-sm font-black text-emerald-400' : (verdict === 'NO!' ? 'text-sm font-black text-rose-400' : 'text-sm font-black text-amber-300');
+      }
+
+      // TTS Árbitro IA
+      this.sfx.speak(verdict);
+
+      const historyList = document.getElementById('hedbanzHistoryList');
+      if (historyList) {
+        const item = document.createElement('div');
+        item.className = 'flex items-center justify-between py-1 border-b border-purple-500/20';
+        item.innerHTML = `
+          <span class="text-purple-200">${questionText}</span>
+          <span class="font-black px-1.5 py-0.5 rounded text-[10px] ${isYes ? 'bg-emerald-950 text-emerald-300 border border-emerald-500/40' : 'bg-rose-950 text-rose-300 border border-rose-500/40'}">${verdict}</span>
+        `;
+        historyList.prepend(item);
+      }
+    }
+
+    openGuessModal() {
+      const modal = document.getElementById('hedbanzGuessModal');
+      if (!modal) return;
+      const optsContainer = document.getElementById('hedbanzGuessOptions');
+      if (optsContainer) {
+        optsContainer.innerHTML = '';
+        const candidates = [this.currentCard.word];
+        const pool = HEDBANZ_VOCAB_DB.filter(c => c.word !== this.currentCard.word);
+        while (candidates.length < 4 && pool.length > 0) {
+          const rand = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
+          candidates.push(rand.word);
+        }
+        candidates.sort(() => Math.random() - 0.5);
+
+        candidates.forEach(cand => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-extrabold text-xs border border-slate-600 transition';
+          btn.textContent = cand;
+          btn.onclick = () => {
+            const input = document.getElementById('hedbanzGuessInput');
+            if (input) input.value = cand;
+            this.submitGuess();
+          };
+          optsContainer.appendChild(btn);
+        });
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    closeGuessModal() {
+      const modal = document.getElementById('hedbanzGuessModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    submitGuess() {
+      const input = document.getElementById('hedbanzGuessInput');
+      if (!input || !input.value.trim() || !this.currentCard) return;
+      const guess = input.value.trim().toLowerCase();
+      this.closeGuessModal();
+
+      if (guess === this.currentCard.word.toLowerCase()) {
+        this.handleVictory();
+      } else {
+        this.strikes++;
+        const strikesCount = document.getElementById('hedbanzStrikesCount');
+        if (strikesCount) strikesCount.textContent = `${this.strikes}/3`;
+        this.sfx.play('buzzer');
+        this.sfx.speak("Not quite! Keep asking questions!");
+
+        if (this.strikes >= 3) {
+          this.handleTimeout();
+        }
+      }
+    }
+
+    handleVictory() {
+      this.isSolved = true;
+      if (this.timerInterval) clearInterval(this.timerInterval);
+      this.sfx.play('cheer');
+      this.sfx.speak(`Correct! You are a ${this.currentCard.word}!`);
+
+      if (typeof global.addExp === 'function') {
+        global.addExp(50, 'Hedbanz 3D Victory');
+      }
+      try {
+        const storedCoins = Number(localStorage.getItem('mastereng_pet_coins') || 100);
+        localStorage.setItem('mastereng_pet_coins', String(storedCoins + 100));
+      } catch (_) {}
+
+      const victoryModal = document.getElementById('hedbanzVictoryModal');
+      const revealedWord = document.getElementById('hedbanzRevealedWord');
+      const revealedHint = document.getElementById('hedbanzRevealedHint');
+      if (revealedWord) revealedWord.textContent = `You are a: ${this.currentCard.word} (${this.currentCard.es})`;
+      if (revealedHint) revealedHint.textContent = this.currentCard.hint;
+      if (victoryModal) victoryModal.classList.remove('hidden');
+    }
+
+    handleTimeout() {
+      this.isSolved = true;
+      if (this.timerInterval) clearInterval(this.timerInterval);
+      this.sfx.play('buzzer');
+      this.sfx.speak(`Time is up! The mystery card was ${this.currentCard.word}.`);
+      alert(`⏰ ¡Tiempo agotado!\nTu palabra secreta era: ${this.currentCard.word} (${this.currentCard.es}).\n${this.currentCard.hint}`);
+      this.nextRound();
+    }
+
+    nextRound() {
+      const victoryModal = document.getElementById('hedbanzVictoryModal');
+      if (victoryModal) victoryModal.classList.add('hidden');
+      this.pickNewMysteryCard();
+      this.startCountdownTimer();
+    }
+
+    handleBack(event) {
+      if (event && event.stopPropagation) event.stopPropagation();
+      this.dispose();
+      if (typeof window.returnToMainPortals === 'function') {
+        window.returnToMainPortals(event);
+      } else if (typeof window.navigateTo === 'function') {
+        window.navigateTo('view-home');
+      }
+    }
+
+    dispose() {
+      this.isRunning = false;
+      if (this.timerInterval) {
+        clearInterval(this.timerInterval);
+        this.timerInterval = null;
+      }
+      this.disposeThree();
+      const container = document.getElementById('view-jest-game');
+      if (container) {
+        container.classList.add('hidden');
+        container.style.display = 'none';
+      }
+    }
+
+    disposeThree() {
+      if (this.rafId) {
+        cancelAnimationFrame(this.rafId);
+        this.rafId = null;
+      }
+      if (this.scene) {
+        try {
+          this.scene.traverse((obj) => {
+            if (obj.isMesh) {
+              if (obj.geometry && typeof obj.geometry.dispose === 'function') obj.geometry.dispose();
+              if (obj.material) {
+                if (Array.isArray(obj.material)) {
+                  obj.material.forEach(m => { if (m && typeof m.dispose === 'function') m.dispose(); });
+                } else if (typeof obj.material.dispose === 'function') {
+                  obj.material.dispose();
+                }
+              }
+            }
+          });
+        } catch (_) {}
+      }
+      if (this.renderer) {
+        try {
+          if (typeof this.renderer.dispose === 'function') this.renderer.dispose();
+          if (this.renderer.domElement && this.renderer.domElement.parentNode) {
+            this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
+          }
+        } catch (_) {}
+      }
+      this.scene = null;
+      this.camera = null;
+      this.renderer = null;
+      this.hourglassMesh = null;
+      this.cardMesh = null;
+      this.headbandMesh = null;
+      this.avatarGroup = null;
+    }
+  }
+
+  const hedbanz3DInstance = new Hedbanz3DEngine();
+  global.Hedbanz3D = hedbanz3DInstance;
+  global.openHedbanz3DGame = (opts) => hedbanz3DInstance.open(opts);
+  global.openJestGameView = (opts) => hedbanz3DInstance.open(opts);
+  global.JestGame3D = hedbanz3DInstance;
 
   // ============================================================================
   // 8. EXPOSICIÓN GLOBAL E INTEGRACIÓN CON PET ENGINE 2D

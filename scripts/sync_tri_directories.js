@@ -31,6 +31,7 @@ const filesToSync = [
   'js/pet_sanctuary.js',
   'js/profile_social.js',
   'js/soccer_tactics_3d.js',
+  'js/asset_download_manager.js',
   'images/app_hero_logo.jpg',
   'images/ai_tutor_mascot.jpg',
   'images/ai_tutor_mascot.svg',
@@ -40,7 +41,17 @@ const filesToSync = [
   'manifest.json',
   'sw.js',
   'icon.png',
-  'icon-512.png'
+  'icon-512.png',
+  'assets/models/manifest.json',
+  'assets/models/worlds/house.glb',
+  'assets/models/worlds/supermarket.glb',
+  'assets/models/worlds/restaurant.glb',
+  'assets/models/worlds/hotel.glb',
+  'assets/models/worlds/dating.glb',
+  'assets/models/worlds/garden.glb',
+  'assets/models/worlds/space.glb',
+  'assets/models/soccer/soccer_pack.glb',
+  'assets/models/hedbanz/hedbanz_pack.glb'
 ];
 
 const targets = [

@@ -727,6 +727,7 @@ Explora y aprende palabras interactuando en 3D.
     </span>
   </div>
 </div>
+<div id="worldtour-asset-badge-container" class="mb-2"></div>
 <button type="button" onclick="event.stopPropagation(); if (typeof window.openWorld3DLobby === 'function') { window.openWorld3DLobby(); } else { window.openPortalModules('worldtour'); openPortalWithLoader('worldtour'); if (typeof window.initOrResumeWorld3D === 'function') window.initOrResumeWorld3D(); }" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-[#F59E0B] hover:bg-[#D97706] text-[#0E1015] font-bold text-xs transition shadow-md cursor-pointer" data-action="enter-portal" data-portal="worldtour">Explorar en 3D (Lobby)</button>
 </div>
 </div>
@@ -1530,6 +1531,7 @@ Estadio 3D con 15 zonas tácticas estilo Score! Hero, vocabulario futbolístico 
     </span>
   </div>
 </div>
+<div id="mastergoal-asset-badge-container" class="mb-2"></div>
 <button type="button" onclick="event.stopPropagation(); window.openPortalModules('soccer');" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-[#F59E0B] hover:bg-[#D97706] text-[#0E1015] font-bold text-xs transition shadow-md cursor-pointer" data-action="enter-portal" data-portal="soccer">Entrar al Estadio 3D</button>
 </div>
 </div>
@@ -2461,6 +2463,7 @@ Cerrar
 <script src="js/pet_sanctuary.js"></script>
 <script src="js/profile_social.js"></script>
 <script src="js/soccer_tactics_3d.js"></script>
+<script src="js/asset_download_manager.js"></script>
 <script>
 function downloadActiveGlossaryPdf() {
 var modId = arguments[0];

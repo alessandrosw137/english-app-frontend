@@ -21,6 +21,223 @@
   World3D._rafId = World3D._rafId || null;
   if (typeof window !== 'undefined') window.World3D = World3D;
 
+  // ============================================================================
+  // CARGADOR GLTFLoader NATIVO PARA THREE.JS r128 (Soporte GLB / Blender 3D)
+  // ============================================================================
+  function parseGLB(arrayBuffer) {
+    const dataView = new DataView(arrayBuffer);
+    const magic = dataView.getUint32(0, true);
+    if (magic !== 0x46546c67) throw new Error('[GLTFLoader] Invalid GLB magic header');
+    const version = dataView.getUint32(4, true);
+    const totalLength = dataView.getUint32(8, true);
+
+    let json = null;
+    let binBuffer = null;
+    let offset = 12;
+
+    while (offset < totalLength) {
+      const chunkLength = dataView.getUint32(offset, true);
+      const chunkType = dataView.getUint32(offset + 4, true);
+      offset += 8;
+      if (chunkType === 0x4e4f534a) { // JSON chunk
+        const jsonBytes = new Uint8Array(arrayBuffer, offset, chunkLength);
+        let jsonStr = '';
+        if (typeof TextDecoder !== 'undefined') {
+          jsonStr = new TextDecoder('utf-8').decode(jsonBytes);
+        } else {
+          for (let i = 0; i < jsonBytes.length; i++) jsonStr += String.fromCharCode(jsonBytes[i]);
+        }
+        json = JSON.parse(jsonStr);
+      } else if (chunkType === 0x004e4942) { // BIN chunk
+        binBuffer = arrayBuffer.slice(offset, offset + chunkLength);
+      }
+      offset += chunkLength;
+    }
+
+    if (!json) throw new Error('[GLTFLoader] Missing JSON chunk in GLB');
+
+    const TYPE_SIZES = { SCALAR: 1, VEC2: 2, VEC3: 3, VEC4: 4, MAT2: 4, MAT3: 9, MAT4: 16 };
+    const COMP_ARRAYS = {
+      5120: Int8Array,
+      5121: Uint8Array,
+      5122: Int16Array,
+      5123: Uint16Array,
+      5125: Uint32Array,
+      5126: Float32Array
+    };
+
+    function getAccessorArray(accessorIndex) {
+      const acc = json.accessors[accessorIndex];
+      const bv = json.bufferViews[acc.bufferView];
+      const byteOffset = (bv.byteOffset || 0) + (acc.byteOffset || 0);
+      const TypedArray = COMP_ARRAYS[acc.componentType];
+      const numComponents = TYPE_SIZES[acc.type];
+      const totalElements = acc.count * numComponents;
+      return new TypedArray(binBuffer, byteOffset, totalElements);
+    }
+
+    const T = (typeof THREE !== 'undefined') ? THREE : (typeof window !== 'undefined' ? window.THREE : null);
+    if (!T) throw new Error('[GLTFLoader] THREE is not defined');
+
+    const materials = (json.materials || []).map(m => {
+      const pbr = m.pbrMetallicRoughness || {};
+      const color = pbr.baseColorFactor ? new T.Color(pbr.baseColorFactor[0], pbr.baseColorFactor[1], pbr.baseColorFactor[2]) : new T.Color(0xffffff);
+      const opacity = pbr.baseColorFactor && pbr.baseColorFactor[3] !== undefined ? pbr.baseColorFactor[3] : 1;
+      const mat = new T.MeshStandardMaterial({
+        color: color,
+        roughness: pbr.roughnessFactor !== undefined ? pbr.roughnessFactor : 0.55,
+        metalness: pbr.metallicFactor !== undefined ? pbr.metallicFactor : 0.1,
+        transparent: opacity < 1,
+        opacity: opacity,
+        side: m.doubleSided ? T.DoubleSide : T.FrontSide
+      });
+      mat.name = m.name || '';
+      return mat;
+    });
+
+    const meshes = (json.meshes || []).map(m => {
+      const primitives = m.primitives || [];
+      const primObjects = primitives.map(prim => {
+        const geom = new T.BufferGeometry();
+        if (prim.attributes) {
+          if (prim.attributes.POSITION !== undefined) {
+            const arr = getAccessorArray(prim.attributes.POSITION);
+            geom.setAttribute('position', new T.BufferAttribute(arr, 3));
+          }
+          if (prim.attributes.NORMAL !== undefined) {
+            const arr = getAccessorArray(prim.attributes.NORMAL);
+            geom.setAttribute('normal', new T.BufferAttribute(arr, 3));
+          }
+          if (prim.attributes.TEXCOORD_0 !== undefined) {
+            const arr = getAccessorArray(prim.attributes.TEXCOORD_0);
+            geom.setAttribute('uv', new T.BufferAttribute(arr, 2));
+          }
+        }
+        if (prim.indices !== undefined) {
+          const arr = getAccessorArray(prim.indices);
+          geom.setIndex(new T.BufferAttribute(arr, 1));
+        }
+        const mat = (prim.material !== undefined && materials[prim.material])
+          ? materials[prim.material]
+          : new T.MeshStandardMaterial({ color: 0xcccccc });
+        const mesh = new T.Mesh(geom, mat);
+        mesh.name = m.name || '';
+        return mesh;
+      });
+
+      if (primObjects.length === 1) return primObjects[0];
+      const group = new T.Group();
+      group.name = m.name || '';
+      primObjects.forEach(p => group.add(p));
+      return group;
+    });
+
+    const rootScene = new T.Group();
+    rootScene.name = 'GLTF_Scene_Root';
+
+    const nodes = (json.nodes || []).map(n => {
+      let obj;
+      if (n.mesh !== undefined && meshes[n.mesh]) {
+        obj = meshes[n.mesh].clone();
+      } else {
+        obj = new T.Group();
+      }
+      obj.name = n.name || obj.name || '';
+      if (n.translation) obj.position.set(n.translation[0], n.translation[1], n.translation[2]);
+      if (n.rotation) obj.quaternion.set(n.rotation[0], n.rotation[1], n.rotation[2], n.rotation[3]);
+      if (n.scale) obj.scale.set(n.scale[0], n.scale[1], n.scale[2]);
+      return obj;
+    });
+
+    (json.nodes || []).forEach((n, idx) => {
+      if (n.children && n.children.length) {
+        n.children.forEach(cIdx => {
+          if (nodes[cIdx]) nodes[idx].add(nodes[cIdx]);
+        });
+      }
+    });
+
+    const scenes = json.scenes || [{ nodes: json.nodes ? json.nodes.map((_, i) => i) : [] }];
+    const defaultScene = scenes[json.scene || 0] || scenes[0];
+    if (defaultScene && defaultScene.nodes) {
+      defaultScene.nodes.forEach(nIdx => {
+        if (nodes[nIdx]) rootScene.add(nodes[nIdx]);
+      });
+    } else {
+      nodes.forEach(n => rootScene.add(n));
+    }
+
+    return { scene: rootScene, scenes: [rootScene], json };
+  }
+
+  function StandardGLTFLoader(manager) {
+    this.manager = manager || (typeof THREE !== 'undefined' ? THREE.DefaultLoadingManager : null);
+  }
+  StandardGLTFLoader.prototype = {
+    constructor: StandardGLTFLoader,
+    load: function(url, onLoad, onProgress, onError) {
+      const scope = this;
+      if (typeof fetch === 'function') {
+        fetch(url)
+          .then(res => {
+            if (!res.ok) throw new Error('HTTP ' + res.status + ' loading ' + url);
+            return res.arrayBuffer();
+          })
+          .then(buffer => {
+            try {
+              const gltf = scope.parse(buffer, url);
+              if (onLoad) onLoad(gltf);
+            } catch (err) {
+              if (onError) onError(err);
+              else console.error('[GLTFLoader] Parse error:', err);
+            }
+          })
+          .catch(err => {
+            if (onError) onError(err);
+            else console.error('[GLTFLoader] Load error:', err);
+          });
+      } else {
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.responseType = 'arraybuffer';
+        xhr.onload = function() {
+          if (xhr.status === 200 || xhr.status === 0) {
+            try {
+              const gltf = scope.parse(xhr.response, url);
+              if (onLoad) onLoad(gltf);
+            } catch (e) {
+              if (onError) onError(e);
+            }
+          } else {
+            if (onError) onError(new Error('Status ' + xhr.status));
+          }
+        };
+        xhr.onerror = function(e) { if (onError) onError(e); };
+        xhr.send(null);
+      }
+    },
+    parse: function(data, path, onLoad, onError) {
+      try {
+        const gltf = parseGLB(data);
+        if (onLoad) onLoad(gltf);
+        return gltf;
+      } catch (e) {
+        if (onError) onError(e);
+        else throw e;
+      }
+    }
+  };
+
+  if (typeof THREE !== 'undefined' && !THREE.GLTFLoader) {
+    THREE.GLTFLoader = StandardGLTFLoader;
+  }
+  if (typeof window !== 'undefined') {
+    if (window.THREE && !window.THREE.GLTFLoader) {
+      window.THREE.GLTFLoader = StandardGLTFLoader;
+    }
+    window.GLTFLoader = window.GLTFLoader || StandardGLTFLoader;
+  }
+
   // Registro global de constructores modulares de alta definición
   global.MasterENG3DBuilders = global.MasterENG3DBuilders || {};
   if (typeof window !== 'undefined') window.MasterENG3DBuilders = global.MasterENG3DBuilders;
@@ -10523,7 +10740,7 @@ ensureOrbitControls();
       <div class="world3d-loader-top-bar">
         <button type="button" onclick="window.cancelWorld3DLoad(event)"
           class="world3d-loader-cancel-btn" data-testid="btn-loader-back-portals">
-          <span>← Volver a Galería 3D</span>
+          <span>✕ Cancelar y Salir</span>
         </button>
         <button type="button" onclick="if(typeof window.returnToMainPortals==='function') window.returnToMainPortals(event); else window.navigateTo('view-home');"
           class="world3d-loader-close-btn" data-testid="btn-loader-cancel">
@@ -10556,7 +10773,7 @@ ensureOrbitControls();
           <div class="mt-3 pt-2.5 border-t border-slate-800/80 flex items-center justify-between gap-2 flex-wrap">
             <button type="button" onclick="window.cancelWorld3DLoad(event)"
               class="px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-600/70 text-[11px] font-extrabold cursor-pointer transition flex items-center gap-1.5">
-              <span>← Retroceder a Galería 3D</span>
+              <span>✕ Cancelar y Salir</span>
             </button>
             <button type="button" onclick="if(typeof window.returnToMainPortals==='function') window.returnToMainPortals(event); else window.navigateTo('view-home');"
               class="px-3 py-1.5 rounded-xl bg-rose-950/70 hover:bg-rose-900/80 text-rose-200 border border-rose-500/40 text-[11px] font-extrabold cursor-pointer transition flex items-center gap-1.5">
@@ -10593,7 +10810,7 @@ ensureOrbitControls();
           style="--world-accent: ${meta.accentHex}; --world-glow: ${meta.glowRgba}; background: ${meta.gradientBg};"
           onmousemove="window.handlePortalCardParallax && window.handlePortalCardParallax(event, this)"
           onmouseleave="window.resetPortalCardParallax && window.resetPortalCardParallax(this)"
-          onclick="window.loadWorld3DWithPrecompile('${meta.id}')">
+          onclick="window.openWorld3DScenario('${meta.id}')">
 
           <div class="portal-arch-header">
             <span class="portal-level-pill" style="border-color: ${meta.accentHex}88;">
@@ -10624,7 +10841,7 @@ ensureOrbitControls();
               <div class="portal-progress-fill" style="width: ${pct}%; background: ${meta.accentHex};"></div>
             </div>
 
-            <button type="button" onclick="event.stopPropagation(); window.loadWorld3DWithPrecompile('${meta.id}')"
+            <button type="button" onclick="event.stopPropagation(); window.openWorld3DScenario('${meta.id}')"
               class="world3d-lobby-explore-btn portal-enter-btn"
               style="background: linear-gradient(135deg, ${meta.accentHex}, #4f46e5);">
               <span>Entrar al Portal</span>
@@ -10768,7 +10985,102 @@ ensureOrbitControls();
     } catch (_) {}
   }
 
-  function loadWorld3DWithPrecompile(scenarioKey) {
+  // =========================================================================
+  // HIDRATACIÓN DE MESHES BLENDER GLB CON VOCABULARIO INTERACTIVO Y FONÉTICA
+  // =========================================================================
+  function hydrateAndAttachBlenderWorldGLB(glbScene, scenarioKey) {
+    if (!glbScene || !scenarioDynamicRoot) return;
+    glbScene.name = 'Blender_GLB_' + scenarioKey;
+
+    const scen = WORLD_TOUR_SCENARIOS[scenarioKey] || {};
+    const scenObjects = scen.objects || [];
+
+    glbScene.traverse((child) => {
+      if (child.isMesh || (child.isGroup && child.children && child.children.length > 0)) {
+        if (child.isMesh) {
+          child.castShadow = false; // Máximo rendimiento 60 FPS fijos
+          child.receiveShadow = true;
+        }
+
+        const rawName = child.name || '';
+        if (!rawName) return;
+
+        const normName = rawName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+
+        let meta = WORLD3D_VOCAB_CATALOG[normName] || WORLD3D_VOCAB_CATALOG[rawName];
+        if (!meta) {
+          meta = scenObjects.find(o => o.id === normName || o.id === rawName || (o.wordEn && o.wordEn.toLowerCase().replace(/[^a-z0-9]/g, '_') === normName));
+        }
+        if (!meta) {
+          for (const k in WORLD3D_VOCAB_CATALOG) {
+            if (normName.includes(k) || k.includes(normName)) {
+              meta = WORLD3D_VOCAB_CATALOG[k];
+              break;
+            }
+          }
+        }
+
+        const cleanWord = (meta && (meta.wordEn || meta.en)) || rawName.replace(/_/g, ' ');
+        const cleanEs = (meta && (meta.wordEs || meta.es)) || cleanWord;
+        const ipaPhon = (meta && (meta.ipa || meta.phonetic)) || '';
+        const exText = (meta && meta.example) || `This is the ${cleanWord}. Practice its native pronunciation!`;
+
+        child.userData = Object.assign({}, meta || {}, {
+          id: (meta && meta.id) || normName,
+          wordEn: cleanWord,
+          wordEs: cleanEs,
+          en: cleanWord,
+          es: cleanEs,
+          ipa: ipaPhon,
+          phonetic: ipaPhon,
+          example: exText,
+          interactive: true,
+          focusPos: child.position ? { x: child.position.x, y: child.position.y + 1, z: child.position.z + 2 } : { x: 0, y: 1.5, z: 3 },
+          lookAtPos: child.position ? { x: child.position.x, y: child.position.y, z: child.position.z } : { x: 0, y: 1, z: 0 }
+        });
+
+        if (!WORLD3D_VOCAB_CATALOG[child.userData.id]) {
+          WORLD3D_VOCAB_CATALOG[child.userData.id] = child.userData;
+        }
+
+        if (!interactiveObjects.includes(child)) {
+          interactiveObjects.push(child);
+        }
+      }
+    });
+
+    scenarioDynamicRoot.add(glbScene);
+  }
+
+  // =========================================================================
+  // ENTRADA AL MUNDO CON VERIFICACIÓN DE PAQUETE ASSET PACK
+  // =========================================================================
+  function openWorld3DScenario(scenarioKey) {
+    const targetKey = WORLD_TOUR_SCENARIOS[scenarioKey] ? scenarioKey : 'house';
+    const meta = WORLD3D_LOBBY_META.find(m => m.id === targetKey) || WORLD3D_LOBBY_META[0];
+    const glbUrl = 'assets/models/worlds/' + (targetKey === 'garden' ? 'garden' : targetKey) + '.glb';
+
+    if (typeof window !== 'undefined' && window.AssetDownloadManager && typeof window.AssetDownloadManager.requireAssetPack === 'function') {
+      window.AssetDownloadManager.requireAssetPack({
+        packId: 'world_' + targetKey,
+        title: meta ? meta.titleEs : targetKey,
+        category: 'world3d',
+        glbUrl: glbUrl,
+        estimatedMB: meta ? (meta.estimatedMB || 0.5) : 0.5,
+        onReady: function(blobUrl) {
+          loadWorld3DWithPrecompile(targetKey, blobUrl || glbUrl);
+        },
+        onCancel: function() {
+          console.log('[World3D] Descarga cancelada. Permaneciendo en Lobby de Mundos 3D.');
+          openWorld3DLobby();
+        }
+      });
+    } else {
+      loadWorld3DWithPrecompile(targetKey, glbUrl);
+    }
+  }
+
+  function loadWorld3DWithPrecompile(scenarioKey, blobOrGlbUrl) {
     if (typeof document === 'undefined') {
       return switch3DScenario(scenarioKey);
     }
@@ -10902,20 +11214,51 @@ ensureOrbitControls();
         }
 
         // PASO 3 (85% - "Construyendo objetos del escenario...")
+        // Envuelve la compilación y carga en Promise.race con timeout de seguridad de 1200ms
         const t3 = setTimeout(() => {
           if (loadToken !== _activeLoadToken) return;
           setLoaderProgress(85, 'Construyendo objetos del escenario...');
-          try {
-            switch3DScenario(targetKey);
-          } catch (err) {
-            console.error('[World3D] Error building scenario:', err);
-          }
 
-          // PASO 4 (100% - Pre-compilación y apertura inmediata)
-          const t4 = setTimeout(() => {
-            finishLoaderAndShowScene();
-          }, 30);
-          _activeLoadTimers.push(t4);
+          const loadPromise = new Promise((resolve) => {
+            try {
+              switch3DScenario(targetKey);
+              const finalGlbUrl = blobOrGlbUrl || ('assets/models/worlds/' + (targetKey === 'garden' ? 'garden' : targetKey) + '.glb');
+              const LoaderClass = (typeof THREE !== 'undefined' && THREE.GLTFLoader) || StandardGLTFLoader;
+              if (LoaderClass) {
+                const gltfLoader = new LoaderClass();
+                gltfLoader.load(finalGlbUrl, (gltf) => {
+                  try {
+                    if (gltf && gltf.scene) {
+                      hydrateAndAttachBlenderWorldGLB(gltf.scene, targetKey);
+                    }
+                  } catch (e) {
+                    console.warn('[World3D] Hydration notice:', e);
+                  }
+                  resolve();
+                }, undefined, (err) => {
+                  console.warn('[World3D] GLB load fallback to procedural:', err);
+                  resolve();
+                });
+              } else {
+                resolve();
+              }
+            } catch (err) {
+              console.error('[World3D] Error building scenario:', err);
+              resolve();
+            }
+          });
+
+          const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 1200));
+
+          Promise.race([loadPromise, timeoutPromise]).then(() => {
+            if (loadToken !== _activeLoadToken) return;
+            // PASO 4 (100% - Pre-compilación y apertura inmediata)
+            setLoaderProgress(100, '¡Escenario listo!');
+            const t4 = setTimeout(() => {
+              finishLoaderAndShowScene();
+            }, 30);
+            _activeLoadTimers.push(t4);
+          });
         }, 20);
         _activeLoadTimers.push(t3);
       }, 20);
@@ -10924,17 +11267,20 @@ ensureOrbitControls();
     _activeLoadTimers.push(t1);
   }
 
+  global.openWorld3DScenario = openWorld3DScenario;
   global.openWorld3DLobby = openWorld3DLobby;
   global.closeWorld3DLobbyAndResume = closeWorld3DLobbyAndResume;
   global.loadWorld3DWithPrecompile = loadWorld3DWithPrecompile;
   global.cancelWorld3DLoad = cancelWorld3DLoad;
   global.handlePortalCardParallax = handlePortalCardParallax;
   global.resetPortalCardParallax = resetPortalCardParallax;
+  global.World3D.openWorld3DScenario = openWorld3DScenario;
   global.World3D.openWorld3DLobby = openWorld3DLobby;
   global.World3D.closeWorld3DLobbyAndResume = closeWorld3DLobbyAndResume;
   global.World3D.loadWorld3DWithPrecompile = loadWorld3DWithPrecompile;
   global.World3D.cancelWorld3DLoad = cancelWorld3DLoad;
   if (typeof window !== 'undefined') {
+    window.openWorld3DScenario = openWorld3DScenario;
     window.openWorld3DLobby = openWorld3DLobby;
     window.closeWorld3DLobbyAndResume = closeWorld3DLobbyAndResume;
     window.loadWorld3DWithPrecompile = loadWorld3DWithPrecompile;
@@ -10942,6 +11288,7 @@ ensureOrbitControls();
     window.handlePortalCardParallax = handlePortalCardParallax;
     window.resetPortalCardParallax = resetPortalCardParallax;
     if (window.World3D) {
+      window.World3D.openWorld3DScenario = openWorld3DScenario;
       window.World3D.openWorld3DLobby = openWorld3DLobby;
       window.World3D.closeWorld3DLobbyAndResume = closeWorld3DLobbyAndResume;
       window.World3D.loadWorld3DWithPrecompile = loadWorld3DWithPrecompile;

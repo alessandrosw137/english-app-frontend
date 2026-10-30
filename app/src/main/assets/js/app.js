@@ -14561,6 +14561,179 @@ window.hideAllModules = function hideAllModules() {
   window._activeModule = null;
 };
 
+// =========================================================================
+// LIBERACIÓN TOTAL DE VRAM Y GEOMETRÍAS WEBGL (WORLD3D, SOCCER, HEDBANZ)
+// =========================================================================
+window.disposeAll3DViewports = function() {
+  // 1. Liberación completa de Mundo 3D (World3D)
+  try {
+    if (typeof window.pauseWorld3D === 'function') window.pauseWorld3D();
+    if (window.World3D) {
+      if (typeof window.World3D.pauseWorld3D === 'function') window.World3D.pauseWorld3D();
+      if (window.World3D._rafId) {
+        cancelAnimationFrame(window.World3D._rafId);
+        window.World3D._rafId = null;
+      }
+      if (window.World3D.scene) {
+        window.World3D.scene.traverse((obj) => {
+          if (obj.isMesh) {
+            if (obj.geometry && typeof obj.geometry.dispose === 'function') obj.geometry.dispose();
+            if (obj.material) {
+              if (Array.isArray(obj.material)) {
+                obj.material.forEach(m => { if (m && typeof m.dispose === 'function') m.dispose(); });
+              } else if (typeof obj.material.dispose === 'function') {
+                obj.material.dispose();
+              }
+            }
+          }
+        });
+      }
+    }
+  } catch (e) {
+    console.warn('[VRAM] World3D dispose notice:', e);
+  }
+
+  // 2. Liberación completa de Fútbol Táctico 3D (SoccerTactics3D)
+  try {
+    if (window.SoccerTactics3D) {
+      if (typeof window.SoccerTactics3D.dispose === 'function') {
+        window.SoccerTactics3D.dispose();
+      } else if (typeof window.SoccerTactics3D.pauseLoop === 'function') {
+        window.SoccerTactics3D.pauseLoop();
+      }
+    }
+  } catch (e) {
+    console.warn('[VRAM] SoccerTactics3D dispose notice:', e);
+  }
+
+  // 3. Liberación completa de Hedbanz 3D (Hedbanz3D / JestGame3D)
+  try {
+    if (window.Hedbanz3D && typeof window.Hedbanz3D.dispose === 'function') {
+      window.Hedbanz3D.dispose();
+    }
+    if (window.JestGame3D && typeof window.JestGame3D.close === 'function') {
+      window.JestGame3D.close();
+    }
+  } catch (e) {
+    console.warn('[VRAM] Hedbanz3D dispose notice:', e);
+  }
+};
+
+// =========================================================================
+// BOTONES DE RETROCESO UNIVERSALES PARA LAS 8 SUBVISTAS DE LA APP
+// =========================================================================
+window.ensureUniversalBackButtons = function() {
+  if (typeof document === 'undefined') return;
+
+  let backBtn = document.getElementById('universal-top-left-back-btn');
+  if (!backBtn) {
+    backBtn = document.createElement('button');
+    backBtn.id = 'universal-top-left-back-btn';
+    backBtn.type = 'button';
+    backBtn.className = 'fixed top-3 left-3 z-[99999] px-3.5 py-1.5 rounded-xl bg-slate-900/95 hover:bg-slate-800 text-slate-100 hover:text-white border border-sky-400/50 shadow-2xl backdrop-blur-md text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 hidden';
+    backBtn.innerHTML = `<span>← Volver</span>`;
+    document.body.appendChild(backBtn);
+  }
+
+  const isVisible = (el) => {
+    if (!el) return false;
+    if (el.classList && el.classList.contains('hidden')) return false;
+    const style = window.getComputedStyle ? window.getComputedStyle(el) : el.style;
+    return style && style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
+  };
+
+  // 1. Lobby de Mundos
+  const worldLobby = document.getElementById('world3d-selection-hub');
+  // 2. Interior del Mundo 3D
+  const worldContainer = document.getElementById('world3d-container') || document.getElementById('view-worldtour');
+  // 3. Pantalla de Carga
+  const worldLoader = document.getElementById('world3d-loading-screen');
+  // 4. Lobby de Fútbol
+  const soccerLobby = document.getElementById('soccer-hub-view');
+  // 5. Partido de Fútbol
+  const soccerMatch = document.getElementById('soccer-stadium-stage') || document.getElementById('soccer-match-view');
+  // 6. Hedbanz
+  const hedbanzView = document.getElementById('hedbanz-main-container') || document.getElementById('view-jest-game');
+  // 7. Karaoke
+  const karaokeView = document.getElementById('view-music');
+  // 8. Perfil
+  const profileModal = document.getElementById('profile-drawer') || document.getElementById('userProfileModal') || document.getElementById('view-profile');
+
+  const inWorldLoader = isVisible(worldLoader);
+  const inWorldLobby = isVisible(worldLobby);
+  const inWorld3D = !inWorldLobby && !inWorldLoader && isVisible(worldContainer) && (document.body.classList.contains('view-worldtour-active') || window._activeModule === 'world3d');
+  const inSoccerMatch = isVisible(soccerMatch);
+  const inSoccerLobby = !inSoccerMatch && isVisible(soccerLobby);
+  const inHedbanz = isVisible(hedbanzView);
+  const inKaraoke = isVisible(karaokeView);
+  const inProfile = isVisible(profileModal);
+
+  const isAnyActive = inWorldLoader || inWorldLobby || inWorld3D || inSoccerMatch || inSoccerLobby || inHedbanz || inKaraoke || inProfile;
+
+  if (!isAnyActive) {
+    backBtn.classList.add('hidden');
+    backBtn.style.setProperty('display', 'none', 'important');
+    return;
+  }
+
+  backBtn.classList.remove('hidden');
+  backBtn.style.setProperty('display', 'flex', 'important');
+
+  backBtn.onclick = function(e) {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (inWorldLoader) {
+      if (typeof window.cancelWorld3DLoad === 'function') window.cancelWorld3DLoad(e);
+      else if (typeof window.openWorld3DLobby === 'function') window.openWorld3DLobby();
+    } else if (inWorld3D) {
+      window.disposeAll3DViewports();
+      if (typeof window.openWorld3DLobby === 'function') window.openWorld3DLobby();
+      else window.returnToMainPortals(e);
+    } else if (inWorldLobby) {
+      window.disposeAll3DViewports();
+      window.returnToMainPortals(e);
+    } else if (inSoccerMatch) {
+      if (window.SoccerTactics3D && typeof window.SoccerTactics3D.handleUniversalBack === 'function') {
+        window.SoccerTactics3D.handleUniversalBack(e);
+      } else {
+        window.disposeAll3DViewports();
+        window.returnToMainPortals(e);
+      }
+    } else if (inSoccerLobby) {
+      window.disposeAll3DViewports();
+      window.returnToMainPortals(e);
+    } else if (inHedbanz) {
+      if (window.Hedbanz3D && typeof window.Hedbanz3D.handleBack === 'function') {
+        window.Hedbanz3D.handleBack(e);
+      } else {
+        window.disposeAll3DViewports();
+        window.returnToMainPortals(e);
+      }
+    } else if (inKaraoke) {
+      if (typeof window.goBackToMusicSearch === 'function' && document.getElementById('music-player-subview') && isVisible(document.getElementById('music-player-subview'))) {
+        window.goBackToMusicSearch();
+      } else {
+        window.returnToMainPortals(e);
+      }
+    } else if (inProfile) {
+      if (typeof window.closeUserProfileModal === 'function') window.closeUserProfileModal();
+      else if (typeof window.closeProfileDrawer === 'function') window.closeProfileDrawer();
+      else window.returnToMainPortals(e);
+    } else {
+      window.disposeAll3DViewports();
+      window.returnToMainPortals(e);
+    }
+  };
+};
+
+if (typeof setInterval !== 'undefined') {
+  setInterval(() => {
+    try { window.ensureUniversalBackButtons(); } catch (_) {}
+  }, 350);
+}
+
 // --- MOTOR UNIVERSAL DE EVENTOS Y CLICS ---
 (function() {
   window.returnToMainPortals = function(e) {
@@ -14572,6 +14745,10 @@ window.hideAllModules = function hideAllModules() {
   window._isReturningToPortals = true;
 
   try {
+    // 0. Liberación total e inmediata de VRAM WebGL y 3D Viewports
+    if (typeof window.disposeAll3DViewports === 'function') {
+      try { window.disposeAll3DViewports(); } catch (_) {}
+    }
     // 0. Cierre total e infalible de MasterPet Sanctuary y hábitat 2D
     if (typeof window.closePetSanctuary === 'function') {
       try { window.closePetSanctuary(); } catch (_) {}
