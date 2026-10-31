@@ -2374,7 +2374,7 @@ window.logout = function() {
 
     function handleCoverCardClick(index) {
       if (index === window.currentPortal) {
-        const modules = ['path', 'worldtour', 'music', 'ai-tutor', 'stories', 'jest', 'social', 'pets', 'soccer'];
+        const modules = ['path', 'worldtour', 'music', 'ai-tutor', 'stories', 'jest', 'social', 'pets', 'soccer', 'culinary'];
         if (modules[index] === 'ai-tutor' && typeof window.isUserRegistered === 'function' && !window.isUserRegistered()) {
           if (typeof showFloatingToast === 'function') {
             showFloatingToast('🔒 Inicia sesión con tu cuenta para acceder al Tutor IA.', '🔒');
@@ -2420,7 +2420,7 @@ window.logout = function() {
       if (typeof document !== 'undefined' && document.body && document.body.classList) {
         document.body.classList.add('in-immersive-portal');
       }
-      const portalModules = ['path', 'worldtour', 'music', 'ai-tutor', 'stories', 'jest', 'social', 'pets', 'soccer'];
+      const portalModules = ['path', 'worldtour', 'music', 'ai-tutor', 'stories', 'jest', 'social', 'pets', 'soccer', 'culinary'];
       const activeIdx = (typeof window.currentPortal === 'number')
         ? ((window.currentPortal % portalModules.length + portalModules.length) % portalModules.length)
         : 0;
@@ -2556,10 +2556,60 @@ window.logout = function() {
         } else if (typeof window.navigateTo === 'function') {
           window.navigateTo('view-soccer-3d');
         }
+      } else if (portal === 'culinary' || portal === 'culinary_studio' || portal === 'masterchef' || portal === 'kitchen') {
+        if (typeof window.openCulinaryStudioPortal === 'function') {
+          window.openCulinaryStudioPortal();
+        }
       } else if (typeof openPortalWithLoader === 'function') {
         openPortalWithLoader(portal);
       } else {
         showFloatingToast('Abriendo Módulos de Aprendizaje...', '🚀');
+      }
+    };
+
+    window.openCulinaryStudioPortal = function openCulinaryStudioPortal() {
+      window._suppressReturnToPortals = true;
+      if (typeof window.hideAllModules === 'function') {
+        window.hideAllModules();
+      }
+      window._suppressReturnToPortals = false;
+
+      window._activeModule = 'culinary_studio';
+      if (document.body && document.body.classList) {
+        document.body.classList.add('in-immersive-portal', 'culinary-studio-active');
+      }
+
+      if (window.CulinaryStudio2D && typeof window.CulinaryStudio2D.open === 'function') {
+        window.CulinaryStudio2D.open();
+      }
+
+      const rootEl = document.getElementById('culinary-studio-root');
+      if (rootEl) {
+        rootEl.classList.remove('hidden');
+        rootEl.style.setProperty('display', 'flex', 'important');
+        rootEl.style.setProperty('visibility', 'visible', 'important');
+        rootEl.style.setProperty('pointer-events', 'auto', 'important');
+
+        // Botón visible "← Salir a Portales" en la barra superior izquierda
+        const topBar = rootEl.querySelector('.culinary-top-bar');
+        if (topBar && !rootEl.querySelector('#culinaryBackToPortalsBtn')) {
+          const backBtn = document.createElement('button');
+          backBtn.id = 'culinaryBackToPortalsBtn';
+          backBtn.type = 'button';
+          backBtn.className = 'culinary-back-btn';
+          backBtn.innerHTML = '← Salir a Portales';
+          backBtn.style.cssText = 'background: #0f172a; color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); padding: 7px 14px; border-radius: 12px; font-weight: 800; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; margin-right: 12px; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: all 0.2s;';
+          backBtn.onclick = function(e) {
+            if (e) {
+              if (typeof e.preventDefault === 'function') e.preventDefault();
+              if (typeof e.stopPropagation === 'function') e.stopPropagation();
+            }
+            if (typeof window.returnToMainPortals === 'function') {
+              window.returnToMainPortals(e);
+            }
+          };
+          topBar.insertBefore(backBtn, topBar.firstChild);
+        }
       }
     };
 
@@ -14506,6 +14556,8 @@ window.hideAllModules = function hideAllModules() {
     '#world3dFloatingBackBtn', '#worldTourTopBar', '#world3d-selection-hub', '#world3d-loading-screen',
     // MasterGoal 3D: Tactical Soccer
     '#view-soccer-3d',
+    // MasterChef Culinary Studio 2D
+    '#culinary-studio-root',
     // Resto de portales
     '#view-path', '#view-stories', '#ai-tutor-view', '#view-jest-game', '#view-community',
     // Overlays activos residuales
@@ -14579,8 +14631,13 @@ window.hideAllModules = function hideAllModules() {
     try { window.PetMinigames2D.stopGame(); } catch (_) {}
   }
 
+  // Pausa y detiene Culinary Studio 2D
+  if (window.CulinaryStudio2D && typeof window.CulinaryStudio2D.close === 'function') {
+    try { window.CulinaryStudio2D.close(); } catch (_) {}
+  }
+
   if (document.body && document.body.classList) {
-    document.body.classList.remove('view-worldtour-active', 'portal-3d-fallback-active', 'pet-sanctuary-active', 'pet-view-active', 'in-immersive-portal');
+    document.body.classList.remove('view-worldtour-active', 'portal-3d-fallback-active', 'pet-sanctuary-active', 'pet-view-active', 'culinary-studio-active', 'in-immersive-portal');
   }
   window._activeModule = null;
 };
@@ -14765,7 +14822,7 @@ if (typeof setInterval !== 'undefined') {
     if (typeof e.preventDefault === 'function') e.preventDefault();
     if (typeof e.stopPropagation === 'function') e.stopPropagation();
   }
-  if (window._isReturningToPortals) return;
+  if (window._isReturningToPortals || window._suppressReturnToPortals) return;
   window._isReturningToPortals = true;
 
   try {
@@ -14818,6 +14875,7 @@ if (typeof setInterval !== 'undefined') {
       'worldTourTopBar',
       'view-pet-sanctuary',
       'pet-sanctuary-root',
+      'culinary-studio-root',
       'masterpet-sanctuary-view',
       'view-pet-game',
       'pet-habitat-view',

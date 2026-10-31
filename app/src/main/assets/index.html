@@ -46,6 +46,7 @@ tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['"Plus Jakart
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/pet_profile.css">
 <link rel="stylesheet" href="css/soccer_tactics.css">
+<link rel="stylesheet" href="css/culinary_studio.css">
 <style>
 .hidden{display:none !important;}
 #view-auth.hidden,#view-home.hidden,#view-path.hidden,#view-stories.hidden,#view-music.hidden,#view-worldtour.hidden,#view-soccer-3d.hidden,#ai-tutor-view.hidden{display:none !important;}
@@ -1537,6 +1538,63 @@ Juega fútbol en un estadio 3D y aprende jugadas y frases en inglés mientras an
 </div>
 </div>
 
+<!-- ================= PORTAL 10: MASTERCHEF CULINARY STUDIO (COCINA 2D) ================= -->
+<div id="coverCard-9" onclick="handleCoverCardClick(9)" class="coverflow-portal-card portal-card portal-card-9 hidden-back" style="--portal-glow: rgba(245, 158, 11, 0.5);">
+<div class="w-full h-full flex flex-col justify-between relative overflow-hidden group">
+<div class="absolute -top-12 -right-12 w-36 h-36 bg-amber-500/25 rounded-full blur-2xl pointer-events-none"></div>
+<div>
+<div class="flex items-center justify-between mb-1.5">
+<span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-[10px] font-bold text-amber-300 uppercase tracking-widest">
+Gastronomía 2D
+</span>
+<span class="text-xs font-bold text-orange-400">Cocina Gourmet</span>
+</div>
+<h3 class="text-lg font-black text-amber-300 group-hover:text-amber-200 transition flex items-center gap-2">
+<span>👨‍🍳</span> MasterChef Culinary Studio
+</h3>
+<p class="text-[11px] text-slate-300 mt-1 leading-snug">
+Cocina 2D: Recetas, Clientes e Inglés Gastronómico Profesional
+</p>
+</div>
+<div class="my-2.5 relative w-full h-36 sm:h-40 rounded-2xl overflow-hidden border border-amber-500/50 shadow-xl bg-slate-950 flex items-center justify-center shrink-0">
+  <svg class="w-full h-full object-cover" viewBox="0 0 340 180" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="culinaryCardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#451a03" />
+        <stop offset="50%" stop-color="#78350f" />
+        <stop offset="100%" stop-color="#1e1b4b" />
+      </linearGradient>
+      <linearGradient id="chefHatGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#ffffff" />
+        <stop offset="100%" stop-color="#e2e8f0" />
+      </linearGradient>
+    </defs>
+    <rect width="340" height="180" fill="url(#culinaryCardGrad)" />
+    <rect x="0" y="130" width="340" height="50" fill="#334155" opacity="0.8" />
+    <line x1="0" y1="130" x2="340" y2="130" stroke="#f59e0b" stroke-width="2" />
+    <ellipse cx="170" cy="130" rx="42" ry="12" fill="#0f172a" stroke="#f59e0b" stroke-width="2" />
+    <path d="M 150 125 Q 160 90 170 110 Q 180 85 190 125 Z" fill="#ef4444" opacity="0.85" />
+    <path d="M 158 125 Q 166 98 172 115 Q 178 95 184 125 Z" fill="#f59e0b" opacity="0.9" />
+    <path d="M 145 65 C 135 50 145 30 160 38 C 170 20 190 22 195 38 C 210 32 215 50 205 65 Z" fill="url(#chefHatGrad)" stroke="#cbd5e1" stroke-width="1.5" />
+    <rect x="150" y="62" width="50" height="12" rx="3" fill="#ffffff" stroke="#94a3b8" stroke-width="1" />
+    <text x="70" y="95" font-size="28">🔪</text>
+    <text x="245" y="95" font-size="28">🍷</text>
+    <text x="156" y="152" font-size="22">🥘</text>
+  </svg>
+  <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none"></div>
+  <div class="absolute bottom-2 right-2.5 z-10">
+    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-950/90 border border-amber-400/50 text-[10px] font-bold text-amber-300 shadow-md">
+      <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+      Servicio Activo
+    </span>
+  </div>
+</div>
+<button type="button" onclick="event.stopPropagation(); window.openCulinaryStudioPortal();" class="portal-btn shrink-0 w-full py-3 rounded-xl bg-gradient-to-r from-[#F59E0B] to-[#EA580C] hover:from-[#D97706] hover:to-[#C2410C] text-slate-950 font-black text-xs transition shadow-md cursor-pointer flex items-center justify-center gap-1.5" data-action="enter-portal" data-portal="culinary">
+  <span>Entrar a la Cocina →</span>
+</button>
+</div>
+</div>
+
 
 </div>
 <button type="button" onclick="window.nextPortal()" class="carousel-nav-btn next carousel-btn carousel-next nav-arrow absolute right-0 sm:-right-3 z-40 w-10 h-10 rounded-full bg-[#161922] hover:bg-[#1E222D] border border-white/10 text-slate-300 flex items-center justify-center shadow-md transition cursor-pointer" style="cursor: pointer !important; pointer-events: auto !important; z-index: 1000 !important;" data-action="next" title="Portal Siguiente">
@@ -1553,6 +1611,7 @@ Juega fútbol en un estadio 3D y aprende jugadas y frases en inglés mientras an
 <span id="coverDot-6" onclick="window.goToPortal(6)" class="carousel-dot w-2.5 h-2.5 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer"></span>
 <span id="coverDot-7" onclick="window.goToPortal(7)" class="carousel-dot w-2.5 h-2.5 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer"></span>
 <span id="coverDot-8" onclick="window.goToPortal(8)" class="carousel-dot w-2.5 h-2.5 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer"></span>
+<span id="coverDot-9" onclick="window.goToPortal(9)" class="carousel-dot w-2.5 h-2.5 rounded-full bg-slate-600 transition-all duration-300 cursor-pointer"></span>
 </div>
 </div>
 <div id="view-path" class="flex-1 p-4 max-w-5xl mx-auto w-full hidden" style="display: none;">
@@ -1892,6 +1951,7 @@ Fábula Clásica
 </div>
 
 <div id="view-soccer-3d" class="flex-1 w-full hidden" style="display: none;"></div>
+<div id="culinary-studio-root" class="flex-1 w-full hidden" style="display: none;"></div>
 <div id="view-jest-game" class="flex-1 w-full hidden" style="display: none;"></div>
 
 <div id="ai-tutor-view" class="flex-1 p-3 sm:p-4 max-w-4xl mx-auto w-full hidden" style="display: none;">
@@ -2466,6 +2526,8 @@ Cerrar
 <script src="js/profile_social.js"></script>
 <script src="js/soccer_tactics_3d.js"></script>
 <script src="js/asset_download_manager.js"></script>
+<script src="js/culinary_databank.js"></script>
+<script src="js/culinary_studio_2d.js"></script>
 <script>
 function downloadActiveGlossaryPdf() {
 var modId = arguments[0];
@@ -2481,11 +2543,11 @@ try {
   if (document.body) document.body.classList.toggle('user-guest', _isG);
 } catch (_) {}
 // 1. Control de Vistas
-window.MASTER_ROOT_VIEWS=['view-auth','view-home','view-path','view-stories','view-music','view-worldtour','view-soccer-3d','ai-tutor-view','view-jest-game','view-community'];
+window.MASTER_ROOT_VIEWS=['view-auth','view-home','view-path','view-stories','view-music','view-worldtour','view-soccer-3d','culinary-studio-root','ai-tutor-view','view-jest-game','view-community'];
 window.resolveMasterViewId=function(rawId){
 var id=(rawId||'home').toString().trim();
 var cleanId=id.replace(/[-_]view$/,'');
-var map={'login':'view-auth','auth':'view-auth','view-auth':'view-auth','login-view':'view-auth','hub':'view-home','home':'view-home','portals':'view-home','view-home':'view-home','hub-view':'view-home','path':'view-path','learning-path':'view-path','learning-path-view':'view-path','view-path':'view-path','worldtour':'view-worldtour','world3d':'view-worldtour','world3d-view':'view-worldtour','view-worldtour':'view-worldtour','soccer':'view-soccer-3d','soccer3d':'view-soccer-3d','mastergoal':'view-soccer-3d','view-soccer-3d':'view-soccer-3d','music':'view-music','music-view':'view-music','view-music':'view-music','stories':'view-stories','stories-view':'view-stories','view-stories':'view-stories','ai-tutor':'ai-tutor-view','tutor':'ai-tutor-view','ai-tutor-view':'ai-tutor-view','view-ai-tutor':'ai-tutor-view','admin':'adminDashboardModal','admin-view':'adminDashboardModal','jest':'view-jest-game','jarz':'view-jest-game','view-jest-game':'view-jest-game','jest-view':'view-jest-game','social':'view-community','chat':'view-community','community':'view-community','view-community':'view-community','community-view':'view-community'};
+var map={'login':'view-auth','auth':'view-auth','view-auth':'view-auth','login-view':'view-auth','hub':'view-home','home':'view-home','portals':'view-home','view-home':'view-home','hub-view':'view-home','path':'view-path','learning-path':'view-path','learning-path-view':'view-path','view-path':'view-path','worldtour':'view-worldtour','world3d':'view-worldtour','world3d-view':'view-worldtour','view-worldtour':'view-worldtour','soccer':'view-soccer-3d','soccer3d':'view-soccer-3d','mastergoal':'view-soccer-3d','view-soccer-3d':'view-soccer-3d','culinary':'culinary-studio-root','culinary_studio':'culinary-studio-root','masterchef':'culinary-studio-root','culinary-studio-root':'culinary-studio-root','music':'view-music','music-view':'view-music','view-music':'view-music','stories':'view-stories','stories-view':'view-stories','view-stories':'view-stories','ai-tutor':'ai-tutor-view','tutor':'ai-tutor-view','ai-tutor-view':'ai-tutor-view','view-ai-tutor':'ai-tutor-view','admin':'adminDashboardModal','admin-view':'adminDashboardModal','jest':'view-jest-game','jarz':'view-jest-game','view-jest-game':'view-jest-game','jest-view':'view-jest-game','social':'view-community','chat':'view-community','community':'view-community','view-community':'view-community','community-view':'view-community'};
 return map[id]||map[cleanId]||(window.MASTER_ROOT_VIEWS.indexOf(id)!==-1?id:(window.MASTER_ROOT_VIEWS.indexOf('view-'+id)!==-1?'view-'+id:'view-home'));
 };
 window.syncImmersivePortalState=function(targetId){
@@ -2495,10 +2557,10 @@ if(!tid&&typeof window.resolveMasterViewId==='function'&&window.currentViewId){
 tid=window.resolveMasterViewId(window.currentViewId);
 }
 var isImmersive=false;
-if(tid==='view-worldtour'||tid==='view-music'||tid==='view-pet-sanctuary'){
+if(tid==='view-worldtour'||tid==='view-music'||tid==='view-pet-sanctuary'||tid==='culinary-studio-root'){
 isImmersive=true;
 }
-if(document.body.classList.contains('pet-sanctuary-active')||document.body.classList.contains('view-worldtour-active')){
+if(document.body.classList.contains('pet-sanctuary-active')||document.body.classList.contains('view-worldtour-active')||document.body.classList.contains('culinary-studio-active')){
 isImmersive=true;
 }
 var petRoot=document.getElementById('pet-sanctuary-root');
@@ -2673,6 +2735,8 @@ if(targetId==='view-jest-game'&&typeof window.openJestGameView==='function')wind
 if(targetId==='view-community'&&typeof window.openCommunityHubView==='function')window.openCommunityHubView();
 if(targetId==='view-soccer-3d'&&window.SoccerTactics3D&&typeof window.SoccerTactics3D.openPortal==='function')window.SoccerTactics3D.openPortal();
 if(targetId!=='view-soccer-3d'&&window.SoccerTactics3D&&typeof window.SoccerTactics3D.pauseLoop==='function')window.SoccerTactics3D.pauseLoop();
+if(targetId==='culinary-studio-root'&&typeof window.openCulinaryStudioPortal==='function')window.openCulinaryStudioPortal();
+if(targetId!=='culinary-studio-root'&&window.CulinaryStudio2D&&typeof window.CulinaryStudio2D.close==='function')window.CulinaryStudio2D.close();
 if(targetId!=='view-music'&&typeof pauseYouTubePlayer==='function')pauseYouTubePlayer();
 };
 window.navigateToView=window.navigateTo;

@@ -1,5 +1,5 @@
-// mastereng-pwa-v32 Service Worker Network-First with Auto-Cache Cleanup
-const CACHE_NAME = 'mastereng-pwa-v34-' + Date.now();
+// mastereng-pwa-v35 Service Worker Network-First with Auto-Cache Cleanup
+const CACHE_NAME = 'mastereng-pwa-v35-' + Date.now();
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -7,6 +7,7 @@ const CORE_ASSETS = [
   './css/styles.css',
   './css/pet_profile.css',
   './css/soccer_tactics.css',
+  './css/culinary_studio.css',
   './js/app.js',
   './js/world3d.js',
   './js/world3d_nature_space.js',
@@ -21,6 +22,8 @@ const CORE_ASSETS = [
   './js/profile_social.js',
   './js/soccer_tactics_3d.js',
   './js/asset_download_manager.js',
+  './js/culinary_databank.js',
+  './js/culinary_studio_2d.js',
   './manifest.json',
   './icon.png',
   './icon-512.png'
