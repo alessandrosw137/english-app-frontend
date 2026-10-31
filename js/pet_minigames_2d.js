@@ -2635,8 +2635,8 @@
 
       this.scene = new THREE.Scene();
       this.camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-      this.camera.position.set(0, 0.3, 4.2);
-      this.camera.lookAt(0, 0.2, 0);
+      this.camera.position.set(0, 0.72, 2.75);
+      this.camera.lookAt(0, 0.45, 0.2);
 
       this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
       this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
@@ -2700,16 +2700,150 @@
       dirLight.position.set(2, 4, 3);
       this.scene.add(dirLight);
 
+      // =========================================================================
+      // 1. MESA DE DUELO 3D CON CUBIERTA, BISEL DORADO, TAPETE, MAZO Y ORBE REFERÍ
+      // =========================================================================
+      this.tableGroup = new THREE.Group();
+      this.tableGroup.position.set(0, 0, 0);
+      this.scene.add(this.tableGroup);
+
+      const woodMat = new THREE.MeshStandardMaterial({ color: 0x5c2c16, roughness: 0.45 });
+      const darkWoodMat = new THREE.MeshStandardMaterial({ color: 0x27170a, roughness: 0.6 });
+      const goldMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.7, roughness: 0.25 });
+      const feltMat = new THREE.MeshStandardMaterial({ color: 0x064e3b, roughness: 0.85 });
+
+      // Base y pata de pedestal
+      const baseGeo = new THREE.CylinderGeometry(0.52, 0.58, 0.06, 32);
+      const baseMesh = new THREE.Mesh(baseGeo, darkWoodMat);
+      baseMesh.position.set(0, -0.42, 0.3);
+
+      const pillarGeo = new THREE.CylinderGeometry(0.12, 0.16, 0.54, 24);
+      const pillarMesh = new THREE.Mesh(pillarGeo, darkWoodMat);
+      pillarMesh.position.set(0, -0.15, 0.3);
+
+      // Cubierta de la mesa (Wooden Table Top)
+      const topGeo = new THREE.CylinderGeometry(1.18, 1.18, 0.06, 48);
+      const topMesh = new THREE.Mesh(topGeo, woodMat);
+      topMesh.position.set(0, 0.12, 0.3);
+
+      // Bisel dorado exterior
+      const rimGeo = new THREE.TorusGeometry(1.18, 0.02, 16, 48);
+      const rimMesh = new THREE.Mesh(rimGeo, goldMat);
+      rimMesh.rotation.x = Math.PI / 2;
+      rimMesh.position.set(0, 0.14, 0.3);
+
+      // Tapete de fieltro de duelo (Velvet Mat)
+      const matGeo = new THREE.CylinderGeometry(0.85, 0.85, 0.015, 40);
+      const matMesh = new THREE.Mesh(matGeo, feltMat);
+      matMesh.position.set(0, 0.152, 0.3);
+
+      // Mazo de cartas sobre la mesa
+      const deckGeo = new THREE.BoxGeometry(0.16, 0.04, 0.22);
+      const deckMat = new THREE.MeshStandardMaterial({ color: 0x1e3a8a, roughness: 0.35 });
+      const deckMesh = new THREE.Mesh(deckGeo, deckMat);
+      deckMesh.position.set(-0.46, 0.175, 0.36);
+      deckMesh.rotation.y = 0.2;
+
+      // Carta suelta superior del mazo
+      const topCardGeo = new THREE.BoxGeometry(0.155, 0.005, 0.215);
+      const topCardMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
+      const topCardMesh = new THREE.Mesh(topCardGeo, topCardMat);
+      topCardMesh.position.set(-0.45, 0.198, 0.365);
+      topCardMesh.rotation.y = 0.32;
+
+      // Orbe Referí IA holográfico central
+      this.refereeGroup = new THREE.Group();
+      this.refereeGroup.position.set(0, 0.16, 0.12);
+
+      const orbRingGeo = new THREE.TorusGeometry(0.065, 0.01, 12, 24);
+      const orbRingMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.6, roughness: 0.2 });
+      const orbRing = new THREE.Mesh(orbRingGeo, orbRingMat);
+      orbRing.rotation.x = Math.PI / 2;
+
+      const orbCoreGeo = new THREE.SphereGeometry(0.042, 16, 16);
+      const orbCoreMat = new THREE.MeshStandardMaterial({
+        color: 0x06b6d4,
+        emissive: 0x0891b2,
+        emissiveIntensity: 0.8,
+        roughness: 0.2
+      });
+      this.refereeOrb = new THREE.Mesh(orbCoreGeo, orbCoreMat);
+      this.refereeOrb.position.y = 0.07;
+
+      this.refereeGroup.add(orbRing, this.refereeOrb);
+
+      this.tableGroup.add(baseMesh, pillarMesh, topMesh, rimMesh, matMesh, deckMesh, topCardMesh, this.refereeGroup);
+
+      // =========================================================================
+      // 2. RIVAL COMPLETO SENTADO: SILLA, TORSO, CUELLO, BRAZOS, CABEZA Y VINCHA
+      // =========================================================================
       this.avatarGroup = new THREE.Group();
       this.avatarGroup.position.set(0, 0, 0);
       this.scene.add(this.avatarGroup);
 
+      // Silla del rival sentado frente a nosotros
+      const chairMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7 });
+      const chairBackGeo = new THREE.BoxGeometry(0.54, 0.64, 0.06);
+      const chairBack = new THREE.Mesh(chairBackGeo, chairMat);
+      chairBack.position.set(0, 0.44, -0.32);
+
+      const chairSeatGeo = new THREE.BoxGeometry(0.50, 0.06, 0.44);
+      const chairSeat = new THREE.Mesh(chairSeatGeo, chairMat);
+      chairSeat.position.set(0, 0.05, -0.16);
+      this.avatarGroup.add(chairBack, chairSeat);
+
+      // Torso del rival: elegante chaqueta azul
+      const torsoMat = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.5 });
+      const torsoGeo = new THREE.CylinderGeometry(0.24, 0.29, 0.46, 24);
+      const torsoMesh = new THREE.Mesh(torsoGeo, torsoMat);
+      torsoMesh.position.set(0, 0.24, -0.06);
+
+      // Cuello de camisa blanca
+      const collarMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 });
+      const collarGeo = new THREE.CylinderGeometry(0.12, 0.15, 0.12, 16);
+      const collarMesh = new THREE.Mesh(collarGeo, collarMat);
+      collarMesh.position.set(0, 0.46, -0.04);
+
+      // Corbata / moño rojo elegante
+      const tieMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.35 });
+      const tieGeo = new THREE.ConeGeometry(0.042, 0.16, 16);
+      const tieMesh = new THREE.Mesh(tieGeo, tieMat);
+      tieMesh.rotation.x = Math.PI;
+      tieMesh.position.set(0, 0.40, 0.04);
+
+      // Brazos y manos apoyadas sobre la mesa
+      const skinMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, roughness: 0.55 });
+      const armMat = new THREE.MeshStandardMaterial({ color: 0x1d4ed8, roughness: 0.5 });
+
+      // Brazo izquierdo
+      const leftUpperArmGeo = new THREE.CylinderGeometry(0.06, 0.055, 0.26, 14);
+      const leftUpperArm = new THREE.Mesh(leftUpperArmGeo, armMat);
+      leftUpperArm.position.set(-0.28, 0.30, 0.02);
+      leftUpperArm.rotation.set(0.6, 0, 0.4);
+
+      const leftHandGeo = new THREE.SphereGeometry(0.052, 16, 16);
+      leftHandGeo.scale(1, 0.6, 1.25);
+      const leftHand = new THREE.Mesh(leftHandGeo, skinMat);
+      leftHand.position.set(-0.28, 0.175, 0.20);
+
+      // Brazo derecho
+      const rightUpperArmGeo = new THREE.CylinderGeometry(0.06, 0.055, 0.26, 14);
+      const rightUpperArm = new THREE.Mesh(rightUpperArmGeo, armMat);
+      rightUpperArm.position.set(0.28, 0.30, 0.02);
+      rightUpperArm.rotation.set(0.6, 0, -0.4);
+
+      const rightHandGeo = new THREE.SphereGeometry(0.052, 16, 16);
+      rightHandGeo.scale(1, 0.6, 1.25);
+      const rightHand = new THREE.Mesh(rightHandGeo, skinMat);
+      rightHand.position.set(0.28, 0.175, 0.20);
+
+      this.avatarGroup.add(torsoMesh, collarMesh, tieMesh, leftUpperArm, leftHand, rightUpperArm, rightHand);
+
       // Cabeza estilizada amarilla
-      const headMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, roughness: 0.55 });
-      const headGeo = new THREE.SphereGeometry(0.26, 32, 32);
+      const headGeo = new THREE.SphereGeometry(0.25, 32, 32);
       headGeo.scale(1, 1.15, 1);
-      const headMesh = new THREE.Mesh(headGeo, headMat);
-      headMesh.position.set(0, 0.48, 0);
+      const headMesh = new THREE.Mesh(headGeo, skinMat);
+      headMesh.position.set(0, 0.58, 0);
       this.avatarGroup.add(headMesh);
 
       // Ojos de personaje estilo cartoon amigable
@@ -2720,38 +2854,38 @@
       const shineGeo = new THREE.SphereGeometry(0.010, 12, 12);
 
       const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
-      leftEye.position.set(-0.08, 0.51, 0.245);
+      leftEye.position.set(-0.08, 0.61, 0.245);
       const leftShine = new THREE.Mesh(shineGeo, eyeShineMat);
-      leftShine.position.set(-0.07, 0.525, 0.255);
+      leftShine.position.set(-0.07, 0.625, 0.255);
 
       const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
-      rightEye.position.set(0.08, 0.51, 0.245);
+      rightEye.position.set(0.08, 0.61, 0.245);
       const rightShine = new THREE.Mesh(shineGeo, eyeShineMat);
-      rightShine.position.set(0.09, 0.525, 0.255);
+      rightShine.position.set(0.09, 0.625, 0.255);
 
       // Sonrisa amigable
       const smileGeo = new THREE.TorusGeometry(0.038, 0.007, 8, 24, Math.PI);
       const smileMat = new THREE.MeshStandardMaterial({ color: 0x7c2d12, roughness: 0.3 });
       const smile = new THREE.Mesh(smileGeo, smileMat);
       smile.rotation.set(0, 0, Math.PI);
-      smile.position.set(0, 0.42, 0.25);
+      smile.position.set(0, 0.52, 0.25);
 
       // Mejillas sonrojadas
       const cheekMat = new THREE.MeshStandardMaterial({ color: 0xf43f5e, roughness: 0.8, transparent: true, opacity: 0.55 });
       const cheekGeo = new THREE.SphereGeometry(0.035, 16, 16);
       cheekGeo.scale(1.2, 0.6, 0.4);
       const leftCheek = new THREE.Mesh(cheekGeo, cheekMat);
-      leftCheek.position.set(-0.14, 0.45, 0.21);
+      leftCheek.position.set(-0.14, 0.55, 0.21);
       const rightCheek = new THREE.Mesh(cheekGeo, cheekMat);
-      rightCheek.position.set(0.14, 0.45, 0.21);
+      rightCheek.position.set(0.14, 0.55, 0.21);
 
       this.avatarGroup.add(leftEye, leftShine, rightEye, rightShine, smile, leftCheek, rightCheek);
 
       // Meshes de respaldo procedural inmediato (evita escena vacía durante descarga)
       const fbBandMat = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.35, metalness: 0.3 });
-      const fbBandGeo = new THREE.TorusGeometry(0.265, 0.024, 16, 36);
+      const fbBandGeo = new THREE.TorusGeometry(0.255, 0.024, 16, 36);
       this.proceduralBand = new THREE.Mesh(fbBandGeo, fbBandMat);
-      this.proceduralBand.position.set(0, 0.55, 0);
+      this.proceduralBand.position.set(0, 0.65, 0);
       this.proceduralBand.rotation.x = Math.PI / 2;
       this.avatarGroup.add(this.proceduralBand);
 
@@ -2759,19 +2893,22 @@
       const fbCardMat = new THREE.MeshStandardMaterial({ map: cardTex, roughness: 0.25 });
       const fbCardGeo = new THREE.BoxGeometry(0.28, 0.38, 0.015);
       this.proceduralCard = new THREE.Mesh(fbCardGeo, fbCardMat);
-      this.proceduralCard.position.set(0, 0.78, 0.26);
+      this.proceduralCard.position.set(0, 0.88, 0.26);
       this.avatarGroup.add(this.proceduralCard);
 
+      // =========================================================================
+      // 3. RELOJ DE ARENA UBICADO EXACTAMENTE ENCIMA DE LA MESA (0.68, 0.18, 0.38)
+      // =========================================================================
       this.proceduralHourglass = new THREE.Group();
       const hgMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.4 });
-      const hgTop = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.04, 24), hgMat);
-      const hgBot = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.04, 24), hgMat);
-      hgTop.position.set(0, 0.22, 0);
-      hgBot.position.set(0, -0.22, 0);
-      const hgGlass = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.40, 16), new THREE.MeshStandardMaterial({ color: 0x93c5fd, transparent: true, opacity: 0.5 }));
+      const hgTop = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.035, 24), hgMat);
+      const hgBot = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.035, 24), hgMat);
+      hgTop.position.set(0, 0.18, 0);
+      hgBot.position.set(0, -0.18, 0);
+      const hgGlass = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.34, 16), new THREE.MeshStandardMaterial({ color: 0x93c5fd, transparent: true, opacity: 0.55 }));
       this.proceduralHourglass.add(hgTop, hgBot, hgGlass);
-      this.proceduralHourglass.position.set(1.8, -0.2, 0);
-      this.proceduralHourglass.scale.set(1.6, 1.6, 1.6);
+      this.proceduralHourglass.position.set(0.68, 0.18, 0.38);
+      this.proceduralHourglass.scale.set(0.85, 0.85, 0.85);
       this.scene.add(this.proceduralHourglass);
 
       // Cargar paquete Blender GLB
@@ -2805,12 +2942,13 @@
             if (headband) {
               this.headbandMesh = headband.clone();
               this.headbandMesh.rotation.y = Math.PI;
+              this.headbandMesh.position.set(0, 0.65, 0);
               this.avatarGroup.add(this.headbandMesh);
             }
             if (card) {
               this.cardMesh = card.clone();
               this.cardMesh.rotation.y = Math.PI;
-              this.cardMesh.position.set(0, 0.78, 0.26);
+              this.cardMesh.position.set(0, 0.88, 0.26);
               if (cardTex) {
                 this.cardMesh.traverse((child) => {
                   if (child.isMesh) child.material = new THREE.MeshStandardMaterial({ map: cardTex, roughness: 0.25 });
@@ -2820,8 +2958,8 @@
             }
             if (hourglass) {
               this.hourglassMesh = hourglass.clone();
-              this.hourglassMesh.position.set(1.8, -0.2, 0);
-              this.hourglassMesh.scale.set(1.6, 1.6, 1.6);
+              this.hourglassMesh.position.set(0.68, 0.18, 0.38);
+              this.hourglassMesh.scale.set(0.85, 0.85, 0.85);
               this.scene.add(this.hourglassMesh);
             }
           }
@@ -2840,8 +2978,12 @@
         this.rafId = requestAnimationFrame(tick);
         const t = performance.now() * 0.0015;
         if (this.avatarGroup) {
-          this.avatarGroup.position.y = Math.sin(t * 1.5) * 0.03;
-          this.avatarGroup.rotation.y = Math.sin(t * 0.8) * 0.12;
+          this.avatarGroup.position.y = Math.sin(t * 1.5) * 0.015;
+          this.avatarGroup.rotation.y = Math.sin(t * 0.8) * 0.04;
+        }
+        if (this.refereeOrb) {
+          this.refereeOrb.position.y = 0.07 + Math.sin(t * 2.5) * 0.015;
+          this.refereeOrb.rotation.y += 0.02;
         }
         if (this.hourglassMesh) {
           this.hourglassMesh.rotation.y += 0.015;

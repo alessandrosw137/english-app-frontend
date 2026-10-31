@@ -2812,21 +2812,33 @@ ensureOrbitControls();
     });
   }
 
+  // Paleta de colores luminosos por escenario (PROHIBIDO fondo negro #000000)
+  const SCENARIO_SKY_COLORS = {
+    house: 0xdbeafe,
+    supermarket: 0xf1f5f9,
+    restaurant: 0x2b1922,
+    hotel: 0x1e293b,
+    dating: 0x0f172a,
+    garden: 0xbae6fd,
+    space: 0x0b1021
+  };
+  global.SCENARIO_SKY_COLORS = SCENARIO_SKY_COLORS;
+
   function setupScenarioAtmosphereAndLighting(activeScene, scenarioKey) {
     if (!activeScene || typeof THREE === 'undefined') return;
     const key = String(scenarioKey || 'house').toLowerCase();
-    const ATMOSPHERES = {
-      house: { bg: 0x0f172a, fogDensity: 0.005, hemiSky: 0xffffff, hemiGround: 0x1e293b, dirColor: 0xfff2dd, dirIntensity: 1.15, dirPos: [8, 16, 10] },
-      supermarket: { bg: 0x0284c7, fogDensity: 0.004, hemiSky: 0xf0f9ff, hemiGround: 0x0369a1, dirColor: 0xffffff, dirIntensity: 1.25, dirPos: [6, 18, 8] },
-      restaurant: { bg: 0x1e1b2e, fogDensity: 0.005, hemiSky: 0xfde68a, hemiGround: 0x312e81, dirColor: 0xffedd5, dirIntensity: 1.10, dirPos: [8, 14, 10] },
-      hotel: { bg: 0x1c1917, fogDensity: 0.005, hemiSky: 0xfef3c7, hemiGround: 0x292524, dirColor: 0xffedd5, dirIntensity: 1.20, dirPos: [10, 16, 12] },
-      dating: { bg: 0x070b14, fogDensity: 0.006, hemiSky: 0xf472b6, hemiGround: 0x1e1b4b, dirColor: 0xfce7f3, dirIntensity: 1.05, dirPos: [6, 14, 8] },
-      garden: { bg: 0x064e3b, fogDensity: 0.004, hemiSky: 0xdcfce7, hemiGround: 0x064e3b, dirColor: 0xfef08a, dirIntensity: 1.20, dirPos: [8, 18, 12] },
-      space: { bg: 0x020617, fogDensity: 0.002, hemiSky: 0x38bdf8, hemiGround: 0x020617, dirColor: 0xbae6fd, dirIntensity: 1.30, dirPos: [12, 16, 14] }
-    };
-    const atmo = ATMOSPHERES[key] || ATMOSPHERES.house;
-    activeScene.background = new THREE.Color(atmo.bg);
-    activeScene.fog = new THREE.FogExp2(atmo.bg, atmo.fogDensity);
+    const skyHex = SCENARIO_SKY_COLORS[key] !== undefined ? SCENARIO_SKY_COLORS[key] : 0xdbeafe;
+
+    // Configuración luminosa del cielo y clear color del renderer
+    activeScene.background = new THREE.Color(skyHex);
+    if (renderer && typeof renderer.setClearColor === 'function') {
+      renderer.setClearColor(skyHex, 1.0);
+    }
+    const rGlobal = (typeof World3D !== 'undefined' && World3D.renderer) ? World3D.renderer : null;
+    if (rGlobal && typeof rGlobal.setClearColor === 'function') {
+      rGlobal.setClearColor(skyHex, 1.0);
+    }
+
     let lightsGroup = activeScene.getObjectByName('ScenarioLightsGroup');
     if (!lightsGroup) {
       lightsGroup = new THREE.Group();
@@ -2834,28 +2846,38 @@ ensureOrbitControls();
       activeScene.add(lightsGroup);
     } else {
       while (lightsGroup.children.length > 0) {
-        lightsGroup.remove(lightsGroup.children[0]);
+        const c = lightsGroup.children[0];
+        lightsGroup.remove(c);
+        if (c.geometry && c.geometry.dispose) c.geometry.dispose();
+        if (c.material && c.material.dispose) c.material.dispose();
       }
     }
-    const amb = new THREE.AmbientLight(0xffffff, 1.35);
+
+    // ILUMINACIÓN DIRECTA POTENTE GARANTIZADA
+    // 1. Luz ambiental de alta intensidad
+    const amb = new THREE.AmbientLight(0xffffff, 2.0);
     amb.name = 'ScenarioAmbientLight';
     lightsGroup.add(amb);
 
-    const hemi = new THREE.HemisphereLight(0xffffff, 0x334155, 1.2);
+    // 2. HemisphereLight con gradiente cielo blanco / suelo gris azulado
+    const hemi = new THREE.HemisphereLight(0xffffff, 0x94a3b8, 1.5);
     hemi.position.set(0, 25, 0);
     hemi.name = 'ScenarioHemiLight';
     lightsGroup.add(hemi);
 
-    const mainDir = new THREE.DirectionalLight(0xfffbeb, 1.5);
+    // 3. DirectionalLight principal en (12, 22, 16) con 1.8 de potencia
+    const mainDir = new THREE.DirectionalLight(0xfffbeb, 1.8);
     mainDir.position.set(12, 22, 16);
     mainDir.castShadow = false;
     mainDir.name = 'ScenarioMainDirLight';
     lightsGroup.add(mainDir);
 
-    const fillDir = new THREE.DirectionalLight(0x94a3b8, 0.4);
-    fillDir.position.set(-atmo.dirPos[0], atmo.dirPos[1] * 0.7, -atmo.dirPos[2]);
-    fillDir.castShadow = false;
-    lightsGroup.add(fillDir);
+    // 4. PointLight cenital de alta difusión en (0, 7, 5) con radio 50
+    const pointLight = new THREE.PointLight(0xffffff, 1.4, 50);
+    pointLight.position.set(0, 7, 5);
+    pointLight.name = 'ScenarioPointLight';
+    lightsGroup.add(pointLight);
+
     let existingStars = activeScene.getObjectByName('SpaceStarfield');
     if (existingStars) {
       activeScene.remove(existingStars);
@@ -4236,37 +4258,33 @@ ensureOrbitControls();
   // 7. ILUMINACIÓN CINEMÁTICA EQUILIBRADA Y CICLO DÍA / NOCHE
   // ============================================================================
   function setupCinematicLighting(targetScene) {
-    // 1. Luz ambiental suave (#ffffff, intensidad 0.6)
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    // 1. Luz ambiental de alta intensidad (#ffffff, 2.0)
+    const ambientLight = new THREE.AmbientLight(0xffffff, 2.0);
     targetScene.add(ambientLight);
     globalAmbientLight = ambientLight;
 
-    // 2. HemisphereLight para relleno ambiental global suave
-    const hemiLight = new THREE.HemisphereLight(0xddeeff, 0x202035, 1.2);
+    // 2. HemisphereLight para relleno ambiental global suave (1.5)
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x94a3b8, 1.5);
     targetScene.add(hemiLight);
     globalHemiLight = hemiLight;
 
-    // 3. DirectionalLight principal con sombras suaves (posición [10, 20, 15], intensidad 1.0)
-    const dirLight = new THREE.DirectionalLight(0xfff2dd, 1.0); // THREE.DirectionalLight(0xfff2dd, 1.8)
-    dirLight.position.set(10, 20, 15); // dirLight.position.set(12, 20, 10);
-    dirLight.castShadow = true;
-    dirLight.shadow.camera.left = -25;
-    dirLight.shadow.camera.right = 25;
-    dirLight.shadow.camera.top = 25;
-    dirLight.shadow.camera.bottom = -25;
-    dirLight.shadow.camera.near = 0.5;
-    dirLight.shadow.camera.far = 75;
-    dirLight.shadow.mapSize.width = 1024;
-    dirLight.shadow.mapSize.height = 1024;
-    dirLight.shadow.bias = -0.0005;
+    // 3. DirectionalLight principal potente en (12, 22, 16) con 1.8
+    const dirLight = new THREE.DirectionalLight(0xfffbeb, 1.8);
+    dirLight.position.set(12, 22, 16);
+    dirLight.castShadow = false;
     targetScene.add(dirLight);
     globalDirLight = dirLight;
 
-    // 4. Luz cálida puntual (PointLight) en el interior de la casa para simular lámparas de estudio
-    const studyLight = new THREE.PointLight(0xffaa44, 2.0, 15.0);
+    // 4. PointLight cenital de alta difusión en (0, 7, 5) con radio 50 (1.4)
+    const pointLight = new THREE.PointLight(0xffffff, 1.4, 50);
+    pointLight.position.set(0, 7, 5);
+    pointLight.castShadow = false;
+    targetScene.add(pointLight);
+
+    // 5. Luz cálida puntual adicional en zona de estudio
+    const studyLight = new THREE.PointLight(0xffaa44, 1.5, 15.0);
     studyLight.position.set(3.5, 2.5, -3.2);
     studyLight.castShadow = false;
-    studyLight.shadow.bias = -0.001;
     targetScene.add(studyLight);
     studyPointLight = studyLight;
   }
@@ -6575,34 +6593,41 @@ ensureOrbitControls();
 
     const c3d = document.getElementById('world3d-container');
     if (c3d) {
+      c3d.classList.remove('hidden');
       c3d.style.setProperty('display', 'block', 'important');
+      c3d.style.setProperty('visibility', 'visible', 'important');
+      c3d.style.setProperty('opacity', '1', 'important');
       c3d.style.setProperty('position', 'fixed', 'important');
       c3d.style.setProperty('inset', '0', 'important');
       c3d.style.setProperty('width', '100vw', 'important');
       c3d.style.setProperty('height', '100vh', 'important');
-      c3d.style.setProperty('z-index', '9000', 'important');
+      c3d.style.setProperty('z-index', '9500', 'important');
     }
 
     const cMount = document.getElementById('threeWebGLMount');
     if (cMount) {
+      cMount.classList.remove('hidden');
       cMount.style.setProperty('display', 'block', 'important');
+      cMount.style.setProperty('visibility', 'visible', 'important');
+      cMount.style.setProperty('opacity', '1', 'important');
       cMount.style.setProperty('position', 'fixed', 'important');
       cMount.style.setProperty('inset', '0', 'important');
       cMount.style.setProperty('width', '100vw', 'important');
       cMount.style.setProperty('height', '100vh', 'important');
-      cMount.style.setProperty('z-index', '9000', 'important');
+      cMount.style.setProperty('z-index', '9500', 'important');
     }
 
     const r = (typeof World3D !== 'undefined' && World3D.renderer) ? World3D.renderer : renderer;
     const c = (typeof World3D !== 'undefined' && World3D.camera) ? World3D.camera : camera;
 
     if (r && r.domElement) {
+      r.domElement.classList.remove('hidden');
       r.domElement.style.setProperty('display', 'block', 'important');
       r.domElement.style.setProperty('position', 'fixed', 'important');
       r.domElement.style.setProperty('inset', '0', 'important');
       r.domElement.style.setProperty('width', '100vw', 'important');
       r.domElement.style.setProperty('height', '100vh', 'important');
-      r.domElement.style.setProperty('z-index', '9000', 'important');
+      r.domElement.style.setProperty('z-index', '9500', 'important');
       r.domElement.style.setProperty('visibility', 'visible', 'important');
       r.domElement.style.setProperty('opacity', '1', 'important');
     }
@@ -6615,6 +6640,92 @@ ensureOrbitControls();
   }
   global.enforceWorld3DContainerStyle = enforceWorld3DContainerStyle;
   if (typeof window !== 'undefined') window.enforceWorld3DContainerStyle = enforceWorld3DContainerStyle;
+
+  function forceHideWorld3DOverlays() {
+    if (typeof document === 'undefined') return;
+    const overlayIds = [
+      'world3d-loading-screen',
+      'world3d-selection-hub',
+      'asset-download-modal',
+      'asset-download-backdrop',
+      'assetDownloadModal'
+    ];
+    overlayIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.classList.add('hidden');
+        el.style.setProperty('display', 'none', 'important');
+        el.style.setProperty('opacity', '0', 'important');
+        el.style.setProperty('pointer-events', 'none', 'important');
+      }
+    });
+  }
+  global.forceHideWorld3DOverlays = forceHideWorld3DOverlays;
+  if (typeof window !== 'undefined') window.forceHideWorld3DOverlays = forceHideWorld3DOverlays;
+
+  function forceShowWorld3DCanvas() {
+    enforceWorld3DContainerStyle();
+    if (typeof document === 'undefined') return;
+    const c3d = document.getElementById('world3d-container');
+    if (c3d) {
+      c3d.classList.remove('hidden');
+      c3d.style.setProperty('display', 'block', 'important');
+      c3d.style.setProperty('visibility', 'visible', 'important');
+      c3d.style.setProperty('opacity', '1', 'important');
+      c3d.style.setProperty('position', 'fixed', 'important');
+      c3d.style.setProperty('inset', '0', 'important');
+      c3d.style.setProperty('width', '100vw', 'important');
+      c3d.style.setProperty('height', '100vh', 'important');
+      c3d.style.setProperty('z-index', '9500', 'important');
+    }
+    const r = (typeof World3D !== 'undefined' && World3D.renderer) ? World3D.renderer : renderer;
+    if (r && r.domElement) {
+      r.domElement.classList.remove('hidden');
+      r.domElement.style.setProperty('display', 'block', 'important');
+      r.domElement.style.setProperty('position', 'fixed', 'important');
+      r.domElement.style.setProperty('inset', '0', 'important');
+      r.domElement.style.setProperty('width', '100vw', 'important');
+      r.domElement.style.setProperty('height', '100vh', 'important');
+      r.domElement.style.setProperty('z-index', '9500', 'important');
+      r.domElement.style.setProperty('visibility', 'visible', 'important');
+      r.domElement.style.setProperty('opacity', '1', 'important');
+    }
+  }
+  global.forceShowWorld3DCanvas = forceShowWorld3DCanvas;
+  if (typeof window !== 'undefined') window.forceShowWorld3DCanvas = forceShowWorld3DCanvas;
+
+  function sanitizeGlbScene(gltfScene) {
+    if (!gltfScene || typeof THREE === 'undefined') return;
+    gltfScene.traverse((child) => {
+      if (child.isMesh) {
+        child.visible = true;
+        child.frustumCulled = false;
+        if (child.geometry && !child.geometry.attributes.normal) {
+          try { child.geometry.computeVertexNormals(); } catch (_) {}
+        }
+        const srcMats = Array.isArray(child.material) ? child.material : [child.material];
+        const safeMats = srcMats.map((m) => {
+          const col = (m && m.color && (m.color.r + m.color.g + m.color.b) > 0.04)
+            ? m.color.clone()
+            : new THREE.Color(0xe2e8f0);
+          return new THREE.MeshStandardMaterial({
+            color: col,
+            map: (m && m.map) ? m.map : null,
+            roughness: 0.48,
+            metalness: 0.12,
+            emissive: col.clone().multiplyScalar(0.10),
+            emissiveIntensity: 0.35,
+            transparent: Boolean(m && m.transparent && m.opacity < 0.95),
+            opacity: (m && typeof m.opacity === 'number' && m.opacity > 0.15) ? m.opacity : 1.0,
+            side: THREE.DoubleSide
+          });
+        });
+        child.material = safeMats.length === 1 ? safeMats[0] : safeMats;
+      }
+    });
+  }
+  global.sanitizeGlbScene = sanitizeGlbScene;
+  if (typeof window !== 'undefined') window.sanitizeGlbScene = sanitizeGlbScene;
 
   function initOrResumeWorld3D() {
     if (typeof THREE === 'undefined') return;
@@ -6734,9 +6845,12 @@ ensureOrbitControls();
       return;
     }
 
-    // 1. Escena con fondo azul profundo
+    // 1. Escena con fondo luminoso adaptado al escenario (PROHIBIDO fondo negro)
+    const initialSky = (typeof SCENARIO_SKY_COLORS !== 'undefined' && SCENARIO_SKY_COLORS[currentScenarioKey || 'house'])
+      ? SCENARIO_SKY_COLORS[currentScenarioKey || 'house']
+      : 0xdbeafe;
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0a0e17);
+    scene.background = new THREE.Color(initialSky);
 
     // 2. Cámara con relación de aspecto del contenedor
     const width = window.innerWidth;
@@ -6751,6 +6865,7 @@ ensureOrbitControls();
       stencil: false,
       depth: true
     });
+    renderer.setClearColor(initialSky, 1.0);
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min((typeof window !== 'undefined' && window.devicePixelRatio) || 1, 1.5));
     renderer.shadowMap.enabled = false; // Desactivar shadowMap costoso para garantizar 60 FPS clavados en los 7 mundos
@@ -6942,7 +7057,13 @@ ensureOrbitControls();
   function switch3DScenario(scenarioKey) {
     const key = String(scenarioKey || 'house').toLowerCase().trim();
     const targetScenario = (typeof WORLD_TOUR_SCENARIOS !== 'undefined' && WORLD_TOUR_SCENARIOS[key]) ? key : 'house';
-    openWorld3DScenario(targetScenario);
+    currentScenarioKey = targetScenario;
+    initOrResumeWorld3D();
+    const activeTargetScene = (typeof World3D !== 'undefined' && World3D.scene) ? World3D.scene : scene;
+    if (activeTargetScene) {
+      setupScenarioAtmosphereAndLighting(activeTargetScene, targetScenario);
+    }
+    forceShowWorld3DCanvas();
   }
 
   function deduplicateWorld3DBarsGlobal() {
@@ -7985,13 +8106,33 @@ ensureOrbitControls();
   // =========================================================================
   function hydrateAndAttachBlenderWorldGLB(glbScene, scenarioKey) {
     if (!glbScene) return;
+    sanitizeGlbScene(glbScene);
+
     const activeTargetScene = (typeof World3D !== 'undefined' && World3D.scene) ? World3D.scene : scene;
     if (!scenarioDynamicRoot) {
       scenarioDynamicRoot = new THREE.Group();
       scenarioDynamicRoot.name = 'ScenarioDynamicRoot';
       if (activeTargetScene) activeTargetScene.add(scenarioDynamicRoot);
-    } else if (activeTargetScene && scenarioDynamicRoot.parent !== activeTargetScene) {
-      activeTargetScene.add(scenarioDynamicRoot);
+    } else {
+      if (activeTargetScene && scenarioDynamicRoot.parent !== activeTargetScene) {
+        activeTargetScene.add(scenarioDynamicRoot);
+      }
+      // Limpiar y liberar cualquier modelo o escena previa (cero escenas duplicadas)
+      while (scenarioDynamicRoot.children.length > 0) {
+        const oldChild = scenarioDynamicRoot.children[0];
+        scenarioDynamicRoot.remove(oldChild);
+        if (typeof disposeObjectHierarchy === 'function') {
+          disposeObjectHierarchy(oldChild);
+        } else if (oldChild && oldChild.traverse) {
+          oldChild.traverse((node) => {
+            if (node.geometry && typeof node.geometry.dispose === 'function') node.geometry.dispose();
+            if (node.material) {
+              if (Array.isArray(node.material)) node.material.forEach(m => { if (m && typeof m.dispose === 'function') m.dispose(); });
+              else if (typeof node.material.dispose === 'function') node.material.dispose();
+            }
+          });
+        }
+      }
     }
     glbScene.name = 'Blender_GLB_' + scenarioKey;
 
@@ -8033,7 +8174,13 @@ ensureOrbitControls();
     // 4. Agregar a la escena dinámica
     scenarioDynamicRoot.add(glbScene);
 
-    // 5. Iniciar bucle requestAnimationFrame inmediatamente
+    // 5. Forzar visibilidad y renderizado inmediato del canvas
+    forceShowWorld3DCanvas();
+    if (renderer && camera && activeTargetScene) {
+      try { renderer.render(activeTargetScene, camera); } catch (_) {}
+    }
+
+    // 6. Iniciar bucle requestAnimationFrame inmediatamente
     resumeLoop();
   }
 
@@ -8080,6 +8227,7 @@ ensureOrbitControls();
       let meshCount = 0;
       gltf.scene.traverse(o => { if (o.isMesh) meshCount++; });
       if (meshCount === 0) return false;
+      sanitizeGlbScene(gltf.scene);
       hydrateAndAttachBlenderWorldGLB(gltf.scene, scenarioKey);
       return true;
     }
@@ -8232,6 +8380,8 @@ ensureOrbitControls();
       if (loadToken !== _activeLoadToken) return;
       clearActiveLoadTimers();
       setLoaderProgress(100, '¡Escenario listo!');
+      forceHideWorld3DOverlays();
+      forceShowWorld3DCanvas();
       try {
         if (renderer && scene && camera) {
           if (typeof renderer.compile === 'function') {
@@ -8244,6 +8394,8 @@ ensureOrbitControls();
       const tFade = setTimeout(() => {
         if (loadToken !== _activeLoadToken) return;
         setWorld3DTopCamBarVisibility(true);
+        forceHideWorld3DOverlays();
+        forceShowWorld3DCanvas();
         if (loaderEl) {
           loaderEl.style.transition = 'opacity 180ms ease-out';
           loaderEl.style.opacity = '0';
@@ -8252,6 +8404,8 @@ ensureOrbitControls();
             if (loadToken !== _activeLoadToken) return;
             loaderEl.classList.add('hidden');
             loaderEl.style.setProperty('display', 'none', 'important');
+            forceHideWorld3DOverlays();
+            forceShowWorld3DCanvas();
             _isPrecompilingWorld = false;
           }, 180);
           _activeLoadTimers.push(tHide);
