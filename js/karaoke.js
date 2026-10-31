@@ -9,16 +9,16 @@
   // DICCIONARIO DE OFFSETS PRE-CALIBRADOS POR CANCIÓN (COMPENSACIÓN DE INTRO DE YOUTUBE)
   // ==========================================================================
   const songOffsets = {
-    "losing_my_religion": -0.5,
-    "rolling_in_the_deep": -0.4,
-    "viva_la_vida": -0.6,
-    "dont_stop_me_now": -0.5,
-    "believer": -0.4,
-    "shape_of_you": -0.5,
-    "in_the_end": -0.6,
-    "bohemian_rhapsody": -0.3,
-    "yellow": -0.6,
-    "radioactive": -0.5
+    "losing_my_religion": 0.0,
+    "rolling_in_the_deep": 0.0,
+    "viva_la_vida": 0.0,
+    "dont_stop_me_now": 0.0,
+    "believer": 0.0,
+    "shape_of_you": 0.0,
+    "in_the_end": 0.0,
+    "bohemian_rhapsody": 0.0,
+    "yellow": 0.0,
+    "radioactive": 0.0
   };
   window.songOffsets = songOffsets;
 
@@ -100,20 +100,14 @@
       }
       this.currentSongId = sId;
 
-      // Recuperar offset guardado en localStorage o valor pre-calibrado
+      // Recuperar offset guardado por el usuario en localStorage o 0.0s por defecto
       let savedOffset = null;
       try {
-        const s1 = localStorage.getItem('k_offset_' + sId);
-        const s2 = localStorage.getItem('karaoke_offset_' + sId);
-        if (s1 !== null && !isNaN(parseFloat(s1))) savedOffset = parseFloat(s1);
-        else if (s2 !== null && !isNaN(parseFloat(s2))) savedOffset = parseFloat(s2);
+        const s = localStorage.getItem('karaoke_sync_v3_' + sId);
+        if (s !== null && !isNaN(parseFloat(s))) savedOffset = parseFloat(s);
       } catch (_) {}
 
-      const defaultOffset = (songOffsets && songOffsets[sId] !== undefined)
-        ? songOffsets[sId]
-        : ((typeof songId === 'object' && typeof songId.defaultOffset === 'number') ? songId.defaultOffset : 0);
-
-      this.offsetSec = savedOffset !== null ? savedOffset : defaultOffset;
+      this.offsetSec = savedOffset !== null ? savedOffset : 0.0;
       window.lyricsOffset = this.offsetSec;
 
       // Cachear en memoria las referencias a los nodos del DOM una sola vez
@@ -210,21 +204,64 @@
       const data = this.lyricsData;
       const len = data.length;
 
-      if (len > 0) {
-        let low = 0;
-        let high = len - 1;
-        while (low <= high) {
-          const mid = (low + high) >> 1;
-          const midTime = typeof data[mid].time === 'number'
-            ? data[mid].time
-            : (typeof data[mid].startTime === 'number' ? data[mid].startTime : 0);
-          if (midTime <= currentTime) {
-            idx = mid;
-            low = mid + 1;
-          } else {
-            high = mid - 1;
+      const firstTime = (len > 0)
+        ? (typeof data[0].time === 'number' ? data[0].time : (typeof data[0].startTime === 'number' ? data[0].startTime : 0))
+        : 0;
+
+      const badge = document.getElementById('karaokeTimeBadge');
+      let introBanner = document.getElementById('karaokeIntroBanner');
+
+      if (len > 0 && currentTime < firstTime) {
+        const remainingIntro = Math.max(1, Math.ceil(firstTime - currentTime));
+        const introText = `🎵 Intro instrumental... (La voz empieza en ${remainingIntro}s)`;
+        if (badge) {
+          badge.classList.remove('hidden');
+          badge.textContent = introText;
+          badge.className = 'text-xs font-mono font-bold text-amber-300 bg-amber-950/80 border border-amber-500/40 px-2.5 py-1 rounded-lg';
+        }
+        if (!introBanner) {
+          const vp = document.getElementById('karaoke-lyrics-viewport');
+          if (vp) {
+            introBanner = document.createElement('div');
+            introBanner.id = 'karaokeIntroBanner';
+            introBanner.className = 'p-3 mb-3 rounded-2xl bg-gradient-to-r from-amber-500/20 via-purple-500/10 to-transparent border border-amber-400/40 text-amber-300 text-xs font-bold flex items-center justify-center gap-2 shadow-lg';
+            vp.prepend(introBanner);
           }
         }
+        if (introBanner) {
+          introBanner.style.display = 'flex';
+          introBanner.innerHTML = `<span>🎵</span> <span>Intro instrumental... (La voz empieza en <strong class="text-white font-mono text-sm">${remainingIntro}s</strong>)</span>`;
+        }
+
+        if (this.currentIndex >= 0 && this.lyricNodes[this.currentIndex]) {
+          const prevNode = this.lyricNodes[this.currentIndex];
+          prevNode.classList.remove('active', 'lyric-active', 'scale-[1.02]', 'border-cyan-400', 'bg-cyan-950/80', 'text-white');
+          prevNode.classList.add('lyric-inactive');
+        }
+        this.currentIndex = -1;
+        this.currentLyricIndex = -1;
+
+        const viewport = document.getElementById('karaoke-lyrics-viewport');
+        if (viewport && !window._isUserScrollingLyrics) {
+          viewport.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        return;
+      }
+
+      if (introBanner) introBanner.style.display = 'none';
+
+      for (let i = 0; i < len; i++) {
+        const tStart = typeof data[i].time === 'number' ? data[i].time : (data[i].startTime || 0);
+        const nextObj = data[i + 1];
+        const tNext = nextObj ? (typeof nextObj.time === 'number' ? nextObj.time : (nextObj.startTime || Infinity)) : Infinity;
+        if (currentTime >= tStart && currentTime < tNext) {
+          idx = i;
+          break;
+        }
+      }
+
+      if (idx === -1 && len > 0 && currentTime >= (typeof data[len - 1].time === 'number' ? data[len - 1].time : (data[len - 1].startTime || 0))) {
+        idx = len - 1;
       }
 
       if (idx === this.currentIndex && !forceScroll) return;
@@ -251,9 +288,9 @@
             viewport.scrollTo({ top: Math.max(0, scrollTarget), behavior: 'smooth' });
           }
         }
-        const badge = document.getElementById('karaokeTimeBadge');
         if (badge) {
           badge.textContent = `Verso ${idx + 1} de ${len}`;
+          badge.className = 'text-xs font-mono font-bold text-cyan-300 bg-slate-950/90 border border-cyan-500/30 px-2.5 py-1 rounded-lg';
         }
       }
     },
@@ -288,8 +325,7 @@
       window.lyricsOffset = this.offsetSec;
       if (sId) {
         try {
-          localStorage.setItem('k_offset_' + sId, String(this.offsetSec));
-          localStorage.setItem('karaoke_offset_' + sId, String(this.offsetSec));
+          localStorage.setItem('karaoke_sync_v3_' + sId, String(this.offsetSec));
         } catch (_) {}
       }
       this.updateOffsetBadgeUI();
@@ -305,8 +341,7 @@
       window.lyricsOffset = this.offsetSec;
       if (sId) {
         try {
-          localStorage.setItem('k_offset_' + sId, String(this.offsetSec));
-          localStorage.setItem('karaoke_offset_' + sId, String(this.offsetSec));
+          localStorage.setItem('karaoke_sync_v3_' + sId, String(this.offsetSec));
         } catch (_) {}
       }
       this.updateOffsetBadgeUI();
@@ -322,8 +357,7 @@
       window.lyricsOffset = this.offsetSec;
       if (sId) {
         try {
-          localStorage.setItem('k_offset_' + sId, String(this.offsetSec));
-          localStorage.setItem('karaoke_offset_' + sId, String(this.offsetSec));
+          localStorage.setItem('karaoke_sync_v3_' + sId, String(this.offsetSec));
         } catch (_) {}
       }
       this.updateOffsetBadgeUI();
@@ -2211,13 +2245,26 @@
         const isCurrent = lIdx === currentKaraokeStanzaIndex;
         const esText = stanza.textEs || stanza.es || '';
 
+        const lineMins = Math.floor(lineTime / 60);
+        const lineSecs = Math.floor(lineTime % 60);
+        const lineTimeStr = `${lineMins}:${lineSecs < 10 ? '0' : ''}${lineSecs}`;
+
         return `
           <div id="karaokeStanza-${lIdx}"
-            class="karaoke-lyric-row karaoke-lyric-line lyric-line stanza-card ${isCurrent ? 'active lyric-active' : 'lyric-inactive'}"
+            class="karaoke-lyric-row karaoke-lyric-line lyric-line stanza-card relative ${isCurrent ? 'active lyric-active' : 'lyric-inactive'}"
             data-sidx="${lIdx}"
             data-start="${lineTime}"
             data-end="${stanza.endTime}"
             onclick="window.handleStanzaClick(${lIdx}, ${lineTime}, event)">
+            <div class="flex items-center justify-between mb-1.5 gap-2 pointer-events-none">
+              <span class="text-[10px] font-mono font-bold text-sky-300 bg-sky-950/80 border border-sky-500/40 px-2 py-0.5 rounded-md pointer-events-auto shadow-sm">${lineTimeStr}</span>
+              <button type="button"
+                      onclick="event.stopPropagation(); window.syncKaraokeAtStanza(${lIdx}, ${lineTime})"
+                      class="px-2 py-0.5 rounded-md bg-purple-950/80 hover:bg-purple-900 border border-purple-500/40 text-purple-200 hover:text-white text-[10px] font-black flex items-center gap-1 shadow-sm transition active:scale-95 cursor-pointer pointer-events-auto"
+                      title="Sincronizar el video exactamente en este verso">
+                <span>🎯 Sincronizar voz aquí</span>
+              </button>
+            </div>
             <div class="lyric-en">${renderedVerses}</div>
             <div class="lyric-es music-stanza-translation stanza-translation ${showEs ? '' : 'hidden'}" id="stanza-es-${lIdx}" style="display: ${showEs ? 'block' : 'none'};">
               ${escapeMusicHtml(esText)}
@@ -2244,6 +2291,35 @@
       window.lyricsOffset = Math.round(offsetVal * 10) / 10;
       if (KaraokeSyncEngine) {
         KaraokeSyncEngine.setExactOffset(window.lyricsOffset, KaraokeSyncEngine.currentSongId);
+      }
+    };
+
+    window.syncKaraokeAtStanza = function(stanzaIdx, lineTime) {
+      let curTime = 0;
+      if (window.YouTubeBridge && typeof window.YouTubeBridge.currentTime === 'number' && window.YouTubeBridge.currentTime > 0) {
+        curTime = window.YouTubeBridge.currentTime;
+      } else if (window.activeYtPlayer && typeof window.activeYtPlayer.getCurrentTime === 'function') {
+        curTime = window.activeYtPlayer.getCurrentTime();
+      } else if (KaraokeSyncEngine && KaraokeSyncEngine.lastYtTime > 0) {
+        curTime = KaraokeSyncEngine.lastYtTime;
+      }
+
+      const sId = (KaraokeSyncEngine && KaraokeSyncEngine.currentSongId) || 'current';
+      const newOffset = Math.round((lineTime - curTime) * 10) / 10;
+
+      if (KaraokeSyncEngine) {
+        KaraokeSyncEngine.setExactOffset(newOffset, sId);
+      } else {
+        window.lyricsOffset = newOffset;
+      }
+
+      try {
+        localStorage.setItem('karaoke_sync_v3_' + sId, String(newOffset));
+      } catch (_) {}
+
+      if (typeof showFloatingToast === 'function') {
+        const sign = newOffset >= 0 ? '+' : '';
+        showFloatingToast(`🎯 Sincronizado en ${sign}${newOffset}s`, '🎯');
       }
     };
 
@@ -2763,17 +2839,9 @@
             if (window.KaraokeSyncEngine) {
               window.KaraokeSyncEngine._pendingLrcDuration = lrcDur;
             }
-            if (ytDur > 30 && lrcDur > 30 && Math.abs(ytDur - lrcDur) > 1.5 && Math.abs(ytDur - lrcDur) < 45) {
-              const dIntro = ytDur - lrcDur;
-              autoIntroOffset = Math.round(dIntro * 10) / 10;
-              if (window.KaraokeSyncEngine) {
-                window.KaraokeSyncEngine.setExactOffset(-autoIntroOffset);
-              }
-              if (typeof showFloatingToast === 'function') {
-                showFloatingToast(`⚡ Sincronización auto-ajustada al video (${autoIntroOffset > 0 ? '+' : ''}${autoIntroOffset}s intro)`, '⚡');
-              }
-            }
-            window._autoIntroOffset = autoIntroOffset;
+            // Iniciar siempre en offset 0.0s (cero desfasajes no solicitados)
+            autoIntroOffset = 0;
+            window._autoIntroOffset = 0;
 
             if (data.syncedLyrics) {
               const parseFn = window.parseLrcToSyncedLyrics || parseLrcFallback;
@@ -2826,17 +2894,9 @@
               window.KaraokeSyncEngine._pendingLrcDuration = lrcDur;
             }
             let autoIntroOffset = 0;
-            if (ytDur > 30 && lrcDur > 30 && Math.abs(ytDur - lrcDur) > 1.5 && Math.abs(ytDur - lrcDur) < 45) {
-              const dIntro = ytDur - lrcDur;
-              autoIntroOffset = Math.round(dIntro * 10) / 10;
-              if (window.KaraokeSyncEngine) {
-                window.KaraokeSyncEngine.setExactOffset(-autoIntroOffset);
-              }
-              if (typeof showFloatingToast === 'function') {
-                showFloatingToast(`⚡ Sincronización auto-ajustada al video (${autoIntroOffset > 0 ? '+' : ''}${autoIntroOffset}s intro)`, '⚡');
-              }
-            }
-            window._autoIntroOffset = autoIntroOffset;
+            // Iniciar siempre en offset 0.0s (cero desfasajes no solicitados)
+            autoIntroOffset = 0;
+            window._autoIntroOffset = 0;
 
             if (bestMatch && bestMatch.syncedLyrics) {
               const parseFn = window.parseLrcToSyncedLyrics || parseLrcFallback;

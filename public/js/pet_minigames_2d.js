@@ -2379,10 +2379,11 @@
           </header>
 
           <!-- ÁREA CENTRAL: VISOR THREE.JS + PANEL DE CONTROL DEL JUGADOR -->
-          <div class="flex-1 relative flex flex-col md:flex-row overflow-hidden">
+          <div class="flex-1 relative flex flex-col md:flex-row overflow-hidden w-full h-[calc(100vh-70px)] min-h-[520px]">
             
             <!-- STAGE THREE.JS 3D -->
-            <div class="flex-1 relative h-64 md:h-full bg-transparent overflow-hidden" id="hedbanzCanvasMount">
+            <div id="hedbanzCanvasMount"
+                 style="width: 100% !important; height: calc(100vh - 70px) !important; min-height: 520px !important; position: relative !important; display: flex !important; align-items: center !important; justify-content: center !important; overflow: hidden !important;">
               <div id="hedbanzLoadingOverlay" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/80 z-10 transition-opacity">
                 <div class="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-2"></div>
                 <span class="text-xs font-extrabold text-purple-300">Cargando paquetes 3D de Blender...</span>
@@ -2551,39 +2552,60 @@
       const mount = document.getElementById('hedbanzCanvasMount');
       if (!mount || typeof THREE === 'undefined') return;
 
-      const w = Math.max(280, mount.clientWidth);
-      const h = Math.max(260, mount.clientHeight);
-
       this.scene = new THREE.Scene();
-      this.camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
-      this.camera.position.set(0, 0.65, 1.65);
-      this.camera.lookAt(0, 0.52, 0);
+      this.camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+      this.camera.position.set(0, 0.3, 4.2);
+      this.camera.lookAt(0, 0.2, 0);
 
       this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
-      this.renderer.setSize(w, h);
       this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
       this.renderer.shadowMap.enabled = false;
+      this.renderer.domElement.style.width = '100%';
+      this.renderer.domElement.style.height = '100%';
+      this.renderer.domElement.style.display = 'block';
       mount.appendChild(this.renderer.domElement);
 
-      const hemi = new THREE.HemisphereLight(0xffffff, 0x443355, 1.2);
+      const resizeViewer = () => {
+        if (!this.renderer || !this.camera || !mount) return;
+        const rect = mount.getBoundingClientRect();
+        const w = rect.width || (window.innerWidth - 380);
+        const h = rect.height || (window.innerHeight - 80);
+        this.renderer.setSize(w, h, false);
+        this.renderer.domElement.style.width = '100%';
+        this.renderer.domElement.style.height = '100%';
+        this.renderer.domElement.style.display = 'block';
+        this.camera.aspect = w / h;
+        this.camera.updateProjectionMatrix();
+      };
+
+      resizeViewer();
+      requestAnimationFrame(() => {
+        setTimeout(resizeViewer, 50);
+      });
+
+      this._resizeListener = resizeViewer;
+      window.addEventListener('resize', this._resizeListener);
+
+      const hemi = new THREE.HemisphereLight(0xffffff, 0x443355, 1.3);
       this.scene.add(hemi);
-      const dirLight = new THREE.DirectionalLight(0xffeedd, 0.8);
-      dirLight.position.set(2, 3, 2);
+      const dirLight = new THREE.DirectionalLight(0xffeedd, 1.2);
+      dirLight.position.set(2, 4, 3);
       this.scene.add(dirLight);
 
       this.avatarGroup = new THREE.Group();
+      this.avatarGroup.position.set(0, -0.2, 0);
       this.scene.add(this.avatarGroup);
 
       // Cabeza estilizada
-      const headMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, roughness: 0.6 });
-      const headGeo = new THREE.SphereGeometry(0.24, 24, 24);
+      const headMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, roughness: 0.55 });
+      const headGeo = new THREE.SphereGeometry(0.26, 32, 32);
       headGeo.scale(1, 1.15, 1);
       const headMesh = new THREE.Mesh(headGeo, headMat);
       headMesh.position.set(0, 0.48, 0);
       this.avatarGroup.add(headMesh);
 
       // Cargar paquete Blender GLB
-      const LoaderClass = THREE.GLTFLoader || (typeof window !== 'undefined' && window.GLTFLoader);
+      const LoaderClass = THREE.GLTFLoader || (typeof window !== 'undefined' && window.GLTFLoader) || (typeof window !== 'undefined' && window.StandardGLTFLoader);
       if (LoaderClass) {
         const loader = new LoaderClass();
         loader.load(glbUrl, (gltf) => {
@@ -2602,20 +2624,21 @@
             }
             if (card) {
               this.cardMesh = card.clone();
-              this.cardMesh.position.set(0, 0.72, -0.27);
               this.avatarGroup.add(this.cardMesh);
             }
             if (hourglass) {
               this.hourglassMesh = hourglass.clone();
-              this.hourglassMesh.position.set(0.65, 0.25, 0);
-              this.hourglassMesh.scale.set(1.5, 1.5, 1.5);
+              this.hourglassMesh.position.set(1.8, -0.2, 0);
+              this.hourglassMesh.scale.set(1.8, 1.8, 1.8);
               this.scene.add(this.hourglassMesh);
             }
           }
+          resizeViewer();
         }, undefined, (err) => {
           console.warn('[Hedbanz3D] Usando modelos procedurales de respaldo:', err);
           const loadingOverlay = document.getElementById('hedbanzLoadingOverlay');
           if (loadingOverlay) loadingOverlay.style.display = 'none';
+          resizeViewer();
         });
       }
 
@@ -2625,7 +2648,7 @@
         this.rafId = requestAnimationFrame(tick);
         const t = performance.now() * 0.0015;
         if (this.avatarGroup) {
-          this.avatarGroup.position.y = Math.sin(t * 1.5) * 0.02;
+          this.avatarGroup.position.y = -0.2 + Math.sin(t * 1.5) * 0.03;
           this.avatarGroup.rotation.y = Math.sin(t * 0.8) * 0.12;
         }
         if (this.hourglassMesh) {
@@ -2848,6 +2871,10 @@
     }
 
     disposeThree() {
+      if (this._resizeListener) {
+        window.removeEventListener('resize', this._resizeListener);
+        this._resizeListener = null;
+      }
       if (this.rafId) {
         cancelAnimationFrame(this.rafId);
         this.rafId = null;
