@@ -8,9 +8,9 @@
 (function () {
   'use strict';
 
-  const DB_NAME = 'MasterENG_3D_Assets_DB_v2';
-  const STORE_NAME = 'glb_packs_v2';
-  const DB_VERSION = 2;
+  const DB_NAME = 'MasterENG_3D_Assets_DB_v3';
+  const STORE_NAME = 'glb_packs_v3';
+  const DB_VERSION = 3;
 
   // Registro maestro de paquetes 3D con estimaciones y títulos amigables
   const ASSET_PACKS_REGISTRY = {
@@ -141,6 +141,10 @@
       if (typeof indexedDB === 'undefined') {
         return reject(new Error('IndexedDB no está soportado en este entorno.'));
       }
+      try {
+        indexedDB.deleteDatabase('MasterENG_3D_Assets_DB');
+        indexedDB.deleteDatabase('MasterENG_3D_Assets_DB_v2');
+      } catch (_) {}
       const request = indexedDB.open(DB_NAME, DB_VERSION);
 
       request.onupgradeneeded = function (event) {
@@ -366,21 +370,21 @@
     modal.style.cssText = 'display: none !important;';
 
     modal.innerHTML = `
-      <div class="adm-dialog-card" style="width: 100%; max-width: 410px; background: linear-gradient(180deg, #1a2336 0%, #0f1624 100%); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 26px; padding: 30px 26px; text-align: center; box-shadow: 0 25px 65px rgba(0, 0, 0, 0.75); color: #f8fafc; font-family: inherit; box-sizing: border-box;" role="dialog" aria-modal="true" aria-labelledby="adm-title">
+      <div class="adm-dialog-card" style="width: 100%; max-width: 400px; background: #151e30; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 24px; padding: 28px; text-align: center; box-shadow: 0 25px 65px rgba(0, 0, 0, 0.75); color: #f8fafc; font-family: inherit; box-sizing: border-box;" role="dialog" aria-modal="true" aria-labelledby="adm-title">
         
         <!-- Icono circular superior grande -->
-        <div class="adm-icon-circle" style="width: 64px; height: 64px; border-radius: 50%; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.35); box-shadow: 0 0 20px rgba(56, 189, 248, 0.2); display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 16px auto;">
+        <div class="adm-icon-circle" style="width: 72px; height: 72px; border-radius: 50%; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.35); box-shadow: 0 0 20px rgba(56, 189, 248, 0.2); display: flex; align-items: center; justify-content: center; font-size: 38px; margin: 0 auto 16px auto;">
           <span id="adm-icon">🏠</span>
         </div>
 
         <!-- Título limpio -->
-        <h2 id="adm-title" class="adm-title" style="font-size: 1.35rem; font-weight: 800; margin-bottom: 8px; color: #ffffff; line-height: 1.3;">
-          ¡Vamos a Explorar!
+        <h2 id="adm-title" class="adm-title" style="font-size: 1.4rem; font-weight: 800; margin-bottom: 8px; color: #ffffff; line-height: 1.3;">
+          ¡Explora el Mundo!
         </h2>
 
-        <!-- Descripción corta para niños y jóvenes -->
+        <!-- Descripción amigable -->
         <p id="adm-desc" class="adm-desc" style="font-size: 0.95rem; color: #94a3b8; margin-bottom: 18px; line-height: 1.45;">
-          Descarga este escenario una sola vez para explorarlo en 3D.
+          Descarga este escenario una sola vez para entrar en 3D.
         </p>
 
         <!-- Píldora de tamaño limpia -->
@@ -457,8 +461,8 @@
     const worldName = reg.titleEs || reg.title || config.title || 'Mundo 3D';
 
     if (iconEl) iconEl.textContent = reg.icon || '📦';
-    if (titleEl) titleEl.textContent = `¡Vamos a ${worldName}!`;
-    if (descEl) descEl.textContent = 'Descarga este escenario una sola vez para explorarlo en 3D.';
+    if (titleEl) titleEl.textContent = `¡Explora ${worldName}!`;
+    if (descEl) descEl.textContent = 'Descarga este escenario una sola vez para entrar en 3D.';
     if (sizeBadgeEl) sizeBadgeEl.textContent = `📦 Tamaño: ${config.sizeMB.toFixed(2)} MB`;
 
     // Restablecer estados de progreso
@@ -472,7 +476,7 @@
 
     // Aplicar estilos inline blindados para centrado en pantalla
     modal.classList.add('adm-modal-open');
-    modal.style.cssText = 'position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100vh !important; background: rgba(7, 11, 20, 0.86) !important; z-index: 200000 !important; display: flex !important; align-items: center !important; justify-content: center !important; padding: 20px !important; box-sizing: border-box !important;';
+    modal.style.cssText = 'position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100vh !important; background: rgba(7, 11, 20, 0.86) !important; backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important; z-index: 200000 !important; display: flex !important; align-items: center !important; justify-content: center !important; padding: 20px !important; box-sizing: border-box !important;';
   }
 
   function closeDownloadModal() {

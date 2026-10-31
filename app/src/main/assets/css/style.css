@@ -4262,3 +4262,44 @@ header, .main-header, .top-nav, #appHeader {
   height: 100% !important;
   display: block !important;
 }
+
+
+/* ==========================================================================
+   ASSET DOWNLOAD MANAGER & STORAGE MODAL (CENTRADOS Y OCULTOS POR DEFECTO)
+   ========================================================================== */
+#asset-download-modal,
+#asset-storage-modal,
+.adm-modal-overlay {
+  display: none !important;
+}
+
+#asset-download-modal.adm-modal-open,
+#asset-storage-modal.adm-modal-open,
+.adm-modal-overlay.adm-modal-open {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: rgba(7, 11, 20, 0.86) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  z-index: 200000 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 20px !important;
+  box-sizing: border-box !important;
+}
+
+.adm-dialog-card {
+  width: 100% !important;
+  max-width: 400px !important;
+  background: #151e30 !important;
+  border: 1px solid rgba(56, 189, 248, 0.35) !important;
+  border-radius: 24px !important;
+  padding: 28px !important;
+  text-align: center !important;
+  box-shadow: 0 25px 65px rgba(0, 0, 0, 0.75) !important;
+  color: #f8fafc !important;
+  box-sizing: border-box !important;
+}

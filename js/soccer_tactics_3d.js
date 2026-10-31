@@ -1,15 +1,16 @@
 /**
- * MASTERGOAL 3D: TACTICAL SOCCER & DIVISION RIVALS ENGINE
+ * MASTERGOAL 3D: TACTICAL SOCCER ENGINE
  * WebGL Three.js 60FPS Tactical Football Simulator + Real-Time English Speed Duel
  */
 (function () {
   'use strict';
 
-  const PROFILE_STORAGE_KEY = 'mastergoal_stats_v2';
+  const PROFILE_STORAGE_KEY = 'mastergoal_profile_v3';
 
   // Purgar claves antiguas con datos pre-cargados falsos (120 RP / Div 9 / 100%)
   try {
     localStorage.removeItem('mastereng_soccer_profile');
+    localStorage.removeItem('mastergoal_stats_v2');
   } catch (e) {}
 
   // =========================================================================

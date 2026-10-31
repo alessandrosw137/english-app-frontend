@@ -335,7 +335,7 @@
       window.lyricsOffset = this.offsetSec;
       if (sId) {
         try {
-          localStorage.setItem('karaoke_sync_v3_' + sId, String(this.offsetSec));
+          localStorage.setItem('karaoke_offset_v4_' + sId, String(this.offsetSec));
         } catch (_) {}
       }
       this.updateOffsetBadgeUI();
@@ -351,7 +351,7 @@
       window.lyricsOffset = this.offsetSec;
       if (sId) {
         try {
-          localStorage.setItem('karaoke_sync_v3_' + sId, String(this.offsetSec));
+          localStorage.setItem('karaoke_offset_v4_' + sId, String(this.offsetSec));
         } catch (_) {}
       }
       this.updateOffsetBadgeUI();
@@ -367,7 +367,7 @@
       window.lyricsOffset = this.offsetSec;
       if (sId) {
         try {
-          localStorage.setItem('karaoke_sync_v3_' + sId, String(this.offsetSec));
+          localStorage.setItem('karaoke_offset_v4_' + sId, String(this.offsetSec));
         } catch (_) {}
       }
       this.updateOffsetBadgeUI();
@@ -2272,7 +2272,7 @@
                       onclick="event.stopPropagation(); window.syncKaraokeAtStanza(${lIdx}, ${lineTime})"
                       class="px-2 py-0.5 rounded-md bg-purple-950/80 hover:bg-purple-900 border border-purple-500/40 text-purple-200 hover:text-white text-[10px] font-black flex items-center gap-1 shadow-sm transition active:scale-95 cursor-pointer pointer-events-auto"
                       title="Sincronizar el video exactamente en este verso">
-                <span>🎯 Sincronizar voz aquí</span>
+                <span>🎯 Sincronizar aquí</span>
               </button>
             </div>
             <div class="lyric-en">${renderedVerses}</div>
@@ -2432,7 +2432,7 @@
       // const calibratedTime = playbackTime + window.lyricsOffset;
       const calibratedTime = (typeof currentTime === 'number' && !isNaN(currentTime))
         ? currentTime
-        : (playbackTime + (typeof window.lyricsOffset === 'number' ? window.lyricsOffset : -0.6));
+        : (playbackTime + (typeof window.lyricsOffset === 'number' ? window.lyricsOffset : 0.0));
 
       // Normalizar startTime en cada estrofa
       lyrics.forEach((st) => {
@@ -2646,7 +2646,7 @@
 
       const ytPlayer = ytMusicPlayer || window._holoYtPlayer;
       const rawMasterTime = getMasterPlaybackTime();
-      let currentTime = rawMasterTime + (typeof window.lyricsOffset === 'number' ? window.lyricsOffset : -0.6);
+      let currentTime = rawMasterTime + (typeof window.lyricsOffset === 'number' ? window.lyricsOffset : 0.0);
 
       // Escala proporcional por duracion SOLO para canciones sin sincronizar con tiempo aproximado
       const duracionRealPlayer = (ytPlayer && typeof ytPlayer.getDuration === 'function')
@@ -3223,7 +3223,7 @@
   window.onYouTubePlayerReady = onYouTubePlayerReady;
   window.handleKaraokeTimeUpdate = handleKaraokeTimeUpdate;
   window.updateKaraokeSync = handleKaraokeTimeUpdate;
-  window.lyricsOffset = window.lyricsOffset !== undefined ? window.lyricsOffset : -0.6;
+  window.lyricsOffset = window.lyricsOffset !== undefined ? window.lyricsOffset : 0.0;
   window.adjustLyricsOffset = window.adjustLyricsOffset;
   window.syncStanzaHere = window.syncStanzaHere;
   window.handleStanzaClick = window.handleStanzaClick;
