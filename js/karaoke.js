@@ -103,8 +103,18 @@
       // Recuperar offset guardado por el usuario en localStorage o 0.0s por defecto
       let savedOffset = null;
       try {
+        localStorage.removeItem('karaoke_offset_' + sId);
+        localStorage.removeItem('k_offset_' + sId);
         const s = localStorage.getItem('karaoke_sync_v3_' + sId);
-        if (s !== null && !isNaN(parseFloat(s))) savedOffset = parseFloat(s);
+        if (s !== null && !isNaN(parseFloat(s))) {
+          const val = parseFloat(s);
+          if (Math.abs(val - (-4.2)) < 0.05) {
+            localStorage.setItem('karaoke_sync_v3_' + sId, '0.0');
+            savedOffset = 0.0;
+          } else {
+            savedOffset = val;
+          }
+        }
       } catch (_) {}
 
       this.offsetSec = savedOffset !== null ? savedOffset : 0.0;

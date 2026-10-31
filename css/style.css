@@ -4242,9 +4242,10 @@ header, .main-header, .top-nav, #appHeader {
 #hedbanzCanvasMount,
 #hedbanz-3d-stage,
 #hedbanz-canvas-container {
+  flex: 1 1 0% !important;
   width: 100% !important;
-  height: calc(100vh - 70px) !important;
-  min-height: 520px !important;
+  height: 100% !important;
+  min-height: 480px !important;
   position: relative !important;
   display: flex !important;
   align-items: center !important;
@@ -4255,6 +4256,8 @@ header, .main-header, .top-nav, #appHeader {
 #hedbanzCanvasMount canvas,
 #hedbanz-3d-stage canvas,
 #hedbanz-canvas-container canvas {
+  position: absolute !important;
+  inset: 0 !important;
   width: 100% !important;
   height: 100% !important;
   display: block !important;

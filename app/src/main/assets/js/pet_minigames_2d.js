@@ -2379,11 +2379,12 @@
           </header>
 
           <!-- ÁREA CENTRAL: VISOR THREE.JS + PANEL DE CONTROL DEL JUGADOR -->
-          <div class="flex-1 relative flex flex-col md:flex-row overflow-hidden w-full h-[calc(100vh-70px)] min-h-[520px]">
+          <div class="flex-1 relative flex flex-col md:flex-row overflow-hidden w-full h-[calc(100vh-70px)] min-h-[500px]">
             
             <!-- STAGE THREE.JS 3D -->
             <div id="hedbanzCanvasMount"
-                 style="width: 100% !important; height: calc(100vh - 70px) !important; min-height: 520px !important; position: relative !important; display: flex !important; align-items: center !important; justify-content: center !important; overflow: hidden !important;">
+                 class="flex-1 relative w-full h-full min-h-[460px] overflow-hidden flex items-center justify-center bg-gradient-to-b from-[#1a102a] to-[#0a0512]"
+                 style="flex: 1 1 0% !important; min-height: 460px !important; position: relative !important; overflow: hidden !important; display: flex !important; align-items: center !important; justify-content: center !important;">
               <div id="hedbanzLoadingOverlay" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/80 z-10 transition-opacity">
                 <div class="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-2"></div>
                 <span class="text-xs font-extrabold text-purple-300">Cargando paquetes 3D de Blender...</span>
@@ -2554,55 +2555,122 @@
 
       this.scene = new THREE.Scene();
       this.camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-      this.camera.position.set(0, 0.3, 4.2);
-      this.camera.lookAt(0, 0.2, 0);
+      this.camera.position.set(0.30, 0.35, 3.4);
+      this.camera.lookAt(0.30, 0.25, 0);
 
       this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
       this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
       this.renderer.shadowMap.enabled = false;
-      this.renderer.domElement.style.width = '100%';
-      this.renderer.domElement.style.height = '100%';
-      this.renderer.domElement.style.display = 'block';
+      this.renderer.domElement.style.cssText = 'position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important; display: block !important;';
       mount.appendChild(this.renderer.domElement);
 
       const resizeViewer = () => {
         if (!this.renderer || !this.camera || !mount) return;
         const rect = mount.getBoundingClientRect();
-        const w = rect.width || (window.innerWidth - 380);
-        const h = rect.height || (window.innerHeight - 80);
+        const w = Math.round(rect.width) || mount.clientWidth || Math.round(window.innerWidth - (window.innerWidth >= 768 ? 384 : 0));
+        const h = Math.round(rect.height) || mount.clientHeight || Math.round(window.innerHeight - 70);
+        if (w <= 0 || h <= 0) return;
         this.renderer.setSize(w, h, false);
         this.renderer.domElement.style.width = '100%';
         this.renderer.domElement.style.height = '100%';
-        this.renderer.domElement.style.display = 'block';
         this.camera.aspect = w / h;
         this.camera.updateProjectionMatrix();
       };
 
       resizeViewer();
       requestAnimationFrame(() => {
-        setTimeout(resizeViewer, 50);
+        resizeViewer();
+        setTimeout(resizeViewer, 60);
+        setTimeout(resizeViewer, 200);
       });
 
       this._resizeListener = resizeViewer;
       window.addEventListener('resize', this._resizeListener);
 
-      const hemi = new THREE.HemisphereLight(0xffffff, 0x443355, 1.3);
+      if (typeof ResizeObserver !== 'undefined') {
+        this._resizeObserver = new ResizeObserver(() => {
+          resizeViewer();
+        });
+        this._resizeObserver.observe(mount);
+      }
+
+      const hemi = new THREE.HemisphereLight(0xffffff, 0x443355, 1.35);
       this.scene.add(hemi);
-      const dirLight = new THREE.DirectionalLight(0xffeedd, 1.2);
+      const dirLight = new THREE.DirectionalLight(0xffeedd, 1.3);
       dirLight.position.set(2, 4, 3);
       this.scene.add(dirLight);
 
       this.avatarGroup = new THREE.Group();
-      this.avatarGroup.position.set(0, -0.2, 0);
+      this.avatarGroup.position.set(-0.25, -0.15, 0);
       this.scene.add(this.avatarGroup);
 
-      // Cabeza estilizada
+      // Cabeza estilizada amarilla
       const headMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, roughness: 0.55 });
       const headGeo = new THREE.SphereGeometry(0.26, 32, 32);
       headGeo.scale(1, 1.15, 1);
       const headMesh = new THREE.Mesh(headGeo, headMat);
       headMesh.position.set(0, 0.48, 0);
       this.avatarGroup.add(headMesh);
+
+      // Ojos de personaje estilo cartoon amigable
+      const eyeMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.2 });
+      const eyeShineMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+      const eyeGeo = new THREE.SphereGeometry(0.028, 16, 16);
+      eyeGeo.scale(1, 1.25, 0.5);
+      const shineGeo = new THREE.SphereGeometry(0.010, 12, 12);
+
+      const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
+      leftEye.position.set(-0.08, 0.51, 0.245);
+      const leftShine = new THREE.Mesh(shineGeo, eyeShineMat);
+      leftShine.position.set(-0.07, 0.525, 0.255);
+
+      const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
+      rightEye.position.set(0.08, 0.51, 0.245);
+      const rightShine = new THREE.Mesh(shineGeo, eyeShineMat);
+      rightShine.position.set(0.09, 0.525, 0.255);
+
+      // Sonrisa amigable
+      const smileGeo = new THREE.TorusGeometry(0.038, 0.007, 8, 24, Math.PI);
+      const smileMat = new THREE.MeshStandardMaterial({ color: 0x7c2d12, roughness: 0.3 });
+      const smile = new THREE.Mesh(smileGeo, smileMat);
+      smile.rotation.set(0, 0, Math.PI);
+      smile.position.set(0, 0.42, 0.25);
+
+      // Mejillas sonrojadas
+      const cheekMat = new THREE.MeshStandardMaterial({ color: 0xf43f5e, roughness: 0.8, transparent: true, opacity: 0.55 });
+      const cheekGeo = new THREE.SphereGeometry(0.035, 16, 16);
+      cheekGeo.scale(1.2, 0.6, 0.4);
+      const leftCheek = new THREE.Mesh(cheekGeo, cheekMat);
+      leftCheek.position.set(-0.14, 0.45, 0.21);
+      const rightCheek = new THREE.Mesh(cheekGeo, cheekMat);
+      rightCheek.position.set(0.14, 0.45, 0.21);
+
+      this.avatarGroup.add(leftEye, leftShine, rightEye, rightShine, smile, leftCheek, rightCheek);
+
+      // Meshes de respaldo procedural inmediato (evita escena vacía durante descarga)
+      const fbBandMat = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.35, metalness: 0.3 });
+      const fbBandGeo = new THREE.TorusGeometry(0.265, 0.024, 16, 36);
+      this.proceduralBand = new THREE.Mesh(fbBandGeo, fbBandMat);
+      this.proceduralBand.position.set(0, 0.55, 0);
+      this.proceduralBand.rotation.x = Math.PI / 2;
+      this.avatarGroup.add(this.proceduralBand);
+
+      const fbCardMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
+      const fbCardGeo = new THREE.BoxGeometry(0.24, 0.36, 0.015);
+      this.proceduralCard = new THREE.Mesh(fbCardGeo, fbCardMat);
+      this.proceduralCard.position.set(0, 0.78, 0.26);
+      this.avatarGroup.add(this.proceduralCard);
+
+      this.proceduralHourglass = new THREE.Group();
+      const hgMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.4 });
+      const hgTop = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.04, 24), hgMat);
+      const hgBot = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.04, 24), hgMat);
+      hgTop.position.set(0, 0.22, 0);
+      hgBot.position.set(0, -0.22, 0);
+      const hgGlass = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.40, 16), new THREE.MeshStandardMaterial({ color: 0x93c5fd, transparent: true, opacity: 0.5 }));
+      this.proceduralHourglass.add(hgTop, hgBot, hgGlass);
+      this.proceduralHourglass.position.set(0.85, -0.15, 0);
+      this.scene.add(this.proceduralHourglass);
 
       // Cargar paquete Blender GLB
       const LoaderClass = THREE.GLTFLoader || (typeof window !== 'undefined' && window.GLTFLoader) || (typeof window !== 'undefined' && window.StandardGLTFLoader);
@@ -2614,22 +2682,39 @@
           setTimeout(() => { if (loadingOverlay) loadingOverlay.style.display = 'none'; }, 200);
 
           if (gltf && gltf.scene) {
+            // Reemplazar respaldos con modelos AAA de Blender
+            if (this.proceduralBand) {
+              this.avatarGroup.remove(this.proceduralBand);
+              this.proceduralBand = null;
+            }
+            if (this.proceduralCard) {
+              this.avatarGroup.remove(this.proceduralCard);
+              this.proceduralCard = null;
+            }
+            if (this.proceduralHourglass) {
+              this.scene.remove(this.proceduralHourglass);
+              this.proceduralHourglass = null;
+            }
+
             const headband = gltf.scene.getObjectByName('Avatar_Headband_Pro');
             const card = gltf.scene.getObjectByName('Mystery_Card_3D');
             const hourglass = gltf.scene.getObjectByName('Game_Timer_Hourglass');
 
             if (headband) {
               this.headbandMesh = headband.clone();
+              this.headbandMesh.rotation.y = Math.PI;
               this.avatarGroup.add(this.headbandMesh);
             }
             if (card) {
               this.cardMesh = card.clone();
+              this.cardMesh.rotation.y = Math.PI;
+              this.cardMesh.position.set(0, 0.78, 0.26);
               this.avatarGroup.add(this.cardMesh);
             }
             if (hourglass) {
               this.hourglassMesh = hourglass.clone();
-              this.hourglassMesh.position.set(1.8, -0.2, 0);
-              this.hourglassMesh.scale.set(1.8, 1.8, 1.8);
+              this.hourglassMesh.position.set(0.85, -0.15, 0);
+              this.hourglassMesh.scale.set(1.5, 1.5, 1.5);
               this.scene.add(this.hourglassMesh);
             }
           }
@@ -2648,11 +2733,13 @@
         this.rafId = requestAnimationFrame(tick);
         const t = performance.now() * 0.0015;
         if (this.avatarGroup) {
-          this.avatarGroup.position.y = -0.2 + Math.sin(t * 1.5) * 0.03;
+          this.avatarGroup.position.y = -0.15 + Math.sin(t * 1.5) * 0.03;
           this.avatarGroup.rotation.y = Math.sin(t * 0.8) * 0.12;
         }
         if (this.hourglassMesh) {
           this.hourglassMesh.rotation.y += 0.015;
+        } else if (this.proceduralHourglass) {
+          this.proceduralHourglass.rotation.y += 0.015;
         }
         this.renderer.render(this.scene, this.camera);
       };
@@ -2871,6 +2958,10 @@
     }
 
     disposeThree() {
+      if (this._resizeObserver) {
+        this._resizeObserver.disconnect();
+        this._resizeObserver = null;
+      }
       if (this._resizeListener) {
         window.removeEventListener('resize', this._resizeListener);
         this._resizeListener = null;
