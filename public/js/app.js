@@ -11190,6 +11190,15 @@ window.logout = function() {
 
           return `
             <div class="karaoke-lyric-row stanza-card lyric-line lyric-stanza-card" data-sidx="${sIdx}" data-start="${sStart}" data-end="${sEnd}" id="karaokeStanza-${sIdx}" onclick="window.seekToStanza(${sStart}, ${sIdx})">
+              <div class="flex items-center justify-between mb-1.5 gap-2 pointer-events-none">
+                <span class="text-[10px] font-mono font-bold text-sky-300 bg-sky-950/80 border border-sky-500/40 px-2 py-0.5 rounded-md pointer-events-auto shadow-sm">${Math.floor(sStart / 60)}:${Math.floor(sStart % 60) < 10 ? '0' : ''}${Math.floor(sStart % 60)}</span>
+                <button type="button"
+                        onclick="event.stopPropagation(); window.syncKaraokeAtStanza ? window.syncKaraokeAtStanza(${sIdx}, ${sStart}) : (window.KaraokeSyncEngine && window.KaraokeSyncEngine.setExactOffset ? window.KaraokeSyncEngine.setExactOffset(0) : null)"
+                        class="px-2 py-0.5 rounded-md bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-400/40 text-cyan-200 hover:text-white text-[10px] font-black flex items-center gap-1 shadow-sm transition active:scale-95 cursor-pointer pointer-events-auto"
+                        title="Sincronizar el video exactamente en este verso">
+                  <span>🎯 Sincronizar voz aquí</span>
+                </button>
+              </div>
               <div class="lyric-en stanza-text">${wordsSpans}</div>
               <div class="lyric-es stanza-translation music-stanza-translation" id="stanza-es-${sIdx}" style="display: ${window.isSpanishTranslationActive !== false ? 'block' : 'none'};">
                 ${stanza.textEs ? stanza.textEs : (stanza.es ? stanza.es : 'Traduciendo al español...')}
@@ -12370,7 +12379,22 @@ window.logout = function() {
 
         // 5. Resolver automáticamente el 'videoId' de la canción completa
         window._currentPlayingTrackName = trackName;
-        window.lyricsOffset = 0; // Inicializa window.lyricsOffset = 0 por defecto al cargar cancion nueva
+        window.lyricsOffset = 0;
+        try {
+          if (typeof localStorage !== 'undefined') {
+            localStorage.removeItem('mastereng_lyrics_offset');
+            ['losing_my_religion','rolling_in_the_deep','viva_la_vida','dont_stop_me_now','believer','shape_of_you','in_the_end','bohemian_rhapsody','yellow','radioactive'].forEach(id => {
+              localStorage.removeItem('karaoke_offset_' + id);
+              localStorage.removeItem('k_offset_' + id);
+              localStorage.removeItem('karaoke_sync_v3_' + id);
+              localStorage.removeItem('karaoke_offset_v4_' + id);
+              const val = parseFloat(localStorage.getItem('karaoke_sync_v5_' + id));
+              if (isNaN(val) || val < -2.0 || Math.abs(val - (-4.2)) < 0.1) {
+                localStorage.setItem('karaoke_sync_v5_' + id, '0.0');
+              }
+            });
+          }
+        } catch (_) {}
         const offsetBadge = document.getElementById('lyricsOffsetBadge');
         if (offsetBadge) offsetBadge.textContent = 'Sync: 0.0s';
         const { cleanTitle, cleanArtist } = window.cleanTrackMetadata ? window.cleanTrackMetadata(trackName, artistName) : { cleanTitle: trackName, cleanArtist: artistName };

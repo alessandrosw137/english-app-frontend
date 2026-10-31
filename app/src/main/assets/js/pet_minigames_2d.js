@@ -2647,13 +2647,12 @@
       const resizeViewer = () => {
         if (!this.renderer || !this.camera || !mount) return;
         const rect = mount.getBoundingClientRect();
-        let w = rect.width;
-        let h = rect.height;
+        let w = mount.clientWidth || rect.width;
+        let h = mount.clientHeight || rect.height;
 
-        // Prevenir colapso a 300x150 default del canvas si el layout está transicionando
         if (!w || w <= 320) {
           const sideW = (window.innerWidth >= 768) ? 384 : 0;
-          w = Math.max(320, window.innerWidth - sideW);
+          w = Math.max(380, window.innerWidth - sideW);
         }
         if (!h || h <= 260) {
           h = Math.max(480, window.innerHeight - 70);
@@ -2661,13 +2660,19 @@
         w = Math.round(w);
         h = Math.round(h);
 
-        this.renderer.setSize(w, h, true);
+        this._lastW = w;
+        this._lastH = h;
+
+        this.renderer.setSize(w, h, false);
         const canvas = this.renderer.domElement;
         canvas.style.setProperty('position', 'absolute', 'important');
+        canvas.style.setProperty('inset', '0', 'important');
         canvas.style.setProperty('top', '0', 'important');
         canvas.style.setProperty('left', '0', 'important');
         canvas.style.setProperty('width', '100%', 'important');
         canvas.style.setProperty('height', '100%', 'important');
+        canvas.style.setProperty('min-width', '100%', 'important');
+        canvas.style.setProperty('min-height', '100%', 'important');
         canvas.style.setProperty('display', 'block', 'important');
         canvas.style.setProperty('z-index', '1', 'important');
 
@@ -2976,6 +2981,9 @@
       const tick = () => {
         if (!this.isRunning) return;
         this.rafId = requestAnimationFrame(tick);
+        if (mount && (Math.abs((mount.clientWidth || 0) - (this._lastW || 0)) > 4 || Math.abs((mount.clientHeight || 0) - (this._lastH || 0)) > 4)) {
+          resizeViewer();
+        }
         const t = performance.now() * 0.0015;
         if (this.avatarGroup) {
           this.avatarGroup.position.y = Math.sin(t * 1.5) * 0.015;
