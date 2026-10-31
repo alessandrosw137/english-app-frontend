@@ -665,9 +665,9 @@
 .k-word.word-inactive,
 .lyric-word.word-inactive,
 .word-inactive {
-  color: rgba(255, 255, 255, 0.38) !important;
-  -webkit-text-fill-color: rgba(255, 255, 255, 0.38) !important;
-  opacity: 0.38 !important;
+  color: #e2e8f0 !important;
+  -webkit-text-fill-color: #e2e8f0 !important;
+  opacity: 0.92 !important;
   text-shadow: none !important;
   transform: scale(1);
 }
@@ -885,7 +885,7 @@ header, .top-bar, .navbar {
   pointer-events: auto !important;
 }
 
-#canvas-container, canvas {
+#canvas-container, #portalStarsCanvas, canvas.star-bg {
   position: fixed !important;
   inset: 0 !important;
   z-index: 0 !important;
@@ -1429,42 +1429,45 @@ header.auth-hidden,
    MOTOR UNIVERSAL LRC: ACELERACION POR HARDWARE Y CERO PARPADEO
    ======================================================== */
 .stanza-card {
-  background: rgba(15, 23, 42, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(15, 23, 42, 0.65) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
   border-radius: 14px;
   padding: 14px 16px;
   margin-bottom: 12px;
   cursor: pointer !important;
   pointer-events: auto !important;
-  opacity: 0.45;
+  opacity: 0.88 !important;
   transform: translateZ(0);
   will-change: transform, opacity, border-color;
   transition: opacity 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
 
 .stanza-card.past {
-  opacity: 0.35;
+  opacity: 0.75 !important;
 }
 
 .stanza-card.active {
   opacity: 1 !important;
-  background: rgba(30, 41, 59, 0.92);
-  border-color: rgba(56, 189, 248, 0.75);
-  box-shadow: 0 0 20px rgba(56, 189, 248, 0.18);
+  background: linear-gradient(90deg, rgba(56, 189, 248, 0.22), rgba(30, 41, 59, 0.85)) !important;
+  border: 2px solid #38bdf8 !important;
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.3) !important;
 }
 
 .k-word {
-  color: rgba(255, 255, 255, 0.4);
-  font-weight: 500;
+  color: #e2e8f0 !important;
+  font-weight: 600;
   transition: color 0.1s linear, text-shadow 0.1s linear;
   display: inline-block;
   margin-right: 4px;
+  opacity: 1 !important;
 }
 
-.k-word.lit {
+.k-word.lit,
+.stanza-card.active .k-word.lit,
+.karaoke-lyric-row.active .k-word.lit {
   color: #ffffff !important;
-  font-weight: 700;
-  text-shadow: 0 0 10px rgba(56, 189, 248, 0.9);
+  font-weight: 800 !important;
+  text-shadow: 0 0 14px rgba(56, 189, 248, 0.85) !important;
 }
 
 /* Slider interactivo tactil para adelantar/atrasar */
@@ -4245,7 +4248,7 @@ header, .main-header, .top-nav, #appHeader {
   flex: 1 1 0% !important;
   width: 100% !important;
   height: 100% !important;
-  min-height: 480px !important;
+  min-height: 520px !important;
   position: relative !important;
   display: flex !important;
   align-items: center !important;
@@ -4257,10 +4260,12 @@ header, .main-header, .top-nav, #appHeader {
 #hedbanz-3d-stage canvas,
 #hedbanz-canvas-container canvas {
   position: absolute !important;
-  inset: 0 !important;
+  top: 0 !important;
+  left: 0 !important;
   width: 100% !important;
   height: 100% !important;
   display: block !important;
+  z-index: 1 !important;
 }
 
 

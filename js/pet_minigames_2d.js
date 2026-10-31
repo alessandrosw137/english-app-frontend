@@ -2383,8 +2383,8 @@
             
             <!-- STAGE THREE.JS 3D -->
             <div id="hedbanzCanvasMount"
-                 class="flex-1 relative w-full h-full min-h-[460px] overflow-hidden flex items-center justify-center bg-gradient-to-b from-[#1a102a] to-[#0a0512]"
-                 style="flex: 1 1 0% !important; min-height: 460px !important; position: relative !important; overflow: hidden !important; display: flex !important; align-items: center !important; justify-content: center !important;">
+                 class="flex-1 relative w-full h-[calc(100vh-70px)] min-h-[520px] overflow-hidden flex items-center justify-center bg-gradient-to-b from-[#1a102a] to-[#0a0512]"
+                 style="flex: 1 1 0% !important; width: 100% !important; height: calc(100vh - 70px) !important; min-height: 520px !important; position: relative !important; display: flex !important; align-items: center !important; justify-content: center !important; overflow: hidden !important;">
               <div id="hedbanzLoadingOverlay" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/80 z-10 transition-opacity">
                 <div class="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-2"></div>
                 <span class="text-xs font-extrabold text-purple-300">Cargando paquetes 3D de Blender...</span>
@@ -2538,6 +2538,7 @@
       this.timeLeft = 90;
       this.strikes = 0;
       this.isSolved = false;
+      this.updateCardTexture(false);
       this.askedQuestions = [];
 
       const strikesCount = document.getElementById('hedbanzStrikesCount');
@@ -2548,6 +2549,85 @@
       if (verdictEl) verdictEl.textContent = 'Ask me a question!';
     }
 
+    createCardTexture(isSolved = false) {
+      if (typeof document === 'undefined') return null;
+      const cvs = document.createElement('canvas');
+      cvs.width = 512;
+      cvs.height = 512;
+      const ctx = cvs.getContext('2d');
+      if (!ctx) return null;
+
+      const grad = ctx.createLinearGradient(0, 0, 0, 512);
+      grad.addColorStop(0, '#2e1065');
+      grad.addColorStop(1, '#0f051d');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 512, 512);
+
+      ctx.lineWidth = 14;
+      ctx.strokeStyle = isSolved ? '#10b981' : '#38bdf8';
+      ctx.strokeRect(10, 10, 492, 492);
+
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      if (isSolved && this.currentCard) {
+        ctx.fillStyle = '#34d399';
+        ctx.font = 'bold 36px sans-serif';
+        ctx.fillText('SOLVED! 🎉', 256, 95);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 52px sans-serif';
+        ctx.fillText(this.currentCard.word.toUpperCase(), 256, 256);
+
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = 'bold 30px sans-serif';
+        ctx.fillText(this.currentCard.es || '', 256, 390);
+      } else {
+        ctx.fillStyle = '#c084fc';
+        ctx.font = 'bold 36px sans-serif';
+        ctx.fillText('HEDBANZ 3D', 256, 90);
+
+        ctx.fillStyle = '#fbbf24';
+        ctx.font = 'bold 180px sans-serif';
+        ctx.fillText('❓', 256, 255);
+
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = 'bold 28px sans-serif';
+        ctx.fillText('GUESS WHAT I AM', 256, 420);
+      }
+
+      if (typeof THREE !== 'undefined' && THREE.CanvasTexture) {
+        const tex = new THREE.CanvasTexture(cvs);
+        tex.needsUpdate = true;
+        return tex;
+      }
+      return null;
+    }
+
+    updateCardTexture(isSolved = false) {
+      const tex = this.createCardTexture(isSolved);
+      if (!tex) return;
+      const applyTex = (mesh) => {
+        if (!mesh) return;
+        if (mesh.material) {
+          if (Array.isArray(mesh.material)) {
+            mesh.material.forEach(m => { m.map = tex; m.needsUpdate = true; });
+          } else {
+            mesh.material.map = tex;
+            mesh.material.needsUpdate = true;
+          }
+        }
+        mesh.traverse?.((ch) => {
+          if (ch.isMesh && ch.material) {
+            ch.material.map = tex;
+            ch.material.needsUpdate = true;
+          }
+        });
+      };
+      applyTex(this.cardMesh);
+      applyTex(this.proceduralCard);
+    }
+
     initThreeViewer(glbUrl) {
       this.disposeThree();
       const mount = document.getElementById('hedbanzCanvasMount');
@@ -2555,24 +2635,42 @@
 
       this.scene = new THREE.Scene();
       this.camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-      this.camera.position.set(0.30, 0.35, 3.4);
-      this.camera.lookAt(0.30, 0.25, 0);
+      this.camera.position.set(0, 0.3, 4.2);
+      this.camera.lookAt(0, 0.2, 0);
 
       this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
       this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
       this.renderer.shadowMap.enabled = false;
-      this.renderer.domElement.style.cssText = 'position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important; display: block !important;';
+      this.renderer.domElement.style.cssText = 'position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; display: block !important; z-index: 1 !important;';
       mount.appendChild(this.renderer.domElement);
 
       const resizeViewer = () => {
         if (!this.renderer || !this.camera || !mount) return;
         const rect = mount.getBoundingClientRect();
-        const w = Math.round(rect.width) || mount.clientWidth || Math.round(window.innerWidth - (window.innerWidth >= 768 ? 384 : 0));
-        const h = Math.round(rect.height) || mount.clientHeight || Math.round(window.innerHeight - 70);
-        if (w <= 0 || h <= 0) return;
-        this.renderer.setSize(w, h, false);
-        this.renderer.domElement.style.width = '100%';
-        this.renderer.domElement.style.height = '100%';
+        let w = rect.width;
+        let h = rect.height;
+
+        // Prevenir colapso a 300x150 default del canvas si el layout está transicionando
+        if (!w || w <= 320) {
+          const sideW = (window.innerWidth >= 768) ? 384 : 0;
+          w = Math.max(320, window.innerWidth - sideW);
+        }
+        if (!h || h <= 260) {
+          h = Math.max(480, window.innerHeight - 70);
+        }
+        w = Math.round(w);
+        h = Math.round(h);
+
+        this.renderer.setSize(w, h, true);
+        const canvas = this.renderer.domElement;
+        canvas.style.setProperty('position', 'absolute', 'important');
+        canvas.style.setProperty('top', '0', 'important');
+        canvas.style.setProperty('left', '0', 'important');
+        canvas.style.setProperty('width', '100%', 'important');
+        canvas.style.setProperty('height', '100%', 'important');
+        canvas.style.setProperty('display', 'block', 'important');
+        canvas.style.setProperty('z-index', '1', 'important');
+
         this.camera.aspect = w / h;
         this.camera.updateProjectionMatrix();
       };
@@ -2580,8 +2678,10 @@
       resizeViewer();
       requestAnimationFrame(() => {
         resizeViewer();
-        setTimeout(resizeViewer, 60);
-        setTimeout(resizeViewer, 200);
+        setTimeout(resizeViewer, 50);
+        setTimeout(resizeViewer, 150);
+        setTimeout(resizeViewer, 300);
+        setTimeout(resizeViewer, 600);
       });
 
       this._resizeListener = resizeViewer;
@@ -2601,7 +2701,7 @@
       this.scene.add(dirLight);
 
       this.avatarGroup = new THREE.Group();
-      this.avatarGroup.position.set(-0.25, -0.15, 0);
+      this.avatarGroup.position.set(0, 0, 0);
       this.scene.add(this.avatarGroup);
 
       // Cabeza estilizada amarilla
@@ -2655,8 +2755,9 @@
       this.proceduralBand.rotation.x = Math.PI / 2;
       this.avatarGroup.add(this.proceduralBand);
 
-      const fbCardMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
-      const fbCardGeo = new THREE.BoxGeometry(0.24, 0.36, 0.015);
+      const cardTex = this.createCardTexture(false);
+      const fbCardMat = new THREE.MeshStandardMaterial({ map: cardTex, roughness: 0.25 });
+      const fbCardGeo = new THREE.BoxGeometry(0.28, 0.38, 0.015);
       this.proceduralCard = new THREE.Mesh(fbCardGeo, fbCardMat);
       this.proceduralCard.position.set(0, 0.78, 0.26);
       this.avatarGroup.add(this.proceduralCard);
@@ -2669,7 +2770,8 @@
       hgBot.position.set(0, -0.22, 0);
       const hgGlass = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.40, 16), new THREE.MeshStandardMaterial({ color: 0x93c5fd, transparent: true, opacity: 0.5 }));
       this.proceduralHourglass.add(hgTop, hgBot, hgGlass);
-      this.proceduralHourglass.position.set(0.85, -0.15, 0);
+      this.proceduralHourglass.position.set(1.8, -0.2, 0);
+      this.proceduralHourglass.scale.set(1.6, 1.6, 1.6);
       this.scene.add(this.proceduralHourglass);
 
       // Cargar paquete Blender GLB
@@ -2709,12 +2811,17 @@
               this.cardMesh = card.clone();
               this.cardMesh.rotation.y = Math.PI;
               this.cardMesh.position.set(0, 0.78, 0.26);
+              if (cardTex) {
+                this.cardMesh.traverse((child) => {
+                  if (child.isMesh) child.material = new THREE.MeshStandardMaterial({ map: cardTex, roughness: 0.25 });
+                });
+              }
               this.avatarGroup.add(this.cardMesh);
             }
             if (hourglass) {
               this.hourglassMesh = hourglass.clone();
-              this.hourglassMesh.position.set(0.85, -0.15, 0);
-              this.hourglassMesh.scale.set(1.5, 1.5, 1.5);
+              this.hourglassMesh.position.set(1.8, -0.2, 0);
+              this.hourglassMesh.scale.set(1.6, 1.6, 1.6);
               this.scene.add(this.hourglassMesh);
             }
           }
@@ -2733,7 +2840,7 @@
         this.rafId = requestAnimationFrame(tick);
         const t = performance.now() * 0.0015;
         if (this.avatarGroup) {
-          this.avatarGroup.position.y = -0.15 + Math.sin(t * 1.5) * 0.03;
+          this.avatarGroup.position.y = Math.sin(t * 1.5) * 0.03;
           this.avatarGroup.rotation.y = Math.sin(t * 0.8) * 0.12;
         }
         if (this.hourglassMesh) {
@@ -2897,6 +3004,7 @@
 
     handleVictory() {
       this.isSolved = true;
+      this.updateCardTexture(true);
       if (this.timerInterval) clearInterval(this.timerInterval);
       this.sfx.play('cheer');
       this.sfx.speak(`Correct! You are a ${this.currentCard.word}!`);

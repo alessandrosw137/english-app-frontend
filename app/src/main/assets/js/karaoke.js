@@ -105,14 +105,16 @@
       try {
         localStorage.removeItem('karaoke_offset_' + sId);
         localStorage.removeItem('k_offset_' + sId);
-        const s = localStorage.getItem('karaoke_sync_v3_' + sId);
+        localStorage.removeItem('karaoke_sync_v3_' + sId);
+        localStorage.removeItem('karaoke_offset_v4_' + sId);
+        const s = localStorage.getItem('karaoke_sync_v5_' + sId);
         if (s !== null && !isNaN(parseFloat(s))) {
           const val = parseFloat(s);
-          if (Math.abs(val - (-4.2)) < 0.05) {
-            localStorage.setItem('karaoke_sync_v3_' + sId, '0.0');
+          if (Math.abs(val - (-4.2)) < 0.1 || val < -3.5) {
+            localStorage.setItem('karaoke_sync_v5_' + sId, '0.0');
             savedOffset = 0.0;
           } else {
-            savedOffset = val;
+            savedOffset = Math.round(val * 10) / 10;
           }
         }
       } catch (_) {}
@@ -335,7 +337,7 @@
       window.lyricsOffset = this.offsetSec;
       if (sId) {
         try {
-          localStorage.setItem('karaoke_offset_v4_' + sId, String(this.offsetSec));
+          localStorage.setItem('karaoke_sync_v5_' + sId, String(this.offsetSec));
         } catch (_) {}
       }
       this.updateOffsetBadgeUI();
@@ -351,7 +353,7 @@
       window.lyricsOffset = this.offsetSec;
       if (sId) {
         try {
-          localStorage.setItem('karaoke_offset_v4_' + sId, String(this.offsetSec));
+          localStorage.setItem('karaoke_sync_v5_' + sId, String(this.offsetSec));
         } catch (_) {}
       }
       this.updateOffsetBadgeUI();
@@ -367,7 +369,7 @@
       window.lyricsOffset = this.offsetSec;
       if (sId) {
         try {
-          localStorage.setItem('karaoke_offset_v4_' + sId, String(this.offsetSec));
+          localStorage.setItem('karaoke_sync_v5_' + sId, String(this.offsetSec));
         } catch (_) {}
       }
       this.updateOffsetBadgeUI();
@@ -2270,9 +2272,9 @@
               <span class="text-[10px] font-mono font-bold text-sky-300 bg-sky-950/80 border border-sky-500/40 px-2 py-0.5 rounded-md pointer-events-auto shadow-sm">${lineTimeStr}</span>
               <button type="button"
                       onclick="event.stopPropagation(); window.syncKaraokeAtStanza(${lIdx}, ${lineTime})"
-                      class="px-2 py-0.5 rounded-md bg-purple-950/80 hover:bg-purple-900 border border-purple-500/40 text-purple-200 hover:text-white text-[10px] font-black flex items-center gap-1 shadow-sm transition active:scale-95 cursor-pointer pointer-events-auto"
+                      class="px-2 py-0.5 rounded-md bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-400/40 text-cyan-200 hover:text-white text-[10px] font-black flex items-center gap-1 shadow-sm transition active:scale-95 cursor-pointer pointer-events-auto"
                       title="Sincronizar el video exactamente en este verso">
-                <span>🎯 Sincronizar aquí</span>
+                <span>🎯 Sincronizar voz aquí</span>
               </button>
             </div>
             <div class="lyric-en">${renderedVerses}</div>
@@ -2324,7 +2326,7 @@
       }
 
       try {
-        localStorage.setItem('karaoke_sync_v3_' + sId, String(newOffset));
+        localStorage.setItem('karaoke_sync_v5_' + sId, String(newOffset));
       } catch (_) {}
 
       if (typeof showFloatingToast === 'function') {
