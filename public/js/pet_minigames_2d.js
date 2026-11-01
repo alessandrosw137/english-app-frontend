@@ -15,6 +15,10 @@
 (function (global) {
   'use strict';
 
+  global.openHedbanz3DPortal = function(opts) { if (global.Hedbanz3D) return global.Hedbanz3D.open(opts); };
+  global.openHedbanz3DGame = function(opts) { if (global.Hedbanz3D) return global.Hedbanz3D.open(opts); };
+  global.openJestGameView = function(opts) { if (global.Hedbanz3D) return global.Hedbanz3D.open(opts); };
+
   // ============================================================================
   // 1. MOTOR DE AUDIO PROCEDURAL (WEB AUDIO API) & VOCES (WEB SPEECH)
   // ============================================================================
@@ -2288,50 +2292,82 @@
       this.strikes = 0;
       this.isSolved = false;
       this.askedQuestions = [];
-      this.hourglassMesh = null;
-      this.cardMesh = null;
-      this.headbandMesh = null;
+      this.tableGroup = null;
       this.avatarGroup = null;
+      this.headGroup = null;
+      this.leftEye = null;
+      this.rightEye = null;
+      this.leftEyebrow = null;
+      this.rightEyebrow = null;
+      this.cardMesh = null;
+      this.proceduralCard = null;
+      this.proceduralHourglass = null;
+      this.hourglassMesh = null;
+      this.refereeOrb = null;
+      this.nodAnimation = { active: false, startTime: 0, duration: 900 };
+      this.shakeAnimation = { active: false, startTime: 0, duration: 900 };
+      this.lastBlinkTime = performance.now();
+      this.isBlinking = false;
+      this.cardRotationY = 0;
+      this.targetCardRotationY = 0;
       this.sfx = new ArcadeAudioEngine();
+    }
+
+    nodYes() {
+      this.nodAnimation = { active: true, startTime: performance.now(), duration: 900 };
+      this.shakeAnimation = { active: false, startTime: 0, duration: 0 };
+    }
+
+    shakeNo() {
+      this.shakeAnimation = { active: true, startTime: performance.now(), duration: 900 };
+      this.nodAnimation = { active: false, startTime: 0, duration: 0 };
     }
 
     open(options) {
       if (typeof window !== 'undefined' && typeof window.hideAllModules === 'function') {
-        window.hideAllModules();
+        try { window.hideAllModules(); } catch (_) {}
+      }
+      if (typeof document !== 'undefined') {
+        document.body.classList.add('hedbanz-3d-active');
       }
 
+      this.initStageAndStart('assets/models/hedbanz/hedbanz_pack.glb');
+
+      // Descarga/actualización en segundo plano con AssetDownloadManager sin bloquear la jugabilidad inmediata
       if (typeof window !== 'undefined' && window.AssetDownloadManager && typeof window.AssetDownloadManager.requireAssetPack === 'function') {
-        window.AssetDownloadManager.requireAssetPack({
-          packId: 'hedbanz',
-          glbUrl: 'assets/models/hedbanz/hedbanz_pack.glb',
-          title: 'Hedbanz 3D: Party Game',
-          category: 'minigames',
-          estimatedMB: 0.25,
-          onReady: (blobUrl) => {
-            this.initStageAndStart(blobUrl || 'assets/models/hedbanz/hedbanz_pack.glb');
-          },
-          onCancel: () => {
-            console.log('[Hedbanz3D] Descarga cancelada. Regresando a Portales.');
-            if (typeof window.returnToMainPortals === 'function') {
-              window.returnToMainPortals();
-            } else if (typeof window.navigateTo === 'function') {
-              window.navigateTo('view-home');
+        try {
+          window.AssetDownloadManager.requireAssetPack({
+            packId: 'hedbanz',
+            glbUrl: 'assets/models/hedbanz/hedbanz_pack.glb',
+            title: 'Hedbanz 3D: Party Game',
+            category: 'minigames',
+            estimatedMB: 0.25,
+            onReady: (blobUrl) => {
+              if (this.isRunning && this.scene) {
+                this.loadGlbAssets(blobUrl || 'assets/models/hedbanz/hedbanz_pack.glb');
+              }
+            },
+            onCancel: () => {
+              console.log('[Hedbanz3D] Usando modelos procedimentales nativos de estudio.');
             }
-          }
-        });
-      } else {
-        this.initStageAndStart('assets/models/hedbanz/hedbanz_pack.glb');
+          });
+        } catch (_) {}
       }
     }
 
     initStageAndStart(glbUrl) {
       this.ensureDOM();
-      const container = document.getElementById('view-jest-game') || document.getElementById('hedbanz-main-container');
-      if (container) {
-        container.classList.remove('hidden');
-        container.style.setProperty('display', 'flex', 'important');
-        container.style.setProperty('visibility', 'visible', 'important');
-        container.style.setProperty('opacity', '1', 'important');
+      const modal = document.getElementById('hedbanz-3d-modal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        modal.style.setProperty('display', 'flex', 'important');
+        modal.style.setProperty('visibility', 'visible', 'important');
+        modal.style.setProperty('opacity', '1', 'important');
+      }
+      const host = document.getElementById('view-jest-game');
+      if (host) {
+        host.classList.remove('hidden');
+        host.style.setProperty('display', 'flex', 'important');
       }
 
       this.pickNewMysteryCard();
@@ -2340,34 +2376,35 @@
     }
 
     ensureDOM() {
-      let host = document.getElementById('view-jest-game');
-      if (!host) {
-        host = document.createElement('div');
-        host.id = 'view-jest-game';
-        host.className = 'flex-1 w-full hidden';
-        document.body.appendChild(host);
+      let modal = document.getElementById('hedbanz-3d-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'hedbanz-3d-modal';
+        document.body.appendChild(modal);
       }
 
-      host.innerHTML = `
-        <div id="hedbanz-main-container" class="relative w-full h-[calc(100dvh-56px)] min-h-[520px] bg-gradient-to-b from-[#1e112a] via-[#0d0714] to-[#05020a] flex flex-col select-none overflow-hidden font-sans">
+      modal.style.cssText = 'position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100dvh !important; z-index: 99000 !important; background: #0f172a !important; display: flex !important; flex-direction: column !important; overflow: hidden !important;';
+
+      modal.innerHTML = `
+        <div id="hedbanz-main-container" class="relative w-full h-full bg-[#0f172a] flex flex-col select-none overflow-hidden font-sans">
           
           <!-- TOPBAR CON BOTÓN VOLVER UNIVERSAL -->
-          <header class="h-14 bg-slate-900/90 border-b border-purple-500/30 flex items-center justify-between px-4 z-20 backdrop-blur-md">
-            <div class="flex items-center gap-3">
+          <header class="h-12 sm:h-14 bg-slate-900/95 border-b border-purple-500/30 flex items-center justify-between px-3 sm:px-4 z-20 backdrop-blur-md flex-shrink-0">
+            <div class="flex items-center gap-2 sm:gap-3">
               <button type="button" onclick="window.Hedbanz3D.handleBack(event)"
-                      class="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-sky-300 hover:text-white border border-sky-500/50 text-xs font-black flex items-center gap-1.5 shadow-md transition cursor-pointer active:scale-95">
+                      class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-sky-300 hover:text-white border border-sky-500/50 text-xs font-black flex items-center gap-1.5 shadow-md transition cursor-pointer active:scale-95">
                 <span>← Volver a Portales</span>
               </button>
               <div>
-                <h1 class="text-sm font-black text-purple-200 tracking-wide flex items-center gap-1.5">
+                <h1 class="text-xs sm:text-sm font-black text-purple-200 tracking-wide flex items-center gap-1.5">
                   <span>🎴 Hedbanz 3D • Guess What I Am</span>
                 </h1>
-                <p class="text-[10px] text-purple-300/70 font-semibold hidden sm:block">Adivina tu carta en inglés haciendo preguntas estratégicas al árbitro IA</p>
+                <p class="text-[10px] text-purple-300/70 font-semibold hidden sm:block">Adivina tu carta en inglés haciendo preguntas estratégicas al rival IA</p>
               </div>
             </div>
 
-            <div class="flex items-center gap-2.5">
-              <div class="px-3 py-1 rounded-xl bg-purple-950/80 border border-purple-500/40 text-amber-300 font-mono text-xs font-black flex items-center gap-1.5 shadow">
+            <div class="flex items-center gap-2">
+              <div class="px-2.5 sm:px-3 py-1 rounded-xl bg-purple-950/80 border border-purple-500/40 text-amber-300 font-mono text-xs font-black flex items-center gap-1.5 shadow">
                 <span>⏳</span>
                 <span id="hedbanzClockDisplay">90s</span>
               </div>
@@ -2378,34 +2415,36 @@
             </div>
           </header>
 
-          <!-- ÁREA CENTRAL: VISOR THREE.JS + PANEL DE CONTROL DEL JUGADOR -->
-          <div class="flex-1 relative flex flex-col md:flex-row overflow-hidden w-full h-[calc(100vh-70px)] min-h-[500px]">
+          <!-- ÁREA CENTRAL: SPLIT-SCREEN PROFESIONAL (65% 3D / 35% Panel en PC, 46dvh / 54dvh en Móvil) -->
+          <div class="flex-1 relative flex flex-col md:flex-row overflow-hidden w-full h-[calc(100dvh-48px)] sm:h-[calc(100dvh-56px)]">
             
-            <!-- STAGE THREE.JS 3D -->
+            <!-- STAGE THREE.JS 3D (PC: 65% ancho, Móvil: 46dvh) -->
             <div id="hedbanzCanvasMount"
-                 class="flex-1 relative w-full h-[calc(100vh-70px)] min-h-[520px] overflow-hidden flex items-center justify-center bg-gradient-to-b from-[#1a102a] to-[#0a0512]"
-                 style="flex: 1 1 0% !important; width: 100% !important; height: calc(100vh - 70px) !important; min-height: 520px !important; position: relative !important; display: flex !important; align-items: center !important; justify-content: center !important; overflow: hidden !important;">
-              <div id="hedbanzLoadingOverlay" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/80 z-10 transition-opacity">
-                <div class="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-2"></div>
-                <span class="text-xs font-extrabold text-purple-300">Cargando paquetes 3D de Blender...</span>
+                 class="w-full md:w-[65%] h-[46dvh] md:h-full relative overflow-hidden flex items-center justify-center bg-[#162038] flex-shrink-0"
+                 style="position: relative !important; overflow: hidden !important; background: #162038 !important;">
+              <div id="hedbanzLoadingOverlay" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/60 z-10 transition-opacity pointer-events-none" style="display: none;">
+                <div class="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+                <span class="text-[11px] font-extrabold text-purple-300">Sincronizando modelos 3D...</span>
               </div>
 
               <!-- HUD DEL ÁRBITRO IA FLOTANTE EN EL ESCENARIO 3D -->
-              <div id="hedbanzRefereeHUD" class="absolute top-3 left-1/2 -translate-x-1/2 px-4 py-2 rounded-2xl bg-slate-900/90 border border-purple-400/40 shadow-2xl backdrop-blur-md flex items-center gap-2.5 pointer-events-none transition-all duration-300 opacity-90">
-                <span class="text-xl">🤖</span>
+              <div id="hedbanzRefereeHUD" class="absolute top-3 left-1/2 -translate-x-1/2 px-3.5 py-1.5 rounded-2xl bg-slate-900/90 border border-purple-400/40 shadow-2xl backdrop-blur-md flex items-center gap-2 pointer-events-none transition-all duration-300 z-10">
+                <span class="text-lg">🤖</span>
                 <div>
-                  <div class="text-[10px] font-extrabold text-purple-300 uppercase tracking-wider">AI Referee</div>
-                  <div id="hedbanzRefereeVerdict" class="text-sm font-black text-amber-300">Ask me a question!</div>
+                  <div class="text-[9px] font-extrabold text-purple-300 uppercase tracking-wider">AI Referee</div>
+                  <div id="hedbanzRefereeVerdict" class="text-xs sm:text-sm font-black text-amber-300">Ask me a question!</div>
                 </div>
               </div>
             </div>
 
-            <!-- PANEL DERECHO: PREGUNTAS ESTRATÉGICAS Y ACCIONES -->
-            <div class="w-full md:w-96 bg-slate-900/95 border-t md:border-t-0 md:border-l border-purple-500/30 flex flex-col p-3.5 gap-2.5 z-10 backdrop-blur-md overflow-y-auto max-h-[50vh] md:max-h-full">
+            <!-- PANEL TÁCTIL DERECHO / INFERIOR (PC: 35% ancho, Móvil: 54dvh con scroll táctil suave) -->
+            <div id="hedbanzPanelSection"
+                 class="w-full md:w-[35%] h-[54dvh] md:h-full bg-slate-900/95 border-t md:border-t-0 md:border-l border-purple-500/30 flex flex-col p-3 sm:p-3.5 gap-2 z-10 backdrop-blur-md overflow-y-auto"
+                 style="-webkit-overflow-scrolling: touch; scroll-behavior: smooth;">
               
               <!-- CATEGORÍAS ESTRATÉGICAS EN INGLÉS -->
               <div>
-                <span class="text-[10px] font-extrabold text-purple-300 uppercase tracking-wider block mb-1.5">
+                <span class="text-[10px] font-extrabold text-purple-300 uppercase tracking-wider block mb-1">
                   Preguntas Estratégicas por Categoría:
                 </span>
                 <div class="grid grid-cols-2 gap-1.5" id="hedbanzQuestionsGrid">
@@ -2415,7 +2454,7 @@
                   </button>
                   <button type="button" onclick="window.Hedbanz3D.askQuestion('isSupermarket')"
                           class="p-2 rounded-xl bg-purple-950/70 hover:bg-purple-900 border border-purple-500/40 text-purple-100 text-[11px] font-extrabold text-left transition shadow cursor-pointer active:scale-95">
-                    🛒 Is it in a supermarket?
+                    🛒 In a supermarket?
                   </button>
                   <button type="button" onclick="window.Hedbanz3D.askQuestion('isEatable')"
                           class="p-2 rounded-xl bg-purple-950/70 hover:bg-purple-900 border border-purple-500/40 text-purple-100 text-[11px] font-extrabold text-left transition shadow cursor-pointer active:scale-95">
@@ -2439,13 +2478,13 @@
                   </button>
                   <button type="button" onclick="window.Hedbanz3D.askQuestion('isHouse')"
                           class="p-2 rounded-xl bg-purple-950/70 hover:bg-purple-900 border border-purple-500/40 text-purple-100 text-[11px] font-extrabold text-left transition shadow cursor-pointer active:scale-95">
-                    🏠 Is it found in a house?
+                    🏠 Found in a house?
                   </button>
                 </div>
               </div>
 
               <!-- PREGUNTA PERSONALIZADA EN INGLÉS -->
-              <div class="mt-1 flex gap-1.5">
+              <div class="mt-0.5 flex gap-1.5">
                 <input type="text" id="hedbanzCustomQuestionInput" placeholder="Ask custom question in English..."
                        class="flex-1 bg-slate-950 border border-purple-500/40 rounded-xl px-2.5 py-1.5 text-xs text-purple-100 placeholder-purple-400/50 focus:outline-none focus:border-purple-400 font-semibold"
                        onkeydown="if(event.key==='Enter') window.Hedbanz3D.askCustomQuestion();">
@@ -2455,13 +2494,13 @@
                 </button>
               </div>
 
-              <!-- HISTORIAL DE PREGUNTAS Y VEREDICTOS -->
-              <div class="flex-1 min-h-[90px] max-h-36 bg-slate-950/60 border border-purple-500/20 rounded-2xl p-2 overflow-y-auto flex flex-col gap-1 text-[11px]" id="hedbanzHistoryList">
+              <!-- HISTORIAL DE PISTAS -->
+              <div class="flex-1 min-h-[70px] max-h-32 bg-slate-950/60 border border-purple-500/20 rounded-2xl p-2 overflow-y-auto flex flex-col gap-1 text-[11px]" id="hedbanzHistoryList">
                 <div class="text-slate-500 italic text-[10px]">Tus pistas acumuladas aparecerán aquí...</div>
               </div>
 
               <!-- BOTÓN PRINCIPAL DE ADIVINANZA FINAL -->
-              <div class="pt-1">
+              <div class="pt-0.5">
                 <button type="button" onclick="window.Hedbanz3D.openGuessModal()"
                         class="w-full py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-amber-500/20 cursor-pointer active:scale-95 flex items-center justify-center gap-1.5">
                   <span>🎯 Adivinar Palabra / Make Final Guess</span>
@@ -2486,7 +2525,7 @@
               <div class="flex items-center gap-2">
                 <button type="button" onclick="window.Hedbanz3D.closeGuessModal()"
                         class="flex-1 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs hover:bg-slate-700">
-                  Volver a preguntar
+                  Volver
                 </button>
                 <button type="button" onclick="window.Hedbanz3D.submitGuess()"
                         class="flex-1 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs">
@@ -2498,7 +2537,7 @@
 
           <!-- MODAL DE VICTORIA & CELEBRACIÓN -->
           <div id="hedbanzVictoryModal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-lg flex items-center justify-center p-4 hidden">
-            <div class="bg-slate-900 border-2 border-emerald-400 rounded-3xl p-6 max-w-md w-full shadow-2xl text-center relative overflow-hidden animate-bounce-short">
+            <div class="bg-slate-900 border-2 border-emerald-400 rounded-3xl p-6 max-w-md w-full shadow-2xl text-center relative overflow-hidden">
               <div class="text-5xl mb-2">🎉</div>
               <h2 class="text-xl font-black text-emerald-300 uppercase">¡EXCELLENT! YOU GOT IT!</h2>
               <p class="text-sm font-extrabold text-white mt-1" id="hedbanzRevealedWord">It is a: Dog</p>
@@ -2634,11 +2673,13 @@
       if (!mount || typeof THREE === 'undefined') return;
 
       this.scene = new THREE.Scene();
+      this.scene.background = new THREE.Color(0x162038);
+
       this.camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
       this.camera.position.set(0, 0.72, 2.75);
       this.camera.lookAt(0, 0.45, 0.2);
 
-      this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+      this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
       this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
       this.renderer.shadowMap.enabled = false;
       this.renderer.domElement.style.cssText = 'position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; display: block !important; z-index: 1 !important;';
@@ -2650,12 +2691,11 @@
         let w = mount.clientWidth || rect.width;
         let h = mount.clientHeight || rect.height;
 
-        if (!w || w <= 320) {
-          const sideW = (window.innerWidth >= 768) ? 384 : 0;
-          w = Math.max(380, window.innerWidth - sideW);
+        if (!w || w <= 200) {
+          w = window.innerWidth >= 768 ? Math.round(window.innerWidth * 0.65) : window.innerWidth;
         }
-        if (!h || h <= 260) {
-          h = Math.max(480, window.innerHeight - 70);
+        if (!h || h <= 180) {
+          h = window.innerWidth >= 768 ? Math.max(480, window.innerHeight - 60) : Math.round(window.innerHeight * 0.46);
         }
         w = Math.round(w);
         h = Math.round(h);
@@ -2665,16 +2705,8 @@
 
         this.renderer.setSize(w, h, false);
         const canvas = this.renderer.domElement;
-        canvas.style.setProperty('position', 'absolute', 'important');
-        canvas.style.setProperty('inset', '0', 'important');
-        canvas.style.setProperty('top', '0', 'important');
-        canvas.style.setProperty('left', '0', 'important');
         canvas.style.setProperty('width', '100%', 'important');
         canvas.style.setProperty('height', '100%', 'important');
-        canvas.style.setProperty('min-width', '100%', 'important');
-        canvas.style.setProperty('min-height', '100%', 'important');
-        canvas.style.setProperty('display', 'block', 'important');
-        canvas.style.setProperty('z-index', '1', 'important');
 
         this.camera.aspect = w / h;
         this.camera.updateProjectionMatrix();
@@ -2683,10 +2715,8 @@
       resizeViewer();
       requestAnimationFrame(() => {
         resizeViewer();
-        setTimeout(resizeViewer, 50);
-        setTimeout(resizeViewer, 150);
-        setTimeout(resizeViewer, 300);
-        setTimeout(resizeViewer, 600);
+        setTimeout(resizeViewer, 60);
+        setTimeout(resizeViewer, 200);
       });
 
       this._resizeListener = resizeViewer;
@@ -2699,25 +2729,28 @@
         this._resizeObserver.observe(mount);
       }
 
+      // Iluminación cálida de estudio de casino
       const hemi = new THREE.HemisphereLight(0xffffff, 0x443355, 1.35);
       this.scene.add(hemi);
       const dirLight = new THREE.DirectionalLight(0xffeedd, 1.3);
       dirLight.position.set(2, 4, 3);
       this.scene.add(dirLight);
+      const ambLight = new THREE.AmbientLight(0x38bdf8, 0.35);
+      this.scene.add(ambLight);
 
       // =========================================================================
-      // 1. MESA DE DUELO 3D CON CUBIERTA, BISEL DORADO, TAPETE, MAZO Y ORBE REFERÍ
+      // 1. MESA DE DUELO OVALADA 3D: NOGAL, TAPETE VERDE TORNEO, FICHAS Y MAZO
       // =========================================================================
       this.tableGroup = new THREE.Group();
       this.tableGroup.position.set(0, 0, 0);
       this.scene.add(this.tableGroup);
 
-      const woodMat = new THREE.MeshStandardMaterial({ color: 0x5c2c16, roughness: 0.45 });
+      const walnutMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.45 });
       const darkWoodMat = new THREE.MeshStandardMaterial({ color: 0x27170a, roughness: 0.6 });
       const goldMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.7, roughness: 0.25 });
       const feltMat = new THREE.MeshStandardMaterial({ color: 0x064e3b, roughness: 0.85 });
 
-      // Base y pata de pedestal
+      // Base y pedestal
       const baseGeo = new THREE.CylinderGeometry(0.52, 0.58, 0.06, 32);
       const baseMesh = new THREE.Mesh(baseGeo, darkWoodMat);
       baseMesh.position.set(0, -0.42, 0.3);
@@ -2726,30 +2759,45 @@
       const pillarMesh = new THREE.Mesh(pillarGeo, darkWoodMat);
       pillarMesh.position.set(0, -0.15, 0.3);
 
-      // Cubierta de la mesa (Wooden Table Top)
-      const topGeo = new THREE.CylinderGeometry(1.18, 1.18, 0.06, 48);
-      const topMesh = new THREE.Mesh(topGeo, woodMat);
+      // Cubierta ovalada de madera de nogal
+      const topGeo = new THREE.CylinderGeometry(1.22, 1.22, 0.06, 48);
+      topGeo.scale(1.15, 1, 0.88);
+      const topMesh = new THREE.Mesh(topGeo, walnutMat);
       topMesh.position.set(0, 0.12, 0.3);
 
       // Bisel dorado exterior
-      const rimGeo = new THREE.TorusGeometry(1.18, 0.02, 16, 48);
+      const rimGeo = new THREE.TorusGeometry(1.22, 0.02, 16, 48);
+      rimGeo.scale(1.15, 0.88, 1);
       const rimMesh = new THREE.Mesh(rimGeo, goldMat);
       rimMesh.rotation.x = Math.PI / 2;
       rimMesh.position.set(0, 0.14, 0.3);
 
-      // Tapete de fieltro de duelo (Velvet Mat)
-      const matGeo = new THREE.CylinderGeometry(0.85, 0.85, 0.015, 40);
+      // Tapete de fieltro verde de torneo
+      const matGeo = new THREE.CylinderGeometry(0.92, 0.92, 0.015, 40);
+      matGeo.scale(1.12, 1, 0.85);
       const matMesh = new THREE.Mesh(matGeo, feltMat);
       matMesh.position.set(0, 0.152, 0.3);
 
-      // Mazo de cartas sobre la mesa
+      // Fichas de casino apiladas en el borde
+      const chipColors = [0xdc2626, 0x2563eb, 0xf8fafc, 0xf59e0b];
+      const chipGeo = new THREE.CylinderGeometry(0.045, 0.045, 0.012, 20);
+      chipColors.forEach((color, stackIdx) => {
+        const chipMat = new THREE.MeshStandardMaterial({ color, roughness: 0.3 });
+        const stackHeight = 3 + (stackIdx % 2);
+        for (let c = 0; c < stackHeight; c++) {
+          const chipMesh = new THREE.Mesh(chipGeo, chipMat);
+          chipMesh.position.set(-0.22 + (stackIdx * 0.06), 0.16 + (c * 0.012), 0.52);
+          this.tableGroup.add(chipMesh);
+        }
+      });
+
+      // Mazo de cartas sobre la mesa (izquierda)
       const deckGeo = new THREE.BoxGeometry(0.16, 0.04, 0.22);
       const deckMat = new THREE.MeshStandardMaterial({ color: 0x1e3a8a, roughness: 0.35 });
       const deckMesh = new THREE.Mesh(deckGeo, deckMat);
       deckMesh.position.set(-0.46, 0.175, 0.36);
       deckMesh.rotation.y = 0.2;
 
-      // Carta suelta superior del mazo
       const topCardGeo = new THREE.BoxGeometry(0.155, 0.005, 0.215);
       const topCardMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
       const topCardMesh = new THREE.Mesh(topCardGeo, topCardMat);
@@ -2774,19 +2822,18 @@
       });
       this.refereeOrb = new THREE.Mesh(orbCoreGeo, orbCoreMat);
       this.refereeOrb.position.y = 0.07;
-
       this.refereeGroup.add(orbRing, this.refereeOrb);
 
       this.tableGroup.add(baseMesh, pillarMesh, topMesh, rimMesh, matMesh, deckMesh, topCardMesh, this.refereeGroup);
 
       // =========================================================================
-      // 2. RIVAL COMPLETO SENTADO: SILLA, TORSO, CUELLO, BRAZOS, CABEZA Y VINCHA
+      // 2. RIVAL SENTADO FRENTE A TI: SILLA, TORSO, CUELLO, BRAZOS Y CABEZA EXPRESIVA
       // =========================================================================
       this.avatarGroup = new THREE.Group();
       this.avatarGroup.position.set(0, 0, 0);
       this.scene.add(this.avatarGroup);
 
-      // Silla del rival sentado frente a nosotros
+      // Silla del rival sentado
       const chairMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7 });
       const chairBackGeo = new THREE.BoxGeometry(0.54, 0.64, 0.06);
       const chairBack = new THREE.Mesh(chairBackGeo, chairMat);
@@ -2797,7 +2844,7 @@
       chairSeat.position.set(0, 0.05, -0.16);
       this.avatarGroup.add(chairBack, chairSeat);
 
-      // Torso del rival: elegante chaqueta azul
+      // Torso del rival: chaqueta azul elegante
       const torsoMat = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.5 });
       const torsoGeo = new THREE.CylinderGeometry(0.24, 0.29, 0.46, 24);
       const torsoMesh = new THREE.Mesh(torsoGeo, torsoMat);
@@ -2809,7 +2856,7 @@
       const collarMesh = new THREE.Mesh(collarGeo, collarMat);
       collarMesh.position.set(0, 0.46, -0.04);
 
-      // Corbata / moño rojo elegante
+      // Corbata roja
       const tieMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.35 });
       const tieGeo = new THREE.ConeGeometry(0.042, 0.16, 16);
       const tieMesh = new THREE.Mesh(tieGeo, tieMat);
@@ -2820,7 +2867,6 @@
       const skinMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, roughness: 0.55 });
       const armMat = new THREE.MeshStandardMaterial({ color: 0x1d4ed8, roughness: 0.5 });
 
-      // Brazo izquierdo
       const leftUpperArmGeo = new THREE.CylinderGeometry(0.06, 0.055, 0.26, 14);
       const leftUpperArm = new THREE.Mesh(leftUpperArmGeo, armMat);
       leftUpperArm.position.set(-0.28, 0.30, 0.02);
@@ -2831,7 +2877,6 @@
       const leftHand = new THREE.Mesh(leftHandGeo, skinMat);
       leftHand.position.set(-0.28, 0.175, 0.20);
 
-      // Brazo derecho
       const rightUpperArmGeo = new THREE.CylinderGeometry(0.06, 0.055, 0.26, 14);
       const rightUpperArm = new THREE.Mesh(rightUpperArmGeo, armMat);
       rightUpperArm.position.set(0.28, 0.30, 0.02);
@@ -2844,162 +2889,175 @@
 
       this.avatarGroup.add(torsoMesh, collarMesh, tieMesh, leftUpperArm, leftHand, rightUpperArm, rightHand);
 
-      // Cabeza estilizada amarilla
+      // GRUPO DE CABEZA DEL RIVAL (Permite animar asentimientos YES y sacudidas NO)
+      this.headGroup = new THREE.Group();
+      this.headGroup.position.set(0, 0.58, 0);
+      this.avatarGroup.add(this.headGroup);
+
       const headGeo = new THREE.SphereGeometry(0.25, 32, 32);
       headGeo.scale(1, 1.15, 1);
       const headMesh = new THREE.Mesh(headGeo, skinMat);
-      headMesh.position.set(0, 0.58, 0);
-      this.avatarGroup.add(headMesh);
+      this.headGroup.add(headMesh);
 
-      // Ojos de personaje estilo cartoon amigable
+      // Ojos con parpadeo expresivo
       const eyeMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.2 });
       const eyeShineMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
       const eyeGeo = new THREE.SphereGeometry(0.028, 16, 16);
       eyeGeo.scale(1, 1.25, 0.5);
       const shineGeo = new THREE.SphereGeometry(0.010, 12, 12);
 
-      const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
-      leftEye.position.set(-0.08, 0.61, 0.245);
+      this.leftEye = new THREE.Mesh(eyeGeo, eyeMat);
+      this.leftEye.position.set(-0.08, 0.03, 0.245);
       const leftShine = new THREE.Mesh(shineGeo, eyeShineMat);
-      leftShine.position.set(-0.07, 0.625, 0.255);
+      leftShine.position.set(-0.07, 0.045, 0.255);
 
-      const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
-      rightEye.position.set(0.08, 0.61, 0.245);
+      this.rightEye = new THREE.Mesh(eyeGeo, eyeMat);
+      this.rightEye.position.set(0.08, 0.03, 0.245);
       const rightShine = new THREE.Mesh(shineGeo, eyeShineMat);
-      rightShine.position.set(0.09, 0.625, 0.255);
+      rightShine.position.set(0.09, 0.045, 0.255);
+
+      // Cejas expresivas
+      const eyebrowMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.5 });
+      const eyebrowGeo = new THREE.BoxGeometry(0.06, 0.014, 0.02);
+      this.leftEyebrow = new THREE.Mesh(eyebrowGeo, eyebrowMat);
+      this.leftEyebrow.position.set(-0.08, 0.08, 0.24);
+      this.leftEyebrow.rotation.z = -0.12;
+
+      this.rightEyebrow = new THREE.Mesh(eyebrowGeo, eyebrowMat);
+      this.rightEyebrow.position.set(0.08, 0.08, 0.24);
+      this.rightEyebrow.rotation.z = 0.12;
 
       // Sonrisa amigable
       const smileGeo = new THREE.TorusGeometry(0.038, 0.007, 8, 24, Math.PI);
       const smileMat = new THREE.MeshStandardMaterial({ color: 0x7c2d12, roughness: 0.3 });
       const smile = new THREE.Mesh(smileGeo, smileMat);
       smile.rotation.set(0, 0, Math.PI);
-      smile.position.set(0, 0.52, 0.25);
+      smile.position.set(0, -0.06, 0.25);
 
       // Mejillas sonrojadas
       const cheekMat = new THREE.MeshStandardMaterial({ color: 0xf43f5e, roughness: 0.8, transparent: true, opacity: 0.55 });
       const cheekGeo = new THREE.SphereGeometry(0.035, 16, 16);
       cheekGeo.scale(1.2, 0.6, 0.4);
       const leftCheek = new THREE.Mesh(cheekGeo, cheekMat);
-      leftCheek.position.set(-0.14, 0.55, 0.21);
+      leftCheek.position.set(-0.14, -0.03, 0.21);
       const rightCheek = new THREE.Mesh(cheekGeo, cheekMat);
-      rightCheek.position.set(0.14, 0.55, 0.21);
+      rightCheek.position.set(0.14, -0.03, 0.21);
 
-      this.avatarGroup.add(leftEye, leftShine, rightEye, rightShine, smile, leftCheek, rightCheek);
+      this.headGroup.add(this.leftEye, leftShine, this.rightEye, rightShine, this.leftEyebrow, this.rightEyebrow, smile, leftCheek, rightCheek);
 
-      // Meshes de respaldo procedural inmediato (evita escena vacía durante descarga)
+      // Headband / Vincha de juego
       const fbBandMat = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.35, metalness: 0.3 });
       const fbBandGeo = new THREE.TorusGeometry(0.255, 0.024, 16, 36);
       this.proceduralBand = new THREE.Mesh(fbBandGeo, fbBandMat);
-      this.proceduralBand.position.set(0, 0.65, 0);
+      this.proceduralBand.position.set(0, 0.07, 0);
       this.proceduralBand.rotation.x = Math.PI / 2;
-      this.avatarGroup.add(this.proceduralBand);
+      this.headGroup.add(this.proceduralBand);
 
+      // Carta Misteriosa con CanvasTexture 512x512
       const cardTex = this.createCardTexture(false);
       const fbCardMat = new THREE.MeshStandardMaterial({ map: cardTex, roughness: 0.25 });
       const fbCardGeo = new THREE.BoxGeometry(0.28, 0.38, 0.015);
       this.proceduralCard = new THREE.Mesh(fbCardGeo, fbCardMat);
-      this.proceduralCard.position.set(0, 0.88, 0.26);
-      this.avatarGroup.add(this.proceduralCard);
+      this.proceduralCard.position.set(0, 0.30, 0.26);
+      this.headGroup.add(this.proceduralCard);
 
       // =========================================================================
-      // 3. RELOJ DE ARENA UBICADO EXACTAMENTE ENCIMA DE LA MESA (0.68, 0.18, 0.38)
+      // 3. RELOJ DE ARENA 3D UBICADO A LA DERECHA (0.68, 0.18, 0.38)
       // =========================================================================
       this.proceduralHourglass = new THREE.Group();
-      const hgMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.4 });
+      const hgMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.4, metalness: 0.2 });
       const hgTop = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.035, 24), hgMat);
       const hgBot = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.035, 24), hgMat);
       hgTop.position.set(0, 0.18, 0);
       hgBot.position.set(0, -0.18, 0);
       const hgGlass = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.34, 16), new THREE.MeshStandardMaterial({ color: 0x93c5fd, transparent: true, opacity: 0.55 }));
-      this.proceduralHourglass.add(hgTop, hgBot, hgGlass);
+      const hgSand = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.14, 16), new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.8 }));
+      hgSand.position.set(0, -0.08, 0);
+      this.proceduralHourglass.add(hgTop, hgBot, hgGlass, hgSand);
       this.proceduralHourglass.position.set(0.68, 0.18, 0.38);
       this.proceduralHourglass.scale.set(0.85, 0.85, 0.85);
       this.scene.add(this.proceduralHourglass);
 
-      // Cargar paquete Blender GLB
-      const LoaderClass = THREE.GLTFLoader || (typeof window !== 'undefined' && window.GLTFLoader) || (typeof window !== 'undefined' && window.StandardGLTFLoader);
-      if (LoaderClass) {
-        const loader = new LoaderClass();
-        loader.load(glbUrl, (gltf) => {
-          const loadingOverlay = document.getElementById('hedbanzLoadingOverlay');
-          if (loadingOverlay) loadingOverlay.style.opacity = '0';
-          setTimeout(() => { if (loadingOverlay) loadingOverlay.style.display = 'none'; }, 200);
-
-          if (gltf && gltf.scene) {
-            // Reemplazar respaldos con modelos AAA de Blender
-            if (this.proceduralBand) {
-              this.avatarGroup.remove(this.proceduralBand);
-              this.proceduralBand = null;
-            }
-            if (this.proceduralCard) {
-              this.avatarGroup.remove(this.proceduralCard);
-              this.proceduralCard = null;
-            }
-            if (this.proceduralHourglass) {
-              this.scene.remove(this.proceduralHourglass);
-              this.proceduralHourglass = null;
-            }
-
-            const headband = gltf.scene.getObjectByName('Avatar_Headband_Pro');
-            const card = gltf.scene.getObjectByName('Mystery_Card_3D');
-            const hourglass = gltf.scene.getObjectByName('Game_Timer_Hourglass');
-
-            if (headband) {
-              this.headbandMesh = headband.clone();
-              this.headbandMesh.rotation.y = Math.PI;
-              this.headbandMesh.position.set(0, 0.65, 0);
-              this.avatarGroup.add(this.headbandMesh);
-            }
-            if (card) {
-              this.cardMesh = card.clone();
-              this.cardMesh.rotation.y = Math.PI;
-              this.cardMesh.position.set(0, 0.88, 0.26);
-              if (cardTex) {
-                this.cardMesh.traverse((child) => {
-                  if (child.isMesh) child.material = new THREE.MeshStandardMaterial({ map: cardTex, roughness: 0.25 });
-                });
-              }
-              this.avatarGroup.add(this.cardMesh);
-            }
-            if (hourglass) {
-              this.hourglassMesh = hourglass.clone();
-              this.hourglassMesh.position.set(0.68, 0.18, 0.38);
-              this.hourglassMesh.scale.set(0.85, 0.85, 0.85);
-              this.scene.add(this.hourglassMesh);
-            }
-          }
-          resizeViewer();
-        }, undefined, (err) => {
-          console.warn('[Hedbanz3D] Usando modelos procedurales de respaldo:', err);
-          const loadingOverlay = document.getElementById('hedbanzLoadingOverlay');
-          if (loadingOverlay) loadingOverlay.style.display = 'none';
-          resizeViewer();
-        });
-      }
-
+      // Bucle de animación 60 FPS
       this.isRunning = true;
       const tick = () => {
         if (!this.isRunning) return;
         this.rafId = requestAnimationFrame(tick);
-        if (mount && (Math.abs((mount.clientWidth || 0) - (this._lastW || 0)) > 4 || Math.abs((mount.clientHeight || 0) - (this._lastH || 0)) > 4)) {
-          resizeViewer();
-        }
-        const t = performance.now() * 0.0015;
+
+        const now = performance.now();
+        const t = now * 0.0015;
+
+        // Respiración suave del avatar
         if (this.avatarGroup) {
-          this.avatarGroup.position.y = Math.sin(t * 1.5) * 0.015;
-          this.avatarGroup.rotation.y = Math.sin(t * 0.8) * 0.04;
+          this.avatarGroup.position.y = Math.sin(t * 1.5) * 0.012;
         }
-        if (this.refereeOrb) {
-          this.refereeOrb.position.y = 0.07 + Math.sin(t * 2.5) * 0.015;
-          this.refereeOrb.rotation.y += 0.02;
+
+        // Parpadeo de ojos periódico cada 3.5 segundos
+        if (this.leftEye && this.rightEye) {
+          if (!this.isBlinking && now - this.lastBlinkTime > 3400) {
+            this.isBlinking = true;
+            this.blinkStartTime = now;
+          }
+          if (this.isBlinking) {
+            const blinkElapsed = now - this.blinkStartTime;
+            if (blinkElapsed < 150) {
+              this.leftEye.scale.y = 0.1;
+              this.rightEye.scale.y = 0.1;
+            } else {
+              this.leftEye.scale.y = 1.0;
+              this.rightEye.scale.y = 1.0;
+              this.isBlinking = false;
+              this.lastBlinkTime = now;
+            }
+          }
         }
+
+        // Animación de Asentimiento (YES) en el eje X de la cabeza
+        if (this.nodAnimation.active && this.headGroup) {
+          const elapsed = now - this.nodAnimation.startTime;
+          const progress = Math.min(1, elapsed / this.nodAnimation.duration);
+          this.headGroup.rotation.x = Math.sin(progress * Math.PI * 4) * 0.22;
+          if (progress >= 1) {
+            this.nodAnimation.active = false;
+            this.headGroup.rotation.x = 0;
+          }
+        }
+
+        // Animación de Negación (NO) en el eje Y de la cabeza
+        if (this.shakeAnimation.active && this.headGroup) {
+          const elapsed = now - this.shakeAnimation.startTime;
+          const progress = Math.min(1, elapsed / this.shakeAnimation.duration);
+          this.headGroup.rotation.y = Math.sin(progress * Math.PI * 4) * 0.26;
+          if (progress >= 1) {
+            this.shakeAnimation.active = false;
+            this.headGroup.rotation.y = 0;
+          }
+        }
+
+        // Volteo de la carta misteriosa al adivinar (giro de 180° / Math.PI)
+        if (this.targetCardRotationY !== 0) {
+          const activeCard = this.proceduralCard || this.cardMesh;
+          if (activeCard) {
+            activeCard.rotation.y += (this.targetCardRotationY - activeCard.rotation.y) * 0.12;
+          }
+        }
+
+        // Rotación continua del reloj de arena
         if (this.hourglassMesh) {
           this.hourglassMesh.rotation.y += 0.015;
         } else if (this.proceduralHourglass) {
           this.proceduralHourglass.rotation.y += 0.015;
         }
+
+        // Levitación y giro del orbe árbitro holográfico
+        if (this.refereeOrb) {
+          this.refereeOrb.position.y = 0.07 + Math.sin(t * 2.5) * 0.015;
+          this.refereeOrb.rotation.y += 0.02;
+        }
+
         this.renderer.render(this.scene, this.camera);
       };
+
       this.rafId = requestAnimationFrame(tick);
     }
 
@@ -3141,6 +3199,7 @@
         this.handleVictory();
       } else {
         this.strikes++;
+        this.shakeNo();
         const strikesCount = document.getElementById('hedbanzStrikesCount');
         if (strikesCount) strikesCount.textContent = `${this.strikes}/3`;
         this.sfx.play('buzzer');
@@ -3154,6 +3213,8 @@
 
     handleVictory() {
       this.isSolved = true;
+      this.targetCardRotationY = Math.PI;
+      this.nodYes();
       this.updateCardTexture(true);
       if (this.timerInterval) clearInterval(this.timerInterval);
       this.sfx.play('cheer');
@@ -3178,6 +3239,7 @@
     handleTimeout() {
       this.isSolved = true;
       if (this.timerInterval) clearInterval(this.timerInterval);
+      this.shakeNo();
       this.sfx.play('buzzer');
       this.sfx.speak(`Time is up! The mystery card was ${this.currentCard.word}.`);
       alert(`⏰ ¡Tiempo agotado!\nTu palabra secreta era: ${this.currentCard.word} (${this.currentCard.es}).\n${this.currentCard.hint}`);
@@ -3194,6 +3256,19 @@
     handleBack(event) {
       if (event && event.stopPropagation) event.stopPropagation();
       this.dispose();
+      const modal = document.getElementById('hedbanz-3d-modal');
+      if (modal) {
+        modal.style.setProperty('display', 'none', 'important');
+        modal.classList.add('hidden');
+      }
+      const host = document.getElementById('view-jest-game');
+      if (host) {
+        host.style.setProperty('display', 'none', 'important');
+        host.classList.add('hidden');
+      }
+      if (typeof document !== 'undefined') {
+        document.body.classList.remove('hedbanz-3d-active');
+      }
       if (typeof window.returnToMainPortals === 'function') {
         window.returnToMainPortals(event);
       } else if (typeof window.navigateTo === 'function') {
@@ -3255,15 +3330,24 @@
       this.scene = null;
       this.camera = null;
       this.renderer = null;
-      this.hourglassMesh = null;
-      this.cardMesh = null;
-      this.headbandMesh = null;
+      this.tableGroup = null;
       this.avatarGroup = null;
+      this.headGroup = null;
+      this.leftEye = null;
+      this.rightEye = null;
+      this.leftEyebrow = null;
+      this.rightEyebrow = null;
+      this.hourglassMesh = null;
+      this.proceduralHourglass = null;
+      this.cardMesh = null;
+      this.proceduralCard = null;
+      this.refereeOrb = null;
     }
   }
 
   const hedbanz3DInstance = new Hedbanz3DEngine();
   global.Hedbanz3D = hedbanz3DInstance;
+  global.openHedbanz3DPortal = (opts) => hedbanz3DInstance.open(opts);
   global.openHedbanz3DGame = (opts) => hedbanz3DInstance.open(opts);
   global.openJestGameView = (opts) => hedbanz3DInstance.open(opts);
   global.JestGame3D = hedbanz3DInstance;

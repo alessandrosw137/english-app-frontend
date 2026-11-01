@@ -873,3 +873,169 @@
   to { transform: rotate(360deg); }
 }
 
+
+/* ==========================================================================
+   ADAPTACIÓN RESPONSIVA CELULARES (< 768px)
+   Cancha 3D: Mitad superior (52dvh)
+   Panel táctico / Preguntas / Modos de Juego: Mitad inferior (48dvh)
+   ========================================================================== */
+@media (max-width: 768px) {
+  #view-soccer-3d {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100dvh !important;
+    overflow: hidden !important;
+    z-index: 10000 !important;
+    background: #040812 !important;
+  }
+
+  /* Lobby en celular: scroll vertical fluido */
+  .soccer-hub-container {
+    height: 100dvh !important;
+    overflow-y: auto !important;
+    padding: 10px !important;
+    box-sizing: border-box !important;
+  }
+
+  .soccer-hub-topbar {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+    padding: 10px !important;
+  }
+
+  .soccer-nav-tabs {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+
+  .soccer-tab-btn, .soccer-exit-btn {
+    flex: 1 1 auto !important;
+    font-size: 11px !important;
+    padding: 8px 10px !important;
+    text-align: center !important;
+  }
+
+  .soccer-lobby-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+    padding-bottom: 24px !important;
+  }
+
+  /* Cancha 3D en partido (Match): 52dvh superior */
+  #soccer-stadium-stage {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100vw !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    position: fixed !important;
+    inset: 0 !important;
+    overflow: hidden !important;
+  }
+
+  #soccer-canvas-mount {
+    position: relative !important;
+    width: 100% !important;
+    height: 52dvh !important;
+    flex-shrink: 0 !important;
+    inset: auto !important;
+  }
+
+  #soccer-canvas-mount canvas {
+    width: 100% !important;
+    height: 100% !important;
+    display: block !important;
+  }
+
+  /* Marcador superior compacto */
+  .soccer-broadcast-hud {
+    top: 6px !important;
+    left: 6px !important;
+    right: 6px !important;
+    gap: 6px !important;
+  }
+
+  .soccer-tv-scoreboard {
+    font-size: 11px !important;
+  }
+
+  .soccer-tv-team {
+    padding: 6px 8px !important;
+    font-size: 11px !important;
+  }
+
+  .soccer-tv-score {
+    padding: 6px 10px !important;
+    font-size: 14px !important;
+  }
+
+  .soccer-tv-clock {
+    padding: 6px 8px !important;
+    font-size: 11px !important;
+  }
+
+  .soccer-momentum-pill {
+    font-size: 10px !important;
+    padding: 3px 6px !important;
+  }
+
+  .soccer-hud-btn {
+    padding: 6px 10px !important;
+    font-size: 11px !important;
+  }
+
+  /* Panel Táctico: 48dvh inferior con scroll limpio */
+  #soccer-tactical-dock.soccer-tactical-dock {
+    position: relative !important;
+    left: auto !important;
+    bottom: auto !important;
+    transform: none !important;
+    width: 100% !important;
+    height: 48dvh !important;
+    flex-shrink: 0 !important;
+    border-radius: 20px 20px 0 0 !important;
+    padding: 12px 14px 20px 14px !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    box-sizing: border-box !important;
+    background: rgba(9, 14, 28, 0.96) !important;
+    border-top: 2px solid rgba(52, 211, 153, 0.5) !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: none !important;
+  }
+
+  .soccer-node-buttons {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  .soccer-node-btn {
+    padding: 10px 12px !important;
+    font-size: 12px !important;
+  }
+
+  /* Modal de Quiz táctico adaptado a celular */
+  #soccer-quiz-modal {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 60 !important;
+    display: none;
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+
+  .soccer-quiz-card {
+    width: 100% !important;
+    max-height: 85dvh !important;
+    overflow-y: auto !important;
+    border-radius: 24px 24px 0 0 !important;
+    padding: 18px 16px 28px 16px !important;
+    margin: 0 !important;
+  }
+}

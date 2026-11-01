@@ -323,6 +323,32 @@
 
     openPortal: function () {
       this.profile = loadProfile();
+
+      // Garantizar visibilidad de MasterGoal 3D sobre cualquier vista previa
+      const container = document.getElementById('view-soccer-3d');
+      if (container) {
+        container.classList.remove('hidden');
+        container.style.setProperty('display', 'block', 'important');
+        container.style.setProperty('position', 'fixed', 'important');
+        container.style.setProperty('inset', '0', 'important');
+        container.style.setProperty('width', '100vw', 'important');
+        container.style.setProperty('height', '100dvh', 'important');
+        container.style.setProperty('z-index', '10000', 'important');
+        container.style.setProperty('background', '#040812', 'important');
+        container.style.setProperty('opacity', '1', 'important');
+        container.style.setProperty('visibility', 'visible', 'important');
+      }
+
+      // Ocultar vistas principales para evitar traslucidez
+      const idsToHide = ['viewHome', 'view-home', 'world3d-container', 'world3d-view', 'view-worldtour', 'pet-sanctuary-root', 'masterpet-sanctuary-view'];
+      idsToHide.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.classList.add('hidden');
+          el.style.setProperty('display', 'none', 'important');
+        }
+      });
+
       this.ensureDOM();
       this.switchTab('lobby');
       if (typeof window.forceLandscapeOrientation === 'function') {
@@ -663,6 +689,7 @@
         if (hubView) hubView.style.display = 'none';
         if (stadiumStage) stadiumStage.style.display = 'block';
         this.resumeLoop();
+        setTimeout(() => { if (typeof this.handleResize === 'function') this.handleResize(); }, 60);
       } else {
         this.pauseLoop();
         if (stadiumStage) stadiumStage.style.display = 'none';

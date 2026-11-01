@@ -22,9 +22,10 @@
   if (typeof window !== 'undefined') window.World3D = World3D;
 
   // ============================================================================
-  // CARGADOR GLTFLoader NATIVO PARA THREE.JS r128 (Soporte GLB / Blender 3D)
+  // CARGADOR GLTFLoader NATIVO & PARSER BINARIO GLB PURO PARA THREE.JS r128
   // ============================================================================
-  function parseGLB(arrayBuffer) {
+  function parseGLBBufferToThreeGroup(arrayBuffer) {
+    if (!arrayBuffer || arrayBuffer.byteLength < 12) return null;
     const dataView = new DataView(arrayBuffer);
     const magic = dataView.getUint32(0, true);
     if (magic !== 0x46546c67) throw new Error('[GLTFLoader] Invalid GLB magic header');
@@ -35,7 +36,7 @@
     let binBuffer = null;
     let offset = 12;
 
-    while (offset < totalLength) {
+    while (offset < totalLength && offset < arrayBuffer.byteLength) {
       const chunkLength = dataView.getUint32(offset, true);
       const chunkType = dataView.getUint32(offset + 4, true);
       offset += 8;
@@ -67,30 +68,38 @@
     };
 
     function getAccessorArray(accessorIndex) {
+      if (!json.accessors || !json.accessors[accessorIndex]) return null;
       const acc = json.accessors[accessorIndex];
-      const bv = json.bufferViews[acc.bufferView];
+      const bv = (acc.bufferView !== undefined && json.bufferViews) ? json.bufferViews[acc.bufferView] : {};
       const byteOffset = (bv.byteOffset || 0) + (acc.byteOffset || 0);
       const TypedArray = COMP_ARRAYS[acc.componentType] || Float32Array;
       const numComponents = TYPE_SIZES[acc.type] || 1;
       const totalElements = acc.count * numComponents;
       const bytesPerElem = TypedArray.BYTES_PER_ELEMENT || 1;
       const byteLength = totalElements * bytesPerElem;
-      const subBuffer = binBuffer.slice(byteOffset, byteOffset + byteLength);
+      if (!binBuffer) return new TypedArray(totalElements);
+      const safeLength = Math.min(byteLength, Math.max(0, binBuffer.byteLength - byteOffset));
+      const subBuffer = binBuffer.slice(byteOffset, byteOffset + safeLength);
       return new TypedArray(subBuffer);
     }
 
     const T = (typeof THREE !== 'undefined') ? THREE : (typeof window !== 'undefined' ? window.THREE : null);
     if (!T) throw new Error('[GLTFLoader] THREE is not defined');
 
+    // Materiales limpios, luminosos y libres de pantalla negra
     const materials = (json.materials || []).map(m => {
       const pbr = m.pbrMetallicRoughness || {};
-      const color = pbr.baseColorFactor ? new T.Color(pbr.baseColorFactor[0], pbr.baseColorFactor[1], pbr.baseColorFactor[2]) : new T.Color(0xffffff);
-      const opacity = pbr.baseColorFactor && pbr.baseColorFactor[3] !== undefined ? pbr.baseColorFactor[3] : 1;
+      const baseCol = pbr.baseColorFactor
+        ? new T.Color(pbr.baseColorFactor[0], pbr.baseColorFactor[1], pbr.baseColorFactor[2])
+        : new T.Color(0xf1f5f9);
+      const opacity = (pbr.baseColorFactor && pbr.baseColorFactor[3] !== undefined) ? pbr.baseColorFactor[3] : 1;
       const mat = new T.MeshStandardMaterial({
-        color: color,
-        roughness: pbr.roughnessFactor !== undefined ? pbr.roughnessFactor : 0.55,
-        metalness: pbr.metallicFactor !== undefined ? pbr.metallicFactor : 0.1,
-        transparent: opacity < 1,
+        color: baseCol,
+        roughness: 0.45,
+        metalness: 0.12,
+        emissive: baseCol.clone().multiplyScalar(0.12),
+        emissiveIntensity: 0.25,
+        transparent: opacity < 0.98,
         opacity: opacity,
         side: m.doubleSided ? T.DoubleSide : T.FrontSide
       });
@@ -105,26 +114,38 @@
         if (prim.attributes) {
           if (prim.attributes.POSITION !== undefined) {
             const arr = getAccessorArray(prim.attributes.POSITION);
-            geom.setAttribute('position', new T.BufferAttribute(arr, 3));
+            if (arr) geom.setAttribute('position', new T.BufferAttribute(arr, 3));
           }
           if (prim.attributes.NORMAL !== undefined) {
             const arr = getAccessorArray(prim.attributes.NORMAL);
-            geom.setAttribute('normal', new T.BufferAttribute(arr, 3));
+            if (arr) geom.setAttribute('normal', new T.BufferAttribute(arr, 3));
           }
           if (prim.attributes.TEXCOORD_0 !== undefined) {
             const arr = getAccessorArray(prim.attributes.TEXCOORD_0);
-            geom.setAttribute('uv', new T.BufferAttribute(arr, 2));
+            if (arr) geom.setAttribute('uv', new T.BufferAttribute(arr, 2));
           }
+        }
+        if (!geom.attributes.normal && geom.attributes.position) {
+          try { geom.computeVertexNormals(); } catch (_) {}
         }
         if (prim.indices !== undefined) {
           const arr = getAccessorArray(prim.indices);
-          geom.setIndex(new T.BufferAttribute(arr, 1));
+          if (arr) geom.setIndex(new T.BufferAttribute(arr, 1));
         }
         const mat = (prim.material !== undefined && materials[prim.material])
           ? materials[prim.material]
-          : new T.MeshStandardMaterial({ color: 0xcccccc });
+          : new T.MeshStandardMaterial({
+              color: new T.Color(0xdbeafe),
+              roughness: 0.45,
+              metalness: 0.12,
+              emissive: new T.Color(0x1e293b),
+              emissiveIntensity: 0.25,
+              side: T.DoubleSide
+            });
         const mesh = new T.Mesh(geom, mat);
         mesh.name = m.name || '';
+        mesh.castShadow = false;
+        mesh.receiveShadow = false;
         return mesh;
       });
 
@@ -135,20 +156,26 @@
       return group;
     });
 
-    const rootScene = new T.Group();
-    rootScene.name = 'GLTF_Scene_Root';
+    const rootGroup = new T.Group();
+    rootGroup.name = 'GLTF_Parsed_Group';
 
     const nodes = (json.nodes || []).map(n => {
       let obj;
       if (n.mesh !== undefined && meshes[n.mesh]) {
-        obj = meshes[n.mesh].clone();
+        obj = meshes[n.mesh].clone(true);
       } else {
         obj = new T.Group();
       }
       obj.name = n.name || obj.name || '';
-      if (n.translation) obj.position.set(n.translation[0], n.translation[1], n.translation[2]);
-      if (n.rotation) obj.quaternion.set(n.rotation[0], n.rotation[1], n.rotation[2], n.rotation[3]);
-      if (n.scale) obj.scale.set(n.scale[0], n.scale[1], n.scale[2]);
+      if (n.matrix) {
+        const mat = new T.Matrix4();
+        mat.fromArray(n.matrix);
+        mat.decompose(obj.position, obj.quaternion, obj.scale);
+      } else {
+        if (n.translation) obj.position.set(n.translation[0], n.translation[1], n.translation[2]);
+        if (n.rotation) obj.quaternion.set(n.rotation[0], n.rotation[1], n.rotation[2], n.rotation[3]);
+        if (n.scale) obj.scale.set(n.scale[0], n.scale[1], n.scale[2]);
+      }
       return obj;
     });
 
@@ -164,13 +191,24 @@
     const defaultScene = scenes[json.scene || 0] || scenes[0];
     if (defaultScene && defaultScene.nodes) {
       defaultScene.nodes.forEach(nIdx => {
-        if (nodes[nIdx]) rootScene.add(nodes[nIdx]);
+        if (nodes[nIdx]) rootGroup.add(nodes[nIdx]);
       });
     } else {
-      nodes.forEach(n => rootScene.add(n));
+      nodes.forEach(n => rootGroup.add(n));
     }
 
-    return { scene: rootScene, scenes: [rootScene], json };
+    return rootGroup;
+  }
+
+  function parseGLB(arrayBuffer) {
+    const rootScene = parseGLBBufferToThreeGroup(arrayBuffer);
+    return { scene: rootScene, scenes: [rootScene] };
+  }
+
+  global.parseGLBBufferToThreeGroup = parseGLBBufferToThreeGroup;
+  global.World3D.parseGLBBufferToThreeGroup = parseGLBBufferToThreeGroup;
+  if (typeof window !== 'undefined') {
+    window.parseGLBBufferToThreeGroup = parseGLBBufferToThreeGroup;
   }
 
   function StandardGLTFLoader(manager) {
@@ -2816,11 +2854,11 @@ ensureOrbitControls();
   const SCENARIO_SKY_COLORS = {
     house: 0xdbeafe,
     supermarket: 0xf1f5f9,
-    restaurant: 0x2b1922,
+    restaurant: 0x2d1a24,
     hotel: 0x1e293b,
     dating: 0x0f172a,
     garden: 0xbae6fd,
-    space: 0x0b1021
+    space: 0x0b1120
   };
   global.SCENARIO_SKY_COLORS = SCENARIO_SKY_COLORS;
 
@@ -6513,6 +6551,71 @@ ensureOrbitControls();
     }
     global.onThreeCanvasClick = onThreeCanvasClick;
 
+    let touchDownX = 0;
+    let touchDownY = 0;
+    let touchDownTime = 0;
+    let touchMoved = false;
+
+    function handleTouchStart(e) {
+      if (e.touches && e.touches.length === 1) {
+        touchDownX = e.touches[0].clientX;
+        touchDownY = e.touches[0].clientY;
+        touchDownTime = Date.now();
+        touchMoved = false;
+      } else {
+        touchMoved = true;
+      }
+    }
+
+    function handleTouchMove(e) {
+      if (e.touches && e.touches.length === 1) {
+        const dx = e.touches[0].clientX - touchDownX;
+        const dy = e.touches[0].clientY - touchDownY;
+        if (Math.hypot(dx, dy) >= 12) {
+          touchMoved = true;
+        }
+      } else {
+        touchMoved = true;
+      }
+    }
+
+    function handleTouchEnd(e) {
+      const elapsed = Date.now() - touchDownTime;
+      // Tap limpio en celular: duracion < 220ms y desplazamiento < 12px
+      if (!touchMoved && elapsed < 220) {
+        const clientX = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0].clientX : touchDownX;
+        const clientY = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0].clientY : touchDownY;
+        executeTapRaycast(clientX, clientY);
+      }
+    }
+
+    function executeTapRaycast(clientX, clientY) {
+      const rect = domElement.getBoundingClientRect();
+      if (!rect || rect.width === 0 || rect.height === 0 || !camera) return;
+
+      pointer.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(pointer, camera);
+      const intersects = raycaster.intersectObjects(interactiveObjects, true);
+      const targetGroup = resolveInteractiveHit(intersects);
+
+      if (targetGroup) {
+        try {
+          localStorage.setItem('mastereng_3d_tutorial_done', 'true');
+        } catch (err) {}
+        const tutorialHandEl = typeof document !== 'undefined' ? document.getElementById('world3dTutorialHand') : null;
+        if (tutorialHandEl) tutorialHandEl.remove();
+        selectInteractive3DObject(targetGroup);
+      } else {
+        closeWorld3DInspectCard();
+      }
+    }
+
+    domElement.addEventListener('touchstart', handleTouchStart, { passive: true });
+    domElement.addEventListener('touchmove', handleTouchMove, { passive: true });
+    domElement.addEventListener('touchend', handleTouchEnd, { passive: true });
+
     domElement.addEventListener('pointermove', handlePointerMove, { passive: true });
     domElement.addEventListener('pointerdown', handlePointerDown, { passive: true });
     domElement.addEventListener('pointerup', onThreeCanvasClick, { passive: true });
@@ -6578,6 +6681,44 @@ ensureOrbitControls();
     pauseLoop();
   }
 
+  
+  function ensureWorld3DTopBackButton() {
+    if (typeof document === 'undefined') return;
+    let btn = document.getElementById('world3d-global-back-portals-btn');
+    if (!btn) {
+      btn = document.createElement('button');
+      btn.id = 'world3d-global-back-portals-btn';
+      btn.type = 'button';
+      btn.innerHTML = '<span>← Volver a Portales</span>';
+      btn.setAttribute('aria-label', 'Volver a Portales');
+      btn.style.cssText = 'position: fixed !important; top: 12px !important; left: 12px !important; z-index: 99999 !important; background: rgba(15, 23, 42, 0.94) !important; border: 1.5px solid rgba(56, 189, 248, 0.6) !important; color: #ffffff !important; font-size: 13px !important; font-weight: 800 !important; padding: 8px 16px !important; border-radius: 14px !important; cursor: pointer !important; display: flex !important; align-items: center !important; gap: 6px !important; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important; backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important; transition: transform 0.15s ease, background 0.15s ease !important;';
+      btn.onmouseenter = () => { btn.style.background = 'rgba(2, 132, 199, 0.95)'; };
+      btn.onmouseleave = () => { btn.style.background = 'rgba(15, 23, 42, 0.94)'; };
+      btn.onclick = function(e) {
+        if (e) e.stopPropagation();
+        console.log('[World3D] Volver a Portales presionado.');
+        const lobbyEl = document.getElementById('world3d-selection-hub');
+        const isLobbyVisible = lobbyEl && !lobbyEl.classList.contains('hidden') && lobbyEl.style.display !== 'none';
+        if (!isLobbyVisible) {
+          openWorld3DLobby();
+        } else {
+          closeWorld3DInspectCard();
+          pauseLoop();
+          if (typeof window.returnToMainPortals === 'function') {
+            window.returnToMainPortals(e);
+          } else if (typeof window.navigateTo === 'function') {
+            window.navigateTo('view-home');
+          }
+        }
+      };
+      document.body.appendChild(btn);
+    }
+    btn.style.setProperty('display', 'flex', 'important');
+    btn.style.setProperty('visibility', 'visible', 'important');
+  }
+  global.ensureWorld3DTopBackButton = ensureWorld3DTopBackButton;
+  if (typeof window !== 'undefined') window.ensureWorld3DTopBackButton = ensureWorld3DTopBackButton;
+
   function enforceWorld3DContainerStyle() {
     if (typeof document === 'undefined') return;
     const ids = ['world3d-container', 'world3d-view', 'canvas-container', 'threeCanvasContainer', 'threeWebGLMount', 'view-worldtour'];
@@ -6600,9 +6741,10 @@ ensureOrbitControls();
       c3d.style.setProperty('position', 'fixed', 'important');
       c3d.style.setProperty('inset', '0', 'important');
       c3d.style.setProperty('width', '100vw', 'important');
-      c3d.style.setProperty('height', '100vh', 'important');
-      c3d.style.setProperty('z-index', '9500', 'important');
+      c3d.style.setProperty('height', '100dvh', 'important');
+      c3d.style.setProperty('z-index', '9800', 'important');
     }
+    ensureWorld3DTopBackButton();
 
     const cMount = document.getElementById('threeWebGLMount');
     if (cMount) {
@@ -6675,8 +6817,8 @@ ensureOrbitControls();
       c3d.style.setProperty('position', 'fixed', 'important');
       c3d.style.setProperty('inset', '0', 'important');
       c3d.style.setProperty('width', '100vw', 'important');
-      c3d.style.setProperty('height', '100vh', 'important');
-      c3d.style.setProperty('z-index', '9500', 'important');
+      c3d.style.setProperty('height', '100dvh', 'important');
+      c3d.style.setProperty('z-index', '9800', 'important');
     }
     const r = (typeof World3D !== 'undefined' && World3D.renderer) ? World3D.renderer : renderer;
     if (r && r.domElement) {
@@ -6685,8 +6827,8 @@ ensureOrbitControls();
       r.domElement.style.setProperty('position', 'fixed', 'important');
       r.domElement.style.setProperty('inset', '0', 'important');
       r.domElement.style.setProperty('width', '100vw', 'important');
-      r.domElement.style.setProperty('height', '100vh', 'important');
-      r.domElement.style.setProperty('z-index', '9500', 'important');
+      r.domElement.style.setProperty('height', '100dvh', 'important');
+      r.domElement.style.setProperty('z-index', '9800', 'important');
       r.domElement.style.setProperty('visibility', 'visible', 'important');
       r.domElement.style.setProperty('opacity', '1', 'important');
     }
@@ -8184,57 +8326,309 @@ ensureOrbitControls();
     resumeLoop();
   }
 
-  function buildProceduralFallbackWorld(scenarioKey) {
-    const activeTargetScene = (typeof World3D !== 'undefined' && World3D.scene) ? World3D.scene : scene;
-    if (!activeTargetScene || typeof THREE === 'undefined') return;
-    if (!scenarioDynamicRoot) {
-      scenarioDynamicRoot = new THREE.Group();
-      scenarioDynamicRoot.name = 'ScenarioDynamicRoot';
-      activeTargetScene.add(scenarioDynamicRoot);
-    }
-    const floorGeo = new THREE.PlaneGeometry(16, 14);
-    const floorMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 });
-    const floor = new THREE.Mesh(floorGeo, floorMat);
+  function buildDetailedHouseDiorama(targetGroup) {
+    if (!targetGroup || typeof THREE === 'undefined') return;
+    const P = {
+      woodOak: new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.45, metalness: 0.12 }),
+      woodDark: new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.5, metalness: 0.1 }),
+      wallSlate: new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.85, metalness: 0.05 }),
+      wallCream: new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.9, metalness: 0.05 }),
+      couchNavy: new THREE.MeshStandardMaterial({ color: 0x1e3a8a, roughness: 0.6, metalness: 0.08 }),
+      cushionCream: new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.7, metalness: 0.05 }),
+      metalSilver: new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.35, metalness: 0.28 }),
+      metalBrass: new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.3, metalness: 0.25 }),
+      screenGlow: new THREE.MeshStandardMaterial({ color: 0x0284c7, emissive: new THREE.Color(0x38bdf8), emissiveIntensity: 0.6, roughness: 0.2 }),
+      lampGlow: new THREE.MeshStandardMaterial({ color: 0xfef08a, emissive: new THREE.Color(0xfbbf24), emissiveIntensity: 0.8, roughness: 0.3 }),
+      plantGreen: new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.6, metalness: 0.05 }),
+      potClay: new THREE.MeshStandardMaterial({ color: 0xc2410c, roughness: 0.7, metalness: 0.05 }),
+      rugCloth: new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.85, metalness: 0.05 }),
+      bedWhite: new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.8, metalness: 0.05 }),
+      bedBlanket: new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.7, metalness: 0.05 }),
+      tvBlack: new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.2, metalness: 0.2 })
+    };
+
+    // 1. Piso de roble
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(16, 14), P.woodOak);
     floor.rotation.x = -Math.PI / 2;
-    floor.name = 'Fallback_Floor';
-    scenarioDynamicRoot.add(floor);
+    floor.name = 'House_Floor';
+    targetGroup.add(floor);
 
-    const wallGeo = new THREE.BoxGeometry(16, 3.6, 0.25);
-    const wallMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.9 });
-    const wall = new THREE.Mesh(wallGeo, wallMat);
-    wall.position.set(0, 1.8, -6);
-    wall.name = 'Fallback_Wall';
-    scenarioDynamicRoot.add(wall);
+    // 2. Paredes
+    const backWall = new THREE.Mesh(new THREE.BoxGeometry(16, 4, 0.25), P.wallSlate);
+    backWall.position.set(0, 2, -6.8);
+    backWall.name = 'House_Back_Wall';
+    targetGroup.add(backWall);
 
-    if (camera) {
-      camera.position.set(0, 8, 12);
-      camera.lookAt(0, 1, 0);
-    }
-    if (controls) {
-      controls.target.set(0, 1, 0);
-      controls.update();
-    }
+    const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.25, 4, 14), P.wallSlate);
+    leftWall.position.set(-7.2, 2, 0);
+    leftWall.name = 'House_Left_Wall';
+    targetGroup.add(leftWall);
+
+    // 3. Sofá (Living Room)
+    const sofaGroup = new THREE.Group();
+    sofaGroup.name = 'sofa';
+    const sBase = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.45, 1.0), P.couchNavy);
+    sBase.position.y = 0.225;
+    const sBack = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.75, 0.25), P.couchNavy);
+    sBack.position.set(0, 0.65, -0.38);
+    const sArmL = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.55, 1.0), P.couchNavy);
+    sArmL.position.set(-1.2, 0.45, 0);
+    const sArmR = sArmL.clone();
+    sArmR.position.x = 1.2;
+    const sCush1 = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.12, 0.7), P.cushionCream);
+    sCush1.position.set(-0.6, 0.48, 0.05);
+    const sCush2 = sCush1.clone();
+    sCush2.position.x = 0.6;
+    sofaGroup.add(sBase, sBack, sArmL, sArmR, sCush1, sCush2);
+    sofaGroup.position.set(-3.6, 0, -4.1);
+    targetGroup.add(sofaGroup);
+
+    // 4. Mesa de Centro (Coffee Table)
+    const tableGroup = new THREE.Group();
+    tableGroup.name = 'coffee_table';
+    const tTop = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.08, 0.8), P.woodDark);
+    tTop.position.y = 0.4;
+    [-0.6, 0.6].forEach(x => {
+      [-0.3, 0.3].forEach(z => {
+        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.4, 8), P.woodDark);
+        leg.position.set(x, 0.2, z);
+        tableGroup.add(leg);
+      });
+    });
+    tableGroup.add(tTop);
+    tableGroup.position.set(-3.6, 0, -2.0);
+    targetGroup.add(tableGroup);
+
+    // 5. Escritorio con Computadora (Desk & Computer)
+    const deskGroup = new THREE.Group();
+    deskGroup.name = 'desk';
+    const dTop = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.08, 0.9), P.woodOak);
+    dTop.position.y = 0.75;
+    [-0.8, 0.8].forEach(x => {
+      [-0.35, 0.35].forEach(z => {
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.75, 0.06), P.metalSilver);
+        leg.position.set(x, 0.375, z);
+        deskGroup.add(leg);
+      });
+    });
+    deskGroup.add(dTop);
+    deskGroup.position.set(3.5, 0, -3.5);
+    targetGroup.add(deskGroup);
+
+    // 6. Monitor
+    const monGroup = new THREE.Group();
+    monGroup.name = 'computer_monitor';
+    const mBase = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.02, 16), P.metalSilver);
+    mBase.position.y = 0.8;
+    const mPole = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.35, 8), P.metalSilver);
+    mPole.position.y = 0.97;
+    const mScreen = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.5, 0.04), P.screenGlow);
+    mScreen.position.y = 1.25;
+    monGroup.add(mBase, mPole, mScreen);
+    monGroup.position.set(3.5, 0, -3.72);
+    targetGroup.add(monGroup);
+
+    // 7. Silla de Oficina
+    const chairGroup = new THREE.Group();
+    chairGroup.name = 'office_chair';
+    const cSeat = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.08, 0.55), P.tvBlack);
+    cSeat.position.y = 0.45;
+    const cBack = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.55, 0.06), P.tvBlack);
+    cBack.position.set(0, 0.75, -0.25);
+    const cPole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.4, 8), P.metalSilver);
+    cPole.position.y = 0.22;
+    chairGroup.add(cSeat, cBack, cPole);
+    chairGroup.position.set(3.5, 0, -2.05);
+    targetGroup.add(chairGroup);
+
+    // 8. Librero (Bookshelf)
+    const shelfGroup = new THREE.Group();
+    shelfGroup.name = 'bookshelf';
+    const shFrame = new THREE.Mesh(new THREE.BoxGeometry(1.6, 2.6, 0.45), P.woodDark);
+    shFrame.position.y = 1.3;
+    shelfGroup.add(shFrame);
+    shelfGroup.position.set(6.7, 0, -3.5);
+    targetGroup.add(shelfGroup);
+
+    // 9. Cama Doble (House Bed)
+    const bedGroup = new THREE.Group();
+    bedGroup.name = 'house_bed';
+    const bBase = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.4, 1.8), P.woodOak);
+    bBase.position.y = 0.2;
+    const bMat = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.25, 1.7), P.bedWhite);
+    bMat.position.y = 0.45;
+    const bBlanket = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.27, 1.72), P.bedBlanket);
+    bBlanket.position.set(0.35, 0.46, 0);
+    const bHead = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.1, 1.8), P.woodOak);
+    bHead.position.set(-1.05, 0.55, 0);
+    bedGroup.add(bBase, bMat, bBlanket, bHead);
+    bedGroup.position.set(1.8, 0, 1.2);
+    targetGroup.add(bedGroup);
+
+    // 10. Refrigerador (Refrigerator)
+    const fridgeGroup = new THREE.Group();
+    fridgeGroup.name = 'house_refrigerator';
+    const fBody = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.0, 0.8), P.metalSilver);
+    fBody.position.y = 1.0;
+    fridgeGroup.add(fBody);
+    fridgeGroup.position.set(-1.4, 0, -5.8);
+    targetGroup.add(fridgeGroup);
+
+    // 11. Ventanal (Window)
+    const winGroup = new THREE.Group();
+    winGroup.name = 'window';
+    const wFrame = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.8, 2.8), P.woodOak);
+    wFrame.position.y = 2.0;
+    const wGlass = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.6, 2.6), P.screenGlow);
+    wGlass.position.y = 2.0;
+    winGroup.add(wFrame, wGlass);
+    winGroup.position.set(-6.95, 0, -1.75);
+    targetGroup.add(winGroup);
+
+    // 12. Lámpara de Pie (Floor Lamp)
+    const lampGroup = new THREE.Group();
+    lampGroup.name = 'floor_lamp';
+    const lPole = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 2.2, 8), P.metalBrass);
+    lPole.position.y = 1.1;
+    const lShade = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.35, 0.4, 16), P.lampGlow);
+    lShade.position.y = 2.0;
+    lampGroup.add(lPole, lShade);
+    lampGroup.position.set(-5.8, 0, -4.5);
+    targetGroup.add(lampGroup);
+
+    // 13. Reloj de Pared (Wall Clock)
+    const clockGroup = new THREE.Group();
+    clockGroup.name = 'wall_clock';
+    const clDial = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.04, 24), P.wallCream);
+    clDial.rotation.x = Math.PI / 2;
+    clockGroup.add(clDial);
+    clockGroup.position.set(-3.6, 2.8, -6.65);
+    targetGroup.add(clockGroup);
+
+    // 14. Planta de Interior (Indoor Plant)
+    const plantGroup = new THREE.Group();
+    plantGroup.name = 'indoor_plant';
+    const pPot = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.16, 0.45, 12), P.potClay);
+    pPot.position.y = 0.225;
+    const pLeaves = new THREE.Mesh(new THREE.SphereGeometry(0.35, 12, 10), P.plantGreen);
+    pLeaves.position.y = 0.55;
+    plantGroup.add(pPot, pLeaves);
+    plantGroup.position.set(-1.2, 0, -4.2);
+    targetGroup.add(plantGroup);
+
+    // 15. Televisor OLED & Barra de Sonido
+    const tvGroup = new THREE.Group();
+    tvGroup.name = 'house_oled_tv';
+    const tvPanel = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.0, 1.8), P.tvBlack);
+    tvPanel.position.y = 1.8;
+    tvGroup.add(tvPanel);
+    tvGroup.position.set(-6.8, 0, -4.5);
+    targetGroup.add(tvGroup);
+
+    const sbGroup = new THREE.Group();
+    sbGroup.name = 'house_soundbar';
+    const sbMesh = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 1.2), P.tvBlack);
+    sbMesh.position.y = 1.15;
+    sbGroup.add(sbMesh);
+    sbGroup.position.set(-6.8, 0, -4.5);
+    targetGroup.add(sbGroup);
+
+    // 16. Tapete de Sala (Area Rug)
+    const rug = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 2.6), P.rugCloth);
+    rug.rotation.x = -Math.PI / 2;
+    rug.position.set(-3.6, 0.02, -3.0);
+    rug.name = 'house_area_rug';
+    targetGroup.add(rug);
   }
-  global.buildProceduralFallbackWorld = buildProceduralFallbackWorld;
+
+  function buildClean3DDioramaFallback(scenarioKey, targetGroup) {
+    if (!targetGroup || typeof THREE === 'undefined') return;
+    const key = String(scenarioKey || 'house').toLowerCase();
+
+    // 1. Limpiar objetos previos
+    while (targetGroup.children.length > 0) {
+      const c = targetGroup.children[0];
+      targetGroup.remove(c);
+      if (c.geometry && c.geometry.dispose) c.geometry.dispose();
+      if (c.material) {
+        if (Array.isArray(c.material)) c.material.forEach(m => { if (m && m.dispose) m.dispose(); });
+        else if (c.material.dispose) c.material.dispose();
+      }
+    }
+
+    const B = (typeof window !== 'undefined' && window.MasterENG3DBuilders) || (typeof global !== 'undefined' ? global.MasterENG3DBuilders : null);
+
+    if (key === 'supermarket' && B && typeof B.buildSupermarketScene === 'function') {
+      B.buildSupermarketScene(targetGroup);
+    } else if (key === 'restaurant' && B && typeof B.buildRestaurantScene === 'function') {
+      B.buildRestaurantScene(targetGroup);
+    } else if (key === 'hotel' && B && typeof B.buildHotelScene === 'function') {
+      B.buildHotelScene(targetGroup);
+    } else if (key === 'dating' && B && typeof B.buildDatingScene === 'function') {
+      B.buildDatingScene(targetGroup);
+    } else if (key === 'garden' && B && typeof B.buildGardenScene === 'function') {
+      B.buildGardenScene(targetGroup);
+    } else if (key === 'space' && B && typeof B.buildSpaceScene === 'function') {
+      B.buildSpaceScene(targetGroup);
+    } else {
+      buildDetailedHouseDiorama(targetGroup);
+    }
+
+    // 2. Vincular objetos interactivos de la escena
+    bindGlbInteractiveNodes(targetGroup, key);
+
+    // 3. Auto-encuadre con Box3 y ajuste de cámara
+    if (THREE.Box3 && THREE.Vector3 && camera && controls) {
+      targetGroup.updateMatrixWorld(true);
+      const box = new THREE.Box3().setFromObject(targetGroup);
+      if (!box.isEmpty()) {
+        const center = new THREE.Vector3();
+        const size = new THREE.Vector3();
+        box.getCenter(center);
+        box.getSize(size);
+        const camY = Math.max(8, size.y * 1.6);
+        const camZ = Math.max(12, size.z * 1.4);
+        const lookY = size.y * 0.35;
+        camera.position.set(0, camY, camZ);
+        camera.lookAt(0, lookY, 0);
+        controls.target.set(0, lookY, 0);
+        if (typeof controls.syncSphericalFromObject === 'function') {
+          controls.syncSphericalFromObject();
+        }
+        controls.update();
+      }
+    }
+
+    forceShowWorld3DCanvas();
+    resumeLoop();
+  }
+  global.buildClean3DDioramaFallback = buildClean3DDioramaFallback;
+  global.buildDetailedHouseDiorama = buildDetailedHouseDiorama;
 
   function loadScenarioGLBWithFallback(scenarioKey, initialUrl, onComplete) {
-    const LoaderClass = getGLTFLoaderClass();
-    const loader = new LoaderClass();
     const directPath = 'assets/models/worlds/' + (scenarioKey === 'garden' ? 'garden' : scenarioKey) + '.glb';
+    let isDone = false;
 
-    function tryAttachGLTF(gltf) {
-      if (!gltf || !gltf.scene) return false;
-      let meshCount = 0;
-      gltf.scene.traverse(o => { if (o.isMesh) meshCount++; });
-      if (meshCount === 0) return false;
-      sanitizeGlbScene(gltf.scene);
-      hydrateAndAttachBlenderWorldGLB(gltf.scene, scenarioKey);
-      return true;
+    function finishSuccess(group) {
+      if (isDone) return;
+      isDone = true;
+      hydrateAndAttachBlenderWorldGLB(group, scenarioKey);
+      ensureMeshCountCheckAndComplete();
     }
 
-    function runProceduralFallback() {
-      console.warn('[World3D] Fallback procedimental anti-pantalla-negra para:', scenarioKey);
-      buildProceduralFallbackWorld(scenarioKey);
+    function ensureMeshCountCheckAndComplete() {
+      const activeTargetScene = (typeof World3D !== 'undefined' && World3D.scene) ? World3D.scene : scene;
+      let meshCount = 0;
+      if (activeTargetScene) {
+        activeTargetScene.traverse((child) => {
+          if (child.isMesh && child.visible) meshCount++;
+        });
+      }
+      if (meshCount === 0) {
+        console.warn('[World3D] Cero mallas detectadas tras carga. Ejecutando diorama 3D limpio para:', scenarioKey);
+        buildClean3DDioramaFallback(scenarioKey, scenarioDynamicRoot);
+      }
+      forceShowWorld3DCanvas();
       resumeLoop();
       if (typeof onComplete === 'function') onComplete();
     }
@@ -8251,32 +8645,81 @@ ensureOrbitControls();
         })
         .then(buf => {
           try {
-            const parsed = (typeof loader.parse === 'function') ? loader.parse(buf, directPath) : parseGLB(buf);
-            if (tryAttachGLTF(parsed)) {
-              if (typeof onComplete === 'function') onComplete();
-              return;
+            const parsedGroup = parseGLBBufferToThreeGroup(buf);
+            if (parsedGroup) {
+              let mCount = 0;
+              parsedGroup.traverse(o => { if (o.isMesh) mCount++; });
+              if (mCount > 0) {
+                finishSuccess(parsedGroup);
+                return;
+              }
             }
           } catch (err) {
             console.warn('[World3D] Error parseando fetch directo:', err);
           }
-          runProceduralFallback();
+          if (!isDone) {
+            isDone = true;
+            buildClean3DDioramaFallback(scenarioKey, scenarioDynamicRoot);
+            ensureMeshCountCheckAndComplete();
+          }
         })
         .catch(err => {
           console.warn('[World3D] Fetch directo falló:', err);
-          runProceduralFallback();
+          if (!isDone) {
+            isDone = true;
+            buildClean3DDioramaFallback(scenarioKey, scenarioDynamicRoot);
+            ensureMeshCountCheckAndComplete();
+          }
         });
     }
 
-    loader.load(initialUrl, (gltf) => {
-      if (tryAttachGLTF(gltf)) {
-        if (typeof onComplete === 'function') onComplete();
-      } else {
-        tryFetchDirectPath();
+    if (initialUrl) {
+      if (typeof THREE !== 'undefined' && THREE.GLTFLoader && typeof THREE.GLTFLoader === 'function') {
+        try {
+          const loader = new THREE.GLTFLoader();
+          loader.load(initialUrl, (gltf) => {
+            if (gltf && gltf.scene) {
+              let mc = 0;
+              gltf.scene.traverse(o => { if (o.isMesh) mc++; });
+              if (mc > 0) {
+                finishSuccess(gltf.scene);
+                return;
+              }
+            }
+            tryFetchDirectPath();
+          }, undefined, (err) => {
+            console.warn('[World3D] Error cargando con GLTFLoader:', err);
+            tryFetchDirectPath();
+          });
+          return;
+        } catch (e) {
+          console.warn('[World3D] Excepción inicializando GLTFLoader:', e);
+        }
       }
-    }, undefined, (err) => {
-      console.warn('[World3D] Error cargando URL inicial:', initialUrl, err);
+      fetch(initialUrl)
+        .then(res => {
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          return res.arrayBuffer();
+        })
+        .then(buf => {
+          const parsedGroup = parseGLBBufferToThreeGroup(buf);
+          if (parsedGroup) {
+            let mc = 0;
+            parsedGroup.traverse(o => { if (o.isMesh) mc++; });
+            if (mc > 0) {
+              finishSuccess(parsedGroup);
+              return;
+            }
+          }
+          tryFetchDirectPath();
+        })
+        .catch(err => {
+          console.warn('[World3D] Error en fetch de initialUrl:', err);
+          tryFetchDirectPath();
+        });
+    } else {
       tryFetchDirectPath();
-    });
+    }
   }
   global.loadScenarioGLBWithFallback = loadScenarioGLBWithFallback;
 
@@ -8285,7 +8728,23 @@ ensureOrbitControls();
     const meta = WORLD3D_LOBBY_META.find(m => m.id === targetKey) || WORLD3D_LOBBY_META[0];
     const glbUrl = 'assets/models/worlds/' + (targetKey === 'garden' ? 'garden' : targetKey) + '.glb';
 
+    // 1. Ocultar #world3d-selection-hub y pantallas de carga previas
+    const lobbyEl = document.getElementById('world3d-selection-hub');
+    if (lobbyEl) {
+      lobbyEl.classList.add('hidden');
+      lobbyEl.style.setProperty('display', 'none', 'important');
+    }
+    const loaderScreen = document.getElementById('world3d-loading-screen');
+    if (loaderScreen) {
+      loaderScreen.classList.add('hidden');
+      loaderScreen.style.setProperty('display', 'none', 'important');
+    }
+
+    // 2. Mostrar #world3d-container con los estilos obligatorios
     enforceWorld3DContainerStyle();
+
+    // 3. Asegurar boton "<- Volver a Portales" en la esquina superior izquierda
+    ensureWorld3DTopBackButton();
 
     if (typeof window !== 'undefined' && window.AssetDownloadManager && typeof window.AssetDownloadManager.requireAssetPack === 'function') {
       window.AssetDownloadManager.requireAssetPack({
@@ -8460,7 +8919,7 @@ ensureOrbitControls();
               loadScenarioGLBWithFallback(targetKey, finalGlbUrl, resolve);
             } catch (err) {
               console.error('[World3D] Error building scenario:', err);
-              buildProceduralFallbackWorld(targetKey);
+              buildClean3DDioramaFallback(targetKey, scenarioDynamicRoot);
               resolve();
             }
           });

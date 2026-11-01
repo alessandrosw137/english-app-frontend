@@ -257,10 +257,11 @@
       const manifestRes = await fetch('assets/models/manifest.json', { cache: 'no-cache' });
       if (manifestRes.ok) {
         const manifestData = await manifestRes.json();
-        if (manifestData && manifestData[packId]) {
-          const entry = manifestData[packId];
+        const models = manifestData && manifestData.models ? manifestData.models : manifestData;
+        const entry = models ? (models[packId] || models[`world_${packId}`] || models[`game_${packId}`] || models[`game_${packId}_pack`]) : null;
+        if (entry) {
           const mb = entry.sizeMB || (entry.bytes ? entry.bytes / (1024 * 1024) : null);
-          if (mb) return parseFloat(mb.toFixed(2));
+          if (mb && !isNaN(mb) && mb > 0) return parseFloat(mb.toFixed(2));
         }
       }
     } catch (_) {}
@@ -409,12 +410,15 @@
           </div>
         </div>
 
-        <!-- Fila de 2 Botones de Videojuego -->
-        <div id="adm-actions-prompt" class="adm-actions-row" style="display: flex; gap: 12px; justify-content: center;">
-          <button type="button" id="adm-btn-cancel" class="adm-btn-secondary" style="flex: 1; padding: 13px 16px; border-radius: 14px; background: #1e293b; color: #cbd5e1; border: 1px solid rgba(255,255,255,0.1); font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: all 0.15s ease;">
+        <!-- Fila de Botones de Videojuego -->
+        <div id="adm-actions-prompt" class="adm-actions-row" style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+          <button type="button" id="adm-btn-cancel" class="adm-btn-secondary" style="flex: 1; min-width: 90px; padding: 12px 14px; border-radius: 14px; background: #1e293b; color: #cbd5e1; border: 1px solid rgba(255,255,255,0.1); font-weight: 700; font-size: 0.90rem; cursor: pointer; transition: all 0.15s ease;">
             Volver
           </button>
-          <button type="button" id="adm-btn-confirm" class="adm-btn-primary" style="flex: 1.4; padding: 13px 20px; border-radius: 14px; background: linear-gradient(135deg, #38bdf8 0%, #2563eb 100%); color: #ffffff; border: none; font-weight: 800; font-size: 0.95rem; cursor: pointer; box-shadow: 0 8px 22px rgba(37, 99, 235, 0.4); transition: all 0.15s ease;">
+          <button type="button" id="adm-btn-bypass" class="adm-btn-bypass" style="flex: 1.1; min-width: 120px; padding: 12px 14px; border-radius: 14px; background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.45); color: #6ee7b7; font-weight: 800; font-size: 0.88rem; cursor: pointer; transition: all 0.15s ease;">
+            Entrar Ahora ⚡
+          </button>
+          <button type="button" id="adm-btn-confirm" class="adm-btn-primary" style="flex: 1.3; min-width: 130px; padding: 12px 16px; border-radius: 14px; background: linear-gradient(135deg, #38bdf8 0%, #2563eb 100%); color: #ffffff; border: none; font-weight: 800; font-size: 0.90rem; cursor: pointer; box-shadow: 0 8px 22px rgba(37, 99, 235, 0.4); transition: all 0.15s ease;">
             Descargar y Entrar
           </button>
         </div>
@@ -433,6 +437,15 @@
     document.getElementById('adm-btn-confirm').addEventListener('click', onConfirmDownloadClicked);
     document.getElementById('adm-btn-cancel').addEventListener('click', onCancelDownloadClicked);
     document.getElementById('adm-btn-abort').addEventListener('click', onAbortDownloadClicked);
+    const bypassBtn = document.getElementById('adm-btn-bypass');
+    if (bypassBtn) {
+      bypassBtn.addEventListener('click', () => {
+        closeDownloadModal();
+        if (_currentDownloadConfig && typeof _currentDownloadConfig.onReady === 'function') {
+          _currentDownloadConfig.onReady(_currentDownloadConfig.glbUrl);
+        }
+      });
+    }
 
     // Tecla Escape para salir limpiamente
     window.addEventListener('keydown', (e) => {
@@ -796,6 +809,13 @@
     // 1. Tarjetas del Lobby 3D (.world3d-lobby-card)
     const cards = document.querySelectorAll('.world3d-lobby-card');
     cards.forEach(card => {
+      // Limpiar cualquier badge viejo dentro de .portal-arch-header para que el arco quede impecable
+      const archHeader = card.querySelector('.portal-arch-header');
+      if (archHeader) {
+        const legacyBadges = archHeader.querySelectorAll('.adm-badge');
+        legacyBadges.forEach(b => b.remove());
+      }
+
       const match = card.getAttribute('onclick') || '';
       let matchedId = null;
       for (const id of Object.keys(ASSET_PACKS_REGISTRY)) {
@@ -807,25 +827,37 @@
       if (!matchedId) return;
 
       const packInfo = summary[matchedId];
-      if (!packInfo) return;
+      const rawMB = (packInfo && typeof packInfo.sizeMB === 'number' && packInfo.sizeMB > 0)
+        ? packInfo.sizeMB
+        : (ASSET_PACKS_REGISTRY[matchedId] && ASSET_PACKS_REGISTRY[matchedId].estimatedMB
+          ? ASSET_PACKS_REGISTRY[matchedId].estimatedMB
+          : 0.42);
+      const sizeStr = Number(rawMB).toFixed(2);
 
       let badgeEl = card.querySelector('.adm-badge');
       if (!badgeEl) {
         badgeEl = document.createElement('div');
-        const archHeader = card.querySelector('.portal-arch-header');
-        if (archHeader) {
-          archHeader.appendChild(badgeEl);
+        const footer = card.querySelector('.portal-card-footer');
+        const progressRow = footer ? footer.querySelector('.portal-progress-row') : null;
+        if (footer && progressRow) {
+          footer.insertBefore(badgeEl, progressRow);
+        } else if (footer) {
+          footer.prepend(badgeEl);
         } else {
-          card.prepend(badgeEl);
+          const identity = card.querySelector('.portal-card-identity');
+          if (identity) {
+            identity.appendChild(badgeEl);
+          } else {
+            card.appendChild(badgeEl);
+          }
         }
       }
 
-      if (packInfo.isDownloaded) {
+      if (packInfo && packInfo.isDownloaded) {
         badgeEl.className = 'adm-badge adm-badge-downloaded';
         badgeEl.innerHTML = '<span>✨ Listo para jugar</span>';
       } else {
         badgeEl.className = 'adm-badge adm-badge-ready';
-        const sizeStr = typeof packInfo.sizeMB === 'number' ? packInfo.sizeMB.toFixed(1) : packInfo.sizeMB;
         badgeEl.innerHTML = `<span>☁️ Descarga rápida (${sizeStr} MB)</span>`;
       }
     });
