@@ -13,6 +13,22 @@
 (function (global) {
   'use strict';
 
+  global.openCulinaryStudioPortal = function(opts) {
+    if (typeof global.hideAllModules === 'function') {
+      try {
+        global._suppressReturnToPortals = true;
+        global.hideAllModules();
+        global._suppressReturnToPortals = false;
+      } catch (_) {}
+    }
+    if (typeof document !== 'undefined') {
+      document.body.classList.add('culinary-studio-active');
+    }
+    if (global.CulinaryStudio2D && typeof global.CulinaryStudio2D.open === 'function') {
+      global.CulinaryStudio2D.open(opts);
+    }
+  };
+
   // ============================================================================
   // 1. DEFAULT CULINARY DATABANK (BASE DE DATOS GASTRONÓMICA AUTÓNOMA)
   // ============================================================================
@@ -973,21 +989,20 @@
     rootEl: null,
 
     init: function (containerId) {
-      if (this.rootEl) return;
+      if (this.rootEl && document.body.contains(this.rootEl)) return;
       let target = null;
       if (containerId) {
         target = document.getElementById(containerId);
       }
       if (!target) {
-        let el = document.getElementById('culinary-studio-root');
-        if (!el) {
-          el = document.createElement('div');
-          el.id = 'culinary-studio-root';
-          el.style.display = 'none';
-          document.body.appendChild(el);
-        }
-        target = el;
+        target = document.getElementById('culinary-studio-portal') || document.getElementById('culinary-studio-root');
       }
+      if (!target) {
+        target = document.createElement('div');
+        target.id = 'culinary-studio-portal';
+        document.body.appendChild(target);
+      }
+      target.style.cssText = 'position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100dvh !important; z-index: 99000 !important; background: #1a120b !important; display: flex !important; flex-direction: column !important; overflow: hidden !important;';
       this.rootEl = target;
       this.buildDOM();
     },
@@ -996,49 +1011,63 @@
       this.rootEl.innerHTML = `
         <!-- TOP BAR / HEADER -->
         <header class="culinary-top-bar">
-          <div class="culinary-brand-group">
-            <div class="culinary-logo-badge">👨‍🍳</div>
-            <div class="culinary-title-wrap">
-              <span class="culinary-title">MasterChef 2D Studio</span>
-              <span class="culinary-subtitle">English Gourmet Academy</span>
+          <div class="flex items-center gap-2.5">
+            <button type="button" class="culinary-btn-back-portals" id="btnBackToPortals" title="Volver a los Portales Principales">
+              <span>← Salir a Portales</span>
+            </button>
+            <div class="culinary-brand-group hidden lg:flex">
+              <div class="culinary-logo-badge">👨‍🍳</div>
+              <div class="culinary-title-wrap">
+                <span class="culinary-title">MasterChef Culinary Studio</span>
+                <span class="culinary-subtitle">2D Cartoon Cooking & Brigade English</span>
+              </div>
             </div>
           </div>
 
           <!-- 6 STATION TABS -->
           <nav class="culinary-station-tabs" id="culinaryStationTabs">
             <button class="culinary-station-tab active" data-station="1">
-              <span class="tab-icon">🔔</span>
-              <span>1. Order</span>
+              <span class="tab-icon">🛎️</span>
+              <span>1. Orders</span>
             </button>
             <button class="culinary-station-tab" data-station="2">
-              <span class="tab-icon">❄️</span>
-              <span>2. Fridge</span>
+              <span class="tab-icon">🧊</span>
+              <span>2. Walk-in Fridge</span>
             </button>
             <button class="culinary-station-tab" data-station="3">
-              <span class="tab-icon">🏺</span>
+              <span class="tab-icon">🫙</span>
               <span>3. Pantry & Tools</span>
             </button>
             <button class="culinary-station-tab" data-station="4">
               <span class="tab-icon">🔪</span>
-              <span>4. Prep & Cuts</span>
+              <span>4. Prep Table</span>
             </button>
             <button class="culinary-station-tab" data-station="5">
               <span class="tab-icon">🔥</span>
-              <span>5. Stovetop & Heat</span>
+              <span>5. Stovetop & Oven</span>
             </button>
             <button class="culinary-station-tab" data-station="6">
-              <span class="tab-icon">🍽️</span>
-              <span>6. Plating & Pass</span>
+              <span class="tab-icon">📖</span>
+              <span>6. Chef Dictionary</span>
             </button>
           </nav>
 
-          <!-- HEADER ACTIONS -->
-          <div class="culinary-header-actions">
-            <button class="culinary-btn-action culinary-btn-school" id="btnOpenChefSchool">
-              <span>🎓</span>
-              <span>Chef Academy</span>
-            </button>
-            <button class="culinary-btn-action culinary-btn-close" id="btnCloseCulinaryStudio">
+          <!-- CHEF RANK BADGE & ACTIONS -->
+          <div class="flex items-center gap-2">
+            <div class="culinary-chef-rank-badge">
+              <span>👨‍🍳</span>
+              <div class="culinary-rank-info hidden sm:flex">
+                <span class="culinary-rank-title" id="statChefRankFull">Commis Chef</span>
+                <div class="culinary-xp-bar">
+                  <div class="culinary-xp-fill" id="statChefXpFill" style="width: 25%;"></div>
+                </div>
+              </div>
+              <div class="culinary-currency-badge">
+                <span>🪙 <b id="statChefCoinsBadge">50</b></span>
+                <span>⭐ <b id="statChefMichelinBadge">1★</b></span>
+              </div>
+            </div>
+            <button class="culinary-btn-action culinary-btn-close" id="btnCloseCulinaryStudio" title="Cerrar y volver a Portales">
               <span>✕</span>
             </button>
           </div>
@@ -1166,7 +1195,15 @@
               <div class="prep-challenge-card">
                 <div>
                   <div class="prep-challenge-title" id="knifeTaskTitle">Knife Skill: Cut into wedges</div>
-                  <div class="prep-challenge-desc" id="knifeTaskDesc">Slice the fresh lemon into elegant wedges.</div>
+                  <div class="prep-challenge-desc" id="knifeTaskDesc">Slice the fresh ingredient on the board.</div>
+                  <div class="prep-techniques-selector" id="prepTechniquesSelector">
+                    <span class="text-[10px] font-bold text-amber-300 uppercase">Cortes:</span>
+                    <button type="button" class="prep-tech-btn active" data-tech="wedges">Gajos / Wedges</button>
+                    <button type="button" class="prep-tech-btn" data-tech="brunoise">Brunoise (3mm)</button>
+                    <button type="button" class="prep-tech-btn" data-tech="julienne">Julienne (Tiras)</button>
+                    <button type="button" class="prep-tech-btn" data-tech="chiffonade">Chiffonade (Cintas)</button>
+                    <button type="button" class="prep-tech-btn" data-tech="dice">Dice / Dados</button>
+                  </div>
                 </div>
                 <button class="bubble-tts-btn" style="position: static;" id="btnKnifeTts">🔊</button>
               </div>
@@ -1243,47 +1280,78 @@
             </div>
           </section>
 
-          <!-- STATION 6: PLATING PASS -->
+          <!-- STATION 6: CHEF DICTIONARY (ENCICLOPEDIA GASTRONÓMICA) -->
           <section class="culinary-station-view" id="stationView6">
-            <div class="plating-stage">
-              <div class="pass-counter-stage">
-                <div class="heat-lamps-rig">
-                  <div class="heat-lamp"></div>
-                  <div class="heat-lamp"></div>
-                  <div class="heat-lamp"></div>
+            <div class="culinary-dict-stage">
+              <div class="culinary-dict-controls">
+                <div class="culinary-dict-search-wrap">
+                  <span class="culinary-dict-search-icon">🔍</span>
+                  <input type="text" id="chefDictSearchInput" class="culinary-dict-search-input"
+                         placeholder="Search 350+ culinary terms, cuts, kitchen tools, ingredients or brigade slang...">
                 </div>
 
-                <canvas class="gourmet-plate-canvas" id="platingCanvas"></canvas>
-
-                <div class="service-call-strip">
-                  <span style="font-weight: 800; font-size: 0.9rem; color: #f8fafc;">Order Ready for Guest Delivery:</span>
-                  <button class="btn-service-call" id="btnOrderUpCall">
-                    <span>🔔</span>
-                    <span>"Hands please! Order up!"</span>
-                  </button>
+                <div class="culinary-dict-filter-chips" id="chefDictFilterChips">
+                  <button type="button" class="culinary-dict-filter-chip active" data-cat="all">All (350+)</button>
+                  <button type="button" class="culinary-dict-filter-chip" data-cat="slang">Brigade Slang (86)</button>
+                  <button type="button" class="culinary-dict-filter-chip" data-cat="tools">Tools & Cutlery (100)</button>
+                  <button type="button" class="culinary-dict-filter-chip" data-cat="ingredients">Ingredients (170)</button>
                 </div>
+
+                <span class="culinary-dict-count-badge" id="dictItemsCountBadge">356 Terms Available</span>
               </div>
 
-              <div class="plating-side-panel">
-                <div class="sauce-garnish-card">
-                  <span style="font-weight: 800; font-size: 0.95rem; color: #fff;">1. Sauce Placement:</span>
-                  <div class="sauce-option-group">
-                    <button class="sauce-option-btn active" data-sauce="over_dish">Drizzle Over Dish</button>
-                    <button class="sauce-option-btn" data-sauce="on_the_side">Sauce on the Side (Ramekin)</button>
+              <div class="culinary-dict-grid" id="chefDictionaryGrid"></div>
+            </div>
+          </section>
+
+          <!-- MODAL OVERLAY: PLATING PASS & SERVICE DELIVERY -->
+          <div class="culinary-school-modal" id="culinaryPlatingModal" style="display: none;">
+            <div class="school-card" style="max-width: 820px; width: 95%;">
+              <div class="school-header">
+                <span class="school-title">🍽️ Pass Counter: Final Plating & Service</span>
+                <button type="button" class="culinary-btn-action culinary-btn-close" id="btnClosePlatingModal">✕</button>
+              </div>
+
+              <div class="plating-stage" style="padding: 10px;">
+                <div class="pass-counter-stage">
+                  <div class="heat-lamps-rig">
+                    <div class="heat-lamp"></div>
+                    <div class="heat-lamp"></div>
+                    <div class="heat-lamp"></div>
+                  </div>
+
+                  <canvas class="gourmet-plate-canvas" id="platingCanvas"></canvas>
+
+                  <div class="service-call-strip">
+                    <span style="font-weight: 800; font-size: 0.9rem; color: #f8fafc;">Order Ready for Guest Delivery:</span>
+                    <button type="button" class="btn-service-call" id="btnOrderUpCall">
+                      <span>🔔</span>
+                      <span>"Hands please! Order up!"</span>
+                    </button>
                   </div>
                 </div>
 
-                <div class="sauce-garnish-card">
-                  <span style="font-weight: 800; font-size: 0.95rem; color: #fff;">2. Fresh Herb Garnish:</span>
-                  <div class="garnish-chips-container">
-                    <button class="garnish-chip active" data-garnish="fresh_dill">🌿 Fresh Dill Sprig</button>
-                    <button class="garnish-chip" data-garnish="fresh_parsley">🌿 Flat-Leaf Parsley</button>
-                    <button class="garnish-chip" data-garnish="rosemary">🌿 Rosemary</button>
+                <div class="plating-side-panel">
+                  <div class="sauce-garnish-card">
+                    <span style="font-weight: 800; font-size: 0.95rem; color: #fff;">1. Sauce Placement:</span>
+                    <div class="sauce-option-group">
+                      <button type="button" class="sauce-option-btn active" data-sauce="over_dish">Drizzle Over Dish</button>
+                      <button type="button" class="sauce-option-btn" data-sauce="on_the_side">Sauce on the Side (Ramekin)</button>
+                    </div>
+                  </div>
+
+                  <div class="sauce-garnish-card">
+                    <span style="font-weight: 800; font-size: 0.95rem; color: #fff;">2. Fresh Herb Garnish:</span>
+                    <div class="garnish-chips-container">
+                      <button type="button" class="garnish-chip active" data-garnish="fresh_dill">🌿 Fresh Dill Sprig</button>
+                      <button type="button" class="garnish-chip" data-garnish="fresh_parsley">🌿 Flat-Leaf Parsley</button>
+                      <button type="button" class="garnish-chip" data-garnish="rosemary">🌿 Rosemary</button>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </section>
+          </div>
         </main>
 
         <!-- EVALUATION MODAL -->
@@ -1404,7 +1472,61 @@
         this.switchStation(5);
       });
       root.querySelector('#btnAdvanceToPlating').addEventListener('click', () => {
-        this.switchStation(6);
+        this.openPlatingPass();
+      });
+
+      // Back to portals button
+      const backBtn = root.querySelector('#btnBackToPortals');
+      if (backBtn) {
+        backBtn.addEventListener('click', () => {
+          this.close();
+        });
+      }
+
+      // Close plating modal
+      const closePlatingBtn = root.querySelector('#btnClosePlatingModal');
+      if (closePlatingBtn) {
+        closePlatingBtn.addEventListener('click', () => {
+          this.closePlatingPass();
+        });
+      }
+
+      // Prep techniques buttons
+      root.querySelectorAll('.prep-tech-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          root.querySelectorAll('.prep-tech-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const tech = btn.dataset.tech;
+          const techTitles = {
+            wedges: 'Knife Skill: Cut into wedges',
+            brunoise: 'Knife Skill: Brunoise (Tiny 3mm Cubes)',
+            julienne: 'Knife Skill: Julienne (Matchstick Strips)',
+            chiffonade: 'Knife Skill: Chiffonade (Thin Herb Ribbons)',
+            dice: 'Knife Skill: Medium Dice / Macédoine'
+          };
+          const titleEl = root.querySelector('#knifeTaskTitle');
+          if (titleEl) titleEl.textContent = techTitles[tech] || 'Knife Skill Challenge';
+          speakText(tech);
+        });
+      });
+
+      // Chef dictionary search & filter listeners
+      const dictInput = root.querySelector('#chefDictSearchInput');
+      if (dictInput) {
+        dictInput.addEventListener('input', (e) => {
+          const activeFilter = root.querySelector('.culinary-dict-filter-chip.active');
+          const cat = activeFilter ? activeFilter.dataset.cat : 'all';
+          this.renderChefDictionary(cat, e.target.value);
+        });
+      }
+
+      root.querySelectorAll('.culinary-dict-filter-chip').forEach((chip) => {
+        chip.addEventListener('click', () => {
+          root.querySelectorAll('.culinary-dict-filter-chip').forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+          const q = dictInput ? dictInput.value : '';
+          this.renderChefDictionary(chip.dataset.cat, q);
+        });
       });
 
       // Stovetop Heat Selector
@@ -1507,25 +1629,65 @@
       initPlatingCanvas(c3);
     },
 
-    open: function () {
+    open: function (opts) {
       this.init();
-      this.rootEl.style.display = 'flex';
+      if (this.rootEl) {
+        this.rootEl.classList.remove('hidden');
+        this.rootEl.style.setProperty('display', 'flex', 'important');
+        this.rootEl.style.setProperty('visibility', 'visible', 'important');
+      }
+      const alt = document.getElementById('culinary-studio-root');
+      if (alt && alt !== this.rootEl) {
+        alt.classList.remove('hidden');
+        alt.style.setProperty('display', 'flex', 'important');
+      }
+      if (typeof document !== 'undefined') {
+        document.body.classList.add('culinary-studio-active');
+      }
       state.isOpen = true;
       this.updateHeaderStats();
-      this.startNewOrder();
+      this.startNewOrder(opts && opts.recipeId);
       this.switchStation(1);
     },
 
     close: function () {
       if (this.rootEl) {
-        this.rootEl.style.display = 'none';
+        this.rootEl.style.setProperty('display', 'none', 'important');
+        this.rootEl.classList.add('hidden');
+      }
+      const alt = document.getElementById('culinary-studio-root');
+      if (alt && alt !== this.rootEl) {
+        alt.style.setProperty('display', 'none', 'important');
+        alt.classList.add('hidden');
+      }
+      if (typeof document !== 'undefined') {
+        document.body.classList.remove('culinary-studio-active');
       }
       state.isOpen = false;
       if (typeof window !== 'undefined' && window.speechSynthesis) {
-        window.speechSynthesis.cancel();
+        try { window.speechSynthesis.cancel(); } catch (_) {}
       }
       if (typeof window.returnToMainPortals === 'function') {
         window.returnToMainPortals();
+      } else if (typeof window.navigateTo === 'function') {
+        window.navigateTo('view-home');
+      }
+    },
+
+    openPlatingPass: function () {
+      const modal = this.rootEl.querySelector('#culinaryPlatingModal');
+      if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.add('open');
+      }
+      if (state.renderPlating) state.renderPlating();
+    },
+
+    closePlatingPass: function () {
+      const modal = this.rootEl.querySelector('#culinaryPlatingModal');
+      if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('open');
       }
     },
 
@@ -1559,7 +1721,7 @@
       } else if (stationIndex === 5) {
         this.startStoveTimer();
       } else if (stationIndex === 6) {
-        if (state.renderPlating) state.renderPlating();
+        this.renderChefDictionary();
       }
     },
 
@@ -1825,6 +1987,7 @@
     },
 
     evaluateOrder: function () {
+      this.closePlatingPass();
       playSound('fanfare');
       const profile = getProfile();
       profile.ordersCompleted++;
@@ -1871,16 +2034,141 @@
       modal.classList.add('open');
     },
 
+    renderChefDictionary: function (cat = 'all', query = '') {
+      const container = this.rootEl.querySelector('#chefDictionaryGrid');
+      if (!container) return;
+
+      const databank = (typeof window !== 'undefined' && window.CulinaryDatabank) || {};
+      let allItems = [];
+
+      // 1. Brigade Slang (86)
+      const slangList = databank.culinaryVerbsAndSlang || [];
+      slangList.forEach(s => {
+        allItems.push({
+          type: 'slang',
+          nameEn: s.termEn || s.nameEn,
+          nameEs: s.termEs || s.nameEs,
+          ipa: s.ipa || '/kɪtʃ.ən/',
+          category: s.category || 'Kitchen Brigade Slang',
+          desc: s.contextEn || s.definitionEn || '',
+          example: s.exampleDialogueEn || s.audioPrompt || ''
+        });
+      });
+
+      // 2. Heavy Tools & Cutlery (100)
+      const toolsList = databank.equipmentAndTools || [];
+      toolsList.forEach(t => {
+        allItems.push({
+          type: 'tools',
+          nameEn: t.nameEn,
+          nameEs: t.nameEs,
+          ipa: t.ipa || '/tuːl/',
+          category: t.category || 'Tools & Heavy Equipment',
+          desc: t.definitionEn || '',
+          example: t.usageTipsEn || t.audioPrompt || ''
+        });
+      });
+
+      // 3. Ingredients (170)
+      const ingList = databank.ingredients || [];
+      ingList.forEach(i => {
+        allItems.push({
+          type: 'ingredients',
+          nameEn: i.nameEn,
+          nameEs: i.nameEs,
+          ipa: i.ipa || '/ɪnˈɡriː.di.ənt/',
+          category: i.category || 'Fresh Ingredients & Cold Storage',
+          desc: i.definitionEn || (i.culinaryRole ? 'Culinary Role: ' + i.culinaryRole : ''),
+          example: i.storageZone ? 'HACCP Storage: ' + i.storageZone : ''
+        });
+      });
+
+      const q = (query || '').trim().toLowerCase();
+      let filtered = allItems;
+      if (cat !== 'all') {
+        filtered = filtered.filter(it => it.type === cat || (it.category && it.category.toLowerCase().includes(cat.toLowerCase())));
+      }
+      if (q) {
+        filtered = filtered.filter(it =>
+          (it.nameEn && it.nameEn.toLowerCase().includes(q)) ||
+          (it.nameEs && it.nameEs.toLowerCase().includes(q)) ||
+          (it.desc && it.desc.toLowerCase().includes(q)) ||
+          (it.example && it.example.toLowerCase().includes(q)) ||
+          (it.ipa && it.ipa.toLowerCase().includes(q))
+        );
+      }
+
+      const countBadge = this.rootEl.querySelector('#dictItemsCountBadge');
+      if (countBadge) countBadge.textContent = filtered.length + ' Terms Available';
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #94a3b8;"><div style="font-size: 32px;">🔍</div><div style="font-weight: 700; margin-top: 8px;">No culinary terms found matching "' + q + '"</div><div style="font-size: 12px; color: #64748b; margin-top: 4px;">Try searching for knife, julienne, salmon, sear, or behind</div></div>';
+        return;
+      }
+
+      container.innerHTML = filtered.map(item => {
+        const safeEn = (item.nameEn || '').replace(/'/g, "\\'");
+        return '<div class="culinary-dict-card">' +
+          '<div class="culinary-dict-card-header">' +
+            '<div>' +
+              '<div class="culinary-dict-card-term">' +
+                '<span>' + item.nameEn + '</span>' +
+                '<span class="culinary-dict-card-ipa">' + item.ipa + '</span>' +
+              '</div>' +
+              '<div class="culinary-dict-card-es">' + item.nameEs + '</div>' +
+            '</div>' +
+            '<button type="button" class="bubble-tts-btn" style="position: static;" onclick="event.stopPropagation(); window.speakText && window.speakText(\'' + safeEn + '\')" title="Listen to pronunciation">' +
+              '🔊' +
+            '</button>' +
+          '</div>' +
+          '<div style="font-size: 10px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.05em;">' + item.category + '</div>' +
+          '<div class="culinary-dict-card-desc">' + item.desc + '</div>' +
+          (item.example ? '<div class="culinary-dict-card-brigade">💬 ' + item.example + '</div>' : '') +
+        '</div>';
+      }).join('');
+    },
+
     updateHeaderStats: function () {
       const profile = getProfile();
       const rank = RANKS.find((r) => r.level === profile.rankLevel) || RANKS[0];
-      this.rootEl.querySelector('#statChefRank').textContent = rank.title.split(' ')[0];
-      this.rootEl.querySelector('#statChefCoins').textContent = profile.coins;
+      const nextRank = RANKS.find((r) => r.level === profile.rankLevel + 1);
+      const minScore = rank.minScore;
+      const maxScore = nextRank ? nextRank.minScore : 3500;
+      const currentScore = profile.score || 0;
+      const pct = Math.min(100, Math.max(10, Math.round(((currentScore - minScore) / (maxScore - minScore || 1)) * 100)));
+
+      const rankEl = this.rootEl.querySelector('#statChefRankFull');
+      if (rankEl) rankEl.textContent = rank.title;
+      const rankShortEl = this.rootEl.querySelector('#statChefRank');
+      if (rankShortEl) rankShortEl.textContent = rank.title.split(' ')[0];
+
+      const xpFill = this.rootEl.querySelector('#statChefXpFill');
+      if (xpFill) xpFill.style.width = pct + '%';
+
+      const coinsEl = this.rootEl.querySelector('#statChefCoins');
+      if (coinsEl) coinsEl.textContent = profile.coins;
+      const coinsBadge = this.rootEl.querySelector('#statChefCoinsBadge');
+      if (coinsBadge) coinsBadge.textContent = profile.coins;
+      const michelinEl = this.rootEl.querySelector('#statChefMichelinBadge');
+      if (michelinEl) michelinEl.textContent = (profile.stars || 1) + '★';
     }
   };
 
   // Expose to window
   global.CulinaryStudio2D = CulinaryStudio2D;
+  global.openCulinaryStudioPortal = function(opts) {
+    if (typeof global.hideAllModules === 'function') {
+      try {
+        global._suppressReturnToPortals = true;
+        global.hideAllModules();
+        global._suppressReturnToPortals = false;
+      } catch (_) {}
+    }
+    if (typeof document !== 'undefined') {
+      document.body.classList.add('culinary-studio-active');
+    }
+    CulinaryStudio2D.open(opts);
+  };
 
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = CulinaryStudio2D;
