@@ -2187,7 +2187,133 @@
       });
     }
 
+    
+    // Estilos móviles responsivos de alta precisión para pantalla dividida en teléfonos (< 768px):
+    // 35dvh para el video de YouTube arriba y 65dvh para las letras abajo con scroll táctil suave
+    function ensureKaraokeMobileResponsiveStyles() {
+      if (typeof document === 'undefined') return;
+      if (document.getElementById('karaoke-mobile-responsive-styles')) return;
+      const styleEl = document.createElement('style');
+      styleEl.id = 'karaoke-mobile-responsive-styles';
+      styleEl.textContent = `
+        @media (max-width: 767px) {
+          #view-music {
+            padding: 0 !important;
+            margin: 0 !important;
+            max-width: 100vw !important;
+            width: 100vw !important;
+            height: 100dvh !important;
+            overflow: hidden !important;
+          }
+          #music-player-subview {
+            display: flex !important;
+            flex-direction: column !important;
+            height: 100dvh !important;
+            max-height: 100dvh !important;
+            width: 100vw !important;
+            overflow: hidden !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+          #musicStageColumnsGrid {
+            display: flex !important;
+            flex-direction: column !important;
+            height: 100% !important;
+            gap: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          #musicPlayerLeftCol {
+            height: 35dvh !important;
+            min-height: 35dvh !important;
+            max-height: 35dvh !important;
+            width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+            border: none !important;
+            flex-shrink: 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: flex-start !important;
+            background: #000000 !important;
+            position: relative !important;
+            z-index: 20 !important;
+          }
+          #musicOriginalVideoWrapper {
+            height: 100% !important;
+            width: 100% !important;
+            max-height: 100% !important;
+            aspect-ratio: auto !important;
+            border-radius: 0 !important;
+            border: none !important;
+            background: #000000 !important;
+          }
+          #yt-karaoke-mount {
+            width: 100% !important;
+            height: 100% !important;
+          }
+          #musicOriginalMetaWrapper {
+            display: none !important;
+          }
+          #musicHolographicStage {
+            display: none !important;
+          }
+          #musicLyricsRightCol {
+            height: 65dvh !important;
+            min-height: 65dvh !important;
+            max-height: 65dvh !important;
+            width: 100% !important;
+            border-radius: 0 !important;
+            border: none !important;
+            border-top: 2px solid rgba(56, 189, 248, 0.4) !important;
+            padding: 8px 12px !important;
+            flex: 1 1 65dvh !important;
+            display: flex !important;
+            flex-direction: column !important;
+            background: #0f172a !important;
+            overflow: hidden !important;
+            position: relative !important;
+            z-index: 10 !important;
+          }
+          #karaoke-lyrics-viewport {
+            flex: 1 1 auto !important;
+            height: 100% !important;
+            max-height: 100% !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+            -webkit-overflow-scrolling: touch !important;
+            scroll-behavior: smooth !important;
+            padding-bottom: 40px !important;
+          }
+          .karaoke-lyric-row, .stanza-card {
+            padding: 8px 12px !important;
+            margin-bottom: 8px !important;
+            background: rgba(15, 23, 42, 0.75) !important;
+            border: 1px solid rgba(56, 189, 248, 0.2) !important;
+            border-radius: 14px !important;
+          }
+          .lyric-verse-line, .lyric-en, .k-word {
+            color: #ffffff !important;
+            font-size: 1.05rem !important;
+            line-height: 1.5 !important;
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9) !important;
+          }
+          .karaoke-lyric-row.active .lyric-verse-line,
+          .karaoke-lyric-row.active .k-word,
+          .lyric-active .k-word {
+            color: #38bdf8 !important;
+            font-weight: 800 !important;
+            text-shadow: 0 0 14px rgba(56, 189, 248, 0.8) !important;
+          }
+        }
+      `;
+      (document.head || document.documentElement).appendChild(styleEl);
+    }
+    ensureKaraokeMobileResponsiveStyles();
+
     function renderLyricsFromList(lyrics) {
+      ensureKaraokeMobileResponsiveStyles();
       activeLyricsList = lyrics;
       window.activeLyricsList = lyrics;
       if (typeof window.translateAllStanzasToSpanish === 'function') {
@@ -2274,7 +2400,7 @@
                       onclick="event.stopPropagation(); window.syncKaraokeAtStanza(${lIdx}, ${lineTime})"
                       class="px-2 py-0.5 rounded-md bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-400/40 text-cyan-200 hover:text-white text-[10px] font-black flex items-center gap-1 shadow-sm transition active:scale-95 cursor-pointer pointer-events-auto"
                       title="Sincronizar el video exactamente en este verso">
-                <span>🎯 Sincronizar voz aquí</span>
+                <span>🎯 Sincronizar aquí</span>
               </button>
             </div>
             <div class="lyric-en">${renderedVerses}</div>

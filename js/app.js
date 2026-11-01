@@ -17007,3 +17007,361 @@ window._musicStageGuardInterval = setInterval(function() {
 })();
 
 
+
+
+// =============================================================================
+// MASTER ROUTER & RESILIENT NAVIGATION ENGINE (V2026.11)
+// =============================================================================
+(function () {
+  "use strict";
+
+  // 1. UTILIDAD DE OCULTACIÓN ESTRICTA DE LA RUTA DE APRENDIZAJE / HOME
+  function hideHomeAndCarouselStrictly() {
+    const homeEl = document.getElementById("view-home");
+    if (homeEl) {
+      homeEl.classList.add("hidden");
+      homeEl.style.setProperty("display", "none", "important");
+      homeEl.style.setProperty("visibility", "hidden", "important");
+      homeEl.style.setProperty("pointer-events", "none", "important");
+      homeEl.style.setProperty("opacity", "0", "important");
+      homeEl.style.setProperty("height", "0", "important");
+      homeEl.style.setProperty("max-height", "0", "important");
+      homeEl.style.setProperty("overflow", "hidden", "important");
+    }
+    const heroEl = document.getElementById("practice-today-hero");
+    if (heroEl) {
+      heroEl.classList.add("hidden");
+      heroEl.style.setProperty("display", "none", "important");
+    }
+    const coverFlow = document.getElementById("coverFlowViewport");
+    if (coverFlow) {
+      coverFlow.classList.add("hidden");
+      coverFlow.style.setProperty("display", "none", "important");
+      coverFlow.style.setProperty("pointer-events", "none", "important");
+    }
+    const coverTrack = document.getElementById("coverFlowTrack");
+    if (coverTrack) {
+      coverTrack.style.setProperty("display", "none", "important");
+      coverTrack.style.setProperty("pointer-events", "none", "important");
+    }
+    document.querySelectorAll(".carousel-nav-btn, .carousel-btn").forEach(btn => {
+      btn.style.setProperty("display", "none", "important");
+      btn.style.setProperty("pointer-events", "none", "important");
+    });
+  }
+
+  // 2. RESTAURACIÓN DEL LOBBY PRINCIPAL / COVERFLOW
+  function restoreHomeAndCarousel() {
+    const homeEl = document.getElementById("view-home");
+    if (homeEl) {
+      homeEl.classList.remove("hidden");
+      homeEl.style.setProperty("display", "flex", "important");
+      homeEl.style.setProperty("visibility", "visible", "important");
+      homeEl.style.setProperty("pointer-events", "auto", "important");
+      homeEl.style.setProperty("opacity", "1", "important");
+      homeEl.style.removeProperty("height");
+      homeEl.style.removeProperty("max-height");
+      homeEl.style.removeProperty("overflow");
+    }
+    const heroEl = document.getElementById("practice-today-hero");
+    if (heroEl) {
+      heroEl.classList.remove("hidden");
+      heroEl.style.removeProperty("display");
+    }
+    const coverFlow = document.getElementById("coverFlowViewport");
+    if (coverFlow) {
+      coverFlow.classList.remove("hidden");
+      coverFlow.style.setProperty("display", "flex", "important");
+      coverFlow.style.setProperty("pointer-events", "auto", "important");
+    }
+    const coverTrack = document.getElementById("coverFlowTrack");
+    if (coverTrack) {
+      coverTrack.style.setProperty("display", "flex", "important");
+      coverTrack.style.setProperty("pointer-events", "auto", "important");
+    }
+    document.querySelectorAll(".carousel-nav-btn, .carousel-btn").forEach(btn => {
+      btn.style.removeProperty("display");
+      btn.style.removeProperty("pointer-events");
+    });
+    if (typeof window.showPortal === "function") {
+      window.showPortal(window.currentPortalIdx || 0);
+    }
+    if (typeof window.updateCoverFlowVisuals === "function") {
+      window.updateCoverFlowVisuals();
+    }
+  }
+
+  // 3. MASTER ROUTER GLOBAL
+  window.MasterRouter = {
+    // ABRIR GALERÍA DE PORTALES 3D
+    showWorld3DLobby: function () {
+      hideHomeAndCarouselStrictly();
+
+      document.body.classList.add("view-worldtour-active", "in-immersive-portal");
+      document.body.classList.remove("hedbanz-3d-active", "culinary-studio-active", "soccer-active");
+
+      const viewWorldTour = document.getElementById("view-worldtour");
+      if (viewWorldTour) {
+        viewWorldTour.classList.remove("hidden");
+        viewWorldTour.style.setProperty("display", "block", "important");
+        viewWorldTour.style.setProperty("visibility", "visible", "important");
+        viewWorldTour.style.setProperty("opacity", "1", "important");
+        viewWorldTour.style.setProperty("z-index", "9500", "important");
+      }
+
+      const lobbyEl = document.getElementById("world3d-selection-hub");
+      if (lobbyEl) {
+        lobbyEl.classList.remove("hidden");
+        lobbyEl.style.setProperty("display", "flex", "important");
+        lobbyEl.style.setProperty("visibility", "visible", "important");
+        lobbyEl.style.setProperty("opacity", "1", "important");
+      }
+
+      const worldView = document.getElementById("world3d-view");
+      if (worldView) {
+        worldView.style.setProperty("display", "none", "important");
+      }
+
+      if (typeof window.renderWorld3DLobbyCards === "function") {
+        window.renderWorld3DLobbyCards();
+      }
+
+      if (window.AssetDownloadManager && typeof window.AssetDownloadManager.updateLobbyBadges === "function") {
+        window.AssetDownloadManager.updateLobbyBadges();
+      }
+
+      window.MasterRouter.scheduleHealthCheck("view-worldtour");
+    },
+
+    // ABRIR ESCENARIO 3D ESPECÍFICO (ej. house, supermarket, etc.)
+    showWorld3DScenario: function (scenarioId) {
+      hideHomeAndCarouselStrictly();
+      document.body.classList.add("view-worldtour-active", "in-immersive-portal");
+
+      const lobbyEl = document.getElementById("world3d-selection-hub");
+      if (lobbyEl) {
+        lobbyEl.classList.add("hidden");
+        lobbyEl.style.setProperty("display", "none", "important");
+      }
+
+      const viewWorldTour = document.getElementById("view-worldtour");
+      if (viewWorldTour) {
+        viewWorldTour.classList.remove("hidden");
+        viewWorldTour.style.setProperty("display", "block", "important");
+        viewWorldTour.style.setProperty("visibility", "visible", "important");
+        viewWorldTour.style.setProperty("z-index", "9500", "important");
+      }
+
+      const worldView = document.getElementById("world3d-view");
+      if (worldView) {
+        worldView.classList.remove("hidden");
+        worldView.style.setProperty("display", "block", "important");
+        worldView.style.setProperty("visibility", "visible", "important");
+      }
+
+      if (window.World3D && typeof window.World3D.switchScenario === "function") {
+        window.World3D.switchScenario(scenarioId);
+      } else if (typeof window.switch3DScenario === "function") {
+        window.switch3DScenario(scenarioId);
+      }
+
+      setTimeout(() => {
+        window.dispatchEvent(new Event("resize"));
+      }, 50);
+
+      window.MasterRouter.scheduleHealthCheck("view-worldtour");
+    },
+
+    // VOLVER AL MENÚ PRINCIPAL DE PORTALES (DESDE CUALQUIER MÓDULO)
+    returnToPortals: function (e) {
+      if (e && e.preventDefault) e.preventDefault();
+      if (e && e.stopPropagation) e.stopPropagation();
+
+      document.body.classList.remove("view-worldtour-active", "in-immersive-portal", "culinary-studio-active", "hedbanz-3d-active", "soccer-active");
+
+      const modulesToHide = [
+        "view-worldtour",
+        "world3d-selection-hub",
+        "world3d-view",
+        "view-soccer-3d",
+        "soccer-tactics-portal",
+        "culinary-studio-root",
+        "culinary-studio-portal",
+        "view-jest-game",
+        "hedbanz-3d-modal",
+        "view-music",
+        "view-stories",
+        "ai-tutor-view",
+        "view-path"
+      ];
+
+      modulesToHide.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.classList.add("hidden");
+          el.style.setProperty("display", "none", "important");
+        }
+      });
+
+      if (window.World3D && typeof window.World3D.pauseWorld3D === "function") {
+        try { window.World3D.pauseWorld3D(); } catch (_) {}
+      }
+      if (window.CulinaryStudio2D && typeof window.CulinaryStudio2D.close === "function") {
+        try { window.CulinaryStudio2D.close(); } catch (_) {}
+      }
+
+      restoreHomeAndCarousel();
+
+      const emergencyBar = document.getElementById("universalEmergencyBackBar");
+      if (emergencyBar) emergencyBar.style.setProperty("display", "none", "important");
+    },
+
+    // ACTIVADOR UNIVERSAL CON PREVENCIÓN DE PANTALLA NEGRA
+    activateView: function (targetId, onActivate) {
+      if (targetId === "view-home" || targetId === "hub") {
+        this.returnToPortals();
+        return;
+      }
+
+      hideHomeAndCarouselStrictly();
+
+      const views = window.MASTER_ROOT_VIEWS || ["view-home", "view-worldtour", "view-soccer-3d", "culinary-studio-root", "view-jest-game", "view-music", "view-stories", "ai-tutor-view", "view-path"];
+      views.forEach(v => {
+        const el = document.getElementById(v);
+        if (!el) return;
+        const isTarget = (v === targetId);
+        el.style.setProperty("display", isTarget ? (v === "view-home" ? "flex" : "block") : "none", "important");
+        el.style.setProperty("visibility", isTarget ? "visible" : "hidden", "important");
+        el.style.setProperty("pointer-events", isTarget ? "auto" : "none", "important");
+        el.classList.toggle("hidden", !isTarget);
+        if (isTarget) el.style.setProperty("z-index", "9500", "important");
+      });
+
+      if (typeof onActivate === "function") {
+        try { onActivate(); } catch (err) { console.warn("[MasterRouter] Error in onActivate:", err); }
+      }
+
+      this.scheduleHealthCheck(targetId);
+    },
+
+    // MONITOR RESILIENTE ANTI-PANTALLA NEGRA (100ms y 400ms)
+    scheduleHealthCheck: function (viewId) {
+      const checkFn = () => {
+        const el = document.getElementById(viewId);
+        if (!el) return;
+        const h = el.offsetHeight || el.clientHeight || 0;
+        const isHidden = el.classList.contains("hidden") || el.style.display === "none";
+        if (isHidden || h < 40) {
+          console.warn("[MasterRouter] Vista no visible o colapsada. Aplicando recuperacion de emergencia.");
+          el.classList.remove("hidden");
+          el.style.setProperty("display", viewId === "view-home" ? "flex" : "block", "important");
+          el.style.setProperty("visibility", "visible", "important");
+          el.style.setProperty("opacity", "1", "important");
+          el.style.setProperty("min-height", "80vh", "important");
+          window.MasterRouter.ensureEmergencyBar();
+        }
+      };
+      setTimeout(checkFn, 100);
+      setTimeout(checkFn, 400);
+    },
+
+    // BARRA DE EMERGENCIA UNIVERSAL
+    ensureEmergencyBar: function () {
+      let bar = document.getElementById("universalEmergencyBackBar");
+      if (!bar) {
+        bar = document.createElement("div");
+        bar.id = "universalEmergencyBackBar";
+        bar.style.cssText = "position: fixed; top: 12px; left: 12px; z-index: 210000; display: flex; align-items: center; gap: 8px;";
+        bar.innerHTML = '<button type="button" onclick="window.MasterRouter.returnToPortals(event)" style="padding: 10px 18px; border-radius: 14px; background: rgba(15, 23, 42, 0.95); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.6); font-weight: 800; font-size: 0.85rem; cursor: pointer; box-shadow: 0 8px 24px rgba(0,0,0,0.6); backdrop-filter: blur(8px); display: flex; align-items: center; gap: 6px;"><span>← Menú Principal</span></button>';
+        document.body.appendChild(bar);
+      }
+      bar.style.setProperty("display", "flex", "important");
+    }
+  };
+
+  // 4. INTERCEPTAR FUNCIONES GLOBALES PARA USAR MASTER ROUTER
+  window.openWorld3DLobby = function () {
+    window.MasterRouter.showWorld3DLobby();
+  };
+  window.openWorld3DScenario = function (id) {
+    window.MasterRouter.showWorld3DScenario(id);
+  };
+  window.returnToMainPortals = function (e) {
+    window.MasterRouter.returnToPortals(e);
+  };
+  window.goToHomePortals = function () {
+    window.MasterRouter.returnToPortals();
+  };
+
+  // 5. AJUSTE DE HEDBANZ 3D CANVAS RESIZE RESILIENCE
+  function fixHedbanz3DCanvasLayout() {
+    const modal = document.getElementById("hedbanz-3d-modal");
+    if (!modal || modal.classList.contains("hidden") || modal.style.display === "none") return;
+    const mount = document.getElementById("hedbanzCanvasMount");
+    if (!mount) return;
+    const canvas = mount.querySelector("canvas");
+    if (!canvas) return;
+
+    const rect = mount.getBoundingClientRect();
+    const w = Math.round(rect.width || mount.clientWidth || (window.innerWidth >= 768 ? window.innerWidth * 0.65 : window.innerWidth));
+    const h = Math.round(rect.height || mount.clientHeight || (window.innerWidth >= 768 ? window.innerHeight - 56 : window.innerHeight * 0.46));
+
+    if (w > 50 && h > 50) {
+      canvas.style.setProperty("width", "100%", "important");
+      canvas.style.setProperty("height", "100%", "important");
+      canvas.style.setProperty("position", "absolute", "important");
+      canvas.style.setProperty("top", "0", "important");
+      canvas.style.setProperty("left", "0", "important");
+      canvas.style.setProperty("inset", "0", "important");
+
+      if (window.Hedbanz3D && window.Hedbanz3D.renderer && window.Hedbanz3D.camera) {
+        window.Hedbanz3D.renderer.setSize(w, h, false);
+        window.Hedbanz3D.camera.aspect = w / h;
+        window.Hedbanz3D.camera.updateProjectionMatrix();
+      }
+    }
+  }
+
+  window.addEventListener("resize", fixHedbanz3DCanvasLayout);
+  setInterval(fixHedbanz3DCanvasLayout, 1000);
+
+  // Hook al abrir Hedbanz
+  const origOpenHedbanz = window.openHedbanz3DGame;
+  window.openHedbanz3DGame = function (opts) {
+    hideHomeAndCarouselStrictly();
+    document.body.classList.add("hedbanz-3d-active", "in-immersive-portal");
+    let res;
+    if (origOpenHedbanz) {
+      res = origOpenHedbanz.apply(this, arguments);
+    } else if (window.Hedbanz3D && typeof window.Hedbanz3D.open === "function") {
+      res = window.Hedbanz3D.open(opts);
+    }
+    requestAnimationFrame(() => {
+      fixHedbanz3DCanvasLayout();
+      setTimeout(fixHedbanz3DCanvasLayout, 100);
+      setTimeout(fixHedbanz3DCanvasLayout, 300);
+      setTimeout(fixHedbanz3DCanvasLayout, 600);
+    });
+    window.MasterRouter.scheduleHealthCheck("hedbanz-3d-modal");
+    return res;
+  };
+  window.openJestGameView = window.openHedbanz3DGame;
+
+  // 6. PURGA Y SANITIZACIÓN DEFINITIVA DE OFFSET KARAOKE (-4.2s)
+  try {
+    if (typeof localStorage !== "undefined") {
+      ["mastereng_lyrics_offset", "karaoke_offset", "lyrics_offset"].forEach(k => localStorage.removeItem(k));
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && (k.includes("offset") || k.includes("karaoke_sync"))) {
+          const val = parseFloat(localStorage.getItem(k));
+          if (!isNaN(val) && (val < -2.0 || Math.abs(val - (-4.2)) < 0.1)) {
+            localStorage.setItem(k, "0.0");
+          }
+        }
+      }
+    }
+  } catch (_) {}
+
+  console.log("[MasterRouter] 🚀 Motor de Navegación Resiliente y Router Activo.");
+})();
