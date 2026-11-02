@@ -1,5 +1,5 @@
-// mastereng-pwa-v34 Service Worker Network-First with Auto-Cache Cleanup
-const CACHE_NAME = 'mastereng-pwa-v34-' + Date.now();
+// mastereng-pwa-v35 Service Worker Network-First with Auto-Cache Cleanup
+const CACHE_NAME = 'mastereng-pwa-v35-' + Date.now();
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -13,6 +13,7 @@ const CORE_ASSETS = [
   './js/world3d_nature_space.js',
   './js/world3d_dating_hotel.js',
   './js/world3d_market_rest.js',
+  './js/world3d_dictionaries.js',
   './js/karaoke.js',
   './js/jest_game.js',
   './js/social_chat.js',

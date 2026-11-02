@@ -4417,26 +4417,62 @@ body.in-immersive-portal #practice-today-hero {
 }
 
 /* ==========================================================================
-   KARAOKE: ALTO CONTRASTE EN LETRAS INACTIVAS Y LEGIBILIDAD
+   KARAOKE: ALTO CONTRASTE EN LETRAS INACTIVAS Y LEGIBILIDAD PROFESIONAL
    ========================================================================== */
 .karaoke-lyric-row,
 .stanza-card,
-.lyric-stanza-card {
-  opacity: 0.90 !important;
+.lyric-stanza-card,
+.karaoke-lyric-line,
+.lyric-line {
+  position: relative !important;
+  display: block !important;
+  opacity: 0.96 !important;
+  background: rgba(30, 41, 59, 0.65) !important;
+  border: 1px solid rgba(56, 189, 248, 0.22) !important;
+  border-radius: 14px !important;
+  padding: 14px 18px !important;
+  margin-bottom: 12px !important;
+  transition: all 0.2s ease !important;
+}
+
+.karaoke-lyric-row:hover,
+.stanza-card:hover,
+.lyric-line:hover {
+  opacity: 1 !important;
+  background: rgba(30, 41, 59, 0.88) !important;
+  border-color: rgba(56, 189, 248, 0.45) !important;
 }
 
 .karaoke-lyric-row .lyric-en,
 .stanza-card .stanza-text,
+.stanza-card .lyric-en,
 .lyric-en,
 .stanza-text,
 .karaoke-lyric-row .k-word,
 .stanza-card .k-word,
-.karaoke-lyric-row .lyric-word {
-  color: #e2e8f0 !important;
-  -webkit-text-fill-color: #e2e8f0 !important;
-  opacity: 0.90 !important;
+.karaoke-lyric-row .lyric-word,
+.k-word,
+.lyric-word {
+  color: #f8fafc !important;
+  -webkit-text-fill-color: #f8fafc !important;
+  opacity: 1 !important;
+  font-size: 1.15rem !important;
+  font-weight: 700 !important;
+  line-height: 1.45 !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85) !important;
+}
+
+.karaoke-lyric-row .lyric-es,
+.stanza-card .lyric-es,
+.lyric-es,
+.stanza-translation,
+.music-stanza-translation {
+  color: #38bdf8 !important;
+  -webkit-text-fill-color: #38bdf8 !important;
+  opacity: 0.96 !important;
+  font-size: 0.94rem !important;
   font-weight: 600 !important;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6) !important;
+  margin-top: 5px !important;
 }
 
 .karaoke-lyric-row.active,
@@ -4444,28 +4480,77 @@ body.in-immersive-portal #practice-today-hero {
 .stanza-card.active,
 .stanza-card.lyric-active {
   opacity: 1 !important;
-  background: rgba(14, 165, 233, 0.14) !important;
-  border-color: rgba(56, 189, 248, 0.65) !important;
-  box-shadow: 0 0 20px rgba(56, 189, 248, 0.3) !important;
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.28) 0%, rgba(30, 41, 59, 0.92) 100%) !important;
+  border: 2px solid #38bdf8 !important;
+  box-shadow: 0 0 25px rgba(56, 189, 248, 0.45) !important;
+  transform: scale(1.02) !important;
 }
 
 .karaoke-lyric-row.active .lyric-en,
+.karaoke-lyric-row.active .k-word,
+.karaoke-lyric-row.active .lyric-word,
 .stanza-card.active .stanza-text,
 .lyric-active .k-word.lit,
 .lyric-active .lyric-word.word-sung {
-  color: #38bdf8 !important;
-  -webkit-text-fill-color: #38bdf8 !important;
-  text-shadow: 0 0 14px rgba(56, 189, 248, 0.95) !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  font-size: 1.25rem !important;
+  font-weight: 800 !important;
+  text-shadow: 0 0 16px rgba(56, 189, 248, 0.95) !important;
   opacity: 1 !important;
 }
 
-.lyric-es,
-.stanza-translation,
-.music-stanza-translation {
-  color: #38bdf8 !important;
-  opacity: 0.95 !important;
-  font-style: italic !important;
-  font-weight: 500 !important;
+/* Limpieza absoluta de badges en arcos y anti-wrap en portal cards */
+.portal-arch-header .adm-badge,
+.portal-arch-header .portal-arch-badge,
+.portal-arch-header .portal-badge-size {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  width: 0 !important;
+  opacity: 0 !important;
+}
+
+.portal-card-footer .adm-badge,
+.adm-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  white-space: nowrap !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  margin-bottom: 8px !important;
+}
+
+/* Ocultacion estricta de Home y Carrusel al estar en Galeria 3D */
+body.view-worldtour-active #view-home,
+body.view-worldtour-active #practice-today-hero,
+body.view-worldtour-active #coverFlowViewport,
+body.view-worldtour-active #coverFlowTrack,
+body.view-worldtour-active .carousel-nav-btn,
+body.view-worldtour-active .carousel-btn {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}
+
+#world3d-selection-hub {
+  z-index: 9850 !important;
+  background: #070b14 !important;
+}
+
+#hedbanzCanvasMount canvas {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+  z-index: 1 !important;
 }
 
 /* ==========================================================================
