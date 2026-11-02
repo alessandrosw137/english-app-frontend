@@ -2870,14 +2870,21 @@ ensureOrbitControls();
         child.userData = interactiveData;
         child.traverse((subChild) => {
           if (subChild !== child) {
-            subChild.userData = Object.assign({}, subChild.userData || {}, {
-              interactive: true,
-              isEnvironment: false,
-              parentGroup: child,
-              id: interactiveData.id,
-              en: interactiveData.en,
-              wordEn: interactiveData.wordEn
-            });
+            const rawSub = subChild.name || '';
+            const normSub = normalizeKey(rawSub);
+            const isSubKnownProp = Boolean(MASTER_INTERACTIVE_OBJECTS[normSub] || scenObjects.some(o => normalizeKey(o.id) === normSub || normalizeKey(o.en || o.wordEn) === normSub));
+            
+            // Si el subChild tiene su propia identidad de vocabulario, NO sobreescribirlo con el mueble padre
+            if (!isSubKnownProp && (!subChild.userData || !subChild.userData.id)) {
+              subChild.userData = Object.assign({}, subChild.userData || {}, {
+                interactive: true,
+                isEnvironment: false,
+                parentGroup: child,
+                id: interactiveData.id,
+                en: interactiveData.en,
+                wordEn: interactiveData.wordEn
+              });
+            }
             if (subChild.isMesh) {
               subChild.castShadow = true;
               subChild.receiveShadow = true;
@@ -2894,22 +2901,22 @@ ensureOrbitControls();
     });
   }
 
-  // Paleta de colores luminosos por escenario (PROHIBIDO fondo negro #000000)
+  // Paleta de colores oscuros y elegantes por escenario (PROHIBIDO fondos blancos/lavados)
   const SCENARIO_SKY_COLORS = {
-    house: 0xdbeafe,
-    supermarket: 0xf1f5f9,
-    restaurant: 0x2d1a24,
+    house: 0x1e293b,
+    supermarket: 0x1e293b,
+    restaurant: 0x1e1b2e,
     hotel: 0x1e293b,
     dating: 0x0f172a,
-    garden: 0xbae6fd,
-    space: 0x0b1120
+    garden: 0x0f1f1a,
+    space: 0x020617
   };
   global.SCENARIO_SKY_COLORS = SCENARIO_SKY_COLORS;
 
   function setupScenarioAtmosphereAndLighting(activeScene, scenarioKey) {
     if (!activeScene || typeof THREE === 'undefined') return;
     const key = String(scenarioKey || 'house').toLowerCase();
-    const skyHex = SCENARIO_SKY_COLORS[key] !== undefined ? SCENARIO_SKY_COLORS[key] : 0xdbeafe;
+    const skyHex = SCENARIO_SKY_COLORS[key] !== undefined ? SCENARIO_SKY_COLORS[key] : 0x1e293b;
 
     // Configuración luminosa del cielo y clear color del renderer
     activeScene.background = new THREE.Color(skyHex);
@@ -7115,10 +7122,10 @@ ensureOrbitControls();
       return;
     }
 
-    // 1. Escena con fondo luminoso adaptado al escenario (PROHIBIDO fondo negro)
+    // 1. Escena con fondo oscuro y elegante adaptado al escenario (PROHIBIDO fondos lavados)
     const initialSky = (typeof SCENARIO_SKY_COLORS !== 'undefined' && SCENARIO_SKY_COLORS[currentScenarioKey || 'house'])
       ? SCENARIO_SKY_COLORS[currentScenarioKey || 'house']
-      : 0xdbeafe;
+      : 0x1e293b;
     scene = new THREE.Scene();
     scene.background = new THREE.Color(initialSky);
     scene.fog = null; // Cero niebla global para evitar vistas opacas y lechosas
