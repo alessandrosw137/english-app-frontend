@@ -4589,7 +4589,7 @@ body.view-worldtour-active .carousel-btn {
     gap: 16px !important;
     padding: 4px !important;
   }
-  .world3d-lobby-card, .portal-card {
+  .world3d-lobby-card, .world3d-lobby-grid .portal-card {
     width: 100% !important;
     max-width: 100% !important;
   }
@@ -4597,4 +4597,52 @@ body.view-worldtour-active .carousel-btn {
     min-height: 44px;
     min-width: 44px;
   }
+}
+
+/* ========================================================
+   UNIFIED 3D WORLD HUD & DATING PANELS ELEVATION
+   ======================================================== */
+#unified-world3d-cam-bar {
+  position: fixed !important;
+  top: 10px !important;
+  left: 10px !important;
+  right: 10px !important;
+  max-width: calc(100vw - 20px) !important;
+  z-index: 99990 !important;
+  pointer-events: auto !important;
+}
+
+#datingAvatarGenderSelectorBar,
+#datingBottomDockPills,
+#datingWaiterChatPanel,
+#datingPartnerChatPanel {
+  z-index: 99995 !important;
+  pointer-events: auto !important;
+}
+
+#world3d-container {
+  z-index: 9800 !important;
+}
+
+/* ========================================================
+   MAIN MENU COVERFLOW PRESERVATION & RECOVERY
+   ======================================================== */
+#coverFlowTrack .coverflow-portal-card.active-center,
+#coverFlowTrack .portal-card.active-center {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  z-index: 30 !important;
+}
+
+#coverFlowTrack .coverflow-portal-card.side-left,
+#coverFlowTrack .portal-card.side-left,
+#coverFlowTrack .coverflow-portal-card.side-right,
+#coverFlowTrack .portal-card.side-right {
+  display: flex !important;
+  opacity: 0.55 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  z-index: 20 !important;
 }
