@@ -8,9 +8,9 @@
 (function () {
   'use strict';
 
-  const DB_NAME = 'MasterENG_3D_Assets_DB_v3';
-  const STORE_NAME = 'glb_packs_v3';
-  const DB_VERSION = 3;
+  const DB_NAME = 'MasterENG_GLB_Cache_v5';
+  const STORE_NAME = 'glb_packs_v5';
+  const DB_VERSION = 5;
 
   // Registro maestro de paquetes 3D con estimaciones y títulos amigables
   const ASSET_PACKS_REGISTRY = {
@@ -144,6 +144,9 @@
       try {
         indexedDB.deleteDatabase('MasterENG_3D_Assets_DB');
         indexedDB.deleteDatabase('MasterENG_3D_Assets_DB_v2');
+        indexedDB.deleteDatabase('MasterENG_3D_Assets_DB_v3');
+        indexedDB.deleteDatabase('MasterENG_3D_Assets_DB_v4');
+        indexedDB.deleteDatabase('MasterENG_GLB_Cache_v4');
       } catch (_) {}
       const request = indexedDB.open(DB_NAME, DB_VERSION);
 
@@ -254,7 +257,7 @@
   async function resolvePackSize(packId, fallbackEstimatedMB, glbUrl) {
     // 1. Intentar leer desde assets/models/manifest.json
     try {
-      const manifestRes = await fetch('assets/models/manifest.json', { cache: 'no-cache' });
+      const manifestRes = await fetch('assets/models/manifest.json?v=' + Date.now(), { cache: 'no-cache' });
       if (manifestRes.ok) {
         const manifestData = await manifestRes.json();
         const models = manifestData && manifestData.models ? manifestData.models : manifestData;
@@ -269,7 +272,8 @@
     // 2. Intentar cabecera HEAD si existe glbUrl
     if (glbUrl && typeof fetch !== 'undefined') {
       try {
-        const headRes = await fetch(glbUrl, { method: 'HEAD' });
+        const bustUrl = glbUrl + (glbUrl.includes('?') ? '&' : '?') + 'v=' + Date.now();
+        const headRes = await fetch(bustUrl, { method: 'HEAD' });
         if (headRes.ok) {
           const len = headRes.headers.get('content-length');
           if (len) {
@@ -549,7 +553,8 @@
 
       // Intento 1: Descarga real por red
       try {
-        const response = await fetch(config.glbUrl, { signal, cache: 'no-cache' });
+        const bustGlbUrl = config.glbUrl + (config.glbUrl.includes('?') ? '&' : '?') + 'v=' + Date.now();
+        const response = await fetch(bustGlbUrl, { signal, cache: 'no-cache' });
         if (response.ok && response.body && typeof response.body.getReader === 'function') {
           usedRealStream = true;
           const contentLength = response.headers.get('content-length');

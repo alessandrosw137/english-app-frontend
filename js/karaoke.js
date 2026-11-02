@@ -2449,8 +2449,7 @@
     }
 
     window.applyAutoIntroOffset = function(introSec) {
-      const offsetVal = -Math.abs(parseFloat(introSec) || 0);
-      window.lyricsOffset = Math.round(offsetVal * 10) / 10;
+      window.lyricsOffset = 0.0;
       if (KaraokeSyncEngine) {
         KaraokeSyncEngine.setExactOffset(window.lyricsOffset, KaraokeSyncEngine.currentSongId);
       }

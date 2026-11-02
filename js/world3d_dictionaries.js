@@ -1818,7 +1818,7 @@
   {
     "term": "Lock out",
     "pron": "/lɑːk aʊt/",
-    "meaning": "Quedarse afuera con las llaves adentro de la casa o coche",
+    "meaning": "Quedarse afuera con las llaves adentro de la casa o carro",
     "example": "Cerré la puerta y me locked out; tuve que llamar a un cerrajero."
   },
   {
@@ -2370,7 +2370,7 @@
   {
     "term": "Pull up",
     "pron": "/pʊl ʌp/",
-    "meaning": "Llegar en coche y estacionarse / caerle a un lugar",
+    "meaning": "Llegar en carro y estacionarse / caerle a un lugar",
     "example": "I'm pulling up a la casa, salte de una vez con tus cosas."
   },
   {
@@ -3811,7 +3811,7 @@
     "term": "Write off",
     "pron": "/raɪt ɔːf/",
     "meaning": "Dar por perdido un carro destrozado o perdonar una deuda",
-    "example": "La aseguradora decided to write off el coche como pérdida total."
+    "example": "La aseguradora decided to write off el carro como pérdida total."
   },
   {
     "term": "Write up",
@@ -4492,7 +4492,7 @@
   {
     "term": "Pulling up",
     "pron": "/ˈpʊl.ɪŋ ʌp/",
-    "meaning": "Llegando en coche, ya voy en camino o apareciendo",
+    "meaning": "Llegando en carro, ya voy en camino o apareciendo",
     "example": "I'm pulling up a la fiesta, salte a recibirme a la banqueta."
   },
   {
