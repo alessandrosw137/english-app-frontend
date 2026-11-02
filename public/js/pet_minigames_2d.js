@@ -2459,14 +2459,7 @@
             </div>
 
             <div class="flex items-center gap-2">
-              <div class="px-2.5 sm:px-3 py-1 rounded-xl bg-purple-950/80 border border-purple-500/40 text-amber-300 font-mono text-xs font-black flex items-center gap-1.5 shadow">
-                <span>⏳</span>
-                <span id="hedbanzClockDisplay">90s</span>
-              </div>
-              <div class="px-2.5 py-1 rounded-xl bg-slate-800/90 border border-slate-700 text-rose-300 text-xs font-black flex items-center gap-1" id="hedbanzStrikesBadge">
-                <span>❌</span>
-                <span id="hedbanzStrikesCount">0/3</span>
-              </div>
+              <span class="text-xs font-bold text-purple-300/80 px-2.5 py-1 rounded-xl bg-purple-950/40 border border-purple-500/30 hidden sm:inline">Modo Rival IA 3D</span>
             </div>
           </header>
 
@@ -2497,6 +2490,30 @@
                  class="w-full md:w-[35%] h-[54dvh] md:h-full bg-slate-900 border-t md:border-t-0 md:border-l border-purple-500/30 flex flex-col p-3 sm:p-3.5 gap-2 z-10 overflow-y-auto"
                  style="-webkit-overflow-scrolling: touch; scroll-behavior: smooth;">
               
+              <!-- BARRA DE CONTROL ELEGANTE FLEX (TIEMPO, STRIKES, PISTA, VOZ, NUEVA) -->
+              <div class="hedbanz-control-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(168, 85, 247, 0.35); border-radius: 14px; gap: 6px; flex-wrap: wrap;">
+                <div class="hedbanz-stat-pill" title="⏳ Tiempo restante para adivinar tu carta misteriosa" style="display: flex; align-items: center; gap: 5px; background: rgba(88, 28, 135, 0.6); padding: 5px 9px; border-radius: 8px; border: 1px solid rgba(168, 85, 247, 0.4); color: #fcd34d; font-family: monospace; font-size: 11px; font-weight: 800;">
+                  <span>⏳</span>
+                  <span id="hedbanzClockDisplay">90s</span>
+                </div>
+                <div class="hedbanz-stat-pill" title="❌ Intentos fallidos de adivinanza (Máximo 3 strikes)" style="display: flex; align-items: center; gap: 5px; background: rgba(30, 41, 59, 0.8); padding: 5px 9px; border-radius: 8px; border: 1px solid rgba(100, 116, 139, 0.4); color: #fda4af; font-size: 11px; font-weight: 800;" id="hedbanzStrikesBadge">
+                  <span>❌</span>
+                  <span id="hedbanzStrikesCount">0/3</span>
+                </div>
+                <button type="button" onclick="window.Hedbanz3D.askHint()" title="💡 Pista del árbitro IA: revela un dato clave de tu carta" class="hedbanz-action-btn" style="display: flex; align-items: center; gap: 4px; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(59, 130, 246, 0.5); color: #93c5fd; padding: 5px 9px; border-radius: 8px; font-size: 11px; font-weight: 800; cursor: pointer; transition: all 0.2s;">
+                  <span>💡</span>
+                  <span>Pista</span>
+                </button>
+                <button type="button" onclick="window.Hedbanz3D.speakLastClue()" title="🔊 Escuchar en voz alta la última respuesta o pista en inglés nativo" class="hedbanz-action-btn" style="display: flex; align-items: center; gap: 4px; background: rgba(16, 185, 129, 0.25); border: 1px solid rgba(16, 185, 129, 0.5); color: #6ee7b7; padding: 5px 9px; border-radius: 8px; font-size: 11px; font-weight: 800; cursor: pointer; transition: all 0.2s;">
+                  <span>🔊</span>
+                  <span>Voz</span>
+                </button>
+                <button type="button" onclick="window.Hedbanz3D.resetRound()" title="🔄 Nueva partida: barajar y repartir otra carta misteriosa" class="hedbanz-action-btn" style="display: flex; align-items: center; gap: 4px; background: rgba(244, 63, 94, 0.25); border: 1px solid rgba(244, 63, 94, 0.5); color: #fda4af; padding: 5px 9px; border-radius: 8px; font-size: 11px; font-weight: 800; cursor: pointer; transition: all 0.2s;">
+                  <span>🔄</span>
+                  <span>Nueva</span>
+                </button>
+              </div>
+
               <!-- CATEGORÍAS ESTRATÉGICAS EN INGLÉS -->
               <div>
                 <span class="text-[10px] font-extrabold text-purple-300 uppercase tracking-wider block mb-1">
@@ -2504,34 +2521,42 @@
                 </span>
                 <div class="grid grid-cols-2 gap-1.5" id="hedbanzQuestionsGrid">
                   <button type="button" onclick="window.Hedbanz3D.askQuestion('isLiving')"
+                          title="🌱 Pregunta al árbitro si tu carta es un ser vivo (animal, planta o persona)"
                           class="p-2 rounded-xl bg-purple-950/70 hover:bg-purple-900 border border-purple-500/40 text-purple-100 text-[11px] font-extrabold text-left transition shadow cursor-pointer active:scale-95">
                     🌱 Is it a living thing?
                   </button>
                   <button type="button" onclick="window.Hedbanz3D.askQuestion('isSupermarket')"
+                          title="🛒 Pregunta al árbitro si se vende comúnmente en un supermercado"
                           class="p-2 rounded-xl bg-purple-950/70 hover:bg-purple-900 border border-purple-500/40 text-purple-100 text-[11px] font-extrabold text-left transition shadow cursor-pointer active:scale-95">
                     🛒 In a supermarket?
                   </button>
                   <button type="button" onclick="window.Hedbanz3D.askQuestion('isEatable')"
+                          title="🍎 Pregunta al árbitro si es un alimento comestible que se puede comer"
                           class="p-2 rounded-xl bg-purple-950/70 hover:bg-purple-900 border border-purple-500/40 text-purple-100 text-[11px] font-extrabold text-left transition shadow cursor-pointer active:scale-95">
                     🍎 Can you eat it?
                   </button>
                   <button type="button" onclick="window.Hedbanz3D.askQuestion('isAppliance')"
+                          title="🔌 Pregunta al árbitro si es un electrodoméstico o dispositivo con enchufe"
                           class="p-2 rounded-xl bg-purple-950/70 hover:bg-purple-900 border border-purple-500/40 text-purple-100 text-[11px] font-extrabold text-left transition shadow cursor-pointer active:scale-95">
                     🔌 Is it an appliance?
                   </button>
                   <button type="button" onclick="window.Hedbanz3D.askQuestion('isWearable')"
+                          title="👕 Pregunta al árbitro si es ropa, accesorio o calzado que puedes vestir"
                           class="p-2 rounded-xl bg-purple-950/70 hover:bg-purple-900 border border-purple-500/40 text-purple-100 text-[11px] font-extrabold text-left transition shadow cursor-pointer active:scale-95">
                     👕 Can you wear it?
                   </button>
                   <button type="button" onclick="window.Hedbanz3D.askQuestion('isAnimal')"
+                          title="🐾 Pregunta al árbitro si pertenece a una especie animal"
                           class="p-2 rounded-xl bg-purple-950/70 hover:bg-purple-900 border border-purple-500/40 text-purple-100 text-[11px] font-extrabold text-left transition shadow cursor-pointer active:scale-95">
                     🐾 Is it an animal?
                   </button>
                   <button type="button" onclick="window.Hedbanz3D.askQuestion('canFly')"
+                          title="🦅 Pregunta al árbitro si tiene alas y puede volar por el cielo"
                           class="p-2 rounded-xl bg-purple-950/70 hover:bg-purple-900 border border-purple-500/40 text-purple-100 text-[11px] font-extrabold text-left transition shadow cursor-pointer active:scale-95">
                     🦅 Can it fly?
                   </button>
                   <button type="button" onclick="window.Hedbanz3D.askQuestion('isHouse')"
+                          title="🏠 Pregunta al árbitro si es un objeto habitual del interior de una casa"
                           class="p-2 rounded-xl bg-purple-950/70 hover:bg-purple-900 border border-purple-500/40 text-purple-100 text-[11px] font-extrabold text-left transition shadow cursor-pointer active:scale-95">
                     🏠 Found in a house?
                   </button>
@@ -2539,24 +2564,27 @@
               </div>
 
               <!-- PREGUNTA PERSONALIZADA EN INGLÉS -->
-              <div class="mt-0.5 flex gap-1.5">
+              <div class="mt-0.5 flex gap-1.5" title="Escribe una pregunta libre en inglés al árbitro IA">
                 <input type="text" id="hedbanzCustomQuestionInput" placeholder="Ask custom question in English..."
+                       title="Escribe tu pregunta en inglés (ej: Is it large? Is it made of metal?)"
                        class="flex-1 bg-slate-950 border border-purple-500/40 rounded-xl px-2.5 py-1.5 text-xs text-purple-100 placeholder-purple-400/50 focus:outline-none focus:border-purple-400 font-semibold"
                        onkeydown="if(event.key==='Enter') window.Hedbanz3D.askCustomQuestion();">
                 <button type="button" onclick="window.Hedbanz3D.askCustomQuestion()"
+                        title="Enviar pregunta al árbitro IA"
                         class="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-black shadow cursor-pointer active:scale-95">
                   Ask
                 </button>
               </div>
 
               <!-- HISTORIAL DE PISTAS -->
-              <div class="flex-1 min-h-[70px] max-h-32 bg-slate-950/60 border border-purple-500/20 rounded-2xl p-2 overflow-y-auto flex flex-col gap-1 text-[11px]" id="hedbanzHistoryList">
+              <div class="flex-1 min-h-[70px] max-h-32 bg-slate-950/60 border border-purple-500/20 rounded-2xl p-2 overflow-y-auto flex flex-col gap-1 text-[11px]" id="hedbanzHistoryList" title="Historial de pistas y respuestas del árbitro IA">
                 <div class="text-slate-500 italic text-[10px]">Tus pistas acumuladas aparecerán aquí...</div>
               </div>
 
               <!-- BOTÓN PRINCIPAL DE ADIVINANZA FINAL -->
               <div class="pt-0.5">
                 <button type="button" onclick="window.Hedbanz3D.openGuessModal()"
+                        title="🎯 Abre el modal para adivinar el nombre en inglés de la carta secreta"
                         class="w-full py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-amber-500/20 cursor-pointer active:scale-95 flex items-center justify-center gap-1.5">
                   <span>🎯 Adivinar Palabra / Make Final Guess</span>
                 </button>
@@ -3194,6 +3222,42 @@
       }
 
       this.recordVerdict(q, verdict, isYes);
+    }
+
+    askHint() {
+      if (!this.currentCard || this.isSolved) return;
+      const hint = this.currentCard.hint || (this.currentCard.es ? `En español: ${this.currentCard.es}` : 'Think carefully!');
+      const verdictEl = document.getElementById('hedbanzRefereeVerdict');
+      if (verdictEl) {
+        verdictEl.textContent = `💡 HINT: ${hint}`;
+        verdictEl.className = 'text-xs sm:text-sm font-black text-amber-300';
+      }
+      this.sfx.speak(`Hint: ${hint}`);
+      const historyList = document.getElementById('hedbanzHistoryList');
+      if (historyList) {
+        const item = document.createElement('div');
+        item.className = 'flex items-center justify-between py-1 border-b border-purple-500/20';
+        item.innerHTML = `
+          <span class="text-amber-300 font-semibold text-[11px]">💡 ${hint}</span>
+          <span class="font-black px-1.5 py-0.5 rounded text-[10px] bg-amber-950 text-amber-300 border border-amber-500/40">PISTA</span>
+        `;
+        historyList.prepend(item);
+      }
+    }
+
+    speakLastClue() {
+      if (this.askedQuestions && this.askedQuestions.length > 0) {
+        const last = this.askedQuestions[this.askedQuestions.length - 1];
+        this.sfx.speak(`${last.verdict}. ${last.questionText}`);
+      } else if (this.currentCard && this.currentCard.hint) {
+        this.sfx.speak(this.currentCard.hint);
+      } else {
+        this.sfx.speak("Ask me if it is living, eatable, or an animal!");
+      }
+    }
+
+    resetRound() {
+      this.nextRound();
     }
 
     recordVerdict(questionText, verdict, isYes) {

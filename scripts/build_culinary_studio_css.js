@@ -1,0 +1,1196 @@
+const fs = require('fs');
+
+const cssContent = `/* ==========================================================================
+   MASTERENG - CULINARY STUDIO 2D: CARTOON HD COOKING & DINER MANAGEMENT
+   Archivo: css/culinary_studio.css
+   Estética: 2D Cartoon Ilustrado HD (Cooking Fever / Papa's Pizzeria Style)
+   ========================================================================== */
+
+:root {
+  --culinary-bg-dark: #0c1222;
+  --culinary-card-bg: #1e293b;
+  --culinary-gold: #f59e0b;
+  --culinary-amber: #d97706;
+  --culinary-red: #ef4444;
+  --culinary-green: #10b981;
+  --culinary-sky: #38bdf8;
+  --culinary-purple: #8b5cf6;
+}
+
+/* ==========================================================================
+   1. CONTENEDOR PRINCIPAL
+   ========================================================================== */
+#culinary-studio-root,
+.culinary-studio-root {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  z-index: 99000 !important;
+  background: var(--culinary-bg-dark) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  font-family: 'Outfit', 'Inter', -apple-system, sans-serif !important;
+  user-select: none !important;
+  box-sizing: border-box;
+}
+
+#culinary-studio-root *,
+.culinary-studio-root * {
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
+   2. TOPBAR CON NAVEGACIÓN UNIVERSAL Y STATS
+   ========================================================================== */
+.culinary-topbar {
+  height: 52px;
+  background: rgba(15, 23, 42, 0.96);
+  border-bottom: 2px solid rgba(56, 189, 248, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  flex-shrink: 0;
+  z-index: 50;
+  gap: 10px;
+}
+
+.culinary-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.culinary-btn-back {
+  background: #1e293b;
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.5);
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-weight: 800;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.culinary-btn-back:hover {
+  background: #334155;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.culinary-btn-back:active {
+  transform: scale(0.96);
+}
+
+.culinary-brand-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.culinary-brand-icon {
+  font-size: 24px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+}
+
+.culinary-heading {
+  font-size: 13px;
+  font-weight: 900;
+  color: #f8fafc;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.culinary-subheading {
+  font-size: 10px;
+  font-weight: 600;
+  color: #94a3b8;
+  margin: 0;
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .culinary-subheading {
+    display: block;
+  }
+}
+
+.culinary-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.culinary-btn-dict-top {
+  background: linear-gradient(135deg, #7c3aed, #4f46e5);
+  color: #ffffff;
+  border: 1px solid rgba(168, 85, 247, 0.5);
+  border-radius: 10px;
+  padding: 5px 10px;
+  font-weight: 800;
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 10px rgba(124, 58, 237, 0.35);
+  transition: all 0.2s ease;
+}
+
+.culinary-btn-dict-top:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+}
+
+.culinary-btn-dict-top:active {
+  transform: scale(0.96);
+}
+
+.culinary-header-stats {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.culinary-stat-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #f8fafc;
+}
+
+.culinary-stat-badge.coins {
+  color: #fcd34d;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.culinary-stat-badge.rank {
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+/* ==========================================================================
+   3. LAYOUT DEL RESTAURANTE (SPLIT-SCREEN DINER)
+   ========================================================================== */
+.culinary-restaurant-layout {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+  height: calc(100dvh - 52px);
+}
+
+/* ==========================================================================
+   4. MITAD SUPERIOR: MOSTRADOR DE CLIENTES Y PACIENCIA (COUNTER VIEW)
+   ========================================================================== */
+.culinary-counter-view {
+  height: 42%;
+  min-height: 190px;
+  max-height: 280px;
+  background: radial-gradient(circle at 50% 20%, #1e1b4b 0%, #090d16 90%);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  border-bottom: 4px solid #78350f;
+  flex-shrink: 0;
+}
+
+.culinary-diner-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  display: flex;
+  justify-content: space-around;
+  pointer-events: none;
+}
+
+.diner-lamp {
+  width: 32px;
+  height: 24px;
+  background: #f59e0b;
+  border-radius: 0 0 16px 16px;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(245, 158, 11, 0.3);
+}
+
+.diner-lamp::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  left: 15px;
+  width: 2px;
+  height: 12px;
+  background: #64748b;
+}
+
+.culinary-customer-stage {
+  display: flex;
+  align-items: center;
+  padding: 10px 18px;
+  gap: 16px;
+  flex: 1;
+  position: relative;
+  z-index: 2;
+  overflow: hidden;
+}
+
+.customer-figure-box {
+  width: 110px;
+  height: 130px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.customer-figure-box.entering {
+  animation: customerSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes customerSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-80px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.customer-dialogue-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 620px;
+}
+
+.customer-info-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.customer-name-tag {
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.customer-title-pill {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  text-transform: uppercase;
+}
+
+/* Barra de paciencia */
+.patience-meter-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.85);
+  padding: 3px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.patience-label {
+  font-size: 10px;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+.patience-track {
+  width: 90px;
+  height: 8px;
+  background: #334155;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.patience-fill {
+  height: 100%;
+  border-radius: 6px;
+  background-color: #10b981;
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.patience-clock {
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: 900;
+  color: #fcd34d;
+}
+
+/* Globo de diálogo estilo cómic diner */
+.diner-speech-bubble {
+  background: #ffffff;
+  color: #0f172a;
+  border-radius: 16px;
+  padding: 10px 14px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+  border: 2px solid #facc15;
+  position: relative;
+}
+
+.speech-content-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-tts-order {
+  background: #0284c7;
+  color: #ffffff;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 0.15s ease, background-color 0.2s ease;
+  box-shadow: 0 3px 8px rgba(2, 132, 199, 0.35);
+}
+
+.btn-tts-order:hover {
+  transform: scale(1.1);
+  background: #0369a1;
+}
+
+.btn-tts-order:active {
+  transform: scale(0.95);
+}
+
+.speech-texts {
+  flex: 1;
+}
+
+.order-en-text {
+  font-size: 12px;
+  font-weight: 900;
+  color: #0f172a;
+  line-height: 1.3;
+}
+
+.order-es-text {
+  font-size: 10px;
+  font-weight: 700;
+  color: #64748b;
+  margin-top: 2px;
+  line-height: 1.2;
+}
+
+.order-spec-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+  padding-top: 4px;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.spec-pill {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.culinary-wooden-counter-bar {
+  height: 14px;
+  background: linear-gradient(180deg, #b45309 0%, #78350f 100%);
+  border-top: 2px solid #d97706;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   5. MITAD INFERIOR: ESTACIÓN DE COCINA (KITCHEN WORKSTATION)
+   ========================================================================== */
+.culinary-kitchen-view {
+  flex: 1;
+  background: #0b1120;
+  display: grid;
+  grid-template-columns: 1.1fr 0.85fr 1fr 1.35fr;
+  gap: 8px;
+  padding: 8px 12px;
+  overflow-y: auto;
+}
+
+.station-header {
+  margin-bottom: 6px;
+}
+
+.station-title {
+  font-size: 11px;
+  font-weight: 900;
+  color: #f8fafc;
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.station-subtitle {
+  font-size: 9px;
+  font-weight: 600;
+  color: #64748b;
+  display: block;
+}
+
+/* --- PLANCHA (GRILL) 4 QUEMADORES --- */
+.kitchen-grill-station {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 14px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.grill-slots-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  flex: 1;
+}
+
+.grill-slot-card {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  position: relative;
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.slot-number-badge {
+  position: absolute;
+  top: 3px;
+  left: 5px;
+  font-size: 9px;
+  font-weight: 900;
+  color: #64748b;
+}
+
+.grill-empty-slot {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: radial-gradient(circle at 50% 50%, #334155 0%, #0f172a 80%);
+  transition: all 0.2s;
+}
+
+.grill-empty-slot:hover {
+  filter: brightness(1.2);
+}
+
+.burner-ring {
+  width: 32px;
+  height: 32px;
+  border: 2px dashed #f59e0b;
+  border-radius: 50%;
+  opacity: 0.5;
+  animation: burnerSpin 12s linear infinite;
+}
+
+@keyframes burnerSpin {
+  100% { transform: rotate(360deg); }
+}
+
+.grill-slot-hint {
+  font-size: 9px;
+  font-weight: 800;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+
+.grill-active-patty {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  cursor: pointer;
+  position: relative;
+  border-radius: 12px;
+  background: radial-gradient(circle at 50% 50%, #451a03 0%, #1e1b4b 100%);
+}
+
+.patty-visual-disc {
+  font-size: 24px;
+  transition: transform 0.2s;
+}
+
+.patty-visual-disc.welldone {
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.8));
+}
+
+.patty-visual-disc.burnt {
+  filter: grayscale(1) brightness(0.4);
+}
+
+.slot-progress-wrap {
+  width: 85%;
+  height: 5px;
+  background: #334155;
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 3px 0;
+}
+
+.slot-progress-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.25s linear;
+}
+
+.slot-badge {
+  font-size: 8px;
+  font-weight: 900;
+  padding: 1px 4px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.slot-badge.raw { background: #78350f; color: #fde68a; }
+.slot-badge.cooking { background: #b45309; color: #fff; }
+.slot-badge.welldone { background: #065f46; color: #6ee7b7; border: 1px solid #10b981; }
+.slot-badge.burnt { background: #881337; color: #fecdd3; border: 1px solid #f43f5e; }
+
+/* --- FREIDORA (DEEP FRYER) --- */
+.kitchen-fryer-station {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 14px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.fryer-vat {
+  flex: 1;
+  background: linear-gradient(180deg, #ca8a04 0%, #713f12 100%);
+  border: 2px solid #eab308;
+  border-radius: 12px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+  padding: 8px;
+  overflow: hidden;
+}
+
+.fryer-oil-bubbles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.fryer-oil-bubbles.active {
+  background-image: radial-gradient(#fde047 15%, transparent 16%);
+  background-size: 16px 16px;
+  animation: oilBubbles 0.4s linear infinite;
+}
+
+@keyframes oilBubbles {
+  from { background-position: 0 0; }
+  to { background-position: 0 -16px; }
+}
+
+.fryer-basket-box {
+  background: rgba(15, 23, 42, 0.85);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  padding: 6px 10px;
+  text-align: center;
+  cursor: pointer;
+  z-index: 2;
+  transition: all 0.2s;
+}
+
+.fryer-basket-box.ready {
+  border-color: #10b981;
+  background: rgba(6, 78, 59, 0.9);
+}
+
+.fryer-icon {
+  font-size: 26px;
+  display: block;
+}
+
+.fryer-status-label {
+  font-size: 9px;
+  font-weight: 800;
+  color: #ffffff;
+  margin-top: 2px;
+}
+
+.btn-action-fryer {
+  background: #eab308;
+  color: #451a03;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 10px;
+  font-weight: 900;
+  cursor: pointer;
+  z-index: 2;
+  transition: all 0.2s;
+}
+
+.btn-action-fryer:hover {
+  background: #facc15;
+  transform: translateY(-1px);
+}
+
+.btn-action-fryer:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* --- ESTANTE DE INGREDIENTES (SHELF) --- */
+.kitchen-shelf-station {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 14px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.ingredients-bins-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+  flex: 1;
+}
+
+.ingredient-bin-btn {
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 4px 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.ingredient-bin-btn:hover {
+  background: #334155;
+  border-color: #38bdf8;
+  transform: translateY(-1px);
+}
+
+.ingredient-bin-btn:active {
+  transform: scale(0.95);
+}
+
+.bin-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.bin-labels {
+  overflow: hidden;
+}
+
+.bin-name-en {
+  font-size: 9px;
+  font-weight: 900;
+  color: #f8fafc;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bin-name-es {
+  font-size: 8px;
+  font-weight: 600;
+  color: #94a3b8;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- TABLA DE ARMADO (ASSEMBLY BOARD) --- */
+.kitchen-assembly-station {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: 14px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.assembly-board-surface {
+  flex: 1;
+  background: #451a03;
+  border: 3px solid #78350f;
+  border-radius: 12px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+}
+
+.ceramic-plate-display {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-height: 120px;
+}
+
+.plate-base-rim {
+  width: 190px;
+  height: 120px;
+  background: #e2e8f0;
+  border: 3px solid #cbd5e1;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.45);
+  position: relative;
+}
+
+.plate-inner-rim {
+  width: 170px;
+  height: 100px;
+  background: #ffffff;
+  border: 2px solid #e2e8f0;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: visible;
+}
+
+.burger-stack-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  position: relative;
+  z-index: 2;
+}
+
+.burger-stack-item {
+  width: 130px;
+  display: flex;
+  justify-content: center;
+}
+
+.plate-fries-side {
+  position: absolute;
+  right: -24px;
+  bottom: 0;
+  z-index: 5;
+  animation: friesPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes friesPop {
+  0% { transform: scale(0.6) rotate(-15deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+
+.empty-plate-hint {
+  font-size: 9px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-align: center;
+  padding: 10px;
+}
+
+.assembly-actions-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.btn-clear-plate {
+  background: #334155;
+  color: #cbd5e1;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-clear-plate:hover {
+  background: #475569;
+  color: #ffffff;
+}
+
+.btn-serve-order {
+  flex: 1;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #0f172a;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  text-transform: uppercase;
+}
+
+.btn-serve-order:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+}
+
+.btn-serve-order:active {
+  transform: scale(0.97);
+}
+
+/* ==========================================================================
+   6. MODAL DICCIONARIO GASTRONÓMICO (356 TÉRMINOS)
+   ========================================================================== */
+.culinary-dictionary-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 15, 29, 0.9);
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.dictionary-modal-card {
+  background: #0f172a;
+  border: 2px solid #8b5cf6;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 820px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+}
+
+.dict-modal-header {
+  padding: 14px 18px;
+  background: #1e1b4b;
+  border-bottom: 1px solid rgba(139, 92, 246, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dict-modal-title {
+  font-size: 15px;
+  font-weight: 900;
+  color: #ffffff;
+  margin: 0;
+}
+
+.dict-modal-desc {
+  font-size: 11px;
+  color: #c4b5fd;
+  margin: 0;
+}
+
+.btn-close-dict {
+  background: #334155;
+  color: #fff;
+  border: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dict-controls-row {
+  padding: 12px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #141c2e;
+  border-bottom: 1px solid #1e293b;
+}
+
+.dict-search-box {
+  display: flex;
+  align-items: center;
+  background: #090d16;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 6px 10px;
+  gap: 8px;
+}
+
+.dict-search-input {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 12px;
+  flex: 1;
+  outline: none;
+}
+
+.dict-category-chips {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+}
+
+.dict-chip {
+  background: #1e293b;
+  color: #94a3b8;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.dict-chip.active {
+  background: #8b5cf6;
+  color: #fff;
+  border-color: #a78bfa;
+}
+
+.dict-cards-grid {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 18px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 10px;
+}
+
+.dict-item-card {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dict-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.dict-card-name-en {
+  font-size: 12px;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+.dict-card-ipa {
+  font-size: 10px;
+  color: #38bdf8;
+  font-family: monospace;
+}
+
+.dict-card-name-es {
+  font-size: 11px;
+  font-weight: 700;
+  color: #facc15;
+}
+
+.btn-dict-tts {
+  background: #38bdf8;
+  color: #0f172a;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.dict-card-cat {
+  font-size: 9px;
+  font-weight: 800;
+  color: #a78bfa;
+  text-transform: uppercase;
+}
+
+.dict-card-desc {
+  font-size: 10px;
+  color: #cbd5e1;
+  line-height: 1.3;
+}
+
+.dict-card-example {
+  font-size: 9px;
+  font-style: italic;
+  color: #38bdf8;
+  margin-top: 2px;
+}
+
+/* ==========================================================================
+   7. TOAST NOTIFICATION FLOTANTE
+   ========================================================================== */
+.culinary-toast-notification {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100005;
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 900;
+  color: #ffffff;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+  animation: toastFadeIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.culinary-toast-notification.success {
+  background: #059669;
+  border: 1px solid #34d399;
+}
+
+.culinary-toast-notification.error {
+  background: #dc2626;
+  border: 1px solid #f87171;
+}
+
+.culinary-toast-notification.info {
+  background: #0284c7;
+  border: 1px solid #38bdf8;
+}
+
+@keyframes toastFadeIn {
+  from { opacity: 0; transform: translate(-50%, 15px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* ==========================================================================
+   8. RESPONSIVE EN MÓVILES (< 768px)
+   ========================================================================== */
+@media (max-width: 768px) {
+  .culinary-counter-view {
+    height: 40%;
+    min-height: 170px;
+  }
+
+  .customer-figure-box {
+    width: 80px;
+    height: 100px;
+  }
+
+  .culinary-kitchen-view {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 6px;
+    padding: 6px;
+  }
+
+  .kitchen-grill-station,
+  .kitchen-fryer-station,
+  .kitchen-shelf-station,
+  .kitchen-assembly-station {
+    min-height: 150px;
+  }
+
+  .plate-base-rim {
+    width: 150px;
+    height: 95px;
+  }
+
+  .plate-inner-rim {
+    width: 135px;
+    height: 80px;
+  }
+
+  .burger-stack-item {
+    width: 105px;
+  }
+
+  .btn-serve-order,
+  .btn-clear-plate,
+  .btn-action-fryer {
+    min-height: 44px;
+  }
+}
+`;
+
+fs.writeFileSync('css/culinary_studio.css', cssContent, 'utf8');
+console.log('css/culinary_studio.css successfully written!');
