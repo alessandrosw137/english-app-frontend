@@ -4544,6 +4544,14 @@ body.view-worldtour-active .carousel-btn {
   background: #070b14 !important;
 }
 
+#hedbanz-main-container header,
+.hedbanz-header {
+  position: relative !important;
+  z-index: 30 !important;
+  width: 100% !important;
+  flex-shrink: 0 !important;
+}
+
 #hedbanzCanvasMount canvas {
   position: absolute !important;
   inset: 0 !important;

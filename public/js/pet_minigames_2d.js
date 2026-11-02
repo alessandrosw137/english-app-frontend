@@ -2444,7 +2444,7 @@
         <div id="hedbanz-main-container" class="relative w-full h-full bg-[#0f172a] flex flex-col select-none overflow-hidden font-sans">
           
           <!-- TOPBAR CON BOTÓN VOLVER UNIVERSAL -->
-          <header class="h-12 sm:h-14 bg-slate-900 border-b border-purple-500/30 flex items-center justify-between px-3 sm:px-4 z-20 flex-shrink-0">
+          <header class="h-12 sm:h-14 bg-slate-900 border-b border-purple-500/30 flex items-center justify-between px-3 sm:px-4 z-20 flex-shrink-0" style="position: relative !important; z-index: 30 !important; width: 100% !important; flex-shrink: 0 !important;">
             <div class="flex items-center gap-2 sm:gap-3">
               <button type="button" onclick="window.Hedbanz3D.handleBack(event)"
                       class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-sky-300 hover:text-white border border-sky-500/50 text-xs font-black flex items-center gap-1.5 shadow-md transition cursor-pointer active:scale-95">
