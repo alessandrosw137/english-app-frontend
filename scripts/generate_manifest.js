@@ -28,8 +28,8 @@ const modelEntries = [
 ];
 
 const manifest = {
-  version: '2.0.0',
-  engine: 'Blender 5.2.3 LTS Automation PBR',
+  version: '3.0.0',
+  engine: 'Blender 5.2.3 LTS Studio Organic & Hard-Surface PBR',
   generatedAt: new Date().toISOString(),
   totalSizeMB: 0,
   totalSizeBytes: 0,

@@ -322,6 +322,15 @@
     },
 
     openPortal: function () {
+      if (typeof window !== 'undefined' && typeof window.stopAllBackgroundAudioAndLoops === 'function') {
+        window.stopAllBackgroundAudioAndLoops('soccer');
+      }
+      if (typeof window !== 'undefined' && typeof window.hideWorld3DTopBackButton === 'function') {
+        window.hideWorld3DTopBackButton();
+      }
+      if (typeof document !== 'undefined' && document.body) {
+        document.body.classList.add('soccer-active', 'in-immersive-portal');
+      }
       this.profile = loadProfile();
 
       // Garantizar visibilidad de MasterGoal 3D sobre cualquier vista previa
@@ -340,7 +349,7 @@
       }
 
       // Ocultar vistas principales para evitar traslucidez
-      const idsToHide = ['viewHome', 'view-home', 'world3d-container', 'world3d-view', 'view-worldtour', 'pet-sanctuary-root', 'masterpet-sanctuary-view'];
+      const idsToHide = ['viewHome', 'view-home', 'practice-today-hero', 'coverFlowViewport', 'world3d-selection-hub', 'world3d-container', 'world3d-view', 'view-worldtour', 'pet-sanctuary-root', 'masterpet-sanctuary-view'];
       idsToHide.forEach(id => {
         const el = document.getElementById(id);
         if (el) {
@@ -370,6 +379,9 @@
         <div id="soccer-hub-view" class="soccer-hub-container">
           <div class="soccer-hub-topbar">
             <div class="soccer-brand-block">
+              <button type="button" class="soccer-exit-btn" onclick="window.backToPortalsMenu()" style="margin-right:6px;">
+                ← Volver
+              </button>
               <div class="soccer-brand-emblem">⚽</div>
               <div>
                 <h1 class="soccer-brand-title">MasterGoal 3D</h1>
@@ -1028,7 +1040,9 @@
       this.pointer = new THREE.Vector2();
       this.clock = new THREE.Clock();
 
-      const hemi = new THREE.HemisphereLight(0xdbeafe, 0x064e3b, 0.95);
+      const amb = new THREE.AmbientLight(0xffffff, 1.4);
+      this.scene.add(amb);
+      const hemi = new THREE.HemisphereLight(0xffffff, 0x064e3b, 1.25);
       this.scene.add(hemi);
 
       [
@@ -1062,25 +1076,43 @@
         return;
       }
       const gltfUrl = this.soccerGlbUrl || 'assets/models/soccer/soccer_pack.glb';
+      const applyPack = (group) => {
+        if (group) {
+          if (typeof window !== 'undefined' && typeof window.sanitizeGlbScene === 'function') {
+            window.sanitizeGlbScene(group);
+          }
+          this.blenderSoccerPack = group;
+          this.integrateBlenderModelsIntoStadium();
+        }
+        if (typeof onComplete === 'function') onComplete(this.blenderSoccerPack);
+      };
+      const fallbackNative = () => {
+        if (typeof window !== 'undefined' && typeof window.loadGLBModelNative === 'function') {
+          window.loadGLBModelNative(gltfUrl)
+            .then((grp) => applyPack(grp))
+            .catch(() => { if (typeof onComplete === 'function') onComplete(null); });
+        } else {
+          if (typeof onComplete === 'function') onComplete(null);
+        }
+      };
       const LoaderClass = (typeof THREE !== 'undefined' && THREE.GLTFLoader) || (typeof window !== 'undefined' && window.GLTFLoader);
       if (!LoaderClass) {
-        if (typeof onComplete === 'function') onComplete(null);
+        fallbackNative();
         return;
       }
       try {
         const loader = new LoaderClass();
         loader.load(gltfUrl, (gltf) => {
           if (gltf && gltf.scene) {
-            this.blenderSoccerPack = gltf.scene;
-            this.integrateBlenderModelsIntoStadium();
+            applyPack(gltf.scene);
+          } else {
+            fallbackNative();
           }
-          if (typeof onComplete === 'function') onComplete(this.blenderSoccerPack);
-        }, undefined, (err) => {
-          console.warn('[SoccerTactics3D] Using procedural pitch and players:', err);
-          if (typeof onComplete === 'function') onComplete(null);
+        }, undefined, () => {
+          fallbackNative();
         });
       } catch (e) {
-        if (typeof onComplete === 'function') onComplete(null);
+        fallbackNative();
       }
     },
 
@@ -2231,7 +2263,11 @@
       if (this.isRunning) return;
       this.isRunning = true;
       const tick = () => {
-        if (!this.isRunning) return;
+        const container = typeof document !== 'undefined' ? document.getElementById('view-soccer-3d') : null;
+        if (!this.isRunning || !container || container.classList.contains('hidden') || container.style.display === 'none') {
+          this.pauseLoop();
+          return;
+        }
         this.rafId = requestAnimationFrame(tick);
         this.updateFrame();
       };
@@ -2308,6 +2344,14 @@
         this.switchTab('lobby');
       } else {
         this.dispose();
+        const container = typeof document !== 'undefined' ? document.getElementById('view-soccer-3d') : null;
+        if (container) {
+          container.classList.add('hidden');
+          container.style.setProperty('display', 'none', 'important');
+        }
+        if (typeof document !== 'undefined' && document.body) {
+          document.body.classList.remove('soccer-active', 'in-immersive-portal');
+        }
         if (typeof window.returnToMainPortals === 'function') {
           window.returnToMainPortals(event);
         } else if (typeof window.navigateTo === 'function') {

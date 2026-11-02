@@ -832,7 +832,8 @@
         : (ASSET_PACKS_REGISTRY[matchedId] && ASSET_PACKS_REGISTRY[matchedId].estimatedMB
           ? ASSET_PACKS_REGISTRY[matchedId].estimatedMB
           : 0.42);
-      const sizeStr = Number(rawMB).toFixed(2);
+      const parsedMB = Number(rawMB);
+      const sizeStr = (!isNaN(parsedMB) && parsedMB > 0) ? parsedMB.toFixed(2) : '0.42';
 
       let badgeEl = card.querySelector('.adm-badge');
       if (!badgeEl) {
@@ -858,7 +859,7 @@
         badgeEl.innerHTML = '<span>✨ Listo para jugar</span>';
       } else {
         badgeEl.className = 'adm-badge adm-badge-ready';
-        badgeEl.innerHTML = `<span>☁️ Descarga rápida (${sizeStr} MB)</span>`;
+        badgeEl.innerHTML = `<span>☁️ ${sizeStr} MB</span>`;
       }
     });
 
@@ -869,22 +870,23 @@
       if (sInfo && sInfo.isDownloaded) {
         soccerContainer.innerHTML = '<span class="adm-badge adm-badge-downloaded">✨ Listo para jugar</span>';
       } else {
-        const sizeStr = (sInfo && sInfo.sizeMB) ? sInfo.sizeMB : '22.4';
-        soccerContainer.innerHTML = `<span class="adm-badge adm-badge-ready">☁️ Descarga rápida (${sizeStr} MB)</span>`;
+        const rawSoccerMB = Number(sInfo && sInfo.sizeMB ? sInfo.sizeMB : 0.62);
+        const sizeStr = (!isNaN(rawSoccerMB) && rawSoccerMB > 0) ? rawSoccerMB.toFixed(2) : '0.62';
+        soccerContainer.innerHTML = `<span class="adm-badge adm-badge-ready">☁️ ${sizeStr} MB</span>`;
       }
     }
 
     // 3. Tarjeta de Galería 3D en Portales Hub
     const worldTourContainer = document.getElementById('worldtour-asset-badge-container');
     if (worldTourContainer) {
-      const worldKeys = ['house', 'supermarket', 'restaurant', 'hotel', 'dating', 'nature', 'space'];
+      const worldKeys = ['house', 'supermarket', 'restaurant', 'hotel', 'dating', 'garden', 'space'];
       const dlCount = worldKeys.filter(k => summary[k] && summary[k].isDownloaded).length;
       if (dlCount === worldKeys.length) {
         worldTourContainer.innerHTML = '<span class="adm-badge adm-badge-downloaded">✨ 7/7 mundos listos</span>';
       } else if (dlCount > 0) {
         worldTourContainer.innerHTML = `<span class="adm-badge adm-badge-downloaded">✨ ${dlCount}/7 mundos listos</span>`;
       } else {
-        worldTourContainer.innerHTML = '<span class="adm-badge adm-badge-ready">☁️ Descarga rápida disponible</span>';
+        worldTourContainer.innerHTML = '<span class="adm-badge adm-badge-downloaded">✨ Listo para jugar</span>';
       }
     }
 
@@ -906,111 +908,23 @@
   // =========================================================================
 
   function installInterceptors() {
-    // Interceptar window.loadWorld3DWithPrecompile
-    const origLoadWorld = window.loadWorld3DWithPrecompile;
-    window.loadWorld3DWithPrecompile = function (scenarioKey) {
-      const key = scenarioKey || 'house';
-      const reg = ASSET_PACKS_REGISTRY[key] || {
-        packId: key,
-        title: key.toUpperCase(),
-        titleEs: key.toUpperCase(),
-        category: 'world3d',
-        estimatedMB: 16.5
-      };
-
-      requireAssetPack({
-        packId: key,
-        title: reg.titleEs || reg.title,
-        category: reg.category,
-        glbUrl: reg.glbUrl,
-        estimatedMB: reg.estimatedMB,
-        onReady: function (blobUrl) {
-          if (typeof origLoadWorld === 'function') {
-            origLoadWorld(key, blobUrl);
-          } else if (typeof window.switch3DScenario === 'function') {
-            window.switch3DScenario(key, blobUrl);
-          }
-        },
-        onCancel: function () {
-          console.log('[AssetDownloadManager] Entrada cancelada. En Lobby 3D.');
-          if (typeof window.openWorld3DLobby === 'function') {
-            window.openWorld3DLobby();
-          }
-        }
-      });
-    };
-
-    if (window.World3D) {
-      window.World3D.loadWorld3DWithPrecompile = window.loadWorld3DWithPrecompile;
-    }
-
-    // Interceptar window.openWorld3DLobby para refrescar insignias
+    // No bloquear con modales de descarga manual: los archivos .glb locales (< 1 MB) abren en < 1s.
+    // Solo refrescar insignias al abrir el Lobby 3D o renderizar sus tarjetas.
     const origOpenLobby = window.openWorld3DLobby;
     if (typeof origOpenLobby === 'function') {
       window.openWorld3DLobby = function () {
-        origOpenLobby.apply(this, arguments);
+        const res = origOpenLobby.apply(this, arguments);
         setTimeout(updateLobbyBadges, 30);
+        return res;
       };
     }
 
-    // Interceptar window.openPortalModules para fútbol y juegos
-    const origOpenPortalModules = window.openPortalModules;
-    if (typeof origOpenPortalModules === 'function') {
-      window.openPortalModules = function (targetPortal) {
-        if (targetPortal === 'soccer' || targetPortal === 'mastergoal' || targetPortal === 'view-soccer-3d') {
-          const reg = ASSET_PACKS_REGISTRY['soccer'];
-          requireAssetPack({
-            packId: 'soccer',
-            title: reg.titleEs || reg.title,
-            category: 'sports',
-            glbUrl: reg.glbUrl,
-            estimatedMB: reg.estimatedMB,
-            onReady: function (blobUrl) {
-              origOpenPortalModules(targetPortal);
-            },
-            onCancel: function () {
-              console.log('[AssetDownloadManager] Entrada cancelada. En Portales.');
-              if (typeof window.navigateTo === 'function') {
-                window.navigateTo('view-home');
-              }
-              if (typeof window.goToHomePortals === 'function') {
-                window.goToHomePortals();
-              }
-            }
-          });
-          return;
-        }
-
-        if (targetPortal === 'hedbanz' || targetPortal === 'view-hedbanz') {
-          const reg = ASSET_PACKS_REGISTRY['hedbanz'];
-          requireAssetPack({
-            packId: 'hedbanz',
-            title: reg.titleEs || reg.title,
-            category: 'minigames',
-            glbUrl: reg.glbUrl,
-            estimatedMB: reg.estimatedMB,
-            onReady: function (blobUrl) {
-              origOpenPortalModules(targetPortal);
-            },
-            onCancel: function () {
-              if (typeof window.navigateTo === 'function') {
-                window.navigateTo('view-home');
-              }
-            }
-          });
-          return;
-        }
-
-        return origOpenPortalModules.apply(this, arguments);
-      };
-    }
-
-    // Hook en renderWorld3DLobbyCards para refrescar insignias
     const origRenderCards = window.renderWorld3DLobbyCards;
     if (typeof origRenderCards === 'function') {
       window.renderWorld3DLobbyCards = function () {
-        origRenderCards.apply(this, arguments);
+        const res = origRenderCards.apply(this, arguments);
         setTimeout(updateLobbyBadges, 30);
+        return res;
       };
     }
   }

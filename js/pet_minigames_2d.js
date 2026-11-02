@@ -2291,6 +2291,9 @@
       this.timerInterval = null;
       this.strikes = 0;
       this.isSolved = false;
+      this.targetCardRotationY = 0;
+      if (this.proceduralCard) this.proceduralCard.rotation.y = 0;
+      if (this.cardMesh) this.cardMesh.rotation.y = 0;
       this.askedQuestions = [];
       this.tableGroup = null;
       this.avatarGroup = null;
@@ -2323,18 +2326,70 @@
       this.nodAnimation = { active: false, startTime: 0, duration: 0 };
     }
 
+    pauseLoop() {
+      this.isRunning = false;
+      if (this.rafId) {
+        cancelAnimationFrame(this.rafId);
+        this.rafId = null;
+      }
+      if (this.timerInterval) {
+        clearInterval(this.timerInterval);
+        this.timerInterval = null;
+      }
+    }
+
+    resumeLoop() {
+      const m = typeof document !== 'undefined' ? document.getElementById('hedbanz-3d-modal') : null;
+      if (!m || m.classList.contains('hidden') || m.style.display === 'none') return;
+      if (!this.isRunning && this.renderer && this.scene && this.camera && typeof this._tickFn === 'function') {
+        this.isRunning = true;
+        if (this.rafId) cancelAnimationFrame(this.rafId);
+        this.rafId = requestAnimationFrame(this._tickFn);
+      }
+    }
+
+    async loadGlbAssets(glbUrl) {
+      if (!glbUrl || !this.scene || typeof THREE === 'undefined') return;
+      try {
+        let group = null;
+        if (typeof window !== 'undefined' && typeof window.loadGLBModelNative === 'function') {
+          group = await window.loadGLBModelNative(glbUrl);
+        } else if (THREE.GLTFLoader) {
+          group = await new Promise((resolve, reject) => {
+            new THREE.GLTFLoader().load(glbUrl, (g) => resolve(g && g.scene ? g.scene : null), undefined, reject);
+          });
+        }
+        if (group && this.scene && this.isRunning) {
+          group.name = 'Hedbanz_GLB_Props';
+          // Extraer prop opcional de trofeo/insignia sin ocultar la mesa ni al rival sentado completo
+          group.visible = false;
+        }
+      } catch (_) {}
+    }
+
     open(options) {
+      if (typeof window !== 'undefined' && typeof window.stopAllBackgroundAudioAndLoops === 'function') {
+        try { window.stopAllBackgroundAudioAndLoops('hedbanz'); } catch (_) {}
+      }
       if (typeof window !== 'undefined' && typeof window.hideAllModules === 'function') {
         try { window.hideAllModules(); } catch (_) {}
       }
       if (typeof document !== 'undefined') {
-        document.body.classList.add('hedbanz-3d-active');
+        document.body.classList.add('hedbanz-3d-active', 'in-immersive-portal');
+        ['view-home', 'practice-today-hero', 'coverFlowViewport', 'world3d-selection-hub', 'world3d-container'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) {
+            el.classList.add('hidden');
+            el.style.setProperty('display', 'none', 'important');
+          }
+        });
+        if (typeof window.hideWorld3DTopBackButton === 'function') window.hideWorld3DTopBackButton();
       }
 
       this.initStageAndStart('assets/models/hedbanz/hedbanz_pack.glb');
 
       // Descarga/actualización en segundo plano con AssetDownloadManager sin bloquear la jugabilidad inmediata
-      if (typeof window !== 'undefined' && window.AssetDownloadManager && typeof window.AssetDownloadManager.requireAssetPack === 'function') {
+      if (false && typeof window !== 'undefined' && window.AssetDownloadManager && typeof window.AssetDownloadManager.requireAssetPack === 'function') {
         try {
           window.AssetDownloadManager.requireAssetPack({
             packId: 'hedbanz',
@@ -2389,7 +2444,7 @@
         <div id="hedbanz-main-container" class="relative w-full h-full bg-[#0f172a] flex flex-col select-none overflow-hidden font-sans">
           
           <!-- TOPBAR CON BOTÓN VOLVER UNIVERSAL -->
-          <header class="h-12 sm:h-14 bg-slate-900/95 border-b border-purple-500/30 flex items-center justify-between px-3 sm:px-4 z-20 backdrop-blur-md flex-shrink-0">
+          <header class="h-12 sm:h-14 bg-slate-900 border-b border-purple-500/30 flex items-center justify-between px-3 sm:px-4 z-20 flex-shrink-0">
             <div class="flex items-center gap-2 sm:gap-3">
               <button type="button" onclick="window.Hedbanz3D.handleBack(event)"
                       class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-sky-300 hover:text-white border border-sky-500/50 text-xs font-black flex items-center gap-1.5 shadow-md transition cursor-pointer active:scale-95">
@@ -2428,7 +2483,7 @@
               </div>
 
               <!-- HUD DEL ÁRBITRO IA FLOTANTE EN EL ESCENARIO 3D -->
-              <div id="hedbanzRefereeHUD" class="absolute top-3 left-1/2 -translate-x-1/2 px-3.5 py-1.5 rounded-2xl bg-slate-900/90 border border-purple-400/40 shadow-2xl backdrop-blur-md flex items-center gap-2 pointer-events-none transition-all duration-300 z-10">
+              <div id="hedbanzRefereeHUD" class="absolute top-3 left-1/2 -translate-x-1/2 px-3.5 py-1.5 rounded-2xl bg-slate-900 border border-purple-400/40 shadow-2xl flex items-center gap-2 pointer-events-none transition-all duration-300 z-10">
                 <span class="text-lg">🤖</span>
                 <div>
                   <div class="text-[9px] font-extrabold text-purple-300 uppercase tracking-wider">AI Referee</div>
@@ -2439,7 +2494,7 @@
 
             <!-- PANEL TÁCTIL DERECHO / INFERIOR (PC: 35% ancho, Móvil: 54dvh con scroll táctil suave) -->
             <div id="hedbanzPanelSection"
-                 class="w-full md:w-[35%] h-[54dvh] md:h-full bg-slate-900/95 border-t md:border-t-0 md:border-l border-purple-500/30 flex flex-col p-3 sm:p-3.5 gap-2 z-10 backdrop-blur-md overflow-y-auto"
+                 class="w-full md:w-[35%] h-[54dvh] md:h-full bg-slate-900 border-t md:border-t-0 md:border-l border-purple-500/30 flex flex-col p-3 sm:p-3.5 gap-2 z-10 overflow-y-auto"
                  style="-webkit-overflow-scrolling: touch; scroll-behavior: smooth;">
               
               <!-- CATEGORÍAS ESTRATÉGICAS EN INGLÉS -->
@@ -2510,7 +2565,7 @@
           </div>
 
           <!-- MODAL DE ADIVINANZA FINAL -->
-          <div id="hedbanzGuessModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 hidden">
+          <div id="hedbanzGuessModal" class="fixed inset-0 z-50 bg-slate-950/90 flex items-center justify-center p-4 hidden">
             <div class="bg-slate-900 border-2 border-amber-400 rounded-3xl p-5 max-w-sm w-full shadow-2xl text-center">
               <span class="text-4xl block mb-2">🤔</span>
               <h3 class="text-base font-black text-white">¿Qué o quién soy?</h3>
@@ -2536,7 +2591,7 @@
           </div>
 
           <!-- MODAL DE VICTORIA & CELEBRACIÓN -->
-          <div id="hedbanzVictoryModal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-lg flex items-center justify-center p-4 hidden">
+          <div id="hedbanzVictoryModal" class="fixed inset-0 z-50 bg-slate-950/90 flex items-center justify-center p-4 hidden">
             <div class="bg-slate-900 border-2 border-emerald-400 rounded-3xl p-6 max-w-md w-full shadow-2xl text-center relative overflow-hidden">
               <div class="text-5xl mb-2">🎉</div>
               <h2 class="text-xl font-black text-emerald-300 uppercase">¡EXCELLENT! YOU GOT IT!</h2>
@@ -2577,6 +2632,9 @@
       this.timeLeft = 90;
       this.strikes = 0;
       this.isSolved = false;
+      this.targetCardRotationY = 0;
+      if (this.proceduralCard) this.proceduralCard.rotation.y = 0;
+      if (this.cardMesh) this.cardMesh.rotation.y = 0;
       this.updateCardTexture(false);
       this.askedQuestions = [];
 
@@ -2675,9 +2733,11 @@
       this.scene = new THREE.Scene();
       this.scene.background = new THREE.Color(0x162038);
 
-      this.camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-      this.camera.position.set(0, 0.72, 2.75);
-      this.camera.lookAt(0, 0.45, 0.2);
+      this.camera = new THREE.PerspectiveCamera(46, 1, 0.1, 100);
+      this.camera.position.set(0, 0.88, 2.65);
+      this.camera.lookAt(0, 0.42, 0.10);
+
+
 
       this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
       this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
@@ -2703,10 +2763,28 @@
         this._lastW = w;
         this._lastH = h;
 
-        this.renderer.setSize(w, h, false);
+        const expectedW = window.innerWidth >= 768 ? Math.round(window.innerWidth * 0.65) : window.innerWidth;
+        const expectedH = window.innerWidth >= 768 ? Math.max(480, window.innerHeight - 54) : Math.round(window.innerHeight * 0.46);
+        if (!w || w <= 310) w = expectedW;
+        if (!h || h <= 180) h = expectedH;
+        w = Math.round(w);
+        h = Math.round(h);
+        this._lastW = w;
+        this._lastH = h;
+        mount.style.setProperty('min-width', w + 'px', 'important');
+        mount.style.setProperty('min-height', h + 'px', 'important');
+        this.renderer.setSize(w, h, true);
+        const cEl = this.renderer.domElement;
+        cEl.style.setProperty('position', 'absolute', 'important');
+        cEl.style.setProperty('inset', '0', 'important');
+        cEl.style.setProperty('width', w + 'px', 'important');
+        cEl.style.setProperty('height', h + 'px', 'important');
+        cEl.style.setProperty('max-width', '100%', 'important');
+        cEl.style.setProperty('max-height', '100%', 'important');
         const canvas = this.renderer.domElement;
-        canvas.style.setProperty('width', '100%', 'important');
-        canvas.style.setProperty('height', '100%', 'important');
+        canvas.style.setProperty('display', 'block', 'important');
+        canvas.style.setProperty('width', w + 'px', 'important');
+        canvas.style.setProperty('height', h + 'px', 'important');
 
         this.camera.aspect = w / h;
         this.camera.updateProjectionMatrix();
@@ -2956,7 +3034,7 @@
       // Carta Misteriosa con CanvasTexture 512x512
       const cardTex = this.createCardTexture(false);
       const fbCardMat = new THREE.MeshStandardMaterial({ map: cardTex, roughness: 0.25 });
-      const fbCardGeo = new THREE.BoxGeometry(0.28, 0.38, 0.015);
+      const fbCardGeo = new THREE.BoxGeometry(0.32, 0.42, 0.018);
       this.proceduralCard = new THREE.Mesh(fbCardGeo, fbCardMat);
       this.proceduralCard.position.set(0, 0.30, 0.26);
       this.headGroup.add(this.proceduralCard);
@@ -2974,15 +3052,20 @@
       const hgSand = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.14, 16), new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.8 }));
       hgSand.position.set(0, -0.08, 0);
       this.proceduralHourglass.add(hgTop, hgBot, hgGlass, hgSand);
-      this.proceduralHourglass.position.set(0.68, 0.18, 0.38);
+      this.proceduralHourglass.position.set(0.58, 0.31, 0.40);
       this.proceduralHourglass.scale.set(0.85, 0.85, 0.85);
       this.scene.add(this.proceduralHourglass);
 
       // Bucle de animación 60 FPS
       this.isRunning = true;
       const tick = () => {
-        if (!this.isRunning) return;
-        this.rafId = requestAnimationFrame(tick);
+        const mModal = typeof document !== 'undefined' ? document.getElementById('hedbanz-3d-modal') : null;
+        if (!this.isRunning || !mModal || mModal.classList.contains('hidden') || mModal.style.display === 'none') {
+          this.rafId = null;
+          return;
+        }
+        this._tickFn = tick;
+      this.rafId = requestAnimationFrame(tick);
 
         const now = performance.now();
         const t = now * 0.0015;
@@ -3058,6 +3141,7 @@
         this.renderer.render(this.scene, this.camera);
       };
 
+      this._tickFn = tick;
       this.rafId = requestAnimationFrame(tick);
     }
 
@@ -3267,7 +3351,7 @@
         host.classList.add('hidden');
       }
       if (typeof document !== 'undefined') {
-        document.body.classList.remove('hedbanz-3d-active');
+        document.body.classList.remove('hedbanz-3d-active', 'in-immersive-portal');
       }
       if (typeof window.returnToMainPortals === 'function') {
         window.returnToMainPortals(event);

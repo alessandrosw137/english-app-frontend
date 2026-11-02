@@ -8604,30 +8604,22 @@ window.logout = function() {
       const canvas = document.getElementById('portalStarsCanvas');
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
-      canvas.width = canvas.parentElement.clientWidth || window.innerWidth;
-      canvas.height = canvas.parentElement.clientHeight || window.innerHeight;
+      if (!ctx) return;
+      canvas.width = (canvas.parentElement && canvas.parentElement.clientWidth) || window.innerWidth;
+      canvas.height = (canvas.parentElement && canvas.parentElement.clientHeight) || window.innerHeight;
 
-      const stars = Array.from({ length: 65 }, () => ({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        r: Math.random() * 1.6 + 0.5,
-        alpha: Math.random(),
-        speed: Math.random() * 0.015 + 0.005
-      }));
-
-      function renderStars() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        stars.forEach(s => {
-          s.alpha += s.speed;
-          if (s.alpha > 1 || s.alpha < 0) s.speed = -s.speed;
-          ctx.beginPath();
-          ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(255, 255, 255, ${Math.abs(s.alpha)})`;
-          ctx.fill();
-        });
-        starsCanvasAnimId = requestAnimationFrame(renderStars);
+      // Renderizado estático único (0 bucles requestAnimationFrame en Menú Principal)
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let i = 0; i < 65; i++) {
+        const x = Math.random() * canvas.width;
+        const y = Math.random() * canvas.height;
+        const r = Math.random() * 1.6 + 0.5;
+        const alpha = 0.25 + Math.random() * 0.65;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${alpha.toFixed(2)})`;
+        ctx.fill();
       }
-      renderStars();
     }
 
     function stopPortalStars() {
@@ -14809,10 +14801,10 @@ window.ensureUniversalBackButtons = function() {
   };
 };
 
-if (typeof setInterval !== 'undefined') {
-  setInterval(() => {
+if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+  document.addEventListener('DOMContentLoaded', () => {
     try { window.ensureUniversalBackButtons(); } catch (_) {}
-  }, 350);
+  });
 }
 
 // --- MOTOR UNIVERSAL DE EVENTOS Y CLICS ---
@@ -15231,16 +15223,6 @@ window.switchMasterView = function(targetMode) {
 // PASO 5: ACTIVACIÓN RECURRENTE (MUTATION OBSERVER / INTERVAL)
 // ========================================================
 if (typeof window !== 'undefined') {
-  if (typeof setInterval === 'function') {
-    setInterval(() => {
-      try {
-        if (typeof window.enforceAdminPermissionsUI === 'function') window.enforceAdminPermissionsUI();
-        if (typeof window.injectTranslateButtonsInChat === 'function') window.injectTranslateButtonsInChat();
-        if (typeof window.initWordHelperRobot === 'function') window.initWordHelperRobot();
-      } catch (_) {}
-    }, 800);
-  }
-
   if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
     document.addEventListener('DOMContentLoaded', () => {
       try {
@@ -15670,28 +15652,22 @@ if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator && (typeof 
   }
 }
 
-// Supervisor periódico seguro (sin bloquear tests Node)
+// Supervisor basado en eventos (0 setInterval de polling pesado)
 if (typeof window !== 'undefined' && typeof window.document !== 'undefined') {
   if (typeof process === 'undefined' || !process.versions || !process.versions.node) {
-    if (typeof setInterval === 'function') {
-      setInterval(() => {
-        try {
-          if (typeof window.unlockAllFeaturesForLoggedUsers === 'function') window.unlockAllFeaturesForLoggedUsers();
-          if (typeof window.initOfflineToggleUI === 'function') window.initOfflineToggleUI();
-          if (typeof window.initInstallShareButton === 'function') window.initInstallShareButton();
-          if (typeof window.injectTranslateButtonsInChat === 'function') window.injectTranslateButtonsInChat();
-          if (typeof window.updateFloatingWidgetsVisibility === 'function') window.updateFloatingWidgetsVisibility();
-        } catch (e) {}
-      }, 1000);
-    }
+    const runSupervisorOnce = () => {
+      try {
+        if (typeof window.unlockAllFeaturesForLoggedUsers === 'function') window.unlockAllFeaturesForLoggedUsers();
+        if (typeof window.initOfflineToggleUI === 'function') window.initOfflineToggleUI();
+        if (typeof window.initInstallShareButton === 'function') window.initInstallShareButton();
+        if (typeof window.injectTranslateButtonsInChat === 'function') window.injectTranslateButtonsInChat();
+        if (typeof window.updateFloatingWidgetsVisibility === 'function') window.updateFloatingWidgetsVisibility();
+      } catch (e) {}
+    };
     if (typeof window.addEventListener === 'function') {
-      window.addEventListener('DOMContentLoaded', () => {
-        try {
-          if (typeof window.unlockAllFeaturesForLoggedUsers === 'function') window.unlockAllFeaturesForLoggedUsers();
-          if (typeof window.initOfflineToggleUI === 'function') window.initOfflineToggleUI();
-          if (typeof window.initInstallShareButton === 'function') window.initInstallShareButton();
-        } catch (e) {}
-      });
+      window.addEventListener('DOMContentLoaded', runSupervisorOnce);
+      window.addEventListener('online', runSupervisorOnce);
+      window.addEventListener('offline', runSupervisorOnce);
     }
   }
 }
@@ -16264,7 +16240,7 @@ window.deduplicateWorld3DBars = function() {
       activeBar.style.setProperty('display', 'none', 'important');
       activeBar.style.setProperty('visibility', 'hidden', 'important');
     } else {
-      activeBar.style.cssText = 'position: absolute !important; top: 10px !important; left: 10px !important; right: 10px !important; max-width: calc(100vw - 20px) !important; z-index: 80 !important; display: flex !important; flex-wrap: nowrap !important; overflow-x: auto !important; align-items: center !important; gap: 6px !important; background: rgba(15, 23, 42, 0.88) !important; backdrop-filter: blur(10px) !important; padding: 6px 10px !important; border-radius: 14px !important; border: 1px solid rgba(148, 163, 184, 0.3) !important; pointer-events: auto !important;';
+      activeBar.style.cssText = 'position: absolute !important; top: 10px !important; left: 10px !important; right: 10px !important; max-width: calc(100vw - 20px) !important; z-index: 80 !important; display: flex !important; flex-wrap: nowrap !important; overflow-x: auto !important; align-items: center !important; gap: 6px !important; background: rgba(15, 23, 42, 0.94) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; padding: 6px 10px !important; border-radius: 14px !important; border: 1px solid rgba(148, 163, 184, 0.3) !important; pointer-events: auto !important;';
     }
   }
 };
@@ -16307,45 +16283,11 @@ window.forceWakeUpYouTubePlayer = function(videoId) {
   wrapper.appendChild(newIframe);
 };
 
-// Sobrescribimos el vigilante automático para que, además de mostrar el reproductor, despierte el iframe
-if (window._musicStageGuardInterval) clearInterval(window._musicStageGuardInterval);
-window._musicStageGuardInterval = setInterval(function() {
-  // A. Vigilar que no haya barras duplicadas en el Mundo 3D
-  const wt = document.getElementById('view-worldtour');
-  if (wt && !wt.classList.contains('hidden')) {
-    if (typeof window.deduplicateWorld3DBars === 'function') {
-      window.deduplicateWorld3DBars();
-    }
-  }
-
-  const vm = document.getElementById('view-music');
-  const ms = document.getElementById('music-search-subview');
-  const mp = document.getElementById('music-player-subview');
-  
-  if (vm && ms && mp) {
-    const isMusicViewActive = !vm.classList.contains('hidden') && window.getComputedStyle(vm).display !== 'none';
-    const isSearchHidden = ms.classList.contains('hidden') || window.getComputedStyle(ms).display === 'none';
-    const isPlayerHidden = mp.classList.contains('hidden') || window.getComputedStyle(mp).display === 'none';
-
-    // SOLO si el usuario inició expresamente la reproducción de música:
-    // Si el buscador se ocultó (porque se seleccionó una canción) pero el reproductor sigue oculto:
-    if (window._userInitiatedMusicPlayback === true && isMusicViewActive && isSearchHidden && isPlayerHidden) {
-      if (typeof window.openMusicPlayerStage === 'function') {
-        window.openMusicPlayerStage();
-      } else {
-        mp.classList.remove('hidden');
-        mp.style.setProperty('display', 'block', 'important');
-      }
-      
-      // Buscar si hay una canción cargada para forzar el iframe
-      setTimeout(() => {
-        if (window.KaraokeSyncEngine && window.KaraokeSyncEngine.currentTrack && window.KaraokeSyncEngine.currentTrack.youtubeId) {
-          window.forceWakeUpYouTubePlayer(window.KaraokeSyncEngine.currentTrack.youtubeId);
-        }
-      }, 300);
-    }
-  }
-}, 300);
+// Limpieza de vigilante 300ms para eliminar layout thrashing (0 polling de getComputedStyle / innerText)
+if (window._musicStageGuardInterval) {
+  clearInterval(window._musicStageGuardInterval);
+  window._musicStageGuardInterval = null;
+}
 
 /* ==========================================================================
    MINI-REPRODUCTOR DISCRETO FLOTANTE DE VOZ Y AUDIO + BANDEJA DE INVITACIONES
@@ -17010,10 +16952,113 @@ window._musicStageGuardInterval = setInterval(function() {
 
 
 // =============================================================================
-// MASTER ROUTER & RESILIENT NAVIGATION ENGINE (V2026.11)
+// MASTER ROUTER, SINGLE ACTIVE LOOP POLICY & SILENT STARTUP ENGINE (V2026.11)
 // =============================================================================
 (function () {
   "use strict";
+
+  // 0. REGISTRO DE AUDIOCONTEXTS Y SILENCIADOR MAESTRO DE AUDIO / LOOPS EN SEGUNDO PLANO
+  window._trackedAudioContexts = window._trackedAudioContexts || [];
+  try {
+    const OrigAC = window.AudioContext || window.webkitAudioContext;
+    if (OrigAC && !OrigAC._masterTracked) {
+      const WrappedAC = function () {
+        const ctx = new OrigAC();
+        window._trackedAudioContexts.push(ctx);
+        return ctx;
+      };
+      WrappedAC.prototype = OrigAC.prototype;
+      WrappedAC._masterTracked = true;
+      if (window.AudioContext) window.AudioContext = WrappedAC;
+      if (window.webkitAudioContext) window.webkitAudioContext = WrappedAC;
+    }
+  } catch (_) {}
+
+  window.stopAllBackgroundAudioAndLoops = function (exceptModule) {
+    const active = String(exceptModule || "").toLowerCase();
+
+    // A. Silencio total de YouTube, <audio>, <video>, TTS y AudioContext (a menos que estemos abriendo música activamente)
+    if (active !== "music") {
+      window._userInitiatedMusicPlayback = false;
+      if (typeof window.stopAllAudioAndTimers === "function") {
+        try { window.stopAllAudioAndTimers(); } catch (_) {}
+      }
+      if (window.YouTubeBridge && typeof window.YouTubeBridge.detach === "function") {
+        try { window.YouTubeBridge.detach(); } catch (_) {}
+      }
+      if (window.KaraokeSyncEngine && typeof window.KaraokeSyncEngine.stop === "function") {
+        try { window.KaraokeSyncEngine.stop(); } catch (_) {}
+      }
+      try {
+        document.querySelectorAll("audio, video").forEach(m => {
+          try {
+            m.pause();
+            m.currentTime = 0;
+          } catch (_) {}
+        });
+        document.querySelectorAll("iframe").forEach(ifr => {
+          const src = ifr.getAttribute("src") || "";
+          if (src.includes("youtube.com") || src.includes("youtube-nocookie.com")) {
+            try {
+              if (ifr.contentWindow) {
+                ifr.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', "*");
+                ifr.contentWindow.postMessage('{"event":"command","func":"stopVideo","args":""}', "*");
+              }
+            } catch (_) {}
+          }
+        });
+      } catch (_) {}
+    }
+
+    if (typeof window.speechSynthesis !== "undefined" && window.speechSynthesis) {
+      try { window.speechSynthesis.cancel(); } catch (_) {}
+    }
+
+    // Suspender todos los AudioContexts activos que no correspondan al módulo en uso
+    try {
+      if (window.Hedbanz3D && window.Hedbanz3D.sfx && window.Hedbanz3D.sfx.ctx && active !== "hedbanz") {
+        if (window.Hedbanz3D.sfx.ctx.state === "running") {
+          window.Hedbanz3D.sfx.ctx.suspend().catch(() => {});
+        }
+      }
+      (window._trackedAudioContexts || []).forEach(ctx => {
+        if (ctx && ctx.state === "running") {
+          ctx.suspend().catch(() => {});
+        }
+      });
+    } catch (_) {}
+
+    // B. Política de Un Solo Loop Activo (Single Active Loop Policy)
+    if (active !== "world3d") {
+      if (window.World3D && typeof window.World3D.pauseLoop === "function") {
+        try { window.World3D.pauseLoop(); } catch (_) {}
+      } else if (typeof window.pauseWorld3D === "function") {
+        try { window.pauseWorld3D(); } catch (_) {}
+      }
+      if (active !== "world3d_lobby" && typeof window.hideWorld3DTopBackButton === "function") {
+        try { window.hideWorld3DTopBackButton(); } catch (_) {}
+      }
+    }
+    if (active !== "soccer" && window.SoccerTactics3D && typeof window.SoccerTactics3D.pauseLoop === "function") {
+      try { window.SoccerTactics3D.pauseLoop(); } catch (_) {}
+    }
+    if (active !== "hedbanz" && window.Hedbanz3D && typeof window.Hedbanz3D.pauseLoop === "function") {
+      try { window.Hedbanz3D.pauseLoop(); } catch (_) {}
+    }
+    if (window.PetMinigames2D && typeof window.PetMinigames2D.pauseLoop === "function" && active !== "pet_arcade") {
+      try { window.PetMinigames2D.pauseLoop(); } catch (_) {}
+    }
+    if (active !== "culinary" && window.CulinaryStudio2D && typeof window.CulinaryStudio2D.pauseLoops === "function") {
+      try { window.CulinaryStudio2D.pauseLoops(); } catch (_) {}
+    }
+    if (typeof stopPortalStars === "function") {
+      try { stopPortalStars(); } catch (_) {}
+    }
+  };
+
+  // Capturar las implementaciones nativas de World3D ANTES de instalar los wrappers del Router
+  const _nativeOpenWorld3DLobby = (window.World3D && window.World3D.openWorld3DLobby) || window.openWorld3DLobby;
+  const _nativeOpenWorld3DScenario = (window.World3D && window.World3D.openWorld3DScenario) || window.openWorld3DScenario;
 
   // 1. UTILIDAD DE OCULTACIÓN ESTRICTA DE LA RUTA DE APRENDIZAJE / HOME
   function hideHomeAndCarouselStrictly() {
@@ -17095,8 +17140,42 @@ window._musicStageGuardInterval = setInterval(function() {
   window.MasterRouter = {
     // ABRIR GALERÍA DE PORTALES 3D
     showWorld3DLobby: function () {
+      window.stopAllBackgroundAudioAndLoops("world3d_lobby");
       hideHomeAndCarouselStrictly();
 
+      document.body.classList.add("view-worldtour-active", "in-immersive-portal");
+      document.body.classList.remove("hedbanz-3d-active", "culinary-studio-active", "soccer-active");
+
+      if (typeof _nativeOpenWorld3DLobby === "function") {
+        _nativeOpenWorld3DLobby();
+      } else {
+        const viewWorldTour = document.getElementById("view-worldtour");
+        if (viewWorldTour) {
+          viewWorldTour.classList.remove("hidden");
+          viewWorldTour.style.setProperty("display", "block", "important");
+          viewWorldTour.style.setProperty("visibility", "visible", "important");
+          viewWorldTour.style.setProperty("opacity", "1", "important");
+          viewWorldTour.style.setProperty("z-index", "9500", "important");
+        }
+        if (typeof window.renderWorld3DLobbyCards === "function") {
+          window.renderWorld3DLobbyCards();
+        }
+        const lobbyEl = document.getElementById("world3d-selection-hub");
+        if (lobbyEl) {
+          lobbyEl.classList.remove("hidden");
+          lobbyEl.style.setProperty("display", "flex", "important");
+        }
+      }
+
+      if (window.AssetDownloadManager && typeof window.AssetDownloadManager.updateLobbyBadges === "function") {
+        window.AssetDownloadManager.updateLobbyBadges();
+      }
+    },
+
+    // ABRIR ESCENARIO 3D ESPECÍFICO (ej. house, supermarket, restaurant, hotel, dating, garden, space)
+    showWorld3DScenario: function (scenarioId) {
+      window.stopAllBackgroundAudioAndLoops("world3d");
+      hideHomeAndCarouselStrictly();
       document.body.classList.add("view-worldtour-active", "in-immersive-portal");
       document.body.classList.remove("hedbanz-3d-active", "culinary-studio-active", "soccer-active");
 
@@ -17105,71 +17184,20 @@ window._musicStageGuardInterval = setInterval(function() {
         viewWorldTour.classList.remove("hidden");
         viewWorldTour.style.setProperty("display", "block", "important");
         viewWorldTour.style.setProperty("visibility", "visible", "important");
-        viewWorldTour.style.setProperty("opacity", "1", "important");
         viewWorldTour.style.setProperty("z-index", "9500", "important");
       }
 
-      const lobbyEl = document.getElementById("world3d-selection-hub");
-      if (lobbyEl) {
-        lobbyEl.classList.remove("hidden");
-        lobbyEl.style.setProperty("display", "flex", "important");
-        lobbyEl.style.setProperty("visibility", "visible", "important");
-        lobbyEl.style.setProperty("opacity", "1", "important");
-      }
-
-      const worldView = document.getElementById("world3d-view");
-      if (worldView) {
-        worldView.style.setProperty("display", "none", "important");
-      }
-
-      if (typeof window.renderWorld3DLobbyCards === "function") {
-        window.renderWorld3DLobbyCards();
-      }
-
-      if (window.AssetDownloadManager && typeof window.AssetDownloadManager.updateLobbyBadges === "function") {
-        window.AssetDownloadManager.updateLobbyBadges();
-      }
-
-      window.MasterRouter.scheduleHealthCheck("view-worldtour");
-    },
-
-    // ABRIR ESCENARIO 3D ESPECÍFICO (ej. house, supermarket, etc.)
-    showWorld3DScenario: function (scenarioId) {
-      hideHomeAndCarouselStrictly();
-      document.body.classList.add("view-worldtour-active", "in-immersive-portal");
-
-      const lobbyEl = document.getElementById("world3d-selection-hub");
-      if (lobbyEl) {
-        lobbyEl.classList.add("hidden");
-        lobbyEl.style.setProperty("display", "none", "important");
-      }
-
-      const viewWorldTour = document.getElementById("view-worldtour");
-      if (viewWorldTour) {
-        viewWorldTour.classList.remove("hidden");
-        viewWorldTour.style.setProperty("display", "block", "important");
-        viewWorldTour.style.setProperty("visibility", "visible", "important");
-        viewWorldTour.style.setProperty("z-index", "9500", "important");
-      }
-
-      const worldView = document.getElementById("world3d-view");
-      if (worldView) {
-        worldView.classList.remove("hidden");
-        worldView.style.setProperty("display", "block", "important");
-        worldView.style.setProperty("visibility", "visible", "important");
-      }
-
-      if (window.World3D && typeof window.World3D.switchScenario === "function") {
-        window.World3D.switchScenario(scenarioId);
+      if (typeof _nativeOpenWorld3DScenario === "function") {
+        _nativeOpenWorld3DScenario(scenarioId);
+      } else if (typeof window.loadWorld3DWithPrecompile === "function") {
+        window.loadWorld3DWithPrecompile(scenarioId);
       } else if (typeof window.switch3DScenario === "function") {
         window.switch3DScenario(scenarioId);
       }
 
       setTimeout(() => {
         window.dispatchEvent(new Event("resize"));
-      }, 50);
-
-      window.MasterRouter.scheduleHealthCheck("view-worldtour");
+      }, 60);
     },
 
     // VOLVER AL MENÚ PRINCIPAL DE PORTALES (DESDE CUALQUIER MÓDULO)
@@ -17177,11 +17205,15 @@ window._musicStageGuardInterval = setInterval(function() {
       if (e && e.preventDefault) e.preventDefault();
       if (e && e.stopPropagation) e.stopPropagation();
 
+      window.stopAllBackgroundAudioAndLoops("home");
       document.body.classList.remove("view-worldtour-active", "in-immersive-portal", "culinary-studio-active", "hedbanz-3d-active", "soccer-active");
 
       const modulesToHide = [
         "view-worldtour",
         "world3d-selection-hub",
+        "world3d-loading-screen",
+        "world3d-container",
+        "threeWebGLMount",
         "world3d-view",
         "view-soccer-3d",
         "soccer-tactics-portal",
@@ -17203,11 +17235,8 @@ window._musicStageGuardInterval = setInterval(function() {
         }
       });
 
-      if (window.World3D && typeof window.World3D.pauseWorld3D === "function") {
-        try { window.World3D.pauseWorld3D(); } catch (_) {}
-      }
-      if (window.CulinaryStudio2D && typeof window.CulinaryStudio2D.close === "function") {
-        try { window.CulinaryStudio2D.close(); } catch (_) {}
+      if (typeof window.hideWorld3DTopBackButton === "function") {
+        try { window.hideWorld3DTopBackButton(); } catch (_) {}
       }
 
       restoreHomeAndCarousel();
@@ -17223,6 +17252,7 @@ window._musicStageGuardInterval = setInterval(function() {
         return;
       }
 
+      window.stopAllBackgroundAudioAndLoops(targetId === "view-music" ? "music" : targetId);
       hideHomeAndCarouselStrictly();
 
       const views = window.MASTER_ROOT_VIEWS || ["view-home", "view-worldtour", "view-soccer-3d", "culinary-studio-root", "view-jest-game", "view-music", "view-stories", "ai-tutor-view", "view-path"];
@@ -17272,7 +17302,7 @@ window._musicStageGuardInterval = setInterval(function() {
         bar = document.createElement("div");
         bar.id = "universalEmergencyBackBar";
         bar.style.cssText = "position: fixed; top: 12px; left: 12px; z-index: 210000; display: flex; align-items: center; gap: 8px;";
-        bar.innerHTML = '<button type="button" onclick="window.MasterRouter.returnToPortals(event)" style="padding: 10px 18px; border-radius: 14px; background: rgba(15, 23, 42, 0.95); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.6); font-weight: 800; font-size: 0.85rem; cursor: pointer; box-shadow: 0 8px 24px rgba(0,0,0,0.6); backdrop-filter: blur(8px); display: flex; align-items: center; gap: 6px;"><span>← Menú Principal</span></button>';
+        bar.innerHTML = '<button type="button" onclick="window.MasterRouter.returnToPortals(event)" style="padding: 10px 18px; border-radius: 14px; background: rgba(15, 23, 42, 0.96); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.6); font-weight: 800; font-size: 0.85rem; cursor: pointer; box-shadow: 0 8px 24px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 6px;"><span>← Menú Principal</span></button>';
         document.body.appendChild(bar);
       }
       bar.style.setProperty("display", "flex", "important");
@@ -17293,7 +17323,7 @@ window._musicStageGuardInterval = setInterval(function() {
     window.MasterRouter.returnToPortals();
   };
 
-  // 5. AJUSTE DE HEDBANZ 3D CANVAS RESIZE RESILIENCE
+  // 5. AJUSTE DE HEDBANZ 3D CANVAS RESIZE RESILIENCE (SIN SETINTERVAL DE POLLING)
   function fixHedbanz3DCanvasLayout() {
     const modal = document.getElementById("hedbanz-3d-modal");
     if (!modal || modal.classList.contains("hidden") || modal.style.display === "none") return;
@@ -17303,19 +17333,21 @@ window._musicStageGuardInterval = setInterval(function() {
     if (!canvas) return;
 
     const rect = mount.getBoundingClientRect();
-    const w = Math.round(rect.width || mount.clientWidth || (window.innerWidth >= 768 ? window.innerWidth * 0.65 : window.innerWidth));
-    const h = Math.round(rect.height || mount.clientHeight || (window.innerWidth >= 768 ? window.innerHeight - 56 : window.innerHeight * 0.46));
+    let w = Math.round(rect.width || mount.clientWidth || 0);
+    let h = Math.round(rect.height || mount.clientHeight || 0);
+    if (w <= 310) w = Math.round(window.innerWidth >= 768 ? window.innerWidth * 0.65 : window.innerWidth);
+    if (h <= 180) h = Math.round(window.innerWidth >= 768 ? Math.max(480, window.innerHeight - 54) : window.innerHeight * 0.46);
 
     if (w > 50 && h > 50) {
-      canvas.style.setProperty("width", "100%", "important");
-      canvas.style.setProperty("height", "100%", "important");
+      canvas.style.setProperty("width", w + "px", "important");
+      canvas.style.setProperty("height", h + "px", "important");
       canvas.style.setProperty("position", "absolute", "important");
       canvas.style.setProperty("top", "0", "important");
       canvas.style.setProperty("left", "0", "important");
       canvas.style.setProperty("inset", "0", "important");
 
       if (window.Hedbanz3D && window.Hedbanz3D.renderer && window.Hedbanz3D.camera) {
-        window.Hedbanz3D.renderer.setSize(w, h, false);
+        window.Hedbanz3D.renderer.setSize(w, h, true);
         window.Hedbanz3D.camera.aspect = w / h;
         window.Hedbanz3D.camera.updateProjectionMatrix();
       }
@@ -17323,29 +17355,60 @@ window._musicStageGuardInterval = setInterval(function() {
   }
 
   window.addEventListener("resize", fixHedbanz3DCanvasLayout);
-  setInterval(fixHedbanz3DCanvasLayout, 1000);
 
-  // Hook al abrir Hedbanz
-  const origOpenHedbanz = window.openHedbanz3DGame;
+  // Hook al abrir Hedbanz 3D, Culinary Studio 2D y MasterGoal 3D
+  const origOpenHedbanz = window.openHedbanz3DGame || window.openHedbanz3DPortal;
   window.openHedbanz3DGame = function (opts) {
+    window.stopAllBackgroundAudioAndLoops("hedbanz");
     hideHomeAndCarouselStrictly();
     document.body.classList.add("hedbanz-3d-active", "in-immersive-portal");
     let res;
-    if (origOpenHedbanz) {
-      res = origOpenHedbanz.apply(this, arguments);
-    } else if (window.Hedbanz3D && typeof window.Hedbanz3D.open === "function") {
+    if (window.Hedbanz3D && typeof window.Hedbanz3D.open === "function") {
       res = window.Hedbanz3D.open(opts);
+    } else if (origOpenHedbanz) {
+      res = origOpenHedbanz.apply(this, arguments);
     }
     requestAnimationFrame(() => {
       fixHedbanz3DCanvasLayout();
       setTimeout(fixHedbanz3DCanvasLayout, 100);
-      setTimeout(fixHedbanz3DCanvasLayout, 300);
-      setTimeout(fixHedbanz3DCanvasLayout, 600);
+      setTimeout(fixHedbanz3DCanvasLayout, 280);
     });
-    window.MasterRouter.scheduleHealthCheck("hedbanz-3d-modal");
     return res;
   };
+  window.openHedbanz3DPortal = window.openHedbanz3DGame;
   window.openJestGameView = window.openHedbanz3DGame;
+
+  const origOpenCulinary = window.openCulinaryStudioPortal;
+  window.openCulinaryStudioPortal = function (opts) {
+    window.stopAllBackgroundAudioAndLoops("culinary");
+    hideHomeAndCarouselStrictly();
+    document.body.classList.add("culinary-studio-active", "in-immersive-portal");
+    if (window.CulinaryStudio2D && typeof window.CulinaryStudio2D.open === "function") {
+      return window.CulinaryStudio2D.open(opts);
+    } else if (typeof origOpenCulinary === "function") {
+      return origOpenCulinary(opts);
+    }
+  };
+
+  const origOpenSoccer = window.openSoccerTacticsPortal;
+  window.openSoccerTacticsPortal = function (opts) {
+    window.stopAllBackgroundAudioAndLoops("soccer");
+    hideHomeAndCarouselStrictly();
+    document.body.classList.add("soccer-active", "in-immersive-portal");
+    if (window.SoccerTactics3D && typeof window.SoccerTactics3D.openPortal === "function") {
+      return window.SoccerTactics3D.openPortal(opts);
+    } else if (typeof origOpenSoccer === "function") {
+      return origOpenSoccer(opts);
+    }
+  };
+
+  // Silencio absoluto garantizado al iniciar la app y en DOMContentLoaded
+  window.stopAllBackgroundAudioAndLoops("startup");
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+      window.stopAllBackgroundAudioAndLoops("startup");
+    });
+  }
 
   // 6. PURGA Y SANITIZACIÓN DEFINITIVA DE OFFSET KARAOKE (-4.2s)
   try {

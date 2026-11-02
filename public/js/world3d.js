@@ -86,22 +86,27 @@
     const T = (typeof THREE !== 'undefined') ? THREE : (typeof window !== 'undefined' ? window.THREE : null);
     if (!T) throw new Error('[GLTFLoader] THREE is not defined');
 
-    // Materiales limpios, luminosos y libres de pantalla negra
+    // Materiales limpios, luminosos y libres de pantalla negra (Normalización Anti-Pantalla-Negra)
     const materials = (json.materials || []).map(m => {
       const pbr = m.pbrMetallicRoughness || {};
       const baseCol = pbr.baseColorFactor
         ? new T.Color(pbr.baseColorFactor[0], pbr.baseColorFactor[1], pbr.baseColorFactor[2])
         : new T.Color(0xf1f5f9);
       const opacity = (pbr.baseColorFactor && pbr.baseColorFactor[3] !== undefined) ? pbr.baseColorFactor[3] : 1;
+      const rawRoughness = (typeof pbr.roughnessFactor === 'number') ? pbr.roughnessFactor : 0.45;
+      const rawMetalness = (typeof pbr.metallicFactor === 'number') ? pbr.metallicFactor : 0.15;
+      const emissiveCol = Array.isArray(m.emissiveFactor) && (m.emissiveFactor[0] + m.emissiveFactor[1] + m.emissiveFactor[2] > 0.02)
+        ? new T.Color(m.emissiveFactor[0], m.emissiveFactor[1], m.emissiveFactor[2])
+        : baseCol.clone().multiplyScalar(0.18);
       const mat = new T.MeshStandardMaterial({
         color: baseCol,
-        roughness: 0.45,
-        metalness: 0.12,
-        emissive: baseCol.clone().multiplyScalar(0.12),
-        emissiveIntensity: 0.25,
+        roughness: Math.min(0.85, Math.max(0.30, rawRoughness || 0.45)),
+        metalness: Math.min(0.25, Math.max(0.05, rawMetalness !== undefined ? Math.min(rawMetalness, 0.15) : 0.15)),
+        emissive: emissiveCol,
+        emissiveIntensity: 0.22,
         transparent: opacity < 0.98,
         opacity: opacity,
-        side: m.doubleSided ? T.DoubleSide : T.FrontSide
+        side: T.DoubleSide
       });
       mat.name = m.name || '';
       return mat;
@@ -205,10 +210,42 @@
     return { scene: rootScene, scenes: [rootScene] };
   }
 
+  async function loadGLBModelNative(url) {
+    if (!url) throw new Error('[loadGLBModelNative] Missing URL');
+    let arrayBuffer = null;
+    if (typeof fetch === 'function') {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('HTTP ' + res.status + ' loading ' + url);
+      arrayBuffer = await res.arrayBuffer();
+    } else if (typeof XMLHttpRequest !== 'undefined') {
+      arrayBuffer = await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.responseType = 'arraybuffer';
+        xhr.onload = function() {
+          if (xhr.status === 200 || xhr.status === 0) resolve(xhr.response);
+          else reject(new Error('XHR Status ' + xhr.status));
+        };
+        xhr.onerror = function(e) { reject(e); };
+        xhr.send(null);
+      });
+    } else {
+      throw new Error('[loadGLBModelNative] No fetch or XHR available');
+    }
+    const group = parseGLBBufferToThreeGroup(arrayBuffer);
+    if (typeof sanitizeGlbScene === 'function') {
+      sanitizeGlbScene(group);
+    }
+    return group;
+  }
+
   global.parseGLBBufferToThreeGroup = parseGLBBufferToThreeGroup;
+  global.loadGLBModelNative = loadGLBModelNative;
   global.World3D.parseGLBBufferToThreeGroup = parseGLBBufferToThreeGroup;
+  global.World3D.loadGLBModelNative = loadGLBModelNative;
   if (typeof window !== 'undefined') {
     window.parseGLBBufferToThreeGroup = parseGLBBufferToThreeGroup;
+    window.loadGLBModelNative = loadGLBModelNative;
   }
 
   function StandardGLTFLoader(manager) {
@@ -305,7 +342,7 @@
   }
   const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
 
-  let isWorldTourActive = true;
+  let isWorldTourActive = false;
   let isEngineInitialized = false;
   let scene = null;
   let camera = null;
@@ -2898,7 +2935,7 @@ ensureOrbitControls();
     lightsGroup.add(amb);
 
     // 2. HemisphereLight con gradiente cielo blanco / suelo gris azulado
-    const hemi = new THREE.HemisphereLight(0xffffff, 0x94a3b8, 1.5);
+    const hemi = new THREE.HemisphereLight(0xffffff, 0x94a3b8, 1.4);
     hemi.position.set(0, 25, 0);
     hemi.name = 'ScenarioHemiLight';
     lightsGroup.add(hemi);
@@ -6645,7 +6682,7 @@ ensureOrbitControls();
 
   function getContainerDimensions(container) {
     const width = (typeof window !== 'undefined' && window.innerWidth) ? window.innerWidth : 1024;
-    const height = (typeof window !== 'undefined' && window.innerHeight) ? Math.max(320, window.innerHeight - 56) : 640;
+    const height = (typeof window !== 'undefined' && window.innerHeight) ? Math.max(320, window.innerHeight) : 640;
     return { width, height };
   }
 
@@ -6682,6 +6719,17 @@ ensureOrbitControls();
   }
 
   
+  function hideWorld3DTopBackButton() {
+    if (typeof document === 'undefined') return;
+    const btn = document.getElementById('world3d-global-back-portals-btn');
+    if (btn) {
+      btn.style.setProperty('display', 'none', 'important');
+      btn.style.setProperty('visibility', 'hidden', 'important');
+    }
+  }
+  global.hideWorld3DTopBackButton = hideWorld3DTopBackButton;
+  if (typeof window !== 'undefined') window.hideWorld3DTopBackButton = hideWorld3DTopBackButton;
+
   function ensureWorld3DTopBackButton() {
     if (typeof document === 'undefined') return;
     let btn = document.getElementById('world3d-global-back-portals-btn');
@@ -6691,7 +6739,7 @@ ensureOrbitControls();
       btn.type = 'button';
       btn.innerHTML = '<span>← Volver a Portales</span>';
       btn.setAttribute('aria-label', 'Volver a Portales');
-      btn.style.cssText = 'position: fixed !important; top: 12px !important; left: 12px !important; z-index: 99999 !important; background: rgba(15, 23, 42, 0.94) !important; border: 1.5px solid rgba(56, 189, 248, 0.6) !important; color: #ffffff !important; font-size: 13px !important; font-weight: 800 !important; padding: 8px 16px !important; border-radius: 14px !important; cursor: pointer !important; display: flex !important; align-items: center !important; gap: 6px !important; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important; backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important; transition: transform 0.15s ease, background 0.15s ease !important;';
+      btn.style.cssText = 'position: fixed !important; top: 12px !important; left: 12px !important; z-index: 99999 !important; background: rgba(15, 23, 42, 0.94) !important; border: 1.5px solid rgba(56, 189, 248, 0.6) !important; color: #ffffff !important; font-size: 13px !important; font-weight: 800 !important; padding: 8px 16px !important; border-radius: 14px !important; cursor: pointer !important; display: flex !important; align-items: center !important; gap: 6px !important; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; transition: transform 0.15s ease, background 0.15s ease !important;';
       btn.onmouseenter = () => { btn.style.background = 'rgba(2, 132, 199, 0.95)'; };
       btn.onmouseleave = () => { btn.style.background = 'rgba(15, 23, 42, 0.94)'; };
       btn.onclick = function(e) {
@@ -6704,6 +6752,7 @@ ensureOrbitControls();
         } else {
           closeWorld3DInspectCard();
           pauseLoop();
+          hideWorld3DTopBackButton();
           if (typeof window.returnToMainPortals === 'function') {
             window.returnToMainPortals(e);
           } else if (typeof window.navigateTo === 'function') {
@@ -6853,10 +6902,10 @@ ensureOrbitControls();
           return new THREE.MeshStandardMaterial({
             color: col,
             map: (m && m.map) ? m.map : null,
-            roughness: 0.48,
-            metalness: 0.12,
-            emissive: col.clone().multiplyScalar(0.10),
-            emissiveIntensity: 0.35,
+            roughness: 0.45,
+            metalness: 0.15,
+            emissive: col.clone().multiplyScalar(0.18),
+            emissiveIntensity: 0.22,
             transparent: Boolean(m && m.transparent && m.opacity < 0.95),
             opacity: (m && typeof m.opacity === 'number' && m.opacity > 0.15) ? m.opacity : 1.0,
             side: THREE.DoubleSide
@@ -7057,13 +7106,20 @@ ensureOrbitControls();
 
     // Pre-alocación fuera del loop para CERO Garbage Collection
     let cachedContainer3d = null;
+    let cachedViewWorldTour = null;
 
     // 7. Loop de renderizado animate3D ultraliviano (60 FPS puros, CERO DOM / CERO Layout Thrashing)
     function animate3D(now) {
-      if (!cachedContainer3d && typeof document !== 'undefined') {
-        cachedContainer3d = document.getElementById('world3d-container') || document.getElementById('world3d-view') || document.getElementById('view-worldtour');
+      if (typeof document !== 'undefined') {
+        if (!cachedContainer3d) {
+          cachedContainer3d = document.getElementById('world3d-container') || document.getElementById('world3d-view') || document.getElementById('view-worldtour');
+        }
+        if (!cachedViewWorldTour) {
+          cachedViewWorldTour = document.getElementById('view-worldtour');
+        }
       }
-      const isHidden = cachedContainer3d && (cachedContainer3d.classList.contains('hidden') || cachedContainer3d.style.display === 'none');
+      const isHidden = (cachedContainer3d && (cachedContainer3d.classList.contains('hidden') || cachedContainer3d.style.display === 'none')) ||
+                       (cachedViewWorldTour && (cachedViewWorldTour.classList.contains('hidden') || cachedViewWorldTour.style.display === 'none'));
       if (!isWorldTourActive || (global.World3D && global.World3D.isPaused) || isHidden) {
         cancelRunningLoop();
         return;
@@ -7176,10 +7232,10 @@ ensureOrbitControls();
       // camera.aspect = window.innerWidth / window.innerHeight; renderer.setSize(window.innerWidth, window.innerHeight);
 
       const width = window.innerWidth;
-      const height = Math.max(320, window.innerHeight - 56);
+      const height = Math.max(320, window.innerHeight);
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
-      renderer.setSize(width, height, false);
+      renderer.setSize(width, height, true);
       renderer.setPixelRatio(Math.min((typeof window !== 'undefined' && window.devicePixelRatio) || 1, 1.5));
 
       const container = typeof document !== 'undefined'
@@ -8158,9 +8214,21 @@ ensureOrbitControls();
 
   function openWorld3DLobby() {
     if (typeof document === 'undefined') return;
+    if (typeof window !== 'undefined' && typeof window.stopAllBackgroundAudioAndLoops === 'function') {
+      window.stopAllBackgroundAudioAndLoops('world3d_lobby');
+    }
     if (typeof window !== 'undefined' && typeof window.hideAllModules === 'function' && window._activeModule !== 'world3d') {
       window.hideAllModules();
     }
+
+    ['view-home', 'practice-today-hero', 'coverFlowViewport', 'world3d-container', 'threeWebGLMount', 'world3d-loading-screen'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.classList.add('hidden');
+        el.style.setProperty('display', 'none', 'important');
+      }
+    });
+    hideWorld3DTopBackButton();
 
     const viewWorldTour = document.getElementById('view-worldtour');
     if (viewWorldTour) {
@@ -8185,8 +8253,18 @@ ensureOrbitControls();
     const lobbyEl = document.getElementById('world3d-selection-hub');
     if (lobbyEl) {
       lobbyEl.classList.remove('hidden');
+      lobbyEl.style.setProperty('position', 'fixed', 'important');
+      lobbyEl.style.setProperty('inset', '0', 'important');
+      lobbyEl.style.setProperty('width', '100vw', 'important');
+      lobbyEl.style.setProperty('height', '100dvh', 'important');
+      lobbyEl.style.setProperty('z-index', '9850', 'important');
+      lobbyEl.style.setProperty('background', '#070b14', 'important');
+      lobbyEl.style.setProperty('overflow-y', 'auto', 'important');
       lobbyEl.style.setProperty('display', 'flex', 'important');
       lobbyEl.style.opacity = '1';
+    }
+    if (typeof window !== 'undefined' && window.AssetDownloadManager && typeof window.AssetDownloadManager.updateLobbyBadges === 'function') {
+      try { window.AssetDownloadManager.updateLobbyBadges(); } catch (_) {}
     }
   }
 
@@ -8634,28 +8712,16 @@ ensureOrbitControls();
     }
 
     function tryFetchDirectPath() {
-      console.warn('[World3D] Descargando directamente vía fetch:', directPath);
-      if (typeof window !== 'undefined' && window.AssetDownloadManager && typeof window.AssetDownloadManager.deletePack === 'function') {
-        try { window.AssetDownloadManager.deletePack('world_' + scenarioKey); } catch (_) {}
-      }
-      fetch(directPath)
-        .then(res => {
-          if (!res.ok) throw new Error('HTTP ' + res.status);
-          return res.arrayBuffer();
-        })
-        .then(buf => {
-          try {
-            const parsedGroup = parseGLBBufferToThreeGroup(buf);
-            if (parsedGroup) {
-              let mCount = 0;
-              parsedGroup.traverse(o => { if (o.isMesh) mCount++; });
-              if (mCount > 0) {
-                finishSuccess(parsedGroup);
-                return;
-              }
+      console.warn('[World3D] Cargando vía loadGLBModelNative:', directPath);
+      loadGLBModelNative(directPath)
+        .then(parsedGroup => {
+          if (parsedGroup) {
+            let mCount = 0;
+            parsedGroup.traverse(o => { if (o.isMesh) mCount++; });
+            if (mCount > 0) {
+              finishSuccess(parsedGroup);
+              return;
             }
-          } catch (err) {
-            console.warn('[World3D] Error parseando fetch directo:', err);
           }
           if (!isDone) {
             isDone = true;
@@ -8664,7 +8730,7 @@ ensureOrbitControls();
           }
         })
         .catch(err => {
-          console.warn('[World3D] Fetch directo falló:', err);
+          console.warn('[World3D] loadGLBModelNative falló:', err);
           if (!isDone) {
             isDone = true;
             buildClean3DDioramaFallback(scenarioKey, scenarioDynamicRoot);
@@ -8673,72 +8739,82 @@ ensureOrbitControls();
         });
     }
 
-    if (initialUrl) {
-      if (typeof THREE !== 'undefined' && THREE.GLTFLoader && typeof THREE.GLTFLoader === 'function') {
-        try {
-          const loader = new THREE.GLTFLoader();
-          loader.load(initialUrl, (gltf) => {
-            if (gltf && gltf.scene) {
-              let mc = 0;
-              gltf.scene.traverse(o => { if (o.isMesh) mc++; });
-              if (mc > 0) {
-                finishSuccess(gltf.scene);
-                return;
-              }
-            }
-            tryFetchDirectPath();
-          }, undefined, (err) => {
-            console.warn('[World3D] Error cargando con GLTFLoader:', err);
-            tryFetchDirectPath();
-          });
-          return;
-        } catch (e) {
-          console.warn('[World3D] Excepción inicializando GLTFLoader:', e);
-        }
-      }
-      fetch(initialUrl)
-        .then(res => {
-          if (!res.ok) throw new Error('HTTP ' + res.status);
-          return res.arrayBuffer();
-        })
-        .then(buf => {
-          const parsedGroup = parseGLBBufferToThreeGroup(buf);
-          if (parsedGroup) {
+    const urlToLoad = initialUrl || directPath;
+    if (typeof THREE !== 'undefined' && THREE.GLTFLoader && typeof THREE.GLTFLoader === 'function') {
+      try {
+        const loader = new THREE.GLTFLoader();
+        loader.load(urlToLoad, (gltf) => {
+          if (gltf && gltf.scene) {
             let mc = 0;
-            parsedGroup.traverse(o => { if (o.isMesh) mc++; });
+            gltf.scene.traverse(o => { if (o.isMesh) mc++; });
             if (mc > 0) {
-              finishSuccess(parsedGroup);
+              finishSuccess(gltf.scene);
               return;
             }
           }
           tryFetchDirectPath();
-        })
-        .catch(err => {
-          console.warn('[World3D] Error en fetch de initialUrl:', err);
+        }, undefined, (err) => {
+          console.warn('[World3D] Fallback a loadGLBModelNative desde GLTFLoader:', err);
           tryFetchDirectPath();
         });
-    } else {
-      tryFetchDirectPath();
+        return;
+      } catch (e) {
+        console.warn('[World3D] Excepción inicializando GLTFLoader, usando loadGLBModelNative:', e);
+      }
     }
+    loadGLBModelNative(urlToLoad)
+      .then(parsedGroup => {
+        if (parsedGroup) {
+          let mc = 0;
+          parsedGroup.traverse(o => { if (o.isMesh) mc++; });
+          if (mc > 0) {
+            finishSuccess(parsedGroup);
+            return;
+          }
+        }
+        if (urlToLoad !== directPath) tryFetchDirectPath();
+        else {
+          if (!isDone) {
+            isDone = true;
+            buildClean3DDioramaFallback(scenarioKey, scenarioDynamicRoot);
+            ensureMeshCountCheckAndComplete();
+          }
+        }
+      })
+      .catch(err => {
+        console.warn('[World3D] Error en loadGLBModelNative:', err);
+        if (urlToLoad !== directPath) tryFetchDirectPath();
+        else {
+          if (!isDone) {
+            isDone = true;
+            buildClean3DDioramaFallback(scenarioKey, scenarioDynamicRoot);
+            ensureMeshCountCheckAndComplete();
+          }
+        }
+      });
   }
   global.loadScenarioGLBWithFallback = loadScenarioGLBWithFallback;
 
   function openWorld3DScenario(scenarioKey) {
     const targetKey = WORLD_TOUR_SCENARIOS[scenarioKey] ? scenarioKey : 'house';
-    const meta = WORLD3D_LOBBY_META.find(m => m.id === targetKey) || WORLD3D_LOBBY_META[0];
     const glbUrl = 'assets/models/worlds/' + (targetKey === 'garden' ? 'garden' : targetKey) + '.glb';
 
-    // 1. Ocultar #world3d-selection-hub y pantallas de carga previas
-    const lobbyEl = document.getElementById('world3d-selection-hub');
-    if (lobbyEl) {
-      lobbyEl.classList.add('hidden');
-      lobbyEl.style.setProperty('display', 'none', 'important');
+    if (typeof window !== 'undefined' && typeof window.stopAllBackgroundAudioAndLoops === 'function') {
+      window.stopAllBackgroundAudioAndLoops('world3d');
     }
-    const loaderScreen = document.getElementById('world3d-loading-screen');
-    if (loaderScreen) {
-      loaderScreen.classList.add('hidden');
-      loaderScreen.style.setProperty('display', 'none', 'important');
+
+    // 1. Ocultar Home, Carrusel, #world3d-selection-hub y pantallas de carga previas
+    ['view-home', 'practice-today-hero', 'coverFlowViewport', 'world3d-selection-hub', 'world3d-loading-screen'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.classList.add('hidden');
+        el.style.setProperty('display', 'none', 'important');
+      }
+    });
+    if (document.body && document.body.classList) {
+      document.body.classList.add('view-worldtour-active', 'in-immersive-portal');
     }
+    window._activeModule = 'world3d';
 
     // 2. Mostrar #world3d-container con los estilos obligatorios
     enforceWorld3DContainerStyle();
@@ -8746,21 +8822,19 @@ ensureOrbitControls();
     // 3. Asegurar boton "<- Volver a Portales" en la esquina superior izquierda
     ensureWorld3DTopBackButton();
 
-    if (typeof window !== 'undefined' && window.AssetDownloadManager && typeof window.AssetDownloadManager.requireAssetPack === 'function') {
-      window.AssetDownloadManager.requireAssetPack({
-        packId: 'world_' + targetKey,
-        title: meta ? meta.titleEs : targetKey,
-        category: 'world3d',
-        glbUrl: glbUrl,
-        estimatedMB: meta ? (meta.estimatedMB || 0.5) : 0.5,
-        onReady: function(blobUrl) {
-          loadWorld3DWithPrecompile(targetKey, blobUrl || glbUrl);
-        },
-        onCancel: function() {
-          console.log('[World3D] Descarga cancelada. Permaneciendo en Lobby de Mundos 3D.');
-          openWorld3DLobby();
-        }
-      });
+    // 4. Apertura directa en < 1s desde archivo .glb local o caché IndexedDB (sin modales bloqueantes)
+    if (typeof window !== 'undefined' && window.AssetDownloadManager && typeof window.AssetDownloadManager.getPack === 'function') {
+      window.AssetDownloadManager.getPack(targetKey)
+        .then(function(cached) {
+          let finalUrl = glbUrl;
+          if (cached && cached.blob) {
+            try { finalUrl = URL.createObjectURL(cached.blob); } catch (_) {}
+          }
+          loadWorld3DWithPrecompile(targetKey, finalUrl);
+        })
+        .catch(function() {
+          loadWorld3DWithPrecompile(targetKey, glbUrl);
+        });
     } else {
       loadWorld3DWithPrecompile(targetKey, glbUrl);
     }

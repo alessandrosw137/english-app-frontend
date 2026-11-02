@@ -2605,27 +2605,27 @@ const htmlContent = `<!DOCTYPE html>
       if (matches.length > 0) {
         suggestionsEl.innerHTML = matches.map(track => {
           const originalIdx = MUSIC_SESSION_TRACKS.findIndex(t => t.id === track.id);
-          const thumb = track.thumbnail || `https://img.youtube.com/vi/${track.youtubeId}/mqdefault.jpg`;
-          return `
-            <div onclick="selectMusicTrackFromSuggestion(${originalIdx})" class="p-2.5 flex items-center gap-3 hover:bg-slate-800/90 cursor-pointer border-b border-slate-800/60 transition group">
-              <img src="${thumb}" class="w-14 h-9 object-cover rounded-lg border border-slate-700 group-hover:border-cyan-500/50 shadow" alt="${track.title}">
-              <div class="flex-1 min-w-0">
-                <p class="text-xs font-bold text-white truncate group-hover:text-cyan-400 transition">${track.title}</p>
-                <p class="text-[11px] text-slate-400 truncate">${track.artist} • <span class="text-cyan-400/80">${track.genre || 'Hit'}</span></p>
-              </div>
-              <span class="text-xs text-slate-500 group-hover:text-cyan-400">▶️</span>
-            </div>
-          `;
+          const thumb = track.thumbnail || ('https://img.youtube.com/vi/' + track.youtubeId + '/mqdefault.jpg');
+          return '<div onclick="selectMusicTrackFromSuggestion(' + originalIdx + ')" class="p-2.5 flex items-center gap-3 hover:bg-slate-800/90 cursor-pointer border-b border-slate-800/60 transition group">' +
+            '<img src="' + thumb + '" class="w-14 h-9 object-cover rounded-lg border border-slate-700 group-hover:border-cyan-500/50 shadow" alt="' + track.title + '">' +
+            '<div class="flex-1 min-w-0">' +
+              '<p class="text-xs font-bold text-white truncate group-hover:text-cyan-400 transition">' + track.title + '</p>' +
+              '<p class="text-[11px] text-slate-400 truncate">' + track.artist + ' • <span class="text-cyan-400/80">' + (track.genre || 'Hit') + '</span></p>' +
+            '</div>' +
+            '<span class="text-xs text-slate-500 group-hover:text-cyan-400">▶️</span>' +
+          '</div>';
+
+
         }).join('');
         suggestionsEl.classList.remove('hidden');
       } else {
         // Opción de búsqueda directa o carga de URL
-        suggestionsEl.innerHTML = `
-          <div onclick="handleMusicSearchSubmit()" class="p-3 text-xs text-slate-300 hover:bg-slate-800/90 cursor-pointer flex items-center justify-between">
-            <span>🔍 Buscar y reproducir: "<strong class="text-cyan-400">${val}</strong>"</span>
-            <span class="text-xs text-slate-500">Enter ↵</span>
-          </div>
-        `;
+        suggestionsEl.innerHTML = '<div onclick="handleMusicSearchSubmit()" class="p-3 text-xs text-slate-300 hover:bg-slate-800/90 cursor-pointer flex items-center justify-between">' +
+          '<span>🔍 Buscar y reproducir: "<strong class="text-cyan-400">' + val + '</strong>"</span>' +
+          '<span class="text-xs text-slate-500">Enter ↵</span>' +
+        '</div>';
+
+
         suggestionsEl.classList.remove('hidden');
       }
     }
@@ -2668,7 +2668,7 @@ const htmlContent = `<!DOCTYPE html>
 
       if (matchIdx !== -1) {
         selectMusicTrack(matchIdx);
-        showFloatingToast(`Reproduciendo ${MUSIC_SESSION_TRACKS[matchIdx].title}`, '🎵');
+        showFloatingToast(\`Reproduciendo ${MUSIC_SESSION_TRACKS[matchIdx].title}\`, '🎵');
       } else {
         // Enlace por defecto al catálogo más cercano
         selectMusicTrack(0);
@@ -2680,7 +2680,7 @@ const htmlContent = `<!DOCTYPE html>
       const iframe = document.getElementById('musicYouTubeIframe');
       const titleEl = document.getElementById('activeMusicTitle');
       const artistEl = document.getElementById('activeMusicArtist');
-      if (iframe) iframe.src = `https://www.youtube-nocookie.com/embed/${ytId}?enablejsapi=1`;
+      if (iframe) iframe.src = \`https://www.youtube-nocookie.com/embed/${ytId}?enablejsapi=1\`;
       if (titleEl) titleEl.textContent = title;
       if (artistEl) artistEl.textContent = artist;
     }
@@ -2695,9 +2695,9 @@ const htmlContent = `<!DOCTYPE html>
       const iframe = document.getElementById('musicYouTubeIframe');
 
       if (titleEl) titleEl.textContent = track.title;
-      if (artistEl) artistEl.textContent = `${track.artist} ${track.genre ? '• ' + track.genre : ''}`;
+      if (artistEl) artistEl.textContent = \`${track.artist} ${track.genre ? '• ' + track.genre : ''}\`;
       if (iframe && track.youtubeId) {
-        iframe.src = `https://www.youtube-nocookie.com/embed/${track.youtubeId}?enablejsapi=1`;
+        iframe.src = \`https://www.youtube-nocookie.com/embed/${track.youtubeId}?enablejsapi=1\`;
       }
 
       renderLyrics(track);
@@ -2712,15 +2712,15 @@ const htmlContent = `<!DOCTYPE html>
         const words = line.text.split(/\s+/).map(w => {
           const cleanWord = w.toLowerCase().replace(/[^a-z']/g, '');
           if (!cleanWord) return w;
-          return `<span onclick="inspectLyricsWord('${cleanWord}', event)" class="lyrics-word hover:text-cyan-300 hover:bg-cyan-500/20 px-1 py-0.5 rounded transition cursor-pointer select-none active:scale-95" title="Toca para ver significado">${w}</span>`;
+          return \`<span onclick="inspectLyricsWord('${cleanWord}', event)" class="lyrics-word hover:text-cyan-300 hover:bg-cyan-500/20 px-1 py-0.5 rounded transition cursor-pointer select-none active:scale-95" title="Toca para ver significado">${w}</span>\`;
         }).join(' ');
 
-        return `
+        return \`
           <div class="p-2.5 rounded-xl transition hover:bg-slate-800/60 border border-transparent hover:border-slate-700/50 text-slate-300 flex items-start gap-2.5 group">
             <span class="text-[10px] font-mono text-cyan-500/70 pt-0.5 select-none w-8 text-right">${line.time ? line.time + 's' : '♪'}</span>
             <p class="leading-relaxed text-sm flex-1">${words}</p>
           </div>
-        `;
+        \`;
       }).join('');
     }
 
@@ -2745,7 +2745,7 @@ const htmlContent = `<!DOCTYPE html>
 
       const clean = word.toLowerCase().replace(/[^a-z]/g, '');
       const entry = MUSIC_VOCAB_DICTIONARY[clean] || {
-        ipa: `/${clean}/`,
+        ipa: \`/${clean}/\`,
         trans: 'Término de la canción',
         type: 'Vocabulario',
         note: 'Palabra en inglés utilizada en la lírica musical.'
@@ -3339,7 +3339,7 @@ const htmlContent = `<!DOCTYPE html>
           dx = (dx / dist) * radius;
           dy = (dy / dist) * radius;
         }
-        knob.style.transform = `translate(${dx}px, ${dy}px)`;
+        knob.style.transform = \`translate(${dx}px, ${dy}px)\`;
         joystickMove.x = dx / radius;
         joystickMove.y = dy / radius;
       }
@@ -3498,7 +3498,7 @@ const htmlContent = `<!DOCTYPE html>
       if (esEl) esEl.textContent = objData.es;
       if (ipaEl) ipaEl.textContent = objData.ipa || '';
       if (catEl) catEl.textContent = objData.category || 'Hogar';
-      if (exEl) exEl.textContent = objData.example || `I see the ${objData.en.toLowerCase()} in the room.`;
+      if (exEl) exEl.textContent = objData.example || \`I see the ${objData.en.toLowerCase()} in the room.\`;
 
       if (card) card.classList.remove('hidden');
     }

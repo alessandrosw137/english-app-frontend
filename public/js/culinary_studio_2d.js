@@ -787,9 +787,19 @@
         ctx.fill();
       }
 
-      state.canvasAnimationIds.cutting = requestAnimationFrame(render);
+      if (state.isOpen && state.currentStation === 4) {
+        state.canvasAnimationIds.cutting = requestAnimationFrame(render);
+      } else {
+        state.canvasAnimationIds.cutting = null;
+      }
     }
 
+    state.startCuttingLoop = function () {
+      if (state.canvasAnimationIds.cutting) cancelAnimationFrame(state.canvasAnimationIds.cutting);
+      width = (canvas.width = canvas.clientWidth || 600);
+      height = (canvas.height = canvas.clientHeight || 350);
+      render();
+    };
     render();
 
     // Trigger slice effect
@@ -901,9 +911,19 @@
         ctx.fill();
       }
 
-      state.canvasAnimationIds.stovetop = requestAnimationFrame(render);
+      if (state.isOpen && state.currentStation === 5) {
+        state.canvasAnimationIds.stovetop = requestAnimationFrame(render);
+      } else {
+        state.canvasAnimationIds.stovetop = null;
+      }
     }
 
+    state.startStoveLoop = function () {
+      if (state.canvasAnimationIds.stovetop) cancelAnimationFrame(state.canvasAnimationIds.stovetop);
+      width = (canvas.width = canvas.clientWidth || 500);
+      height = (canvas.height = canvas.clientHeight || 280);
+      render();
+    };
     render();
   }
 
@@ -1629,12 +1649,50 @@
       initPlatingCanvas(c3);
     },
 
+    pauseLoops: function () {
+      if (state.canvasAnimationIds.cutting) {
+        cancelAnimationFrame(state.canvasAnimationIds.cutting);
+        state.canvasAnimationIds.cutting = null;
+      }
+      if (state.canvasAnimationIds.stovetop) {
+        cancelAnimationFrame(state.canvasAnimationIds.stovetop);
+        state.canvasAnimationIds.stovetop = null;
+      }
+      state.stoveHeat = 'off';
+    },
+
+    pauseLoop: function () {
+      this.pauseLoops();
+    },
+
     open: function (opts) {
+      if (typeof window !== 'undefined' && typeof window.stopAllBackgroundAudioAndLoops === 'function') {
+        window.stopAllBackgroundAudioAndLoops('culinary');
+      }
+      if (typeof window !== 'undefined' && typeof window.hideWorld3DTopBackButton === 'function') {
+        window.hideWorld3DTopBackButton();
+      }
+      if (typeof document !== 'undefined') {
+        ['view-home', 'practice-today-hero', 'coverFlowViewport', 'world3d-selection-hub', 'world3d-container', 'view-soccer-3d', 'hedbanz-3d-modal'].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) {
+            el.classList.add('hidden');
+            el.style.setProperty('display', 'none', 'important');
+          }
+        });
+      }
+      state.isOpen = true;
       this.init();
       if (this.rootEl) {
         this.rootEl.classList.remove('hidden');
+        this.rootEl.style.setProperty('position', 'fixed', 'important');
+        this.rootEl.style.setProperty('inset', '0', 'important');
+        this.rootEl.style.setProperty('width', '100vw', 'important');
+        this.rootEl.style.setProperty('height', '100dvh', 'important');
+        this.rootEl.style.setProperty('z-index', '99000', 'important');
         this.rootEl.style.setProperty('display', 'flex', 'important');
         this.rootEl.style.setProperty('visibility', 'visible', 'important');
+        this.rootEl.style.setProperty('opacity', '1', 'important');
       }
       const alt = document.getElementById('culinary-studio-root');
       if (alt && alt !== this.rootEl) {
@@ -1642,15 +1700,16 @@
         alt.style.setProperty('display', 'flex', 'important');
       }
       if (typeof document !== 'undefined') {
-        document.body.classList.add('culinary-studio-active');
+        document.body.classList.add('culinary-studio-active', 'in-immersive-portal');
       }
-      state.isOpen = true;
       this.updateHeaderStats();
       this.startNewOrder(opts && opts.recipeId);
       this.switchStation(1);
     },
 
     close: function () {
+      state.isOpen = false;
+      this.pauseLoops();
       if (this.rootEl) {
         this.rootEl.style.setProperty('display', 'none', 'important');
         this.rootEl.classList.add('hidden');
@@ -1661,9 +1720,8 @@
         alt.classList.add('hidden');
       }
       if (typeof document !== 'undefined') {
-        document.body.classList.remove('culinary-studio-active');
+        document.body.classList.remove('culinary-studio-active', 'in-immersive-portal');
       }
-      state.isOpen = false;
       if (typeof window !== 'undefined' && window.speechSynthesis) {
         try { window.speechSynthesis.cancel(); } catch (_) {}
       }
@@ -1713,12 +1771,18 @@
         }
       });
 
+      // Garantizar como máximo 1 loop RAF activo según la estación seleccionada
+      this.pauseLoops();
+
       // Special station triggers
       if (stationIndex === 2) {
         this.renderFridgeIngredients('all');
       } else if (stationIndex === 3) {
         this.renderPantryAndTools();
+      } else if (stationIndex === 4) {
+        if (typeof state.startCuttingLoop === 'function') state.startCuttingLoop();
       } else if (stationIndex === 5) {
+        if (typeof state.startStoveLoop === 'function') state.startStoveLoop();
         this.startStoveTimer();
       } else if (stationIndex === 6) {
         this.renderChefDictionary();
