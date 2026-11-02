@@ -5,709 +5,1780 @@
 window.MASTER_MODULES_DATA = {
   "phrasal_verbs": {
     title: "PHRASAL VERBS / VERBOS COMPUESTOS",
-    level: "A1-B1",
+    level: "A1-B2",
     category: "Phrasal Verb",
     badge: "Phrasal Verb",
-    total: 100,
+    total: 253,
     items: [
       {
             "term": "Abide by",
             "pron": "/əˈbaɪd baɪ/",
-            "meaning": "Acatar o respetar una ley, regla o decisión",
-            "example": "All international researchers must abide by ethical guidelines.",
+            "meaning": "Acatar las reglas al pie de la letra o cumplir con lo acordado",
+            "example": "Tienes que abide by el reglamento del taller si no quieres broncas.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Account for",
             "pron": "/əˈkaʊnt fɔːr/",
-            "meaning": "Explicar o justificar la causa de algo / representar un porcentaje",
-            "example": "Renewable energy accounts for forty percent of total electricity generation.",
+            "meaning": "Dar cuenta de algo, justificar un gasto o explicar qué pasó",
+            "example": "No me cuadra el dinero, vas a tener que account for cada peso.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Act out",
             "pron": "/ækt aʊt/",
-            "meaning": "Expresar emociones mediante conductas impulsivas o escenificar",
-            "example": "Children under chronic stress frequently act out their anxieties in class.",
+            "meaning": "Hacer un berrinche o portarse mal por frustración",
+            "example": "El chamaco empezó a act out porque le quitaron el celular.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Act up",
             "pron": "/ækt ʌp/",
-            "meaning": "Funcionar mal un aparato o portarse mal",
-            "example": "My computer began to act up right during the final submission.",
+            "meaning": "Dar lata o fallar una máquina / ponerse rebelde",
+            "example": "Mi troca empezó a act up en plena subida.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Add up",
             "pron": "/æd ʌp/",
-            "meaning": "Tener sentido o concordar una explicación / sumar",
-            "example": "His conflicting statements simply did not add up during the inquiry.",
+            "meaning": "Tener sentido o cuadrar una historia",
+            "example": "Lo que me cuenta Juan no me add up para nada.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Allow for",
             "pron": "/əˈlaʊ fɔːr/",
-            "meaning": "Tomar en cuenta o considerar un factor al planificar",
-            "example": "Project timelines must allow for unexpected supply chain delays.",
+            "meaning": "Tomar en cuenta o prever un imprevisto / tiempo extra",
+            "example": "Hay que allow for el tráfico de periférico en hora pico.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Answer back",
             "pron": "/ˈæn.sɚ bæk/",
-            "meaning": "Replicar o contestar de manera insolente",
-            "example": "Junior recruits are trained never to answer back during inspections.",
+            "meaning": "Contestarle feo a alguien o ser respondón",
+            "example": "No le vayas a answer back a tu jefa porque te va peor.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Ask after",
             "pron": "/æsk ˈæf.tɚ/",
-            "meaning": "Preguntar por la salud o estado de alguien",
-            "example": "The dean specifically asked after you during the academic council.",
+            "meaning": "Preguntar por la salud o cómo le va a alguien",
+            "example": "Tu tía vino ayer y se puso a ask after ti.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Ask out",
-            "pron": "/ɑːsk aʊt/",
-            "meaning": "Invitar a salir a alguien en una cita romántica",
-            "example": "He finally gathered the courage to ask her out for coffee.",
+            "pron": "/æsk aʊt/",
+            "meaning": "Invitar a salir a alguien en plan de ligue",
+            "example": "Júntate valor y anímate a ask her out al cine.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Back down",
             "pron": "/bæk daʊn/",
-            "meaning": "Ceder o retirarse de una postura o discusión",
-            "example": "Neither diplomat was willing to back down on territorial claims.",
-            "category": "Phrasal Verb"
-      },
-      {
-            "term": "Back off",
-            "pron": "/bæk ɔːf/",
-            "meaning": "Dar un paso atrás o dejar de presionar a alguien",
-            "example": "Critics backed off when the company released audited quarterly figures.",
+            "meaning": "Echarse para atrás o rajarse en una discusión",
+            "example": "Cuando vio la bronca que se armaba, prefirió back down.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Back out",
             "pron": "/bæk aʊt/",
-            "meaning": "Echarse para atrás en un compromiso acordado",
-            "example": "They signed the agreement and cannot back out now without penalties.",
+            "meaning": "Rajarse a la mera hora de un trato o compromiso",
+            "example": "Ya habíamos quedado en hacer el negocio, no te vayas a back out.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Back up",
             "pron": "/bæk ʌp/",
-            "meaning": "Respaldar datos o apoyar con evidencia o testimonio",
-            "example": "Always back up your raw survey datasets prior to computational analysis.",
+            "meaning": "Hacer un respaldo de datos o tirar paro (apoyar a un compa)",
+            "example": "Haz un back up de tu tesis y yo te back up si te preguntan.",
             "category": "Phrasal Verb"
       },
       {
-            "term": "Bank on",
-            "pron": "/bæŋk ɑːn/",
-            "meaning": "Confiar plenamente en algo o darlo por seguro",
-            "example": "Do not bank on rapid approval before official patent review finishes.",
+            "term": "Bail out",
+            "pron": "/beɪl aʊt/",
+            "meaning": "Sacar a alguien de un apuro económico o de la cárcel",
+            "example": "Mi hermano me tuvo que bail out porque me quedé sin un quinto.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Bargain for",
             "pron": "/ˈbɑːr.ɡɪn fɔːr/",
-            "meaning": "Esperar o estar preparado para algo (usualmente negativo)",
-            "example": "The harsh monsoon brought more flooding than meteorologists had bargained for.",
-            "category": "Phrasal Verb"
-      },
-      {
-            "term": "Bear out",
-            "pron": "/ber aʊt/",
-            "meaning": "Confirmar o respaldar la veracidad de una hipótesis",
-            "example": "Empirical field findings bear out the theory established five years ago.",
-            "category": "Phrasal Verb"
-      },
-      {
-            "term": "Bear with",
-            "pron": "/ber wɪð/",
-            "meaning": "Tener paciencia con alguien mientras resuelve algo",
-            "example": "Please bear with us while technical support updates server security.",
+            "meaning": "Esperarse algo imprevisto (más de lo que pedías)",
+            "example": "Esta chamba resultó ser más difícil de lo que I bargained for.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Beat up",
             "pron": "/biːt ʌp/",
-            "meaning": "Golpear severamente / desgastar",
-            "example": "Years of rough gravel roads had severely beaten up the pickup truck suspension.",
+            "meaning": "Ponerle una golpiza a alguien o estar madreado por el uso",
+            "example": "Ese carro viejo ya está bien beat up pero todavía jala.",
             "category": "Phrasal Verb"
       },
       {
-            "term": "Blow out",
-            "pron": "/bloʊ aʊt/",
-            "meaning": "Apagar soplando / reventar un neumático o fusible",
-            "example": "A sudden electric surge blew out the laboratory power transformer.",
+            "term": "Blow away",
+            "pron": "/bloʊ əˈweɪ/",
+            "meaning": "Dejar con la boca abierta o fascinar por completo",
+            "example": "Ese concierto de rock me blow away por completo.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Blow up",
             "pron": "/bloʊ ʌp/",
-            "meaning": "Explotar de ira o estallar / inflar / magnificar",
-            "example": "The supervisor blew up when the project deadline was missed.",
+            "meaning": "Explotar de coraje / estallar o volverse viral de golpe",
+            "example": "El profe va a blow up si ve que nadie hizo la tarea.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Boil down to",
             "pron": "/bɔɪl daʊn tuː/",
-            "meaning": "Reducirse esencialmente a un factor clave",
-            "example": "The entire diplomatic impasse boils down to mutual security guarantees.",
-            "category": "Phrasal Verb"
-      },
-      {
-            "term": "Bottle up",
-            "pron": "/ˈbɑː.t̬əl ʌp/",
-            "meaning": "Reprimir emociones o contener sentimientos",
-            "example": "Bottling up frustration for years can provoke acute physical distress.",
-            "category": "Phrasal Verb"
-      },
-      {
-            "term": "Branch out",
-            "pron": "/bræntʃ aʊt/",
-            "meaning": "Diversificarse hacia nuevas áreas de actividad",
-            "example": "The biotechnology firm decided to branch out into agricultural genomics.",
+            "meaning": "Reducirse todo al meollo del asunto",
+            "example": "Todo este rollo se boil down to que falta lana.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Break down",
             "pron": "/breɪk daʊn/",
-            "meaning": "Descomponerse una máquina / colapsar emocionalmente / desglosar",
-            "example": "The intercity bus broke down on the mountain pass.",
+            "meaning": "Descomponerse un auto o máquina / quebrarse a llorar",
+            "example": "El carro se me break down a medio camino.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Break in",
             "pron": "/breɪk ɪn/",
-            "meaning": "Entrar a la fuerza / amoldar calzado / interrumpir",
-            "example": "Burglars attempted to break in while the tenants were at work.",
-            "category": "Phrasal Verb"
-      },
-      {
-            "term": "Break off",
-            "pron": "/breɪk ɔːf/",
-            "meaning": "Romper relaciones o cancelar un compromiso abruptamente",
-            "example": "The two allied countries broke off bilateral trade talks yesterday.",
+            "meaning": "Meterse a la fuerza a robar o amoldar unos zapatos nuevos",
+            "example": "Tengo que break in estas botas de trabajo para que no me saquen ampollas.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Break out",
             "pron": "/breɪk aʊt/",
-            "meaning": "Estallar un conflicto o epidemia / fugarse",
-            "example": "A devastating fire broke out in the timber warehouse before dawn.",
-            "category": "Phrasal Verb"
-      },
-      {
-            "term": "Break through",
-            "pron": "/breɪk θruː/",
-            "meaning": "Abrirse paso a través de un obstáculo / lograr un avance",
-            "example": "Scientists finally broke through the chemical barrier after years of trial.",
+            "meaning": "Fugarse o brotar de repente una erupción en la piel",
+            "example": "Me comí unos mariscos y me break out toda la espalda.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Break up",
             "pron": "/breɪk ʌp/",
-            "meaning": "Terminar una relación sentimental / disolver",
-            "example": "The antitrust regulator moved to break up the telecommunications monopoly.",
+            "meaning": "Cortar con la pareja o disolverse una reunión",
+            "example": "Carlos y su novia acaban de break up después de tres años.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Breathe down someone's neck",
+            "pron": "/briːð daʊn ˈsʌm.wʌnz nek/",
+            "meaning": "Estar respirándole en la nuca a alguien / vigilarlo obsesivamente",
+            "example": "El jefe se la pasa breathing down my neck todo el turno.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Bring about",
             "pron": "/brɪŋ əˈbaʊt/",
-            "meaning": "Provocar u originar un cambio o resultado",
-            "example": "Strict carbon taxes will bring about sustainable industrial modernization.",
-            "category": "Phrasal Verb"
-      },
-      {
-            "term": "Bring forward",
-            "pron": "/brɪŋ ˈfɔːr.wɚd/",
-            "meaning": "Adelantar una fecha o reunión / proponer una moción",
-            "example": "The committee agreed to bring forward the general shareholders meeting.",
-            "category": "Phrasal Verb"
-      },
-      {
-            "term": "Bring in",
-            "pron": "/brɪŋ ɪn/",
-            "meaning": "Generar ingresos o incorporar a un especialista",
-            "example": "The tourism campaign helped bring in millions of dollars in revenue.",
-            "category": "Phrasal Verb"
-      },
-      {
-            "term": "Bring off",
-            "pron": "/brɪŋ ɔːf/",
-            "meaning": "Lograr con éxito algo sumamente difícil",
-            "example": "Against overwhelming odds, the rescue team brought off the operation.",
-            "category": "Phrasal Verb"
-      },
-      {
-            "term": "Bring on",
-            "pron": "/brɪŋ ɑːn/",
-            "meaning": "Provocar o desencadenar una enfermedad o síntoma",
-            "example": "Excessive stress often brings on acute migraine episodes.",
-            "category": "Phrasal Verb"
-      },
-      {
-            "term": "Bring out",
-            "pron": "/brɪŋ aʊt/",
-            "meaning": "Lanzar un producto al mercado / resaltar una cualidad",
-            "example": "The publisher plans to bring out a revised edition next spring.",
+            "meaning": "Provocar o traer como consecuencia un cambio",
+            "example": "Las nuevas tecnologías van a bring about una revolución total.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Bring up",
             "pron": "/brɪŋ ʌp/",
-            "meaning": "Mencionar un tema en una conversación / criar a un hijo",
-            "example": "She brought up the subject of funding during the symposium.",
-            "category": "Phrasal Verb"
-      },
-      {
-            "term": "Brush off",
-            "pron": "/brʌʃ ɔːf/",
-            "meaning": "Desestimar o ignorar a alguien o una sugerencia",
-            "example": "The spokesperson brushed off allegations of executive misconduct.",
+            "meaning": "Sacar un tema a la plática o criar a los hijos",
+            "example": "Ni se te ocurra bring up ese tema delicado en la comida familiar.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Brush up on",
             "pron": "/brʌʃ ʌp ɑːn/",
-            "meaning": "Repasar o refrescar conocimientos olvidados",
-            "example": "You should brush up on statistical modeling before taking the exam.",
+            "meaning": "Darle una repasada a algo que ya tenías olvidado",
+            "example": "Tengo que brush up on mi inglés conversacional antes de la entrevista.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Bump into",
             "pron": "/bʌmp ˈɪn.tuː/",
-            "meaning": "Toparse de casualidad con alguien",
-            "example": "I bumped into my former professor at the academic bookstore.",
+            "meaning": "Toparse a alguien de pura casualidad en la calle",
+            "example": "Ayer me bump into mi compadre en el tianguis.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Burn out",
-            "pron": "/bɜːrn aʊt/",
-            "meaning": "Agotarse física o mentalmente por exceso de trabajo",
-            "example": "Resident physicians risk burning out due to consecutive eighty-hour shifts.",
-            "category": "Phrasal Verb"
-      },
-      {
-            "term": "Butt in",
-            "pron": "/bʌt ɪn/",
-            "meaning": "Interrumpir indiscretamente una conversación ajena",
-            "example": "Please do not butt in while the witnesses are providing sworn testimony.",
-            "category": "Phrasal Verb"
-      },
-      {
-            "term": "Buy out",
-            "pron": "/baɪ aʊt/",
-            "meaning": "Comprar la totalidad de las acciones de un socio",
-            "example": "The senior partner offered to buy out his co-founder's equity.",
-            "category": "Phrasal Verb"
-      },
-      {
-            "term": "Call back",
-            "pron": "/kɔːl bæk/",
-            "meaning": "Devolver una llamada telefónica",
-            "example": "I am in a client meeting right now; I will call back in thirty minutes.",
-            "category": "Phrasal Verb"
-      },
-      {
-            "term": "Call for",
-            "pron": "/kɔːl fɔːr/",
-            "meaning": "Exigir o requerir una acción determinada",
-            "example": "The environmental crisis calls for prompt international intervention.",
+            "pron": "/bɝːn aʊt/",
+            "meaning": "Quedar fundido o agotado por exceso de chamba",
+            "example": "Si sigues trabajando doce horas diarias te vas a burn out.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Call off",
-            "pron": "/kɔːl ɔːf/",
-            "meaning": "Cancelar definitivamente un evento programado",
-            "example": "Organizers called off the outdoor concert due to severe hail.",
+            "pron": "/kɑːl ɔːf/",
+            "meaning": "Cancelar un evento o compromiso",
+            "example": "Tuvieron que call off la cascarita de fútbol por el tormentón.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Call on",
-            "pron": "/kɔːl ɑːn/",
-            "meaning": "Pedir a alguien que intervenga o hacer un llamamiento formal",
-            "example": "The speaker called on international leaders to respect peace treaties.",
-            "category": "Phrasal Verb"
-      },
-      {
-            "term": "Call out",
-            "pron": "/kɔːl aʊt/",
-            "meaning": "Denunciar o confrontar una mala conducta públicamente",
-            "example": "Investigative reporters called out the administration for concealing pollution data.",
+            "pron": "/kɑːl ɑːn/",
+            "meaning": "Pasar a alguien a hablar o hacerle una visita corta",
+            "example": "El maestro me called on para que explicara el ejercicio.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Call up",
-            "pron": "/kɔːl ʌp/",
-            "meaning": "Llamar por teléfono / convocar al servicio militar",
-            "example": "The defense ministry called up reserve divisions during the border standoff.",
+            "pron": "/kɑːl ʌp/",
+            "meaning": "Pegarle una llamada a alguien por teléfono",
+            "example": "Te call up más al ratito para ponernos de acuerdo.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Calm down",
             "pron": "/kɑːm daʊn/",
-            "meaning": "Tranquilizarse o calmar a otra persona",
-            "example": "Take a deep breath and calm down before answering the cross-examination.",
-            "category": "Phrasal Verb"
-      },
-      {
-            "term": "Care for",
-            "pron": "/ker fɔːr/",
-            "meaning": "Cuidar a alguien / gustar de algo en tono formal",
-            "example": "Would you care for a cup of herbal tea while you wait?",
-            "category": "Phrasal Verb"
-      },
-      {
-            "term": "Carry away",
-            "pron": "/ˈker.i əˈweɪ/",
-            "meaning": "Dejarse llevar por la emoción o el entusiasmo",
-            "example": "Do not let victory carry you away; the tournament has just begun.",
-            "category": "Phrasal Verb"
-      },
-      {
-            "term": "Carry off",
-            "pron": "/ˈker.i ɔːf/",
-            "meaning": "Completar una hazaña con gran éxito / ganar un premio",
-            "example": "The young soloist carried off first prize in the violin competition.",
+            "meaning": "Bajarle dos rayitas / calmarse o relajarse",
+            "example": "Cálmate un poco y calm down antes de hablar con el cliente.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Carry on",
-            "pron": "/ˈker.i ɑːn/",
-            "meaning": "Continuar adelante a pesar de las dificultades",
-            "example": "The scientific team resolved to carry on with clinical trials.",
+            "pron": "/ˈkær.i ɑːn/",
+            "meaning": "Seguir adelante a pesar de las broncas",
+            "example": "Aunque la cosa esté difícil, hay que carry on sin rajarse.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Carry out",
-            "pron": "/ˈker.i aʊt/",
-            "meaning": "Llevar a cabo o ejecutar una tarea o investigación",
-            "example": "Researchers carried out the laboratory tests under sterile conditions.",
+            "pron": "/ˈkær.i aʊt/",
+            "meaning": "Llevar a cabo un plan o ejecutar una orden",
+            "example": "Vamos a carry out la auditoría mañana a primera hora.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Catch on",
             "pron": "/kætʃ ɑːn/",
-            "meaning": "Volverse popular una moda / comprender una idea",
-            "example": "Electric bicycles quickly caught on among urban commuters.",
+            "meaning": "Ponerse de moda o agarrarle la onda a un tema",
+            "example": "Ese corrido tardó poco en catch on en todo el norte.",
             "category": "Phrasal Verb"
       },
       {
-            "term": "Catch up on",
-            "pron": "/kætʃ ʌp ɑːn/",
-            "meaning": "Ponerse al día con lecturas o tareas atrasadas",
-            "example": "I dedicated my weekend to catching up on recent biomedical literature.",
-            "category": "Phrasal Verb"
-      },
-      {
-            "term": "Catch up with",
-            "pron": "/kætʃ ʌp wɪð/",
-            "meaning": "Alcanzar a alguien en ritmo o pasar factura las consecuencias",
-            "example": "Years of sleep deprivation will inevitably catch up with you.",
-            "category": "Phrasal Verb"
-      },
-      {
-            "term": "Cater to",
-            "pron": "/ˈkeɪ.t̬ɚ tuː/",
-            "meaning": "Satisfacer las necesidades o gustos específicos de un grupo",
-            "example": "The boutique hotel caters to executives seeking quiet workspace.",
+            "term": "Catch up",
+            "pron": "/kætʃ ʌp/",
+            "meaning": "Alcanzar a alguien en ritmo o ponerse al corriente",
+            "example": "Caminen ustedes despacio, ahorita los catch up.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Check in",
             "pron": "/tʃek ɪn/",
-            "meaning": "Registrarse al llegar a hotel o aeropuerto",
-            "example": "Passengers must check in two hours prior to international flights.",
+            "meaning": "Registrarse en el hotel o en el aeropuerto",
+            "example": "Llegando al hotel hacemos check in y nos vamos a comer.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Check out",
             "pron": "/tʃek aʊt/",
-            "meaning": "Desalojar una habitación / examinar o investigar algo",
-            "example": "Inspectors visited the plant to check out reports of hydraulic leakage.",
+            "meaning": "Echarle un ojo a algo curioso o desocupar la habitación",
+            "example": "Check out esos tenis que acaban de llegar a la tienda.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Cheer up",
             "pron": "/tʃɪr ʌp/",
-            "meaning": "Animar o alegrar a alguien desanimado",
-            "example": "We visited our teammate to cheer her up after the surgical procedure.",
+            "meaning": "Animarse o levantar el ánimo a alguien que anda agüitado",
+            "example": "¡Cheer up compa, no te agüites por cosas sin importancia!",
             "category": "Phrasal Verb"
       },
       {
             "term": "Chip in",
             "pron": "/tʃɪp ɪn/",
-            "meaning": "Aportar una cuota de dinero o colaborar en grupo",
-            "example": "All office colleagues chipped in to purchase the retirement farewell gift.",
+            "meaning": "Ponerse la del Puebla / hacer una vaquita para cooperar",
+            "example": "Vamos a chip in diez dólares cada quien para las pizzas.",
             "category": "Phrasal Verb"
       },
       {
-            "term": "Clamp down on",
-            "pron": "/klæmp daʊn ɑːn/",
-            "meaning": "Imponer medidas severas para erradicar una infracción",
-            "example": "Financial regulators clamped down on unregistered offshore securities.",
+            "term": "Clean up",
+            "pron": "/kliːn ʌp/",
+            "meaning": "Hacer la limpieza general o recoger el desmadre",
+            "example": "Ayúdame a clean up la cocina antes de que llegue visita.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Clear up",
             "pron": "/klɪr ʌp/",
-            "meaning": "Aclarar un malentendido / despejarse el clima",
-            "example": "The preliminary briefing served to clear up doubts regarding fiscal rules.",
-            "category": "Phrasal Verb"
-      },
-      {
-            "term": "Cling to",
-            "pron": "/klɪŋ tuː/",
-            "meaning": "Aferrarse a una creencia, esperanza o recuerdo",
-            "example": "Orthodox economists continued to cling to discredited forecasting models.",
+            "meaning": "Aclarar un malentendido o despejarse el cielo",
+            "example": "Tenemos que sentarnos a platicar para clear up este enredo.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Close down",
             "pron": "/kloʊz daʊn/",
-            "meaning": "Cerrar definitivamente un negocio o fábrica",
-            "example": "Rising utility bills forced several traditional bakeries to close down.",
+            "meaning": "Cerrar definitivamente un changarro o negocio",
+            "example": "Tuvieron que close down la cafetería por falta de clientes.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Come across",
-            "pron": "/kʌm əˈkrɑːs/",
-            "meaning": "Hallar un dato u objeto por azar",
-            "example": "He came across a rare first-edition manuscript in the archives.",
+            "pron": "/kʌm əˈkrɔːs/",
+            "meaning": "Toparse algo por pura suerte o dar cierta impresión",
+            "example": "Me come across unas fotos viejas en el cajón de recuerdos.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Come along",
-            "pron": "/kʌm əˈlɑːŋ/",
-            "meaning": "Progresar favorablemente / acompañar a alguien",
-            "example": "How is your master's dissertation coming along this term?",
-            "category": "Phrasal Verb"
-      },
-      {
-            "term": "Come around",
-            "pron": "/kʌm əˈraʊnd/",
-            "meaning": "Cambiar de opinión tras convencerse / recuperar el sentido",
-            "example": "After extensive debate, the dean finally came around to our proposal.",
-            "category": "Phrasal Verb"
-      },
-      {
-            "term": "Come by",
-            "pron": "/kʌm baɪ/",
-            "meaning": "Obtener algo difícil de conseguir / pasar de visita",
-            "example": "Genuine vintage lenses are extremely hard to come by nowadays.",
+            "pron": "/kʌm əˈlɔːŋ/",
+            "meaning": "Ir progresando bien o acompañar al grupo",
+            "example": "¿Cómo come along el proyecto que estabas programando?",
             "category": "Phrasal Verb"
       },
       {
             "term": "Come down with",
             "pron": "/kʌm daʊn wɪð/",
-            "meaning": "Caer enfermo de una dolencia contagiosa",
-            "example": "Several key delegates came down with influenza before the summit.",
+            "meaning": "Caer enfermo de gripe o resfriado",
+            "example": "Siento el cuerpo cortado, creo que me voy a come down with tos.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Come forward",
             "pron": "/kʌm ˈfɔːr.wɚd/",
-            "meaning": "Presentarse voluntariamente para ofrecer testimonio o ayuda",
-            "example": "Investigators appealed for reliable eyewitnesses to come forward.",
-            "category": "Phrasal Verb"
-      },
-      {
-            "term": "Come into",
-            "pron": "/kʌm ˈɪn.tuː/",
-            "meaning": "Heredar una fortuna o bienes de repente",
-            "example": "She unexpectedly came into a considerable estate from her grand-uncle.",
-            "category": "Phrasal Verb"
-      },
-      {
-            "term": "Come off",
-            "pron": "/kʌm ɔːf/",
-            "meaning": "Tener éxito un plan / desprenderse una pieza",
-            "example": "The corporate acquisition came off without noticeable friction.",
-            "category": "Phrasal Verb"
-      },
-      {
-            "term": "Come out",
-            "pron": "/kʌm aʊt/",
-            "meaning": "Publicarse una obra / revelarse un secreto",
-            "example": "His groundbreaking economic treatise will come out next November.",
-            "category": "Phrasal Verb"
-      },
-      {
-            "term": "Come round to",
-            "pron": "/kʌm raʊnd tuː/",
-            "meaning": "Aceptar gradualmente una postura o idea inicialmente rechazada",
-            "example": "Board members eventually came round to approving the merger plan.",
-            "category": "Phrasal Verb"
-      },
-      {
-            "term": "Come through",
-            "pron": "/kʌm θruː/",
-            "meaning": "Cumplir una promesa en momento crítico / sobrevivir",
-            "example": "When financing seemed impossible, our private investor came through.",
+            "meaning": "Dar la cara o presentarse como testigo voluntario",
+            "example": "Nadie quiso come forward para decir quién rompió el cristal.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Come up with",
             "pron": "/kʌm ʌp wɪð/",
-            "meaning": "Idear o inventar una solución o respuesta creativa",
-            "example": "Engineers came up with an ingenious filter that cuts emissions by half.",
+            "meaning": "Sacarse una buena idea o solución de la manga",
+            "example": "A ver si se te come up with una solución antes de la junta.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Cool down",
+            "pron": "/kuːl daʊn/",
+            "meaning": "Enfriarse un motor o calmarse los ánimos",
+            "example": "Deja que el motor cool down antes de revisar el anticongelante.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Count on",
             "pron": "/kaʊnt ɑːn/",
-            "meaning": "Contar con el apoyo seguro de alguien",
-            "example": "You can always count on our laboratory for accurate spectrometry.",
-            "category": "Phrasal Verb"
-      },
-      {
-            "term": "Crack down on",
-            "pron": "/kræk daʊn ɑːn/",
-            "meaning": "Aplicar mano dura o castigos estrictos",
-            "example": "Authorities are cracking down on intellectual property piracy.",
-            "category": "Phrasal Verb"
-      },
-      {
-            "term": "Crop up",
-            "pron": "/krɑːp ʌp/",
-            "meaning": "Surgir problemas imprevistos",
-            "example": "Several unexpected complications cropped up late in the semester.",
+            "meaning": "Contar con el apoyo incondicional de alguien",
+            "example": "Sabes que puedes count on mí para las que sean.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Cross out",
-            "pron": "/krɑːs aʊt/",
-            "meaning": "Tachar una palabra o renglón con una línea",
-            "example": "Please cross out any irrelevant fields on the registration slip.",
+            "pron": "/krɔːs aʊt/",
+            "meaning": "Tachar un renglón de la lista con una raya",
+            "example": "Ve cross out las tareas que ya vayas completando.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Cut back on",
             "pron": "/kʌt bæk ɑːn/",
-            "meaning": "Recortar gastos o consumo por necesidad",
-            "example": "Universities had to cut back on travel stipends due to state austerity.",
+            "meaning": "Bajarle al gasto o al consumo de algo por salud",
+            "example": "Tengo que cut back on los refrescos y las garnachas.",
             "category": "Phrasal Verb"
       },
       {
-            "term": "Cut down on",
-            "pron": "/kʌt daʊn ɑːn/",
-            "meaning": "Reducir conscientemente el consumo de algo",
-            "example": "Doctors advised the patient to cut down on saturated fats.",
+            "term": "Cut down",
+            "pron": "/kʌt daʊn/",
+            "meaning": "Talar un árbol o reducir porciones",
+            "example": "Tuvieron que cut down el árbol viejo porque iba a tirar los cables.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Cut off",
             "pron": "/kʌt ɔːf/",
-            "meaning": "Interrumpir un suministro o aislar a una comunidad",
-            "example": "The blizzard cut off power to ten thousand alpine households.",
+            "meaning": "Cortarle el servicio a alguien o cerrársele a un carro",
+            "example": "Un taxi me cut off bien feo en la glorieta.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Cut out",
             "pron": "/kʌt aʊt/",
-            "meaning": "Eliminar por completo de la dieta / dejar de funcionar",
-            "example": "You must cut out refined sugars if you want to stabilize insulin.",
+            "meaning": "Dejar de dar lata / recortar figuras o apagarse un motor",
+            "example": "¡Cut it out! Ya deja de estar molestando a tu hermanito.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Deal with",
             "pron": "/diːl wɪð/",
-            "meaning": "Manejar o resolver una situación difícil o interactuar",
-            "example": "Senior engineers deal with complex system architectures daily.",
+            "meaning": "Lidiar con broncas o encargarse de un cliente difícil",
+            "example": "No me gusta deal with gente que no tiene palabra.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Die down",
             "pron": "/daɪ daʊn/",
-            "meaning": "Disminuir en intensidad el viento, ruido o furor",
-            "example": "Wait until the protests die down before traveling through the capital.",
-            "category": "Phrasal Verb"
-      },
-      {
-            "term": "Die out",
-            "pron": "/daɪ aʊt/",
-            "meaning": "Extinguirse una especie o tradición para siempre",
-            "example": "Without conservation sanctuaries, rare amphibians will die out.",
+            "meaning": "Calmarse un chisme, el viento o el ruido poco a poco",
+            "example": "Vamos a esperar a que la tormenta die down para salir.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Do away with",
             "pron": "/duː əˈweɪ wɪð/",
-            "meaning": "Abolir, derogar o eliminar un sistema o práctica",
-            "example": "The ministry decided to do away with obsolete paper filing methods.",
+            "meaning": "Eliminar de raíz un trámite inútil o regla obsoleta",
+            "example": "Deberían do away with tanto papeleo burocrático.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Do over",
+            "pron": "/duː ˈoʊ.vɚ/",
+            "meaning": "Hacer de nuevo algo que quedó mal hecho",
+            "example": "El profe me hizo do over todo el ensayo.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Do up",
             "pron": "/duː ʌp/",
-            "meaning": "Abotonar o abrochar / restaurar y remodelar un edificio",
-            "example": "The architecture studio plans to do up the nineteenth-century villa.",
+            "meaning": "Abrocharse el cierre / remodelar una casa vieja",
+            "example": "Vamos a do up la fachada con pintura fresca.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Do without",
             "pron": "/duː wɪˈðaʊt/",
-            "meaning": "Prescindir de algo que no es estrictamente indispensable",
-            "example": "During field expeditions, researchers must do without luxury amenities.",
+            "meaning": "Aguantarse o arreglárselas sin algo",
+            "example": "Se fue la luz, así que nos va a tocar do without tele esta noche.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Drag on",
+            "pron": "/dræɡ ɑːn/",
+            "meaning": "Hacerse eterno o alargarse de más una junta tediosa",
+            "example": "La reunión de planeación se drag on por casi cuatro horas.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Draw back",
             "pron": "/drɔː bæk/",
-            "meaning": "Retroceder por miedo o sorpresa / retirarse",
-            "example": "Troops drew back from the demarcation zone following ceasefire talks.",
+            "meaning": "Retroceder asustado o retractarse",
+            "example": "Dio un paso atrás y drew back al ver la víbora de cascabel.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Draw up",
             "pron": "/drɔː ʌp/",
-            "meaning": "Redactar formalmente un contrato o borrador legal",
-            "example": "Attorneys met to draw up the formal terms of the joint venture.",
+            "meaning": "Redactar un contrato formal o detenerse un carro",
+            "example": "El abogado va a draw up el contrato de arrendamiento.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Dress up",
             "pron": "/dres ʌp/",
-            "meaning": "Vestirse de gala o disfrazarse",
-            "example": "All attendees dressed up in formal black tie for the awards gala.",
+            "meaning": "Vestirse de gala / ponerse catrín o disfrazarse",
+            "example": "Nos tenemos que dress up para la boda de mi prima.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Drop by",
             "pron": "/drɑːp baɪ/",
-            "meaning": "Pasar a visitar brevemente sin cita previa",
-            "example": "Feel free to drop by the faculty office if lingering questions arise.",
+            "meaning": "Caerle de imprevisto a la casa de alguien a saludar",
+            "example": "Pásale a la casa y drop by cuando andes por mi rumbo.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Drop in",
             "pron": "/drɑːp ɪn/",
-            "meaning": "Hacer una visita informal y rápida",
-            "example": "I decided to drop in on my colleague while attending the symposium.",
+            "meaning": "Hacer una visita rápida sin avisar con tiempo",
+            "example": "Iba pasando por tu cuadra y decidí drop in.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Drop off",
             "pron": "/drɑːp ɔːf/",
-            "meaning": "Dejar a alguien en un lugar / quedarse dormido / decaer",
-            "example": "Could you drop me off at the main terminal entrance?",
+            "meaning": "Ir a dejar a alguien en el carro o quedarse jetón",
+            "example": "Te puedo drop off en la estación del metro de paso.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Drop out",
             "pron": "/drɑːp aʊt/",
-            "meaning": "Abandonar los estudios o una competición antes de concluir",
-            "example": "Financial difficulties compelled him to drop out of university.",
+            "meaning": "Darse de baja o salirse de la escuela/carrera",
+            "example": "Decidió drop out de la facultad para abrir su negocio.",
             "category": "Phrasal Verb"
       },
       {
             "term": "Ease off",
             "pron": "/iːz ɔːf/",
-            "meaning": "Aminorar la intensidad o disminuir la presión",
-            "example": "The torrential rainfall finally eased off around dawn.",
+            "meaning": "Aflojar la presión o calmarse el aguacero",
+            "example": "Bájale tantito y ease off al acelerador en las curvas.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Eat out",
+            "pron": "/iːt aʊt/",
+            "meaning": "Salir a comer fuera a unos tacos o restaurante",
+            "example": "Hoy no cocines nada, vámonos a eat out al centro.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "End up",
+            "pron": "/end ʌp/",
+            "meaning": "Terminar yendo a parar a un lugar insospechado",
+            "example": "Salimos por un café y ended up cenando birria.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Even out",
+            "pron": "/ˈiː.vən aʊt/",
+            "meaning": "Emparejarse las cosas o equilibrarse las cargas",
+            "example": "Con las horas extras se van a even out las cuentas del mes.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Face up to",
+            "pron": "/feɪs ʌp tuː/",
+            "meaning": "Afrontar la realidad y dar la cara a los problemas",
+            "example": "Tienes que face up to tus errores y no echarle la culpa a otros.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Fall apart",
+            "pron": "/fɑːl əˈpɑːrt/",
+            "meaning": "Caerse a pedazos un mueble viejo o derrumbarse emocionalmente",
+            "example": "Ese sillón viejo ya se está cayendo a fall apart.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Fall back on",
+            "pron": "/fɑːl bæk ɑːn/",
+            "meaning": "Tener un plan B o ahorros bajo la manga para emergencias",
+            "example": "Siempre es bueno tener un guardadito para fall back on.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Fall behind",
+            "pron": "/fɑːl bɪˈhaɪnd/",
+            "meaning": "Quedarse rezagado o atrasarse con las mensualidades",
+            "example": "No te vayas a fall behind con las cuotas del carro.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Fall for",
+            "pron": "/fɑːl fɔːr/",
+            "meaning": "Tragarse una mentira / caer redondito o enamorarse",
+            "example": "No puedo creer que fall for esa broma tan inocente.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Fall out",
+            "pron": "/fɑːl aʊt/",
+            "meaning": "Agarrar pleito con un amigo y dejar de hablarse",
+            "example": "Se pelearon por dinero y fell out para siempre.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Figure out",
+            "pron": "/ˈfɪɡ.jɚ aʊt/",
+            "meaning": "Descifrar el misterio o hallarle la maña a un problema",
+            "example": "Dame unos minutos para figure out cómo prender esta máquina.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Fill in",
+            "pron": "/fɪl ɪn/",
+            "meaning": "Llenar los espacios en blanco o cubrir el turno de un compañero",
+            "example": "Carlos me pidió que lo fill in hoy en el turno de la tarde.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Fill out",
+            "pron": "/fɪl aʊt/",
+            "meaning": "Rellenar una solicitud oficial con tus datos",
+            "example": "Por favor fill out esta forma para tramitar la membresía.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Find out",
+            "pron": "/faɪnd aʊt/",
+            "meaning": "Enterarse de un chisme o descubrir la verdad",
+            "example": "Al final nos venimos a find out de todo lo que pasó.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Fit in",
+            "pron": "/fɪt ɪn/",
+            "meaning": "Encajar en la bolita o adaptarse al ambiente",
+            "example": "El muchacho nuevo tardó poquito en fit in con el equipo.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Fix up",
+            "pron": "/fɪks ʌp/",
+            "meaning": "Arreglar un desperfecto o acicalarse para salir",
+            "example": "Le dieron una buena fix up a la camioneta y quedó al cien.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Follow through",
+            "pron": "/ˈfɑː.loʊ θruː/",
+            "meaning": "Cumplir con lo pactado hasta el final sin rajarse",
+            "example": "Si prometiste entregar el reporte, tienes que follow through.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Follow up",
+            "pron": "/ˈfɑː.loʊ ʌp/",
+            "meaning": "Darle seguimiento a un cliente o a un trámite",
+            "example": "Voy a mandar un correo para follow up con el proveedor.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Freak out",
+            "pron": "/friːk aʊt/",
+            "meaning": "Paniquearse o ponerse histérico por un susto",
+            "example": "Mi mamá va a freak out si ve el raspón en la puerta.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Get across",
+            "pron": "/ɡet əˈkrɔːs/",
+            "meaning": "Hacerse entender claramente / transmitir una idea",
+            "example": "El ponente logró get across su punto con mucha claridad.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Get along",
+            "pron": "/ɡet əˈlɔːŋ/",
+            "meaning": "Llevarse a todo dar con los compas o la familia",
+            "example": "Me da gusto ver que tú y tu cuñado se get along tan bien.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Get around",
+            "pron": "/ɡet əˈraʊnd/",
+            "meaning": "Moverse por la ciudad o sacarle la vuelta a una regla",
+            "example": "En esta ciudad es facilísimo get around usando el metro.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Get away with",
+            "pron": "/ɡet əˈweɪ wɪð/",
+            "meaning": "Salirse con la suya sin que lo cachen o castiguen",
+            "example": "Pensó que se iba a get away with la trampa pero lo torcieron.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Get by",
+            "pron": "/ɡet baɪ/",
+            "meaning": "Irla pasando o sobrevivir apenas con los gastos",
+            "example": "Con este sueldo apenas alcanzamos para get by la quincena.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Get over",
+            "pron": "/ɡet ˈoʊ.vɚ/",
+            "meaning": "Superar a un ex o aliviarse de una enfermedad",
+            "example": "Ya supéralo y get over esa ruptura amorosa.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Get rid of",
+            "pron": "/ɡet rɪd əv/",
+            "meaning": "Deshacerse de cacharros viejos que ya estorban",
+            "example": "Tenemos que get rid of todas esas cajas arrumbadas.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Get through",
+            "pron": "/ɡet θruː/",
+            "meaning": "Superar una racha difícil o comunicarse por teléfono",
+            "example": "Estuvo cañón el examen pero logré get through sin reprobar.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Get together",
+            "pron": "/ɡet təˈɡeð.ɚ/",
+            "meaning": "Juntarse la banda a convivir o armar una carnita asada",
+            "example": "Hay que get together este fin de semana a ver el partido.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Give away",
+            "pron": "/ɡɪv əˈweɪ/",
+            "meaning": "Regalar lo que ya no usas o delatar un secreto",
+            "example": "Su mirada nerviosa lo give away de inmediato.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Give in",
+            "pron": "/ɡɪv ɪn/",
+            "meaning": "Dar su brazo a torcer o ceder ante la insistencia",
+            "example": "Los papás terminaron por give in y le compraron el perrito.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Give out",
+            "pron": "/ɡɪv aʊt/",
+            "meaning": "Repartir volantes o agotarse una máquina / las fuerzas",
+            "example": "Se pusieron en la esquina a give out muestras gratis.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Give up",
+            "pron": "/ɡɪv ʌp/",
+            "meaning": "Tirar la toalla o darse por vencido",
+            "example": "¡Nunca te vayas a give up, échale todas las ganas!",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Go ahead",
+            "pron": "/ɡoʊ əˈhed/",
+            "meaning": "¡Dale con confianza! / Seguir adelante con el plan",
+            "example": "Si ya tienes todo listo, go ahead y lánzate al ruedo.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Go back on",
+            "pron": "/ɡoʊ bæk ɑːn/",
+            "meaning": "Romper su promesa o no sostener la palabra dada",
+            "example": "Jamás vayas a go back on una promesa hecha a un amigo.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Go for",
+            "pron": "/ɡoʊ fɔːr/",
+            "meaning": "Ir con todo por una meta o animarse",
+            "example": "Si de verdad quieres esa beca, ¡go for it sin dudar!",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Go off",
+            "pron": "/ɡoʊ ɔːf/",
+            "meaning": "Sonar una alarma / echarse a perder la comida",
+            "example": "La leche se go off porque la dejaron afuera del refri.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Go on",
+            "pron": "/ɡoʊ ɑːn/",
+            "meaning": "Continuar hablando o suceder algo en el momento",
+            "example": "Por favor go on con la historia, me dejaste picado.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Go over",
+            "pron": "/ɡoʊ ˈoʊ.vɚ/",
+            "meaning": "Darle una revisada minuciosa a las cuentas o papeles",
+            "example": "Vamos a go over los números para asegurarnos que cuadren.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Grow apart",
+            "pron": "/ɡroʊ əˈpɑːrt/",
+            "meaning": "Distanciarse los amigos con el paso de los años",
+            "example": "Éramos uña y mugre de niños pero fuimos growing apart.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Grow up",
+            "pron": "/ɡroʊ ʌp/",
+            "meaning": "Crecer de edad o madurar y dejar de portarse infantil",
+            "example": "Ya tienes treinta años compa, es hora de grow up.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Hand down",
+            "pron": "/hænd daʊn/",
+            "meaning": "Heredar ropa o joyas de generación en generación",
+            "example": "Este reloj de oro fue handed down por mi bisabuelo.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Hand in",
+            "pron": "/hænd ɪn/",
+            "meaning": "Entregar la tarea o un reporte a la autoridad",
+            "example": "Asegúrate de hand in tu reporte antes del mediodía.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Hand out",
+            "pron": "/hænd aʊt/",
+            "meaning": "Repartir volantes, exámenes o víveres mano a mano",
+            "example": "El profe se puso a hand out las hojas de examen.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Hand over",
+            "pron": "/hænd ˈoʊ.vɚ/",
+            "meaning": "Soltar o entregar un objeto a la fuerza / ceder el mando",
+            "example": "El asaltante le gritó que handed over la cartera.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Hang out",
+            "pron": "/hæŋ aʊt/",
+            "meaning": "Pasar el rato con los amigos sin prisa / cotorrear",
+            "example": "Nos gusta hang out en la plaza los domingos por la tarde.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Hang up",
+            "pron": "/hæŋ ʌp/",
+            "meaning": "Colgar la llamada telefónica",
+            "example": "Se enojó tanto en la discusión que me hung up en la cara.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Hold back",
+            "pron": "/hoʊld bæk/",
+            "meaning": "Contenerse las lágrimas o guardarse una opinión",
+            "example": "Quiso hold back el llanto pero la emoción le ganó.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Hold off",
+            "pron": "/hoʊld ɔːf/",
+            "meaning": "Posponer una decisión o aguantarse la lluvia",
+            "example": "Vamos a hold off el lanzamiento hasta que todo esté probado.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Hold on",
+            "pron": "/hoʊld ɑːn/",
+            "meaning": "¡Espérate tantito! / Aguantar la línea en el teléfono",
+            "example": "Hold on un segundo, deja busco una pluma para anotar.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Hold out",
+            "pron": "/hoʊld aʊt/",
+            "meaning": "Resistir en una situación dura hasta que llegue auxilio",
+            "example": "Lograron hold out en el cerro hasta que llegó el rescate.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Hold up",
+            "pron": "/hoʊld ʌp/",
+            "meaning": "Retrasar por el tráfico o asaltar a mano armada",
+            "example": "El tráfico en la autopista nos held up más de dos horas.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Hook up",
+            "pron": "/hʊk ʌp/",
+            "meaning": "Conectar cables o darse unos besos con alguien",
+            "example": "Ayúdame a hook up las bocinas a la pantalla.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Iron out",
+            "pron": "/ˈaɪ.ɚn aʊt/",
+            "meaning": "Planchar las asperezas / resolver detallitos de un trato",
+            "example": "Nos falta iron out un par de detallitos del contrato.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Join in",
+            "pron": "/dʒɔɪn ɪn/",
+            "meaning": "Sumarse al relajo o integrarse a la actividad",
+            "example": "¡Vente a la mesa y join in con nosotros a jugar!",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Jot down",
+            "pron": "/dʒɑːt daʊn/",
+            "meaning": "Apuntar de volada un dato en una servilleta o libreta",
+            "example": "Déjame jot down tu número celular para que no se me olvide.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Jump at",
+            "pron": "/dʒʌmp æt/",
+            "meaning": "Abalanzarse sobre una oportunidad sin pensarlo dos veces",
+            "example": "Yo en tu lugar jump at esa oferta de chamba de volada.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Keep away",
+            "pron": "/kiːp əˈweɪ/",
+            "meaning": "Mantenerse alejado del peligro o de las malas mañas",
+            "example": "Keep away del enchufe descompuesto para que no te dé toques.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Keep on",
+            "pron": "/kiːp ɑːn/",
+            "meaning": "Seguir terco dale y dale con lo mismo",
+            "example": "A pesar del cansancio decidió keep on corriendo hasta la meta.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Keep up with",
+            "pron": "/kiːp ʌp wɪð/",
+            "meaning": "Seguirle el paso o el ritmo a alguien más rápido",
+            "example": "Es bien difícil keep up with las nuevas tendencias de redes.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Kick back",
+            "pron": "/kɪk bæk/",
+            "meaning": "Tirarse a la flojera a descansar con una chela",
+            "example": "El domingo sólo quiero kick back en el sillón y descansar.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Kick off",
+            "pron": "/kɪk ɔːf/",
+            "meaning": "Arrancar un evento o dar la patada inicial del partido",
+            "example": "El festival de música va a kick off a las cuatro de la tarde.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Knock down",
+            "pron": "/nɑːk daʊn/",
+            "meaning": "Demoler una barda o noquear a alguien",
+            "example": "Van a knock down esa construcción vieja para hacer un parque.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Knock out",
+            "pron": "/nɑːk aʊt/",
+            "meaning": "Noquear al rival en el ring o quedar noqueado del sueño",
+            "example": "Esa pastilla para la gripa me knocked out toda la noche.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Lay off",
+            "pron": "/leɪ ɔːf/",
+            "meaning": "Despedir personal por recorte o dejar de estar molestando",
+            "example": "La empresa tuvo que lay off a veinte empleados por la crisis.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Lead to",
+            "pron": "/liːd tuː/",
+            "meaning": "Desembocar en consecuencias graves",
+            "example": "Manejar desvelado puede lead to un accidente grave.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Leak out",
+            "pron": "/liːk aʊt/",
+            "meaning": "Filtrarse un secreto a la prensa o a las redes",
+            "example": "La noticia del nuevo celular se leaked out antes del evento.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Leave behind",
+            "pron": "/liːv bɪˈhaɪnd/",
+            "meaning": "Olvidar algo en un lugar o dejar atrás el pasado",
+            "example": "Se me olvidó la cartera y la left behind en la cafetería.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Leave out",
+            "pron": "/liːv aʊt/",
+            "meaning": "Dejar fuera a alguien de la lista o excluirlo",
+            "example": "No me vayan a leave out de la quiniela de fútbol.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Let down",
+            "pron": "/let daʊn/",
+            "meaning": "Quedarle mal a un amigo o decepcionarlo feo",
+            "example": "Contaba conmigo y no le quise let down.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Line up",
+            "pron": "/laɪn ʌp/",
+            "meaning": "Hacer fila india o cuadrar una serie de citas",
+            "example": "Tuvimos que line up desde las seis de la mañana por boletos.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Look after",
+            "pron": "/lʊk ˈæf.tɚ/",
+            "meaning": "Cuidar a los chamacos o echarle un ojo a la casa",
+            "example": "¿Me puedes look after al perro mientras salgo al mandado?",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Look down on",
+            "pron": "/lʊk daʊn ɑːn/",
+            "meaning": "Mirar a alguien por encima del hombro o discriminar",
+            "example": "Nadie tiene derecho a look down on ti por tu origen.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Look for",
+            "pron": "/lʊk fɔːr/",
+            "meaning": "Andar buscando las llaves o un objeto perdido",
+            "example": "Llevo media hora looking for las llaves de la casa.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Look forward to",
+            "pron": "/lʊk ˈfɔːr.wɚd tuː/",
+            "meaning": "Esperar con muchas ansias un viaje o evento emocionante",
+            "example": "Estoy looking forward to las vacaciones en la playa.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Look into",
+            "pron": "/lʊk ˈɪn.tuː/",
+            "meaning": "Investigar a fondo un caso o ponerse a averiguar",
+            "example": "La policía va a look into las causas del corto circuito.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Look out",
+            "pron": "/lʊk aʊt/",
+            "meaning": "¡Aguas! / ¡Ponte buzo con el peligro!",
+            "example": "¡Look out! Viene una moto en sentido contrario.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Look up to",
+            "pron": "/lʊk ʌp tuː/",
+            "meaning": "Admirar y tener como ejemplo a seguir a alguien",
+            "example": "Los niños siempre look up to sus hermanos mayores.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Make out",
+            "pron": "/meɪk aʊt/",
+            "meaning": "Distinguir algo borroso a lo lejos o darse un faje",
+            "example": "Con la neblina no alcanzaba a make out el letrero de la salida.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Make up",
+            "pron": "/meɪk ʌp/",
+            "meaning": "Inventar una mentira piadosa o hacer las paces",
+            "example": "Tuvieron un pleito fuerte pero ya se hicieron make up.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Make up for",
+            "pron": "/meɪk ʌp fɔːr/",
+            "meaning": "Compensar un error o reparar el daño",
+            "example": "Te prometo que te voy a make up for haber llegado tarde.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Mess around",
+            "pron": "/mes əˈraʊnd/",
+            "meaning": "Andar perdiendo el tiempo o vacilando sin hacer nada",
+            "example": "¡Ya dejen de mess around y pónganse a trabajar!",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Mess up",
+            "pron": "/mes ʌp/",
+            "meaning": "Regarla gacho / arruinar una oportunidad de oro",
+            "example": "La regué bien gacho, I really messed up esta vez.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Miss out",
+            "pron": "/mɪs aʊt/",
+            "meaning": "Perderse de algo muy chido por no haber ido",
+            "example": "La fiesta se puso con madre, te la missed out.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Mix up",
+            "pron": "/mɪks ʌp/",
+            "meaning": "Confundir una cosa con otra por distracción",
+            "example": "El mesero mixed up las órdenes y me trajo tacos de pastor en vez de bistec.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Move on",
+            "pron": "/muːv ɑːn/",
+            "meaning": "Pasar la página y seguir adelante con tu vida",
+            "example": "Ya no te martirices por el pasado, hay que move on.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Narrow down",
+            "pron": "/ˈnær.oʊ daʊn/",
+            "meaning": "Depurar la lista y reducir las opciones a las mejores",
+            "example": "Pudimos narrow down los candidatos a los tres mejores perfiles.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Nod off",
+            "pron": "/nɑːd ɔːf/",
+            "meaning": "Dar el pestañazo o cabecear de sueño sentado",
+            "example": "Me estaba nod off en la clase de historia por el calor.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Open up",
+            "pron": "/ˈoʊ.pən ʌp/",
+            "meaning": "Abrir el corazón y sincerarse con un amigo",
+            "example": "Por fin se animó a open up y contarme lo que sentía.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Opt out",
+            "pron": "/ɑːpt aʊt/",
+            "meaning": "Darse de baja voluntariamente o no querer participar",
+            "example": "Decidió opt out de la tanda para no endeudarse.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Own up",
+            "pron": "/oʊn ʌp/",
+            "meaning": "Tener los pantalones de aceptar la culpa de su error",
+            "example": "Fue muy valiente de su parte own up a lo que hizo.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Pace back and forth",
+            "pron": "/peɪs bæk ənd fɔːrθ/",
+            "meaning": "Caminar de un lado a otro nervioso como león enjaulado",
+            "example": "Estaba pacing back and forth en la sala esperando las noticias del doctor.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Pass away",
+            "pron": "/pæs əˈweɪ/",
+            "meaning": "Fallecer o pasar a mejor vida con respeto",
+            "example": "Mi abuelita passed away en paz rodeada de su familia.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Pass out",
+            "pron": "/pæs aʊt/",
+            "meaning": "Desmayarse por el calor o quedarse noqueado de cansancio",
+            "example": "Hacía tanto bochorno en el desfile que una señora passed out.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Pay back",
+            "pron": "/peɪ bæk/",
+            "meaning": "Devolver el dinero prestado o cobrarse una factura",
+            "example": "Te juro que te pay back cada centavo el día de pago.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Pay off",
+            "pron": "/peɪ ɔːf/",
+            "meaning": "Dar frutos el esfuerzo o terminar de pagar la deuda",
+            "example": "Tantas noches de estudio por fin paid off con el diploma.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Pick out",
+            "pron": "/pɪk aʊt/",
+            "meaning": "Escoger a detalle la mejor fruta o camisa",
+            "example": "Ayúdame a pick out una buena corbata para la entrevista.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Pick up",
+            "pron": "/pɪk ʌp/",
+            "meaning": "Recoger a alguien en el carro / contestar la llamada",
+            "example": "Paso a pick you up a tu casa a las siete en punto.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Point out",
+            "pron": "/pɔɪnt aʊt/",
+            "meaning": "Señalar un detalle importante que nadie había visto",
+            "example": "El arquitecto pointed out una fisura peligrosa en el muro.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Polish up",
+            "pron": "/ˈpɑː.lɪʃ ʌp/",
+            "meaning": "Darle una pulida a tus habilidades o sacarle brillo a algo",
+            "example": "Quiero polish up mi pronunciación antes de irme a Canadá.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Pop out",
+            "pron": "/pɑːp aʊt/",
+            "meaning": "Botar de repente / salir un segundo a la tiendita",
+            "example": "Voy a pop out al Oxxo a comprar un refresco, ahorita regreso.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Pull off",
+            "pron": "/pʊl ɔːf/",
+            "meaning": "Lograr una hazaña complicadísima contra todo pronóstico",
+            "example": "Estaba bien difícil pero lograron pull off la victoria en el último minuto.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Pull out",
+            "pron": "/pʊl aʊt/",
+            "meaning": "Sacar algo del bolsillo / retirarse de una inversión",
+            "example": "Decidió pull out su dinero antes de que cayera la bolsa.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Pull over",
+            "pron": "/pʊl ˈoʊ.vɚ/",
+            "meaning": "Orillarse en el acotamiento de la carretera",
+            "example": "La patrulla me pidió que me pulled over para una revisión.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Pull through",
+            "pron": "/pʊl θruː/",
+            "meaning": "Salir de peligro o librarla milagrosamente de una enfermedad",
+            "example": "Los médicos dijeron que la operación fue un éxito y he will pull through.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Pull up",
+            "pron": "/pʊl ʌp/",
+            "meaning": "Llegar en coche y estacionarse / caerle a un lugar",
+            "example": "I'm pulling up a la casa, salte de una vez con tus cosas.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Put away",
+            "pron": "/pʊt əˈweɪ/",
+            "meaning": "Guardar las cosas en su lugar después de usarlas",
+            "example": "Lava los trastes y put away las ollas en la alacena.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Put down",
+            "pron": "/pʊt daʊn/",
+            "meaning": "Hacer menos a alguien con burlas / soltar un objeto",
+            "example": "No dejes que nadie te put down por cómo hablas.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Put off",
+            "pron": "/pʊt ɔːf/",
+            "meaning": "Dejar las cosas para mañana / postergar la desidia",
+            "example": "Ya no put off esa ida con el dentista, atiéndete de una vez.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Put on",
+            "pron": "/pʊt ɑːn/",
+            "meaning": "Ponerse la chamarra / encender música",
+            "example": "Put on una chamarrita que afuera está calando el frío.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Put out",
+            "pron": "/pʊt aʊt/",
+            "meaning": "Apagar una fogata o un cigarro / causarle molestias a alguien",
+            "example": "Asegúrate de put out la fogata antes de dormir.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Put up with",
+            "pron": "/pʊt ʌp wɪð/",
+            "meaning": "Tolerar o aguantarse las impertinencias de alguien pesado",
+            "example": "Ya no puedo put up with los berrinches de ese vecino ruidoso.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Quiet down",
+            "pron": "/ˈkwaɪ.ət daʊn/",
+            "meaning": "Bajarle al escándalo y guardar silencio",
+            "example": "¡Quiet down muchachos, que ya empezó la película!",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Rip off",
+            "pron": "/rɪp ɔːf/",
+            "meaning": "Cobrar un ojo de la cara / estafar descaradamente",
+            "example": "Ese taxi me cobró el triple, it was a total rip off.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Rule out",
+            "pron": "/ruːl aʊt/",
+            "meaning": "Descartar una hipótesis o posibilidad por completo",
+            "example": "El doctor ya ruled out cualquier fractura en la rodilla.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Run across",
+            "pron": "/rʌn əˈkrɔːs/",
+            "meaning": "Encontrarse por casualidad un tesoro o documento viejo",
+            "example": "Me ran across tu certificado de primaria guardado en el baúl.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Run into",
+            "pron": "/rʌn ˈɪn.tuː/",
+            "meaning": "Toparse de frente con un conocido en el súper",
+            "example": "Adivina a quién me ran into en el centro comercial hoy.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Run out of",
+            "pron": "/rʌn aʊt əv/",
+            "meaning": "Quedarse sin gas, sin pila o sin mercancía",
+            "example": "Se nos ran out of gasolina a mitad del desierto.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Run over",
+            "pron": "/rʌn ˈoʊ.vɚ/",
+            "meaning": "Atropellar o pasarse del tiempo límite",
+            "example": "El expositor se ran over diez minutos de su turno.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Save up",
+            "pron": "/seɪv ʌp/",
+            "meaning": "Ahorrar peso sobre peso para comprarse algo grande",
+            "example": "Estoy saving up para dar el enganche de mi casita.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Settle down",
+            "pron": "/ˈset̬.əl daʊn/",
+            "meaning": "Sentar cabeza / calmarse o establecerse en familia",
+            "example": "Ya anduvo mucho de fiesta, ahora decidió settle down y casarse.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Set back",
+            "pron": "/set bæk/",
+            "meaning": "Retrasar el avance de una obra / costar una lana",
+            "example": "La lluvia nos set back tres semanas en la construcción.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Set off",
+            "pron": "/set ɔːf/",
+            "meaning": "Prender cuetes / detonar una alarma o partir de viaje",
+            "example": "El humo de la carne asada set off la alarma de incendios.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Set up",
+            "pron": "/set ʌp/",
+            "meaning": "Armar un changarro / tenderle una trampa a alguien",
+            "example": "Lo arrestaron porque le set up una trampa con pruebas falsas.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Show off",
+            "pron": "/ʃoʊ ɔːf/",
+            "meaning": "Farolear / presumir algo nuevo para llamar la atención",
+            "example": "Le encanta show off su carro deportivo nuevo en la cuadra.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Show up",
+            "pron": "/ʃoʊ ʌp/",
+            "meaning": "Caerle a la cita o aparecerse cuando nadie lo esperaba",
+            "example": "El cantante no quiso show up al evento y la gente se molestó.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Shut down",
+            "pron": "/ʃʌt daʊn/",
+            "meaning": "Apagar un servidor o clausurar un negocio",
+            "example": "Tuvieron que shut down la fábrica por violar normas de seguridad.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Shut up",
+            "pron": "/ʃʌt ʌp/",
+            "meaning": "Callarse la boca / cerrar el pico",
+            "example": "Le pidieron que shut up para poder escuchar la conferencia.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Sign in",
+            "pron": "/saɪn ɪn/",
+            "meaning": "Iniciar sesión en una app o firmar la entrada",
+            "example": "Tienes que sign in con tu correo institucional para ingresar.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Sink in",
+            "pron": "/sɪŋk ɪn/",
+            "meaning": "Caer el veinte de una noticia fuerte o asimilar la verdad",
+            "example": "Tardó varios días en sink in que se había ganado la lotería.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Slow down",
+            "pron": "/sloʊ daʊn/",
+            "meaning": "Bajarle a la velocidad o llevarse las cosas con más calma",
+            "example": "¡Slow down compa, que la curva está muy cerrada!",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Sort out",
+            "pron": "/sɔːrt aʊt/",
+            "meaning": "Poner orden en el relajo o arreglar un problema",
+            "example": "Vamos a sentarnos a sort out este embrollo pacíficamente.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Speak up",
+            "pron": "/spiːk ʌp/",
+            "meaning": "Hablar más fuerte porque no se oye / alzar la voz",
+            "example": "Speak up que hay mucho ruido en el salón y no te escucho.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Speed up",
+            "pron": "/spiːd ʌp/",
+            "meaning": "Meterle pata al acelerador o apurar el paso",
+            "example": "Hay que speed up si queremos alcanzar el último camión.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Stand by",
+            "pron": "/stænd baɪ/",
+            "meaning": "Quedarse en guardia listo para entrar en acción",
+            "example": "El equipo médico está en stand by para cualquier urgencia.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Stand out",
+            "pron": "/stænd aʊt/",
+            "meaning": "Resaltar sobre los demás por talento o presencia",
+            "example": "Ese muchacho siempre stands out por su disciplina para entrenar.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Step down",
+            "pron": "/step daʊn/",
+            "meaning": "Renunciar a un cargo importante o dejarle el puesto a otro",
+            "example": "El presidente del club tuvo que step down por broncas de salud.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Step in",
+            "pron": "/step ɪn/",
+            "meaning": "Meter las manos para frenar un pleito o intervenir",
+            "example": "El árbitro tuvo que step in antes de que se agarraran a golpes.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Step up",
+            "pron": "/step ʌp/",
+            "meaning": "Dar un paso al frente y fajarse los pantalones como líder",
+            "example": "Es momento de step up y demostrar de qué estás hecho.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Stick to",
+            "pron": "/stɪk tuː/",
+            "meaning": "Apegarse al plan original sin salirse por la tangente",
+            "example": "Hay que stick to la receta al pie de la letra para que quede rica.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Take after",
+            "pron": "/teɪk ˈæf.tɚ/",
+            "meaning": "Heredar los gestos o el carácter de un pariente / salir igualito",
+            "example": "El chamaco salió igualito y takes after a su papá en lo enojón.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Take apart",
+            "pron": "/teɪk əˈpɑːrt/",
+            "meaning": "Desarmar pieza por pieza un motor o aparato",
+            "example": "Le encanta take apart las licuadoras viejas para arreglarlas.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Take back",
+            "pron": "/teɪk bæk/",
+            "meaning": "Retractarse de un insulto o devolver mercancía con ticket",
+            "example": "Retiro lo dicho, I take back lo que te dije cuando estaba molesto.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Take down",
+            "pron": "/teɪk daʊn/",
+            "meaning": "Bajar un anuncio o derribar a un oponente en combate",
+            "example": "El réferi marcó foul cuando logró take down a su rival.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Take in",
+            "pron": "/teɪk ɪn/",
+            "meaning": "Darle posada a alguien necesitado o asimilar tanta información",
+            "example": "Fue tanta sorpresa que todavía no logro take in todo lo sucedido.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Take off",
+            "pron": "/teɪk ɔːf/",
+            "meaning": "Despegar el avión / quitarse la ropa o marcharse en friega",
+            "example": "El avión está a punto de take off rumbo a Cancún.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Take on",
+            "pron": "/teɪk ɑːn/",
+            "meaning": "Aceptar una chamba pesada o medirse a golpes con un rival",
+            "example": "Decidió take on el reto de coordinar la sucursal completa.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Take out",
+            "pron": "/teɪk aʊt/",
+            "meaning": "Sacar la basura al camión o invitar a cenar",
+            "example": "No se te vaya a olvidar take out la basura antes de que pase el camión.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Take over",
+            "pron": "/teɪk ˈoʊ.vɚ/",
+            "meaning": "Tomar el control de la empresa o asumir el volante",
+            "example": "Déjame take over la manejada que tú ya te andas durmiendo.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Take up",
+            "pron": "/teɪk ʌp/",
+            "meaning": "Iniciar un nuevo pasatiempo o abarcar mucho espacio",
+            "example": "Ese mueble grandote takes up casi toda la sala.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Talk into",
+            "pron": "/tɔːk ˈɪn.tuː/",
+            "meaning": "Convencer o marear a alguien para que acepte algo",
+            "example": "Mis amigos me lograron talk into ir a la fiesta con ellos.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Talk out of",
+            "pron": "/tɔːk aʊt əv/",
+            "meaning": "Hacer entrar en razón a alguien para que no cometa una locura",
+            "example": "Su hermano lo logró talk out of vender su carro para apostar.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Tear down",
+            "pron": "/ter daʊn/",
+            "meaning": "Tirar una pared o demoler un edificio abandonado",
+            "example": "Van a tear down esa bodega vieja para construir una plaza.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Tell off",
+            "pron": "/tel ɔːf/",
+            "meaning": "Ponerle una buena regañada / cantar las verdades",
+            "example": "La jefa de manzana se puso a tell off al vecino cochino.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Think over",
+            "pron": "/θɪŋk ˈoʊ.vɚ/",
+            "meaning": "Consultarlo con la almohada y meditar bien la decisión",
+            "example": "Déjame think over tu propuesta de negocio este fin de semana.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Throw away",
+            "pron": "/θroʊ əˈweɪ/",
+            "meaning": "Tirar cosas a la basura o desperdiciar una oportunidad de oro",
+            "example": "No vayas a throw away esa oportunidad de trabajo tan buena.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Throw up",
+            "pron": "/θroʊ ʌp/",
+            "meaning": "Vomitar las tripas por comida descompuesta o mareo",
+            "example": "Le cayó tan pesada la comida grasosa que tuvo que throw up.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Track down",
+            "pron": "/træk daʊn/",
+            "meaning": "Rastrear o dar con el paradero de algo difícil de hallar",
+            "example": "Por fin pude track down esa pieza de colección que tanto buscaba.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Try on",
+            "pron": "/traɪ ɑːn/",
+            "meaning": "Probarse la ropa en el vestidor para ver si te queda",
+            "example": "Pásale al vestidor a try on ese pantalón a ver cómo te luce.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Try out",
+            "pron": "/traɪ aʊt/",
+            "meaning": "Hacer pruebas a un aparato nuevo o audicionar para un equipo",
+            "example": "Fue a try out para el equipo de básquetbol municipal.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Turn away",
+            "pron": "/tɝːn əˈweɪ/",
+            "meaning": "Rechazar en la entrada por falta de cupo o boleto",
+            "example": "Tuvieron que turn away a mucha gente porque el antro se llenó.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Turn down",
+            "pron": "/tɝːn daʊn/",
+            "meaning": "Bajarle al volumen del estéreo o batear una oferta",
+            "example": "Bájale tantito y turn down la música que los vecinos van a llamar a la patrulla.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Turn in",
+            "pron": "/tɝːn ɪn/",
+            "meaning": "Entregar tareas a tiempo o irse a tirar a la cama a dormir",
+            "example": "Ya es bien noche compadre, ya me voy a turn in a descansar.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Turn off",
+            "pron": "/tɝːn ɔːf/",
+            "meaning": "Apagar las luces o el aire acondicionado",
+            "example": "Asegúrate de turn off todas las luces antes de cerrar el local.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Turn on",
+            "pron": "/tɝːn ɑːn/",
+            "meaning": "Prender la tele o la luz",
+            "example": "Turn on la tele para ver el resumen del partido.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Turn out",
+            "pron": "/tɝːn aʊt/",
+            "meaning": "Resultar ser algo totalmente distinto al final",
+            "example": "Pensamos que iba a llover pero turned out ser un día súper soleado.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Turn up",
+            "pron": "/tɝːn ʌp/",
+            "meaning": "Subirle al volumen a la cumbia o aparecerse de imprevisto",
+            "example": "¡Turn up esa canción que me gusta mucho!",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Use up",
+            "pron": "/juːz ʌp/",
+            "meaning": "Gastarse hasta la última gota o terminarse todo",
+            "example": "Mi hermano used up toda el agua caliente de la regadera.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Venture out",
+            "pron": "/ˈven.tʃɚ aʊt/",
+            "meaning": "Aventurarse a salir a la intemperie a pesar del temporal",
+            "example": "Nadie se atrevió a venture out con la tremenda granizada.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Vouch for",
+            "pron": "/vaʊtʃ fɔːr/",
+            "meaning": "Meter las manos al fuego por alguien / dar fe de su honradez",
+            "example": "Yo puedo vouch for él, lo conozco de años y es muy honrado.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Wake up",
+            "pron": "/weɪk ʌp/",
+            "meaning": "Despertarse de golpe con la alarma",
+            "example": "Me tengo que wake up a las cinco de la mañana para evitar el tráfico.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Walk out on",
+            "pron": "/wɔːk aʊt ɑːn/",
+            "meaning": "Dejar botado a alguien en pleno apuro o abandonar el hogar",
+            "example": "No es de hombres walk out on la familia cuando las cosas se ponen difíciles.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Warm up",
+            "pron": "/wɔːrm ʌp/",
+            "meaning": "Calentar el motor de la troca o calentar músculos antes del ejercicio",
+            "example": "Deja warm up el carro unos minutos antes de meter velocidad.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Wash up",
+            "pron": "/wɑːʃ ʌp/",
+            "meaning": "Lavarse las manos y la cara antes de pasar a la mesa",
+            "example": "Vete a wash up que ya casi vamos a comer.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Watch out",
+            "pron": "/wɑːtʃ aʊt/",
+            "meaning": "¡Aguas! / ¡Ponte trucha con los peligros del camino!",
+            "example": "¡Watch out con ese bache enorme en la calle!",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Wear off",
+            "pron": "/wer ɔːf/",
+            "meaning": "Pasársele el efecto a la anestesia o a la pastilla",
+            "example": "El efecto del calmante empezó a wear off y le dolió la muela.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Wear out",
+            "pron": "/wer aʊt/",
+            "meaning": "Desgastar las suelas de los zapatos o quedar muerto de cansancio",
+            "example": "Esa jornada de doce horas me left completely worn out.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Wind down",
+            "pron": "/waɪnd daʊn/",
+            "meaning": "Relajarse y desconectarse del estrés al final de la jornada",
+            "example": "Me gusta wind down leyendo un libro antes de pegar el ojo.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Wind up",
+            "pron": "/waɪnd ʌp/",
+            "meaning": "Terminar yendo a parar a un callejón sin salida",
+            "example": "Si sigues manejando sin GPS vas a wind up en otro estado.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Wipe out",
+            "pron": "/waɪp aʊt/",
+            "meaning": "Darse un azotón tremendo en la bicicleta o exterminar",
+            "example": "El chavo se dio un tremendo wipe out en la patineta.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Work out",
+            "pron": "/wɝːk aʊt/",
+            "meaning": "Hacer ejercicio en el gimnasio o resolverse bien las cosas",
+            "example": "No te preocupes compa, vas a ver que todo va a work out a tu favor.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Wrap up",
+            "pron": "/ræp ʌp/",
+            "meaning": "Dar por concluida la junta o abrigarse bien contra el frío",
+            "example": "Vamos a wrap up esta reunión que ya es hora de la comida.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Yield to",
+            "pron": "/jiːld tuː/",
+            "meaning": "Ceder el paso en el cruce de calles a los peatones",
+            "example": "Por reglamento vial tienes que yield to a los peatones en la esquina.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Zero in on",
+            "pron": "/ˈzɪr.oʊ ɪn ɑːn/",
+            "meaning": "Enfocar toda la mira y concentración en el blanco",
+            "example": "El delantero supo zero in on la portería y clavó el gol.",
+            "category": "Phrasal Verb"
+      },
+      {
+            "term": "Zone out",
+            "pron": "/zoʊn aʊt/",
+            "meaning": "Quedarse en la luna / perder el hilo de la conversación",
+            "example": "Perdón, me quedé zoned out pensando en los pendientes de la casa.",
             "category": "Phrasal Verb"
       }
 ]

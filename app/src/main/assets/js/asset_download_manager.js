@@ -809,12 +809,8 @@
     // 1. Tarjetas del Lobby 3D (.world3d-lobby-card)
     const cards = document.querySelectorAll('.world3d-lobby-card');
     cards.forEach(card => {
-      // Limpiar cualquier badge viejo dentro de .portal-arch-header para que el arco quede impecable
-      const archHeader = card.querySelector('.portal-arch-header');
-      if (archHeader) {
-        const legacyBadges = archHeader.querySelectorAll('.adm-badge');
-        legacyBadges.forEach(b => b.remove());
-      }
+      // Limpiar rigurosamente cualquier badge viejo en el arco o cabecera
+      card.querySelectorAll('.portal-arch-header .adm-badge, .portal-dimensional-stage .adm-badge, .portal-arch-badge').forEach(b => b.remove());
 
       const match = card.getAttribute('onclick') || '';
       let matchedId = null;
@@ -835,22 +831,17 @@
       const parsedMB = Number(rawMB);
       const sizeStr = (!isNaN(parsedMB) && parsedMB > 0) ? parsedMB.toFixed(2) : '0.42';
 
-      let badgeEl = card.querySelector('.adm-badge');
+      const footer = card.querySelector('.portal-card-footer');
+      if (!footer) return;
+
+      let badgeEl = footer.querySelector('.adm-badge');
       if (!badgeEl) {
         badgeEl = document.createElement('div');
-        const footer = card.querySelector('.portal-card-footer');
-        const progressRow = footer ? footer.querySelector('.portal-progress-row') : null;
-        if (footer && progressRow) {
+        const progressRow = footer.querySelector('.portal-progress-row');
+        if (progressRow) {
           footer.insertBefore(badgeEl, progressRow);
-        } else if (footer) {
-          footer.prepend(badgeEl);
         } else {
-          const identity = card.querySelector('.portal-card-identity');
-          if (identity) {
-            identity.appendChild(badgeEl);
-          } else {
-            card.appendChild(badgeEl);
-          }
+          footer.prepend(badgeEl);
         }
       }
 

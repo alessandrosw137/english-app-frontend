@@ -152,8 +152,8 @@
             });
         const mesh = new T.Mesh(geom, mat);
         mesh.name = m.name || '';
-        mesh.castShadow = false;
-        mesh.receiveShadow = false;
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
         return mesh;
       });
 
@@ -2800,7 +2800,7 @@ ensureOrbitControls();
       const rawName = child.name || '';
       if (!rawName) return;
       if (child.isMesh) {
-        child.castShadow = false;
+        child.castShadow = true;
         child.receiveShadow = true;
       }
       if (isArchitecturalNode(rawName)) {
@@ -2879,7 +2879,7 @@ ensureOrbitControls();
               wordEn: interactiveData.wordEn
             });
             if (subChild.isMesh) {
-              subChild.castShadow = false;
+              subChild.castShadow = true;
               subChild.receiveShadow = true;
             }
           }
@@ -2935,24 +2935,36 @@ ensureOrbitControls();
       }
     }
 
-    // ILUMINACIÓN DIRECTA POTENTE GARANTIZADA
-    // 1. Luz ambiental de alta intensidad
-    const amb = new THREE.AmbientLight(0xffffff, 2.0);
+    // ILUMINACIÓN DIRECTA POTENTE Y SOMBRAS DIRECCIONALES DURAS
+    // 1. Luz ambiental equilibrada para sombras contrastadas
+    const amb = new THREE.AmbientLight(0xffffff, 0.4);
     amb.name = 'ScenarioAmbientLight';
     lightsGroup.add(amb);
+    globalAmbientLight = amb;
 
     // 2. HemisphereLight con gradiente cielo blanco / suelo cálido azul profundo
-    const hemi = new THREE.HemisphereLight(0xffffff, 0x1e293b, 1.6);
+    const hemi = new THREE.HemisphereLight(0xffffff, 0x1e293b, 0.6);
     hemi.position.set(0, 25, 0);
     hemi.name = 'ScenarioHemiLight';
     lightsGroup.add(hemi);
+    globalHemiLight = hemi;
 
-    // 3. DirectionalLight principal en (12, 22, 16) con 2.5 de potencia
+    // 3. DirectionalLight principal en (15, 25, 15) con 2.5 y sombras nítidas (2048x2048)
     const mainDir = new THREE.DirectionalLight(0xfffbeb, 2.5);
-    mainDir.position.set(12, 22, 16);
-    mainDir.castShadow = false;
+    mainDir.position.set(15, 25, 15);
+    mainDir.castShadow = true;
+    mainDir.shadow.mapSize.width = 2048;
+    mainDir.shadow.mapSize.height = 2048;
+    mainDir.shadow.bias = -0.0005;
+    mainDir.shadow.camera.near = 0.5;
+    mainDir.shadow.camera.far = 120;
+    mainDir.shadow.camera.left = -25;
+    mainDir.shadow.camera.right = 25;
+    mainDir.shadow.camera.top = 25;
+    mainDir.shadow.camera.bottom = -25;
     mainDir.name = 'ScenarioMainDirLight';
     lightsGroup.add(mainDir);
+    globalDirLight = mainDir;
 
     // 4. PointLight cenital de alta difusión en (0, 7, 5) con radio 50
     const pointLight = new THREE.PointLight(0xffffff, 1.4, 50);
@@ -4197,7 +4209,7 @@ ensureOrbitControls();
     const dirLights = [];
     const pointSpotLights = [];
 
-    // Desactivar sombras dinámicas costosas en todas las mallas para 60 FPS fijos
+    // Activar sombras dinámicas nítidas en todas las mallas
     activeScene.traverse(obj => {
       if (!obj) return;
 
@@ -4208,8 +4220,8 @@ ensureOrbitControls();
       } else if (obj.isPointLight || obj.isSpotLight) {
         pointSpotLights.push(obj);
       } else if (obj.isMesh) {
-        obj.castShadow = false;
-        obj.receiveShadow = false;
+        obj.castShadow = true;
+        obj.receiveShadow = true;
       }
     });
 
@@ -4223,14 +4235,25 @@ ensureOrbitControls();
       });
     }
 
-    // 2. Máximo 1 DirectionalLight principal (única con castShadow = true si se usaran sombras, mapa 1024x1024)
+    // 2. Máximo 1 DirectionalLight principal con sombras nítidas (2048x2048)
     if (dirLights.length > 0) {
       const mainDir = dirLights[0];
-      if (mainDir.shadow && mainDir.shadow.mapSize) {
-        mainDir.shadow.mapSize.width = 1024;
-        mainDir.shadow.mapSize.height = 1024;
+      mainDir.castShadow = true;
+      if (mainDir.shadow) {
+        if (mainDir.shadow.mapSize) {
+          mainDir.shadow.mapSize.width = 2048;
+          mainDir.shadow.mapSize.height = 2048;
+        }
+        mainDir.shadow.bias = -0.0005;
+        if (mainDir.shadow.camera) {
+          mainDir.shadow.camera.near = 0.5;
+          mainDir.shadow.camera.far = 120;
+          mainDir.shadow.camera.left = -25;
+          mainDir.shadow.camera.right = 25;
+          mainDir.shadow.camera.top = 25;
+          mainDir.shadow.camera.bottom = -25;
+        }
       }
-      mainDir.castShadow = false;
       for (let i = 1; i < dirLights.length; i++) {
         if (dirLights[i].parent) {
           dirLights[i].parent.remove(dirLights[i]);
@@ -4340,20 +4363,29 @@ ensureOrbitControls();
   // 7. ILUMINACIÓN CINEMÁTICA EQUILIBRADA Y CICLO DÍA / NOCHE
   // ============================================================================
   function setupCinematicLighting(targetScene) {
-    // 1. Luz ambiental de alta intensidad (#ffffff, 2.0)
-    const ambientLight = new THREE.AmbientLight(0xffffff, 2.0);
+    // 1. Luz ambiental equilibrada (#ffffff, 0.4) para contraste y sombras reales
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
     targetScene.add(ambientLight);
     globalAmbientLight = ambientLight;
 
-    // 2. HemisphereLight para relleno ambiental global cálido/definido (1.6)
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x1e293b, 1.6);
+    // 2. HemisphereLight para relleno ambiental equilibrado (0.6)
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x1e293b, 0.6);
     targetScene.add(hemiLight);
     globalHemiLight = hemiLight;
 
-    // 3. DirectionalLight principal potente en (12, 22, 16) con 2.5
+    // 3. DirectionalLight principal potente en (15, 25, 15) con sombras nítidas (2048x2048)
     const dirLight = new THREE.DirectionalLight(0xfffbeb, 2.5);
-    dirLight.position.set(12, 22, 16);
-    dirLight.castShadow = false;
+    dirLight.position.set(15, 25, 15);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 2048;
+    dirLight.shadow.mapSize.height = 2048;
+    dirLight.shadow.bias = -0.0005;
+    dirLight.shadow.camera.near = 0.5;
+    dirLight.shadow.camera.far = 120;
+    dirLight.shadow.camera.left = -25;
+    dirLight.shadow.camera.right = 25;
+    dirLight.shadow.camera.top = 25;
+    dirLight.shadow.camera.bottom = -25;
     targetScene.add(dirLight);
     globalDirLight = dirLight;
 
@@ -4406,12 +4438,16 @@ ensureOrbitControls();
       if (globalHemiLight) {
         globalHemiLight.color.setHex(0xddeeff);
         globalHemiLight.groundColor.setHex(0x1e293b);
-        globalHemiLight.intensity = 1.6;
+        globalHemiLight.intensity = 0.6;
       }
       if (globalDirLight) {
         globalDirLight.color.setHex(0xfff2dd);
         globalDirLight.intensity = 2.5;
-        globalDirLight.position.set(10, 20, 15);
+        globalDirLight.position.set(15, 25, 15);
+        globalDirLight.castShadow = true;
+      }
+      if (globalAmbientLight) {
+        globalAmbientLight.intensity = 0.4;
       }
 
       if (streetLanternSpotLight) streetLanternSpotLight.intensity = 0.0;
@@ -6926,6 +6962,8 @@ ensureOrbitControls();
       if (child.isMesh) {
         child.visible = true;
         child.frustumCulled = false;
+        child.castShadow = true;
+        child.receiveShadow = true;
         if (child.geometry && !child.geometry.attributes.normal) {
           try { child.geometry.computeVertexNormals(); } catch (_) {}
         }
@@ -7061,7 +7099,8 @@ ensureOrbitControls();
 
       const maxDPR = 1.5;
       renderer.setPixelRatio(Math.min((typeof window !== 'undefined' && window.devicePixelRatio) || 1, maxDPR));
-      renderer.shadowMap.enabled = false;
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
       if (controls) controls.update();
       updateProgressHudCounter();
@@ -7100,7 +7139,8 @@ ensureOrbitControls();
     renderer.setClearColor(initialSky, 1.0);
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min((typeof window !== 'undefined' && window.devicePixelRatio) || 1, 1.5));
-    renderer.shadowMap.enabled = false; // Desactivar shadowMap costoso para garantizar 60 FPS clavados en los 7 mundos
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.15;
     if (THREE.SRGBColorSpace) {
@@ -8262,13 +8302,22 @@ ensureOrbitControls();
       window.hideAllModules();
     }
 
-    ['view-home', 'practice-today-hero', 'coverFlowViewport', 'world3d-container', 'threeWebGLMount', 'world3d-loading-screen'].forEach(id => {
+    ['view-home', 'practice-today-hero', 'coverFlowViewport', 'coverFlowTrack', 'world3d-container', 'threeWebGLMount', 'world3d-loading-screen'].forEach(id => {
       const el = document.getElementById(id);
       if (el) {
         el.classList.add('hidden');
         el.style.setProperty('display', 'none', 'important');
+        el.style.setProperty('visibility', 'hidden', 'important');
+        el.style.setProperty('pointer-events', 'none', 'important');
+        el.style.setProperty('opacity', '0', 'important');
       }
     });
+    if (typeof document !== 'undefined') {
+      document.querySelectorAll('.carousel-nav-btn, .carousel-btn, .nav-arrow, .coverflow-portal-card').forEach(b => {
+        b.style.setProperty('display', 'none', 'important');
+        b.style.setProperty('pointer-events', 'none', 'important');
+      });
+    }
     hideWorld3DTopBackButton();
 
     const viewWorldTour = document.getElementById('view-worldtour');
@@ -8278,7 +8327,7 @@ ensureOrbitControls();
       viewWorldTour.style.setProperty('flex-direction', 'column', 'important');
       viewWorldTour.style.setProperty('visibility', 'visible', 'important');
       viewWorldTour.style.setProperty('opacity', '1', 'important');
-      viewWorldTour.style.setProperty('z-index', '1000', 'important');
+      viewWorldTour.style.setProperty('z-index', '9850', 'important');
       viewWorldTour.style.setProperty('pointer-events', 'auto', 'important');
     }
 
@@ -8371,6 +8420,12 @@ ensureOrbitControls();
   function hydrateAndAttachBlenderWorldGLB(glbScene, scenarioKey) {
     if (!glbScene) return;
     sanitizeGlbScene(glbScene);
+    glbScene.traverse((child) => {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
 
     const activeTargetScene = (typeof World3D !== 'undefined' && World3D.scene) ? World3D.scene : scene;
     if (!scenarioDynamicRoot) {
@@ -8695,6 +8750,13 @@ ensureOrbitControls();
     } else {
       buildDetailedHouseDiorama(targetGroup);
     }
+
+    targetGroup.traverse((child) => {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
 
     // 2. Vincular objetos interactivos de la escena
     bindGlbInteractiveNodes(targetGroup, key);

@@ -2733,58 +2733,40 @@
       this.scene = new THREE.Scene();
       this.scene.background = new THREE.Color(0x162038);
 
-      this.camera = new THREE.PerspectiveCamera(46, 1, 0.1, 100);
-      this.camera.position.set(0, 0.88, 2.65);
-      this.camera.lookAt(0, 0.42, 0.10);
+      this.camera = new THREE.PerspectiveCamera(48, 1, 0.1, 100);
+      this.camera.position.set(0, 0.72, 2.50);
+      this.camera.lookAt(0, 0.38, 0.10);
 
 
 
       this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
       this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
       this.renderer.shadowMap.enabled = false;
-      this.renderer.domElement.style.cssText = 'position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; display: block !important; z-index: 1 !important;';
-      mount.appendChild(this.renderer.domElement);
+      const canvasEl = this.renderer.domElement;
+      canvasEl.style.cssText = 'position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important; display: block !important; z-index: 1 !important;';
+      mount.appendChild(canvasEl);
 
       const resizeViewer = () => {
         if (!this.renderer || !this.camera || !mount) return;
         const rect = mount.getBoundingClientRect();
-        let w = mount.clientWidth || rect.width;
-        let h = mount.clientHeight || rect.height;
-
-        if (!w || w <= 200) {
-          w = window.innerWidth >= 768 ? Math.round(window.innerWidth * 0.65) : window.innerWidth;
-        }
-        if (!h || h <= 180) {
-          h = window.innerWidth >= 768 ? Math.max(480, window.innerHeight - 60) : Math.round(window.innerHeight * 0.46);
-        }
-        w = Math.round(w);
-        h = Math.round(h);
-
-        this._lastW = w;
-        this._lastH = h;
+        let w = Math.round(rect.width || mount.clientWidth || 0);
+        let h = Math.round(rect.height || mount.clientHeight || 0);
 
         const expectedW = window.innerWidth >= 768 ? Math.round(window.innerWidth * 0.65) : window.innerWidth;
-        const expectedH = window.innerWidth >= 768 ? Math.max(480, window.innerHeight - 54) : Math.round(window.innerHeight * 0.46);
-        if (!w || w <= 310) w = expectedW;
-        if (!h || h <= 180) h = expectedH;
-        w = Math.round(w);
-        h = Math.round(h);
+        const expectedH = window.innerWidth >= 768 ? Math.max(480, window.innerHeight - 56) : Math.round(window.innerHeight * 0.46);
+
+        if (w < 320) w = expectedW;
+        if (h < 240) h = expectedH;
+
         this._lastW = w;
         this._lastH = h;
-        mount.style.setProperty('min-width', w + 'px', 'important');
-        mount.style.setProperty('min-height', h + 'px', 'important');
-        this.renderer.setSize(w, h, true);
-        const cEl = this.renderer.domElement;
-        cEl.style.setProperty('position', 'absolute', 'important');
-        cEl.style.setProperty('inset', '0', 'important');
-        cEl.style.setProperty('width', w + 'px', 'important');
-        cEl.style.setProperty('height', h + 'px', 'important');
-        cEl.style.setProperty('max-width', '100%', 'important');
-        cEl.style.setProperty('max-height', '100%', 'important');
-        const canvas = this.renderer.domElement;
-        canvas.style.setProperty('display', 'block', 'important');
-        canvas.style.setProperty('width', w + 'px', 'important');
-        canvas.style.setProperty('height', h + 'px', 'important');
+
+        this.renderer.setSize(w, h, false);
+        canvasEl.style.setProperty('position', 'absolute', 'important');
+        canvasEl.style.setProperty('inset', '0', 'important');
+        canvasEl.style.setProperty('width', '100%', 'important');
+        canvasEl.style.setProperty('height', '100%', 'important');
+        canvasEl.style.setProperty('display', 'block', 'important');
 
         this.camera.aspect = w / h;
         this.camera.updateProjectionMatrix();

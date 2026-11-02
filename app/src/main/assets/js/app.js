@@ -1618,6 +1618,11 @@ window.isCurrentUserAdmin = function() {
         loader.style.display = 'none';
       }
 
+      if (typeof window.showMainMenu === 'function') {
+        window.showMainMenu();
+        return;
+      }
+
       closeGlossaryModal();
       closeMissionModal();
       closeRouletteModal();
@@ -1642,6 +1647,13 @@ window.isCurrentUserAdmin = function() {
     }
 
     window.navigateTo = function(viewId) {
+      if (viewId === 'music' || viewId === 'karaoke' || viewId === 'view-music') {
+        if (typeof window.openKaraokePortal === 'function') {
+          return window.openKaraokePortal();
+        } else if (typeof window.openMusicPortal === 'function') {
+          return window.openMusicPortal();
+        }
+      }
       if (viewId === 'pets' || viewId === 'sanctuary' || viewId === 'pet_sanctuary' || viewId === 'masterpet' || viewId === 'view-pet-sanctuary' || viewId === 'pet') {
         const hubViews = ['view-home', 'hub-view', 'view-auth', 'login-view', 'view-path', 'view-stories', 'view-music', 'view-worldtour', 'ai-tutor-view', 'view-jest-game', 'view-community'];
         hubViews.forEach(vid => {
@@ -2414,6 +2426,13 @@ window.logout = function() {
           }
           return;
         }
+        if (modules[index] === 'music') {
+          if (typeof window.openKaraokePortal === 'function') {
+            return window.openKaraokePortal();
+          } else if (typeof window.openMusicPortal === 'function') {
+            return window.openMusicPortal();
+          }
+        }
         if (typeof window.openPortalModules === 'function') {
           window.openPortalModules(modules[index]);
         }
@@ -2428,7 +2447,9 @@ window.logout = function() {
         document.body.classList.add('in-immersive-portal');
       }
       if (targetPortal === 'music' || targetPortal === 'karaoke') {
-        if (typeof window.openMusicPortal === 'function') {
+        if (typeof window.openKaraokePortal === 'function') {
+          return window.openKaraokePortal();
+        } else if (typeof window.openMusicPortal === 'function') {
           return window.openMusicPortal();
         }
       }
@@ -2475,8 +2496,11 @@ window.logout = function() {
         } else if (typeof showView === 'function') {
           showView('view-worldtour');
         }
-      } else if (portal === 'music') {
-        if (typeof window.openMusicPortal === 'function') {
+      } else if (portal === 'music' || portal === 'karaoke') {
+        if (typeof window.openKaraokePortal === 'function') {
+          window.openKaraokePortal();
+          return;
+        } else if (typeof window.openMusicPortal === 'function') {
           window.openMusicPortal();
           return;
         }
@@ -2652,6 +2676,13 @@ window.logout = function() {
         e.stopPropagation();
         console.log('Ingresando al portal de módulos...');
         const portalTarget = portalBtn.dataset.portal || portalBtn.getAttribute('data-portal');
+        if (modules[index] === 'music') {
+          if (typeof window.openKaraokePortal === 'function') {
+            return window.openKaraokePortal();
+          } else if (typeof window.openMusicPortal === 'function') {
+            return window.openMusicPortal();
+          }
+        }
         if (typeof window.openPortalModules === 'function') {
           window.openPortalModules(portalTarget);
         } else {
@@ -14881,6 +14912,10 @@ if (typeof document !== 'undefined' && typeof document.addEventListener === 'fun
     // 2. Ocultar vistas secundarias e inyectadas
     const secondaryIds = [
       'view-worldtour',
+      'world3d-selection-hub',
+      'world3d-loading-screen',
+      'world3d-container',
+      'threeWebGLMount',
       'portal-3d-master-view',
       'music-player-subview',
       'music-search-subview',
@@ -17177,7 +17212,7 @@ if (window._musicStageGuardInterval) {
         viewWorldTour.style.setProperty("flex-direction", "column", "important");
         viewWorldTour.style.setProperty("visibility", "visible", "important");
         viewWorldTour.style.setProperty("opacity", "1", "important");
-        viewWorldTour.style.setProperty("z-index", "1000", "important");
+        viewWorldTour.style.setProperty("z-index", "9850", "important");
         viewWorldTour.style.setProperty("pointer-events", "auto", "important");
       }
 
@@ -17193,7 +17228,7 @@ if (window._musicStageGuardInterval) {
         lobbyEl.style.setProperty("display", "flex", "important");
         lobbyEl.style.setProperty("opacity", "1", "important");
         lobbyEl.style.setProperty("visibility", "visible", "important");
-        lobbyEl.style.setProperty("z-index", "1000", "important");
+        lobbyEl.style.setProperty("z-index", "9850", "important");
         lobbyEl.style.setProperty("pointer-events", "auto", "important");
       }
 
@@ -17204,77 +17239,7 @@ if (window._musicStageGuardInterval) {
 
     // ABRIR PORTAL DE MÚSICA & KARAOKE
     showMusicPortal: function () {
-      window.stopAllBackgroundAudioAndLoops("music");
-      hideHomeAndCarouselStrictly();
-
-      document.body.classList.remove("view-worldtour-active", "hedbanz-3d-active", "culinary-studio-active", "soccer-active");
-
-      const allViews = window.MASTER_ROOT_VIEWS || [
-        'view-home', 'view-path', 'view-stories', 'view-music', 'view-worldtour',
-        'view-soccer-3d', 'culinary-studio-root', 'view-jest-game', 'ai-tutor-view', 'view-auth'
-      ];
-      allViews.forEach(v => {
-        if (v !== 'view-music') {
-          const el = document.getElementById(v);
-          if (el) {
-            el.classList.add('hidden');
-            el.style.setProperty('display', 'none', 'important');
-          }
-        }
-      });
-
-      const viewMusic = document.getElementById('view-music');
-      if (viewMusic) {
-        viewMusic.classList.remove('hidden', 'offline-locked');
-        viewMusic.style.setProperty('display', 'flex', 'important');
-        viewMusic.style.setProperty('flex-direction', 'column', 'important');
-        viewMusic.style.setProperty('opacity', '1', 'important');
-        viewMusic.style.setProperty('visibility', 'visible', 'important');
-        viewMusic.style.setProperty('z-index', '1000', 'important');
-        viewMusic.style.setProperty('pointer-events', 'auto', 'important');
-      }
-
-      const searchSub = document.getElementById('music-search-subview');
-      if (searchSub) {
-        searchSub.classList.remove('hidden', 'offline-locked');
-        searchSub.style.setProperty('display', 'block', 'important');
-        searchSub.style.setProperty('visibility', 'visible', 'important');
-        searchSub.style.setProperty('opacity', '1', 'important');
-        searchSub.style.setProperty('pointer-events', 'auto', 'important');
-      }
-
-      const playerSub = document.getElementById('music-player-subview');
-      if (playerSub) {
-        playerSub.classList.add('hidden');
-        playerSub.style.setProperty('display', 'none', 'important');
-      }
-
-      const trendingSec = document.getElementById('musicTrendingSection');
-      if (trendingSec) {
-        trendingSec.classList.remove('hidden');
-        trendingSec.style.setProperty('display', 'block', 'important');
-      }
-
-      const recGrid = document.getElementById('recommendedSongsGrid');
-      if (recGrid) {
-        recGrid.classList.remove('hidden');
-        recGrid.style.setProperty('display', 'grid', 'important');
-      }
-
-      window._activeModule = 'music';
-
-      if (typeof window.renderMusicTracksList === 'function') {
-        try { window.renderMusicTracksList(''); } catch (_) {}
-      }
-      if (typeof window.renderRecommendedSongsGrid === 'function') {
-        try { window.renderRecommendedSongsGrid(''); } catch (_) {}
-      }
-      if (typeof window.clearMusicSearchInput === 'function') {
-        try { window.clearMusicSearchInput(); } catch (_) {}
-      }
-      if (typeof window.scrollTo === 'function') {
-        try { window.scrollTo({ top: 0, behavior: 'instant' }); } catch (_) {}
-      }
+      openKaraokePortal();
     },
 
     // ABRIR ESCENARIO 3D ESPECÍFICO (ej. house, supermarket, restaurant, hotel, dating, garden, space)
@@ -17327,6 +17292,7 @@ if (window._musicStageGuardInterval) {
         "view-jest-game",
         "hedbanz-3d-modal",
         "view-music",
+        "karaoke-container",
         "view-stories",
         "ai-tutor-view",
         "view-path"
@@ -17421,10 +17387,96 @@ if (window._musicStageGuardInterval) {
   window.openWorld3DScenario = function (id) {
     window.MasterRouter.showWorld3DScenario(id);
   };
-  window.openMusicPortal = function () {
-    window.MasterRouter.showMusicPortal();
-  };
-  window.openKaraokePortal = window.openMusicPortal;
+  function openKaraokePortal() {
+    if (typeof window.stopAllBackgroundAudioAndLoops === 'function') {
+      try { window.stopAllBackgroundAudioAndLoops('music'); } catch (_) {}
+    }
+    if (typeof window.hideAllModules === 'function') {
+      try { window.hideAllModules(); } catch (_) {}
+    }
+    if (typeof hideHomeAndCarouselStrictly === 'function') {
+      try { hideHomeAndCarouselStrictly(); } catch (_) {}
+    }
+
+    if (document.body && document.body.classList) {
+      document.body.classList.remove('view-worldtour-active', 'hedbanz-3d-active', 'culinary-studio-active', 'soccer-active');
+      document.body.classList.add('in-immersive-portal');
+    }
+
+    const allViews = window.MASTER_ROOT_VIEWS || [
+      'view-home', 'view-path', 'view-stories', 'view-music', 'view-worldtour',
+      'view-soccer-3d', 'culinary-studio-root', 'view-jest-game', 'ai-tutor-view', 'view-auth'
+    ];
+    allViews.forEach(v => {
+      if (v !== 'view-music') {
+        const el = document.getElementById(v);
+        if (el) {
+          el.classList.add('hidden');
+          el.style.setProperty('display', 'none', 'important');
+        }
+      }
+    });
+
+    const karoCont = document.getElementById('karaoke-container');
+    if (karoCont) {
+      karoCont.classList.remove('hidden');
+      karoCont.style.setProperty('display', 'flex', 'important');
+      karoCont.style.setProperty('flex-direction', 'column', 'important');
+      karoCont.style.setProperty('z-index', '100000', 'important');
+      karoCont.style.setProperty('opacity', '1', 'important');
+      karoCont.style.setProperty('visibility', 'visible', 'important');
+      karoCont.style.setProperty('pointer-events', 'auto', 'important');
+    }
+
+    const viewMusic = document.getElementById('view-music');
+    if (viewMusic) {
+      viewMusic.classList.remove('hidden', 'offline-locked');
+      viewMusic.style.setProperty('display', 'flex', 'important');
+      viewMusic.style.setProperty('flex-direction', 'column', 'important');
+      viewMusic.style.setProperty('z-index', '100000', 'important');
+      viewMusic.style.setProperty('opacity', '1', 'important');
+      viewMusic.style.setProperty('visibility', 'visible', 'important');
+      viewMusic.style.setProperty('pointer-events', 'auto', 'important');
+    }
+
+    const searchSub = document.getElementById('music-search-subview');
+    if (searchSub) {
+      searchSub.classList.remove('hidden', 'offline-locked');
+      searchSub.style.setProperty('display', 'block', 'important');
+      searchSub.style.setProperty('visibility', 'visible', 'important');
+      searchSub.style.setProperty('opacity', '1', 'important');
+      searchSub.style.setProperty('pointer-events', 'auto', 'important');
+    }
+
+    const playerSub = document.getElementById('music-player-subview');
+    if (playerSub) {
+      playerSub.classList.add('hidden');
+      playerSub.style.setProperty('display', 'none', 'important');
+    }
+
+    const trendingSec = document.getElementById('musicTrendingSection');
+    if (trendingSec) {
+      trendingSec.classList.remove('hidden');
+      trendingSec.style.setProperty('display', 'block', 'important');
+    }
+
+    window._activeModule = 'music';
+    if (typeof window.renderMusicTracksList === 'function') {
+      try { window.renderMusicTracksList(''); } catch (_) {}
+    }
+    if (typeof window.renderRecommendedSongsGrid === 'function') {
+      try { window.renderRecommendedSongsGrid(''); } catch (_) {}
+    }
+    if (typeof window.bindMusicKeyboardShortcuts === 'function') {
+      try { window.bindMusicKeyboardShortcuts(); } catch (_) {}
+    }
+  }
+
+  window.openKaraokePortal = openKaraokePortal;
+  window.openMusicPortal = openKaraokePortal;
+  if (window.MasterRouter) {
+    window.MasterRouter.showMusicPortal = openKaraokePortal;
+  }
   window.returnToMainPortals = function (e) {
     window.MasterRouter.returnToPortals(e);
   };
@@ -17475,15 +17527,13 @@ if (window._musicStageGuardInterval) {
     if (h <= 180) h = Math.round(window.innerWidth >= 768 ? Math.max(480, window.innerHeight - 54) : window.innerHeight * 0.46);
 
     if (w > 50 && h > 50) {
-      canvas.style.setProperty("width", w + "px", "important");
-      canvas.style.setProperty("height", h + "px", "important");
+      canvas.style.setProperty("width", "100%", "important");
+      canvas.style.setProperty("height", "100%", "important");
       canvas.style.setProperty("position", "absolute", "important");
-      canvas.style.setProperty("top", "0", "important");
-      canvas.style.setProperty("left", "0", "important");
       canvas.style.setProperty("inset", "0", "important");
 
       if (window.Hedbanz3D && window.Hedbanz3D.renderer && window.Hedbanz3D.camera) {
-        window.Hedbanz3D.renderer.setSize(w, h, true);
+        window.Hedbanz3D.renderer.setSize(w, h, false);
         window.Hedbanz3D.camera.aspect = w / h;
         window.Hedbanz3D.camera.updateProjectionMatrix();
       }

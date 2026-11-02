@@ -100,17 +100,18 @@
       }
       this.currentSongId = sId;
 
-      // Recuperar offset guardado por el usuario en localStorage o 0.0s por defecto
-      let savedOffset = null;
+      // Recuperar offset guardado por el usuario en localStorage o 0.0s por defecto (cero desfasajes negativos)
+      let savedOffset = 0.0;
       try {
         localStorage.removeItem('karaoke_offset_' + sId);
         localStorage.removeItem('k_offset_' + sId);
         localStorage.removeItem('karaoke_sync_v3_' + sId);
         localStorage.removeItem('karaoke_offset_v4_' + sId);
+        localStorage.removeItem('mastereng_lyrics_offset');
         const s = localStorage.getItem('karaoke_sync_v5_' + sId);
         if (s !== null && !isNaN(parseFloat(s))) {
           const val = parseFloat(s);
-          if (Math.abs(val - (-4.2)) < 0.1 || val < -3.5) {
+          if (val < -0.2 || Math.abs(val - (-4.2)) < 0.1 || val > 10) {
             localStorage.setItem('karaoke_sync_v5_' + sId, '0.0');
             savedOffset = 0.0;
           } else {
@@ -119,7 +120,7 @@
         }
       } catch (_) {}
 
-      this.offsetSec = savedOffset !== null ? savedOffset : 0.0;
+      this.offsetSec = savedOffset;
       window.lyricsOffset = this.offsetSec;
 
       // Cachear en memoria las referencias a los nodos del DOM una sola vez
@@ -2120,6 +2121,11 @@
       if (!track) return;
 
       stopMusicKaraokeSync();
+      if (KaraokeSyncEngine) {
+        KaraokeSyncEngine.offsetSec = 0.0;
+        KaraokeSyncEngine.updateOffsetBadgeUI();
+      }
+      window.lyricsOffset = 0.0;
 
       const titleEl = document.getElementById('activeMusicTitle');
       const artistEl = document.getElementById('activeMusicArtist');

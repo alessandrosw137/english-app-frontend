@@ -23,6 +23,7 @@ const filesToSync = [
   'js/world3d_nature_space.js',
   'js/world3d_dating_hotel.js',
   'js/world3d_market_rest.js',
+  'js/world3d_dictionaries.js',
   'js/karaoke.js',
   'js/jest_game.js',
   'js/social_chat.js',
