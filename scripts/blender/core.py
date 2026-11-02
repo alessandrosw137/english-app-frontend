@@ -156,41 +156,58 @@ def mat_water():
 
 
 def mat_porcelain():
-    return get_material("porcelain_white", base_color=(0.96, 0.95, 0.93, 1.0), roughness=0.14,
+    return get_material("porcelain_warm", base_color=(0.85, 0.83, 0.80, 1.0), roughness=0.18,
                         coat_weight=0.45, coat_roughness=0.05)
 
 
 def mat_white_quartz():
-    return get_material("carrara_quartz", base_color=(0.93, 0.93, 0.91, 1.0), roughness=0.16,
+    return get_material("carrara_quartz", base_color=(0.78, 0.77, 0.75, 1.0), roughness=0.18,
                         coat_weight=0.40, coat_roughness=0.06)
 
 
 def mat_warm_wood():
-    return get_material("european_oak", base_color=(0.58, 0.40, 0.24, 1.0), roughness=0.38)
+    # Warm rich timber (#8B5A2B)
+    return get_material("european_oak", base_color=(0.55, 0.35, 0.17, 1.0), roughness=0.36)
+
+
+def mat_warm_wood_rich():
+    # Sienna warm wood (#A0522D)
+    return get_material("rich_sienna_wood", base_color=(0.63, 0.32, 0.18, 1.0), roughness=0.34)
 
 
 def mat_light_oak():
-    return get_material("natural_ash_wood", base_color=(0.73, 0.57, 0.39, 1.0), roughness=0.40)
+    return get_material("natural_ash_wood", base_color=(0.65, 0.50, 0.34, 1.0), roughness=0.38)
 
 
 def mat_dark_walnut():
-    return get_material("american_walnut", base_color=(0.24, 0.14, 0.09, 1.0), roughness=0.34)
+    # Dark walnut wood (#5C3A21)
+    return get_material("american_walnut", base_color=(0.36, 0.23, 0.13, 1.0), roughness=0.32)
 
 
 def mat_parquet():
-    return get_material("bistro_parquet_a", base_color=(0.45, 0.28, 0.16, 1.0), roughness=0.32, coat_weight=0.22)
+    return get_material("bistro_parquet_a", base_color=(0.42, 0.26, 0.15, 1.0), roughness=0.32, coat_weight=0.22)
 
 
 def mat_parquet_alt():
-    return get_material("bistro_parquet_b", base_color=(0.38, 0.23, 0.13, 1.0), roughness=0.34, coat_weight=0.22)
+    return get_material("bistro_parquet_b", base_color=(0.35, 0.21, 0.12, 1.0), roughness=0.34, coat_weight=0.22)
 
 
 def mat_black_marble():
-    return get_material("imperial_nero_marble", base_color=(0.11, 0.12, 0.14, 1.0), roughness=0.15, coat_weight=0.55)
+    return get_material("imperial_nero_marble", base_color=(0.08, 0.09, 0.12, 1.0), roughness=0.15, coat_weight=0.55)
+
+
+def mat_dark_slate():
+    # Elegant dark slate (#1e293b)
+    return get_material("terrace_dark_slate", base_color=(0.12, 0.16, 0.23, 1.0), roughness=0.45, coat_weight=0.15)
+
+
+def mat_volcanic_stone():
+    # Dark volcanic stone
+    return get_material("volcanic_dark_stone", base_color=(0.09, 0.10, 0.12, 1.0), roughness=0.82)
 
 
 def mat_travertine():
-    return get_material("cream_travertine", base_color=(0.86, 0.82, 0.75, 1.0), roughness=0.35, coat_weight=0.15)
+    return get_material("cream_travertine", base_color=(0.74, 0.70, 0.63, 1.0), roughness=0.38, coat_weight=0.15)
 
 
 def mat_burgundy_rug():
@@ -198,15 +215,15 @@ def mat_burgundy_rug():
 
 
 def mat_woven_beige():
-    return get_material("woven_oatmeal_rug", base_color=(0.85, 0.81, 0.74, 1.0), roughness=0.88, sheen_weight=0.30)
+    return get_material("woven_oatmeal_rug", base_color=(0.75, 0.71, 0.64, 1.0), roughness=0.88, sheen_weight=0.30)
 
 
 def mat_linen_white():
-    return get_material("fine_ivory_linen", base_color=(0.95, 0.93, 0.89, 1.0), roughness=0.76, sheen_weight=0.35)
+    return get_material("fine_ivory_linen", base_color=(0.85, 0.83, 0.79, 1.0), roughness=0.76, sheen_weight=0.35)
 
 
 def mat_navy_fabric():
-    return get_material("slate_navy_boucle", base_color=(0.16, 0.24, 0.36, 1.0), roughness=0.78, sheen_weight=0.40)
+    return get_material("slate_navy_boucle", base_color=(0.14, 0.20, 0.32, 1.0), roughness=0.78, sheen_weight=0.40)
 
 
 def mat_cognac_leather():
@@ -214,19 +231,20 @@ def mat_cognac_leather():
 
 
 def mat_commercial_tile():
-    return get_material("porcelain_floor_tile", base_color=(0.90, 0.91, 0.92, 1.0), roughness=0.20, coat_weight=0.30)
+    # Medium gray porcelain (#475569) - Zero blinding white!
+    return get_material("porcelain_floor_tile", base_color=(0.28, 0.33, 0.41, 1.0), roughness=0.25, coat_weight=0.28)
 
 
 def mat_sci_fi_metal():
-    return get_material("orbital_titanium_deck", base_color=(0.22, 0.25, 0.30, 1.0), metallic=0.72, roughness=0.32)
+    return get_material("orbital_titanium_deck", base_color=(0.16, 0.19, 0.25, 1.0), metallic=0.72, roughness=0.32)
 
 
 def mat_grass_natural():
-    return get_material("botanical_lawn", base_color=(0.18, 0.44, 0.19, 1.0), roughness=0.86)
+    return get_material("botanical_lawn", base_color=(0.16, 0.38, 0.16, 1.0), roughness=0.86)
 
 
 def mat_stone_path():
-    return get_material("limestone_paver", base_color=(0.72, 0.70, 0.65, 1.0), roughness=0.68)
+    return get_material("limestone_paver", base_color=(0.58, 0.56, 0.52, 1.0), roughness=0.68)
 
 
 def mat_velvet_red():
@@ -234,7 +252,133 @@ def mat_velvet_red():
 
 
 def mat_terracotta():
-    return get_material("artisanal_terracotta", base_color=(0.74, 0.38, 0.24, 1.0), roughness=0.72)
+    # Terracotta warm (#A0522D / #8B5A2B)
+    return get_material("artisanal_terracotta", base_color=(0.63, 0.32, 0.18, 1.0), roughness=0.72)
+
+
+# ==============================================================================
+# VIBRANT SUPERMARKET & PRODUCE PBR PALETTES
+# ==============================================================================
+def mat_apple_red():
+    return get_material("prod_apple_red", (0.86, 0.08, 0.12, 1.0), roughness=0.30, coat_weight=0.3)
+
+def mat_banana_yellow():
+    return get_material("prod_banana_yellow", (0.96, 0.82, 0.15, 1.0), roughness=0.42)
+
+def mat_orange_vivid():
+    return get_material("prod_orange_vivid", (0.95, 0.45, 0.05, 1.0), roughness=0.40)
+
+def mat_watermelon_green():
+    return get_material("prod_watermelon_green", (0.12, 0.46, 0.16, 1.0), roughness=0.32, coat_weight=0.3)
+
+def mat_strawberry_red():
+    return get_material("prod_strawberry_red", (0.92, 0.12, 0.20, 1.0), roughness=0.35)
+
+def mat_avocado_dark():
+    return get_material("prod_avocado_dark", (0.14, 0.26, 0.11, 1.0), roughness=0.58)
+
+def mat_tomato_red():
+    return get_material("prod_tomato_red", (0.88, 0.14, 0.08, 1.0), roughness=0.28, coat_weight=0.3)
+
+def mat_potato_brown():
+    return get_material("prod_potato_brown", (0.58, 0.42, 0.26, 1.0), roughness=0.85)
+
+def mat_carrot_orange():
+    return get_material("prod_carrot_orange", (0.96, 0.42, 0.08, 1.0), roughness=0.48)
+
+def mat_broccoli_green():
+    return get_material("prod_broccoli_green", (0.14, 0.40, 0.15, 1.0), roughness=0.75)
+
+def mat_cheese_yellow():
+    return get_material("prod_cheese_yellow", (0.98, 0.78, 0.18, 1.0), roughness=0.35)
+
+def mat_yogurt_berry():
+    return get_material("prod_yogurt_berry", (0.78, 0.22, 0.48, 1.0), roughness=0.28)
+
+def mat_butter_cream():
+    return get_material("prod_butter_cream", (0.96, 0.88, 0.52, 1.0), roughness=0.38)
+
+def mat_soda_red():
+    return get_material("prod_soda_red", (0.88, 0.06, 0.08, 1.0), metallic=0.75, roughness=0.22)
+
+def mat_soda_blue():
+    return get_material("prod_soda_blue", (0.08, 0.35, 0.88, 1.0), metallic=0.75, roughness=0.22)
+
+def mat_chips_bag():
+    return get_material("prod_chips_bag", (0.92, 0.65, 0.08, 1.0), metallic=0.30, roughness=0.25)
+
+def mat_cookies_box():
+    return get_material("prod_cookies_box", (0.24, 0.45, 0.82, 1.0), roughness=0.38)
+
+def mat_chocolate_brown():
+    return get_material("prod_chocolate_brown", (0.26, 0.13, 0.07, 1.0), roughness=0.36)
+
+def mat_shopping_basket_red():
+    return get_material("market_basket_red", (0.85, 0.10, 0.12, 1.0), roughness=0.35)
+
+
+# ==============================================================================
+# SOLAR SYSTEM & COSMOS PBR PALETTES
+# ==============================================================================
+def mat_sun():
+    return get_material("Solar_Star_Sun", (1.0, 0.65, 0.08, 1.0), roughness=0.20,
+                        emission=(1.0, 0.65, 0.08, 1.0), emission_strength=4.5)
+
+def mat_mercury():
+    return get_material("Planet_Mercury", (0.58, 0.55, 0.52, 1.0), roughness=0.85)
+
+def mat_venus():
+    return get_material("Planet_Venus", (0.88, 0.74, 0.45, 1.0), roughness=0.60)
+
+def mat_earth():
+    return get_material("Planet_Earth_Ocean", (0.08, 0.35, 0.82, 1.0), roughness=0.40)
+
+def mat_earth_land():
+    return get_material("Planet_Earth_Continent", (0.16, 0.50, 0.20, 1.0), roughness=0.62)
+
+def mat_moon():
+    return get_material("Satellite_Moon", (0.68, 0.69, 0.72, 1.0), roughness=0.90)
+
+def mat_mars():
+    return get_material("Planet_Mars", (0.85, 0.28, 0.12, 1.0), roughness=0.75)
+
+def mat_jupiter():
+    return get_material("Planet_Jupiter", (0.86, 0.58, 0.34, 1.0), roughness=0.50)
+
+def mat_saturn():
+    return get_material("Planet_Saturn", (0.88, 0.78, 0.50, 1.0), roughness=0.52)
+
+def mat_saturn_rings():
+    return get_material("Saturn_Rings_Golden", (0.82, 0.72, 0.45, 0.75), roughness=0.35, alpha=0.75)
+
+def mat_uranus():
+    return get_material("Planet_Uranus", (0.44, 0.82, 0.88, 1.0), roughness=0.45)
+
+def mat_neptune():
+    return get_material("Planet_Neptune", (0.12, 0.30, 0.88, 1.0), roughness=0.42)
+
+def mat_pluto():
+    return get_material("Planet_Pluto", (0.72, 0.68, 0.64, 1.0), roughness=0.88)
+
+def mat_space_rocket_body():
+    return get_material("Space_Rocket_Body", (0.90, 0.91, 0.93, 1.0), roughness=0.25)
+
+def mat_space_rocket_red():
+    return get_material("Space_Rocket_Red", (0.88, 0.10, 0.12, 1.0), roughness=0.25)
+
+def mat_solar_panel():
+    return get_material("Space_Solar_Array", (0.06, 0.15, 0.42, 1.0), metallic=0.85, roughness=0.15)
+
+def mat_black_hole_disk():
+    return get_material("Black_Hole_Disk", (0.98, 0.55, 0.08, 1.0), roughness=0.20,
+                        emission=(0.98, 0.55, 0.08, 1.0), emission_strength=4.0)
+
+def mat_ufo_metallic():
+    return get_material("UFO_Hull_Chrome", (0.82, 0.85, 0.88, 1.0), metallic=0.88, roughness=0.18)
+
+def mat_ufo_dome():
+    return get_material("UFO_Dome_Green", (0.15, 0.88, 0.45, 0.65), roughness=0.12,
+                        transmission=0.65, alpha=0.65)
 
 
 def mat_screen(color=(0.18, 0.68, 0.88, 1.0), strength=1.5, name="studio_screen"):
@@ -1225,7 +1369,8 @@ def build_isometric_room(base_name, floor_size=(16.0, 14.0), floor_mat=None, wal
     """
     parts = []
     fx, fy = floor_size
-    w_mat = wall_mat or get_material(f"{base_name}_WallMat", base_color=(0.93, 0.92, 0.90, 1.0), roughness=0.58)
+    # Rich warm architectural slate-taupe wall (Zero blinding pure-white)
+    w_mat = wall_mat or get_material(f"{base_name}_WallMat", base_color=(0.38, 0.42, 0.48, 1.0), roughness=0.65)
     bb_mat = baseboard_mat or mat_dark_walnut()
 
     # 1. Detailed Floor System (Top surface strictly at Z = 0.0)
@@ -1317,7 +1462,7 @@ def build_isometric_room(base_name, floor_size=(16.0, 14.0), floor_mat=None, wal
 
 
 def export_glb(filepath):
-    """Exports active scene as Y-up binary GLB with all modifiers applied and node transforms preserved."""
+    """Exports active scene as Y-up binary GLB with all modifiers applied and node transforms preserved, then optimizes with gltfpack -cc -kn."""
     _ensure_object_mode()
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
     bpy.ops.export_scene.gltf(
@@ -1326,5 +1471,29 @@ def export_glb(filepath):
         export_apply=True,
         export_yup=True
     )
-    size_kb = os.path.getsize(filepath) / 1024.0
-    print(f"[EXPORT OK] {filepath} ({size_kb:.1f} KB)")
+    size_raw_kb = os.path.getsize(filepath) / 1024.0
+    print(f"[EXPORT RAW] {filepath} ({size_raw_kb:.1f} KB)")
+
+    # Run gltfpack optimization with -cc and -kn (keep node names for interactive raycasting)
+    gltfpack_bin = r"C:\Tools\gltfpack\gltfpack.exe"
+    if not os.path.isfile(gltfpack_bin):
+        gltfpack_bin = "gltfpack"
+
+    opt_path = filepath.replace(".glb", "_opt.glb")
+    bak_path = filepath.replace(".glb", ".bak.glb")
+    try:
+        import subprocess
+        res = subprocess.run([gltfpack_bin, "-i", filepath, "-o", opt_path, "-cc", "-kn"],
+                             capture_output=True, text=True)
+        if res.returncode == 0 and os.path.isfile(opt_path) and os.path.getsize(opt_path) > 1000:
+            if os.path.isfile(bak_path):
+                try: os.remove(bak_path)
+                except Exception: pass
+            os.replace(filepath, bak_path)
+            os.replace(opt_path, filepath)
+            opt_kb = os.path.getsize(filepath) / 1024.0
+            print(f"[GLTFPACK OK] {filepath} optimized: {size_raw_kb:.1f} KB -> {opt_kb:.1f} KB (-kn preserved nodes)")
+        else:
+            print(f"[GLTFPACK NOTICE] code {res.returncode}: {res.stderr or res.stdout}")
+    except Exception as e:
+        print(f"[GLTFPACK WARNING] Could not run gltfpack: {e}")

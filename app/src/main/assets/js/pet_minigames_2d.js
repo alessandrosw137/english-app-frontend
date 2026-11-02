@@ -2789,7 +2789,7 @@
         this._lastW = w;
         this._lastH = h;
 
-        this.renderer.setSize(w, h, false);
+        this.renderer.setSize(w, h, true);
         canvasEl.style.setProperty('position', 'absolute', 'important');
         canvasEl.style.setProperty('inset', '0', 'important');
         canvasEl.style.setProperty('width', '100%', 'important');
@@ -3076,6 +3076,10 @@
         }
         this._tickFn = tick;
       this.rafId = requestAnimationFrame(tick);
+
+        if (mount && (Math.abs((mount.clientWidth || 0) - (this._lastW || 0)) > 4 || Math.abs((mount.clientHeight || 0) - (this._lastH || 0)) > 4)) {
+          resizeViewer();
+        }
 
         const now = performance.now();
         const t = now * 0.0015;

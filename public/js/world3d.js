@@ -2792,6 +2792,163 @@ ensureOrbitControls();
            norm.includes('anchor');
   }
 
+  // DICCIONARIO UNIVERSAL DE RESPALDO EN ESPAÑOL MEXICANO Y FONÉTICA IPA PARA NODOS BLENDER
+  const UNIVERSAL_SPANISH_FALLBACK_DICT = {
+    // Casa / Sala / Estudio
+    'remote_control': { en: 'Remote Control', es: 'Control remoto', ipa: '/rɪˈmoʊt kənˈtroʊl/' },
+    'living_table': { en: 'Coffee Table', es: 'Mesa de centro', ipa: '/ˈkɑː.fi ˈteɪ.bəl/' },
+    'bistro_table': { en: 'Bistro Table', es: 'Mesa de bistró', ipa: '/ˈbiː.stroʊ ˈteɪ.bəl/' },
+    'dining_table': { en: 'Dining Table', es: 'Mesa de comedor', ipa: '/ˈdaɪ.nɪŋ ˈteɪ.bəl/' },
+    'candle': { en: 'Candle', es: 'Vela aromática', ipa: '/ˈkæn.dəl/' },
+    'candles': { en: 'Candles', es: 'Velas aromáticas', ipa: '/ˈkæn.dəlz/' },
+    'wine_glass': { en: 'Wine Glass', es: 'Copa de vino', ipa: '/waɪn ɡlæs/' },
+    'wine_glasses': { en: 'Wine Glasses', es: 'Copas de vino', ipa: '/waɪn ˈɡlæs.ɪz/' },
+    'mayonnaise': { en: 'Mayonnaise', es: 'Mayonesa', ipa: '/ˌmeɪ.əˈneɪz/' },
+    'laptop': { en: 'Laptop', es: 'Computadora portátil', ipa: '/ˈlæp.tɑːp/' },
+    'television': { en: 'Television', es: 'Televisión', ipa: '/ˈtel.ə.vɪʒ.ən/' },
+    'tv': { en: 'TV Screen', es: 'Pantalla de TV', ipa: '/ˌtiːˈviː/' },
+    'sofa': { en: 'Sofa', es: 'Sofá', ipa: '/ˈsoʊ.fə/' },
+    'couch': { en: 'Couch', es: 'Sillón cómodo', ipa: '/kaʊtʃ/' },
+    'armchair': { en: 'Armchair', es: 'Sillón individual', ipa: '/ˈɑːrm.tʃer/' },
+    'bookshelf': { en: 'Bookshelf', es: 'Librero', ipa: '/ˈbʊk.ʃelf/' },
+    'book': { en: 'Book', es: 'Libro', ipa: '/bʊk/' },
+    'books': { en: 'Books', es: 'Libros', ipa: '/bʊks/' },
+    'lamp': { en: 'Lamp', es: 'Lámpara', ipa: '/læmp/' },
+    'floor_lamp': { en: 'Floor Lamp', es: 'Lámpara de piso', ipa: '/flɔːr læmp/' },
+    'plant': { en: 'Houseplant', es: 'Planta de interior', ipa: '/ˈhaʊs.plænt/' },
+    'pot': { en: 'Flowerpot', es: 'Maceta', ipa: '/ˈflaʊ.ɚ.pɑːt/' },
+    'rug': { en: 'Area Rug', es: 'Tapete decorativo', ipa: '/ˈer.i.ə rʌɡ/' },
+    'clock': { en: 'Wall Clock', es: 'Reloj de pared', ipa: '/wɑːl klɑːk/' },
+    'painting': { en: 'Framed Painting', es: 'Cuadro decorativo', ipa: '/freɪmd ˈpeɪn.tɪŋ/' },
+    'window': { en: 'Window', es: 'Ventana', ipa: '/ˈwɪn.doʊ/' },
+    'fireplace': { en: 'Fireplace', es: 'Chimenea', ipa: '/ˈfaɪr.pleɪs/' },
+    'cushion': { en: 'Cushion', es: 'Cojín', ipa: '/ˈkʊʃ.ən/' },
+    'desk': { en: 'Study Desk', es: 'Escritorio de estudio', ipa: '/ˈstʌd.i desk/' },
+    'chair': { en: 'Chair', es: 'Silla', ipa: '/tʃer/' },
+    'bed': { en: 'Bed', es: 'Cama', ipa: '/bed/' },
+    'pillow': { en: 'Pillow', es: 'Almohada', ipa: '/ˈpɪl.oʊ/' },
+    'blanket': { en: 'Blanket', es: 'Cobija', ipa: '/ˈblæŋ.kɪt/' },
+    
+    // Espacio / Astronomía
+    'earth': { en: 'Earth', es: 'Planeta Tierra', ipa: '/ɜːrθ/' },
+    'saturn': { en: 'Saturn', es: 'Saturno', ipa: '/ˈsæt.ərn/' },
+    'mars': { en: 'Mars', es: 'Marte', ipa: '/mɑːrz/' },
+    'jupiter': { en: 'Jupiter', es: 'Júpiter', ipa: '/ˈdʒuː.pə.t̬ɚ/' },
+    'moon': { en: 'Moon', es: 'Luna', ipa: '/muːn/' },
+    'sun': { en: 'Sun', es: 'Sol', ipa: '/sʌn/' },
+    'shooting_star': { en: 'Shooting Star', es: 'Estrella fugaz', ipa: '/ˌʃuː.tɪŋ ˈstɑːr/' },
+    'star': { en: 'Star', es: 'Estrella', ipa: '/stɑːr/' },
+    'rocket': { en: 'Rocket', es: 'Cohete espacial', ipa: '/ˈrɑː.kɪt/' },
+    'telescope': { en: 'Telescope', es: 'Telescopio', ipa: '/ˈtel.ə.skoʊp/' },
+    'satellite': { en: 'Satellite', es: 'Satélite', ipa: '/ˈsæt̬.əl.aɪt/' },
+    'black_hole': { en: 'Black Hole', es: 'Agujero negro', ipa: '/blæk hoʊl/' },
+    'asteroid': { en: 'Asteroid', es: 'Asteroide', ipa: '/ˈæs.tə.rɔɪd/' },
+    'comet': { en: 'Comet', es: 'Cometa', ipa: '/ˈkɑː.mɪt/' },
+    'space_station': { en: 'Space Station', es: 'Estación espacial', ipa: '/speɪs ˈsteɪ.ʃən/' },
+    'astronaut': { en: 'Astronaut', es: 'Astronauta', ipa: '/ˈæs.trə.nɑːt/' },
+    
+    // Cita Romántica / Restaurante / Bistro
+    'menu': { en: 'Dinner Menu', es: 'Menú de cena', ipa: '/ˈdɪn.ɚ ˈmen.juː/' },
+    'napkin': { en: 'Cloth Napkin', es: 'Servilleta de tela', ipa: '/klɑːθ ˈnæp.kɪn/' },
+    'cloth_napkin': { en: 'Cloth Napkin', es: 'Servilleta de tela', ipa: '/klɑːθ ˈnæp.kɪn/' },
+    'plate': { en: 'Plate', es: 'Plato', ipa: '/pleɪt/' },
+    'fork': { en: 'Fork', es: 'Tenedor', ipa: '/fɔːrk/' },
+    'knife': { en: 'Knife', es: 'Cuchillo', ipa: '/naɪf/' },
+    'spoon': { en: 'Spoon', es: 'Cuchara', ipa: '/spuːn/' },
+    'cutlery': { en: 'Cutlery', es: 'Cubertería', ipa: '/ˈkʌt.lɚ.i/' },
+    'salt_shaker': { en: 'Salt Shaker', es: 'Salero', ipa: '/sɑːlt ˈʃeɪ.kər/' },
+    'pepper_shaker': { en: 'Pepper Shaker', es: 'Pimentero', ipa: '/ˈpep.ər ˈʃeɪ.kər/' },
+    'ice_bucket': { en: 'Ice Bucket', es: 'Hielera', ipa: '/aɪs ˈbʌk.ɪt/' },
+    'wine_bottle': { en: 'Wine Bottle', es: 'Botella de vino', ipa: '/waɪn ˈbɑː.t̬əl/' },
+    'dessert': { en: 'Dessert', es: 'Postre', ipa: '/dɪˈzɝːt/' },
+    'chocolate_dessert': { en: 'Chocolate Dessert', es: 'Pastel de chocolate', ipa: '/ˈtʃɑːk.lət dɪˈzɝːt/' },
+    'conversation_cards': { en: 'Conversation Cards', es: 'Tarjetas de conversación', ipa: '/ˌkɑːn.vɚˈseɪ.ʃən kɑːrdz/' },
+    'string_lights': { en: 'String Lights', es: 'Luces colgantes', ipa: '/strɪŋ laɪts/' },
+    'flower_vase': { en: 'Flower Vase', es: 'Florero', ipa: '/ˈflaʊ.ɚ veɪs/' },
+    'rose': { en: 'Red Rose', es: 'Rosa roja', ipa: '/red roʊz/' },
+    'dating_waiter_npc': { en: 'Waiter NPC', es: 'Mesero interactivo', ipa: '/ˈweɪ.t̬ɚ/' },
+    
+    // Supermercado / Tienda
+    'shopping_cart': { en: 'Shopping Cart', es: 'Carrito del súper', ipa: '/ˈʃɑː.pɪŋ kɑːrt/' },
+    'cash_register': { en: 'Cash Register', es: 'Caja registradora', ipa: '/kæʃ ˈredʒ.ə.stɚ/' },
+    'apple': { en: 'Red Apple', es: 'Manzana roja', ipa: '/red ˈæp.əl/' },
+    'orange': { en: 'Fresh Orange', es: 'Naranja fresca', ipa: '/freʃ ˈɔːr.ɪndʒ/' },
+    'banana': { en: 'Banana', es: 'Plátano', ipa: '/bəˈnæn.ə/' },
+    'bread': { en: 'Loaf of Bread', es: 'Barra de pan', ipa: '/loʊf əv bred/' },
+    'milk': { en: 'Milk Carton', es: 'Cartón de leche', ipa: '/mɪlk ˈkɑːr.tən/' },
+    'cereal': { en: 'Cereal Box', es: 'Caja de cereal', ipa: '/ˈsɪr.i.əl bɑːks/' },
+    'soda': { en: 'Soda Can', es: 'Lata de refresco', ipa: '/ˈsoʊ.də kæn/' },
+    'water_bottle': { en: 'Water Bottle', es: 'Botella de agua', ipa: '/ˈwɑː.t̬ɚ ˈbɑː.t̬əl/' },
+    'shelf': { en: 'Supermarket Shelf', es: 'Estante de tienda', ipa: '/ˈsuː.pɚˌmɑːr.kɪt ʃelf/' },
+    'shelves': { en: 'Shelves', es: 'Estantes', ipa: '/ʃelvz/' },
+    'checkout_counter': { en: 'Checkout Counter', es: 'Banda de cobro', ipa: '/ˈtʃek.aʊt ˈkaʊn.t̬ɚ/' },
+    'scanner': { en: 'Barcode Scanner', es: 'Lector de código de barras', ipa: '/ˈbɑːr.koʊd ˈskæn.ɚ/' },
+    
+    // Hotel & Recepción
+    'reception_desk': { en: 'Reception Desk', es: 'Mostrador de recepción', ipa: '/rɪˈsep.ʃən desk/' },
+    'bell': { en: 'Service Bell', es: 'Timbre de recepción', ipa: '/ˈsɝː.vɪs bel/' },
+    'service_bell': { en: 'Service Bell', es: 'Timbre de recepción', ipa: '/ˈsɝː.vɪs bel/' },
+    'keycard': { en: 'Room Keycard', es: 'Tarjeta llave', ipa: '/ruːm ˈkiː.kɑːrd/' },
+    'luggage': { en: 'Suitcase', es: 'Maleta de viaje', ipa: '/ˈsuːt.keɪs/' },
+    'suitcase': { en: 'Suitcase', es: 'Maleta', ipa: '/ˈsuːt.keɪs/' },
+    'elevator': { en: 'Elevator', es: 'Elevador', ipa: '/ˈel.ə.veɪ.t̬ɚ/' },
+    'passport': { en: 'Passport', es: 'Pasaporte', ipa: '/ˈpæs.pɔːrt/' },
+    'lobby_sofa': { en: 'Lobby Sofa', es: 'Sillón del vestíbulo', ipa: '/ˈlɑː.bi ˈsoʊ.fə/' },
+    
+    // Jardín Botánico
+    'fountain': { en: 'Water Fountain', es: 'Fuente de agua', ipa: '/ˈwɑː.t̬ɚ ˈfaʊn.tən/' },
+    'bench': { en: 'Garden Bench', es: 'Banca de jardín', ipa: '/ˈɡɑːr.dən bentʃ/' },
+    'tree': { en: 'Green Tree', es: 'Árbol frondoso', ipa: '/ɡriːn triː/' },
+    'flower': { en: 'Blooming Flower', es: 'Flor en flor', ipa: '/ˈbluː.mɪŋ ˈflaʊ.ɚ/' },
+    'flowers': { en: 'Flowers', es: 'Flores coloridas', ipa: '/ˈflaʊ.ɚz/' },
+    'watering_can': { en: 'Watering Can', es: 'Regadera de plantas', ipa: '/ˈwɑː.t̬ɚ.ɪŋ kæn/' },
+    'pathway': { en: 'Stone Pathway', es: 'Camino de piedra', ipa: '/stoʊn ˈpæθ.weɪ/' }
+  };
+
+  function resolveBlenderNodeMeta(nodeName, scenarioKey) {
+    if (!nodeName) return null;
+    const cleanKey = normalizeKey(nodeName);
+    
+    if (UNIVERSAL_SPANISH_FALLBACK_DICT[cleanKey]) {
+      return Object.assign({ id: cleanKey }, UNIVERSAL_SPANISH_FALLBACK_DICT[cleanKey]);
+    }
+    
+    for (const dictKey in UNIVERSAL_SPANISH_FALLBACK_DICT) {
+      if (cleanKey === dictKey || cleanKey.includes(dictKey) || dictKey.includes(cleanKey)) {
+        return Object.assign({ id: cleanKey }, UNIVERSAL_SPANISH_FALLBACK_DICT[dictKey]);
+      }
+    }
+    
+    const words = nodeName.replace(/[-_]+/g, ' ').trim();
+    const formattedEn = words.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+    
+    const commonSpanishWords = {
+      'remote': 'Control', 'control': 'remoto', 'table': 'Mesa', 'bistro': 'de bistró',
+      'candle': 'Vela', 'wine': 'Vino', 'glass': 'Copa', 'glasses': 'Copas', 'mayonnaise': 'Mayonesa',
+      'laptop': 'Computadora portátil', 'star': 'Estrella', 'shooting': 'fugaz',
+      'satellite': 'Satélite', 'rocket': 'Cohete', 'station': 'Estación',
+      'chair': 'Silla', 'desk': 'Escritorio', 'lamp': 'Lámpara', 'light': 'Luz',
+      'book': 'Libro', 'shelf': 'Estante', 'sofa': 'Sofá', 'couch': 'Sillón',
+      'window': 'Ventana', 'door': 'Puerta', 'plate': 'Plato', 'fork': 'Tenedor',
+      'knife': 'Cuchillo', 'spoon': 'Cuchara', 'napkin': 'Servilleta', 'cart': 'Carrito',
+      'bread': 'Pan', 'milk': 'Leche', 'apple': 'Manzana', 'orange': 'Naranja',
+      'water': 'Agua', 'bottle': 'Botella', 'bed': 'Cama', 'pillow': 'Almohada',
+      'fountain': 'Fuente', 'bench': 'Banca', 'tree': 'Árbol', 'flower': 'Flor'
+    };
+    
+    const translatedParts = words.toLowerCase().split(' ').map(w => commonSpanishWords[w] || w);
+    const formattedEs = translatedParts.join(' ').replace(/^./, c => c.toUpperCase());
+    
+    return {
+      id: cleanKey,
+      en: formattedEn,
+      es: formattedEs,
+      ipa: `/${formattedEn.toLowerCase().replace(/\s+/g, '.')}/`,
+      category: scenarioKey || 'World Tour 3D',
+      example: `Explore the ${formattedEn} in the 3D world.`
+    };
+  }
+
   function bindGlbInteractiveNodes(glbScene, scenarioKey) {
     if (!glbScene) return;
     const scen = (typeof WORLD_TOUR_SCENARIOS !== 'undefined' && WORLD_TOUR_SCENARIOS[scenarioKey]) || {};
@@ -2828,16 +2985,8 @@ ensureOrbitControls();
           }
         }
       }
-      if (!meta && (child.isMesh || (child.isGroup && child.children && child.children.length > 0))) {
-        const cleanWord = rawName.replace(/_/g, ' ');
-        meta = {
-          id: normName,
-          en: cleanWord,
-          es: cleanWord,
-          ipa: `/${cleanWord.toLowerCase().replace(/\s+/g, '.')}/`,
-          category: scenarioKey || 'World Tour 3D',
-          example: `Explore the ${cleanWord} in the 3D world.`
-        };
+      if (!meta) {
+        meta = resolveBlenderNodeMeta(rawName, scenarioKey);
       }
       if (meta) {
         const cleanWord = meta.en || meta.wordEn || rawName.replace(/_/g, ' ');
@@ -2872,10 +3021,27 @@ ensureOrbitControls();
           if (subChild !== child) {
             const rawSub = subChild.name || '';
             const normSub = normalizeKey(rawSub);
-            const isSubKnownProp = Boolean(MASTER_INTERACTIVE_OBJECTS[normSub] || scenObjects.some(o => normalizeKey(o.id) === normSub || normalizeKey(o.en || o.wordEn) === normSub));
+            const isSubKnownProp = Boolean(MASTER_INTERACTIVE_OBJECTS[normSub] || scenObjects.some(o => normalizeKey(o.id) === normSub || normalizeKey(o.en || o.wordEn) === normSub) || UNIVERSAL_SPANISH_FALLBACK_DICT[normSub] || /remote|candle|wine|glass|mayonnaise|laptop|earth|saturn|star|comet|rocket|bread|apple|orange|banana|milk|cereal|soda|fork|knife|spoon|napkin|plate|dessert|menu|bell|card|keycard|passport|book|cup|bottle/i.test(rawSub));
             
             // Si el subChild tiene su propia identidad de vocabulario, NO sobreescribirlo con el mueble padre
-            if (!isSubKnownProp && (!subChild.userData || !subChild.userData.id)) {
+            if (isSubKnownProp) {
+              const subMeta = resolveBlenderNodeMeta(rawSub, scenarioKey);
+              if (subMeta) {
+                subChild.userData = Object.assign({}, subChild.userData || {}, {
+                  id: subMeta.id,
+                  en: subMeta.en,
+                  wordEn: subMeta.en,
+                  es: subMeta.es,
+                  wordEs: subMeta.es,
+                  ipa: subMeta.ipa,
+                  phonetic: subMeta.ipa,
+                  category: subMeta.category,
+                  interactive: true,
+                  isEnvironment: false,
+                  parentGroup: subChild
+                });
+              }
+            } else if (!subChild.userData || !subChild.userData.id) {
               subChild.userData = Object.assign({}, subChild.userData || {}, {
                 interactive: true,
                 isEnvironment: false,
@@ -2943,21 +3109,21 @@ ensureOrbitControls();
     }
 
     // ILUMINACIÓN DIRECTA POTENTE Y SOMBRAS DIRECCIONALES DURAS
-    // 1. Luz ambiental equilibrada para sombras contrastadas
-    const amb = new THREE.AmbientLight(0xffffff, 0.4);
+    // 1. Luz ambiental equilibrada para sombras contrastadas (0.85)
+    const amb = new THREE.AmbientLight(0xffffff, 0.85);
     amb.name = 'ScenarioAmbientLight';
     lightsGroup.add(amb);
     globalAmbientLight = amb;
 
-    // 2. HemisphereLight con gradiente cielo blanco / suelo cálido azul profundo
-    const hemi = new THREE.HemisphereLight(0xffffff, 0x1e293b, 0.6);
+    // 2. HemisphereLight con gradiente cielo blanco / suelo cálido azul profundo (0.65)
+    const hemi = new THREE.HemisphereLight(0xffffff, 0x1e293b, 0.65);
     hemi.position.set(0, 25, 0);
     hemi.name = 'ScenarioHemiLight';
     lightsGroup.add(hemi);
     globalHemiLight = hemi;
 
-    // 3. DirectionalLight principal en (15, 25, 15) con 2.5 y sombras nítidas (2048x2048)
-    const mainDir = new THREE.DirectionalLight(0xfffbeb, 2.5);
+    // 3. DirectionalLight principal en (15, 25, 15) con 1.35 y sombras nítidas (2048x2048)
+    const mainDir = new THREE.DirectionalLight(0xfffbeb, 1.35);
     mainDir.position.set(15, 25, 15);
     mainDir.castShadow = true;
     mainDir.shadow.mapSize.width = 2048;
@@ -3857,6 +4023,131 @@ ensureOrbitControls();
   }
   global.rebuildDatingSeatedAvatars = rebuildDatingSeatedAvatars;
 
+  function buildWaiterNPCMesh() {
+    if (typeof THREE === 'undefined') return null;
+    const g = new THREE.Group();
+    g.name = 'dating_waiter_npc';
+
+    const tuxedoMat = new THREE.MeshStandardMaterial({ color: 0x090d16, roughness: 0.4, metalness: 0.1 });
+    const shirtMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.3, metalness: 0.05 });
+    const bowTieMat = new THREE.MeshStandardMaterial({ color: 0xb91c1c, roughness: 0.3, metalness: 0.1 });
+    const apronMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.5, metalness: 0.05 });
+    const skinMat = new THREE.MeshStandardMaterial({ color: 0xfcd34d, roughness: 0.5, metalness: 0.05 });
+    const hairMat = new THREE.MeshStandardMaterial({ color: 0x271810, roughness: 0.8, metalness: 0.05 });
+    const trayMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.25, metalness: 0.8 });
+    const wineMat = new THREE.MeshStandardMaterial({ color: 0x881337, transparent: true, opacity: 0.75 });
+
+    // Shoes & Legs
+    const shoes = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.1, 0.22), tuxedoMat);
+    shoes.position.y = 0.05;
+    const legs = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.72, 0.18), tuxedoMat);
+    legs.position.y = 0.46;
+
+    // Torso, Shirt, BowTie & Apron
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.58, 0.24), tuxedoMat);
+    torso.position.y = 1.05;
+    const shirt = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.35, 0.02), shirtMat);
+    shirt.position.set(0, 1.15, 0.125);
+    const bowTie = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.06, 0.04), bowTieMat);
+    bowTie.position.set(0, 1.3, 0.13);
+    const apron = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.52, 0.02), apronMat);
+    apron.position.set(0, 0.75, 0.122);
+
+    // Head & Hair
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.14, 16, 14), skinMat);
+    head.position.y = 1.5;
+    const hair = new THREE.Mesh(new THREE.SphereGeometry(0.145, 14, 12), hairMat);
+    hair.position.set(0, 1.54, -0.02);
+
+    // Right Arm & Serving Tray with drinks
+    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.36, 8), tuxedoMat);
+    arm.rotation.z = -Math.PI / 3;
+    arm.position.set(0.26, 1.1, 0.1);
+    const tray = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.02, 16), trayMat);
+    tray.position.set(0.38, 1.08, 0.22);
+    const glass = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.025, 0.12, 10), wineMat);
+    glass.position.set(0.38, 1.15, 0.22);
+
+    g.add(shoes, legs, torso, shirt, bowTie, apron, head, hair, arm, tray, glass);
+
+    const waiterMeta = {
+      id: 'dating_waiter_npc',
+      en: 'Waiter NPC',
+      wordEn: 'Waiter NPC',
+      es: 'Mesero 3D Interactivo',
+      wordEs: 'Mesero 3D Interactivo',
+      ipa: '/ˈweɪ.t̬ɚ/',
+      phonetic: '/ˈweɪ.t̬ɚ/',
+      category: 'Romantic Date',
+      example: 'Our friendly waiter recommended the chef’s special tonight.',
+      interactive: true,
+      parentGroup: g
+    };
+    g.userData = waiterMeta;
+    g.traverse(child => {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+        child.userData = waiterMeta;
+      }
+    });
+
+    return g;
+  }
+  global.buildWaiterNPCMesh = buildWaiterNPCMesh;
+
+  function setupDatingScenarioElements() {
+    if (currentScenarioKey !== 'dating' || !scenarioDynamicRoot) return;
+
+    // 1. Sentar a los 2 avatares en las sillas bistro
+    rebuildDatingSeatedAvatars();
+
+    // 2. Spawn y colocar al Mesero en WAITER_STATION_POS
+    if (waiterGroup && waiterGroup.parent) {
+      waiterGroup.parent.remove(waiterGroup);
+    }
+    waiterGroup = buildWaiterNPCMesh();
+    if (waiterGroup) {
+      const wx = (typeof WAITER_STATION_POS !== 'undefined') ? WAITER_STATION_POS.x : 2.8;
+      const wy = (typeof WAITER_STATION_POS !== 'undefined') ? WAITER_STATION_POS.y : 0;
+      const wz = (typeof WAITER_STATION_POS !== 'undefined') ? WAITER_STATION_POS.z : -2.4;
+      waiterGroup.position.set(wx, wy, wz);
+      waiterGroup.rotation.y = -0.45;
+      scenarioDynamicRoot.add(waiterGroup);
+      waiterTargetPos = { x: wx, y: wy, z: wz };
+      if (typeof waiterLerp !== 'undefined' && waiterLerp && waiterLerp.targetPos && waiterLerp.targetPos.set) {
+        waiterLerp.targetPos.set(wx, wy, wz);
+        waiterLerp.targetRotY = -0.45;
+      }
+    }
+
+    // 3. Activar paneles interactivos de la cita con z-index 99995
+    if (typeof toggleDatingDualPanelsVisibility === 'function') {
+      toggleDatingDualPanelsVisibility(true);
+    }
+    if (typeof updateDatingGenderButtonsUI === 'function') {
+      updateDatingGenderButtonsUI();
+    }
+
+    const genderBar = document.getElementById('datingAvatarGenderSelectorBar');
+    if (genderBar) {
+      genderBar.style.setProperty('display', 'flex', 'important');
+      genderBar.style.setProperty('visibility', 'visible', 'important');
+      genderBar.style.setProperty('z-index', '99995', 'important');
+    }
+    const dockPills = document.getElementById('datingBottomDockPills');
+    if (dockPills) {
+      dockPills.style.setProperty('display', 'flex', 'important');
+      dockPills.style.setProperty('visibility', 'visible', 'important');
+      dockPills.style.setProperty('z-index', '99995', 'important');
+    }
+
+    if (renderer && scene && camera) {
+      try { renderer.render(scene, camera); } catch (_) {}
+    }
+  }
+  global.setupDatingScenarioElements = setupDatingScenarioElements;
+
   // Burbujas de Chat Estilo Roblox Sobre la Cabeza (window.showRobloxOverheadBubble)
   function showRobloxOverheadBubble(targetWho, text) {
     if (typeof THREE === 'undefined' || !text) return null;
@@ -4370,18 +4661,18 @@ ensureOrbitControls();
   // 7. ILUMINACIÓN CINEMÁTICA EQUILIBRADA Y CICLO DÍA / NOCHE
   // ============================================================================
   function setupCinematicLighting(targetScene) {
-    // 1. Luz ambiental equilibrada (#ffffff, 0.4) para contraste y sombras reales
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    // 1. Luz ambiental equilibrada (#ffffff, 0.85) para colores intensos y contraste real
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
     targetScene.add(ambientLight);
     globalAmbientLight = ambientLight;
 
-    // 2. HemisphereLight para relleno ambiental equilibrado (0.6)
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x1e293b, 0.6);
+    // 2. HemisphereLight para relleno ambiental equilibrado (0.65)
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x1e293b, 0.65);
     targetScene.add(hemiLight);
     globalHemiLight = hemiLight;
 
-    // 3. DirectionalLight principal potente en (15, 25, 15) con sombras nítidas (2048x2048)
-    const dirLight = new THREE.DirectionalLight(0xfffbeb, 2.5);
+    // 3. DirectionalLight principal en (15, 25, 15) con 1.35 y sombras nítidas (2048x2048)
+    const dirLight = new THREE.DirectionalLight(0xfffbeb, 1.35);
     dirLight.position.set(15, 25, 15);
     dirLight.castShadow = true;
     dirLight.shadow.mapSize.width = 2048;
@@ -4449,12 +4740,12 @@ ensureOrbitControls();
       }
       if (globalDirLight) {
         globalDirLight.color.setHex(0xfff2dd);
-        globalDirLight.intensity = 2.5;
+        globalDirLight.intensity = 1.35;
         globalDirLight.position.set(15, 25, 15);
         globalDirLight.castShadow = true;
       }
       if (globalAmbientLight) {
-        globalAmbientLight.intensity = 0.4;
+        globalAmbientLight.intensity = 0.85;
       }
 
       if (streetLanternSpotLight) streetLanternSpotLight.intensity = 0.0;
@@ -5035,6 +5326,12 @@ ensureOrbitControls();
       modal.style.cssText = 'position: fixed; inset: 0; z-index: 99999; background: rgba(15, 18, 26, 0.94); backdrop-filter: none !important; -webkit-backdrop-filter: none !important; display: flex; align-items: center; justify-content: center; padding: 16px;';
       document.body.appendChild(modal);
     }
+    const isGuest = Boolean(
+      (typeof window !== 'undefined' && ((window.currentUser && window.currentUser.isGuest) || (window.currentUser && window.currentUser.role === 'GUEST'))) ||
+      localStorage.getItem('mastereng_role') === 'GUEST' ||
+      sessionStorage.getItem('mastereng_role') === 'GUEST' ||
+      localStorage.getItem('guest_user') === 'true'
+    );
     const friends = getStoredFriendsListForDating();
     modal.innerHTML = `
       <div class="bg-slate-950 border-2 border-rose-500/80 rounded-3xl p-5 max-w-md w-full text-white shadow-2xl space-y-4">
@@ -5046,6 +5343,19 @@ ensureOrbitControls();
           <button type="button" onclick="window.closeDatingInviteModal()"
             class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold cursor-pointer">&times;</button>
         </div>
+
+        ${isGuest ? `
+          <div class="p-3 rounded-2xl bg-amber-500/15 border border-amber-500/50 text-amber-200 text-xs flex items-center gap-2.5">
+            <span class="text-base">🔒</span>
+            <span>Inicia sesión para invitar a un jugador real (Modo Invitado: puedes practicar libremente con tu pareja IA).</span>
+          </div>
+          <div class="pt-1">
+            <button type="button" onclick="window.confirmDatingPartnerInvite('IA-DATE', 'Elena (IA)', 'female')"
+              class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-rose-600 via-pink-600 to-amber-600 hover:from-rose-500 text-white text-xs font-black shadow-lg cursor-pointer transition flex items-center justify-center gap-2">
+              <span>💑 Practicar Ahora con Pareja IA en la Mesa</span>
+            </button>
+          </div>
+        ` : ''}
 
         <div class="space-y-1.5">
           <div class="text-[11px] font-extrabold uppercase tracking-wider text-rose-200">👥 Tus Contactos Agregados</div>
@@ -5643,99 +5953,63 @@ ensureOrbitControls();
           activeBar.style.setProperty('display', 'none', 'important');
           activeBar.style.setProperty('visibility', 'hidden', 'important');
         } else {
-          activeBar.style.cssText = 'position: absolute !important; top: 10px !important; left: 10px !important; right: 10px !important; max-width: calc(100vw - 20px) !important; z-index: 80 !important; display: flex !important; flex-wrap: nowrap !important; overflow-x: auto !important; align-items: center !important; gap: 6px !important; background: rgba(15, 18, 26, 0.92) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; padding: 6px 10px !important; border-radius: 14px !important; border: 1px solid rgba(148, 163, 184, 0.3) !important; pointer-events: auto !important;';
+          activeBar.style.cssText = 'position: fixed !important; top: 10px !important; left: 10px !important; right: 10px !important; max-width: calc(100vw - 20px) !important; z-index: 99990 !important; display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 8px !important; background: rgba(15, 23, 42, 0.94) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; padding: 6px 12px !important; border-radius: 16px !important; border: 1.5px solid rgba(168, 85, 247, 0.6) !important; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7) !important; pointer-events: auto !important;';
         }
       }
     };
 
-    // BARRA SUPERIOR UNIFICADA (#unified-world3d-cam-bar)
-    // Legacy camera controls position compatibility: top: 68px; left: 16px; z-index: 60;
+    // BARRA SUPERIOR UNIFICADA (#unified-world3d-cam-bar) CON Z-INDEX 99990
     let cameraButtonsBar = document.getElementById('unified-world3d-cam-bar') || document.getElementById('world3dCameraControlsBar') || document.getElementById('world3dCameraButtonsBar');
     if (!cameraButtonsBar) {
       cameraButtonsBar = document.createElement('div');
       cameraButtonsBar.id = 'unified-world3d-cam-bar';
-      cameraButtonsBar.className = 'flex flex-wrap items-center gap-1.5';
-      cameraButtonsBar.style.cssText = 'position: absolute; top: 12px; left: 12px; right: 12px; max-width: calc(100vw - 24px); z-index: 80; pointer-events: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 6px;';
+      cameraButtonsBar.className = 'unified-world3d-cam-bar';
+      cameraButtonsBar.style.cssText = 'position: fixed !important; top: 10px !important; left: 10px !important; right: 10px !important; max-width: calc(100vw - 20px) !important; z-index: 99990 !important; display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 8px !important; background: rgba(15, 23, 42, 0.94) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; padding: 6px 12px !important; border-radius: 16px !important; border: 1.5px solid rgba(168, 85, 247, 0.6) !important; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7) !important; pointer-events: auto !important;';
       cameraButtonsBar.innerHTML = `
-        <button type="button" onclick="if(typeof window.returnToMainPortals==='function') window.returnToMainPortals(event); else window.navigateTo('view-home');"
-          class="px-3 py-1.5 rounded-xl bg-slate-900/95 hover:bg-slate-800 text-white border border-purple-500/50 text-[11px] font-bold shadow-lg cursor-pointer transition active:scale-95 flex items-center gap-1">
-          <span>← Salir a Portales</span>
-          <span style="font-size:0;opacity:0;position:absolute;pointer-events:none;">← Volver a Portales</span>
-        </button>
-
-        <button type="button" id="world3dLobbySwitchBtn" onclick="window.openWorld3DLobby()"
-          class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-fuchsia-600 hover:from-indigo-500 hover:to-fuchsia-500 text-white border border-purple-300/60 text-[11px] font-black shadow-lg shadow-purple-700/40 cursor-pointer transition active:scale-95 flex items-center gap-1.5">
-          <span>🗺️ Cambiar de Mundo (Lobby)</span>
-        </button>
-
-        <select id="world3dScenarioSelect"
-          aria-label="Seleccionar Mundo 3D"
-          style="display: none;"
-          class="hidden px-2.5 py-1.5 rounded-xl bg-slate-900/95 hover:bg-slate-800 text-purple-200 border border-purple-500/60 text-[11px] font-extrabold shadow-lg cursor-pointer focus:outline-none">
-          <option value="house">🏠 House & Study (50+ Vocab)</option>
-          <option value="garden">🌿 Backyard & Garden (50+ Vocab)</option>
-          <option value="dating">🕯️ Romantic Date & Bistro (50+ Vocab)</option>
-          <option value="space">🚀 Outer Space & Astronomy (50+ Vocab)</option>
-          <option value="supermarket">🛒 Supermarket (50+ Vocab)</option>
-          <option value="hotel">🏨 Hotel & Reception (50+ Vocab)</option>
-          <option value="restaurant">🍽️ Fine Restaurant (50+ Vocab)</option>
-        </select>
-
-        <button type="button" id="world3dRotateScreenBtn" onclick="window.toggleScreenOrientation()" title="Rotar pantalla a horizontal/vertical"
-          class="px-2.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-[11px] shadow-lg cursor-pointer transition active:scale-95 flex items-center gap-1 border border-purple-400/50">
-          <span>🔄 Rotar</span>
-        </button>
-
-        <button type="button" id="world3dToggleHudBtn" onclick="window.toggleWorld3DMinimalMode()" title="Ocultar / Mostrar paneles"
-          class="px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 font-bold text-[11px] border border-slate-700 shadow-lg cursor-pointer transition active:scale-95 flex items-center gap-1">
-          <span id="world3dToggleHudIcon">👁️ Ocultar HUD</span>
-        </button>
-
-        <button type="button" id="world3dCatalogBtn" onclick="window.openWorld3DCatalogModal()"
-          class="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-purple-700 to-indigo-600 hover:from-purple-600 hover:to-indigo-500 text-white border border-purple-400/50 text-[11px] font-extrabold shadow-lg shadow-purple-900/40 cursor-pointer transition active:scale-95 flex items-center gap-1">
-          <span>📚 Catálogo</span>
-        </button>
-
-        <button type="button" id="world3dPdfBtn" onclick="window.downloadCurrent3DWorldPdf()"
-          class="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-slate-950 font-black border border-yellow-300/80 text-[11px] shadow-lg shadow-amber-600/30 cursor-pointer transition active:scale-95 flex items-center gap-1">
-          <span>📥 PDF</span>
-        </button>
-
-        <button type="button" id="world3dCamBtnOverview" onclick="window.focusWorld3DZone('overview')"
-          class="px-2.5 py-1.5 rounded-xl bg-slate-900/90 hover:bg-purple-600/90 text-slate-200 hover:text-white border border-slate-700/80 text-[11px] font-bold shadow-lg cursor-pointer transition active:scale-95">
-          <span id="world3dCamLabelOverview">🏠 Vista General</span>
-        </button>
-        <button type="button" id="world3dCamBtnZone1" onclick="window.focusWorld3DZone('zone1')"
-          class="px-2.5 py-1.5 rounded-xl bg-slate-900/90 hover:bg-purple-600/90 text-slate-200 hover:text-white border border-slate-700/80 text-[11px] font-bold shadow-lg cursor-pointer transition active:scale-95">
-          <span id="world3dCamLabelZone1">🛋️ Ir a la Sala</span>
-          <span style="font-size:0;opacity:0;position:absolute;pointer-events:none;">Vista General Ir a la Sala Ir al Estudio Ir al Jardín</span>
-        </button>
-        <button type="button" id="world3dCamBtnZone2" onclick="window.focusWorld3DZone('zone2')"
-          class="px-2.5 py-1.5 rounded-xl bg-slate-900/90 hover:bg-purple-600/90 text-slate-200 hover:text-white border border-slate-700/80 text-[11px] font-bold shadow-lg cursor-pointer transition active:scale-95">
-          <span id="world3dCamLabelZone2">💻 Ir al Estudio</span>
-        </button>
-        <button type="button" id="world3dCamBtnZone3" onclick="window.focusWorld3DZone('zone3')"
-          class="px-2.5 py-1.5 rounded-xl bg-slate-900/90 hover:bg-emerald-600/90 text-slate-200 hover:text-white border border-slate-700/80 text-[11px] font-bold shadow-lg cursor-pointer transition active:scale-95">
-          <span id="world3dCamLabelZone3">🌳 Ir al Jardín</span>
-        </button>
-
-        <button type="button" id="world3dStartDateBtn" onclick="window.openDateNightSimulator()"
-          style="display: none;"
-          class="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white border border-rose-300/60 text-[11px] font-extrabold shadow-lg shadow-rose-600/30 cursor-pointer transition active:scale-95 items-center gap-1">
-          <span>💑 Iniciar Cita</span>
-        </button>
-
-        <button type="button" id="world3dDayNightBtn" onclick="window.toggleWorld3DDayNight()" title="☀️ Día / 🌙 Noche"
-          class="px-2.5 py-1.5 rounded-xl bg-indigo-950/90 hover:bg-indigo-800 text-indigo-200 border border-indigo-500/40 text-[11px] font-bold shadow-lg cursor-pointer transition active:scale-95">
-          <span>☀️/🌙</span>
-        </button>
-
-        <div class="flex items-center gap-1.5 bg-slate-950/90 border border-purple-500/40 px-2.5 py-1 rounded-xl">
-          <span id="world3dProgressCounter" class="text-[10px] font-black text-white">Objetos descubiertos: 0 / 14</span>
-          <span id="world3dLearnedSubBadge" class="hidden sm:inline text-[10px] font-bold text-emerald-400">Aprendidos: 0/14</span>
-          <div class="w-10 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-            <div id="world3dProgressBarFill" class="h-full bg-gradient-to-r from-purple-500 to-emerald-400" style="width: 0%;"></div>
+        <!-- SECCIÓN IZQUIERDA: Volver a Portales + Título del Mundo -->
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <button type="button" onclick="if(typeof window.openWorld3DLobby==='function'){ window.openWorld3DLobby(); } else if(typeof window.returnToMainPortals==='function'){ window.returnToMainPortals(event); } else { window.navigateTo('view-home'); }"
+            class="px-3 py-1.5 rounded-xl bg-slate-900/95 hover:bg-slate-800 text-white border border-sky-400/60 text-xs font-black shadow-lg cursor-pointer transition active:scale-95 flex items-center gap-1.5">
+            <span>← Volver a Portales</span>
+          </button>
+          <div id="world3dScenarioTitleBadge" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-purple-950/80 border border-purple-500/40 text-purple-200 text-xs font-black">
+            <span id="world3dCurrentWorldIcon">🏠</span>
+            <span id="world3dCurrentWorldTitle">Casa y Jardín</span>
           </div>
+        </div>
+
+        <!-- SECCIÓN CENTRO: Controles de Cámara Rápida -->
+        <div class="flex items-center gap-1.5 flex-wrap justify-center overflow-x-auto max-w-full">
+          <button type="button" id="world3dCamBtnOverview" onclick="window.focusWorld3DZone('overview')"
+            class="px-2.5 py-1.5 rounded-xl bg-slate-900/90 hover:bg-purple-600 text-slate-200 hover:text-white border border-slate-700 text-xs font-bold shadow cursor-pointer transition active:scale-95 flex items-center gap-1">
+            <span id="world3dCamLabelOverview">🎥 Vista General</span>
+          </button>
+          <button type="button" id="world3dCamBtnZone1" onclick="window.focusWorld3DZone('zone1')"
+            class="px-2.5 py-1.5 rounded-xl bg-slate-900/90 hover:bg-purple-600 text-slate-200 hover:text-white border border-slate-700 text-xs font-bold shadow cursor-pointer transition active:scale-95 flex items-center gap-1">
+            <span id="world3dCamLabelZone1">🔍 Acercar Zona Principal</span>
+          </button>
+          <button type="button" id="world3dRotateScreenBtn" onclick="window.toggleWorld3DOrbitOrOrientation()" title="Girar Cámara"
+            class="px-2.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white border border-purple-400/50 text-xs font-black shadow cursor-pointer transition active:scale-95 flex items-center gap-1">
+            <span>🔄 Girar Cámara</span>
+          </button>
+          <button type="button" id="world3dCatalogBtn" onclick="window.openWorld3DCatalogModal()"
+            class="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-purple-700 to-indigo-600 hover:from-purple-600 hover:to-indigo-500 text-white border border-purple-400/50 text-xs font-black shadow cursor-pointer transition active:scale-95 flex items-center gap-1">
+            <span>📋 Ver Lista de Objetos del Mundo</span>
+          </button>
+        </div>
+
+        <!-- SECCIÓN DERECHA: Contador de Objetos y Ayuda -->
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <div class="flex items-center gap-1.5 bg-slate-950/90 border border-purple-500/40 px-2.5 py-1 rounded-xl">
+            <span id="world3dProgressCounter" class="text-xs font-black text-white">Objetos: 0 / 14</span>
+            <div class="w-10 h-1.5 bg-slate-800 rounded-full overflow-hidden hidden sm:block">
+              <div id="world3dProgressBarFill" class="h-full bg-gradient-to-r from-purple-500 to-emerald-400" style="width: 0%;"></div>
+            </div>
+          </div>
+          <button type="button" onclick="window.openWorld3DHelpModal()" title="Ayuda"
+            class="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-purple-200 hover:text-white border border-slate-700 text-xs font-black shadow cursor-pointer transition active:scale-95">
+            <span>❓ Ayuda</span>
+          </button>
         </div>
       `;
       containerEl.appendChild(cameraButtonsBar);
@@ -5762,7 +6036,7 @@ ensureOrbitControls();
       genderBar = document.createElement('div');
       genderBar.id = 'datingAvatarGenderSelectorBar';
       genderBar.className = 'hidden';
-      genderBar.style.cssText = 'position: absolute; top: 64px; left: 12px; right: 12px; z-index: 82; pointer-events: auto; display: none; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px;';
+      genderBar.style.cssText = 'position: fixed !important; top: 68px !important; left: 12px !important; right: 12px !important; z-index: 99995 !important; pointer-events: auto !important; display: none; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px;';
       genderBar.innerHTML = `
         <div class="flex flex-wrap items-center gap-2 bg-slate-950/92 border border-rose-500/50 px-3 py-1.5 rounded-2xl shadow-xl text-white">
           <span class="text-[11px] font-extrabold text-sky-300">👤 Mi Avatar:</span>
@@ -5784,7 +6058,7 @@ ensureOrbitControls();
       datingDockPills = document.createElement('div');
       datingDockPills.id = 'datingBottomDockPills';
       datingDockPills.className = 'hidden';
-      datingDockPills.style.cssText = 'position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 85; display: none; align-items: center; gap: 8px; pointer-events: auto;';
+      datingDockPills.style.cssText = 'position: fixed !important; bottom: 16px !important; left: 50% !important; transform: translateX(-50%) !important; z-index: 99995 !important; display: none; align-items: center; gap: 8px; pointer-events: auto !important;';
       datingDockPills.innerHTML = `
         <button type="button" onclick="window.toggleDatingPanel('waiter')"
           class="px-3 py-1.5 rounded-xl bg-amber-600/95 hover:bg-amber-500 text-white font-extrabold text-[11px] shadow-xl border border-amber-300/40 cursor-pointer flex items-center gap-1.5 transition active:scale-95">
@@ -5828,7 +6102,7 @@ ensureOrbitControls();
       waiterChatPanel = document.createElement('div');
       waiterChatPanel.id = 'datingWaiterChatPanel';
       waiterChatPanel.className = 'hidden';
-      waiterChatPanel.style.cssText = 'position: absolute; bottom: 64px; left: 16px; width: min(320px, calc(100vw - 32px)); max-height: calc(100vh - 160px); z-index: 90; pointer-events: auto; display: none;';
+      waiterChatPanel.style.cssText = 'position: fixed !important; bottom: 64px !important; left: 16px !important; width: min(320px, calc(100vw - 32px)) !important; max-height: calc(100vh - 160px) !important; z-index: 99995 !important; pointer-events: auto !important; display: none;';
       waiterChatPanel.innerHTML = `
         <div class="bg-slate-950/94 border-2 border-amber-500/65 rounded-3xl p-3 shadow-2xl text-white flex flex-col gap-2">
           <div class="flex items-center justify-between gap-1 border-b border-slate-800 pb-1.5">
@@ -5900,7 +6174,7 @@ ensureOrbitControls();
       partnerChatPanel = document.createElement('div');
       partnerChatPanel.id = 'datingPartnerChatPanel';
       partnerChatPanel.className = 'hidden';
-      partnerChatPanel.style.cssText = 'position: absolute; bottom: 64px; right: 16px; width: min(320px, calc(100vw - 32px)); max-height: calc(100vh - 160px); z-index: 90; pointer-events: auto; display: none;';
+      partnerChatPanel.style.cssText = 'position: fixed !important; bottom: 64px !important; right: 16px !important; width: min(320px, calc(100vw - 32px)) !important; max-height: calc(100vh - 160px) !important; z-index: 99995 !important; pointer-events: auto !important; display: none;';
       partnerChatPanel.innerHTML = `
         <div class="bg-slate-950/94 border-2 border-rose-500/70 rounded-3xl p-3 shadow-2xl text-white flex flex-col gap-2">
           <div class="flex items-center justify-between gap-1 border-b border-slate-800 pb-1.5">
@@ -6521,6 +6795,8 @@ ensureOrbitControls();
 
     function resolveInteractiveHit(intersects) {
       if (!Array.isArray(intersects) || intersects.length === 0) return null;
+      intersects.sort((a, b) => a.distance - b.distance);
+
       for (let i = 0; i < intersects.length; i++) {
         const hit = intersects[i];
         const obj = hit && hit.object;
@@ -6537,16 +6813,43 @@ ensureOrbitControls();
           }
         }
 
-        // Filtrar elementos de fondo (sky domes, star points, pisos y paredes estáticos sin metadata)
         const name = String(obj.name || '').toLowerCase();
         const parentName = String(obj.parent?.name || '').toLowerCase();
+
+        // Filtrar elementos de fondo (sky domes, star points, pisos y paredes estáticos sin metadata)
         if (name.includes('spacedome') || parentName.includes('spacedome') || obj.isPoints) continue;
         if (name.includes('skydome') || parentName.includes('skydome')) continue;
         if ((name.includes('floor') || name.includes('ground') || name.includes('lawn') || name.includes('patio') || name.includes('runner')) && (!obj.userData || (!obj.userData.en && !obj.userData.wordEn && !obj.userData.interactive))) {
           continue;
         }
-        if ((name.includes('wall') || name.includes('ceiling') || name.includes('roof') || name.includes('hedge')) && (!obj.userData || (!obj.userData.en && !obj.userData.wordEn && !obj.userData.interactive))) {
+        if ((name.includes('wall') || name.includes('ceiling') || name.includes('roof') || name.includes('baseboard')) && (!obj.userData || (!obj.userData.en && !obj.userData.wordEn && !obj.userData.interactive))) {
           continue;
+        }
+
+        // Si es un objeto específico pequeño sobre mesas, estantes o escenario:
+        // (ej. Remote_Control, Candle, Wine_Glass, Wine_Glasses, Mayonnaise, Laptop, Earth, Saturn, etc.)
+        const isSmallSpecificProp = /remote|candle|wine|glass|mayonnaise|laptop|earth|saturn|star|comet|rocket|satellite|bread|apple|orange|banana|milk|cereal|soda|fork|knife|spoon|napkin|plate|dessert|menu|bell|card|keycard|passport|book|cup|bottle/i.test(name) || /remote|candle|wine|glass|mayonnaise|laptop|earth|saturn|star|comet|rocket|satellite|bread|apple|orange|banana|milk|cereal|soda|fork|knife|spoon|napkin|plate|dessert|menu|bell|card|keycard|passport|book|cup|bottle/i.test(parentName);
+
+        if (isSmallSpecificProp) {
+          if (!obj.userData || (!obj.userData.en && !obj.userData.wordEn)) {
+            const meta = resolveBlenderNodeMeta(obj.name || obj.parent?.name, currentScenarioKey);
+            if (meta) {
+              const intData = Object.assign({}, obj.userData || {}, {
+                id: meta.id,
+                en: meta.en,
+                wordEn: meta.en,
+                es: meta.es,
+                wordEs: meta.es,
+                ipa: meta.ipa,
+                phonetic: meta.ipa,
+                category: meta.category,
+                interactive: true,
+                parentGroup: obj
+              });
+              obj.userData = intData;
+            }
+          }
+          return (obj.userData && obj.userData.parentGroup) ? obj.userData.parentGroup : obj;
         }
 
         // 1. Vinculación directa con parentGroup
@@ -6557,15 +6860,37 @@ ensureOrbitControls();
 
         // 2. Ascenso por la jerarquía hasta encontrar el grupo con metadata de vocabulario
         let curr = obj;
+        let matchedAncestor = null;
         while (curr && curr !== scene && curr !== scenarioDynamicRoot) {
           if (curr.userData && (curr.userData.en || curr.userData.wordEn)) {
-            return curr.userData.parentGroup || curr;
+            matchedAncestor = curr.userData.parentGroup || curr;
+            break;
           }
           curr = curr.parent;
         }
+        if (matchedAncestor) {
+          return matchedAncestor;
+        }
 
-        if (obj.userData && obj.userData.interactive) {
-          return obj.userData.parentGroup || obj;
+        // 3. Fallback a diccionario universal para cualquier nodo nombrado de Blender
+        if (obj.name && !/wall|floor|ceiling|ground|baseboard|anchor|root|light/i.test(name)) {
+          const meta = resolveBlenderNodeMeta(obj.name, currentScenarioKey);
+          if (meta) {
+            const intData = Object.assign({}, obj.userData || {}, {
+              id: meta.id,
+              en: meta.en,
+              wordEn: meta.en,
+              es: meta.es,
+              wordEs: meta.es,
+              ipa: meta.ipa,
+              phonetic: meta.ipa,
+              category: meta.category,
+              interactive: true,
+              parentGroup: obj
+            });
+            obj.userData = intData;
+            return obj;
+          }
         }
       }
       return null;
@@ -6604,7 +6929,9 @@ ensureOrbitControls();
       pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
 
       raycaster.setFromCamera(pointer, camera);
-      const intersects = raycaster.intersectObjects(interactiveObjects, true);
+      const activeScene = (typeof World3D !== 'undefined' && World3D.scene) ? World3D.scene : scene;
+      const targetCandidates = (activeScene && activeScene.children && activeScene.children.length > 0) ? activeScene.children : interactiveObjects;
+      const intersects = raycaster.intersectObjects(targetCandidates, true);
       const targetGroup = resolveInteractiveHit(intersects);
 
       if (targetGroup) {
@@ -6650,7 +6977,9 @@ ensureOrbitControls();
       pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
 
       raycaster.setFromCamera(pointer, camera);
-      const intersects = raycaster.intersectObjects(interactiveObjects, true);
+      const activeScene = (typeof World3D !== 'undefined' && World3D.scene) ? World3D.scene : scene;
+      const targetCandidates = (activeScene && activeScene.children && activeScene.children.length > 0) ? activeScene.children : interactiveObjects;
+      const intersects = raycaster.intersectObjects(targetCandidates, true);
       const targetGroup = resolveInteractiveHit(intersects);
 
       if (targetGroup) {
@@ -6712,7 +7041,9 @@ ensureOrbitControls();
       pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
 
       raycaster.setFromCamera(pointer, camera);
-      const intersects = raycaster.intersectObjects(interactiveObjects, true);
+      const activeScene = (typeof World3D !== 'undefined' && World3D.scene) ? World3D.scene : scene;
+      const targetCandidates = (activeScene && activeScene.children && activeScene.children.length > 0) ? activeScene.children : interactiveObjects;
+      const intersects = raycaster.intersectObjects(targetCandidates, true);
       const targetGroup = resolveInteractiveHit(intersects);
 
       if (targetGroup) {
@@ -6810,41 +7141,65 @@ ensureOrbitControls();
 
   function ensureWorld3DTopBackButton() {
     if (typeof document === 'undefined') return;
-    let btn = document.getElementById('world3d-global-back-portals-btn');
-    if (!btn) {
-      btn = document.createElement('button');
-      btn.id = 'world3d-global-back-portals-btn';
-      btn.type = 'button';
-      btn.innerHTML = '<span>← Volver a Portales</span>';
-      btn.setAttribute('aria-label', 'Volver a Portales');
-      btn.style.cssText = 'position: fixed !important; top: 12px !important; left: 12px !important; z-index: 99999 !important; background: rgba(15, 23, 42, 0.94) !important; border: 1.5px solid rgba(56, 189, 248, 0.6) !important; color: #ffffff !important; font-size: 13px !important; font-weight: 800 !important; padding: 8px 16px !important; border-radius: 14px !important; cursor: pointer !important; display: flex !important; align-items: center !important; gap: 6px !important; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; transition: transform 0.15s ease, background 0.15s ease !important;';
-      btn.onmouseenter = () => { btn.style.background = 'rgba(2, 132, 199, 0.95)'; };
-      btn.onmouseleave = () => { btn.style.background = 'rgba(15, 23, 42, 0.94)'; };
-      btn.onclick = function(e) {
-        if (e) e.stopPropagation();
-        console.log('[World3D] Volver a Portales presionado.');
-        const lobbyEl = document.getElementById('world3d-selection-hub');
-        const isLobbyVisible = lobbyEl && !lobbyEl.classList.contains('hidden') && lobbyEl.style.display !== 'none';
-        if (!isLobbyVisible) {
-          openWorld3DLobby();
-        } else {
-          closeWorld3DInspectCard();
-          pauseLoop();
-          hideWorld3DTopBackButton();
-          if (typeof window.returnToMainPortals === 'function') {
-            window.returnToMainPortals(e);
-          } else if (typeof window.navigateTo === 'function') {
-            window.navigateTo('view-home');
-          }
-        }
-      };
-      document.body.appendChild(btn);
+    if (typeof setupUnifiedCameraControlsBar === 'function') {
+      setupUnifiedCameraControlsBar();
     }
-    btn.style.setProperty('display', 'flex', 'important');
-    btn.style.setProperty('visibility', 'visible', 'important');
+    setWorld3DTopCamBarVisibility(true);
+    const btn = document.getElementById('world3d-global-back-portals-btn');
+    if (btn) {
+      btn.style.setProperty('display', 'none', 'important');
+    }
   }
   global.ensureWorld3DTopBackButton = ensureWorld3DTopBackButton;
   if (typeof window !== 'undefined') window.ensureWorld3DTopBackButton = ensureWorld3DTopBackButton;
+
+  window.toggleWorld3DOrbitOrOrientation = function() {
+    if (camera && controls) {
+      const angle = Math.PI / 4;
+      const offset = camera.position.clone().sub(controls.target);
+      offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), angle);
+      camera.position.copy(controls.target).add(offset);
+      camera.lookAt(controls.target);
+      if (typeof controls.syncSphericalFromObject === 'function') {
+        controls.syncSphericalFromObject();
+      }
+      controls.update();
+      if (renderer && scene) renderer.render(scene, camera);
+    } else if (typeof window.toggleScreenOrientation === 'function') {
+      window.toggleScreenOrientation();
+    }
+  };
+
+  window.openWorld3DHelpModal = function() {
+    let modal = document.getElementById('world3dHelpModal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'world3dHelpModal';
+      modal.style.cssText = 'position: fixed; inset: 0; z-index: 99999; background: rgba(15, 23, 42, 0.94); display: flex; align-items: center; justify-content: center; padding: 16px;';
+      document.body.appendChild(modal);
+    }
+    modal.innerHTML = `
+      <div class="bg-slate-950 border-2 border-purple-500/80 rounded-3xl p-5 max-w-md w-full text-white shadow-2xl space-y-3">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+          <h3 class="text-sm font-black text-purple-300 flex items-center gap-1.5">❓ Guía de Navegación 3D</h3>
+          <button type="button" onclick="document.getElementById('world3dHelpModal').style.display='none'"
+            class="w-7 h-7 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold">&times;</button>
+        </div>
+        <div class="space-y-2 text-xs text-slate-300">
+          <p>• <b>Toca cualquier objeto:</b> Toca o haz clic sobre cualquier objeto en mesas, estantes o habitaciones para escuchar su pronunciación y fonética IPA.</p>
+          <p>• <b>Vistas de Cámara:</b> Usa los botones superiores para volver a la <b>🎥 Vista General</b>, <b>🔍 Acercar Zona</b> o <b>🔄 Girar Cámara</b>.</p>
+          <p>• <b>Catálogo:</b> Pulsa <b>📋 Ver Lista de Objetos</b> para explorar todos los términos del escenario.</p>
+        </div>
+        <div class="pt-2 text-right">
+          <button type="button" onclick="document.getElementById('world3dHelpModal').style.display='none'"
+            class="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow cursor-pointer">
+            ¡Entendido!
+          </button>
+        </div>
+      </div>
+    `;
+    modal.style.display = 'flex';
+  };
 
   function enforceWorld3DContainerStyle() {
     if (typeof document === 'undefined') return;
@@ -6978,17 +7333,16 @@ ensureOrbitControls();
         const safeMats = srcMats.map((m) => {
           const matName = ((m && m.name) || child.name || '').toLowerCase();
           const isTranslucent = /glass|water/i.test(matName);
-          const col = (m && m.color && (m.color.r + m.color.g + m.color.b) > 0.04)
-            ? m.color.clone()
-            : new THREE.Color(0xe2e8f0);
+          const isEmissiveSource = /lamp|light|sun|screen|neon|flame|candle|fire|emission|glow/i.test(matName) || /lamp|light|sun|screen|neon|flame|candle|fire/i.test(child.name || '');
+          const col = (m && m.color) ? m.color.clone() : new THREE.Color(0xffffff);
           return new THREE.MeshStandardMaterial({
             name: (m && m.name) || child.name || '',
             color: col,
             map: (m && m.map) ? m.map : null,
-            roughness: 0.45,
-            metalness: 0.15,
-            emissive: col.clone().multiplyScalar(0.12),
-            emissiveIntensity: 0.15,
+            roughness: (m && typeof m.roughness === 'number') ? Math.max(0.15, Math.min(0.9, m.roughness)) : 0.5,
+            metalness: (m && typeof m.metalness === 'number') ? Math.min(0.85, m.metalness) : 0.15,
+            emissive: isEmissiveSource ? col.clone() : new THREE.Color(0x000000),
+            emissiveIntensity: isEmissiveSource ? 0.8 : 0.0,
             transparent: isTranslucent,
             opacity: isTranslucent ? Math.max(0.3, Math.min(0.85, (m && m.opacity) || 0.5)) : 1.0,
             depthWrite: !isTranslucent,
@@ -7149,7 +7503,7 @@ ensureOrbitControls();
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.15;
+    renderer.toneMappingExposure = 1.0;
     if (THREE.SRGBColorSpace) {
       renderer.outputColorSpace = THREE.SRGBColorSpace;
     }
@@ -7401,7 +7755,7 @@ ensureOrbitControls();
         activeBar.style.setProperty('display', 'none', 'important');
         activeBar.style.setProperty('visibility', 'hidden', 'important');
       } else {
-        activeBar.style.cssText = 'position: absolute !important; top: 10px !important; left: 12px !important; right: 12px !important; max-width: calc(100vw - 24px) !important; z-index: 80 !important; display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: 8px !important; background: rgba(15, 23, 42, 0.88) !important; backdrop-filter: none !important; padding: 6px 10px !important; border-radius: 14px !important; border: 1px solid rgba(148, 163, 184, 0.3) !important; pointer-events: auto !important;';
+        activeBar.style.cssText = 'position: fixed !important; top: 10px !important; left: 10px !important; right: 10px !important; max-width: calc(100vw - 20px) !important; z-index: 99990 !important; display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 8px !important; background: rgba(15, 23, 42, 0.94) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; padding: 6px 12px !important; border-radius: 16px !important; border: 1.5px solid rgba(168, 85, 247, 0.6) !important; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7) !important; pointer-events: auto !important;';
       }
     }
 
@@ -8309,7 +8663,7 @@ ensureOrbitControls();
       window.hideAllModules();
     }
 
-    ['view-home', 'practice-today-hero', 'coverFlowViewport', 'coverFlowTrack', 'world3d-container', 'threeWebGLMount', 'world3d-loading-screen'].forEach(id => {
+    ['view-home', 'practice-today-hero', 'coverFlowViewport', 'coverFlowTrack', 'portalCarouselIndicators', 'portalCarouselDots', 'world3d-container', 'threeWebGLMount', 'world3d-loading-screen'].forEach(id => {
       const el = document.getElementById(id);
       if (el) {
         el.classList.add('hidden');
@@ -8320,7 +8674,7 @@ ensureOrbitControls();
       }
     });
     if (typeof document !== 'undefined') {
-      document.querySelectorAll('.carousel-nav-btn, .carousel-btn, .nav-arrow, .coverflow-portal-card').forEach(b => {
+      document.querySelectorAll('.carousel-nav-btn, .carousel-btn, .nav-arrow').forEach(b => {
         b.style.setProperty('display', 'none', 'important');
         b.style.setProperty('pointer-events', 'none', 'important');
       });
@@ -8499,6 +8853,18 @@ ensureOrbitControls();
 
     // 4. Agregar a la escena dinámica
     scenarioDynamicRoot.add(glbScene);
+
+    // Configuración y paneles interactivos si es el escenario de Cita Romántica
+    if (scenarioKey === 'dating') {
+      currentScenarioKey = 'dating';
+      if (typeof setupDatingScenarioElements === 'function') {
+        try { setupDatingScenarioElements(); } catch (err) { console.warn('setupDatingScenarioElements error:', err); }
+      }
+    } else {
+      if (typeof toggleDatingDualPanelsVisibility === 'function') {
+        toggleDatingDualPanelsVisibility(false);
+      }
+    }
 
     // 5. Forzar visibilidad y renderizado inmediato del canvas
     forceShowWorld3DCanvas();
@@ -8787,6 +9153,17 @@ ensureOrbitControls();
           controls.syncSphericalFromObject();
         }
         controls.update();
+      }
+    }
+
+    if (key === 'dating') {
+      currentScenarioKey = 'dating';
+      if (typeof setupDatingScenarioElements === 'function') {
+        try { setupDatingScenarioElements(); } catch (err) { console.warn('setupDatingScenarioElements fallback error:', err); }
+      }
+    } else {
+      if (typeof toggleDatingDualPanelsVisibility === 'function') {
+        toggleDatingDualPanelsVisibility(false);
       }
     }
 

@@ -1,10 +1,18 @@
 const fs = require('fs');
 const path = require('path');
 
-// Keep css/styles.css synchronized with css/style.css
+// Keep css/styles.css synchronized with css/style.css (copying newer to older)
 const styleSrc = path.join(__dirname, '..', 'css', 'style.css');
 const stylesAlias = path.join(__dirname, '..', 'css', 'styles.css');
-if (fs.existsSync(styleSrc)) {
+if (fs.existsSync(stylesAlias) && fs.existsSync(styleSrc)) {
+  if (fs.statSync(stylesAlias).mtimeMs >= fs.statSync(styleSrc).mtimeMs) {
+    fs.copyFileSync(stylesAlias, styleSrc);
+  } else {
+    fs.copyFileSync(styleSrc, stylesAlias);
+  }
+} else if (fs.existsSync(stylesAlias)) {
+  fs.copyFileSync(stylesAlias, styleSrc);
+} else if (fs.existsSync(styleSrc)) {
   fs.copyFileSync(styleSrc, stylesAlias);
 }
 
@@ -43,6 +51,7 @@ const filesToSync = [
   'images/portal_stories.jpg',
   'images/portal_worldtour.jpg',
   'manifest.json',
+  'data/dictionary.json',
   'sw.js',
   'icon.png',
   'icon-512.png',
@@ -81,7 +90,10 @@ targets.forEach(targetDir => {
 });
 
 // Sincronizar directorio de audios hiperrealistas de vocabulario Kokoro TTS
-const audioSrc = path.join(__dirname, '..', 'public', 'audio', 'vocab');
+const rootAudio = path.join(__dirname, '..', 'audio', 'vocab');
+const publicAudio = path.join(__dirname, '..', 'public', 'audio', 'vocab');
+const audioSrc = fs.existsSync(rootAudio) ? rootAudio : publicAudio;
+
 if (fs.existsSync(audioSrc)) {
   const audioFiles = fs.readdirSync(audioSrc).filter(f => f.endsWith('.wav'));
   targets.forEach(targetDir => {

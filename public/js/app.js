@@ -2289,9 +2289,15 @@ window.logout = function() {
       }
     };
     function updateCoverFlowVisuals() {
-      window.updatePortalDisplay();
+      const activeIdx = (typeof window.currentPortalIdx === 'number' && !isNaN(window.currentPortalIdx))
+        ? window.currentPortalIdx
+        : (typeof window.currentPortal === 'number' && !isNaN(window.currentPortal) ? window.currentPortal : 0);
+      if (typeof window.showPortal === 'function') {
+        window.showPortal(activeIdx);
+      }
     }
-    window.updateCoverFlowVisuals = window.updatePortalDisplay;
+    window.updateCoverFlowVisuals = updateCoverFlowVisuals;
+    window.updatePortalDisplay = updateCoverFlowVisuals;
 
     window.currentPortal = 0;
     window.currentPortalIdx = 0;
@@ -4848,14 +4854,12 @@ window.logout = function() {
         const currentItems = Array.isArray(window.MASTER_MODULES_DATA[modKey].items)
           ? window.MASTER_MODULES_DATA[modKey].items
           : [];
-        if (currentItems.length < 100) {
-          const extras = EXTRA_MODULE_DICTIONARY[modKey] || [];
-          extras.forEach(ex => {
-            if (!currentItems.some(i => (i.term || '').toLowerCase() === ex.term.toLowerCase())) {
-              currentItems.push(ex);
-            }
-          });
-        }
+        const extras = EXTRA_MODULE_DICTIONARY[modKey] || [];
+        extras.forEach(ex => {
+          if (!currentItems.some(i => (i.term || '').toLowerCase() === ex.term.toLowerCase())) {
+            currentItems.push(ex);
+          }
+        });
         currentItems.sort((a, b) =>
           (a.term || a.word || '').localeCompare((b.term || b.word || ''), 'en', { sensitivity: 'base' })
         );
@@ -4866,6 +4870,23 @@ window.logout = function() {
         });
         window.MASTER_MODULES_DATA[modKey].items = currentItems;
       });
+
+      // Asegurar que window.MASTER_GLOBAL_GLOSSARY esté construido
+      if (!window.MASTER_GLOBAL_GLOSSARY || window.MASTER_GLOBAL_GLOSSARY.length === 0) {
+        const allMap = new Map();
+        Object.keys(window.MASTER_MODULES_DATA).forEach(k => {
+          (window.MASTER_MODULES_DATA[k].items || []).forEach(item => {
+            if (item && item.term && !allMap.has(item.term.toLowerCase())) {
+              allMap.set(item.term.toLowerCase(), item);
+            }
+          });
+        });
+        window.MASTER_GLOBAL_GLOSSARY = Array.from(allMap.values()).sort((a, b) =>
+          (a.term || a.word || '').localeCompare((b.term || b.word || ''), 'en', { sensitivity: 'base' })
+        );
+        window.MASTER_DICTIONARY_ALL = window.MASTER_GLOBAL_GLOSSARY;
+      }
+
       if (Array.isArray(window.OFFICIAL_LEARNING_MODULES)) {
         window.OFFICIAL_LEARNING_MODULES.forEach(m => {
           const data = window.MASTER_MODULES_DATA[m.key];
@@ -4879,18 +4900,28 @@ window.logout = function() {
     function renderGlossaryCategoryPills() {
       const bar = document.getElementById('glossaryCategoryFilters');
       if (!bar) return;
+      
+      const globalGlossary = window.MASTER_GLOBAL_GLOSSARY || [];
       const modData = (window.MASTER_MODULES_DATA && window.MASTER_MODULES_DATA[activeGlossaryModuleKey])
         ? window.MASTER_MODULES_DATA[activeGlossaryModuleKey]
         : { items: [] };
       const allItems = modData.items || [];
 
+      // Conteo de términos en el catálogo maestro para que ninguna categoría quede en 0
+      const countAll = (activeGlossaryCategoryFilter === 'all' && allItems.length > 0) ? allItems.length : globalGlossary.length;
+      const countSustantivos = globalGlossary.filter(i => i.category === 'Sustantivo').length;
+      const countVerbos = globalGlossary.filter(i => i.category === 'Verbo').length;
+      const countPhrasals = globalGlossary.filter(i => i.category === 'Phrasal Verb').length;
+      const countIdioms = globalGlossary.filter(i => i.category === 'Idiom').length;
+      const countAdjetivos = globalGlossary.filter(i => i.category === 'Adjetivo').length;
+
       const categories = [
-        { id: 'all', label: '📚 Todos', count: allItems.length },
-        { id: 'Sustantivo', label: '🏛️ Sustantivos', count: allItems.filter(i => i.category === 'Sustantivo').length },
-        { id: 'Verbo', label: '⚡ Verbos', count: allItems.filter(i => i.category === 'Verbo').length },
-        { id: 'Phrasal Verb', label: '🚀 Phrasal Verbs', count: allItems.filter(i => i.category === 'Phrasal Verb').length },
-        { id: 'Idiom', label: '💬 Idioms', count: allItems.filter(i => i.category === 'Idiom').length },
-        { id: 'Adjetivo', label: '✨ Adjetivos', count: allItems.filter(i => i.category === 'Adjetivo').length }
+        { id: 'all', label: '📚 Todos', count: countAll },
+        { id: 'Sustantivo', label: '🏛️ Sustantivos', count: countSustantivos },
+        { id: 'Verbo', label: '⚡ Verbos', count: countVerbos },
+        { id: 'Phrasal Verb', label: '🚀 Phrasal Verbs', count: countPhrasals },
+        { id: 'Idiom', label: '💬 Idioms', count: countIdioms },
+        { id: 'Adjetivo', label: '✨ Adjetivos', count: countAdjetivos }
       ];
 
       bar.innerHTML = categories.map(cat => {
@@ -4983,13 +5014,32 @@ window.logout = function() {
 
     function filterGlossaryTerms(query) {
       enrichMasterModulesDictionary();
+      const globalGlossary = window.MASTER_GLOBAL_GLOSSARY || [];
       const modData = (window.MASTER_MODULES_DATA && window.MASTER_MODULES_DATA[activeGlossaryModuleKey])
         ? window.MASTER_MODULES_DATA[activeGlossaryModuleKey]
         : { items: [] };
+      
+      let sourceItems = [];
+      if (activeGlossaryCategoryFilter === 'all') {
+        sourceItems = (modData.items && modData.items.length > 0) ? modData.items : globalGlossary;
+      } else {
+        sourceItems = globalGlossary.filter(i => i.category === activeGlossaryCategoryFilter);
+        if (sourceItems.length === 0 && modData.items) {
+          sourceItems = modData.items.filter(i => i.category === activeGlossaryCategoryFilter);
+        }
+      }
+
+      // Actualizar subtítulo para reflejar el conteo activo
+      const subEl = document.getElementById('glossaryModalSubtitle');
+      if (subEl) {
+        const catLabel = activeGlossaryCategoryFilter === 'all'
+          ? `${sourceItems.length} términos clasificados`
+          : `${sourceItems.length} ${activeGlossaryCategoryFilter}s clasificados`;
+        subEl.textContent = `${catLabel} con transcripción IPA, pronunciación nativa Kokoro TTS y contexto`;
+      }
+
       const q = (query || '').toLowerCase().trim();
-      const filtered = (modData.items || []).filter(i => {
-        const matchesCat = (activeGlossaryCategoryFilter === 'all') || (i.category === activeGlossaryCategoryFilter);
-        if (!matchesCat) return false;
+      const filtered = sourceItems.filter(i => {
         if (!q) return true;
         const w = (i.word || i.term || '').toLowerCase();
         const p = (i.ipa || i.pron || '').toLowerCase();
@@ -15337,6 +15387,9 @@ window.switchMasterView = function(targetMode) {
           }
         }, 200);
       }
+
+      const btn = e.target && e.target.closest ? e.target.closest('button, a, [role="button"], .btn, .portal-btn, .portal-card, .coverflow-portal-card, [onclick]') : null;
+      const btnText = ((btn && btn.textContent) || (e.target && e.target.textContent) || '').trim().toLowerCase();
       
       // 2. Interceptar el retorno al buscador
       const isBackToSearch = (e.target && e.target.closest && e.target.closest('#backToMusicSearchBtn')) || btnText.includes('volver al buscador');
@@ -15348,10 +15401,9 @@ window.switchMasterView = function(targetMode) {
         return;
       }
 
-      const btn = e.target && e.target.closest ? e.target.closest('button, a, [role="button"], .btn, .portal-btn, .portal-card, .coverflow-portal-card, [onclick]') : null;
       if (!btn) return;
 
-      const text = (btn.textContent || '').trim().toLowerCase();
+      const text = btnText;
 
       // Si el clic ocurre en un botón de cancelar/volver a la Galería 3D dentro de #world3d-loading-screen o #world3d-selection-hub, permitir su propio handler
       if (btn.closest && btn.closest('#world3d-loading-screen, #world3d-selection-hub')) {
@@ -16905,7 +16957,20 @@ if (window._musicStageGuardInterval) {
 
   window.speakGlossaryWord = function(word, rate = 0.9) {
     if (!word) return;
-    window.speakText(word, rate);
+    if (window.isVoiceMuted) return;
+    const clean = String(word).toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+    const audioPath = 'audio/vocab/' + clean + '.wav';
+    
+    // Intentar reproducir archivo nativo Kokoro TTS hiperrealista
+    const audio = new Audio(audioPath);
+    audio.volume = (typeof window.masterAppVolume === 'number') ? window.masterAppVolume : 1.0;
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(function() {
+        // Fallback inmediato a SpeechSynthesis si el archivo no está en caché
+        window.speakText(word, rate);
+      });
+    }
   };
 
   // 9. Actualizador del Contador de Invitaciones (Bandeja)
@@ -17351,28 +17416,54 @@ if (window._musicStageGuardInterval) {
     if (heroEl) {
       heroEl.classList.remove("hidden");
       heroEl.style.removeProperty("display");
+      heroEl.style.setProperty("visibility", "visible", "important");
+      heroEl.style.setProperty("opacity", "1", "important");
     }
     const coverFlow = document.getElementById("coverFlowViewport");
     if (coverFlow) {
       coverFlow.classList.remove("hidden");
       coverFlow.style.setProperty("display", "flex", "important");
+      coverFlow.style.setProperty("visibility", "visible", "important");
       coverFlow.style.setProperty("pointer-events", "auto", "important");
+      coverFlow.style.setProperty("opacity", "1", "important");
     }
     const coverTrack = document.getElementById("coverFlowTrack");
     if (coverTrack) {
+      coverTrack.classList.remove("hidden");
       coverTrack.style.setProperty("display", "flex", "important");
+      coverTrack.style.setProperty("visibility", "visible", "important");
       coverTrack.style.setProperty("pointer-events", "auto", "important");
+      coverTrack.style.setProperty("opacity", "1", "important");
     }
-    document.querySelectorAll(".carousel-nav-btn, .carousel-btn").forEach(btn => {
+    document.querySelectorAll(".carousel-nav-btn, .carousel-btn, .nav-arrow").forEach(btn => {
       btn.style.removeProperty("display");
       btn.style.removeProperty("pointer-events");
+      btn.style.removeProperty("opacity");
+      btn.style.removeProperty("visibility");
     });
+    // Limpiar estilos inline restrictivos de todas las tarjetas del Coverflow
+    document.querySelectorAll("#coverFlowTrack .coverflow-portal-card, #coverFlowTrack .portal-card, [id^='coverCard-']").forEach(card => {
+      card.style.removeProperty("display");
+      card.style.removeProperty("pointer-events");
+      card.style.removeProperty("opacity");
+      card.style.removeProperty("visibility");
+      card.style.removeProperty("height");
+      card.style.removeProperty("max-height");
+    });
+
+    const activeIdx = (typeof window.currentPortalIdx === 'number' && !isNaN(window.currentPortalIdx))
+      ? window.currentPortalIdx
+      : (typeof window.currentPortal === 'number' && !isNaN(window.currentPortal) ? window.currentPortal : 0);
+
     if (typeof window.showPortal === "function") {
-      window.showPortal(window.currentPortalIdx || 0);
+      window.showPortal(activeIdx);
     }
     if (typeof window.updateCoverFlowVisuals === "function") {
       window.updateCoverFlowVisuals();
     }
+    setTimeout(() => {
+      window.dispatchEvent(new Event("resize"));
+    }, 40);
   }
 
   // 3. MASTER ROUTER GLOBAL
