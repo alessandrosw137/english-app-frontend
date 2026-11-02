@@ -1,408 +1,25 @@
 /**
  * ============================================================================
- * MASTERENG - CULINARY STUDIO 2D: CARTOON HD COOKING & ENGLISH ACADEMY
+ * MASTERENG - CULINARY STUDIO 2D: CARTOON DINER RESTAURANT MANAGEMENT
  * Archivo: js/culinary_studio_2d.js
  *
- * Videojuego de cocina profesional 2D con estética Cartoon Ilustrada HD
- * (colores vibrantes, contornos limpios estilo cómic, animaciones de vapor,
- * fuego, burbujas, cortes de cuchillo y clientes animados).
- * Consume window.CulinaryDatabank con soporte autónomo y Diccionario Culinario.
+ * Videojuego de gestión de restaurante en tiempo real estilo Cooking Fever /
+ * Papa's Pizzeria con estética 2D Cartoon Ilustrada HD.
+ *
+ * Componentes principales:
+ * 1. Mitad Superior (Counter View): Mostrador, clientes animados que entran
+ *    desde la izquierda, globo de diálogo con pedidos en inglés y barra de paciencia.
+ * 2. Mitad Inferior (Kitchen Station): Plancha (Grill) con 4 quemadores activos,
+ *    freidora de papas con aceite burbujeante, estante de ingredientes y tabla de armado.
+ * 3. Botón Flotante de Diccionario Culinario (356 términos profesionales).
  * ============================================================================
  */
 
 (function (global) {
   'use strict';
 
-  global.openCulinaryStudioPortal = function(opts) {
-    if (typeof global.hideAllModules === 'function') {
-      try {
-        global._suppressReturnToPortals = true;
-        global.hideAllModules();
-        global._suppressReturnToPortals = false;
-      } catch (_) {}
-    }
-    if (typeof document !== 'undefined') {
-      document.body.classList.add('culinary-studio-active');
-    }
-    if (global.CulinaryStudio2D && typeof global.CulinaryStudio2D.open === 'function') {
-      global.CulinaryStudio2D.open(opts);
-    }
-  };
-
   // ============================================================================
-  // 1. DEFAULT CULINARY DATABANK (BASE DE DATOS GASTRONÓMICA AUTÓNOMA)
-  // ============================================================================
-
-  const DEFAULT_RECIPES = [
-    {
-      id: 'pan_seared_salmon',
-      title: 'Pan-Seared Atlantic Salmon',
-      titleEs: 'Salmón del Atlántico Sellado a la Sartén',
-      category: 'Seafood',
-      difficulty: 'Medium',
-      customerRestrictions: ['no_butter', 'sauce_on_the_side'],
-      freshIngredients: ['salmon_fillet', 'lemon', 'fresh_dill', 'garlic_cloves'],
-      dryIngredients: ['olive_oil', 'white_wine', 'kosher_salt', 'black_pepper'],
-      tools: ['chefs_knife', 'cutting_board', 'skillet', 'kitchen_tongs'],
-      knifeTask: {
-        ingredient: 'lemon',
-        technique: 'wedges',
-        nameEn: 'Cut into wedges',
-        nameEs: 'Cortar en gajos limpios',
-        ipa: '/wɛdʒɪz/',
-        desc: 'Slice the fresh lemon into elegant wedges to accompany the seafood.',
-        slicesRequired: 4
-      },
-      cookingSteps: [
-        {
-          prompt: 'Heat the skillet and add oil. When hot, place the salmon skin-side down.',
-          promptEs: 'Calienta la sartén y agrega aceite. Al estar caliente, coloca el salmón con la piel hacia abajo.',
-          targetHeat: 'high',
-          targetDoneness: 'medium_rare',
-          actionRequired: 'sear',
-          labelEn: 'High Sear (Crispy Skin)',
-          timeSec: 6
-        },
-        {
-          prompt: 'Deglaze the pan with a splash of white wine to lift the fond!',
-          promptEs: '¡Desglasa la sartén con un chorro de vino blanco para levantar los jugos!',
-          actionRequired: 'deglaze',
-          ingredientRequired: 'white_wine',
-          labelEn: 'Deglaze with White Wine',
-          timeSec: 5
-        }
-      ],
-      plating: {
-        sauceStyle: 'on_the_side',
-        garnish: 'fresh_dill'
-      }
-    },
-    {
-      id: 'prime_ribeye_steak',
-      title: 'Prime Ribeye Steak with Herb Crust',
-      titleEs: 'Bife de Ribeye Prime con Costra de Hierbas',
-      category: 'Butchery',
-      difficulty: 'Hard',
-      customerRestrictions: ['medium_rare', 'extra_pepper'],
-      freshIngredients: ['ribeye_steak', 'rosemary', 'thyme', 'garlic_cloves', 'unsalted_butter'],
-      dryIngredients: ['olive_oil', 'kosher_salt', 'black_pepper'],
-      tools: ['chefs_knife', 'cutting_board', 'cast_iron_pan', 'kitchen_tongs', 'meat_thermometer'],
-      knifeTask: {
-        ingredient: 'garlic_cloves',
-        technique: 'mince',
-        nameEn: 'Mince finely',
-        nameEs: 'Picar muy finamente',
-        ipa: '/mɪns/',
-        desc: 'Crush and finely mince the garlic cloves to infuse the basting butter.',
-        slicesRequired: 6
-      },
-      cookingSteps: [
-        {
-          prompt: 'Sear the ribeye on high heat until a deep golden-brown crust forms (Maillard reaction).',
-          promptEs: 'Sella el ribeye a fuego vivo hasta formar una costra dorada profunda (reacción de Maillard).',
-          targetHeat: 'high',
-          targetDoneness: 'medium_rare',
-          actionRequired: 'sear',
-          labelEn: 'High Sear Crust',
-          timeSec: 7
-        },
-        {
-          prompt: 'Baste the steak with melted butter, crushed garlic, and fresh rosemary (Arroser)!',
-          promptEs: '¡Baña el filete con mantequilla derretida, ajo y romero fresco!',
-          actionRequired: 'baste',
-          ingredientRequired: 'unsalted_butter',
-          labelEn: 'Baste with Butter (Arroser)',
-          timeSec: 6
-        }
-      ],
-      plating: {
-        sauceStyle: 'over_dish',
-        garnish: 'rosemary'
-      }
-    },
-    {
-      id: 'chicken_fettuccine_alfredo',
-      title: 'Creamy Chicken Fettuccine Alfredo',
-      titleEs: 'Fettuccine Alfredo Cremoso con Pollo a la Plancha',
-      category: 'Pasta & Poultry',
-      difficulty: 'Medium',
-      customerRestrictions: ['no_mushrooms'],
-      freshIngredients: ['chicken_breast', 'heavy_cream', 'parmesan_cheese', 'unsalted_butter', 'fresh_parsley'],
-      dryIngredients: ['fettuccine_pasta', 'olive_oil', 'kosher_salt', 'black_pepper'],
-      tools: ['chefs_knife', 'cutting_board', 'skillet', 'tongs', 'wire_whisk'],
-      knifeTask: {
-        ingredient: 'chicken_breast',
-        technique: 'strips',
-        nameEn: 'Cut into bite-sized strips',
-        nameEs: 'Cortar en tiras tamaño bocado',
-        ipa: '/strɪps/',
-        desc: 'Slice the tender chicken breast across the grain into uniform strips.',
-        slicesRequired: 5
-      },
-      cookingSteps: [
-        {
-          prompt: 'Sauté the chicken strips over medium-high heat until golden and tender.',
-          promptEs: 'Saltea las tiras de pollo a fuego medio-alto hasta dorar.',
-          targetHeat: 'med',
-          targetDoneness: 'well_done',
-          actionRequired: 'sear',
-          labelEn: 'Sauté Chicken',
-          timeSec: 6
-        },
-        {
-          prompt: 'Lower the heat, pour heavy cream and whisk in parmesan cheese until velvety!',
-          promptEs: '¡Baja el fuego, vierte la crema y bate el queso parmesano hasta que quede aterciopelado!',
-          actionRequired: 'emulsify',
-          ingredientRequired: 'parmesan_cheese',
-          labelEn: 'Emulsify Sauce',
-          timeSec: 5
-        }
-      ],
-      plating: {
-        sauceStyle: 'over_dish',
-        garnish: 'fresh_parsley'
-      }
-    },
-    {
-      id: 'garlic_butter_prawns',
-      title: 'Garlic Butter Tiger Prawns',
-      titleEs: 'Langostinos Tigre al Ajillo y Vino Blanco',
-      category: 'Seafood',
-      difficulty: 'Easy',
-      customerRestrictions: ['no_spicy'],
-      freshIngredients: ['tiger_prawns', 'garlic_cloves', 'unsalted_butter', 'lemon', 'fresh_parsley'],
-      dryIngredients: ['olive_oil', 'white_wine', 'kosher_salt', 'black_pepper'],
-      tools: ['chefs_knife', 'cutting_board', 'skillet', 'kitchen_tongs'],
-      knifeTask: {
-        ingredient: 'fresh_parsley',
-        technique: 'chiffonade',
-        nameEn: 'Chop finely (Chiffonade)',
-        nameEs: 'Picar finamente en cintas',
-        ipa: '/ˌʃɪf.əˈnɑːd/',
-        desc: 'Finely chop the fresh parsley to release fragrant aromatic oils.',
-        slicesRequired: 4
-      },
-      cookingSteps: [
-        {
-          prompt: 'Quickly sear the prawns on high heat for 90 seconds per side until pink and curled.',
-          promptEs: 'Sella rápidamente los langostinos a fuego alto por ambos lados.',
-          targetHeat: 'high',
-          targetDoneness: 'medium',
-          actionRequired: 'sear',
-          labelEn: 'Flash Sear Prawns',
-          timeSec: 5
-        },
-        {
-          prompt: 'Deglaze with white wine, swirl cold butter to create a glossy emulsion!',
-          promptEs: '¡Desglasa con vino blanco y agrega mantequilla fría para una emulsión brillante!',
-          actionRequired: 'deglaze',
-          ingredientRequired: 'white_wine',
-          labelEn: 'Deglaze & Mount Butter',
-          timeSec: 5
-        }
-      ],
-      plating: {
-        sauceStyle: 'over_dish',
-        garnish: 'fresh_parsley'
-      }
-    },
-    {
-      id: 'pan_roasted_duck_breast',
-      title: 'Pan-Roasted Duck Breast with Balsamic Glaze',
-      titleEs: 'Magret de Pato Asado con Glaseado Balsámico',
-      category: 'Gourmet Poultry',
-      difficulty: 'Hard',
-      customerRestrictions: ['medium_doneness'],
-      freshIngredients: ['duck_breast', 'fresh_thyme', 'shallots', 'unsalted_butter'],
-      dryIngredients: ['balsamic_vinegar', 'chicken_stock', 'kosher_salt', 'black_pepper'],
-      tools: ['chefs_knife', 'cutting_board', 'skillet', 'kitchen_tongs', 'meat_thermometer'],
-      knifeTask: {
-        ingredient: 'duck_breast',
-        technique: 'score',
-        nameEn: 'Score the skin (Diamond pattern)',
-        nameEs: 'Marcar la piel en rombos',
-        ipa: '/skɔːr/',
-        desc: 'Score the fatty duck skin in a crosshatch pattern without cutting into the meat.',
-        slicesRequired: 5
-      },
-      cookingSteps: [
-        {
-          prompt: 'Render the duck fat on low-medium heat until the skin is razor-crisp.',
-          promptEs: 'Derrite la grasa a fuego medio-bajo hasta que la piel quede crujiente.',
-          targetHeat: 'med',
-          targetDoneness: 'medium',
-          actionRequired: 'sear',
-          labelEn: 'Render Fat & Sear',
-          timeSec: 7
-        },
-        {
-          prompt: 'Reduce balsamic vinegar with chicken stock into a syrupy glaze!',
-          promptEs: '¡Reduce el vinagre balsámico con caldo hasta lograr un glaseado almibarado!',
-          actionRequired: 'reduce',
-          ingredientRequired: 'balsamic_vinegar',
-          labelEn: 'Balsamic Reduction',
-          timeSec: 5
-        }
-      ],
-      plating: {
-        sauceStyle: 'over_dish',
-        garnish: 'fresh_thyme'
-      }
-    },
-    {
-      id: 'wild_mushroom_risotto',
-      title: 'Wild Mushroom & Truffle Risotto',
-      titleEs: 'Risotto de Hongos Silvestres y Trufa',
-      category: 'Vegetarian Gourmet',
-      difficulty: 'Hard',
-      customerRestrictions: ['no_dairy_allergies_safe'],
-      freshIngredients: ['mushrooms', 'shallots', 'garlic_cloves', 'parmesan_cheese', 'fresh_parsley', 'unsalted_butter'],
-      dryIngredients: ['arborio_rice', 'vegetable_stock', 'white_wine', 'olive_oil', 'kosher_salt'],
-      tools: ['chefs_knife', 'cutting_board', 'stockpot', 'wooden_spoon'],
-      knifeTask: {
-        ingredient: 'mushrooms',
-        technique: 'slice',
-        nameEn: 'Uniform slices',
-        nameEs: 'Láminas uniformes',
-        ipa: '/slaɪs/',
-        desc: 'Slice the earthy button and cremini mushrooms to saute evenly.',
-        slicesRequired: 5
-      },
-      cookingSteps: [
-        {
-          prompt: 'Toast the Arborio rice in olive oil until translucent around the edges.',
-          promptEs: 'Tuesta el arroz arborio en aceite hasta que los bordes queden traslúcidos.',
-          targetHeat: 'med',
-          targetDoneness: 'medium',
-          actionRequired: 'sear',
-          labelEn: 'Toast Rice (Tostatura)',
-          timeSec: 6
-        },
-        {
-          prompt: 'Simmer and ladle hot stock while stirring vigorously (Mantecatura)!',
-          promptEs: '¡Hierve a fuego lento y añade caldo mientras revuelves con fuerza!',
-          actionRequired: 'simmer',
-          ingredientRequired: 'white_wine',
-          labelEn: 'Simmer & Mantecatura',
-          timeSec: 6
-        }
-      ],
-      plating: {
-        sauceStyle: 'over_dish',
-        garnish: 'fresh_parsley'
-      }
-    }
-  ];
-
-  const DEFAULT_INGREDIENTS = {
-    // Butchery
-    ribeye_steak: { nameEn: 'Ribeye Steak', nameEs: 'Bife de Ribeye', cat: 'butchery', icon: '🥩', ipa: '/ˈrɪb.aɪ steɪk/', desc: 'Marbled prime beef cut, renowned for supreme tenderness and rich flavor.' },
-    chicken_breast: { nameEn: 'Chicken Breast', nameEs: 'Pechuga de Pollo', cat: 'butchery', icon: '🍗', ipa: '/ˈtʃɪk.ɪn brest/', desc: 'Lean white poultry meat ideal for quick searing and tender strips.' },
-    duck_breast: { nameEn: 'Duck Breast (Magret)', nameEs: 'Magret de Pato', cat: 'butchery', icon: '🦆', ipa: '/dʌk brest/', desc: 'Rich, flavorful dark meat crowned with a thick layer of savory fat.' },
-    pork_tenderloin: { nameEn: 'Pork Tenderloin', nameEs: 'Solomillo de Cerdo', cat: 'butchery', icon: '🥓', ipa: '/pɔːrk ˈten.dɚ.lɔɪn/', desc: 'Extraordinarily lean and mild cut of pork that cooks quickly.' },
-
-    // Seafood
-    salmon_fillet: { nameEn: 'Atlantic Salmon', nameEs: 'Filete de Salmón', cat: 'seafood', icon: '🐟', ipa: '/ˈsæm.ən ˈfɪl.ɪt/', desc: 'Rich oily fish packed with omega-3s, requiring a hot pan for crispy skin.' },
-    tiger_prawns: { nameEn: 'Tiger Prawns', nameEs: 'Langostinos Tigre', cat: 'seafood', icon: '🦐', ipa: '/ˈtaɪ.ɡɚ prɑːnz/', desc: 'Jumbo succulent crustaceans that turn vibrant coral pink when seared.' },
-
-    // Dairy & Eggs
-    unsalted_butter: { nameEn: 'Unsalted Butter', nameEs: 'Mantequilla sin Sal', cat: 'dairy', icon: '🧈', ipa: '/ʌnˈsɔːl.tɪd ˈbʌt̬.ɚ/', desc: 'Pure sweet-cream butter for finishing pan sauces and basting steaks.' },
-    heavy_cream: { nameEn: 'Heavy Cream', nameEs: 'Crema para Batir', cat: 'dairy', icon: '🥛', ipa: '/ˌhev.i ˈkriːm/', desc: 'High-fat dairy cream used for velvety sauces, soups, and ganache.' },
-    parmesan_cheese: { nameEn: 'Parmesan Cheese', nameEs: 'Queso Parmesano', cat: 'dairy', icon: '🧀', ipa: '/ˈpɑːr.mə.zɑːn/', desc: 'Aged hard Italian cheese lending savory umami depth to dishes.' },
-
-    // Produce & Herbs
-    garlic_cloves: { nameEn: 'Garlic Cloves', nameEs: 'Dientes de Ajo', cat: 'produce', icon: '🧄', ipa: '/ˈɡɑːr.lɪk kloʊvz/', desc: 'Aromatic pungent bulb that mellows into sweet savory notes when cooked.' },
-    yellow_onion: { nameEn: 'Yellow Onion', nameEs: 'Cebolla Amarilla', cat: 'produce', icon: '🧅', ipa: '/ˈjel.oʊ ˈʌn.jən/', desc: 'Foundational aromatic for building stocks, mirepoix, and braises.' },
-    shallots: { nameEn: 'French Shallots', nameEs: 'Chalotas Francesas', cat: 'produce', icon: '🧅', ipa: '/ʃəˈlɑːts/', desc: 'Delicate allium with a mild garlic-onion nuance prized in French gastronomy.' },
-    mushrooms: { nameEn: 'Button Mushrooms', nameEs: 'Champiñones Frescos', cat: 'produce', icon: '🍄', ipa: '/ˈmʌʃ.ruːmz/', desc: 'Earthy fungi that caramelize gorgeously in high-heat skillet preparations.' },
-    lemon: { nameEn: 'Fresh Lemon', nameEs: 'Limón Amarillo', cat: 'produce', icon: '🍋', ipa: '/ˈlem.ən/', desc: 'Citrus providing bright acidity to cut through fatty proteins and sauces.' },
-    fresh_dill: { nameEn: 'Fresh Dill', nameEs: 'Eneldo Fresco', cat: 'produce', icon: '🌿', ipa: '/frɛʃ dɪl/', desc: 'Feathery herb with distinctive anise notes, classical pairing with salmon.' },
-    rosemary: { nameEn: 'Fresh Rosemary', nameEs: 'Romero Fresco', cat: 'produce', icon: '🌿', ipa: '/ˈroʊz.mer.i/', desc: 'Resinous piney woody herb indispensable for basting red meats.' },
-    thyme: { nameEn: 'Fresh Thyme', nameEs: 'Tomillo Fresco', cat: 'produce', icon: '🌱', ipa: '/taɪm/', desc: 'Subtle earthy herb that complements poultry, stocks, and reductions.' },
-    fresh_parsley: { nameEn: 'Flat-Leaf Parsley', nameEs: 'Perejil Fresco', cat: 'produce', icon: '🌿', ipa: '/ˈpɑːrs.li/', desc: 'Clean, herbaceous finishing garnish that adds freshness and vibrant green color.' },
-
-    // Dry Pantry & Spices
-    olive_oil: { nameEn: 'Extra Virgin Olive Oil', nameEs: 'Aceite de Oliva Extra Virgen', cat: 'dry', icon: '🫒', ipa: '/ˈɑː.lɪv ɔɪl/', desc: 'Cold-pressed fruity oil for searing, dressing, and marinades.' },
-    white_wine: { nameEn: 'Dry White Wine', nameEs: 'Vino Blanco Seco', cat: 'dry', icon: '🍾', ipa: '/waɪt waɪn/', desc: 'High-acid cooking wine used to deglaze fond and enrich pan sauces.' },
-    balsamic_vinegar: { nameEn: 'Aged Balsamic Vinegar', nameEs: 'Vinagre Balsámico Envejecido', cat: 'dry', icon: '🏺', ipa: '/bɔːlˈsæm.ɪk/', desc: 'Sweet, acidic dark Italian vinegar suitable for syrupy pan glazes.' },
-    kosher_salt: { nameEn: 'Kosher Salt', nameEs: 'Sal Kosher', cat: 'dry', icon: '🧂', ipa: '/ˈkoʊ.ʃɚ sɑːlt/', desc: 'Coarse flake salt allowing precise tactile pinch control for seasoning.' },
-    black_pepper: { nameEn: 'Coarse Black Pepper', nameEs: 'Pimienta Negra Molida', cat: 'dry', icon: '🧂', ipa: '/blæk ˈpep.ɚ/', desc: 'Cracked pungent peppercorns delivering warmth and floral aroma.' },
-    fettuccine_pasta: { nameEn: 'Fettuccine Pasta', nameEs: 'Pasta Fettuccine', cat: 'dry', icon: '🍝', ipa: '/ˌfet̬.əˈtʃiː.ni/', desc: 'Flat thick ribbon pasta made from durum wheat semolina.' },
-    arborio_rice: { nameEn: 'Arborio Rice', nameEs: 'Arroz Arborio', cat: 'dry', icon: '🍚', ipa: '/ɑːrˈbɔːr.i.oʊ/', desc: 'High-starch short-grain Italian rice yielding creamy risotto texture.' }
-  };
-
-  const DEFAULT_TOOLS = {
-    chefs_knife: { nameEn: "Chef's Knife (8-inch)", nameEs: "Cuchillo de Chef (20cm)", icon: '🔪', ipa: '/ʃɛfs naɪf/', desc: 'The quintessential kitchen workhorse for slicing, dicing, and mincing.' },
-    cutting_board: { nameEn: 'End-Grain Cutting Board', nameEs: 'Tabla de Corte de Madera', icon: '🪵', ipa: '/ˈkʌt̬.ɪŋ bɔːrd/', desc: 'Durable wooden surface designed to protect sharp blade edges.' },
-    skillet: { nameEn: 'Stainless Steel Skillet', nameEs: 'Sartén de Acero Inoxidable', icon: '🍳', ipa: '/ˈskɪl.ɪt/', desc: 'Heavy pan ideal for searing proteins and building flavorful pan sauces.' },
-    cast_iron_pan: { nameEn: 'Cast Iron Skillet', nameEs: 'Sartén de Hierro Fundido', icon: '🍳', ipa: '/kæst ˈaɪ.ɚn/', desc: 'Incredible heat retention for intense restaurant-grade steaks and crusts.' },
-    kitchen_tongs: { nameEn: 'Stainless Steel Tongs', nameEs: 'Pinzas de Cocina', icon: '🥢', ipa: '/kɪtʃ.ən tɑːŋz/', desc: 'Extension of the chef’s hand for turning hot meats and tossing pasta.' },
-    wire_whisk: { nameEn: 'Balloon Wire Whisk', nameEs: 'Batidor de Alambre', icon: '🥣', ipa: '/waɪɚ wɪsk/', desc: 'Essential tool for emulsifying sauces, vinaigrettes, and whipping cream.' },
-    meat_thermometer: { nameEn: 'Digital Meat Thermometer', nameEs: 'Termómetro Digital de Cocina', icon: '🌡️', ipa: '/ˈmæt θɚˈmɑː.mə.t̬ɚ/', desc: 'Instant-read probe to guarantee exact culinary doneness without cutting.' },
-    stockpot: { nameEn: 'Heavy Stockpot', nameEs: 'Olla Alta de Caldo', icon: '🍲', ipa: '/ˈstɑːk.pɑːt/', desc: 'Large deep vessel for boiling pasta, simmering stocks, and making risotto.' }
-  };
-
-  const CUSTOMER_PERSONAS = [
-    {
-      id: 'sophia_gourmet',
-      name: 'Sophia Laurent',
-      title: 'Food Critic & Sommelier',
-      avatarColor: '#f43f5e',
-      speechGreeting: 'Good evening Chef! I have heard wonderful things about your seafood.',
-      speechRequest: "I'd love the Pan-Seared Atlantic Salmon, but I have a strict dairy allergy—please no butter, sear it with olive oil, and serve the sauce on the side!",
-      requestEs: '¡Me encantaría el Salmón Sellado, pero tengo alergia a lácteos: sin mantequilla, séllalo con aceite de oliva y pon la salsa al lado!',
-      acceptedDialogue: 'Certainly madame! We will sear the salmon in olive oil without butter and place the sauce on the side.',
-      correctDialogueIndex: 0,
-      dialogueOptions: [
-        'Certainly madame! We will sear the salmon in olive oil without butter and place the sauce on the side.',
-        'No problem, I will boil the salmon in milk with extra butter on top.',
-        'We do not have fish today, here is a beef burger.'
-      ]
-    },
-    {
-      id: 'marcus_steak',
-      name: 'Marcus Vance',
-      title: 'Executive Gourmet',
-      avatarColor: '#3b82f6',
-      speechGreeting: 'Hello Chef! I crave a proper cut of beef tonight.',
-      speechRequest: 'Could I get the Prime Ribeye Steak cooked medium-rare? Please baste it with butter and plenty of crushed garlic!',
-      requestEs: '¿Podrías prepararme el Bife de Ribeye en término medio-rojo? ¡Báñalo con mantequilla y abundante ajo picado!',
-      acceptedDialogue: 'Right away sir! Prime Ribeye seared medium-rare, basted with butter, rosemary, and minced garlic.',
-      correctDialogueIndex: 1,
-      dialogueOptions: [
-        'Sure! I will burn it well-done with no seasoning at all.',
-        'Right away sir! Prime Ribeye seared medium-rare, basted with butter, rosemary, and minced garlic.',
-        'We only serve chicken pasta tonight.'
-      ]
-    },
-    {
-      id: 'clara_italian',
-      name: 'Clara Rossi',
-      title: 'Pasta Enthusiast',
-      avatarColor: '#10b981',
-      speechGreeting: 'Buonasera Chef! Looking forward to an authentic comforting meal.',
-      speechRequest: 'I will order the Chicken Fettuccine Alfredo, but please hold the mushrooms. Make sure the sauce is rich and creamy!',
-      requestEs: 'Ordenaré el Fettuccine Alfredo con pollo, pero sin champiñones. ¡Asegúrate de que la salsa quede bien cremosa!',
-      acceptedDialogue: 'Delighted! Fettuccine Alfredo with tender chicken strips, velvety parmesan cream, and no mushrooms.',
-      correctDialogueIndex: 2,
-      dialogueOptions: [
-        'Coming up! Extra spicy mushrooms with cold milk.',
-        'I will fry the pasta in old oil with ketchup.',
-        'Delighted! Fettuccine Alfredo with tender chicken strips, velvety parmesan cream, and no mushrooms.'
-      ]
-    }
-  ];
-
-  const RANKS = [
-    { level: 1, title: 'Dishwasher & Commis', titleEs: 'Lavaplatos y Ayudante de Cocina', minScore: 0, badge: '🧼' },
-    { level: 2, title: 'Line Cook (Chef de Partie)', titleEs: 'Cocinero de Línea (Chef de Partie)', minScore: 300, badge: '🔪' },
-    { level: 3, title: 'Sous-Chef de Cuisine', titleEs: 'Segundo Jefe de Cocina (Sous-Chef)', minScore: 800, badge: '🍳' },
-    { level: 4, title: 'Executive Chef', titleEs: 'Chef Ejecutivo de Restaurante', minScore: 1600, badge: '👨‍🍳' },
-    { level: 5, title: 'Michelin Star Master Chef', titleEs: 'Maestro Culinario Estrella Michelin', minScore: 3000, badge: '⭐' }
-  ];
-
-  // ============================================================================
-  // 2. PROCEDURAL SOUND SYNTHESIZER (WEB AUDIO API) & TTS (WEB SPEECH API)
+  // 1. PROCEDURAL SOUND SYNTHESIZER (WEB AUDIO API) & TTS (KOKORO / WEB SPEECH)
   // ============================================================================
 
   let audioCtx = null;
@@ -427,7 +44,7 @@
       const now = ctx.currentTime;
 
       if (type === 'bell') {
-        // Double metallic chime (880Hz + 1760Hz)
+        // Doble campana de servicio (880Hz + 1760Hz)
         [880, 1760].forEach((freq, i) => {
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
@@ -441,21 +58,21 @@
           osc.stop(now + 1.25);
         });
       } else if (type === 'chop') {
-        // Knife thud on wood board
+        // Golpe firme sobre madera / colocación de ingrediente
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.type = 'triangle';
         osc.frequency.setValueAtTime(140, now);
         osc.frequency.exponentialRampToValueAtTime(40, now + 0.08);
-        gain.gain.setValueAtTime(0.4, now);
+        gain.gain.setValueAtTime(0.35, now);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.start(now);
         osc.stop(now + 0.09);
       } else if (type === 'sizzle') {
-        // White noise burst with bandpass for pan frying
-        const bufferSize = ctx.sampleRate * 0.3;
+        // Chisporroteo de carne en plancha caliente
+        const bufferSize = ctx.sampleRate * 0.35;
         const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
         const data = buffer.getChannelData(0);
         for (let i = 0; i < bufferSize; i++) {
@@ -468,85 +85,51 @@
         filter.frequency.value = 3500;
         filter.Q.value = 1.8;
         const gain = ctx.createGain();
-        gain.gain.setValueAtTime(0.25, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
-        noise.connect(filter);
-        filter.connect(gain);
-        gain.connect(ctx.destination);
-        noise.start(now);
-      } else if (type === 'deglaze') {
-        // Heavy liquid hiss
-        const bufferSize = ctx.sampleRate * 0.6;
-        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) {
-          data[i] = Math.random() * 2 - 1;
-        }
-        const noise = ctx.createBufferSource();
-        noise.buffer = buffer;
-        const filter = ctx.createBiquadFilter();
-        filter.type = 'highpass';
-        filter.frequency.value = 2000;
-        const gain = ctx.createGain();
-        gain.gain.setValueAtTime(0.35, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.58);
+        gain.gain.setValueAtTime(0.28, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
         noise.connect(filter);
         filter.connect(gain);
         gain.connect(ctx.destination);
         noise.start(now);
       } else if (type === 'bubble') {
-        // Sine popping bubble
+        // Aceite burbujeante en freidora
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(350, now);
-        osc.frequency.exponentialRampToValueAtTime(650, now + 0.12);
-        gain.gain.setValueAtTime(0.2, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+        osc.frequency.setValueAtTime(320, now);
+        osc.frequency.exponentialRampToValueAtTime(800, now + 0.12);
+        gain.gain.setValueAtTime(0.22, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.start(now);
-        osc.stop(now + 0.13);
-      } else if (type === 'coin') {
-        // Bright coin chime
-        [987, 1318].forEach((f, i) => {
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(f, now + i * 0.08);
-          gain.gain.setValueAtTime(0.25, now + i * 0.08);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4 + i * 0.08);
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.start(now + i * 0.08);
-          osc.stop(now + 0.45);
-        });
+        osc.stop(now + 0.15);
       } else if (type === 'fanfare') {
-        // Michelin 5-star triad (C5, E5, G5, C6)
+        // Acorde triunfal (C5, E5, G5, C6)
         [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
           osc.type = 'triangle';
-          osc.frequency.setValueAtTime(f, now + i * 0.09);
-          gain.gain.setValueAtTime(0.25, now + i * 0.09);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.8 + i * 0.09);
+          osc.frequency.setValueAtTime(f, now + i * 0.08);
+          gain.gain.setValueAtTime(0.25, now + i * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.7 + i * 0.08);
           osc.connect(gain);
           gain.connect(ctx.destination);
-          osc.start(now + i * 0.09);
-          osc.stop(now + 1.2);
+          osc.start(now + i * 0.08);
+          osc.stop(now + 1.0);
         });
       } else if (type === 'wrong') {
-        // Low error buzz
+        // Zumbido de error
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(140, now);
-        gain.gain.setValueAtTime(0.2, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+        osc.frequency.setValueAtTime(130, now);
+        gain.gain.setValueAtTime(0.22, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.start(now);
-        osc.stop(now + 0.26);
+        osc.stop(now + 0.29);
       }
     } catch (_) {}
   }
@@ -559,7 +142,7 @@
       .replace(/[^a-z0-9_-]/g, '_')
       .replace(/^_+|_+$/g, '');
 
-    // 1. Intentar reproducir el audio hiperrealista af_sarah generado con Kokoro TTS
+    // 1. Intento de reproducción de audio hiperrealista Kokoro TTS
     if (cleanKey) {
       const audioUrl = 'audio/vocab/' + cleanKey + '.wav';
       try {
@@ -592,112 +175,18 @@
   }
 
   // ============================================================================
-  // 3. SVG CARTOON ILLUSTRATION ENGINE
+  // 2. PERFIL DE CHEF Y PERSISTENCIA (LOCALSTORAGE)
   // ============================================================================
 
-  function getIngredientSvg(id) {
-    switch (id) {
-      case 'salmon_fillet':
-        return `<svg viewBox="0 0 64 64" class="ingredient-illustration"><polygon points="8,32 56,18 52,46 12,42" fill="#fb923c" stroke="#c2410c" stroke-width="2.5"/><path d="M18,28 Q30,22 46,24" stroke="#fed7aa" stroke-width="2" fill="none"/><path d="M20,38 Q34,34 48,36" stroke="#fed7aa" stroke-width="2" fill="none"/><rect x="8" y="22" width="6" height="20" rx="3" fill="#ea580c"/></svg>`;
-      case 'ribeye_steak':
-        return `<svg viewBox="0 0 64 64" class="ingredient-illustration"><ellipse cx="32" cy="32" rx="24" ry="18" fill="#dc2626" stroke="#991b1b" stroke-width="2.5"/><path d="M20,24 Q32,18 42,26 Q36,36 22,34" fill="#fecaca"/><circle cx="28" cy="30" r="3" fill="#ffffff"/></svg>`;
-      case 'chicken_breast':
-        return `<svg viewBox="0 0 64 64" class="ingredient-illustration"><path d="M12,36 Q16,16 38,20 Q54,26 50,44 Q36,50 12,36 Z" fill="#fdba74" stroke="#c2410c" stroke-width="2.5"/><path d="M22,28 Q34,26 42,34" stroke="#ffedd5" stroke-width="2" fill="none"/></svg>`;
-      case 'duck_breast':
-        return `<svg viewBox="0 0 64 64" class="ingredient-illustration"><ellipse cx="32" cy="32" rx="24" ry="16" fill="#b91c1c" stroke="#7f1d1d" stroke-width="2.5"/><rect x="14" y="20" width="36" height="6" rx="3" fill="#fef08a"/><path d="M18,22 L46,22" stroke="#ca8a04" stroke-width="1.5"/></svg>`;
-      case 'tiger_prawns':
-        return `<svg viewBox="0 0 64 64" class="ingredient-illustration"><path d="M46,20 Q54,34 38,44 Q22,48 18,34 Q28,26 46,20 Z" fill="#f97316" stroke="#c2410c" stroke-width="2.5"/><path d="M48,16 L56,12" stroke="#ea580c" stroke-width="2"/><circle cx="48" cy="24" r="2.5" fill="#000"/></svg>`;
-      case 'unsalted_butter':
-        return `<svg viewBox="0 0 64 64" class="ingredient-illustration"><polygon points="12,28 32,16 52,24 32,38" fill="#fef08a" stroke="#ca8a04" stroke-width="2"/><polygon points="12,28 32,38 32,48 12,38" fill="#fde047" stroke="#ca8a04" stroke-width="2"/><polygon points="32,38 52,24 52,34 32,48" fill="#eab308" stroke="#ca8a04" stroke-width="2"/></svg>`;
-      case 'heavy_cream':
-        return `<svg viewBox="0 0 64 64" class="ingredient-illustration"><rect x="20" y="24" width="24" height="30" rx="4" fill="#f8fafc" stroke="#94a3b8" stroke-width="2.5"/><polygon points="20,24 32,14 44,24" fill="#e2e8f0" stroke="#94a3b8" stroke-width="2"/><text x="32" y="42" font-size="10" font-weight="bold" fill="#0284c7" text-anchor="middle">MILK</text></svg>`;
-      case 'parmesan_cheese':
-        return `<svg viewBox="0 0 64 64" class="ingredient-illustration"><polygon points="12,46 52,46 44,22 12,46" fill="#fde047" stroke="#ca8a04" stroke-width="2.5"/><circle cx="26" cy="38" r="2" fill="#ca8a04"/><circle cx="36" cy="40" r="3" fill="#ca8a04"/><circle cx="30" cy="30" r="2.5" fill="#ca8a04"/></svg>`;
-      case 'lemon':
-        return `<svg viewBox="0 0 64 64" class="ingredient-illustration"><ellipse cx="32" cy="32" rx="22" ry="16" fill="#facc15" stroke="#a16207" stroke-width="2.5"/><polygon points="10,32 6,32 8,30" fill="#a16207"/><polygon points="54,32 58,32 56,34" fill="#a16207"/></svg>`;
-      case 'garlic_cloves':
-        return `<svg viewBox="0 0 64 64" class="ingredient-illustration"><path d="M32,14 Q44,28 38,46 Q26,48 18,44 Q14,30 32,14 Z" fill="#f8fafc" stroke="#94a3b8" stroke-width="2.5"/><line x1="32" y1="14" x2="30" y2="46" stroke="#cbd5e1" stroke-width="2"/></svg>`;
-      case 'yellow_onion':
-        return `<svg viewBox="0 0 64 64" class="ingredient-illustration"><ellipse cx="32" cy="36" rx="18" ry="18" fill="#d97706" stroke="#92400e" stroke-width="2.5"/><polygon points="32,12 28,20 36,20" fill="#65a30d"/></svg>`;
-      case 'mushrooms':
-        return `<svg viewBox="0 0 64 64" class="ingredient-illustration"><path d="M14,34 Q32,12 50,34 Z" fill="#d7ba9b" stroke="#78350f" stroke-width="2.5"/><rect x="26" y="34" width="12" height="16" rx="3" fill="#f5f5f4" stroke="#78350f" stroke-width="2"/></svg>`;
-      case 'fresh_dill':
-      case 'fresh_parsley':
-      case 'rosemary':
-      case 'thyme':
-        return `<svg viewBox="0 0 64 64" class="ingredient-illustration"><path d="M32,54 Q32,24 44,14" stroke="#15803d" stroke-width="3" fill="none"/><ellipse cx="28" cy="36" rx="8" ry="4" fill="#22c55e" transform="rotate(-30 28 36)"/><ellipse cx="38" cy="26" rx="8" ry="4" fill="#22c55e" transform="rotate(30 38 26)"/></svg>`;
-      case 'olive_oil':
-        return `<svg viewBox="0 0 64 64" class="ingredient-illustration"><rect x="24" y="22" width="16" height="32" rx="4" fill="#84cc16" stroke="#4d7c0f" stroke-width="2"/><rect x="28" y="14" width="8" height="8" rx="2" fill="#ca8a04"/><circle cx="32" cy="36" r="4" fill="#facc15"/></svg>`;
-      case 'white_wine':
-        return `<svg viewBox="0 0 64 64" class="ingredient-illustration"><rect x="24" y="24" width="16" height="30" rx="3" fill="#22c55e" stroke="#15803d" stroke-width="2"/><rect x="28" y="12" width="8" height="12" rx="1" fill="#fde047"/></svg>`;
-      case 'balsamic_vinegar':
-        return `<svg viewBox="0 0 64 64" class="ingredient-illustration"><rect x="22" y="24" width="20" height="30" rx="4" fill="#451a03" stroke="#1c1917" stroke-width="2"/><rect x="28" y="14" width="8" height="10" rx="2" fill="#b45309"/></svg>`;
-      default:
-        return `<svg viewBox="0 0 64 64" class="ingredient-illustration"><circle cx="32" cy="32" r="22" fill="#38bdf8" stroke="#0284c7" stroke-width="2.5"/><text x="32" y="38" font-size="18" text-anchor="middle" fill="#fff">🍴</text></svg>`;
-    }
-  }
+  const STORAGE_KEY = 'culinary_studio_profile_v2';
 
-  function getToolSvg(id) {
-    switch (id) {
-      case 'chefs_knife':
-        return `<svg viewBox="0 0 64 64" class="tool-illustration"><path d="M12,44 L24,32 L20,28 L8,40 Z" fill="#78350f"/><path d="M24,32 Q44,28 54,14 Q46,38 28,36 Z" fill="#cbd5e1" stroke="#475569" stroke-width="1.5"/></svg>`;
-      case 'cutting_board':
-        return `<svg viewBox="0 0 64 64" class="tool-illustration"><rect x="10" y="16" width="44" height="32" rx="5" fill="#b45309" stroke="#78350f" stroke-width="2.5"/><rect x="14" y="20" width="36" height="24" rx="3" fill="#d97706"/></svg>`;
-      case 'skillet':
-      case 'cast_iron_pan':
-        return `<svg viewBox="0 0 64 64" class="tool-illustration"><ellipse cx="28" cy="34" rx="18" ry="12" fill="#334155" stroke="#0f172a" stroke-width="2.5"/><rect x="42" y="30" width="16" height="6" rx="3" fill="#1e293b"/></svg>`;
-      case 'kitchen_tongs':
-        return `<svg viewBox="0 0 64 64" class="tool-illustration"><line x1="16" y1="16" x2="48" y2="34" stroke="#94a3b8" stroke-width="3"/><line x1="16" y1="48" x2="48" y2="34" stroke="#94a3b8" stroke-width="3"/></svg>`;
-      case 'wire_whisk':
-        return `<svg viewBox="0 0 64 64" class="tool-illustration"><rect x="14" y="44" width="8" height="8" fill="#64748b"/><path d="M22,44 Q44,24 50,14 Q34,44 22,44" stroke="#94a3b8" stroke-width="2" fill="none"/></svg>`;
-      default:
-        return `<svg viewBox="0 0 64 64" class="tool-illustration"><circle cx="32" cy="32" r="22" fill="#64748b"/><text x="32" y="38" font-size="18" text-anchor="middle" fill="#fff">🛠️</text></svg>`;
-    }
-  }
-
-  function getCustomerAvatarSvg(persona) {
-    const color = persona.avatarColor || '#38bdf8';
-    return `
-      <svg viewBox="0 0 160 200" class="customer-avatar-svg">
-        <!-- Body / Chef jacket or suit -->
-        <path d="M35,160 Q80,140 125,160 L135,200 L25,200 Z" fill="${color}" stroke="#0f172a" stroke-width="4"/>
-        <path d="M65,150 L80,180 L95,150" fill="#ffffff" stroke="#0f172a" stroke-width="3"/>
-        
-        <!-- Neck -->
-        <rect x="68" y="115" width="24" height="25" rx="4" fill="#fed7aa" stroke="#0f172a" stroke-width="3"/>
-        
-        <!-- Head -->
-        <ellipse cx="80" cy="85" rx="42" ry="46" fill="#fed7aa" stroke="#0f172a" stroke-width="4"/>
-        
-        <!-- Hair -->
-        <path d="M38,70 Q80,30 122,70 Q130,40 80,35 Q30,40 38,70 Z" fill="#451a03" stroke="#0f172a" stroke-width="4"/>
-        
-        <!-- Eyes & Eyebrows -->
-        <circle cx="65" cy="82" r="5" fill="#0f172a"/>
-        <circle cx="95" cy="82" r="5" fill="#0f172a"/>
-        <circle cx="67" cy="80" r="1.5" fill="#ffffff"/>
-        <circle cx="97" cy="80" r="1.5" fill="#ffffff"/>
-        <path d="M56,72 Q65,68 74,72" stroke="#0f172a" stroke-width="3" fill="none"/>
-        <path d="M86,72 Q95,68 104,72" stroke="#0f172a" stroke-width="3" fill="none"/>
-        
-        <!-- Nose -->
-        <path d="M80,82 Q84,92 78,94" stroke="#d97706" stroke-width="3" fill="none"/>
-        
-        <!-- Smiling Mouth -->
-        <path d="M66,104 Q80,118 94,104" stroke="#991b1b" stroke-width="3.5" fill="#fca5a5"/>
-        
-        <!-- Cheeks -->
-        <circle cx="52" cy="95" r="7" fill="#f43f5e" opacity="0.4"/>
-        <circle cx="108" cy="95" r="7" fill="#f43f5e" opacity="0.4"/>
-      </svg>
-    `;
-  }
-
-  // ============================================================================
-  // 4. GAME STATE & LOCAL STORAGE PROFILE
-  // ============================================================================
-
-  const STORAGE_KEY = 'culinary_studio_profile_v1';
+  const RANKS = [
+    { level: 1, title: 'Commis Chef', titleEs: 'Ayudante de Cocina', minScore: 0, badge: '🧼' },
+    { level: 2, title: 'Line Cook', titleEs: 'Cocinero de Línea', minScore: 250, badge: '🔪' },
+    { level: 3, title: 'Sous-Chef', titleEs: 'Segundo de Cocina', minScore: 700, badge: '🍳' },
+    { level: 4, title: 'Executive Chef', titleEs: 'Chef Ejecutivo', minScore: 1500, badge: '👨‍🍳' },
+    { level: 5, title: 'Michelin Star Chef', titleEs: 'Chef Estrella Michelin', minScore: 2800, badge: '⭐' }
+  ];
 
   function getProfile() {
     try {
@@ -706,9 +195,10 @@
     } catch (_) {}
     return {
       score: 0,
-      coins: 50,
+      coins: 100,
       ordersCompleted: 0,
       perfectOrders: 0,
+      stars: 1,
       rankLevel: 1
     };
   }
@@ -719,1423 +209,1194 @@
     } catch (_) {}
   }
 
-  const state = {
-    isOpen: false,
-    currentStation: 1,
-    activeOrder: null,
-    customerPersona: null,
-    orderAccepted: false,
-    selectedFresh: [],
-    selectedDry: [],
-    selectedTools: [],
-    knifeCutsDone: 0,
-    stoveHeat: 'off',
-    stoveDoneness: 0, // 0 to 100%
-    quickActionActive: null,
-    platingSauceStyle: 'over_dish',
-    platingGarnishDone: false,
-    orderEvaluation: null,
-    schoolItem: null,
-    canvasAnimationIds: {}
+  // ============================================================================
+  // 3. BASE DE DATOS DE CLIENTES Y PEDIDOS DE RESTAURANTE
+  // ============================================================================
+
+  const CUSTOMER_PERSONAS = [
+    {
+      id: 'sophia',
+      name: 'Sophia Laurent',
+      title: 'Food Critic',
+      avatarColor: '#f43f5e',
+      hairColor: '#3b1d11',
+      praiseEn: 'Magnifique! The patty is perfectly well-done and the bun is toasted just right!',
+      praiseEs: '¡Magnífico! ¡La carne está en su punto perfecto y el pan bien tostado!'
+    },
+    {
+      id: 'marcus',
+      name: 'Marcus Vance',
+      title: 'BBQ Pitmaster',
+      avatarColor: '#ea580c',
+      hairColor: '#1c1917',
+      praiseEn: 'Now that is a real burger! Delicious melted cheese and hot crispy fries!',
+      praiseEs: '¡Eso sí es una hamburguesa! ¡Queso derretido delicioso y papas calientitas!'
+    },
+    {
+      id: 'clara',
+      name: 'Clara Rossi',
+      title: 'Gourmet Enthusiast',
+      avatarColor: '#10b981',
+      hairColor: '#b45309',
+      praiseEn: 'Delicious Chef! The crisp lettuce and ripe tomatoes bring supreme freshness!',
+      praiseEs: '¡Delicioso Chef! ¡La lechuga crujiente y los jitomates le dan gran frescura!'
+    },
+    {
+      id: 'lucas',
+      name: 'Lucas Silva',
+      title: 'Soccer Striker',
+      avatarColor: '#0284c7',
+      hairColor: '#1e293b',
+      praiseEn: 'Goal! Exactly what I needed after the match. Thanks for the quick service!',
+      praiseEs: '¡Golazo! Justo lo que necesitaba después del partido. ¡Gracias por la rapidez!'
+    },
+    {
+      id: 'elena',
+      name: 'Elena Rostova',
+      title: 'Food Blogger',
+      avatarColor: '#8b5cf6',
+      hairColor: '#ca8a04',
+      praiseEn: 'Five stars on my blog! Picture-perfect stacking and fantastic flavor!',
+      praiseEs: '¡Cinco estrellas en mi blog! ¡Un armado impecable y sabor fantástico!'
+    }
+  ];
+
+  const RESTAURANT_ORDERS = [
+    {
+      id: 'classic_cheeseburger',
+      nameEn: 'Classic Cheeseburger with Fries',
+      nameEs: 'Hamburguesa Clásica con Queso y Papas',
+      speechEn: 'I want a well-done burger with cheddar cheese, crisp lettuce, and golden fries, please!',
+      speechEs: '¡Quiero una hamburguesa bien cocida con queso cheddar, lechuga y papas doradas, por favor!',
+      requiredLayers: ['bottom_bun', 'cooked_patty', 'cheese', 'lettuce', 'top_bun', 'fries'],
+      timeSec: 60,
+      rewardCoins: 100,
+      rewardExp: 50
+    },
+    {
+      id: 'diner_deluxe',
+      nameEn: 'MasterChef Deluxe Burger',
+      nameEs: 'Hamburguesa Deluxe con Todo',
+      speechEn: 'I would like a deluxe burger with cheese, tomato, sliced onion, lettuce, and fries!',
+      speechEs: '¡Quisiera una hamburguesa deluxe con queso, jitomate, cebolla, lechuga y papas!',
+      requiredLayers: ['bottom_bun', 'cooked_patty', 'cheese', 'lettuce', 'tomato', 'onion', 'top_bun', 'fries'],
+      timeSec: 75,
+      rewardCoins: 140,
+      rewardExp: 70
+    },
+    {
+      id: 'onion_cheddar_burger',
+      nameEn: 'Double Onion & Cheddar Burger',
+      nameEs: 'Hamburguesa con Queso y Cebolla Asada',
+      speechEn: 'Please make me a well-done burger with melted cheddar cheese and sliced onions!',
+      speechEs: '¡Por favor prepárame una hamburguesa bien cocida con queso cheddar derretido y cebolla!',
+      requiredLayers: ['bottom_bun', 'cooked_patty', 'cheese', 'onion', 'top_bun'],
+      timeSec: 55,
+      rewardCoins: 90,
+      rewardExp: 45
+    },
+    {
+      id: 'fresh_salad_burger',
+      nameEn: 'Garden Fresh Burger with Fries',
+      nameEs: 'Hamburguesa Fresca de la Huerta con Papas',
+      speechEn: 'I want a burger with plenty of lettuce, fresh tomato, and hot french fries!',
+      speechEs: '¡Quiero una hamburguesa con bastante lechuga, jitomate fresco y papas a la francesa!',
+      requiredLayers: ['bottom_bun', 'cooked_patty', 'lettuce', 'tomato', 'top_bun', 'fries'],
+      timeSec: 65,
+      rewardCoins: 110,
+      rewardExp: 55
+    },
+    {
+      id: 'simple_quick_burger',
+      nameEn: 'Express Burger with Fries',
+      nameEs: 'Hamburguesa Exprés con Papas',
+      speechEn: 'Just a well-done burger with lettuce, top bun, and a large basket of crispy fries!',
+      speechEs: '¡Solo una hamburguesa bien cocida con lechuga, su pan y una canasta de papas crujientes!',
+      requiredLayers: ['bottom_bun', 'cooked_patty', 'lettuce', 'top_bun', 'fries'],
+      timeSec: 50,
+      rewardCoins: 85,
+      rewardExp: 40
+    }
+  ];
+
+  const INGREDIENTS_DEF = {
+    bottom_bun: { id: 'bottom_bun', nameEn: 'Bottom Bun', nameEs: 'Pan Inferior', icon: '🍞', ipa: '/ˈbɑː.t̬əm bʌn/' },
+    raw_patty: { id: 'raw_patty', nameEn: 'Raw Beef Patty', nameEs: 'Carne Cruda (a la plancha)', icon: '🥩', ipa: '/rɑː ˈpæt.i/' },
+    cooked_patty: { id: 'cooked_patty', nameEn: 'Well-Done Patty', nameEs: 'Carne Bien Cocida', icon: '🍔', ipa: '/wɛl dʌn ˈpæt.i/' },
+    cheese: { id: 'cheese', nameEn: 'Cheddar Cheese', nameEs: 'Queso Cheddar', icon: '🧀', ipa: '/ˈtʃed.ɚ tʃiːz/' },
+    lettuce: { id: 'lettuce', nameEn: 'Crisp Lettuce', nameEs: 'Lechuga Fresca', icon: '🥬', ipa: '/ˈlet̬.ɪs/' },
+    tomato: { id: 'tomato', nameEn: 'Sliced Tomato', nameEs: 'Jitomate en Rebanadas', icon: '🍅', ipa: '/təˈmeɪ.t̬oʊ/' },
+    onion: { id: 'onion', nameEn: 'Sliced Onion', nameEs: 'Cebolla en Aros', icon: '🧅', ipa: '/ˈʌn.jən/' },
+    top_bun: { id: 'top_bun', nameEn: 'Top Bun (Sesame)', nameEs: 'Pan Superior con Ajonjolí', icon: '🍞', ipa: '/tɑːp bʌn/' },
+    fries: { id: 'fries', nameEn: 'Crispy French Fries', nameEs: 'Papas a la Francesa', icon: '🍟', ipa: '/krɪs.pi fraɪz/' }
   };
 
   // ============================================================================
-  // 5. CANVAS RENDERERS (KNIFE BOARD, STOVE FLAMES, PLATING PASS)
+  // 4. GENERADORES DE ILUSTRACIONES SVG 2D CARTOON
   // ============================================================================
 
-  function initCuttingBoardCanvas(canvas) {
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    let width = (canvas.width = canvas.clientWidth || 600);
-    let height = (canvas.height = canvas.clientHeight || 350);
+  function getCustomerAvatarSvg(persona, emotion = 'happy') {
+    const color = (persona && persona.avatarColor) || '#38bdf8';
+    const hair = (persona && persona.hairColor) || '#451a03';
 
-    const particles = [];
+    let mouthSvg = '<path d="M66,104 Q80,118 94,104" stroke="#991b1b" stroke-width="3.5" fill="#fca5a5"/>';
+    let eyeLeftSvg = '<circle cx="65" cy="82" r="5" fill="#0f172a"/><circle cx="67" cy="80" r="1.5" fill="#ffffff"/>';
+    let eyeRightSvg = '<circle cx="95" cy="82" r="5" fill="#0f172a"/><circle cx="97" cy="80" r="1.5" fill="#ffffff"/>';
 
-    function render() {
-      ctx.clearRect(0, 0, width, height);
-
-      // Render wood board grain subtle lines
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
-      ctx.lineWidth = 2;
-      for (let i = 20; i < height; i += 30) {
-        ctx.beginPath();
-        ctx.moveTo(10, i);
-        ctx.lineTo(width - 10, i + Math.sin(i) * 6);
-        ctx.stroke();
-      }
-
-      // Render active ingredient on the center of board
-      const task = state.activeOrder ? state.activeOrder.knifeTask : null;
-      const progress = task ? state.knifeCutsDone / task.slicesRequired : 0;
-
-      const centerX = width / 2;
-      const centerY = height / 2;
-
-      // Draw item
-      ctx.save();
-      ctx.translate(centerX, centerY);
-
-      // Ingredient body
-      ctx.fillStyle = '#f59e0b';
-      ctx.strokeStyle = '#78350f';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, 80, 50, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-
-      // Cut marks on ingredient
-      ctx.strokeStyle = '#451a03';
-      ctx.lineWidth = 3;
-      const cutsCount = state.knifeCutsDone;
-      for (let c = 1; c <= cutsCount; c++) {
-        const xOffset = -60 + c * (120 / (task ? task.slicesRequired + 1 : 5));
-        ctx.beginPath();
-        ctx.moveTo(xOffset, -40);
-        ctx.lineTo(xOffset, 40);
-        ctx.stroke();
-      }
-
-      ctx.restore();
-
-      // Particles update & draw
-      for (let p = particles.length - 1; p >= 0; p--) {
-        const pt = particles[p];
-        pt.x += pt.vx;
-        pt.y += pt.vy;
-        pt.vy += 0.3; // gravity
-        pt.alpha -= 0.03;
-        if (pt.alpha <= 0) {
-          particles.splice(p, 1);
-          continue;
-        }
-        ctx.fillStyle = `rgba(251, 191, 36, ${pt.alpha})`;
-        ctx.beginPath();
-        ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      if (state.isOpen && state.currentStation === 4) {
-        state.canvasAnimationIds.cutting = requestAnimationFrame(render);
-      } else {
-        state.canvasAnimationIds.cutting = null;
-      }
+    if (emotion === 'impatient') {
+      mouthSvg = '<path d="M68,110 Q80,102 92,110" stroke="#991b1b" stroke-width="3.5" fill="none"/>';
+      eyeLeftSvg = '<path d="M60,84 L70,80" stroke="#0f172a" stroke-width="3"/><circle cx="65" cy="84" r="4" fill="#0f172a"/>';
+      eyeRightSvg = '<path d="M90,80 L100,84" stroke="#0f172a" stroke-width="3"/><circle cx="95" cy="84" r="4" fill="#0f172a"/>';
+    } else if (emotion === 'ecstatic') {
+      mouthSvg = '<path d="M62,100 Q80,126 98,100 Z" stroke="#991b1b" stroke-width="3" fill="#dc2626"/><path d="M68,100 Q80,108 92,100" fill="#ffffff"/>';
+      eyeLeftSvg = '<path d="M60,82 Q65,74 70,82" stroke="#0f172a" stroke-width="3.5" fill="none"/>';
+      eyeRightSvg = '<path d="M90,82 Q95,74 100,82" stroke="#0f172a" stroke-width="3.5" fill="none"/>';
     }
 
-    state.startCuttingLoop = function () {
-      if (state.canvasAnimationIds.cutting) cancelAnimationFrame(state.canvasAnimationIds.cutting);
-      width = (canvas.width = canvas.clientWidth || 600);
-      height = (canvas.height = canvas.clientHeight || 350);
-      render();
-    };
-    render();
-
-    // Trigger slice effect
-    canvas.onCutClick = function (e) {
-      playSound('chop');
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-
-      for (let i = 0; i < 8; i++) {
-        particles.push({
-          x: x,
-          y: y,
-          vx: (Math.random() - 0.5) * 6,
-          vy: -Math.random() * 5 - 2,
-          size: Math.random() * 4 + 2,
-          alpha: 1.0
-        });
-      }
-    };
+    return `
+      <svg viewBox="0 0 160 190" class="customer-avatar-svg" style="width: 100%; height: 100%; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.35));">
+        <!-- Torso / Camisa -->
+        <path d="M30,155 Q80,135 130,155 L140,190 L20,190 Z" fill="${color}" stroke="#0f172a" stroke-width="3.5"/>
+        <path d="M65,150 L80,175 L95,150" fill="#ffffff" stroke="#0f172a" stroke-width="2.5"/>
+        
+        <!-- Cuello -->
+        <rect x="68" y="116" width="24" height="22" rx="4" fill="#fed7aa" stroke="#0f172a" stroke-width="3"/>
+        
+        <!-- Cabeza -->
+        <ellipse cx="80" cy="85" rx="42" ry="46" fill="#fed7aa" stroke="#0f172a" stroke-width="3.5"/>
+        
+        <!-- Cabello Cartoon -->
+        <path d="M38,72 Q80,28 122,72 Q132,42 80,36 Q28,42 38,72 Z" fill="${hair}" stroke="#0f172a" stroke-width="3.5"/>
+        
+        <!-- Ojos -->
+        ${eyeLeftSvg}
+        ${eyeRightSvg}
+        
+        <!-- Cejas -->
+        <path d="M56,72 Q65,67 74,72" stroke="#0f172a" stroke-width="3" fill="none"/>
+        <path d="M86,72 Q95,67 104,72" stroke="#0f172a" stroke-width="3" fill="none"/>
+        
+        <!-- Nariz -->
+        <path d="M80,82 Q84,91 78,93" stroke="#d97706" stroke-width="3" fill="none"/>
+        
+        <!-- Boca -->
+        ${mouthSvg}
+        
+        <!-- Mejillas sonrosadas -->
+        <circle cx="52" cy="96" r="6" fill="#f43f5e" opacity="0.4"/>
+        <circle cx="108" cy="96" r="6" fill="#f43f5e" opacity="0.4"/>
+      </svg>
+    `;
   }
 
-  function initStovetopCanvas(canvas) {
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    let width = (canvas.width = canvas.clientWidth || 500);
-    let height = (canvas.height = canvas.clientHeight || 280);
-
-    const bubbles = [];
-    const flames = [];
-
-    function render() {
-      ctx.clearRect(0, 0, width, height);
-
-      const cx = width / 2;
-      const cy = height / 2 + 30;
-
-      // Draw gas flames underneath skillet
-      if (state.stoveHeat !== 'off') {
-        const flameHeight = state.stoveHeat === 'high' ? 36 : state.stoveHeat === 'med' ? 24 : 14;
-        const flameColor = state.stoveHeat === 'high' ? '#ef4444' : state.stoveHeat === 'med' ? '#f97316' : '#38bdf8';
-
-        for (let fx = cx - 90; fx <= cx + 90; fx += 18) {
-          const jitter = Math.random() * 8;
-          ctx.fillStyle = flameColor;
-          ctx.beginPath();
-          ctx.moveTo(fx - 7, cy + 30);
-          ctx.quadraticCurveTo(fx, cy + 30 - flameHeight - jitter, fx + 7, cy + 30);
-          ctx.fill();
-
-          // Inner blue core
-          ctx.fillStyle = '#67e8f9';
-          ctx.beginPath();
-          ctx.moveTo(fx - 3, cy + 30);
-          ctx.quadraticCurveTo(fx, cy + 30 - flameHeight * 0.5, fx + 3, cy + 30);
-          ctx.fill();
-        }
-      }
-
-      // Draw Skillet body
-      ctx.fillStyle = '#1e293b';
-      ctx.strokeStyle = '#0f172a';
-      ctx.lineWidth = 6;
-      ctx.beginPath();
-      ctx.ellipse(cx, cy, 110, 48, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-
-      // Skillet inner pan surface
-      const crustColor = state.stoveDoneness > 70 ? '#78350f' : state.stoveDoneness > 40 ? '#b45309' : '#f59e0b';
-      ctx.fillStyle = crustColor;
-      ctx.beginPath();
-      ctx.ellipse(cx, cy - 2, 95, 38, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Food searing in pan
-      ctx.fillStyle = '#dc2626';
-      ctx.strokeStyle = '#7f1d1d';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.ellipse(cx, cy - 6, 50, 22, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-
-      // Sizzle / steam particles
-      if (state.stoveHeat !== 'off') {
-        if (Math.random() < 0.4) {
-          bubbles.push({
-            x: cx + (Math.random() - 0.5) * 80,
-            y: cy + (Math.random() - 0.5) * 20,
-            vy: -Math.random() * 2 - 1,
-            size: Math.random() * 5 + 3,
-            alpha: 0.8
-          });
-        }
-      }
-
-      for (let b = bubbles.length - 1; b >= 0; b--) {
-        const bb = bubbles[b];
-        bb.y += bb.vy;
-        bb.alpha -= 0.02;
-        if (bb.alpha <= 0) {
-          bubbles.splice(b, 1);
-          continue;
-        }
-        ctx.fillStyle = `rgba(255, 255, 255, ${bb.alpha})`;
-        ctx.beginPath();
-        ctx.arc(bb.x, bb.y, bb.size, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      if (state.isOpen && state.currentStation === 5) {
-        state.canvasAnimationIds.stovetop = requestAnimationFrame(render);
-      } else {
-        state.canvasAnimationIds.stovetop = null;
-      }
+  function getBurgerLayerSvg(layerId) {
+    switch (layerId) {
+      case 'bottom_bun':
+        return `<svg viewBox="0 0 160 36" class="burger-layer-svg" style="width: 100%; height: 32px;">
+          <ellipse cx="80" cy="18" rx="72" ry="16" fill="#d97706" stroke="#78350f" stroke-width="3"/>
+          <ellipse cx="80" cy="15" rx="68" ry="12" fill="#f59e0b"/>
+          <path d="M24,20 Q80,26 136,20" stroke="#b45309" stroke-width="2.5" fill="none"/>
+        </svg>`;
+      case 'cooked_patty':
+        return `<svg viewBox="0 0 160 34" class="burger-layer-svg" style="width: 100%; height: 30px;">
+          <ellipse cx="80" cy="17" rx="74" ry="15" fill="#582512" stroke="#2e1005" stroke-width="3"/>
+          <!-- Marcas de plancha doradas -->
+          <line x1="38" y1="10" x2="58" y2="24" stroke="#1c0a02" stroke-width="3.5" stroke-linecap="round"/>
+          <line x1="64" y1="8" x2="86" y2="25" stroke="#1c0a02" stroke-width="3.5" stroke-linecap="round"/>
+          <line x1="92" y1="9" x2="114" y2="24" stroke="#1c0a02" stroke-width="3.5" stroke-linecap="round"/>
+          <!-- Jugosidad -->
+          <ellipse cx="78" cy="15" rx="50" ry="8" fill="#78350f" opacity="0.45"/>
+        </svg>`;
+      case 'cheese':
+        return `<svg viewBox="0 0 160 32" class="burger-layer-svg" style="width: 100%; height: 26px;">
+          <path d="M12,10 L148,10 L140,24 L110,14 L85,28 L60,14 L30,26 L12,10 Z" fill="#facc15" stroke="#ca8a04" stroke-width="2.5"/>
+          <circle cx="42" cy="14" r="3" fill="#ca8a04" opacity="0.6"/>
+          <circle cx="120" cy="16" r="2.5" fill="#ca8a04" opacity="0.6"/>
+        </svg>`;
+      case 'lettuce':
+        return `<svg viewBox="0 0 160 34" class="burger-layer-svg" style="width: 100%; height: 28px;">
+          <path d="M10,16 Q25,8 40,18 Q55,6 75,18 Q95,8 115,19 Q135,7 150,18 L144,24 Q125,18 105,26 Q85,16 65,24 Q45,16 20,24 Z" fill="#22c55e" stroke="#15803d" stroke-width="2.5"/>
+          <path d="M24,18 Q40,14 60,20" stroke="#86efac" stroke-width="2" fill="none"/>
+          <path d="M90,18 Q110,13 130,20" stroke="#86efac" stroke-width="2" fill="none"/>
+        </svg>`;
+      case 'tomato':
+        return `<svg viewBox="0 0 160 28" class="burger-layer-svg" style="width: 100%; height: 24px;">
+          <!-- Dos rodajas de tomate jugosas -->
+          <ellipse cx="48" cy="14" rx="32" ry="10" fill="#ef4444" stroke="#b91c1c" stroke-width="2.5"/>
+          <ellipse cx="48" cy="14" rx="24" ry="7" fill="#f87171"/>
+          <ellipse cx="112" cy="14" rx="32" ry="10" fill="#ef4444" stroke="#b91c1c" stroke-width="2.5"/>
+          <ellipse cx="112" cy="14" rx="24" ry="7" fill="#f87171"/>
+          <circle cx="44" cy="13" r="2" fill="#fef08a"/>
+          <circle cx="52" cy="15" r="2" fill="#fef08a"/>
+          <circle cx="108" cy="13" r="2" fill="#fef08a"/>
+          <circle cx="116" cy="15" r="2" fill="#fef08a"/>
+        </svg>`;
+      case 'onion':
+        return `<svg viewBox="0 0 160 26" class="burger-layer-svg" style="width: 100%; height: 22px;">
+          <ellipse cx="50" cy="13" rx="30" ry="9" fill="none" stroke="#a855f7" stroke-width="4"/>
+          <ellipse cx="50" cy="13" rx="26" ry="7" fill="none" stroke="#f3e8ff" stroke-width="2"/>
+          <ellipse cx="110" cy="13" rx="30" ry="9" fill="none" stroke="#a855f7" stroke-width="4"/>
+          <ellipse cx="110" cy="13" rx="26" ry="7" fill="none" stroke="#f3e8ff" stroke-width="2"/>
+        </svg>`;
+      case 'top_bun':
+        return `<svg viewBox="0 0 160 52" class="burger-layer-svg" style="width: 100%; height: 46px;">
+          <path d="M12,46 Q16,8 80,8 Q144,8 148,46 Z" fill="#d97706" stroke="#78350f" stroke-width="3"/>
+          <path d="M18,44 Q22,14 80,14 Q138,14 142,44 Z" fill="#f59e0b"/>
+          <!-- Ajonjolí / Semillas de sésamo -->
+          <ellipse cx="45" cy="22" rx="2.5" ry="1.5" fill="#ffffff" transform="rotate(-15 45 22)"/>
+          <ellipse cx="65" cy="16" rx="2.5" ry="1.5" fill="#ffffff" transform="rotate(10 65 16)"/>
+          <ellipse cx="85" cy="15" rx="2.5" ry="1.5" fill="#ffffff" transform="rotate(-5 85 15)"/>
+          <ellipse cx="105" cy="20" rx="2.5" ry="1.5" fill="#ffffff" transform="rotate(25 105 20)"/>
+          <ellipse cx="125" cy="28" rx="2.5" ry="1.5" fill="#ffffff" transform="rotate(-20 125 28)"/>
+          <ellipse cx="72" cy="28" rx="2.5" ry="1.5" fill="#ffffff" transform="rotate(15 72 28)"/>
+          <ellipse cx="95" cy="27" rx="2.5" ry="1.5" fill="#ffffff" transform="rotate(-10 95 27)"/>
+        </svg>`;
+      case 'fries':
+        return `<svg viewBox="0 0 70 80" class="fries-side-svg" style="width: 64px; height: 72px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));">
+          <!-- Papas doradas saliendo del envase -->
+          <rect x="18" y="10" width="6" height="36" rx="2" fill="#facc15" stroke="#ca8a04" stroke-width="1.5" transform="rotate(-10 21 28)"/>
+          <rect x="28" y="6" width="6" height="42" rx="2" fill="#fde047" stroke="#ca8a04" stroke-width="1.5" transform="rotate(-2 31 27)"/>
+          <rect x="38" y="8" width="6" height="40" rx="2" fill="#facc15" stroke="#ca8a04" stroke-width="1.5" transform="rotate(8 41 28)"/>
+          <rect x="48" y="14" width="6" height="34" rx="2" fill="#fde047" stroke="#ca8a04" stroke-width="1.5" transform="rotate(18 51 31)"/>
+          <rect x="23" y="18" width="6" height="30" rx="2" fill="#eab308" stroke="#ca8a04" stroke-width="1.5" transform="rotate(-18 26 33)"/>
+          <!-- Cartucho rojo clásico -->
+          <path d="M12,38 L58,38 L52,76 L18,76 Z" fill="#dc2626" stroke="#991b1b" stroke-width="2.5"/>
+          <circle cx="35" cy="56" r="9" fill="#facc15" stroke="#eab308" stroke-width="1.5"/>
+          <text x="35" y="60" font-size="10" font-weight="900" fill="#dc2626" text-anchor="middle">M</text>
+        </svg>`;
+      default:
+        return '';
     }
-
-    state.startStoveLoop = function () {
-      if (state.canvasAnimationIds.stovetop) cancelAnimationFrame(state.canvasAnimationIds.stovetop);
-      width = (canvas.width = canvas.clientWidth || 500);
-      height = (canvas.height = canvas.clientHeight || 280);
-      render();
-    };
-    render();
-  }
-
-  function initPlatingCanvas(canvas) {
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    let width = (canvas.width = canvas.clientWidth || 440);
-    let height = (canvas.height = canvas.clientHeight || 300);
-
-    function render() {
-      ctx.clearRect(0, 0, width, height);
-      const cx = width / 2;
-      const cy = height / 2;
-
-      // Draw elegant porcelain plate
-      ctx.fillStyle = '#ffffff';
-      ctx.strokeStyle = '#cbd5e1';
-      ctx.lineWidth = 5;
-      ctx.beginPath();
-      ctx.ellipse(cx, cy, 140, 85, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-
-      // Plate inner well
-      ctx.fillStyle = '#f8fafc';
-      ctx.beginPath();
-      ctx.ellipse(cx, cy, 105, 60, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Seared Protein
-      ctx.fillStyle = '#b45309';
-      ctx.strokeStyle = '#451a03';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.ellipse(cx, cy, 55, 28, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-
-      // Sauce
-      if (state.platingSauceStyle === 'over_dish') {
-        ctx.strokeStyle = '#d97706';
-        ctx.lineWidth = 6;
-        ctx.beginPath();
-        ctx.moveTo(cx - 40, cy - 5);
-        ctx.quadraticCurveTo(cx, cy - 20, cx + 40, cy + 5);
-        ctx.stroke();
-      } else {
-        // Ramekin on the side
-        ctx.fillStyle = '#ffffff';
-        ctx.strokeStyle = '#94a3b8';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.ellipse(cx + 80, cy - 20, 22, 14, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-        ctx.fillStyle = '#d97706';
-        ctx.beginPath();
-        ctx.ellipse(cx + 80, cy - 20, 16, 10, 0, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      // Garnish
-      if (state.platingGarnishDone) {
-        ctx.fillStyle = '#16a34a';
-        ctx.beginPath();
-        ctx.ellipse(cx, cy - 10, 8, 4, Math.PI / 4, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.ellipse(cx + 10, cy - 12, 8, 4, -Math.PI / 4, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-
-    render();
-    state.renderPlating = render;
   }
 
   // ============================================================================
-  // 6. CULINARY STUDIO CONTROLLER & DOM CREATION
+  // 5. MOTOR DEL VIDEOJUEGO DE GESTIÓN EN TIEMPO REAL
   // ============================================================================
 
   const CulinaryStudio2D = {
     rootEl: null,
+    isOpen: false,
 
-    init: function (containerId) {
-      if (this.rootEl && document.body.contains(this.rootEl)) return;
-      let target = null;
-      if (containerId) {
-        target = document.getElementById(containerId);
-      }
-      if (!target) {
-        target = document.getElementById('culinary-studio-portal') || document.getElementById('culinary-studio-root');
-      }
-      if (!target) {
-        target = document.createElement('div');
-        target.id = 'culinary-studio-portal';
-        document.body.appendChild(target);
-      }
-      target.style.cssText = 'position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100dvh !important; z-index: 99000 !important; background: #1a120b !important; display: flex !important; flex-direction: column !important; overflow: hidden !important;';
-      this.rootEl = target;
-      this.buildDOM();
+    // Estado del juego
+    activeOrder: null,
+    activePersona: null,
+    patienceTimer: null,
+    patienceTotal: 60,
+    patienceLeft: 60,
+
+    // Platos e ingredientes
+    currentPlateLayers: [],
+
+    // 4 Quemadores de la plancha
+    grillSlots: [
+      { id: 0, state: 'empty', progress: 0 },
+      { id: 1, state: 'empty', progress: 0 },
+      { id: 2, state: 'empty', progress: 0 },
+      { id: 3, state: 'empty', progress: 0 }
+    ],
+    grillInterval: null,
+
+    // Freidora de papas
+    fryer: {
+      state: 'idle', // 'idle' | 'frying' | 'ready'
+      timerSec: 4,
+      interval: null
     },
 
-    buildDOM: function () {
-      this.rootEl.innerHTML = `
-        <!-- TOP BAR / HEADER -->
-        <header class="culinary-top-bar">
-          <div class="flex items-center gap-2.5">
-            <button type="button" class="culinary-btn-back-portals" id="btnBackToPortals" title="Volver a los Portales Principales">
-              <span>← Salir a Portales</span>
+    // Diccionario
+    dictSearchTerm: '',
+    dictFilterCat: 'all',
+
+    init: function () {
+      if (this.rootEl) return;
+      this.ensureDOM();
+      this.bindEvents();
+      this.startGrillLoop();
+    },
+
+    ensureDOM: function () {
+      let root = document.getElementById('culinary-studio-root');
+      if (!root) {
+        root = document.createElement('div');
+        root.id = 'culinary-studio-root';
+        document.body.appendChild(root);
+      }
+      this.rootEl = root;
+
+      root.className = 'culinary-studio-root';
+      root.style.cssText = 'position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100dvh !important; z-index: 99000 !important; background: #0c1222 !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; font-family: Outfit, Inter, sans-serif !important; user-select: none !important;';
+
+      root.innerHTML = `
+        <!-- TOPBAR CON BOTÓN VOLVER UNIVERSAL, TÍTULO, DICCIONARIO Y STATS -->
+        <header class="culinary-topbar">
+          <div class="culinary-topbar-left">
+            <button type="button" id="btnBackToPortals" class="culinary-btn-back" title="Volver a los Portales Principales">
+              <span>← Volver a Portales</span>
             </button>
-            <div class="culinary-brand-group hidden lg:flex">
-              <div class="culinary-logo-badge">👨‍🍳</div>
-              <div class="culinary-title-wrap">
-                <span class="culinary-title">MasterChef Culinary Studio</span>
-                <span class="culinary-subtitle">2D Cartoon Cooking & Brigade English</span>
+            <div class="culinary-brand-title">
+              <span class="culinary-brand-icon">👨‍🍳</span>
+              <div>
+                <h1 class="culinary-heading">MasterChef Diner • Kitchen Management</h1>
+                <p class="culinary-subheading">Cocina en tiempo real: atiende pedidos en inglés, asa hamburguesas y gana estrellas Michelin</p>
               </div>
             </div>
           </div>
 
-          <!-- 6 STATION TABS -->
-          <nav class="culinary-station-tabs" id="culinaryStationTabs">
-            <button class="culinary-station-tab active" data-station="1">
-              <span class="tab-icon">🛎️</span>
-              <span>1. Orders</span>
+          <div class="culinary-topbar-right">
+            <!-- BOTÓN FLOTANTE AL DICCIONARIO GASTRONÓMICO -->
+            <button type="button" id="btnOpenChefDictionary" class="culinary-btn-dict-top" title="Abrir Diccionario Culinario (356 Términos)">
+              <span>📖</span>
+              <span class="hidden sm:inline">Chef Dictionary (356)</span>
             </button>
-            <button class="culinary-station-tab" data-station="2">
-              <span class="tab-icon">🧊</span>
-              <span>2. Walk-in Fridge</span>
-            </button>
-            <button class="culinary-station-tab" data-station="3">
-              <span class="tab-icon">🫙</span>
-              <span>3. Pantry & Tools</span>
-            </button>
-            <button class="culinary-station-tab" data-station="4">
-              <span class="tab-icon">🔪</span>
-              <span>4. Prep Table</span>
-            </button>
-            <button class="culinary-station-tab" data-station="5">
-              <span class="tab-icon">🔥</span>
-              <span>5. Stovetop & Oven</span>
-            </button>
-            <button class="culinary-station-tab" data-station="6">
-              <span class="tab-icon">📖</span>
-              <span>6. Chef Dictionary</span>
-            </button>
-          </nav>
 
-          <!-- CHEF RANK BADGE & ACTIONS -->
-          <div class="flex items-center gap-2">
-            <div class="culinary-chef-rank-badge">
-              <span>👨‍🍳</span>
-              <div class="culinary-rank-info hidden sm:flex">
-                <span class="culinary-rank-title" id="statChefRankFull">Commis Chef</span>
-                <div class="culinary-xp-bar">
-                  <div class="culinary-xp-fill" id="statChefXpFill" style="width: 25%;"></div>
-                </div>
+            <!-- STATS DE MONEDAS Y RANGO -->
+            <div class="culinary-header-stats">
+              <div class="culinary-stat-badge coins">
+                <span>🪙</span>
+                <span id="statChefCoins">100</span>
               </div>
-              <div class="culinary-currency-badge">
-                <span>🪙 <b id="statChefCoinsBadge">50</b></span>
-                <span>⭐ <b id="statChefMichelinBadge">1★</b></span>
+              <div class="culinary-stat-badge rank">
+                <span id="statChefBadgeIcon">🔪</span>
+                <span id="statChefRankTitle" class="hidden md:inline">Line Cook</span>
+                <span id="statChefStars">⭐ 1★</span>
               </div>
             </div>
-            <button class="culinary-btn-action culinary-btn-close" id="btnCloseCulinaryStudio" title="Cerrar y volver a Portales">
-              <span>✕</span>
-            </button>
           </div>
         </header>
 
-        <!-- TICKET RAIL -->
-        <div class="culinary-ticket-rail" id="culinaryTicketRail">
-          <div class="culinary-ticket-holder" id="culinaryTicketHolder">
-            <div class="culinary-ticket" id="activeOrderTicket">
-              <span class="ticket-number">#101</span>
-              <span class="ticket-dish-name">Pan-Seared Salmon</span>
-              <div class="ticket-specs">
-                <span class="ticket-spec-tag">NO BUTTER</span>
-                <span class="ticket-spec-tag blue">SAUCE ON SIDE</span>
-              </div>
+        <!-- LAYOUT DE RESTAURANTE EN TIEMPO REAL (MITAD SUPERIOR: MOSTRADOR / MITAD INFERIOR: COCINA) -->
+        <div class="culinary-restaurant-layout">
+          
+          <!-- ============================================================== -->
+          <!-- MITAD SUPERIOR: BARRA DE MOSTRADOR Y CLIENTE CON GLOBO Y PACIENCIA -->
+          <!-- ============================================================== -->
+          <section class="culinary-counter-view" id="counterView">
+            <div class="culinary-diner-backdrop">
+              <div class="diner-lamp lamp-left"></div>
+              <div class="diner-lamp lamp-center"></div>
+              <div class="diner-lamp lamp-right"></div>
             </div>
-          </div>
 
-          <div class="culinary-stats-summary">
-            <div class="culinary-stat-item">
-              <span>⭐ Rank:</span>
-              <span class="val" id="statChefRank">Commis</span>
-            </div>
-            <div class="culinary-stat-item">
-              <span>🪙 Coins:</span>
-              <span class="val" id="statChefCoins">50</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- MAIN VIEWPORT / 6 STATIONS -->
-        <main class="culinary-viewport">
-          <!-- STATION 1: ORDER COUNTER -->
-          <section class="culinary-station-view active" id="stationView1">
-            <div class="counter-stage">
-              <div class="customer-diorama">
-                <div class="restaurant-backdrop"></div>
-                <div class="window-frame"></div>
-                <div class="customer-avatar-box" id="customerAvatarContainer"></div>
-                <div class="wooden-counter">
-                  <svg viewBox="0 0 48 40" class="service-bell" id="serviceBellBtn">
-                    <path d="M8,32 L40,32 L40,36 L8,36 Z" fill="#b45309"/>
-                    <path d="M12,32 Q24,8 36,32 Z" fill="#facc15" stroke="#ca8a04" stroke-width="2"/>
-                    <rect x="22" y="4" width="4" height="6" rx="2" fill="#d97706"/>
-                  </svg>
-                  <span style="font-weight: 800; font-size: 0.82rem; color: #fde047;">Touch Bell to Call Next Guest</span>
-                </div>
+            <!-- ESCENARIO DEL CLIENTE CON ANIMACIÓN DESDE LA IZQUIERDA -->
+            <div class="culinary-customer-stage">
+              <div class="customer-figure-box" id="customerFigureBox">
+                <!-- Avatar SVG inyectado dinámicamente -->
               </div>
-
-              <div class="order-dialogue-card">
-                <div class="dialogue-bubble">
-                  <button class="bubble-tts-btn" id="btnCustomerTts" title="Listen to pronunciation">🔊</button>
-                  <div class="bubble-text-en" id="dialogueTextEn">"Good evening Chef! ..."</div>
-                  <div class="bubble-text-es" id="dialogueTextEs">"¡Buenas noches Chef! ..."</div>
-                </div>
-
-                <div class="dialogue-instruction">
-                  <span>💬 Choose Brigade Confirmation Response:</span>
-                </div>
-
-                <div class="dialogue-choices" id="dialogueChoicesContainer"></div>
-              </div>
-            </div>
-          </section>
-
-          <!-- STATION 2: WALK-IN FRIDGE -->
-          <section class="culinary-station-view" id="stationView2">
-            <div class="fridge-container">
-              <div class="fridge-header-shelf">
-                <div class="fridge-temp-display">
-                  <span>❄️ Walk-in Temp:</span>
-                  <span>3.2°C (38°F)</span>
-                </div>
-                <div class="fridge-category-tabs">
-                  <button class="fridge-cat-btn active" data-cat="all">All Fresh</button>
-                  <button class="fridge-cat-btn" data-cat="butchery">🥩 Butchery</button>
-                  <button class="fridge-cat-btn" data-cat="seafood">🐟 Seafood</button>
-                  <button class="fridge-cat-btn" data-cat="dairy">🧀 Dairy & Eggs</button>
-                  <button class="fridge-cat-btn" data-cat="produce">🥦 Produce & Herbs</button>
-                </div>
-              </div>
-
-              <div class="fridge-shelves-grid" id="fridgeShelvesGrid"></div>
-
-              <div class="mise-en-place-tray">
-                <div class="tray-label-wrap">
-                  <span class="tray-title">🍱 Mise en Place Tray</span>
-                  <span class="tray-subtitle">Gather ingredients for the active order ticket</span>
-                </div>
-                <div class="tray-items-container" id="trayItemsContainer"></div>
-                <button class="tray-advance-btn" id="btnAdvanceToPantry">
-                  <span>Next: Pantry & Tools →</span>
-                </button>
-              </div>
-            </div>
-          </section>
-
-          <!-- STATION 3: DRY PANTRY & TOOLS -->
-          <section class="culinary-station-view" id="stationView3">
-            <div class="pantry-stage">
-              <div class="pantry-shelf-panel">
-                <div class="panel-header-badge">
-                  <span class="panel-title">🏺 Dry Pantry & Seasonings</span>
-                  <span style="font-size: 0.75rem; color: #38bdf8;">Click to add to recipe</span>
-                </div>
-                <div class="fridge-shelves-grid" id="pantryShelvesGrid"></div>
-              </div>
-
-              <div class="tools-wall-panel">
-                <div class="panel-header-badge">
-                  <span class="panel-title">🔪 Magnetic Tool Wall</span>
-                  <span style="font-size: 0.75rem; color: #fbbf24;">Select required utensils</span>
-                </div>
-                <div class="tools-grid" id="toolsWallGrid"></div>
-                <button class="tray-advance-btn" style="margin-top: auto;" id="btnAdvanceToPrep">
-                  <span>Next: Cutting Board →</span>
-                </button>
-              </div>
-            </div>
-          </section>
-
-          <!-- STATION 4: PREP & KNIFE SKILLS -->
-          <section class="culinary-station-view" id="stationView4">
-            <div class="prep-stage">
-              <div class="prep-challenge-card">
-                <div>
-                  <div class="prep-challenge-title" id="knifeTaskTitle">Knife Skill: Cut into wedges</div>
-                  <div class="prep-challenge-desc" id="knifeTaskDesc">Slice the fresh ingredient on the board.</div>
-                  <div class="prep-techniques-selector" id="prepTechniquesSelector">
-                    <span class="text-[10px] font-bold text-amber-300 uppercase">Cortes:</span>
-                    <button type="button" class="prep-tech-btn active" data-tech="wedges">Gajos / Wedges</button>
-                    <button type="button" class="prep-tech-btn" data-tech="brunoise">Brunoise (3mm)</button>
-                    <button type="button" class="prep-tech-btn" data-tech="julienne">Julienne (Tiras)</button>
-                    <button type="button" class="prep-tech-btn" data-tech="chiffonade">Chiffonade (Cintas)</button>
-                    <button type="button" class="prep-tech-btn" data-tech="dice">Dice / Dados</button>
+              
+              <div class="customer-dialogue-wrap">
+                <!-- CABECERA DEL CLIENTE Y PACIENCIA -->
+                <div class="customer-info-bar">
+                  <div class="customer-name-tag">
+                    <span id="customerName">Sophia Laurent</span>
+                    <span class="customer-title-pill" id="customerTitle">Food Critic</span>
                   </div>
-                </div>
-                <button class="bubble-tts-btn" style="position: static;" id="btnKnifeTts">🔊</button>
-              </div>
-
-              <div class="cutting-board-stage" id="cuttingBoardStage">
-                <canvas class="cutting-canvas" id="cuttingBoardCanvas"></canvas>
-                <div class="knife-action-hint">👆 Tap or click anywhere on the cutting board to slice!</div>
-              </div>
-
-              <div class="cut-progress-bar-wrap">
-                <div class="cut-progress-fill" id="cutProgressFill"></div>
-                <div class="cut-progress-text" id="cutProgressText">0 / 4 Cuts Completed</div>
-              </div>
-
-              <button class="tray-advance-btn" id="btnAdvanceToStove" style="display: none;">
-                <span>Ingredients Prepped! Move to Stovetop →</span>
-              </button>
-            </div>
-          </section>
-
-          <!-- STATION 5: STOVETOP & HEAT -->
-          <section class="culinary-station-view" id="stationView5">
-            <div class="cooking-stage">
-              <div class="stovetop-range">
-                <div class="skillet-pan-stage">
-                  <canvas class="cooking-canvas" id="stovetopCanvas"></canvas>
-                </div>
-
-                <div class="stovetop-controls">
-                  <span style="font-weight: 800; font-size: 0.85rem; color: #38bdf8;">🔥 Gas Burner Heat:</span>
-                  <div class="heat-level-selector">
-                    <button class="heat-btn" data-heat="off">OFF</button>
-                    <button class="heat-btn" data-heat="low">LOW</button>
-                    <button class="heat-btn" data-heat="med">MEDIUM</button>
-                    <button class="heat-btn active high" data-heat="high">HIGH SEAR</button>
-                  </div>
-                </div>
-              </div>
-
-              <div class="cooking-dashboard">
-                <div class="thermometer-card">
-                  <div class="thermo-header">
-                    <span class="thermo-title">🌡️ Digital Meat Thermometer</span>
-                    <span class="doneness-label" id="donenessLabel">Rare (50°C)</span>
-                  </div>
-                  <div class="thermo-gauge-track">
-                    <div class="thermo-gauge-indicator" id="thermoIndicator" style="left: 20%;"></div>
-                  </div>
-                  <div class="thermo-ticks">
-                    <span>Rare</span>
-                    <span>Med-Rare ⭐</span>
-                    <span>Medium</span>
-                    <span>Well Done</span>
+                  <!-- BARRA DE PACIENCIA CON TIEMPO -->
+                  <div class="patience-meter-wrap" title="Barra de paciencia del comensal">
+                    <span class="patience-label">Patience:</span>
+                    <div class="patience-track">
+                      <div class="patience-fill" id="patienceFill" style="width: 100%;"></div>
+                    </div>
+                    <span class="patience-clock" id="patienceClock">60s</span>
                   </div>
                 </div>
 
-                <div class="quick-action-card" id="quickActionCard">
-                  <div class="quick-action-header">
-                    <span>⚡ Chef Quick-Time Event!</span>
-                  </div>
-                  <div class="quick-action-prompt" id="quickActionPrompt">
-                    "Deglaze the pan with white wine to lift caramelized fond!"
-                  </div>
-                  <div class="quick-action-buttons">
-                    <button class="action-trigger-btn" id="btnAction1">Deglaze with White Wine</button>
-                    <button class="action-trigger-btn" id="btnAction2">Add Cold Water</button>
-                  </div>
-                </div>
-
-                <button class="tray-advance-btn" id="btnAdvanceToPlating" style="margin-top: auto;">
-                  <span>Cooked to Perfection! Go to Plating Pass →</span>
-                </button>
-              </div>
-            </div>
-          </section>
-
-          <!-- STATION 6: CHEF DICTIONARY (ENCICLOPEDIA GASTRONÓMICA) -->
-          <section class="culinary-station-view" id="stationView6">
-            <div class="culinary-dict-stage">
-              <div class="culinary-dict-controls">
-                <div class="culinary-dict-search-wrap">
-                  <span class="culinary-dict-search-icon">🔍</span>
-                  <input type="text" id="chefDictSearchInput" class="culinary-dict-search-input"
-                         placeholder="Search 350+ culinary terms, cuts, kitchen tools, ingredients or brigade slang...">
-                </div>
-
-                <div class="culinary-dict-filter-chips" id="chefDictFilterChips">
-                  <button type="button" class="culinary-dict-filter-chip active" data-cat="all">All (350+)</button>
-                  <button type="button" class="culinary-dict-filter-chip" data-cat="slang">Brigade Slang (86)</button>
-                  <button type="button" class="culinary-dict-filter-chip" data-cat="tools">Tools & Cutlery (100)</button>
-                  <button type="button" class="culinary-dict-filter-chip" data-cat="ingredients">Ingredients (170)</button>
-                </div>
-
-                <span class="culinary-dict-count-badge" id="dictItemsCountBadge">356 Terms Available</span>
-              </div>
-
-              <div class="culinary-dict-grid" id="chefDictionaryGrid"></div>
-            </div>
-          </section>
-
-          <!-- MODAL OVERLAY: PLATING PASS & SERVICE DELIVERY -->
-          <div class="culinary-school-modal" id="culinaryPlatingModal" style="display: none;">
-            <div class="school-card" style="max-width: 820px; width: 95%;">
-              <div class="school-header">
-                <span class="school-title">🍽️ Pass Counter: Final Plating & Service</span>
-                <button type="button" class="culinary-btn-action culinary-btn-close" id="btnClosePlatingModal">✕</button>
-              </div>
-
-              <div class="plating-stage" style="padding: 10px;">
-                <div class="pass-counter-stage">
-                  <div class="heat-lamps-rig">
-                    <div class="heat-lamp"></div>
-                    <div class="heat-lamp"></div>
-                    <div class="heat-lamp"></div>
-                  </div>
-
-                  <canvas class="gourmet-plate-canvas" id="platingCanvas"></canvas>
-
-                  <div class="service-call-strip">
-                    <span style="font-weight: 800; font-size: 0.9rem; color: #f8fafc;">Order Ready for Guest Delivery:</span>
-                    <button type="button" class="btn-service-call" id="btnOrderUpCall">
-                      <span>🔔</span>
-                      <span>"Hands please! Order up!"</span>
+                <!-- GLOBO DE DIÁLOGO CON PEDIDO EN INGLÉS -->
+                <div class="diner-speech-bubble">
+                  <div class="speech-content-row">
+                    <button type="button" id="btnSpeakOrder" class="btn-tts-order" title="Escuchar pronunciación del pedido en inglés">
+                      <span>🔊</span>
                     </button>
-                  </div>
-                </div>
-
-                <div class="plating-side-panel">
-                  <div class="sauce-garnish-card">
-                    <span style="font-weight: 800; font-size: 0.95rem; color: #fff;">1. Sauce Placement:</span>
-                    <div class="sauce-option-group">
-                      <button type="button" class="sauce-option-btn active" data-sauce="over_dish">Drizzle Over Dish</button>
-                      <button type="button" class="sauce-option-btn" data-sauce="on_the_side">Sauce on the Side (Ramekin)</button>
+                    <div class="speech-texts">
+                      <div class="order-en-text" id="orderTextEn">"I want a well-done burger with cheese, lettuce and fries!"</div>
+                      <div class="order-es-text" id="orderTextEs">"¡Quiero una hamburguesa bien cocida con queso, lechuga y papas fritas!"</div>
                     </div>
                   </div>
 
-                  <div class="sauce-garnish-card">
-                    <span style="font-weight: 800; font-size: 0.95rem; color: #fff;">2. Fresh Herb Garnish:</span>
-                    <div class="garnish-chips-container">
-                      <button type="button" class="garnish-chip active" data-garnish="fresh_dill">🌿 Fresh Dill Sprig</button>
-                      <button type="button" class="garnish-chip" data-garnish="fresh_parsley">🌿 Flat-Leaf Parsley</button>
-                      <button type="button" class="garnish-chip" data-garnish="rosemary">🌿 Rosemary</button>
-                    </div>
+                  <!-- LISTA VISUAL DE INGREDIENTES REQUERIDOS (CHECKLIST PILLS) -->
+                  <div class="order-spec-pills" id="orderSpecPills">
+                    <!-- Pills generadas dinámicamente -->
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        </main>
 
-        <!-- EVALUATION MODAL -->
-        <div class="culinary-evaluation-overlay" id="culinaryEvaluationModal">
-          <div class="michelin-eval-card">
-            <span class="eval-rank-badge" id="evalRankTitle">Line Cook</span>
-            <span class="eval-dish-title" id="evalDishTitle">Pan-Seared Atlantic Salmon</span>
-            <div class="michelin-stars-row" id="evalStarsRow">⭐⭐⭐⭐⭐</div>
+            <!-- BARRA DE MOSTRADOR DE MADERA -->
+            <div class="culinary-wooden-counter-bar"></div>
+          </section>
 
-            <div class="eval-breakdown-list">
-              <div class="breakdown-row">
-                <span>Guest Dietary Restrictions:</span>
-                <span class="score" id="scoreRestrictions">100% (No Allergens)</span>
+          <!-- ============================================================== -->
+          <!-- MITAD INFERIOR: ESTACIÓN DE COCINA (PLANCHA, FREIDORA, ESTANTE Y ARMADO) -->
+          <!-- ============================================================== -->
+          <section class="culinary-kitchen-view" id="kitchenView">
+            
+            <!-- 1. SECCIÓN PLANCHA CALIENTE (GRILL - 4 QUEMADORES) -->
+            <div class="kitchen-grill-station">
+              <div class="station-header">
+                <span class="station-title">🔥 Sizzling Grill (Plancha)</span>
+                <span class="station-subtitle">Coloca carne cruda y espera el término "Well-Done"</span>
               </div>
-              <div class="breakdown-row">
-                <span>Doneness & Temperature:</span>
-                <span class="score" id="scoreDoneness">Medium-Rare Optimal</span>
-              </div>
-              <div class="breakdown-row">
-                <span>Knife Technique Precision:</span>
-                <span class="score" id="scoreKnife">Flawless Wedges</span>
-              </div>
-              <div class="breakdown-row">
-                <span>Brigada English Communication:</span>
-                <span class="score" id="scoreEnglish">+50 XP</span>
+              <div class="grill-slots-grid" id="grillSlotsGrid">
+                <!-- 4 Slots de Quemador -->
               </div>
             </div>
 
-            <div class="eval-tip-box" id="evalTipText">
-              "Outstanding service, Chef! The customer was thrilled with the crispy salmon skin and having the dill sauce served on the side."
+            <!-- 2. SECCIÓN FREIDORA DE PAPAS (FRENCH FRIES FRYER) -->
+            <div class="kitchen-fryer-station">
+              <div class="station-header">
+                <span class="station-title">🍟 Deep Fryer</span>
+                <span class="station-subtitle">Papas crujientes</span>
+              </div>
+              <div class="fryer-vat" id="fryerVat">
+                <div class="fryer-oil-bubbles" id="fryerOilBubbles"></div>
+                <div class="fryer-basket-box" id="fryerBasketBox">
+                  <span class="fryer-icon" id="fryerBasketIcon">🍟</span>
+                  <div class="fryer-status-label" id="fryerStatusLabel">Canastilla Lista</div>
+                </div>
+                <button type="button" class="btn-action-fryer" id="btnActionFryer">
+                  <span>Freír Papas (4s)</span>
+                </button>
+              </div>
             </div>
 
-            <div class="eval-actions-group">
-              <button class="btn-eval-continue" id="btnNextGuest">Next Guest Order →</button>
-              <button class="btn-eval-school" id="btnVisitAcademyFromEval">Chef Academy</button>
+            <!-- 3. SECCIÓN ESTANTE DE INGREDIENTES (TRAYS) -->
+            <div class="kitchen-shelf-station">
+              <div class="station-header">
+                <span class="station-title">🥫 Ingredient Shelf</span>
+                <span class="station-subtitle">Toca para agregar a la mesa o a la plancha</span>
+              </div>
+              <div class="ingredients-bins-grid" id="ingredientsShelfGrid">
+                <!-- 8 Bins de Ingredientes -->
+              </div>
+            </div>
+
+            <!-- 4. SECCIÓN TABLA DE ARMADO Y PLATO CERÁMICO (ASSEMBLY BOARD) -->
+            <div class="kitchen-assembly-station">
+              <div class="station-header">
+                <span class="station-title">🍽️ Assembly Board</span>
+                <span class="station-subtitle">Armado del plato del comensal</span>
+              </div>
+              
+              <div class="assembly-board-surface">
+                <!-- Plato Cerámico con Apilado Visual 2D Dinámico -->
+                <div class="ceramic-plate-display" id="ceramicPlateDisplay">
+                  <div class="plate-base-rim">
+                    <div class="plate-inner-rim">
+                      <!-- Contenedor de Capas Apiladas del Burger -->
+                      <div class="burger-stack-container" id="burgerStackContainer">
+                        <div class="empty-plate-hint" id="emptyPlateHint">Plato Vacío: Toca los ingredientes del estante para comenzar a armar...</div>
+                      </div>
+                      <!-- Papas al lado del plato -->
+                      <div class="plate-fries-side" id="plateFriesSide" style="display: none;"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- BOTONES DE ACCIÓN: ENTREGAR Y LIMPIAR -->
+                <div class="assembly-actions-bar">
+                  <button type="button" class="btn-clear-plate" id="btnClearPlate" title="Desechar ingredientes y limpiar plato">
+                    <span>🗑️ Desechar</span>
+                  </button>
+                  <button type="button" class="btn-serve-order" id="btnServeOrder" title="Entregar pedido al comensal">
+                    <span>🛎️ ¡ENTREGAR PEDIDO! (SERVE)</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </section>
+
+        </div>
+
+        <!-- ============================================================== -->
+        <!-- MODAL DEL DICCIONARIO GASTRONÓMICO (356 TÉRMINOS) -->
+        <!-- ============================================================== -->
+        <div class="culinary-dictionary-modal" id="culinaryDictionaryModal" style="display: none;">
+          <div class="dictionary-modal-card">
+            <header class="dict-modal-header">
+              <div class="flex items-center gap-2">
+                <span class="text-2xl">🎓</span>
+                <div>
+                  <h3 class="dict-modal-title">MasterChef Gastronomic Academy</h3>
+                  <p class="dict-modal-desc">Diccionario y jerga culinaria profesional bilingüe (356 términos)</p>
+                </div>
+              </div>
+              <button type="button" class="btn-close-dict" id="btnCloseChefDictionary">✕</button>
+            </header>
+
+            <!-- FILTROS Y BÚSQUEDA RÁPIDA -->
+            <div class="dict-controls-row">
+              <div class="dict-search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="dictSearchInput" placeholder="Buscar término culinario (ej: julienne, sear, sous-vide, spatula)..." class="dict-search-input">
+              </div>
+              <div class="dict-category-chips">
+                <button type="button" class="dict-chip active" data-cat="all">Todos (356)</button>
+                <button type="button" class="dict-chip" data-cat="slang">Brigade Slang (86)</button>
+                <button type="button" class="dict-chip" data-cat="tools">Equipment & Tools (100)</button>
+                <button type="button" class="dict-chip" data-cat="ingredients">Ingredients (170)</button>
+              </div>
+            </div>
+
+            <!-- GRILLA DE TARJETAS DEL DICCIONARIO CON SCROLL -->
+            <div class="dict-cards-grid" id="dictCardsGrid">
+              <!-- Renderizado dinámico de tarjetas -->
             </div>
           </div>
         </div>
 
-        <!-- CHEF ACADEMY (DICCIONARIO MODAL) -->
-        <div class="culinary-school-modal" id="culinarySchoolModal">
-          <div class="school-card">
-            <div class="school-header">
-              <span class="school-title">🎓 MasterChef Gastronomic Academy</span>
-              <button class="culinary-btn-action culinary-btn-close" id="btnCloseChefSchool">✕</button>
-            </div>
-
-            <div class="school-item-profile">
-              <div id="schoolItemImg"></div>
-              <div class="school-item-texts">
-                <div style="display:flex; align-items:center; gap:8px;">
-                  <span class="school-term-en" id="schoolTermEn">Pan-Seared</span>
-                  <button class="bubble-tts-btn" style="position:static;" id="btnSchoolTts">🔊</button>
-                </div>
-                <span class="school-term-ipa" id="schoolTermIpa">/pæn sɪəd/</span>
-                <span class="school-term-es" id="schoolTermEs">Sellado a la sartén</span>
-              </div>
-            </div>
-
-            <div class="school-info-section">
-              <span class="school-section-title">Professional Gastronomic Role</span>
-              <div class="school-section-content" id="schoolDesc">
-                Cooking technique where the surface of the food is cooked at high temperature until a caramelized browned crust forms.
-              </div>
-            </div>
-
-            <div class="school-info-section">
-              <span class="school-section-title">Kitchen Brigade Example</span>
-              <div class="school-section-content" id="schoolExample" style="color: #38bdf8; font-style: italic;">
-                "Chef, the Atlantic salmon is pan-seared to medium-rare; plate is walking!"
-              </div>
-            </div>
-          </div>
-        </div>
+        <!-- TOAST / NOTIFICACIÓN DE EVALUACIÓN FLOTANTE -->
+        <div class="culinary-toast-notification" id="culinaryToast" style="display: none;"></div>
       `;
-
-      this.bindEvents();
-      this.initCanvases();
     },
 
     bindEvents: function () {
       const root = this.rootEl;
 
-      // Close Button
-      root.querySelector('#btnCloseCulinaryStudio').addEventListener('click', () => {
-        this.close();
-      });
-
-      // Station Navigation Tabs
-      root.querySelectorAll('.culinary-station-tab').forEach((tab) => {
-        tab.addEventListener('click', (e) => {
-          const st = parseInt(tab.dataset.station, 10);
-          this.switchStation(st);
-        });
-      });
-
-      // Service Bell
-      root.querySelector('#serviceBellBtn').addEventListener('click', () => {
-        playSound('bell');
-        this.startNewOrder();
-      });
-
-      // Customer Dialogue TTS
-      root.querySelector('#btnCustomerTts').addEventListener('click', () => {
-        if (state.customerPersona) {
-          speakText(state.customerPersona.speechRequest);
-        }
-      });
-
-      // Advance Buttons
-      root.querySelector('#btnAdvanceToPantry').addEventListener('click', () => {
-        this.switchStation(3);
-      });
-      root.querySelector('#btnAdvanceToPrep').addEventListener('click', () => {
-        this.switchStation(4);
-      });
-      root.querySelector('#btnAdvanceToStove').addEventListener('click', () => {
-        this.switchStation(5);
-      });
-      root.querySelector('#btnAdvanceToPlating').addEventListener('click', () => {
-        this.openPlatingPass();
-      });
-
-      // Back to portals button
-      const backBtn = root.querySelector('#btnBackToPortals');
-      if (backBtn) {
-        backBtn.addEventListener('click', () => {
-          this.close();
-        });
+      // Botón volver a Portales
+      const btnBack = root.querySelector('#btnBackToPortals');
+      if (btnBack) {
+        btnBack.onclick = (e) => {
+          this.close(e);
+        };
       }
 
-      // Close plating modal
-      const closePlatingBtn = root.querySelector('#btnClosePlatingModal');
-      if (closePlatingBtn) {
-        closePlatingBtn.addEventListener('click', () => {
-          this.closePlatingPass();
-        });
-      }
-
-      // Prep techniques buttons
-      root.querySelectorAll('.prep-tech-btn').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          root.querySelectorAll('.prep-tech-btn').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-          const tech = btn.dataset.tech;
-          const techTitles = {
-            wedges: 'Knife Skill: Cut into wedges',
-            brunoise: 'Knife Skill: Brunoise (Tiny 3mm Cubes)',
-            julienne: 'Knife Skill: Julienne (Matchstick Strips)',
-            chiffonade: 'Knife Skill: Chiffonade (Thin Herb Ribbons)',
-            dice: 'Knife Skill: Medium Dice / Macédoine'
-          };
-          const titleEl = root.querySelector('#knifeTaskTitle');
-          if (titleEl) titleEl.textContent = techTitles[tech] || 'Knife Skill Challenge';
-          speakText(tech);
-        });
-      });
-
-      // Chef dictionary search & filter listeners
-      const dictInput = root.querySelector('#chefDictSearchInput');
-      if (dictInput) {
-        dictInput.addEventListener('input', (e) => {
-          const activeFilter = root.querySelector('.culinary-dict-filter-chip.active');
-          const cat = activeFilter ? activeFilter.dataset.cat : 'all';
-          this.renderChefDictionary(cat, e.target.value);
-        });
-      }
-
-      root.querySelectorAll('.culinary-dict-filter-chip').forEach((chip) => {
-        chip.addEventListener('click', () => {
-          root.querySelectorAll('.culinary-dict-filter-chip').forEach(c => c.classList.remove('active'));
-          chip.classList.add('active');
-          const q = dictInput ? dictInput.value : '';
-          this.renderChefDictionary(chip.dataset.cat, q);
-        });
-      });
-
-      // Stovetop Heat Selector
-      root.querySelectorAll('.heat-btn').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          root.querySelectorAll('.heat-btn').forEach((b) => b.classList.remove('active', 'low', 'med', 'high'));
-          const h = btn.dataset.heat;
-          state.stoveHeat = h;
-          if (h !== 'off') {
-            btn.classList.add('active', h);
-            playSound('sizzle');
+      // Botón TTS para escuchar la orden
+      const btnSpeak = root.querySelector('#btnSpeakOrder');
+      if (btnSpeak) {
+        btnSpeak.onclick = () => {
+          if (this.activeOrder) {
+            speakText(this.activeOrder.speechEn);
           }
-        });
+        };
+      }
+
+      // Freidora de papas
+      const btnFryer = root.querySelector('#btnActionFryer');
+      if (btnFryer) {
+        btnFryer.onclick = () => {
+          this.handleFryerClick();
+        };
+      }
+      const fryerBox = root.querySelector('#fryerBasketBox');
+      if (fryerBox) {
+        fryerBox.onclick = () => {
+          this.handleFryerClick();
+        };
+      }
+
+      // Botón entregar orden
+      const btnServe = root.querySelector('#btnServeOrder');
+      if (btnServe) {
+        btnServe.onclick = () => {
+          this.serveOrder();
+        };
+      }
+
+      // Botón limpiar plato
+      const btnClear = root.querySelector('#btnClearPlate');
+      if (btnClear) {
+        btnClear.onclick = () => {
+          this.clearPlate();
+        };
+      }
+
+      // Abrir / Cerrar diccionario
+      const btnOpenDict = root.querySelector('#btnOpenChefDictionary');
+      if (btnOpenDict) {
+        btnOpenDict.onclick = () => {
+          this.openDictionary();
+        };
+      }
+      const btnCloseDict = root.querySelector('#btnCloseChefDictionary');
+      if (btnCloseDict) {
+        btnCloseDict.onclick = () => {
+          this.closeDictionary();
+        };
+      }
+
+      // Filtros de diccionario
+      const chips = root.querySelectorAll('.dict-chip');
+      chips.forEach((ch) => {
+        ch.onclick = () => {
+          chips.forEach(c => c.classList.remove('active'));
+          ch.classList.add('active');
+          this.dictFilterCat = ch.dataset.cat;
+          this.renderDictionaryCards();
+        };
       });
 
-      // Cutting Board Click
-      const cBoard = root.querySelector('#cuttingBoardCanvas');
-      cBoard.addEventListener('click', (e) => {
-        if (cBoard.onCutClick) cBoard.onCutClick(e);
-        this.handleKnifeSlice();
-      });
-
-      // Quick Actions
-      root.querySelector('#btnAction1').addEventListener('click', () => {
-        playSound('deglaze');
-        speakText('Deglazing with white wine!');
-        root.querySelector('#quickActionCard').style.display = 'none';
-        state.quickActionActive = null;
-      });
-      root.querySelector('#btnAction2').addEventListener('click', () => {
-        playSound('wrong');
-        speakText('Never add cold water to hot fond!');
-      });
-
-      // Sauce Options
-      root.querySelectorAll('.sauce-option-btn').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          root.querySelectorAll('.sauce-option-btn').forEach((b) => b.classList.remove('active'));
-          btn.classList.add('active');
-          state.platingSauceStyle = btn.dataset.sauce;
-          if (state.renderPlating) state.renderPlating();
-        });
-      });
-
-      // Garnish Options
-      root.querySelectorAll('.garnish-chip').forEach((chip) => {
-        chip.addEventListener('click', () => {
-          root.querySelectorAll('.garnish-chip').forEach((c) => c.classList.remove('active'));
-          chip.classList.add('active');
-          state.platingGarnishDone = true;
-          if (state.renderPlating) state.renderPlating();
-        });
-      });
-
-      // Order Up Call
-      root.querySelector('#btnOrderUpCall').addEventListener('click', () => {
-        playSound('bell');
-        speakText('Hands please! Order up!', 'en-US', 1.1);
-        setTimeout(() => {
-          this.evaluateOrder();
-        }, 1200);
-      });
-
-      // Evaluation Next Guest
-      root.querySelector('#btnNextGuest').addEventListener('click', () => {
-        root.querySelector('#culinaryEvaluationModal').classList.remove('open');
-        this.startNewOrder();
-        this.switchStation(1);
-      });
-
-      // Chef School Open/Close
-      root.querySelector('#btnOpenChefSchool').addEventListener('click', () => {
-        this.openChefSchool('salmon_fillet');
-      });
-      root.querySelector('#btnCloseChefSchool').addEventListener('click', () => {
-        root.querySelector('#culinarySchoolModal').classList.remove('open');
-      });
-      root.querySelector('#btnVisitAcademyFromEval').addEventListener('click', () => {
-        root.querySelector('#culinaryEvaluationModal').classList.remove('open');
-        this.openChefSchool('salmon_fillet');
-      });
-
-      // Fridge Category Tabs
-      root.querySelectorAll('.fridge-cat-btn').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          root.querySelectorAll('.fridge-cat-btn').forEach((b) => b.classList.remove('active'));
-          btn.classList.add('active');
-          this.renderFridgeIngredients(btn.dataset.cat);
-        });
-      });
-    },
-
-    initCanvases: function () {
-      const c1 = this.rootEl.querySelector('#cuttingBoardCanvas');
-      const c2 = this.rootEl.querySelector('#stovetopCanvas');
-      const c3 = this.rootEl.querySelector('#platingCanvas');
-
-      initCuttingBoardCanvas(c1);
-      initStovetopCanvas(c2);
-      initPlatingCanvas(c3);
-    },
-
-    pauseLoops: function () {
-      if (state.canvasAnimationIds.cutting) {
-        cancelAnimationFrame(state.canvasAnimationIds.cutting);
-        state.canvasAnimationIds.cutting = null;
-      }
-      if (state.canvasAnimationIds.stovetop) {
-        cancelAnimationFrame(state.canvasAnimationIds.stovetop);
-        state.canvasAnimationIds.stovetop = null;
-      }
-      state.stoveHeat = 'off';
-    },
-
-    pauseLoop: function () {
-      this.pauseLoops();
-    },
-
-    open: function (opts) {
-      if (typeof window !== 'undefined' && typeof window.stopAllBackgroundAudioAndLoops === 'function') {
-        window.stopAllBackgroundAudioAndLoops('culinary');
-      }
-      if (typeof window !== 'undefined' && typeof window.hideWorld3DTopBackButton === 'function') {
-        window.hideWorld3DTopBackButton();
-      }
-      if (typeof document !== 'undefined') {
-        ['view-home', 'practice-today-hero', 'coverFlowViewport', 'world3d-selection-hub', 'world3d-container', 'view-soccer-3d', 'hedbanz-3d-modal'].forEach((id) => {
-          const el = document.getElementById(id);
-          if (el) {
-            el.classList.add('hidden');
-            el.style.setProperty('display', 'none', 'important');
-          }
-        });
-      }
-      state.isOpen = true;
-      this.init();
-      if (this.rootEl) {
-        this.rootEl.classList.remove('hidden');
-        this.rootEl.style.setProperty('position', 'fixed', 'important');
-        this.rootEl.style.setProperty('inset', '0', 'important');
-        this.rootEl.style.setProperty('width', '100vw', 'important');
-        this.rootEl.style.setProperty('height', '100dvh', 'important');
-        this.rootEl.style.setProperty('z-index', '99000', 'important');
-        this.rootEl.style.setProperty('display', 'flex', 'important');
-        this.rootEl.style.setProperty('visibility', 'visible', 'important');
-        this.rootEl.style.setProperty('opacity', '1', 'important');
-      }
-      const alt = document.getElementById('culinary-studio-root');
-      if (alt && alt !== this.rootEl) {
-        alt.classList.remove('hidden');
-        alt.style.setProperty('display', 'flex', 'important');
-      }
-      if (typeof document !== 'undefined') {
-        document.body.classList.add('culinary-studio-active', 'in-immersive-portal');
-      }
-      this.updateHeaderStats();
-      this.startNewOrder(opts && opts.recipeId);
-      this.switchStation(1);
-    },
-
-    close: function () {
-      state.isOpen = false;
-      this.pauseLoops();
-      if (this.rootEl) {
-        this.rootEl.style.setProperty('display', 'none', 'important');
-        this.rootEl.classList.add('hidden');
-      }
-      const alt = document.getElementById('culinary-studio-root');
-      if (alt && alt !== this.rootEl) {
-        alt.style.setProperty('display', 'none', 'important');
-        alt.classList.add('hidden');
-      }
-      if (typeof document !== 'undefined') {
-        document.body.classList.remove('culinary-studio-active', 'in-immersive-portal');
-      }
-      if (typeof window !== 'undefined' && window.speechSynthesis) {
-        try { window.speechSynthesis.cancel(); } catch (_) {}
-      }
-      if (typeof window.returnToMainPortals === 'function') {
-        window.returnToMainPortals();
-      } else if (typeof window.navigateTo === 'function') {
-        window.navigateTo('view-home');
+      const searchInput = root.querySelector('#dictSearchInput');
+      if (searchInput) {
+        searchInput.oninput = (e) => {
+          this.dictSearchTerm = e.target.value.trim().toLowerCase();
+          this.renderDictionaryCards();
+        };
       }
     },
 
-    openPlatingPass: function () {
-      const modal = this.rootEl.querySelector('#culinaryPlatingModal');
-      if (modal) {
-        modal.style.display = 'flex';
-        modal.classList.add('open');
-      }
-      if (state.renderPlating) state.renderPlating();
-    },
+    // ============================================================================
+    // 6. FLUJO DEL JUEGO: CLIENTES Y ÓRDENES
+    // ============================================================================
 
-    closePlatingPass: function () {
-      const modal = this.rootEl.querySelector('#culinaryPlatingModal');
-      if (modal) {
-        modal.style.display = 'none';
-        modal.classList.remove('open');
-      }
-    },
+    startNewOrder: function (orderIndex) {
+      if (!this.isOpen) return;
 
-    switchStation: function (stationIndex) {
-      state.currentStation = stationIndex;
-      const root = this.rootEl;
+      const pIdx = Math.floor(Math.random() * CUSTOMER_PERSONAS.length);
+      this.activePersona = CUSTOMER_PERSONAS[pIdx];
 
-      // Update Tabs
-      root.querySelectorAll('.culinary-station-tab').forEach((tab) => {
-        if (parseInt(tab.dataset.station, 10) === stationIndex) {
-          tab.classList.add('active');
-        } else {
-          tab.classList.remove('active');
-        }
-      });
+      const oIdx = (typeof orderIndex === 'number' && orderIndex >= 0 && orderIndex < RESTAURANT_ORDERS.length)
+        ? orderIndex
+        : Math.floor(Math.random() * RESTAURANT_ORDERS.length);
+      this.activeOrder = RESTAURANT_ORDERS[oIdx];
 
-      // Update Views
-      root.querySelectorAll('.culinary-station-view').forEach((view, idx) => {
-        if (idx + 1 === stationIndex) {
-          view.classList.add('active');
-        } else {
-          view.classList.remove('active');
-        }
-      });
+      this.patienceTotal = this.activeOrder.timeSec || 60;
+      this.patienceLeft = this.patienceTotal;
 
-      // Garantizar como máximo 1 loop RAF activo según la estación seleccionada
-      this.pauseLoops();
+      // Renderizar cliente y globo
+      this.renderCustomer('happy');
 
-      // Special station triggers
-      if (stationIndex === 2) {
-        this.renderFridgeIngredients('all');
-      } else if (stationIndex === 3) {
-        this.renderPantryAndTools();
-      } else if (stationIndex === 4) {
-        if (typeof state.startCuttingLoop === 'function') state.startCuttingLoop();
-      } else if (stationIndex === 5) {
-        if (typeof state.startStoveLoop === 'function') state.startStoveLoop();
-        this.startStoveTimer();
-      } else if (stationIndex === 6) {
-        this.renderChefDictionary();
-      }
-    },
-
-    startNewOrder: function (recipeId) {
-      const databank = (typeof window !== 'undefined' && window.CulinaryDatabank) || {};
-      const recipes = databank.recipes || DEFAULT_RECIPES;
-      const personas = databank.customers || CUSTOMER_PERSONAS;
-
-      const recipe = recipeId ? recipes.find((r) => r.id === recipeId) || recipes[0] : recipes[Math.floor(Math.random() * recipes.length)];
-      const customer = personas[Math.floor(Math.random() * personas.length)];
-
-      state.activeOrder = recipe;
-      state.customerPersona = customer;
-      state.orderAccepted = false;
-      state.selectedFresh = [];
-      state.selectedDry = [];
-      state.selectedTools = [];
-      state.knifeCutsDone = 0;
-      state.stoveDoneness = 20;
-
-      // Update Ticket DOM
-      const ticket = this.rootEl.querySelector('#activeOrderTicket');
-      ticket.querySelector('.ticket-dish-name').textContent = recipe.title;
-      const specs = ticket.querySelector('.ticket-specs');
-      specs.innerHTML = '';
-      (recipe.customerRestrictions || []).forEach((r) => {
-        const tag = document.createElement('span');
-        tag.className = 'ticket-spec-tag';
-        tag.textContent = r.replace(/_/g, ' ').toUpperCase();
-        specs.appendChild(tag);
-      });
-
-      // Update Customer Diorama
-      const avatarBox = this.rootEl.querySelector('#customerAvatarContainer');
-      avatarBox.innerHTML = `
-        <div class="customer-mood-badge">😊 Satisfied</div>
-        ${getCustomerAvatarSvg(customer)}
-      `;
-
-      // Update Dialogue
-      this.rootEl.querySelector('#dialogueTextEn').textContent = `"${customer.speechRequest}"`;
-      this.rootEl.querySelector('#dialogueTextEs').textContent = `"${customer.requestEs}"`;
-
-      // Update Dialogue Choices
-      const choicesContainer = this.rootEl.querySelector('#dialogueChoicesContainer');
-      choicesContainer.innerHTML = '';
-      customer.dialogueOptions.forEach((opt, idx) => {
-        const btn = document.createElement('button');
-        btn.className = 'dialogue-choice-btn';
-        btn.textContent = `${['A', 'B', 'C'][idx]}) "${opt}"`;
-        btn.addEventListener('click', () => {
-          if (idx === customer.correctDialogueIndex) {
-            btn.classList.add('correct');
-            playSound('coin');
-            speakText('Order accepted! Let us gather the ingredients in the walk-in fridge!');
-            setTimeout(() => {
-              this.switchStation(2);
-            }, 900);
-          } else {
-            btn.classList.add('wrong');
-            playSound('wrong');
-            speakText('Pardon me, that is not what I requested.');
-          }
-        });
-        choicesContainer.appendChild(btn);
-      });
-
-      // Knife Task Texts
-      this.rootEl.querySelector('#knifeTaskTitle').textContent = `Knife Technique: ${recipe.knifeTask.nameEn}`;
-      this.rootEl.querySelector('#knifeTaskDesc').textContent = recipe.knifeTask.desc;
-      this.updateKnifeProgressBar();
-      this.updateTrayDOM();
-    },
-
-    renderFridgeIngredients: function (cat) {
-      const grid = this.rootEl.querySelector('#fridgeShelvesGrid');
-      grid.innerHTML = '';
-
-      const databank = (typeof window !== 'undefined' && window.CulinaryDatabank) || {};
-      const ingredients = databank.ingredients || DEFAULT_INGREDIENTS;
-
-      Object.keys(ingredients).forEach((id) => {
-        const ing = ingredients[id];
-        if (cat !== 'all' && ing.cat !== cat) return;
-
-        const isSelected = state.selectedFresh.includes(id);
-        const card = document.createElement('div');
-        card.className = `ingredient-card ${isSelected ? 'selected' : ''}`;
-        card.innerHTML = `
-          <button class="ingredient-card-tts" data-word="${ing.nameEn}">🔊</button>
-          ${getIngredientSvg(id)}
-          <span class="ingredient-name-en">${ing.nameEn}</span>
-          <span class="ingredient-name-es">${ing.nameEs}</span>
-        `;
-
-        card.querySelector('.ingredient-card-tts').addEventListener('click', (e) => {
-          e.stopPropagation();
-          speakText(ing.nameEn);
-        });
-
-        card.addEventListener('click', () => {
-          this.toggleFreshIngredient(id);
-        });
-
-        grid.appendChild(card);
-      });
-    },
-
-    toggleFreshIngredient: function (id) {
-      const idx = state.selectedFresh.indexOf(id);
-      if (idx >= 0) {
-        state.selectedFresh.splice(idx, 1);
-      } else {
-        state.selectedFresh.push(id);
-        playSound('coin');
-        // Check forbidden allergen penalty
-        if (state.activeOrder && state.activeOrder.customerRestrictions.includes('no_butter') && id === 'unsalted_butter') {
-          playSound('wrong');
-          speakText('Warning: Customer requested NO BUTTER due to allergy!');
-        }
-      }
-      this.renderFridgeIngredients(this.rootEl.querySelector('.fridge-cat-btn.active').dataset.cat);
-      this.updateTrayDOM();
-    },
-
-    updateTrayDOM: function () {
-      const tray = this.rootEl.querySelector('#trayItemsContainer');
-      tray.innerHTML = '';
-
-      state.selectedFresh.forEach((id) => {
-        const ing = DEFAULT_INGREDIENTS[id] || { nameEn: id };
-        const pill = document.createElement('div');
-        pill.className = 'tray-item-pill';
-        pill.innerHTML = `
-          <span>${ing.nameEn}</span>
-          <span class="remove-btn">✕</span>
-        `;
-        pill.querySelector('.remove-btn').addEventListener('click', (e) => {
-          e.stopPropagation();
-          this.toggleFreshIngredient(id);
-        });
-        tray.appendChild(pill);
-      });
-    },
-
-    renderPantryAndTools: function () {
-      // Render Dry Goods
-      const pGrid = this.rootEl.querySelector('#pantryShelvesGrid');
-      pGrid.innerHTML = '';
-      Object.keys(DEFAULT_INGREDIENTS).forEach((id) => {
-        const ing = DEFAULT_INGREDIENTS[id];
-        if (ing.cat !== 'dry') return;
-
-        const isSelected = state.selectedDry.includes(id);
-        const card = document.createElement('div');
-        card.className = `ingredient-card ${isSelected ? 'selected' : ''}`;
-        card.innerHTML = `
-          <button class="ingredient-card-tts" data-word="${ing.nameEn}">🔊</button>
-          ${getIngredientSvg(id)}
-          <span class="ingredient-name-en">${ing.nameEn}</span>
-          <span class="ingredient-name-es">${ing.nameEs}</span>
-        `;
-        card.querySelector('.ingredient-card-tts').addEventListener('click', (e) => {
-          e.stopPropagation();
-          speakText(ing.nameEn);
-        });
-        card.addEventListener('click', () => {
-          if (!state.selectedDry.includes(id)) {
-            state.selectedDry.push(id);
-            playSound('coin');
-          } else {
-            state.selectedDry = state.selectedDry.filter((x) => x !== id);
-          }
-          this.renderPantryAndTools();
-        });
-        pGrid.appendChild(card);
-      });
-
-      // Render Tools Wall
-      const tGrid = this.rootEl.querySelector('#toolsWallGrid');
-      tGrid.innerHTML = '';
-      Object.keys(DEFAULT_TOOLS).forEach((id) => {
-        const tool = DEFAULT_TOOLS[id];
-        const isSelected = state.selectedTools.includes(id);
-        const card = document.createElement('div');
-        card.className = `tool-card ${isSelected ? 'selected' : ''}`;
-        card.innerHTML = `
-          ${getToolSvg(id)}
-          <span class="tool-name-en">${tool.nameEn}</span>
-          <span class="tool-name-es">${tool.nameEs}</span>
-        `;
-        card.addEventListener('click', () => {
-          if (!state.selectedTools.includes(id)) {
-            state.selectedTools.push(id);
-            playSound('coin');
-          } else {
-            state.selectedTools = state.selectedTools.filter((x) => x !== id);
-          }
-          this.renderPantryAndTools();
-        });
-        tGrid.appendChild(card);
-      });
-    },
-
-    handleKnifeSlice: function () {
-      if (!state.activeOrder) return;
-      const task = state.activeOrder.knifeTask;
-      if (state.knifeCutsDone < task.slicesRequired) {
-        state.knifeCutsDone++;
-        this.updateKnifeProgressBar();
-
-        if (state.knifeCutsDone >= task.slicesRequired) {
-          playSound('coin');
-          speakText(`Perfect ${task.nameEn}!`);
-          this.rootEl.querySelector('#btnAdvanceToStove').style.display = 'block';
-        }
-      }
-    },
-
-    updateKnifeProgressBar: function () {
-      const task = state.activeOrder ? state.activeOrder.knifeTask : { slicesRequired: 4 };
-      const pct = Math.min(100, Math.round((state.knifeCutsDone / task.slicesRequired) * 100));
-      this.rootEl.querySelector('#cutProgressFill').style.width = `${pct}%`;
-      this.rootEl.querySelector('#cutProgressText').textContent = `${state.knifeCutsDone} / ${task.slicesRequired} Cuts Completed`;
-    },
-
-    startStoveTimer: function () {
-      state.stoveHeat = 'high';
-      playSound('sizzle');
-
-      // Update temperature indicator visually
-      const interval = setInterval(() => {
-        if (state.currentStation !== 5 || !state.isOpen) {
-          clearInterval(interval);
-          return;
-        }
-
-        if (state.stoveHeat === 'high') {
-          state.stoveDoneness = Math.min(100, state.stoveDoneness + 3);
-        } else if (state.stoveHeat === 'med') {
-          state.stoveDoneness = Math.min(100, state.stoveDoneness + 1.5);
-        }
-
-        const indicator = this.rootEl.querySelector('#thermoIndicator');
-        const donenessLabel = this.rootEl.querySelector('#donenessLabel');
-
-        indicator.style.left = `${state.stoveDoneness}%`;
-
-        if (state.stoveDoneness < 35) {
-          donenessLabel.textContent = 'Rare (50°C)';
-          donenessLabel.style.color = '#38bdf8';
-        } else if (state.stoveDoneness < 65) {
-          donenessLabel.textContent = 'Medium-Rare ⭐ Optimal (55°C)';
-          donenessLabel.style.color = '#10b981';
-        } else if (state.stoveDoneness < 85) {
-          donenessLabel.textContent = 'Medium (62°C)';
-          donenessLabel.style.color = '#f59e0b';
-        } else {
-          donenessLabel.textContent = 'Well Done (72°C+)';
-          donenessLabel.style.color = '#ef4444';
+      // Pronunciar orden en voz alta
+      setTimeout(() => {
+        if (this.isOpen && this.activeOrder) {
+          speakText(this.activeOrder.speechEn);
         }
       }, 500);
+
+      // Iniciar cuenta regresiva de paciencia
+      if (this.patienceTimer) clearInterval(this.patienceTimer);
+      this.patienceTimer = setInterval(() => {
+        this.tickPatience();
+      }, 1000);
     },
 
-    evaluateOrder: function () {
-      this.closePlatingPass();
-      playSound('fanfare');
-      const profile = getProfile();
-      profile.ordersCompleted++;
-      profile.coins += 25;
-      profile.score += 150;
+    tickPatience: function () {
+      if (!this.isOpen || !this.activeOrder) return;
+      this.patienceLeft--;
 
-      // Calculate Rank Level
-      for (let i = RANKS.length - 1; i >= 0; i--) {
-        if (profile.score >= RANKS[i].minScore) {
-          profile.rankLevel = RANKS[i].level;
-          break;
+      const pct = Math.max(0, Math.min(100, Math.round((this.patienceLeft / this.patienceTotal) * 100)));
+      const fillEl = this.rootEl.querySelector('#patienceFill');
+      const clockEl = this.rootEl.querySelector('#patienceClock');
+
+      if (fillEl) {
+        fillEl.style.width = pct + '%';
+        if (pct > 50) {
+          fillEl.style.backgroundColor = '#10b981'; // Verde
+        } else if (pct > 25) {
+          fillEl.style.backgroundColor = '#f59e0b'; // Amarillo
+          this.updateCustomerEmotion('waiting');
+        } else {
+          fillEl.style.backgroundColor = '#ef4444'; // Rojo impaciente
+          this.updateCustomerEmotion('impatient');
         }
       }
-      saveProfile(profile);
-      this.updateHeaderStats();
 
-      // Show Evaluation Modal
-      const modal = this.rootEl.querySelector('#culinaryEvaluationModal');
-      const rankInfo = RANKS.find((r) => r.level === profile.rankLevel) || RANKS[0];
-      modal.querySelector('#evalRankTitle').textContent = rankInfo.title;
-      modal.querySelector('#evalDishTitle').textContent = state.activeOrder ? state.activeOrder.title : 'Gourmet Dish';
-      modal.classList.add('open');
+      if (clockEl) {
+        clockEl.textContent = this.patienceLeft + 's';
+      }
+
+      // Si se acaba el tiempo, el cliente se va enojado
+      if (this.patienceLeft <= 0) {
+        clearInterval(this.patienceTimer);
+        this.handleCustomerWalkout();
+      }
     },
 
-    openChefSchool: function (itemKey) {
-      const item = DEFAULT_INGREDIENTS[itemKey] || DEFAULT_TOOLS[itemKey] || {
-        nameEn: 'Mise en Place',
-        nameEs: 'Todo en su lugar (Organización de cocina)',
-        ipa: '/ˌmiːz ɑ̃ ˈplæs/',
-        desc: 'Culinary philosophy of preparing and organizing all ingredients and utensils before service begins.'
-      };
-
-      const modal = this.rootEl.querySelector('#culinarySchoolModal');
-      modal.querySelector('#schoolTermEn').textContent = item.nameEn;
-      modal.querySelector('#schoolTermIpa').textContent = item.ipa || '/kɪtʃ.ən/';
-      modal.querySelector('#schoolTermEs').textContent = item.nameEs;
-      modal.querySelector('#schoolDesc').textContent = item.desc;
-      modal.querySelector('#schoolItemImg').innerHTML = getIngredientSvg(itemKey) || getToolSvg(itemKey);
-
-      modal.querySelector('#btnSchoolTts').onclick = () => {
-        speakText(item.nameEn);
-      };
-
-      modal.classList.add('open');
+    updateCustomerEmotion: function (emotion) {
+      const box = this.rootEl.querySelector('#customerFigureBox');
+      if (box && this.activePersona) {
+        box.innerHTML = getCustomerAvatarSvg(this.activePersona, emotion);
+      }
     },
 
-    renderChefDictionary: function (cat = 'all', query = '') {
-      const container = this.rootEl.querySelector('#chefDictionaryGrid');
+    renderCustomer: function (emotion = 'happy') {
+      const root = this.rootEl;
+      if (!root || !this.activePersona || !this.activeOrder) return;
+
+      const nameEl = root.querySelector('#customerName');
+      const titleEl = root.querySelector('#customerTitle');
+      const textEnEl = root.querySelector('#orderTextEn');
+      const textEsEl = root.querySelector('#orderTextEs');
+      const pillsContainer = root.querySelector('#orderSpecPills');
+      const figureBox = root.querySelector('#customerFigureBox');
+
+      if (nameEl) nameEl.textContent = this.activePersona.name;
+      if (titleEl) titleEl.textContent = this.activePersona.title;
+      if (textEnEl) textEnEl.textContent = '"' + this.activeOrder.speechEn + '"';
+      if (textEsEl) textEsEl.textContent = '"' + this.activeOrder.speechEs + '"';
+
+      if (figureBox) {
+        figureBox.innerHTML = getCustomerAvatarSvg(this.activePersona, emotion);
+        figureBox.classList.remove('entering');
+        void figureBox.offsetWidth; // Forzar reflow para reiniciar animación
+        figureBox.classList.add('entering');
+      }
+
+      // Renderizar pills de requerimientos
+      if (pillsContainer) {
+        pillsContainer.innerHTML = this.activeOrder.requiredLayers.map(layerId => {
+          const item = INGREDIENTS_DEF[layerId] || { nameEn: layerId, icon: '🍴' };
+          return `<span class="spec-pill" title="${item.nameEn} (${item.nameEs || ''})">
+            <span>${item.icon}</span>
+            <span>${item.nameEn}</span>
+          </span>`;
+        }).join('');
+      }
+
+      // Reiniciar barra de paciencia
+      const fillEl = root.querySelector('#patienceFill');
+      const clockEl = root.querySelector('#patienceClock');
+      if (fillEl) {
+        fillEl.style.width = '100%';
+        fillEl.style.backgroundColor = '#10b981';
+      }
+      if (clockEl) {
+        clockEl.textContent = this.patienceTotal + 's';
+      }
+    },
+
+    handleCustomerWalkout: function () {
+      playSound('wrong');
+      speakText("Too slow, Chef! I'm leaving!");
+      this.showToast('⚠️ ¡El comensal perdió la paciencia y se marchó!', 'error');
+
+      const textEnEl = this.rootEl.querySelector('#orderTextEn');
+      const textEsEl = this.rootEl.querySelector('#orderTextEs');
+      if (textEnEl) textEnEl.textContent = '"Too slow Chef, I have to go! 0 stars!"';
+      if (textEsEl) textEsEl.textContent = '"¡Tardaste demasiado Chef, me tengo que ir!"';
+
+      setTimeout(() => {
+        if (this.isOpen) {
+          this.clearPlate();
+          this.startNewOrder();
+        }
+      }, 2200);
+    },
+
+    // ============================================================================
+    // 7. PLANCHA (HOT GRILL) - 4 QUEMADORES
+    // ============================================================================
+
+    startGrillLoop: function () {
+      if (this.grillInterval) clearInterval(this.grillInterval);
+      this.grillInterval = setInterval(() => {
+        if (!this.isOpen) return;
+
+        let needsRender = false;
+        this.grillSlots.forEach((slot) => {
+          if (slot.state !== 'empty') {
+            slot.progress += 2.5; // Avanza cada 250ms
+            needsRender = true;
+          }
+        });
+
+        if (needsRender) {
+          this.renderGrillSlots();
+        }
+      }, 250);
+    },
+
+    renderGrillSlots: function () {
+      const container = this.rootEl.querySelector('#grillSlotsGrid');
+      if (!container) return;
+
+      container.innerHTML = this.grillSlots.map((slot, index) => {
+        let statusBadge = '';
+        let slotContent = '';
+        let borderClass = '';
+
+        if (slot.state === 'empty') {
+          slotContent = `
+            <div class="grill-empty-slot" onclick="window.CulinaryStudio2D.clickGrillSlot(${index})">
+              <div class="burner-ring"></div>
+              <span class="grill-slot-hint">+ Carne Cruda</span>
+            </div>
+          `;
+        } else {
+          // doneness states:
+          // 0-35%: raw
+          // 35-70%: cooking
+          // 70-100%: welldone (ÓPTIMO ⭐)
+          // >100%: burnt (QUEMADO ⚠️)
+          if (slot.progress < 35) {
+            statusBadge = '<span class="slot-badge raw">Cruda (Raw)</span>';
+            borderClass = 'border-amber-700/50';
+          } else if (slot.progress < 70) {
+            statusBadge = '<span class="slot-badge cooking">Asando...</span>';
+            borderClass = 'border-amber-500';
+          } else if (slot.progress <= 100) {
+            statusBadge = '<span class="slot-badge welldone">¡LISTA! ⭐ (Toca)</span>';
+            borderClass = 'border-emerald-400 animate-pulse';
+          } else {
+            statusBadge = '<span class="slot-badge burnt">QUEMADA ⚠️ (Tirar)</span>';
+            borderClass = 'border-rose-600';
+          }
+
+          const fillPct = Math.min(100, slot.progress);
+          const barColor = slot.progress > 100 ? '#ef4444' : slot.progress >= 70 ? '#10b981' : '#f59e0b';
+
+          slotContent = `
+            <div class="grill-active-patty ${borderClass}" onclick="window.CulinaryStudio2D.clickGrillSlot(${index})">
+              <div class="sizzle-smoke"></div>
+              <div class="patty-visual-disc ${slot.progress > 100 ? 'burnt' : slot.progress >= 70 ? 'welldone' : 'cooking'}">
+                ${slot.progress > 100 ? '🥩' : '🍔'}
+              </div>
+              <div class="slot-progress-wrap">
+                <div class="slot-progress-bar" style="width: ${fillPct}%; background-color: ${barColor};"></div>
+              </div>
+              ${statusBadge}
+            </div>
+          `;
+        }
+
+        return `
+          <div class="grill-slot-card" data-slot="${index}">
+            <div class="slot-number-badge">#${index + 1}</div>
+            ${slotContent}
+          </div>
+        `;
+      }).join('');
+    },
+
+    clickGrillSlot: function (index) {
+      const slot = this.grillSlots[index];
+      if (!slot) return;
+
+      if (slot.state === 'empty') {
+        // Colocar carne cruda
+        slot.state = 'cooking';
+        slot.progress = 0;
+        playSound('sizzle');
+        speakText('Searing beef patty on the grill!');
+        this.renderGrillSlots();
+      } else if (slot.progress >= 70 && slot.progress <= 100) {
+        // Carne perfectamente bien cocida: recolectar y pasar al plato
+        playSound('chop');
+        this.addIngredientToPlate('cooked_patty');
+        slot.state = 'empty';
+        slot.progress = 0;
+        this.showToast('✅ ¡Carne Well-Done dorada colocada en el plato!', 'success');
+        this.renderGrillSlots();
+      } else if (slot.progress > 100) {
+        // Carne quemada: desechar
+        playSound('wrong');
+        speakText('Discarding burnt patty!');
+        this.showToast('⚠️ Carne quemada descartada para liberar el quemador', 'error');
+        slot.state = 'empty';
+        slot.progress = 0;
+        this.renderGrillSlots();
+      } else {
+        // Aún se está cocinando
+        playSound('sizzle');
+        this.showToast('⏳ Espera a que termine de dorar ( Well-Done )', 'info');
+      }
+    },
+
+    addRawPattyToFirstFreeSlot: function () {
+      const freeIdx = this.grillSlots.findIndex(s => s.state === 'empty');
+      if (freeIdx !== -1) {
+        this.clickGrillSlot(freeIdx);
+      } else {
+        playSound('wrong');
+        this.showToast('⚠️ La plancha está llena. Retira o desecha una carne.', 'error');
+      }
+    },
+
+    // ============================================================================
+    // 8. FREIDORA DE PAPAS FRITAS (DEEP FRYER)
+    // ============================================================================
+
+    handleFryerClick: function () {
+      if (this.fryer.state === 'idle') {
+        // Iniciar freído
+        this.fryer.state = 'frying';
+        this.fryer.timerSec = 4;
+        playSound('bubble');
+        speakText('Dropping french fries into hot oil!');
+        this.renderFryer();
+
+        if (this.fryer.interval) clearInterval(this.fryer.interval);
+        this.fryer.interval = setInterval(() => {
+          this.fryer.timerSec--;
+          if (this.fryer.timerSec <= 0) {
+            clearInterval(this.fryer.interval);
+            this.fryer.state = 'ready';
+            playSound('bell');
+            speakText('French fries golden and crispy!');
+            this.showToast('🍟 ¡Papas listas y crujientes! Toca la canastilla para servirlas.', 'success');
+          }
+          this.renderFryer();
+        }, 1000);
+
+      } else if (this.fryer.state === 'ready') {
+        // Recoger papas y pasarlas al plato
+        playSound('chop');
+        this.addIngredientToPlate('fries');
+        this.fryer.state = 'idle';
+        this.showToast('🍟 ¡Canasta de papas fritas agregada al plato!', 'success');
+        this.renderFryer();
+      } else if (this.fryer.state === 'frying') {
+        playSound('bubble');
+        this.showToast('⏳ Las papas se están friendo, quedan ' + this.fryer.timerSec + 's', 'info');
+      }
+    },
+
+    renderFryer: function () {
+      const root = this.rootEl;
+      if (!root) return;
+
+      const basketBox = root.querySelector('#fryerBasketBox');
+      const label = root.querySelector('#fryerStatusLabel');
+      const btn = root.querySelector('#btnActionFryer');
+      const bubbles = root.querySelector('#fryerOilBubbles');
+
+      if (!basketBox || !label || !btn) return;
+
+      if (this.fryer.state === 'idle') {
+        basketBox.className = 'fryer-basket-box idle';
+        label.textContent = 'Canastilla Lista';
+        btn.textContent = '🍟 Freír Papas (4s)';
+        btn.disabled = false;
+        if (bubbles) bubbles.classList.remove('active');
+      } else if (this.fryer.state === 'frying') {
+        basketBox.className = 'fryer-basket-box frying';
+        label.textContent = 'Friéndose (' + this.fryer.timerSec + 's)...';
+        btn.textContent = 'Friéndose (' + this.fryer.timerSec + 's)';
+        btn.disabled = true;
+        if (bubbles) bubbles.classList.add('active');
+      } else if (this.fryer.state === 'ready') {
+        basketBox.className = 'fryer-basket-box ready animate-bounce';
+        label.textContent = '¡CRUJIENTES! (Toca para servir)';
+        btn.textContent = '✅ Servir al Plato';
+        btn.disabled = false;
+        if (bubbles) bubbles.classList.remove('active');
+      }
+    },
+
+    // ============================================================================
+    // 9. ESTANTE DE INGREDIENTES Y TABLA DE ARMADO (ASSEMBLY BOARD)
+    // ============================================================================
+
+    renderIngredientShelf: function () {
+      const container = this.rootEl.querySelector('#ingredientsShelfGrid');
+      if (!container) return;
+
+      const items = [
+        'bottom_bun',
+        'raw_patty',
+        'cheese',
+        'lettuce',
+        'tomato',
+        'onion',
+        'top_bun',
+        'fries'
+      ];
+
+      container.innerHTML = items.map(id => {
+        const item = INGREDIENTS_DEF[id];
+        return `
+          <button type="button" class="ingredient-bin-btn" onclick="window.CulinaryStudio2D.handleShelfItemClick('${id}')" title="${item.nameEn} (${item.nameEs})">
+            <span class="bin-icon">${item.icon}</span>
+            <div class="bin-labels">
+              <span class="bin-name-en">${item.nameEn}</span>
+              <span class="bin-name-es">${item.nameEs}</span>
+            </div>
+          </button>
+        `;
+      }).join('');
+    },
+
+    handleShelfItemClick: function (ingredientId) {
+      if (ingredientId === 'raw_patty') {
+        // Enviar carne cruda a la plancha
+        this.addRawPattyToFirstFreeSlot();
+      } else if (ingredientId === 'fries') {
+        // Si la freidora está lista o para agilizar
+        if (this.fryer.state === 'ready') {
+          this.handleFryerClick();
+        } else {
+          // freír directamente o advertir
+          this.handleFryerClick();
+        }
+      } else {
+        // Agregar capa directa al plato
+        this.addIngredientToPlate(ingredientId);
+      }
+    },
+
+    addIngredientToPlate: function (ingredientId) {
+      if (!this.isOpen) return;
+
+      if (ingredientId === 'fries') {
+        // Las papas van a un lado del plato
+        if (!this.currentPlateLayers.includes('fries')) {
+          this.currentPlateLayers.push('fries');
+          playSound('chop');
+          speakText('Crispy French Fries');
+        } else {
+          this.showToast('Ya tienes papas fritas en el plato', 'info');
+        }
+      } else {
+        // Apilar capa sobre la hamburguesa
+        this.currentPlateLayers.push(ingredientId);
+        playSound('chop');
+        const item = INGREDIENTS_DEF[ingredientId];
+        if (item) speakText(item.nameEn);
+      }
+
+      this.renderPlate();
+    },
+
+    renderPlate: function () {
+      const container = this.rootEl.querySelector('#burgerStackContainer');
+      const friesEl = this.rootEl.querySelector('#plateFriesSide');
+      if (!container || !friesEl) return;
+
+      // Filtrar papas para mostrarlas a un costado
+      const burgerLayers = this.currentPlateLayers.filter(l => l !== 'fries');
+      const hasFries = this.currentPlateLayers.includes('fries');
+
+      if (hasFries) {
+        friesEl.style.display = 'block';
+        friesEl.innerHTML = getBurgerLayerSvg('fries');
+      } else {
+        friesEl.style.display = 'none';
+        friesEl.innerHTML = '';
+      }
+
+      if (burgerLayers.length === 0 && !hasFries) {
+        container.innerHTML = '<div class="empty-plate-hint" id="emptyPlateHint">Plato Vacío: Toca los ingredientes del estante para comenzar a armar...</div>';
+        return;
+      }
+
+      // Renderizar de abajo hacia arriba las capas apiladas
+      container.innerHTML = burgerLayers.map((layerId, idx) => {
+        const svg = getBurgerLayerSvg(layerId);
+        return `<div class="burger-stack-item" style="z-index: ${idx + 2}; margin-top: ${idx === 0 ? '0' : '-14px'};">
+          ${svg}
+        </div>`;
+      }).join('');
+    },
+
+    clearPlate: function () {
+      if (this.currentPlateLayers.length > 0) {
+        playSound('chop');
+        this.currentPlateLayers = [];
+        this.renderPlate();
+        this.showToast('🗑️ Plato limpio y listo para volver a armar', 'info');
+      }
+    },
+
+    // ============================================================================
+    // 10. ENTREGA DEL PEDIDO (SERVE ORDER) Y VERIFICACIÓN
+    // ============================================================================
+
+    serveOrder: function () {
+      if (!this.isOpen || !this.activeOrder) return;
+
+      const required = this.activeOrder.requiredLayers;
+      const current = this.currentPlateLayers;
+
+      if (current.length === 0) {
+        playSound('wrong');
+        this.showToast('⚠️ El plato está completamente vacío. ¡Arma el pedido primero!', 'error');
+        return;
+      }
+
+      // Verificar que contenga todos los requeridos
+      const missing = required.filter(item => !current.includes(item));
+      const hasExtra = current.filter(item => !required.includes(item));
+
+      if (missing.length === 0 && hasExtra.length === 0) {
+        // ¡ÉXITO PERFECTO!
+        if (this.patienceTimer) clearInterval(this.patienceTimer);
+
+        playSound('bell');
+        playSound('fanfare');
+
+        // Actualizar emoción del comensal
+        this.updateCustomerEmotion('ecstatic');
+
+        // Elogio en inglés con voz
+        const praise = (this.activePersona && this.activePersona.praiseEn) || "Delicious! Exactly what I ordered!";
+        speakText(praise);
+
+        // Recompensas
+        const profile = getProfile();
+        profile.ordersCompleted++;
+        profile.perfectOrders++;
+        profile.coins += (this.activeOrder.rewardCoins || 100);
+        profile.score += (this.activeOrder.rewardExp || 50);
+
+        // Recalcular nivel de Chef
+        for (let i = RANKS.length - 1; i >= 0; i--) {
+          if (profile.score >= RANKS[i].minScore) {
+            profile.rankLevel = RANKS[i].level;
+            break;
+          }
+        }
+        saveProfile(profile);
+        this.updateHeaderStats();
+
+        this.showToast('⭐ ¡ORDEN PERFECTA! +' + this.activeOrder.rewardCoins + ' Coins / +' + this.activeOrder.rewardExp + ' EXP', 'success');
+
+        // Mensaje de éxito en el globo
+        const textEnEl = this.rootEl.querySelector('#orderTextEn');
+        const textEsEl = this.rootEl.querySelector('#orderTextEs');
+        if (textEnEl) textEnEl.textContent = '"' + praise + '"';
+        if (textEsEl) textEsEl.textContent = '"' + ((this.activePersona && this.activePersona.praiseEs) || '¡Delicioso!') + '"';
+
+        setTimeout(() => {
+          if (this.isOpen) {
+            this.clearPlate();
+            this.startNewOrder();
+          }
+        }, 2200);
+
+      } else {
+        // Falló algún ingrediente
+        playSound('wrong');
+        let errorMsg = '⚠️ ';
+        if (missing.length > 0) {
+          const missingNames = missing.map(m => (INGREDIENTS_DEF[m] ? INGREDIENTS_DEF[m].nameEn : m)).join(', ');
+          errorMsg += 'Faltan ingredientes: ' + missingNames;
+        } else if (hasExtra.length > 0) {
+          const extraNames = hasExtra.map(e => (INGREDIENTS_DEF[e] ? INGREDIENTS_DEF[e].nameEn : e)).join(', ');
+          errorMsg += 'Ingredientes de más: ' + extraNames;
+        }
+        this.showToast(errorMsg, 'error');
+        speakText('Check the ticket order carefully, Chef!');
+      }
+    },
+
+    // ============================================================================
+    // 11. DICCIONARIO GASTRONÓMICO (356 TÉRMINOS)
+    // ============================================================================
+
+    openDictionary: function () {
+      const modal = this.rootEl.querySelector('#culinaryDictionaryModal');
+      if (!modal) return;
+      modal.style.display = 'flex';
+      this.dictFilterCat = 'all';
+      this.dictSearchTerm = '';
+      const input = this.rootEl.querySelector('#dictSearchInput');
+      if (input) input.value = '';
+      this.renderDictionaryCards();
+    },
+
+    closeDictionary: function () {
+      const modal = this.rootEl.querySelector('#culinaryDictionaryModal');
+      if (modal) modal.style.display = 'none';
+    },
+
+    renderDictionaryCards: function () {
+      const container = this.rootEl.querySelector('#dictCardsGrid');
       if (!container) return;
 
       const databank = (typeof window !== 'undefined' && window.CulinaryDatabank) || {};
       let allItems = [];
 
-      // 1. Brigade Slang (86)
-      const slangList = databank.culinaryVerbsAndSlang || [];
-      slangList.forEach(s => {
+      // 1. Kitchen Brigade Slang (86)
+      (databank.culinaryVerbsAndSlang || []).forEach(s => {
         allItems.push({
           type: 'slang',
           nameEn: s.termEn || s.nameEn,
@@ -2147,9 +1408,8 @@
         });
       });
 
-      // 2. Heavy Tools & Cutlery (100)
-      const toolsList = databank.equipmentAndTools || [];
-      toolsList.forEach(t => {
+      // 2. Equipment & Tools (100)
+      (databank.equipmentAndTools || []).forEach(t => {
         allItems.push({
           type: 'tools',
           nameEn: t.nameEn,
@@ -2162,8 +1422,7 @@
       });
 
       // 3. Ingredients (170)
-      const ingList = databank.ingredients || [];
-      ingList.forEach(i => {
+      (databank.ingredients || []).forEach(i => {
         allItems.push({
           type: 'ingredients',
           nameEn: i.nameEn,
@@ -2175,81 +1434,167 @@
         });
       });
 
-      const q = (query || '').trim().toLowerCase();
+      // Filtrar por categoría y término de búsqueda
       let filtered = allItems;
-      if (cat !== 'all') {
-        filtered = filtered.filter(it => it.type === cat || (it.category && it.category.toLowerCase().includes(cat.toLowerCase())));
+      if (this.dictFilterCat !== 'all') {
+        filtered = filtered.filter(item => item.type === this.dictFilterCat);
       }
-      if (q) {
-        filtered = filtered.filter(it =>
-          (it.nameEn && it.nameEn.toLowerCase().includes(q)) ||
-          (it.nameEs && it.nameEs.toLowerCase().includes(q)) ||
-          (it.desc && it.desc.toLowerCase().includes(q)) ||
-          (it.example && it.example.toLowerCase().includes(q)) ||
-          (it.ipa && it.ipa.toLowerCase().includes(q))
+      if (this.dictSearchTerm) {
+        const q = this.dictSearchTerm;
+        filtered = filtered.filter(item =>
+          (item.nameEn && item.nameEn.toLowerCase().includes(q)) ||
+          (item.nameEs && item.nameEs.toLowerCase().includes(q)) ||
+          (item.desc && item.desc.toLowerCase().includes(q)) ||
+          (item.example && item.example.toLowerCase().includes(q))
         );
       }
 
-      const countBadge = this.rootEl.querySelector('#dictItemsCountBadge');
-      if (countBadge) countBadge.textContent = filtered.length + ' Terms Available';
-
       if (filtered.length === 0) {
-        container.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #94a3b8;"><div style="font-size: 32px;">🔍</div><div style="font-weight: 700; margin-top: 8px;">No culinary terms found matching "' + q + '"</div><div style="font-size: 12px; color: #64748b; margin-top: 4px;">Try searching for knife, julienne, salmon, sear, or behind</div></div>';
+        container.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #94a3b8;"><div style="font-size: 32px;">🔍</div><div style="font-weight: 700; margin-top: 8px;">No se encontraron términos para "' + this.dictSearchTerm + '"</div></div>';
         return;
       }
 
       container.innerHTML = filtered.map(item => {
         const safeEn = (item.nameEn || '').replace(/'/g, "\\'");
-        return '<div class="culinary-dict-card">' +
-          '<div class="culinary-dict-card-header">' +
-            '<div>' +
-              '<div class="culinary-dict-card-term">' +
-                '<span>' + item.nameEn + '</span>' +
-                '<span class="culinary-dict-card-ipa">' + item.ipa + '</span>' +
-              '</div>' +
-              '<div class="culinary-dict-card-es">' + item.nameEs + '</div>' +
-            '</div>' +
-            '<button type="button" class="bubble-tts-btn" style="position: static;" onclick="event.stopPropagation(); window.speakText && window.speakText(\'' + safeEn + '\', \'en-US\', 1.0, \'' + item.id + '\')" title="Listen to pronunciation">' +
-              '🔊' +
-            '</button>' +
-          '</div>' +
-          '<div style="font-size: 10px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.05em;">' + item.category + '</div>' +
-          '<div class="culinary-dict-card-desc">' + item.desc + '</div>' +
-          (item.example ? '<div class="culinary-dict-card-brigade">💬 ' + item.example + '</div>' : '') +
-        '</div>';
+        return `
+          <div class="dict-item-card">
+            <div class="dict-card-top">
+              <div>
+                <div class="dict-card-name-en">${item.nameEn}</div>
+                <div class="dict-card-ipa">${item.ipa}</div>
+                <div class="dict-card-name-es">${item.nameEs}</div>
+              </div>
+              <button type="button" class="btn-dict-tts" onclick="event.stopPropagation(); window.speakText && window.speakText('${safeEn}', 'en-US', 1.0, '${item.id || ''}')" title="Escuchar pronunciación">
+                🔊
+              </button>
+            </div>
+            <div class="dict-card-cat">${item.category}</div>
+            <div class="dict-card-desc">${item.desc}</div>
+            ${item.example ? '<div class="dict-card-example">💬 ' + item.example + '</div>' : ''}
+          </div>
+        `;
       }).join('');
+    },
+
+    // ============================================================================
+    // 12. UTILIDADES, TOAST Y ENCABEZADO
+    // ============================================================================
+
+    showToast: function (msg, type = 'info') {
+      const toast = this.rootEl.querySelector('#culinaryToast');
+      if (!toast) return;
+
+      toast.textContent = msg;
+      toast.className = 'culinary-toast-notification ' + type;
+      toast.style.display = 'block';
+
+      clearTimeout(this._toastTimeout);
+      this._toastTimeout = setTimeout(() => {
+        toast.style.display = 'none';
+      }, 3000);
     },
 
     updateHeaderStats: function () {
       const profile = getProfile();
-      const rank = RANKS.find((r) => r.level === profile.rankLevel) || RANKS[0];
-      const nextRank = RANKS.find((r) => r.level === profile.rankLevel + 1);
-      const minScore = rank.minScore;
-      const maxScore = nextRank ? nextRank.minScore : 3500;
-      const currentScore = profile.score || 0;
-      const pct = Math.min(100, Math.max(10, Math.round(((currentScore - minScore) / (maxScore - minScore || 1)) * 100)));
-
-      const rankEl = this.rootEl.querySelector('#statChefRankFull');
-      if (rankEl) rankEl.textContent = rank.title;
-      const rankShortEl = this.rootEl.querySelector('#statChefRank');
-      if (rankShortEl) rankShortEl.textContent = rank.title.split(' ')[0];
-
-      const xpFill = this.rootEl.querySelector('#statChefXpFill');
-      if (xpFill) xpFill.style.width = pct + '%';
+      const rank = RANKS.find(r => r.level === profile.rankLevel) || RANKS[0];
 
       const coinsEl = this.rootEl.querySelector('#statChefCoins');
       if (coinsEl) coinsEl.textContent = profile.coins;
-      const coinsBadge = this.rootEl.querySelector('#statChefCoinsBadge');
-      if (coinsBadge) coinsBadge.textContent = profile.coins;
-      const michelinEl = this.rootEl.querySelector('#statChefMichelinBadge');
-      if (michelinEl) michelinEl.textContent = (profile.stars || 1) + '★';
+
+      const rankTitleEl = this.rootEl.querySelector('#statChefRankTitle');
+      if (rankTitleEl) rankTitleEl.textContent = rank.title;
+
+      const badgeIconEl = this.rootEl.querySelector('#statChefBadgeIcon');
+      if (badgeIconEl) badgeIconEl.textContent = rank.badge;
+
+      const starsEl = this.rootEl.querySelector('#statChefStars');
+      if (starsEl) starsEl.textContent = '⭐ ' + (profile.stars || 1) + '★';
+    },
+
+    // ============================================================================
+    // 13. APERTURA Y CIERRE DEL PORTAL (INTEGRACIÓN GLOBAL)
+    // ============================================================================
+
+    open: function (opts) {
+      if (typeof window !== 'undefined' && typeof window.stopAllBackgroundAudioAndLoops === 'function') {
+        window.stopAllBackgroundAudioAndLoops('culinary');
+      }
+      if (typeof window !== 'undefined' && typeof window.hideWorld3DTopBackButton === 'function') {
+        window.hideWorld3DTopBackButton();
+      }
+
+      if (typeof document !== 'undefined') {
+        ['view-home', 'practice-today-hero', 'coverFlowViewport', 'world3d-selection-hub', 'world3d-container', 'view-soccer-3d', 'hedbanz-3d-modal'].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) {
+            el.classList.add('hidden');
+            el.style.setProperty('display', 'none', 'important');
+          }
+        });
+        document.body.classList.add('culinary-studio-active', 'in-immersive-portal');
+      }
+
+      this.isOpen = true;
+      this.init();
+
+      if (this.rootEl) {
+        this.rootEl.classList.remove('hidden');
+        this.rootEl.style.setProperty('display', 'flex', 'important');
+      }
+
+      this.updateHeaderStats();
+      this.renderGrillSlots();
+      this.renderFryer();
+      this.renderIngredientShelf();
+      this.renderPlate();
+
+      // Iniciar primera orden
+      this.startNewOrder(opts && opts.recipeIndex);
+    },
+
+    close: function (event) {
+      if (event && event.stopPropagation) event.stopPropagation();
+      this.isOpen = false;
+
+      if (this.patienceTimer) {
+        clearInterval(this.patienceTimer);
+        this.patienceTimer = null;
+      }
+      if (this.grillInterval) {
+        clearInterval(this.grillInterval);
+        this.grillInterval = null;
+      }
+      if (this.fryer.interval) {
+        clearInterval(this.fryer.interval);
+        this.fryer.interval = null;
+      }
+
+      if (this.rootEl) {
+        this.rootEl.style.setProperty('display', 'none', 'important');
+        this.rootEl.classList.add('hidden');
+      }
+
+      if (typeof document !== 'undefined') {
+        document.body.classList.remove('culinary-studio-active', 'in-immersive-portal');
+      }
+
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        try { window.speechSynthesis.cancel(); } catch (_) {}
+      }
+
+      if (typeof window.returnToMainPortals === 'function') {
+        window.returnToMainPortals(event);
+      } else if (typeof window.navigateTo === 'function') {
+        window.navigateTo('view-home');
+      }
     }
   };
 
-  // Expose to window
+  // Exponer a window y módulos
   global.speakText = speakText;
   global.CulinaryStudio2D = CulinaryStudio2D;
-  global.openCulinaryStudioPortal = function(opts) {
+
+  global.openCulinaryStudioPortal = function (opts) {
     if (typeof global.hideAllModules === 'function') {
       try {
         global._suppressReturnToPortals = true;
