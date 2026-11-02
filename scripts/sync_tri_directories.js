@@ -79,4 +79,22 @@ targets.forEach(targetDir => {
   });
 });
 
+// Sincronizar directorio de audios hiperrealistas de vocabulario Kokoro TTS
+const audioSrc = path.join(__dirname, '..', 'public', 'audio', 'vocab');
+if (fs.existsSync(audioSrc)) {
+  const audioFiles = fs.readdirSync(audioSrc).filter(f => f.endsWith('.wav'));
+  targets.forEach(targetDir => {
+    const audioDest = path.join(targetDir, 'audio', 'vocab');
+    if (!fs.existsSync(audioDest)) fs.mkdirSync(audioDest, { recursive: true });
+    audioFiles.forEach(af => {
+      const s = path.join(audioSrc, af);
+      const d = path.join(audioDest, af);
+      if (!fs.existsSync(d) || fs.statSync(s).size !== fs.statSync(d).size) {
+        fs.copyFileSync(s, d);
+      }
+    });
+  });
+  console.log(`Synced ${audioFiles.length} Kokoro TTS audio files to target directories!`);
+}
+
 console.log('Tri-directory synchronization complete!');

@@ -97,15 +97,18 @@
       const rawMetalness = (typeof pbr.metallicFactor === 'number') ? pbr.metallicFactor : 0.15;
       const emissiveCol = Array.isArray(m.emissiveFactor) && (m.emissiveFactor[0] + m.emissiveFactor[1] + m.emissiveFactor[2] > 0.02)
         ? new T.Color(m.emissiveFactor[0], m.emissiveFactor[1], m.emissiveFactor[2])
-        : baseCol.clone().multiplyScalar(0.18);
+        : baseCol.clone().multiplyScalar(0.12);
+      const isTranslucent = /glass|water/i.test(m.name || '');
       const mat = new T.MeshStandardMaterial({
         color: baseCol,
         roughness: Math.min(0.85, Math.max(0.30, rawRoughness || 0.45)),
         metalness: Math.min(0.25, Math.max(0.05, rawMetalness !== undefined ? Math.min(rawMetalness, 0.15) : 0.15)),
         emissive: emissiveCol,
-        emissiveIntensity: 0.22,
-        transparent: opacity < 0.98,
-        opacity: opacity,
+        emissiveIntensity: 0.12,
+        transparent: isTranslucent,
+        opacity: isTranslucent ? Math.max(0.25, Math.min(0.85, (pbr.baseColorFactor && pbr.baseColorFactor[3] !== undefined) ? pbr.baseColorFactor[3] : 0.5)) : 1.0,
+        depthWrite: !isTranslucent,
+        depthTest: true,
         side: T.DoubleSide
       });
       mat.name = m.name || '';
@@ -253,6 +256,10 @@
   }
   StandardGLTFLoader.prototype = {
     constructor: StandardGLTFLoader,
+    setMeshoptDecoder: function(decoder) {
+      this.meshoptDecoder = decoder;
+      return this;
+    },
     load: function(url, onLoad, onProgress, onError) {
       const scope = this;
       if (typeof fetch === 'function') {
@@ -2144,7 +2151,7 @@ ensureOrbitControls();
     "id": "refrigerator",
     "en": "Refrigerator",
     "ipa": "/rɪˈfrɪdʒ.ə.reɪ.t̬ɚ/",
-    "es": "Refrigerador / Nevera",
+    "es": "Refrigerador / Refri",
     "category": "Kitchen",
     "example": "Keep the groceries cool and fresh in the refrigerator."
   },
@@ -2934,14 +2941,14 @@ ensureOrbitControls();
     amb.name = 'ScenarioAmbientLight';
     lightsGroup.add(amb);
 
-    // 2. HemisphereLight con gradiente cielo blanco / suelo gris azulado
-    const hemi = new THREE.HemisphereLight(0xffffff, 0x94a3b8, 1.4);
+    // 2. HemisphereLight con gradiente cielo blanco / suelo cálido azul profundo
+    const hemi = new THREE.HemisphereLight(0xffffff, 0x1e293b, 1.6);
     hemi.position.set(0, 25, 0);
     hemi.name = 'ScenarioHemiLight';
     lightsGroup.add(hemi);
 
-    // 3. DirectionalLight principal en (12, 22, 16) con 1.8 de potencia
-    const mainDir = new THREE.DirectionalLight(0xfffbeb, 1.8);
+    // 3. DirectionalLight principal en (12, 22, 16) con 2.5 de potencia
+    const mainDir = new THREE.DirectionalLight(0xfffbeb, 2.5);
     mainDir.position.set(12, 22, 16);
     mainDir.castShadow = false;
     mainDir.name = 'ScenarioMainDirLight';
@@ -3016,7 +3023,7 @@ ensureOrbitControls();
         {"id":"office_chair","en":"Office Chair","ipa":"/ˈɑː.fɪs tʃer/","es":"Silla de Oficina Ergonómica","category":"Study Room","type":"object","example":"This ergonomic office chair has a comfortable curved backrest and wheels.","pos":[3.5,0.22,-2.05]},
         {"id":"bookshelf","en":"Bookshelf","ipa":"/ˈbʊk.ʃelf/","es":"Librero / Estantería","category":"Study Room","type":"object","example":"The wooden bookshelf is filled with colorful collectible English novels.","pos":[6.7,0.22,-3.5]},
         {"id":"house_bed","en":"Double Bed","ipa":"/ˈdʌb.əl bed/","es":"Cama Doble con Almohadas","category":"Bedroom","type":"object","example":"I read an English chapter before going to sleep in my comfortable double bed.","pos":[1.8,0.22,1.2]},
-        {"id":"house_refrigerator","en":"Refrigerator","ipa":"/rɪˈfrɪdʒ.ə.reɪ.t̬ɚ/","es":"Refrigerador / Nevera","category":"Kitchen","type":"object","example":"Keep the fresh milk and fruit cold inside the stainless steel refrigerator.","pos":[-1.4,0.22,-5.8]},
+        {"id":"house_refrigerator","en":"Refrigerator","ipa":"/rɪˈfrɪdʒ.ə.reɪ.t̬ɚ/","es":"Refrigerador / Refri","category":"Kitchen","type":"object","example":"Keep the fresh milk and fruit cold inside the stainless steel refrigerator.","pos":[-1.4,0.22,-5.8]},
         {"id":"window","en":"Panoramic Window","ipa":"/ˌpæn.əˈræm.ɪk ˈwɪn.doʊ/","es":"Ventanal Panorámico","category":"Living Room","type":"object","example":"The large window provides a beautiful view of the swaying green trees.","pos":[-6.95,1.15,-1.75]},
         {"id":"sofa","en":"Sofa / Couch","ipa":"/ˈsoʊ.fə/","es":"Sofá / Sillón","category":"Living Room","type":"object","example":"I relax on the cozy sofa after studying English vocabulary.","pos":[-3.6,0.22,-4.1]},
         {"id":"armchair","en":"Reading Armchair","ipa":"/ˈriː.dɪŋ ˈɑːrm.tʃer/","es":"Sillón de Lectura","category":"Living Room","type":"object","example":"I sit in the comfortable armchair by the window to read English stories.","pos":[-5.6,0.22,-0.8]},
@@ -3326,7 +3333,7 @@ ensureOrbitControls();
         {"id":"market_mustard","en":"Mustard","ipa":"/ˈmʌs.tɚd/","es":"Botella de Mostaza Amarilla","category":"Supermarket","type":"object","example":"Add a swirl of tangy yellow mustard to your hot dog.","pos":[0.6,1.15,-2.2]},
         {"id":"market_cooking_oil","en":"Cooking Oil","ipa":"/ˈkʊk.ɪŋ ɔɪl/","es":"Botella de Aceite de Cocina","category":"Supermarket","type":"object","example":"Heat a tablespoon of vegetable cooking oil in the frying pan.","pos":[0.9,1.15,-2.2]},
         {"id":"market_strawberry_jam","en":"Strawberry Jam","ipa":"/ˈstrɑː.ber.i dʒæm/","es":"Frasco de Mermelada de Fresa","category":"Supermarket","type":"object","example":"Spread sweet strawberry jam over warm buttered toast.","pos":[-0.8,1.15,-2.2]},
-        {"id":"market_peanut_butter","en":"Peanut Butter","ipa":"/ˈpiː.nʌt ˌbʌt̬.ɚ/","es":"Frasco de Mantequilla de Maní","category":"Supermarket","type":"object","example":"Crunchy peanut butter is packed with protein for breakfast.","pos":[-1.1,1.15,-2.2]},
+        {"id":"market_peanut_butter","en":"Peanut Butter","ipa":"/ˈpiː.nʌt ˌbʌt̬.ɚ/","es":"Frasco de Crema de Cacahuate","category":"Supermarket","type":"object","example":"Crunchy peanut butter is packed with protein for breakfast.","pos":[-1.1,1.15,-2.2]},
         {"id":"market_bag_of_rice","en":"Bag of Rice","ipa":"/bæɡ əv raɪs/","es":"Bolsa de Arroz Blanco Grano Largo","category":"Supermarket","type":"object","example":"We bought a two-kilogram bag of jasmine rice for dinner.","pos":[1.2,0.65,-2.2]},
         {"id":"market_soda_can","en":"Soda Can","ipa":"/ˈsoʊ.də kæn/","es":"Lata de Refresco con Anillo Metálico","category":"Supermarket","type":"object","example":"Pop the tab on the chilled aluminum soda can.","pos":[4.5,1.15,-3.6]},
         {"id":"market_reusable_bag","en":"Eco Reusable Grocery Bag","ipa":"/riːˈjuː.zə.bəl ˈɡroʊ.sɚ.i bæɡ/","es":"Bolsa Ecológica Reutilizable","category":"Supermarket","type":"object","example":"Bring your own canvas reusable bag to reduce plastic waste.","pos":[3.8,0.8,2.5]},
@@ -4338,13 +4345,13 @@ ensureOrbitControls();
     targetScene.add(ambientLight);
     globalAmbientLight = ambientLight;
 
-    // 2. HemisphereLight para relleno ambiental global suave (1.5)
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x94a3b8, 1.5);
+    // 2. HemisphereLight para relleno ambiental global cálido/definido (1.6)
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x1e293b, 1.6);
     targetScene.add(hemiLight);
     globalHemiLight = hemiLight;
 
-    // 3. DirectionalLight principal potente en (12, 22, 16) con 1.8
-    const dirLight = new THREE.DirectionalLight(0xfffbeb, 1.8);
+    // 3. DirectionalLight principal potente en (12, 22, 16) con 2.5
+    const dirLight = new THREE.DirectionalLight(0xfffbeb, 2.5);
     dirLight.position.set(12, 22, 16);
     dirLight.castShadow = false;
     targetScene.add(dirLight);
@@ -4370,9 +4377,10 @@ ensureOrbitControls();
     const activeScen = WORLD_TOUR_SCENARIOS[currentScenarioKey] || WORLD_TOUR_SCENARIOS.house;
     const baseBg = activeScen && activeScen.bg !== undefined ? activeScen.bg : 0x0a0e17;
 
+    scene.fog = null; // Eliminación total de niebla para máxima nitidez y cero transparencia lechosa
+
     if (isNightMode) {
       scene.background = new THREE.Color(baseBg);
-      scene.fog = new THREE.FogExp2(baseBg, activeScen.fogDensity || 0.012);
 
       if (globalHemiLight) {
         globalHemiLight.color.setHex(0x38bdf8);
@@ -4394,16 +4402,15 @@ ensureOrbitControls();
       if (monitorScreenMaterial) monitorScreenMaterial.emissiveIntensity = 1.35;
     } else {
       scene.background = new THREE.Color(baseBg);
-      scene.fog = new THREE.FogExp2(baseBg, activeScen.fogDensity || 0.005);
 
       if (globalHemiLight) {
         globalHemiLight.color.setHex(0xddeeff);
-        globalHemiLight.groundColor.setHex(0x202035);
-        globalHemiLight.intensity = 1.20;
+        globalHemiLight.groundColor.setHex(0x1e293b);
+        globalHemiLight.intensity = 1.6;
       }
       if (globalDirLight) {
         globalDirLight.color.setHex(0xfff2dd);
-        globalDirLight.intensity = 1.0;
+        globalDirLight.intensity = 2.5;
         globalDirLight.position.set(10, 20, 15);
       }
 
@@ -6377,7 +6384,35 @@ ensureOrbitControls();
     }
   }
 
-  function speakWorld3DText(text) {
+  function speakWorld3DText(text, wordId) {
+    if (!text && !wordId) return;
+    const cleanKey = String(wordId || text || '')
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9_-]/g, '_')
+      .replace(/^_+|_+$/g, '');
+
+    // 1. Intentar reproducir el audio hiperrealista af_sarah generado con Kokoro TTS
+    if (cleanKey) {
+      const audioUrl = 'audio/vocab/' + cleanKey + '.wav';
+      try {
+        const audio = new Audio(audioUrl);
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(() => {
+            fallbackWorld3DSpeech(text);
+          });
+          return;
+        }
+      } catch (_) {
+        fallbackWorld3DSpeech(text);
+        return;
+      }
+    }
+    fallbackWorld3DSpeech(text);
+  }
+
+  function fallbackWorld3DSpeech(text) {
     if (!text || typeof window === 'undefined' || !window.speechSynthesis) return;
     try {
       window.speechSynthesis.cancel();
@@ -6393,14 +6428,14 @@ ensureOrbitControls();
 
   function speakWorld3DObject() {
     if (selectedObjectData && (selectedObjectData.wordEn || selectedObjectData.en)) {
-      speakWorld3DText(selectedObjectData.wordEn || selectedObjectData.en);
+      speakWorld3DText(selectedObjectData.wordEn || selectedObjectData.en, selectedObjectData.id);
     }
   }
 
   function practiceWorld3DObject() {
     if (!selectedObjectData) return;
     const data = selectedObjectData;
-    speakWorld3DText(data.wordEn);
+    speakWorld3DText(data.wordEn || data.en, data.id);
 
     const alreadyLearned = learnedObjectIds.has(data.id);
     learnedObjectIds.add(data.id);
@@ -6896,18 +6931,23 @@ ensureOrbitControls();
         }
         const srcMats = Array.isArray(child.material) ? child.material : [child.material];
         const safeMats = srcMats.map((m) => {
+          const matName = ((m && m.name) || child.name || '').toLowerCase();
+          const isTranslucent = /glass|water/i.test(matName);
           const col = (m && m.color && (m.color.r + m.color.g + m.color.b) > 0.04)
             ? m.color.clone()
             : new THREE.Color(0xe2e8f0);
           return new THREE.MeshStandardMaterial({
+            name: (m && m.name) || child.name || '',
             color: col,
             map: (m && m.map) ? m.map : null,
             roughness: 0.45,
             metalness: 0.15,
-            emissive: col.clone().multiplyScalar(0.18),
-            emissiveIntensity: 0.22,
-            transparent: Boolean(m && m.transparent && m.opacity < 0.95),
-            opacity: (m && typeof m.opacity === 'number' && m.opacity > 0.15) ? m.opacity : 1.0,
+            emissive: col.clone().multiplyScalar(0.12),
+            emissiveIntensity: 0.15,
+            transparent: isTranslucent,
+            opacity: isTranslucent ? Math.max(0.3, Math.min(0.85, (m && m.opacity) || 0.5)) : 1.0,
+            depthWrite: !isTranslucent,
+            depthTest: true,
             side: THREE.DoubleSide
           });
         });
@@ -7042,6 +7082,7 @@ ensureOrbitControls();
       : 0xdbeafe;
     scene = new THREE.Scene();
     scene.background = new THREE.Color(initialSky);
+    scene.fog = null; // Cero niebla global para evitar vistas opacas y lechosas
 
     // 2. Cámara con relación de aspecto del contenedor
     const width = window.innerWidth;
@@ -8233,9 +8274,12 @@ ensureOrbitControls();
     const viewWorldTour = document.getElementById('view-worldtour');
     if (viewWorldTour) {
       viewWorldTour.classList.remove('hidden');
-      viewWorldTour.style.setProperty('display', 'block', 'important');
+      viewWorldTour.style.setProperty('display', 'flex', 'important');
+      viewWorldTour.style.setProperty('flex-direction', 'column', 'important');
       viewWorldTour.style.setProperty('visibility', 'visible', 'important');
       viewWorldTour.style.setProperty('opacity', '1', 'important');
+      viewWorldTour.style.setProperty('z-index', '1000', 'important');
+      viewWorldTour.style.setProperty('pointer-events', 'auto', 'important');
     }
 
     if (document.body && document.body.classList) {
@@ -8740,9 +8784,18 @@ ensureOrbitControls();
     }
 
     const urlToLoad = initialUrl || directPath;
-    if (typeof THREE !== 'undefined' && THREE.GLTFLoader && typeof THREE.GLTFLoader === 'function') {
+    const LoaderClass = getGLTFLoaderClass();
+    if (LoaderClass && typeof LoaderClass === 'function') {
       try {
-        const loader = new THREE.GLTFLoader();
+        const loader = new LoaderClass();
+        const decoder = (typeof window !== 'undefined' && window.MeshoptDecoder) || (typeof MeshoptDecoder !== 'undefined' ? MeshoptDecoder : null);
+        if (decoder && typeof loader.setMeshoptDecoder === 'function') {
+          try {
+            loader.setMeshoptDecoder(decoder);
+          } catch (decErr) {
+            console.warn('[World3D] MeshoptDecoder attach error:', decErr);
+          }
+        }
         loader.load(urlToLoad, (gltf) => {
           if (gltf && gltf.scene) {
             let mc = 0;

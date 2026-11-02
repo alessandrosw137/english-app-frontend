@@ -5200,7 +5200,7 @@ window.MASTER_MODULES_DATA = {
       {
             "term": "Frontend",
             "pron": "/ˈfrʌnt.end/",
-            "meaning": "Interfaz de usuario visible en navegador o app móvil",
+            "meaning": "Interfaz de usuario visible en navegador o app de celular",
             "example": "The frontend renders responsive Tailwind layouts with intuitive micro-interactions.",
             "category": "Negocios & Tech"
       },
@@ -5748,7 +5748,7 @@ window.MASTER_MODULES_DATA = {
       {
             "term": "Car rental",
             "pron": "/kɑːr ˈren.t̬əl/",
-            "meaning": "Renta o alquiler de automóviles",
+            "meaning": "Renta de autos o carros",
             "example": "We signed the car rental agreement and picked up the keys in parking sector G.",
             "category": "Viajes & Supervivencia"
       },

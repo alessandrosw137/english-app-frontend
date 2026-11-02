@@ -1732,6 +1732,7 @@ window.isCurrentUserAdmin = function() {
         'music': 'view-music',
         'music-view': 'view-music',
         'view-music': 'view-music',
+        'karaoke': 'view-music',
         'stories': 'view-stories',
         'stories-view': 'view-stories',
         'view-stories': 'view-stories',
@@ -1755,16 +1756,37 @@ window.isCurrentUserAdmin = function() {
         'sanctuary': 'view-pet-sanctuary',
         'masterpet': 'view-pet-sanctuary',
         'view-pet-sanctuary': 'view-pet-sanctuary',
-        'pet': 'view-pet-sanctuary'
+        'pet': 'view-pet-sanctuary',
+        'soccer': 'view-soccer-3d',
+        'soccer-tactics': 'view-soccer-3d',
+        'view-soccer-3d': 'view-soccer-3d',
+        'culinary': 'culinary-studio-root',
+        'culinary-studio': 'culinary-studio-root',
+        'culinary-studio-root': 'culinary-studio-root'
       };
       const cleanRaw = (viewId || '').toString().trim();
-      const targetId = viewMap[cleanRaw] || viewMap[cleanRaw.replace(/[-_]view$/, '')] || cleanRaw;
-      if (targetId === 'world3d-view' || targetId === 'view-worldtour' || viewId === 'world3d' || viewId === 'worldtour') {
-        if (typeof window.open3DPortalView === 'function') {
-          window.open3DPortalView();
-          return;
+      const targetId = (typeof window.resolveMasterViewId === 'function')
+        ? window.resolveMasterViewId(cleanRaw)
+        : (viewMap[cleanRaw] || viewMap[cleanRaw.replace(/[-_]view$/, '')] || cleanRaw);
+
+      if (targetId === 'view-home' || cleanRaw === 'home' || cleanRaw === 'hub') {
+        if (typeof window.showMainMenu === 'function') {
+          return window.showMainMenu();
         }
       }
+
+      if (targetId === 'view-music' || cleanRaw === 'music' || cleanRaw === 'karaoke') {
+        if (typeof window.openMusicPortal === 'function') {
+          return window.openMusicPortal();
+        }
+      }
+
+      if (targetId === 'view-worldtour' || cleanRaw === 'worldtour' || cleanRaw === 'world3d') {
+        if (typeof window.openWorld3DLobby === 'function') {
+          return window.openWorld3DLobby();
+        }
+      }
+
       if (targetId === 'ai-tutor-view' || viewId === 'ai-tutor' || viewId === 'ai-tutor-view' || viewId === 'view-ai-tutor') {
         if (typeof window.isUserRegistered === 'function' && !window.isUserRegistered()) {
           if (typeof showFloatingToast === 'function') {
@@ -1793,27 +1815,25 @@ window.isCurrentUserAdmin = function() {
         if (typeof window.initAiTutorChat === 'function') window.initAiTutorChat();
       }
 
-      ['view-auth', 'view-home', 'view-path', 'view-stories', 'view-music', 'view-worldtour', 'ai-tutor-view', 'view-jest-game', 'view-community', 'view-pet-sanctuary'].forEach(v => {
+      const allRegisteredViews = [
+        'view-auth', 'view-home', 'view-path', 'view-stories', 'view-music',
+        'view-worldtour', 'ai-tutor-view', 'view-jest-game', 'view-community',
+        'view-pet-sanctuary', 'view-soccer-3d', 'culinary-studio-root'
+      ];
+      allRegisteredViews.forEach(v => {
         const el = document.getElementById(v);
         if (el) {
           if (v === targetId) {
             el.classList.remove('hidden');
-            el.style.display = 'flex';
-            el.style.setProperty('display', v === 'view-home' || v === 'view-auth' ? 'flex' : 'block', 'important');
-            el.style.pointerEvents = 'auto';
+            el.style.setProperty('display', (v === 'view-home' || v === 'view-auth' || v === 'view-music' || v === 'view-worldtour') ? 'flex' : 'block', 'important');
+            el.style.setProperty('opacity', '1', 'important');
             el.style.setProperty('pointer-events', 'auto', 'important');
-            el.style.visibility = 'visible';
             el.style.setProperty('visibility', 'visible', 'important');
-            if (v === 'view-auth') {
-              el.style.setProperty('z-index', '10000', 'important');
-            }
+            el.style.setProperty('z-index', v === 'view-auth' ? '10000' : '1000', 'important');
           } else {
             el.classList.add('hidden');
-            el.style.display = 'none';
             el.style.setProperty('display', 'none', 'important');
-            el.style.pointerEvents = 'none';
             el.style.setProperty('pointer-events', 'none', 'important');
-            el.style.visibility = 'hidden';
             el.style.setProperty('visibility', 'hidden', 'important');
             if (v === 'view-auth') {
               el.style.zIndex = '-1';
@@ -1821,6 +1841,10 @@ window.isCurrentUserAdmin = function() {
           }
         }
       });
+
+      if (typeof window.syncTopBackBtnVisibility === 'function') {
+        window.syncTopBackBtnVisibility(targetId);
+      }
 
             const mainHeader = document.getElementById('mainHeader') || document.querySelector('header');
       if (targetId === 'view-auth') {
@@ -17146,29 +17170,110 @@ if (window._musicStageGuardInterval) {
       document.body.classList.add("view-worldtour-active", "in-immersive-portal");
       document.body.classList.remove("hedbanz-3d-active", "culinary-studio-active", "soccer-active");
 
-      if (typeof _nativeOpenWorld3DLobby === "function") {
-        _nativeOpenWorld3DLobby();
-      } else {
-        const viewWorldTour = document.getElementById("view-worldtour");
-        if (viewWorldTour) {
-          viewWorldTour.classList.remove("hidden");
-          viewWorldTour.style.setProperty("display", "block", "important");
-          viewWorldTour.style.setProperty("visibility", "visible", "important");
-          viewWorldTour.style.setProperty("opacity", "1", "important");
-          viewWorldTour.style.setProperty("z-index", "9500", "important");
-        }
-        if (typeof window.renderWorld3DLobbyCards === "function") {
-          window.renderWorld3DLobbyCards();
-        }
-        const lobbyEl = document.getElementById("world3d-selection-hub");
-        if (lobbyEl) {
-          lobbyEl.classList.remove("hidden");
-          lobbyEl.style.setProperty("display", "flex", "important");
-        }
+      const viewWorldTour = document.getElementById("view-worldtour");
+      if (viewWorldTour) {
+        viewWorldTour.classList.remove("hidden");
+        viewWorldTour.style.setProperty("display", "flex", "important");
+        viewWorldTour.style.setProperty("flex-direction", "column", "important");
+        viewWorldTour.style.setProperty("visibility", "visible", "important");
+        viewWorldTour.style.setProperty("opacity", "1", "important");
+        viewWorldTour.style.setProperty("z-index", "1000", "important");
+        viewWorldTour.style.setProperty("pointer-events", "auto", "important");
+      }
+
+      if (window.World3D && typeof window.World3D.openWorld3DLobby === "function") {
+        try { window.World3D.openWorld3DLobby(); } catch (_) {}
+      } else if (typeof window.renderWorld3DLobbyCards === "function") {
+        window.renderWorld3DLobbyCards();
+      }
+
+      const lobbyEl = document.getElementById("world3d-selection-hub");
+      if (lobbyEl) {
+        lobbyEl.classList.remove("hidden");
+        lobbyEl.style.setProperty("display", "flex", "important");
+        lobbyEl.style.setProperty("opacity", "1", "important");
+        lobbyEl.style.setProperty("visibility", "visible", "important");
+        lobbyEl.style.setProperty("z-index", "1000", "important");
+        lobbyEl.style.setProperty("pointer-events", "auto", "important");
       }
 
       if (window.AssetDownloadManager && typeof window.AssetDownloadManager.updateLobbyBadges === "function") {
-        window.AssetDownloadManager.updateLobbyBadges();
+        try { window.AssetDownloadManager.updateLobbyBadges(); } catch (_) {}
+      }
+    },
+
+    // ABRIR PORTAL DE MÚSICA & KARAOKE
+    showMusicPortal: function () {
+      window.stopAllBackgroundAudioAndLoops("music");
+      hideHomeAndCarouselStrictly();
+
+      document.body.classList.remove("view-worldtour-active", "hedbanz-3d-active", "culinary-studio-active", "soccer-active");
+
+      const allViews = window.MASTER_ROOT_VIEWS || [
+        'view-home', 'view-path', 'view-stories', 'view-music', 'view-worldtour',
+        'view-soccer-3d', 'culinary-studio-root', 'view-jest-game', 'ai-tutor-view', 'view-auth'
+      ];
+      allViews.forEach(v => {
+        if (v !== 'view-music') {
+          const el = document.getElementById(v);
+          if (el) {
+            el.classList.add('hidden');
+            el.style.setProperty('display', 'none', 'important');
+          }
+        }
+      });
+
+      const viewMusic = document.getElementById('view-music');
+      if (viewMusic) {
+        viewMusic.classList.remove('hidden', 'offline-locked');
+        viewMusic.style.setProperty('display', 'flex', 'important');
+        viewMusic.style.setProperty('flex-direction', 'column', 'important');
+        viewMusic.style.setProperty('opacity', '1', 'important');
+        viewMusic.style.setProperty('visibility', 'visible', 'important');
+        viewMusic.style.setProperty('z-index', '1000', 'important');
+        viewMusic.style.setProperty('pointer-events', 'auto', 'important');
+      }
+
+      const searchSub = document.getElementById('music-search-subview');
+      if (searchSub) {
+        searchSub.classList.remove('hidden', 'offline-locked');
+        searchSub.style.setProperty('display', 'block', 'important');
+        searchSub.style.setProperty('visibility', 'visible', 'important');
+        searchSub.style.setProperty('opacity', '1', 'important');
+        searchSub.style.setProperty('pointer-events', 'auto', 'important');
+      }
+
+      const playerSub = document.getElementById('music-player-subview');
+      if (playerSub) {
+        playerSub.classList.add('hidden');
+        playerSub.style.setProperty('display', 'none', 'important');
+      }
+
+      const trendingSec = document.getElementById('musicTrendingSection');
+      if (trendingSec) {
+        trendingSec.classList.remove('hidden');
+        trendingSec.style.setProperty('display', 'block', 'important');
+      }
+
+      const recGrid = document.getElementById('recommendedSongsGrid');
+      if (recGrid) {
+        recGrid.classList.remove('hidden');
+        recGrid.style.setProperty('display', 'grid', 'important');
+      }
+
+      window._activeModule = 'music';
+
+      if (typeof window.renderMusicTracksList === 'function') {
+        try { window.renderMusicTracksList(''); } catch (_) {}
+      }
+      if (typeof window.renderRecommendedSongsGrid === 'function') {
+        try { window.renderRecommendedSongsGrid(''); } catch (_) {}
+      }
+      if (typeof window.clearMusicSearchInput === 'function') {
+        try { window.clearMusicSearchInput(); } catch (_) {}
+      }
+      if (typeof window.scrollTo === 'function') {
+        try { window.scrollTo({ top: 0, behavior: 'instant' }); } catch (_) {}
       }
     },
 
@@ -17316,12 +17421,43 @@ if (window._musicStageGuardInterval) {
   window.openWorld3DScenario = function (id) {
     window.MasterRouter.showWorld3DScenario(id);
   };
+  window.openMusicPortal = function () {
+    window.MasterRouter.showMusicPortal();
+  };
+  window.openKaraokePortal = window.openMusicPortal;
   window.returnToMainPortals = function (e) {
     window.MasterRouter.returnToPortals(e);
   };
   window.goToHomePortals = function () {
     window.MasterRouter.returnToPortals();
   };
+  window.showMainMenu = function (e) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (e && e.stopPropagation) e.stopPropagation();
+    if (typeof window.closeAllModals === 'function') {
+      try { window.closeAllModals(); } catch (_) {}
+    }
+    window.MasterRouter.returnToPortals(e);
+  };
+
+  // Robust universal back-button delegation (operates on capture phase, immune to race conditions)
+  if (typeof document !== 'undefined') {
+    const bindRobustGlobalBackListeners = function () {
+      document.addEventListener('click', function (e) {
+        const btn = e.target && e.target.closest && e.target.closest('#headerGlobalBackBtn, #backFromPathBtn, #backFromStoriesBtn, #backFromMusicBtn, #backFromWorldTourTopBtn, #backFromAiTutorBtn, #world3dFloatingBackBtn, .btn-back, [data-action="back-to-hub"]');
+        if (btn) {
+          e.preventDefault();
+          e.stopPropagation();
+          window.showMainMenu(e);
+        }
+      }, true);
+    };
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', bindRobustGlobalBackListeners);
+    } else {
+      bindRobustGlobalBackListeners();
+    }
+  }
 
   // 5. AJUSTE DE HEDBANZ 3D CANVAS RESIZE RESILIENCE (SIN SETINTERVAL DE POLLING)
   function fixHedbanz3DCanvasLayout() {

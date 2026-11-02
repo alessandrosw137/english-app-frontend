@@ -781,22 +781,22 @@
     "category": "Hand Tools & Gadgets",
     "categoryEs": "Utensilios y Gadgets",
     "definitionEn": "Hand-cranked device that mashes soft vegetables through perforated discs while filtering skins and seeds.",
-    "definitionEs": "Mecanismo con manivela giratoria que prensa tomates y patatas reteniendo semillas y pieles duras.",
+    "definitionEs": "Mecanismo con manivela giratoria que prensa tomates y papas reteniendo semillas y cáscaras duras.",
     "usageTipsEn": "The undisputed gold standard for ultra-velvety pomme purée without gumminess from broken starch.",
-    "usageTipsEs": "Incomparable para purés de patata sedosos porque no sobre-bate los almidones como la batidora.",
+    "usageTipsEs": "Incomparable para purés de papa sedosos porque no sobre-bate los almidones como la batidora.",
     "audioPrompt": "Food Mill, hand-cranked purée press that screens seeds and peels."
   },
   {
     "id": "potato_ricer",
     "nameEn": "Potato Ricer",
-    "nameEs": "Prensa-Patatas de Émbolo",
+    "nameEs": "Prensa-Papas de Émbolo",
     "ipa": "/pəˈteɪ.toʊ ˈraɪ.sɚ/",
     "category": "Hand Tools & Gadgets",
     "categoryEs": "Utensilios y Gadgets",
     "definitionEn": "Leveraged piston press that extrudes cooked potatoes into rice-like strands for cloud-light gnocchi.",
     "definitionEs": "Prensa de palanca que extruye tubérculos cocidos en finos filamentos para purés etéreos y ñoquis.",
     "usageTipsEn": "Rice potatoes while steaming hot so steam escapes, preventing excess moisture absorption.",
-    "usageTipsEs": "Prensa las patatas recién salidas de la olla humeando para que evaporen agua y no absorban exceso.",
+    "usageTipsEs": "Prensa las papas recién salidas de la olla humeando para que evaporen agua y no absorban exceso.",
     "audioPrompt": "Potato Ricer, lever press for lump-free mashed potatoes and light gnocchi dough."
   },
   {
@@ -924,7 +924,7 @@
     "category": "Hand Tools & Gadgets",
     "categoryEs": "Utensilios y Gadgets",
     "definitionEn": "Hinged press that turns halved lemons and limes inside-out, extracting seed-free fresh juice.",
-    "definitionEs": "Prensa articulada que invierte mitades de limón extrayendo el zumo sin semillas ni amargor de cáscara.",
+    "definitionEs": "Prensa articulada que exprime mitades de limón sacando todo el jugo sin semillas ni amargor de la cáscara.",
     "usageTipsEn": "Place halved fruit cut-side down facing the drainage holes, not against the pushing dome.",
     "usageTipsEs": "Coloca la fruta con la cara cortada hacia abajo mirando los orificios para que expulse el jugo.",
     "audioPrompt": "Citrus Squeezer, hinged lever press for lemons and limes."
@@ -1186,7 +1186,7 @@
     "definitionEn": "Self-freezing churner that freezes cream bases while paddling to limit ice crystal size for silky gelato.",
     "definitionEs": "Máquina con motor de frío incorporado que congela y bate la crema evitando cristales de hielo grandes.",
     "usageTipsEn": "Chill your custard base overnight to 35°F (2°C) prior to churning for shortest freeze and microscopic crystals.",
-    "usageTipsEs": "Madura la base de crema en nevera toda la noche para cristales diminutos y textura de heladería.",
+    "usageTipsEs": "Deja reposar la base de crema en el refri toda la noche para lograr cristales diminutos y textura de heladería.",
     "audioPrompt": "Ice Cream Maker, compressor freezer churning velvety gelatos and sorbets."
   },
   {
@@ -2577,7 +2577,7 @@
   {
     "id": "leek",
     "nameEn": "Leeks",
-    "nameEs": "Puerro / Porro",
+    "nameEs": "Poro / Puerro",
     "ipa": "/liːks/",
     "zone": "Vegetable Crisper (Refrigerator)",
     "zoneEs": "Cajón de Verduras",
@@ -2729,7 +2729,7 @@
   {
     "id": "shiitake_mushrooms",
     "nameEn": "Shiitake Mushrooms",
-    "nameEs": "Setas Shiitake",
+    "nameEs": "Hongos Shiitake",
     "ipa": "/ʃiːˈtɑː.keɪ/",
     "zone": "Refrigerator (Paper Bag)",
     "zoneEs": "Refrigerador (Bolsa de Papel)",
@@ -2956,7 +2956,7 @@
   {
     "id": "butternut_squash",
     "nameEn": "Butternut Squash",
-    "nameEs": "Calabaza Cacahuete / Butternut",
+    "nameEs": "Calabaza Cacahuate / Butternut",
     "ipa": "/ˈbʌt̬.ɚ.nʌt skwɑːʃ/",
     "zone": "Dry Pantry / Cellar",
     "zoneEs": "Despensa Seca",
@@ -2994,7 +2994,7 @@
     "categoryEs": "Verduras y Aromáticos",
     "storageTemp": "18°C to 22°C (Chill only when fully ripe)",
     "culinaryNotesEn": "High monounsaturated fat fruit with rich nutty flavor; mash with lime juice immediately to halt polyphenol oxidase browning.",
-    "culinaryNotesEs": "Fruta con grasas saludables y textura de mantequilla; añade zumo de lima para evitar que se oxide.",
+    "culinaryNotesEs": "Fruta con grasas saludables y textura cremosa; agrégale jugo de limón para evitar que se oxide.",
     "allergens": [],
     "audioPrompt": "Hass Avocado, creamy rich fruit requiring immediate acid to prevent browning."
   },
@@ -3061,7 +3061,7 @@
   {
     "id": "snap_peas",
     "nameEn": "Sugar Snap Peas",
-    "nameEs": "Guisantes Dulces de Vaina / Tirabeques",
+    "nameEs": "Chícharos Dulces con Vaina / Tirabeques",
     "ipa": "/ˈʃʊɡ.ɚ snæp piːz/",
     "zone": "Vegetable Crisper (Refrigerator)",
     "zoneEs": "Cajón de Verduras",
@@ -3076,7 +3076,7 @@
   {
     "id": "green_beans",
     "nameEn": "Haricots Verts / French Green Beans",
-    "nameEs": "Judías Verdes Finas / Haricots Verts",
+    "nameEs": "Ejotes Finos / Haricots Verts",
     "ipa": "/ˌhær.ɪ.koʊ ˈvɛər/",
     "zone": "Vegetable Crisper (Refrigerator)",
     "zoneEs": "Cajón de Verduras",
@@ -3084,7 +3084,7 @@
     "categoryEs": "Verduras y Aromáticos",
     "storageTemp": "4°C to 7°C",
     "culinaryNotesEn": "Slender, stringless French green beans; blanch 2 minutes in salted water and toss in brown butter with toasted almonds.",
-    "culinaryNotesEs": "Judías verdes muy delgadas y sin hebras; escáldalas 2 minutos y saltéalas con mantequilla y almendras.",
+    "culinaryNotesEs": "Ejotes muy delgados y sin hebras; pásalos 2 minutos por agua hirviendo y saltéalos con mantequilla y almendras.",
     "allergens": [],
     "audioPrompt": "Haricots Verts, slender tender green beans blanched and tossed with almonds."
   },
@@ -3189,7 +3189,7 @@
     "categoryEs": "Hierbas y Especias",
     "storageTemp": "1°C to 4°C",
     "culinaryNotesEn": "High menthol cooling herb; pairs exquisitely with roasted lamb, minted peas, mojitos, and yogurt tzatziki.",
-    "culinaryNotesEs": "Aroma fresco balsámico; maridaje perfecto con cordero asado, guisantes, tabulé y tzatziki griego.",
+    "culinaryNotesEs": "Aroma fresco balsámico; combinación perfecta con cordero asado, chícharos, tabulé y tzatziki griego.",
     "allergens": [],
     "audioPrompt": "Fresh Mint, cooling herbaceous leaves for lamb and refreshing drinks."
   },
@@ -3598,7 +3598,7 @@
     "categoryEs": "Aceites y Condimentos",
     "storageTemp": "1°C to 4°C",
     "culinaryNotesEn": "Rich, silky animal fat with low melting point; the holy grail for making confit and the world's crispiest roast potatoes.",
-    "culinaryNotesEs": "Grasa sedosa y aromática; el secreto de los bistrós franceses para confitados y patatas asadas ultracrocantes.",
+    "culinaryNotesEs": "Grasa sedosa y aromática; el secreto de los bistrós franceses para confitados y papas asadas bien doraditas y crujientes.",
     "allergens": [],
     "audioPrompt": "Rendered Duck Fat, liquid gold for confiting legs and roasting potatoes."
   },
@@ -4077,7 +4077,7 @@
     "contextEn": "Precision matchstick cut measuring exactly 1/8 inch × 1/8 inch × 2 inches (3mm × 3mm × 5cm).",
     "contextEs": "Corte fino en tiras o bastoncillos uniformes de 3 mm de grosor por 5 cm de longitud.",
     "exampleDialogueEn": "“Commis, julienne these leeks and carrots for the consommé garnish right away!”",
-    "exampleDialogueEs": "“¡Ayudante, corta en juliana estos puerros y zanahorias para la guarnición del consomé de inmediato!”",
+    "exampleDialogueEs": "“¡Ayudante, corta en juliana estos poros y zanahorias para la guarnición del consomé de volada!”",
     "audioPrompt": "Julienne, classical matchstick cut measuring 3 millimeters by 5 centimeters."
   },
   {
@@ -4140,7 +4140,7 @@
     "category": "Knife Cuts",
     "categoryEs": "Cortes de Cuchillo",
     "contextEn": "Cubes measuring 1/2 inch × 1/2 inch × 1/2 inch (12mm × 12mm × 12mm); standard for hearty stews.",
-    "contextEs": "Dados de 1.2 cm de lado; tamaño estándar para patatas salteadas y guisados de ternera.",
+    "contextEs": "Dados de 1.2 cm de lado; tamaño estándar para papas salteadas y guisados de res.",
     "exampleDialogueEn": "“Cut the beef chuck and Yukon potatoes into medium dice for the Irish stew.”",
     "exampleDialogueEs": "“Corta el morcillo de ternera y las papas en dados medianos para el estofado.”",
     "audioPrompt": "Medium Dice, half-inch cubes tailored for hearty braises and stews."
@@ -4194,7 +4194,7 @@
     "contextEn": "Flat, thin tiles measuring 1/2 inch × 1/2 inch × 1/8 inch (12mm × 12mm × 3mm) conforming to vegetable shape.",
     "contextEs": "Láminas finas cuadradas o triangulares de 12 mm por 3 mm de espesor para sopas tradicionales campesinas.",
     "exampleDialogueEn": "“Cut the leeks, carrots, and turnips en paysanne so they layer flat on the spoon.”",
-    "exampleDialogueEs": "“Corta los puerros, zanahorias y nabos a la paisana para que quepan planos en la cuchara.”",
+    "exampleDialogueEs": "“Corta los poros, zanahorias y nabos a la paisana para que quepan planitos en la cuchara.”",
     "audioPrompt": "Paysanne, flat tile-shaped cuts designed for rustic European vegetable soups."
   },
   {
@@ -4207,7 +4207,7 @@
     "contextEn": "Classical French 7-sided football or barrel shape carved with curved bird's beak knife measuring 2 inches long.",
     "contextEs": "Corte clásico de alta cocina que talla vegetales en forma de barrilito de 7 caras curvas iguales.",
     "exampleDialogueEn": "“Every single potato must have seven identical facets, or the chef will send them back.”",
-    "exampleDialogueEs": "“Cada patata debe tener exactamente siete facetas idénticas, o el chef las rechazará todas.”",
+    "exampleDialogueEs": "“Cada papa debe tener exactamente siete lados idénticos, o el chef las va a rechazar todas.”",
     "audioPrompt": "Tourné, classical French technique sculpting seven curved facets on root vegetables."
   },
   {
@@ -4337,7 +4337,7 @@
     "contextEn": "Submerging vegetables into boiling salted water for 60–120 seconds, then immediately shocking in ice water.",
     "contextEs": "Hervir verduras brevemente en agua salada y transferirlas de golpe a un baño de hielo para fijar clorofila.",
     "exampleDialogueEn": "“Blanch the green beans for ninety seconds, shock in ice, and drain bone-dry before service.”",
-    "exampleDialogueEs": "“Escalda las judías verdes noventa segundos, pásalas al hielo y sécalas bien antes del servicio.”",
+    "exampleDialogueEs": "“Pasa los ejotes por agua hirviendo noventa segundos, pásalos a agua con hielo y sécalos bien antes del servicio.”",
     "audioPrompt": "Blanch and Shock, brief boiling followed by ice water bath to fix color and crunch."
   },
   {
@@ -4480,7 +4480,7 @@
     "contextEn": "Cooking chopped vegetables gently in fat over low heat with salt, drawing out moisture without taking on color.",
     "contextEs": "Cocinar verduras picadas a fuego muy bajo con sal para que suelten agua y se vuelvan traslúcidas sin dorar.",
     "exampleDialogueEn": "“Sweat the onions and leeks under parchment cartouche until completely soft and translucent.”",
-    "exampleDialogueEs": "“Pocha las cebollas y puerros con una tapa de papel hasta que queden transparentes sin una mota dorada.”",
+    "exampleDialogueEs": "“Acitrona las cebollas y los poros tapados con papel hasta que queden transparentes sin dorarse.”",
     "audioPrompt": "Sweat, gentle cooking with salt drawing out sweet juices with zero browning."
   },
   {
@@ -4688,7 +4688,7 @@
     "contextEn": "Kitchen directive demanding a dish or fix be prepared immediately at emergency speed due to error or rush.",
     "contextEs": "Orden de máxima prioridad para sacar un plato a toda prisa por error de comanda o cliente impaciente.",
     "exampleDialogueEn": "“Waiter dropped the risotto; I need one mushroom risotto on the fly right now!”",
-    "exampleDialogueEs": "“Al camarero se le cayó el plato; ¡necesito un risotto de setas al vuelo ahora mismo!”",
+    "exampleDialogueEs": "“Al mesero se le cayó el plato; ¡necesito un risotto de hongos al vuelo de una vez!”",
     "audioPrompt": "On the fly, urgent emergency order demanding instant preparation."
   },
   {
@@ -5261,7 +5261,7 @@
         "toolId": "chefs_knife",
         "timerSeconds": 1800,
         "criticalRuleEn": "Never sear cold meat straight from the fridge; a cold core inhibits even heat distribution and drops pan temperature instantly.",
-        "criticalRuleEs": "Nunca selles carne fría directo de la nevera; el núcleo frío frena la cocción uniforme y desploma la temperatura de la sartén."
+        "criticalRuleEs": "Nunca selles carne fría directo del refri; el centro frío frena la cocción pareja y le baja la temperatura a la sartén."
       },
       {
         "stepNumber": 2,
@@ -5351,7 +5351,7 @@
     "cookTime": "15 mins",
     "servings": 2,
     "descriptionEn": "Delicate Chilean sea bass fillet enclosed with julienned leeks, fennel, lemon wheels, and dry vermouth inside a parchment paper pouch that inflates into a steaming aromatic parcel.",
-    "descriptionEs": "Delicado filete de lubina chilena envuelto con juliana de puerros, hinojo, rodajas de limón y vermú seco dentro de un paquete de papel pergamino que se infla al vapor aromatizado.",
+    "descriptionEs": "Delicado filete de robalo envuelto con juliana de poros, hinojo, rebanadas de limón y vermú seco dentro de papel para hornear que se infla al vapor aromatizado.",
     "requiredIngredients": [
       {
         "id": "chilean_sea_bass",
@@ -5414,7 +5414,7 @@
         "titleEn": "Building Aromatic Bed and Assembling",
         "titleEs": "Construcción del Lecho Aromático y Montaje",
         "actionEn": "Place julienned leeks and shaved fennel in center of parchment. Place seasoned sea bass over vegetables, garnish with lemon wheels and tarragon, splash with vermouth.",
-        "actionEs": "Coloca la juliana de puerro e hinojo en el centro. Posiciona la lubina sazonada sobre las verduras, añade rodajas de limón, estragón y un chorro de vermú.",
+        "actionEs": "Coloca la juliana de poro e hinojo en el centro. Acomoda el pescado sazonado sobre las verduras, ponle rebanadas de limón, estragón y un chorrito de vermú.",
         "techniqueId": "mise_en_place",
         "toolId": "chefs_knife",
         "timerSeconds": 360,
@@ -5867,7 +5867,7 @@
         "titleEn": "Crafting the Sweet-Tart Gastrique",
         "titleEs": "Elaboración de la Gastrique Agridulce",
         "actionEn": "Melt sugar in saucier until amber caramel. Deglaze with vinegar to dissolve caramel, add fresh orange juice and strips of blanched orange zest, reducing by half to glossy syrup.",
-        "actionEs": "Funde azúcar en un cazo hasta formar caramelo ámbar. Desglasa con vinagre para disolver el caramelo, añade zumo de naranja y juliana de piel escalfada, reduciendo a jarabe.",
+        "actionEs": "Derrite azúcar en una cacerola hasta formar caramelo ámbar. Desglasa con vinagre para disolver el caramelo, agrega jugo de naranja y tiritas de cáscara escalfada, reduciendo a jarabe.",
         "techniqueId": "gastrique_reduction",
         "toolId": "saucier_pan",
         "timerSeconds": 360,
@@ -6819,7 +6819,7 @@
     "cookTime": "35 mins",
     "servings": 6,
     "descriptionEn": "Authentic Spanish saffron rice simmered over open flame with jumbo prawns, calamari, mussels, and rich sofrito, finished with the legendary crispy caramelized rice crust (socarrat).",
-    "descriptionEs": "Auténtico arroz con azafrán español cocido a fuego vivo con gambas gigantes, calamares, mejillones y sofrito casero, terminado con la legendaria costra crujiente de socarrat.",
+    "descriptionEs": "Arroz con azafrán cocido a fuego vivo con camarones gigantes, calamares, mejillones y sofrito casero, terminado con su clásica costra crujiente de socarrat.",
     "requiredIngredients": [
       {
         "id": "bomba_rice",
@@ -6876,7 +6876,7 @@
         "titleEn": "Searing Shellfish and Building Sofrito",
         "titleEs": "Sellado de Mariscos y Construcción del Sofrito",
         "actionEn": "Sear prawns in generous olive oil inside wide paella pan until red; remove and reserve. In same oil, sauté calamari, grated tomatoes, garlic, and smoked paprika into sweet sofrito jam.",
-        "actionEs": "Sella las gambas en aceite de oliva en la paellera hasta dorar; retira y reserva. En el mismo aceite saltea calamares, tomate rallado, ajo y pimentón dulce hasta formar sofrito.",
+        "actionEs": "Dora los camarones con aceite de oliva en la paellera; retira y reserva. En el mismo aceite saltea calamares, jitomate rallado, ajo y páprika dulce hasta formar el sofrito.",
         "techniqueId": "sofrito_foundation",
         "toolId": "paella_pan",
         "timerSeconds": 480,
@@ -6900,7 +6900,7 @@
         "titleEn": "Open Flame Simmering and Arranging Seafood",
         "titleEs": "Cocción a Fuego Vivo y Colocación de Mariscos",
         "actionEn": "Cook vigorously on high heat for 8 minutes, then reduce to medium-low for 10 minutes. Press mussels and reserved prawns into surface during final 5 minutes so steam opens shells.",
-        "actionEs": "Cocina a fuego vivo 8 minutos y baja a medio-bajo 10 minutos. Entierra los mejillones y gambas en la superficie los últimos 5 minutos para que abran al vapor.",
+        "actionEs": "Cocina a fuego vivo 8 minutos y baja a medio-bajo 10 minutos. Acomoda los mejillones y camarones en la superficie los últimos 5 minutos para que se abran al vapor.",
         "techniqueId": "simmering",
         "toolId": "paella_pan",
         "timerSeconds": 1080,

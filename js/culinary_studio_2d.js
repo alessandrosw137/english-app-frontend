@@ -551,13 +551,41 @@
     } catch (_) {}
   }
 
-  function speakText(text, lang = 'en-US', rate = 1.0) {
+  function speakText(text, lang = 'en-US', rate = 1.0, itemId) {
+    if (!text && !itemId) return;
+    const cleanKey = String(itemId || text || '')
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9_-]/g, '_')
+      .replace(/^_+|_+$/g, '');
+
+    // 1. Intentar reproducir el audio hiperrealista af_sarah generado con Kokoro TTS
+    if (cleanKey) {
+      const audioUrl = 'audio/vocab/' + cleanKey + '.wav';
+      try {
+        const audio = new Audio(audioUrl);
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(() => {
+            fallbackSpeechSynthesis(text, lang, rate);
+          });
+          return;
+        }
+      } catch (_) {
+        fallbackSpeechSynthesis(text, lang, rate);
+        return;
+      }
+    }
+    fallbackSpeechSynthesis(text, lang, rate);
+  }
+
+  function fallbackSpeechSynthesis(text, lang, rate) {
     if (typeof window === 'undefined' || !window.speechSynthesis) return;
     try {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = lang;
-      utterance.rate = rate;
+      utterance.lang = lang || 'en-US';
+      utterance.rate = rate || 1.0;
       utterance.pitch = 1.05;
       window.speechSynthesis.speak(utterance);
     } catch (_) {}
@@ -2181,7 +2209,7 @@
               '</div>' +
               '<div class="culinary-dict-card-es">' + item.nameEs + '</div>' +
             '</div>' +
-            '<button type="button" class="bubble-tts-btn" style="position: static;" onclick="event.stopPropagation(); window.speakText && window.speakText(\'' + safeEn + '\')" title="Listen to pronunciation">' +
+            '<button type="button" class="bubble-tts-btn" style="position: static;" onclick="event.stopPropagation(); window.speakText && window.speakText(\'' + safeEn + '\', \'en-US\', 1.0, \'' + item.id + '\')" title="Listen to pronunciation">' +
               '🔊' +
             '</button>' +
           '</div>' +
@@ -2219,6 +2247,7 @@
   };
 
   // Expose to window
+  global.speakText = speakText;
   global.CulinaryStudio2D = CulinaryStudio2D;
   global.openCulinaryStudioPortal = function(opts) {
     if (typeof global.hideAllModules === 'function') {
